@@ -32,6 +32,7 @@ import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -79,7 +80,8 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
-        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        String databaseType = DatasourcePlatformUtil.getDatasourcePlatform("");
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable, databaseType);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
     
@@ -113,8 +115,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
                 : configInfo.getEncryptedDataKey();
         
-        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
-                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(TableConstant.HIS_CONFIG_INFO);
         final String sql = historyConfigInfoMapper.insert(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
                         "src_user", "gmt_modified", "op_type", "encrypted_data_key"));
@@ -126,8 +127,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public void removeConfigHistory(final Timestamp startTime, final int limitSize) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
-                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(TableConstant.HIS_CONFIG_INFO);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
         context.putWhereParameter(FieldConstant.LIMIT_SIZE, limitSize);
@@ -138,8 +138,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public List<ConfigInfo> findDeletedConfig(final Timestamp startTime, final Timestamp endTime) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
-                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(TableConstant.HIS_CONFIG_INFO);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
         context.putWhereParameter(FieldConstant.END_TIME, endTime);
@@ -155,8 +154,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
-        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
-                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(TableConstant.HIS_CONFIG_INFO);
         
         MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
@@ -173,8 +171,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public ConfigHistoryInfo detailConfigHistory(Long nid) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
-                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(TableConstant.HIS_CONFIG_INFO);
         String sqlFetchRows = historyConfigInfoMapper.select(
                 Arrays.asList("nid", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_user",
                         "src_ip", "op_type", "gmt_create", "gmt_modified", "encrypted_data_key"),
@@ -184,8 +181,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public ConfigHistoryInfo detailPreviousConfigHistory(Long id) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
-                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(TableConstant.HIS_CONFIG_INFO);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.ID, id);
         MapperResult sqlFetchRows = historyConfigInfoMapper.detailPreviousConfigHistory(context);
@@ -195,8 +191,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     
     @Override
     public int findConfigHistoryCountByTime(final Timestamp startTime) {
-        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
-                dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
+        HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(TableConstant.HIS_CONFIG_INFO);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
         MapperResult sqlFetchRows = historyConfigInfoMapper.findConfigHistoryCountByTime(context);

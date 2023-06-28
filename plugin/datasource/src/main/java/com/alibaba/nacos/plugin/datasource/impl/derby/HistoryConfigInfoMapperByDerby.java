@@ -17,9 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -30,7 +28,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * @author hyx
  **/
 
-public class HistoryConfigInfoMapperByDerby extends AbstractMapper implements HistoryConfigInfoMapper {
+public class HistoryConfigInfoMapperByDerby extends AbstractDerbyMapper implements HistoryConfigInfoMapper {
     
     @Override
     public MapperResult removeConfigHistory(MapperContext context) {
@@ -49,9 +47,5 @@ public class HistoryConfigInfoMapperByDerby extends AbstractMapper implements Hi
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
                 context.getWhereParameter(FieldConstant.GROUP_ID), context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
-    
-    @Override
-    public String getDataSource() {
-        return DataSourceConstant.DERBY;
-    }
+
 }

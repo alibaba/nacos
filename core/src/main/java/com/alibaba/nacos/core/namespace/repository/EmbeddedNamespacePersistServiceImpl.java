@@ -26,6 +26,7 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -67,7 +68,9 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         Boolean isDataSourceLogEnable = EnvUtil
                 .getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
-        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+
+        String databaseType = DatasourcePlatformUtil.getDatasourcePlatform("");
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable, databaseType);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
     
@@ -76,7 +79,7 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
             String createResoure, final long time) {
         
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper.insert(Arrays
                 .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
                         "gmt_modified"));
@@ -97,7 +100,7 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     @Override
     public void removeTenantInfoAtomic(final String kp, final String tenantId) {
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(TableConstant.TENANT_INFO);
         
         EmbeddedStorageContextHolder
                 .addSqlContext(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp, tenantId);
@@ -112,7 +115,7 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
         
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper
                 .update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"), Arrays.asList("kp", "tenant_id"));
         final Object[] args = new Object[] {tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId};
@@ -132,7 +135,7 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     @Override
     public List<TenantInfo> findTenantByKp(String kp) {
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
                 .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Collections.singletonList("kp"));
         return databaseOperate.queryMany(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
@@ -142,7 +145,7 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     @Override
     public TenantInfo findTenantByKp(String kp, String tenantId) {
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
                 .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Arrays.asList("kp", "tenant_id"));
         return databaseOperate.queryOne(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
@@ -177,7 +180,7 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
             throw new IllegalArgumentException("tenantId can not be null");
         }
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper.count(Arrays.asList("tenant_id"));
         Integer result = databaseOperate.queryOne(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {

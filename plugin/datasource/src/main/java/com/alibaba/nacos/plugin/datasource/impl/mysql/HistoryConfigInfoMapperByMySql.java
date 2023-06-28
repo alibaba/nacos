@@ -17,9 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -30,7 +28,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * @author hyx
  **/
 
-public class HistoryConfigInfoMapperByMySql extends AbstractMapper implements HistoryConfigInfoMapper {
+public class HistoryConfigInfoMapperByMySql extends AbstractMysqlMapper implements HistoryConfigInfoMapper {
     
     @Override
     public MapperResult removeConfigHistory(MapperContext context) {
@@ -48,9 +46,5 @@ public class HistoryConfigInfoMapperByMySql extends AbstractMapper implements Hi
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
                 context.getWhereParameter(FieldConstant.GROUP_ID), context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
-    
-    @Override
-    public String getDataSource() {
-        return DataSourceConstant.MYSQL;
-    }
+
 }

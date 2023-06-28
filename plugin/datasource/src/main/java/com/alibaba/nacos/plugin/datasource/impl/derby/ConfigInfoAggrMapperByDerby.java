@@ -17,9 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -31,7 +29,7 @@ import java.util.List;
  *
  * @author hyx
  **/
-public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements ConfigInfoAggrMapper {
+public class ConfigInfoAggrMapperByDerby extends AbstractDerbyMapper implements ConfigInfoAggrMapper {
     
     @Override
     public MapperResult findConfigInfoAggrByPageFetchRows(MapperContext context) {
@@ -48,9 +46,5 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
         List<Object> paramList = CollectionUtils.list(dataId, groupId, tenantId);
         return new MapperResult(sql, paramList);
     }
-    
-    @Override
-    public String getDataSource() {
-        return DataSourceConstant.DERBY;
-    }
+
 }

@@ -22,6 +22,7 @@ import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -75,7 +76,8 @@ public class GroupCapacityPersistService {
         this.jdbcTemplate = dataSourceService.getJdbcTemplate();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
-        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        String databaseType = DatasourcePlatformUtil.getDatasourcePlatform("");
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable, databaseType);
     }
     
     private static final class GroupCapacityRowMapper implements RowMapper<GroupCapacity> {
@@ -95,7 +97,7 @@ public class GroupCapacityPersistService {
     }
     
     public GroupCapacity getGroupCapacity(String groupId) {
-        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                 TableConstant.GROUP_CAPACITY);
         String sql = groupCapacityMapper.select(
                 Arrays.asList("id", "quota", "`usage`", "`max_size`", "max_aggr_count", "max_aggr_size", "group_id"),
@@ -118,7 +120,7 @@ public class GroupCapacityPersistService {
      * @return operate result.
      */
     public boolean insertGroupCapacity(final GroupCapacity capacity) {
-        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                 TableConstant.GROUP_CAPACITY);
         MapperResult mapperResult;
         MapperContext context = new MapperContext();
@@ -145,7 +147,7 @@ public class GroupCapacityPersistService {
         if (clusterCapacity != null) {
             return clusterCapacity.getUsage();
         }
-        ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoMapper configInfoMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO);
         String sql = configInfoMapper.count(null);
         Integer result = jdbcTemplate.queryForObject(sql, Integer.class);
@@ -162,7 +164,7 @@ public class GroupCapacityPersistService {
      * @return operate result.
      */
     public boolean incrementUsageWithDefaultQuotaLimit(GroupCapacity groupCapacity) {
-        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                 TableConstant.GROUP_CAPACITY);
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
@@ -185,7 +187,7 @@ public class GroupCapacityPersistService {
      * @return operate result.
      */
     public boolean incrementUsageWithQuotaLimit(GroupCapacity groupCapacity) {
-        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                 TableConstant.GROUP_CAPACITY);
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
@@ -207,7 +209,7 @@ public class GroupCapacityPersistService {
      * @return operate result.
      */
     public boolean incrementUsage(GroupCapacity groupCapacity) {
-        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                 TableConstant.GROUP_CAPACITY);
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
@@ -229,7 +231,7 @@ public class GroupCapacityPersistService {
      * @return operate result.
      */
     public boolean decrementUsage(GroupCapacity groupCapacity) {
-        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                 TableConstant.GROUP_CAPACITY);
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
@@ -280,7 +282,7 @@ public class GroupCapacityPersistService {
         whereList.add("group_id");
         argList.add(group);
         
-        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                 TableConstant.GROUP_CAPACITY);
         String sql = groupCapacityMapper.update(columnList, whereList);
         try {
@@ -307,7 +309,7 @@ public class GroupCapacityPersistService {
      * @return operate result.
      */
     public boolean correctUsage(String group, Timestamp gmtModified) {
-        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                 TableConstant.GROUP_CAPACITY);
         MapperResult mapperResult;
         MapperContext context = new MapperContext();
@@ -341,7 +343,7 @@ public class GroupCapacityPersistService {
      * @return GroupCapacity list.
      */
     public List<GroupCapacity> getCapacityList4CorrectUsage(long lastId, int pageSize) {
-        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                 TableConstant.GROUP_CAPACITY);
         
         MapperContext context = new MapperContext();
@@ -370,7 +372,7 @@ public class GroupCapacityPersistService {
      */
     public boolean deleteGroupCapacity(final String group) {
         try {
-            GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(
                     TableConstant.GROUP_CAPACITY);
             PreparedStatementCreator preparedStatementCreator = connection -> {
                 PreparedStatement ps = connection.prepareStatement(

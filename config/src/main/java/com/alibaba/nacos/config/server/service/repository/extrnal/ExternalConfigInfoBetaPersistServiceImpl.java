@@ -31,6 +31,7 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -78,7 +79,8 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         this.tjt = dataSourceService.getTransactionTemplate();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
-        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        String databaseType = DatasourcePlatformUtil.getDatasourcePlatform("");
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable, databaseType);
     }
     
     @Override
@@ -94,7 +96,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
                 : configInfo.getEncryptedDataKey();
         try {
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_BETA);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             
@@ -138,8 +140,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             try {
                 ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
                 if (configInfo != null) {
-                    ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
-                            dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_BETA);
+                    ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(TableConstant.CONFIG_INFO_BETA);
                     jt.update(configInfoBetaMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id")), dataId,
                             group, tenantTmp);
                 }
@@ -160,7 +161,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
                 : configInfo.getEncryptedDataKey();
         try {
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_BETA);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             
@@ -209,7 +210,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         try {
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_BETA);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             
@@ -247,7 +248,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     public ConfigInfoBetaWrapper findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_BETA);
             return this.jt.queryForObject(configInfoBetaMapper.select(
                             Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "beta_ips",
@@ -263,7 +264,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     
     @Override
     public int configInfoBetaCount() {
-        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_BETA);
         String sql = configInfoBetaMapper.count(null);
         Integer result = jt.queryForObject(sql, Integer.class);
@@ -276,7 +277,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_BETA);
         String sqlCountRows = configInfoBetaMapper.count(null);
         

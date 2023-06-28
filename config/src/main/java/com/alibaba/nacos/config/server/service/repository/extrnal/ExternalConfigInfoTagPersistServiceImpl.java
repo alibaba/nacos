@@ -31,6 +31,7 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -78,7 +79,8 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         this.tjt = dataSourceService.getTransactionTemplate();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
-        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        String databaseType = DatasourcePlatformUtil.getDatasourcePlatform("");
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable, databaseType);
     }
     
     @Override
@@ -89,7 +91,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public ConfigInfoStateWrapper findConfigInfo4TagState(final String dataId, final String group, final String tenant,
             String tag) {
-        ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_TAG);
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
@@ -117,7 +119,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         try {
-            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_TAG);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             
@@ -159,7 +161,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag;
         try {
-            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_TAG);
             jt.update(configInfoTagMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "tag_id")), dataId,
                     group, tenantTmp, tagTmp);
@@ -176,7 +178,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_TAG);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             jt.update(configInfoTagMapper.update(
@@ -199,7 +201,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_TAG);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             
@@ -237,7 +239,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         try {
-            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_TAG);
             return this.jt.queryForObject(configInfoTagMapper.select(
                             Arrays.asList("id", "data_id", "group_id", "tenant_id", "tag_id", "app_name", "content"),
@@ -253,7 +255,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     
     @Override
     public int configInfoTagCount() {
-        ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_TAG);
         String sql = configInfoTagMapper.count(null);
         Integer result = jt.queryForObject(sql, Integer.class);
@@ -266,7 +268,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_TAG);
         String sqlCountRows = configInfoTagMapper.count(null);
         MapperResult sqlFetchRows = configInfoTagMapper.findAllConfigInfoTagForDumpAllFetchRows(
@@ -287,7 +289,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public List<String> findConfigInfoTags(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_TAG);
         String selectSql = configInfoTagMapper.select(Arrays.asList("tag_id"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));

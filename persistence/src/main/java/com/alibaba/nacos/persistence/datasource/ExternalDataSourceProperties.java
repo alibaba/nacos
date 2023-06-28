@@ -36,11 +36,14 @@ import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
  * @author Nacos
  */
 public class ExternalDataSourceProperties {
-    
-    private static final String JDBC_DRIVER_NAME = "com.mysql.cj.jdbc.Driver";
+    public ExternalDataSourceProperties() {
+        this.driverClassName = "com.mysql.cj.jdbc.Driver";
+    }
     
     private static final String TEST_QUERY = "SELECT 1";
-    
+
+    private String driverClassName;
+
     private Integer num;
     
     private List<String> url = new ArrayList<>();
@@ -64,7 +67,11 @@ public class ExternalDataSourceProperties {
     public void setPassword(List<String> password) {
         this.password = password;
     }
-    
+
+    public void setDriverClassName(String driverClassName) {
+        this.driverClassName = driverClassName;
+    }
+
     /**
      * Build serveral HikariDataSource.
      *
@@ -83,7 +90,7 @@ public class ExternalDataSourceProperties {
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
             DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
             if (StringUtils.isEmpty(poolProperties.getDataSource().getDriverClassName())) {
-                poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
+                poolProperties.setDriverClassName(this.driverClassName);
             }
             poolProperties.setJdbcUrl(url.get(index).trim());
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());

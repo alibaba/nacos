@@ -21,6 +21,7 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -50,30 +51,31 @@ import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInje
 @Conditional(value = ConditionOnExternalStorage.class)
 @Service("externalOtherPersistServiceImpl")
 public class ExternalNamespacePersistServiceImpl implements NamespacePersistService {
-    
+
     private final DataSourceService dataSourceService;
-    
+
     protected JdbcTemplate jt;
-    
+
     protected TransactionTemplate tjt;
-    
+
     private final MapperManager mapperManager;
-    
+
     public ExternalNamespacePersistServiceImpl() {
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         this.jt = dataSourceService.getJdbcTemplate();
         this.tjt = dataSourceService.getTransactionTemplate();
         Boolean isDataSourceLogEnable = EnvUtil
                 .getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
-        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        String databaseType = DatasourcePlatformUtil.getDatasourcePlatform("");
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable, databaseType);
     }
-    
+
     @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResoure, final long time) {
+                                       String createResoure, final long time) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
-                    .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                    .findMapper(TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.insert(Arrays
                     .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
                             "gmt_modified")), kp, tenantId, tenantName, tenantDesc, createResoure, time, time);
@@ -82,41 +84,41 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
             throw e;
         }
     }
-    
+
     @Override
     public void removeTenantInfoAtomic(final String kp, final String tenantId) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
-                    .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                    .findMapper(TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.delete(Arrays.asList("kp", "tenant_id")), kp, tenantId);
         } catch (CannotGetJdbcConnectionException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
         }
     }
-    
+
     @Override
     public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
-                    .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                    .findMapper(TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"),
-                    Arrays.asList("kp", "tenant_id")), tenantName, tenantDesc, System.currentTimeMillis(), kp,
+                            Arrays.asList("kp", "tenant_id")), tenantName, tenantDesc, System.currentTimeMillis(), kp,
                     tenantId);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
         }
     }
-    
+
     @Override
     public List<TenantInfo> findTenantByKp(String kp) {
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
                 .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Collections.singletonList("kp"));
         try {
-            return this.jt.query(sql, new Object[] {kp}, TENANT_INFO_ROW_MAPPER);
+            return this.jt.query(sql, new Object[]{kp}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
@@ -127,15 +129,15 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public TenantInfo findTenantByKp(String kp, String tenantId) {
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper
                 .select(Arrays.asList("tenant_id", "tenant_name", "tenant_desc"), Arrays.asList("kp", "tenant_id"));
         try {
-            return jt.queryForObject(sql, new Object[] {kp, tenantId}, TENANT_INFO_ROW_MAPPER);
+            return jt.queryForObject(sql, new Object[]{kp, tenantId}, TENANT_INFO_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
@@ -146,7 +148,7 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public String generateLikeArgument(String s) {
         String fuzzySearchSign = "\\*";
@@ -157,7 +159,7 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
             return s;
         }
     }
-    
+
     @Override
     public boolean isExistTable(String tableName) {
         String sql = String.format("SELECT 1 FROM %s LIMIT 1", tableName);
@@ -168,16 +170,16 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
             return false;
         }
     }
-    
+
     @Override
     public int tenantInfoCountByTenantId(String tenantId) {
         if (Objects.isNull(tenantId)) {
             throw new IllegalArgumentException("tenantId can not be null");
         }
         TenantInfoMapper tenantInfoMapper = mapperManager
-                .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
+                .findMapper(TableConstant.TENANT_INFO);
         String sql = tenantInfoMapper.count(Arrays.asList("tenant_id"));
-        Integer result = this.jt.queryForObject(sql, new String[] {tenantId}, Integer.class);
+        Integer result = this.jt.queryForObject(sql, new String[]{tenantId}, Integer.class);
         if (result == null) {
             return 0;
         }

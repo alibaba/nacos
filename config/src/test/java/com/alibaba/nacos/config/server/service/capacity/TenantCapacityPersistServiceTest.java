@@ -78,7 +78,7 @@ public class TenantCapacityPersistServiceTest {
         ReflectionTestUtils.setField(service, "mapperManager", mapperManager);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
         doReturn(new TenantCapacityMapperByMySql()).when(mapperManager)
-                .findMapper(any(), eq(TableConstant.TENANT_CAPACITY));
+                .findMapper(eq(TableConstant.TENANT_CAPACITY));
     }
     
     @Test

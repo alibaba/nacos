@@ -36,6 +36,7 @@ import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -80,7 +81,8 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
-        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        String databaseType = DatasourcePlatformUtil.getDatasourcePlatform("");
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable, databaseType);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
     
@@ -92,7 +94,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigInfoStateWrapper findConfigInfo4BetaState(final String dataId, final String group,
             final String tenant) {
-        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_BETA);
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
@@ -124,7 +126,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         configInfo.setTenant(tenantTmp);
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_BETA);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             
@@ -172,8 +174,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
         if (configInfo != null) {
             try {
-                ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
-                        dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_BETA);
+                ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(TableConstant.CONFIG_INFO_BETA);
                 final String sql = configInfoBetaMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id"));
                 final Object[] args = new Object[] {dataId, group, tenantTmp};
                 
@@ -203,7 +204,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         configInfo.setTenant(tenantTmp);
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_BETA);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             final String sql = configInfoBetaMapper.update(
@@ -234,7 +235,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             
-            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+            ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                     TableConstant.CONFIG_INFO_BETA);
             Timestamp time = new Timestamp(System.currentTimeMillis());
             MapperContext context = new MapperContext();
@@ -273,7 +274,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigInfoBetaWrapper findConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_BETA);
         final String sql = configInfoBetaMapper.select(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "beta_ips",
@@ -286,7 +287,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     
     @Override
     public int configInfoBetaCount() {
-        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_BETA);
         String sql = configInfoBetaMapper.count(null);
         Integer result = databaseOperate.queryOne(sql, Integer.class);
@@ -299,7 +300,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public Page<ConfigInfoBetaWrapper> findAllConfigInfoBetaForDumpAll(final int pageNo, final int pageSize) {
         final int startRow = (pageNo - 1) * pageSize;
-        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_BETA);
         String sqlCountRows = configInfoBetaMapper.count(null);
         

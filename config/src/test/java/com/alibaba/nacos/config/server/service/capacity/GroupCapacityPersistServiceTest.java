@@ -80,7 +80,7 @@ public class GroupCapacityPersistServiceTest {
         ReflectionTestUtils.setField(service, "mapperManager", mapperManager);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
         doReturn(new GroupCapacityMapperByMysql()).when(mapperManager)
-                .findMapper(any(), eq(TableConstant.GROUP_CAPACITY));
+                .findMapper(eq(TableConstant.GROUP_CAPACITY));
     }
     
     @Test
@@ -137,7 +137,7 @@ public class GroupCapacityPersistServiceTest {
     
     @Test
     public void testGetClusterUsage() {
-        doReturn(new ConfigInfoMapperByMySql()).when(mapperManager).findMapper(any(), eq(TableConstant.CONFIG_INFO));
+        doReturn(new ConfigInfoMapperByMySql()).when(mapperManager).findMapper(eq(TableConstant.CONFIG_INFO));
         
         List<GroupCapacity> list = new ArrayList<>();
         GroupCapacity groupCapacity = new GroupCapacity();

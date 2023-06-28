@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
-import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoBetaMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -31,7 +29,7 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigInfoBetaMapperByDerby extends AbstractMapper implements ConfigInfoBetaMapper {
+public class ConfigInfoBetaMapperByDerby extends AbstractDerbyMapper implements ConfigInfoBetaMapper {
 
     @Override
     public MapperResult findAllConfigInfoBetaForDumpAllFetchRows(MapperContext context) {
@@ -49,8 +47,4 @@ public class ConfigInfoBetaMapperByDerby extends AbstractMapper implements Confi
         return new MapperResult(sql, paramList);
     }
 
-    @Override
-    public String getDataSource() {
-        return DataSourceConstant.DERBY;
-    }
 }

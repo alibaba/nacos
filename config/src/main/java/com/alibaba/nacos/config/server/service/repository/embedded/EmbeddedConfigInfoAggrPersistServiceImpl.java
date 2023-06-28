@@ -32,6 +32,7 @@ import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.utils.DatasourcePlatformUtil;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -80,7 +81,8 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
         Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
                 false);
-        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
+        String databaseType = DatasourcePlatformUtil.getDatasourcePlatform("");
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable, databaseType);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
     
@@ -108,7 +110,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         String contentTmp = StringUtils.isBlank(content) ? StringUtils.EMPTY : content;
         final Timestamp now = new Timestamp(System.currentTimeMillis());
         
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         final String select = configInfoAggrMapper.select(Collections.singletonList("content"),
                 Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
@@ -168,7 +170,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         removeAggrConfigInfo(dataId, group, tenant);
         
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         final String sql = configInfoAggrMapper.insert(
                 Arrays.asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified"));
@@ -195,7 +197,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
             final String datumId) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         final String sql = configInfoAggrMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp, datumId};
@@ -215,7 +217,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     public void removeAggrConfigInfo(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         final String sql = configInfoAggrMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp};
@@ -235,7 +237,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     public boolean batchRemoveAggr(final String dataId, final String group, final String tenant,
             final List<String> datumList) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         
         MapperContext context = new MapperContext();
@@ -264,7 +266,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     @Override
     public int aggrConfigInfoCount(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         String sql = configInfoAggrMapper.count(Arrays.asList("data_id", "group_id", "tenant_id"));
         Integer result = databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp}, Integer.class);
@@ -280,7 +282,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
             return 0;
         }
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         
         MapperContext context = new MapperContext();
@@ -305,7 +307,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     @Override
     public ConfigInfoAggr findSingleConfigInfoAggr(String dataId, String group, String tenant, String datumId) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         String sql = configInfoAggrMapper.select(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "datum_id", "app_name", "content"),
@@ -319,7 +321,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     @Override
     public List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         
         MapperContext context = new MapperContext();
@@ -339,7 +341,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     public Page<ConfigInfoAggr> findConfigInfoAggrByPage(String dataId, String group, String tenant, final int pageNo,
             final int pageSize) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         final int startRow = (pageNo - 1) * pageSize;
         final String sqlCountRows = configInfoAggrMapper.select(Arrays.asList("count(*)"),
@@ -456,7 +458,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     
     @Override
     public List<ConfigInfoChanged> findAllAggrGroup() {
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         MapperResult mapperResult = configInfoAggrMapper.findAllAggrGroupByDistinct(null);
         
@@ -466,7 +468,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     
     @Override
     public List<String> findDatumIdByContent(String dataId, String groupId, String content) {
-        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+        ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(
                 TableConstant.CONFIG_INFO_AGGR);
         String sql = configInfoAggrMapper.select(Collections.singletonList("datum_id"),
                 Arrays.asList("data_id", "group_id", "content"));

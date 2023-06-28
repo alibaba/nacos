@@ -17,9 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -33,7 +31,7 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements ConfigTagsRelationMapper {
+public class ConfigTagsRelationMapperByMySql extends AbstractMysqlMapper implements ConfigTagsRelationMapper {
     
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
@@ -128,9 +126,5 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         return new MapperResult(sqlFetchRows + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
                 paramList);
     }
-    
-    @Override
-    public String getDataSource() {
-        return DataSourceConstant.MYSQL;
-    }
+
 }
