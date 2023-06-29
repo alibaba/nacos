@@ -30,9 +30,9 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -101,7 +101,10 @@ public class PersistentIpPortClientManager implements ClientManager {
     
     @Override
     public Collection<String> allClientId() {
-        Collection<String> clientIds = new ArrayList<>(clients.size());
+        // client id is unique in the application
+        // use set to replace array list
+        // it will improve the performance
+        Collection<String> clientIds = new HashSet<>(clients.size());
         clientIds.addAll(clients.keySet());
         return clientIds;
     }
@@ -135,5 +138,26 @@ public class PersistentIpPortClientManager implements ClientManager {
         ConcurrentMap<String, IpPortBasedClient> oldClients = this.clients;
         this.clients = clients;
         oldClients.clear();
+    }
+
+    /**
+     * add client directly.
+     *
+     * @param client client
+     */
+    public void addSyncClient(IpPortBasedClient client) {
+        clients.put(client.getClientId(), client);
+    }
+
+    /**
+     * remove client.
+     *
+     * @param clientId client id
+     */
+    public void removeAndRelease(String clientId) {
+        IpPortBasedClient client = clients.remove(clientId);
+        if (client != null) {
+            client.release();
+        }
     }
 }
