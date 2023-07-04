@@ -40,11 +40,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.HashMap;
 
 /**
  * Its own configuration information manipulation tool class.
@@ -103,11 +103,17 @@ public class EnvUtil {
     private static final String NACOS_TEMP_DIR_1 = "data";
     
     private static final String NACOS_TEMP_DIR_2 = "tmp";
-
+    
     private static final String NACOS_CUSTOM_ENVIRONMENT_ENABLED = "nacos.custom.environment.enabled";
-
+    
     private static final String NACOS_CUSTOM_CONFIG_NAME = "customFirstNacosConfig";
-
+    
+    private static final int DEFAULT_PUSH_RETRY_TIME = 3;
+    
+    private static final String PUSH_RETRY_TIME = "push.retry.times";
+    
+    private static Integer pushRetryTimes;
+    
     @JustForTest
     private static String confPath = "";
     
@@ -115,7 +121,7 @@ public class EnvUtil {
     private static String nacosHomePath = null;
     
     private static ConfigurableEnvironment environment;
-
+    
     /**
      * customEnvironment.
      */
@@ -226,6 +232,21 @@ public class EnvUtil {
     
     public static void setContextPath(String contextPath) {
         EnvUtil.contextPath = contextPath;
+    }
+    
+    public static int getPushRetryTimes() {
+        if (null == pushRetryTimes) {
+            try {
+                pushRetryTimes = getProperty(PUSH_RETRY_TIME, Integer.class, DEFAULT_PUSH_RETRY_TIME);
+            } catch (Exception e) {
+                pushRetryTimes = DEFAULT_PUSH_RETRY_TIME;
+            }
+        }
+        return pushRetryTimes;
+    }
+    
+    public static void setPushRetryTimes(int pushRetryTimes) {
+        EnvUtil.pushRetryTimes = pushRetryTimes;
     }
     
     @JustForTest

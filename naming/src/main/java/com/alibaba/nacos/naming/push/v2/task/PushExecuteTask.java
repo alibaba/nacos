@@ -31,6 +31,7 @@ import com.alibaba.nacos.naming.push.v2.PushConfig;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.hook.PushResult;
 import com.alibaba.nacos.naming.push.v2.hook.PushResultHookHolder;
+import com.alibaba.nacos.sys.env.EnvUtil;
 
 import java.util.Collection;
 
@@ -74,7 +75,9 @@ public class PushExecuteTask extends AbstractExecuteTask {
             }
         } catch (Exception e) {
             Loggers.PUSH.error("Push task for service" + service.getGroupedServiceName() + " execute failed ", e);
-            delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L));
+            if (delayTask.getRetriedCount() < EnvUtil.getPushRetryTimes()) {
+                delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L, delayTask.getRetriedCount() + 1));
+            }
         }
     }
     
@@ -156,8 +159,11 @@ public class PushExecuteTask extends AbstractExecuteTask {
                     subscriber.getIp());
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Reason detail: ", e);
-                delayTaskEngine.addTask(service,
-                        new PushDelayTask(service, PushConfig.getInstance().getPushTaskRetryDelay(), clientId));
+                if (delayTask.getRetriedCount() < EnvUtil.getPushRetryTimes()) {
+                    delayTaskEngine.addTask(service,
+                            new PushDelayTask(service, PushConfig.getInstance().getPushTaskRetryDelay(), clientId,
+                                    delayTask.getRetriedCount() + 1));
+                }
             }
             PushResult result = PushResult
                     .pushFailed(service, clientId, actualServiceInfo, subscriber, pushCostTime, e, isPushToAll);

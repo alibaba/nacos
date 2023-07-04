@@ -36,6 +36,8 @@ public class PushDelayTask extends AbstractDelayTask {
     
     private Set<String> targetClients;
     
+    private int retriedCount = 0;
+    
     public PushDelayTask(Service service, long delay) {
         this.service = service;
         pushToAll = true;
@@ -49,6 +51,25 @@ public class PushDelayTask extends AbstractDelayTask {
         this.pushToAll = false;
         this.targetClients = new HashSet<>(1);
         this.targetClients.add(targetClient);
+        setTaskInterval(delay);
+        setLastProcessTime(System.currentTimeMillis());
+    }
+    
+    public PushDelayTask(Service service, long delay, int retriedCount) {
+        this.service = service;
+        pushToAll = true;
+        targetClients = null;
+        this.retriedCount = retriedCount;
+        setTaskInterval(delay);
+        setLastProcessTime(System.currentTimeMillis());
+    }
+    
+    public PushDelayTask(Service service, long delay, String targetClient, int retriedCount) {
+        this.service = service;
+        this.pushToAll = false;
+        this.targetClients = new HashSet<>(1);
+        this.targetClients.add(targetClient);
+        this.retriedCount = retriedCount;
         setTaskInterval(delay);
         setLastProcessTime(System.currentTimeMillis());
     }
@@ -79,5 +100,9 @@ public class PushDelayTask extends AbstractDelayTask {
     
     public Set<String> getTargetClients() {
         return targetClients;
+    }
+    
+    public int getRetriedCount() {
+        return retriedCount;
     }
 }

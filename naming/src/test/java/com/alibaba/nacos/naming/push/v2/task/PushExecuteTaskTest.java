@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -91,6 +93,9 @@ public class PushExecuteTaskTest {
         when(delayTaskExecuteEngine.getMetadataManager()).thenReturn(metadataManager);
         when(metadataManager.getServiceMetadata(service)).thenReturn(Optional.empty());
         ApplicationUtils.injectContext(context);
+        MockEnvironment mockEnvironment = new MockEnvironment();
+        mockEnvironment.setProperty("push.retry.times", "0");
+        EnvUtil.setEnvironment(mockEnvironment);
     }
     
     @Test
@@ -138,6 +143,22 @@ public class PushExecuteTaskTest {
         pushExecutor.setFailedException(new RuntimeException());
         executeTask.run();
         assertEquals(1, MetricsMonitor.getFailedPushMonitor().get());
+        verify(delayTaskExecuteEngine).addTask(eq(service), any(PushDelayTask.class));
+    }
+    
+    @Test
+    public void testRunFailedWithRetryLimit() {
+        PushDelayTask delayTask = new PushDelayTask(service, 0L);
+        PushExecuteTask executeTask = new PushExecuteTask(service, delayTaskExecuteEngine, delayTask);
+        pushExecutor.setShouldSuccess(false);
+        pushExecutor.setFailedException(new RuntimeException());
+        executeTask.run();
+        assertEquals(1, MetricsMonitor.getFailedPushMonitor().get());
+        verify(delayTaskExecuteEngine, never()).addTask(eq(service), any(PushDelayTask.class));
+        
+        EnvUtil.setPushRetryTimes(1);
+        executeTask.run();
+        assertEquals(2, MetricsMonitor.getFailedPushMonitor().get());
         verify(delayTaskExecuteEngine).addTask(eq(service), any(PushDelayTask.class));
     }
 }
