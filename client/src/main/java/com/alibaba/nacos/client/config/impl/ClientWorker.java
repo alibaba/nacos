@@ -274,7 +274,7 @@ public class ClientWorker implements Closeable {
         }
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        MetricsMonitor.setListenerConfigCountMonitor(cacheMap.get().size());
     }
     
     /**
@@ -349,7 +349,7 @@ public class ClientWorker implements Closeable {
         
         LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
         
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        MetricsMonitor.setListenerConfigCountMonitor(cacheMap.get().size());
         
         return cache;
     }
@@ -396,7 +396,7 @@ public class ClientWorker implements Closeable {
         }
         LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
         
-        MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
+        MetricsMonitor.setListenerConfigCountMonitor(cacheMap.get().size());
         
         return cache;
     }

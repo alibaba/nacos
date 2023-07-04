@@ -168,9 +168,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
-                        instance);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+                serviceName, instance);
         if (instance.isEphemeral()) {
             return;
         }
@@ -187,8 +186,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[UPDATE-SERVICE] {} update service {} with instance: {}", namespaceId, serviceName, instance);
+        NAMING_LOGGER.info("[UPDATE-SERVICE] {} update service {} with instance: {}", namespaceId, serviceName,
+                instance);
         
         final Map<String, String> params = new HashMap<>(32);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -442,12 +441,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
         try {
-            HttpRestResult<String> restResult = nacosRestTemplate
-                    .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
+            HttpRestResult<String> restResult = nacosRestTemplate.exchangeForm(url, header,
+                    Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
             
-            MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
-                    .observe(end - start);
+            MetricsMonitor.recordNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()), end - start);
             
             if (restResult.ok()) {
                 return restResult.getData();

@@ -82,37 +82,38 @@ public class ServiceInfoHolder implements Closeable {
     
     private void initCacheDir(String namespace, NacosClientProperties properties) {
         String jmSnapshotPath = properties.getProperty(JM_SNAPSHOT_PATH_PROPERTY);
-    
+        
         String namingCacheRegistryDir = "";
         if (properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR) != null) {
-            namingCacheRegistryDir = File.separator + properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR);
+            namingCacheRegistryDir =
+                    File.separator + properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR);
         }
         
         if (!StringUtils.isBlank(jmSnapshotPath)) {
-            cacheDir = jmSnapshotPath + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
-                    + File.separator + FILE_PATH_NAMING + File.separator + namespace;
+            cacheDir = jmSnapshotPath + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir + File.separator
+                    + FILE_PATH_NAMING + File.separator + namespace;
         } else {
-            cacheDir = properties.getProperty(USER_HOME_PROPERTY) + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
-                    + File.separator + FILE_PATH_NAMING + File.separator + namespace;
+            cacheDir = properties.getProperty(USER_HOME_PROPERTY) + File.separator + FILE_PATH_NACOS
+                    + namingCacheRegistryDir + File.separator + FILE_PATH_NAMING + File.separator + namespace;
         }
     }
     
     private boolean isLoadCacheAtStart(NacosClientProperties properties) {
         boolean loadCacheAtStart = false;
-        if (properties != null && StringUtils
-                .isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
-            loadCacheAtStart = ConvertUtils
-                    .toBoolean(properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
+        if (properties != null && StringUtils.isNotEmpty(
+                properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START))) {
+            loadCacheAtStart = ConvertUtils.toBoolean(
+                    properties.getProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START));
         }
         return loadCacheAtStart;
     }
     
     private boolean isPushEmptyProtect(NacosClientProperties properties) {
         boolean pushEmptyProtection = false;
-        if (properties != null && StringUtils
-                .isNotEmpty(properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION))) {
-            pushEmptyProtection = ConvertUtils
-                    .toBoolean(properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION));
+        if (properties != null && StringUtils.isNotEmpty(
+                properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION))) {
+            pushEmptyProtection = ConvertUtils.toBoolean(
+                    properties.getProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION));
         }
         return pushEmptyProtection;
     }
@@ -164,12 +165,13 @@ public class ServiceInfoHolder implements Closeable {
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
-        MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
+        MetricsMonitor.setServiceInfoMapSizeMonitor(serviceInfoMap.size());
         if (changed) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
-            NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
-                    serviceInfo.getClusters(), serviceInfo.getHosts()));
+            NotifyCenter.publishEvent(
+                    new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
+                            serviceInfo.getClusters(), serviceInfo.getHosts()));
             DiskCache.write(serviceInfo, cacheDir);
         }
         return serviceInfo;
@@ -204,8 +206,7 @@ public class ServiceInfoHolder implements Closeable {
         Set<Instance> newHosts = new HashSet<>();
         Set<Instance> remvHosts = new HashSet<>();
         
-        List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(
-                newHostMap.entrySet());
+        List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(newHostMap.entrySet());
         for (Map.Entry<String, Instance> entry : newServiceHosts) {
             Instance host = entry.getValue();
             String key = entry.getKey();
@@ -225,7 +226,7 @@ public class ServiceInfoHolder implements Closeable {
             if (newHostMap.containsKey(key)) {
                 continue;
             }
-
+            
             //add to remove hosts
             remvHosts.add(host);
         }

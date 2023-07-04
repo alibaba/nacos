@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,6 +51,31 @@ public final class ValidatorUtils {
         if (matcher.find()) {
             throw new IllegalArgumentException("Illegal url path expression");
         }
+    }
+    
+    /**
+     * Check whether the http/https url is valid.
+     *
+     * @param urlString url string
+     * @return null if not valid, otherwise return the url string
+     */
+    public static String checkValidUrl(String urlString) {
+        if (urlString == null) {
+            return null;
+        }
+        URI url;
+        try {
+            url = new URI(urlString);
+        } catch (URISyntaxException e) {
+            return null;
+        }
+        if (url.getHost() == null) {
+            return null;
+        }
+        if (url.getScheme().equalsIgnoreCase("http") || url.getScheme().equalsIgnoreCase("https")) {
+            return url.toString();
+        }
+        return null;
     }
     
 }

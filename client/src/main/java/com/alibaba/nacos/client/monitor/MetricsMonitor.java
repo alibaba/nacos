@@ -1,5 +1,6 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,45 +13,120 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 
 package com.alibaba.nacos.client.monitor;
 
-import io.prometheus.client.Gauge;
-import io.prometheus.client.Histogram;
+import com.alibaba.nacos.client.utils.ValidatorUtils;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tags;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.registry.otlp.OtlpConfig;
+import io.micrometer.registry.otlp.OtlpMeterRegistry;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Metrics Monitor.
+ * Unified management of Micrometer registry.
  *
- * @author Nacos
+ * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
+@SuppressWarnings("all")
 public class MetricsMonitor {
     
-    private static final Gauge NACOS_MONITOR = Gauge.build().name("nacos_monitor").labelNames("module", "name")
-            .help("nacos_monitor").register();
+    /**
+     * The <strong>NACOS_METER_REGISTRY</strong> is pointing to
+     * {@link io.micrometer.core.instrument.Metrics#globalRegistry}.
+     * <p>
+     * <strong>DO NOT</strong> directly use {@link io.micrometer.core.instrument.Metrics#globalRegistry} in Nacos
+     * client, or the metrics of Nacos client may not export to Prometheus and OpenTelemetry.
+     */
+    private static final CompositeMeterRegistry NACOS_METER_REGISTRY = Metrics.globalRegistry;
     
-    private static final Histogram NACOS_CLIENT_REQUEST_HISTOGRAM = Histogram.build()
-            .labelNames("module", "method", "url", "code").name("nacos_client_request").help("nacos_client_request")
-            .register();
-    
-    public static Gauge.Child getServiceInfoMapSizeMonitor() {
-        return NACOS_MONITOR.labels("naming", "serviceInfoMapSize");
+    /**
+     *  Initialize the {@link NACOS_METER_REGISTRY}
+     */
+    static {
+        CompositeMeterRegistry nacosMeterRegistry = NACOS_METER_REGISTRY;
+        
+        nacosMeterRegistry.add(new OtlpMeterRegistry(new OtlpConfig() {
+            @Override
+            public String get(final String key) {
+                return null;
+            }
+            
+            @Override
+            public String url() {
+                // User should set the environment variable `NACOS_OTEL_COLLECTOR_URL` to customize the collector URL.
+                String url = ValidatorUtils.checkValidUrl(System.getenv("NACOS_OTEL_COLLECTOR_URL"));
+                return url == null ? "http://localhost:4318/v1/metrics" : url;
+            }
+        }, Clock.SYSTEM));
+        
+        nacosMeterRegistry.add(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
     }
     
-    public static Gauge.Child getDom2BeatSizeMonitor() {
-        return NACOS_MONITOR.labels("naming", "dom2BeatSize");
+    // “heisen-gauge” principal: https://micrometer.io/docs/concepts#_gauges
+    // DO NOT interact with the gauge object directly. Rather, interacting with the thing that will cause the gauge
+    private static AtomicInteger SERVICE_INFO_MAP_SIZE_GAUGE = NACOS_METER_REGISTRY.gauge("nacos.monitor",
+            Tags.of("module", "naming", "name", "serviceInfoMapSize"), new AtomicInteger(0));
+    
+    private static AtomicInteger LISTENER_CONFIG_COUNT_GAUGE = NACOS_METER_REGISTRY.gauge("nacos.monitor",
+            Tags.of("module", "config", "name", "listenConfigCount"), new AtomicInteger(0));
+    
+    /**
+     * Set the value of serviceInfoMapSize gauge.
+     *
+     * @param size the size of serviceInfoMap
+     */
+    public static void setServiceInfoMapSizeMonitor(int size) {
+        SERVICE_INFO_MAP_SIZE_GAUGE.set(size);
     }
     
-    public static Gauge.Child getListenConfigCountMonitor() {
-        return NACOS_MONITOR.labels("config", "listenConfigCount");
+    
+    /**
+     * set the value of listenConfigCount gauge.
+     *
+     * @param count the count of listen config
+     */
+    public static void setListenerConfigCountMonitor(int count) {
+        LISTENER_CONFIG_COUNT_GAUGE.set(count);
     }
     
-    public static Histogram.Child getConfigRequestMonitor(String method, String url, String code) {
-        return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("config", method, url, code);
+    /**
+     * Record the request time in config module.
+     *
+     * @param url      request url
+     * @param method   request method
+     * @param code     response code
+     * @param duration request duration, unit: ms
+     */
+    public static void recordConfigRequestMonitor(String method, String url, String code, long duration) {
+        NACOS_METER_REGISTRY.timer("nacos.client.request",
+                        Tags.of("module", "config", "method", method, "url", url, "code", code))
+                .record(duration, TimeUnit.MILLISECONDS);
     }
     
-    public static Histogram.Child getNamingRequestMonitor(String method, String url, String code) {
-        return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("naming", method, url, code);
+    /**
+     * Record the request time in naming module.
+     *
+     * @param url      request url
+     * @param method   request method
+     * @param code     response code
+     * @param duration request duration, unit: ms
+     */
+    public static void recordNamingRequestMonitor(String method, String url, String code, long duration) {
+        NACOS_METER_REGISTRY.timer("nacos.client.request",
+                        Tags.of("module", "naming", "method", method, "url", url, "code", code))
+                .record(duration, TimeUnit.MILLISECONDS);
+    }
+    
+    public static CompositeMeterRegistry getNacosMeterRegistry() {
+        return NACOS_METER_REGISTRY;
     }
 }
-
