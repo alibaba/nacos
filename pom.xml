@@ -143,7 +143,7 @@
         <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
         <javatuples.version>1.2</javatuples.version>
-        <grpc-java.version>1.50.2</grpc-java.version>
+        <grpc-java.version>1.53.0</grpc-java.version>
         <proto-google-common-protos.version>2.7.1</proto-google-common-protos.version>
         <protobuf-java.version>3.21.11</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
