@@ -25,91 +25,32 @@ import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
  * @version $Id: ConfigChangeClusterSyncRequest.java, v 0.1 2020年08月11日 4:30 PM liuzunfei Exp $
  */
 public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
-    
-    String dataId;
-    
-    String group;
-    
-    String tenant;
-    
+
+
     String tag;
-    
+
     long lastModified;
-    
+
     boolean isBeta;
-    
+
     boolean isBatch;
-    
+
     public boolean isBeta() {
         return isBeta;
     }
-    
+
     public void setBeta(boolean beta) {
         isBeta = beta;
     }
-    
+
     public boolean isBatch() {
         return isBatch;
     }
-    
+
     public void setBatch(boolean batch) {
         isBatch = batch;
     }
-    
-    /**
-     * Getter method for property <tt>dataId</tt>.
-     *
-     * @return property value of dataId
-     */
-    public String getDataId() {
-        return dataId;
-    }
-    
-    /**
-     * Setter method for property <tt>dataId</tt>.
-     *
-     * @param dataId value to be assigned to property dataId
-     */
-    public void setDataId(String dataId) {
-        this.dataId = dataId;
-    }
-    
-    /**
-     * Getter method for property <tt>group</tt>.
-     *
-     * @return property value of group
-     */
-    public String getGroup() {
-        return group;
-    }
-    
-    /**
-     * Setter method for property <tt>group</tt>.
-     *
-     * @param group value to be assigned to property group
-     */
-    public void setGroup(String group) {
-        this.group = group;
-    }
-    
-    /**
-     * Getter method for property <tt>tenant</tt>.
-     *
-     * @return property value of tenant
-     */
-    public String getTenant() {
-        return tenant;
-    }
-    
-    /**
-     * Setter method for property <tt>tenant</tt>.
-     *
-     * @param tenant value to be assigned to property tenant
-     */
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
-    }
-    
+
     /**
      * Getter method for property <tt>tag</tt>.
      *
@@ -118,7 +59,7 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     public String getTag() {
         return tag;
     }
-    
+
     /**
      * Setter method for property <tt>tag</tt>.
      *
@@ -127,7 +68,7 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     public void setTag(String tag) {
         this.tag = tag;
     }
-    
+
     /**
      * Getter method for property <tt>lastModified</tt>.
      *
@@ -136,7 +77,7 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     public long getLastModified() {
         return lastModified;
     }
-    
+
     /**
      * Setter method for property <tt>lastModified</tt>.
      *
@@ -145,5 +86,5 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
-    
+
 }

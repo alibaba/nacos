@@ -23,35 +23,22 @@ package com.alibaba.nacos.api.config.remote.request;
  * @version $Id: ConfigRemoveRequest.java, v 0.1 2020年07月16日 4:31 PM liuzunfei Exp $
  */
 public class ConfigRemoveRequest extends AbstractConfigRequest {
-    
-    String dataId;
-    
-    String group;
-    
-    String tenant;
-    
+
+
     String tag;
-    
+
     public ConfigRemoveRequest() {
-    
+
     }
-    
+
     public ConfigRemoveRequest(String dataId, String group, String tenant, String tag) {
-        this.dataId = dataId;
-        this.group = group;
+        super.setDataId(dataId);
+        super.setGroup(group);
+        super.setTenant(tenant);
         this.tag = tag;
-        this.tenant = tenant;
     }
-    
-    /**
-     * Getter method for property <tt>dataId</tt>.
-     *
-     * @return property value of dataId
-     */
-    public String getDataId() {
-        return dataId;
-    }
-    
+
+
     /**
      * Getter method for property <tt>tag</tt>.
      *
@@ -60,7 +47,7 @@ public class ConfigRemoveRequest extends AbstractConfigRequest {
     public String getTag() {
         return tag;
     }
-    
+
     /**
      * Setter method for property <tt>tag</tt>.
      *
@@ -69,49 +56,5 @@ public class ConfigRemoveRequest extends AbstractConfigRequest {
     public void setTag(String tag) {
         this.tag = tag;
     }
-    
-    /**
-     * Setter method for property <tt>dataId</tt>.
-     *
-     * @param dataId value to be assigned to property dataId
-     */
-    public void setDataId(String dataId) {
-        this.dataId = dataId;
-    }
-    
-    /**
-     * Getter method for property <tt>group</tt>.
-     *
-     * @return property value of group
-     */
-    public String getGroup() {
-        return group;
-    }
-    
-    /**
-     * Setter method for property <tt>group</tt>.
-     *
-     * @param group value to be assigned to property group
-     */
-    public void setGroup(String group) {
-        this.group = group;
-    }
-    
-    /**
-     * Getter method for property <tt>tenant</tt>.
-     *
-     * @return property value of tenant
-     */
-    public String getTenant() {
-        return tenant;
-    }
-    
-    /**
-     * Setter method for property <tt>tenant</tt>.
-     *
-     * @param tenant value to be assigned to property tenant
-     */
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
-    }
+
 }

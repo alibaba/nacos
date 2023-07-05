@@ -25,15 +25,10 @@ import com.alibaba.nacos.api.common.Constants;
  * @version $Id: ConfigQueryRequest.java, v 0.1 2020年07月13日 9:06 PM liuzunfei Exp $
  */
 public class ConfigQueryRequest extends AbstractConfigRequest {
-    
-    private String dataId;
-    
-    private String group;
-    
-    private String tenant;
-    
+
+
     private String tag;
-    
+
     /**
      * request builder.
      *
@@ -49,61 +44,7 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
         request.setTenant(tenant);
         return request;
     }
-    
-    /**
-     * Getter method for property <tt>dataId</tt>.
-     *
-     * @return property value of dataId
-     */
-    public String getDataId() {
-        return dataId;
-    }
-    
-    /**
-     * Setter method for property <tt>dataId</tt>.
-     *
-     * @param dataId value to be assigned to property dataId
-     */
-    public void setDataId(String dataId) {
-        this.dataId = dataId;
-    }
-    
-    /**
-     * Getter method for property <tt>group</tt>.
-     *
-     * @return property value of group
-     */
-    public String getGroup() {
-        return group;
-    }
-    
-    /**
-     * Setter method for property <tt>group</tt>.
-     *
-     * @param group value to be assigned to property group
-     */
-    public void setGroup(String group) {
-        this.group = group;
-    }
-    
-    /**
-     * Getter method for property <tt>tenant</tt>.
-     *
-     * @return property value of tenant
-     */
-    public String getTenant() {
-        return tenant;
-    }
-    
-    /**
-     * Setter method for property <tt>tenant</tt>.
-     *
-     * @param tenant value to be assigned to property tenant
-     */
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
-    }
-    
+
     /**
      * Getter method for property <tt>tag</tt>.
      *
@@ -112,7 +53,7 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     public String getTag() {
         return tag;
     }
-    
+
     /**
      * Setter method for property <tt>tag</tt>.
      *
@@ -121,7 +62,7 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     public void setTag(String tag) {
         this.tag = tag;
     }
-    
+
     public boolean isNotify() {
         String notify = getHeader(Constants.Config.NOTIFY_HEADER, Boolean.FALSE.toString());
         return Boolean.parseBoolean(notify);

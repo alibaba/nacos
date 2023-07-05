@@ -26,23 +26,25 @@ import java.util.Map;
  * @version $Id: ConfigPublishRequest.java, v 0.1 2020年07月16日 4:30 PM liuzunfei Exp $
  */
 public class ConfigPublishRequest extends AbstractConfigRequest {
-    
-    String dataId;
-    
-    String group;
-    
-    String tenant;
-    
+
+
     String content;
-    
+
     String casMd5;
-    
+
     private Map<String, String> additionMap;
-    
+
     public ConfigPublishRequest() {
-    
+
     }
-    
+
+    public ConfigPublishRequest(String dataId, String group, String tenant, String content) {
+        this.content = content;
+        super.setGroup(group);
+        super.setTenant(tenant);
+        super.setDataId(dataId);
+    }
+
     /**
      * get additional param.
      *
@@ -52,7 +54,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     public String getAdditionParam(String key) {
         return additionMap == null ? null : additionMap.get(key);
     }
-    
+
     /**
      * put additional param value. will override if exist.
      *
@@ -65,50 +67,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
         }
         additionMap.put(key, value);
     }
-    
-    public ConfigPublishRequest(String dataId, String group, String tenant, String content) {
-        this.content = content;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = tenant;
-    }
-    
-    /**
-     * Getter method for property <tt>dataId</tt>.
-     *
-     * @return property value of dataId
-     */
-    public String getDataId() {
-        return dataId;
-    }
-    
-    /**
-     * Setter method for property <tt>dataId</tt>.
-     *
-     * @param dataId value to be assigned to property dataId
-     */
-    public void setDataId(String dataId) {
-        this.dataId = dataId;
-    }
-    
-    /**
-     * Getter method for property <tt>group</tt>.
-     *
-     * @return property value of group
-     */
-    public String getGroup() {
-        return group;
-    }
-    
-    /**
-     * Setter method for property <tt>group</tt>.
-     *
-     * @param group value to be assigned to property group
-     */
-    public void setGroup(String group) {
-        this.group = group;
-    }
-    
+
     /**
      * Getter method for property <tt>content</tt>.
      *
@@ -117,7 +76,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     public String getContent() {
         return content;
     }
-    
+
     /**
      * Setter method for property <tt>content</tt>.
      *
@@ -126,7 +85,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     public void setContent(String content) {
         this.content = content;
     }
-    
+
     /**
      * Getter method for property <tt>casMd5</tt>.
      *
@@ -135,7 +94,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     public String getCasMd5() {
         return casMd5;
     }
-    
+
     /**
      * Setter method for property <tt>casMd5</tt>.
      *
@@ -144,7 +103,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     public void setCasMd5(String casMd5) {
         this.casMd5 = casMd5;
     }
-    
+
     /**
      * Getter method for property <tt>casMd5</tt>.
      *
@@ -153,7 +112,7 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     public Map<String, String> getAdditionMap() {
         return additionMap;
     }
-    
+
     /**
      * Setter method for property <tt>additionMap</tt>.
      *
@@ -162,22 +121,10 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     public void setAdditionMap(Map<String, String> additionMap) {
         this.additionMap = additionMap;
     }
-    
+
     /**
      * Getter method for property <tt>tenant</tt>.
      *
      * @return property value of tenant
      */
-    public String getTenant() {
-        return tenant;
-    }
-    
-    /**
-     * Setter method for property <tt>tenant</tt>.
-     *
-     * @param tenant value to be assigned to property tenant
-     */
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
-    }
 }
