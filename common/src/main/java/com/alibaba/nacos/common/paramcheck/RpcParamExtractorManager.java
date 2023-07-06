@@ -1,3 +1,19 @@
+/*
+ *  Copyright 1999-2023 Alibaba Group Holding Ltd.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.nacos.common.paramcheck;
 
 import com.alibaba.nacos.api.remote.request.Request;
@@ -11,12 +27,13 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * HttpParamExtractor Manager.
  *
- * @author sunrisea
+ * @author zhuoguang
  */
 public class RpcParamExtractorManager {
 
     private static final RpcParamExtractorManager INSTANCE = new RpcParamExtractorManager();
-    private static final RpcParamExtractor DEFAULT_EXTRACTOR = new RpcParamExtractor() {
+
+    private static final AbstractRpcParamExtractor DEFAULT_EXTRACTOR = new AbstractRpcParamExtractor() {
         @Override
         public void init() {
         }
@@ -25,11 +42,12 @@ public class RpcParamExtractorManager {
         public void extractParamAndCheck(Request params) throws Exception {
         }
     };
-    private final Map<String, RpcParamExtractor> extractorMap = new ConcurrentHashMap<>(32);
+
+    private final Map<String, AbstractRpcParamExtractor> extractorMap = new ConcurrentHashMap<>(32);
 
     private RpcParamExtractorManager() {
-        Collection<RpcParamExtractor> extractors = NacosServiceLoader.load(RpcParamExtractor.class);
-        for (RpcParamExtractor extractor : extractors) {
+        Collection<AbstractRpcParamExtractor> extractors = NacosServiceLoader.load(AbstractRpcParamExtractor.class);
+        for (AbstractRpcParamExtractor extractor : extractors) {
             List<String> targetrequestlist = extractor.getTargetRequestList();
             for (String targetRequest : targetrequestlist) {
                 extractorMap.put(targetRequest, extractor);
@@ -41,13 +59,12 @@ public class RpcParamExtractorManager {
         return INSTANCE;
     }
 
-    public RpcParamExtractor getExtractor(String type) {
-        RpcParamExtractor extractor = extractorMap.get(type);
+    public AbstractRpcParamExtractor getExtractor(String type) {
+        AbstractRpcParamExtractor extractor = extractorMap.get(type);
         if (extractor == null) {
             extractor = DEFAULT_EXTRACTOR;
         }
         return extractor;
     }
-
 
 }

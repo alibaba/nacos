@@ -1,3 +1,19 @@
+/*
+ *  Copyright 1999-2023 Alibaba Group Holding Ltd.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.nacos.common.paramcheck.utils;
 
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -5,7 +21,11 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-
+/**
+ * Param Check Utils.
+ *
+ * @author zhuoguang
+ */
 public class ParamCheckUtils {
 
     private static final Pattern NAMESPACE_ID_PATTERN = Pattern.compile(ParamCheckRules.NAMESPACE_ID_PATTERN_STRING);
@@ -20,6 +40,11 @@ public class ParamCheckUtils {
 
     private static final Pattern IP_PATTERN = Pattern.compile(ParamCheckRules.IP_PATTERN_STRING);
 
+    /**
+     * Check param info format.
+     *
+     * @param paramInfo the param info
+     */
     public static void checkParamInfoFormat(ParamInfo paramInfo) {
         if (paramInfo == null) {
             return;
@@ -35,7 +60,11 @@ public class ParamCheckUtils {
         checkMetadataFormat(paramInfo.getMetadata());
     }
 
-
+    /**
+     * Check namespace show name format.
+     *
+     * @param namespaceShowName the namespace show name
+     */
     public static void checkNamespaceShowNameFormat(String namespaceShowName) {
         if (StringUtils.isBlank(namespaceShowName)) {
             return;
@@ -47,6 +76,11 @@ public class ParamCheckUtils {
         }
     }
 
+    /**
+     * Check namespace id format.
+     *
+     * @param namespaceId the namespace id
+     */
     public static void checkNamespaceIdFormat(String namespaceId) {
         if (StringUtils.isBlank(namespaceId)) {
             return;
@@ -62,6 +96,11 @@ public class ParamCheckUtils {
         }
     }
 
+    /**
+     * Check data id format.
+     *
+     * @param dataId the data id
+     */
     public static void checkDataIdFormat(String dataId) {
         if (StringUtils.isBlank(dataId)) {
             return;
@@ -77,6 +116,11 @@ public class ParamCheckUtils {
         }
     }
 
+    /**
+     * Check service name format.
+     *
+     * @param serviceName the service name
+     */
     public static void checkServiceNameFormat(String serviceName) {
         if (StringUtils.isBlank(serviceName)) {
             return;
@@ -92,6 +136,11 @@ public class ParamCheckUtils {
         }
     }
 
+    /**
+     * Check group format.
+     *
+     * @param group the group
+     */
     public static void checkGroupFormat(String group) {
         if (StringUtils.isBlank(group)) {
             return;
@@ -107,6 +156,11 @@ public class ParamCheckUtils {
         }
     }
 
+    /**
+     * Check cluster format.
+     *
+     * @param cluster the cluster
+     */
     public static void checkClusterFormat(String cluster) {
         if (StringUtils.isBlank(cluster)) {
             return;
@@ -122,6 +176,11 @@ public class ParamCheckUtils {
         }
     }
 
+    /**
+     * Check ip format.
+     *
+     * @param ip the ip
+     */
     public static void checkIpFormat(String ip) {
         if (StringUtils.isBlank(ip)) {
             return;
@@ -137,6 +196,11 @@ public class ParamCheckUtils {
         }
     }
 
+    /**
+     * Check port format.
+     *
+     * @param port the port
+     */
     public static void checkPortFormat(String port) {
         if (StringUtils.isBlank(port)) {
             return;
@@ -156,20 +220,25 @@ public class ParamCheckUtils {
         }
     }
 
+    /**
+     * Check metadata format.
+     *
+     * @param metadata the metadata
+     */
     public static void checkMetadataFormat(Map<String, String> metadata) {
         if (metadata == null || metadata.isEmpty()) {
             return;
         }
-        int total_length = 0;
+        int totalLength = 0;
         for (Map.Entry<String, String> entry : metadata.entrySet()) {
             if (StringUtils.isNotBlank(entry.getKey())) {
-                total_length = total_length + entry.getKey().length();
+                totalLength = totalLength + entry.getKey().length();
             }
             if (StringUtils.isNotBlank(entry.getValue())) {
-                total_length = total_length + entry.getValue().length();
+                totalLength = totalLength + entry.getValue().length();
             }
         }
-        if (total_length > ParamCheckRules.MAX_METADATA_LENGTH) {
+        if (totalLength > ParamCheckRules.MAX_METADATA_LENGTH) {
             throw new IllegalArgumentException(
                     String.format("Param 'Metadata' is illegal, the param length should not exceed %d.",
                             ParamCheckRules.MAX_METADATA_LENGTH));

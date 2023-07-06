@@ -1,3 +1,19 @@
+/*
+ *  Copyright 1999-2023 Alibaba Group Holding Ltd.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 package com.alibaba.nacos.common.paramcheck;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
@@ -11,13 +27,15 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * HttpParamExtractor Manager.
  *
- * @author sunrisea
+ * @author zhuoguang
  */
 public class HttpParamExtractorManager {
 
     private static final String SPLITTER = "@@";
+
     private static final HttpParamExtractorManager INSTANCE = new HttpParamExtractorManager();
-    private static final HttpParamExtractor DEFAULT_EXTRACTOR = new HttpParamExtractor() {
+
+    private static final AbstractHttpParamExtractor DEFAULT_EXTRACTOR = new AbstractHttpParamExtractor() {
         @Override
         public void init() {
         }
@@ -26,11 +44,12 @@ public class HttpParamExtractorManager {
         public void extractParamAndCheck(HttpServletRequest request) throws Exception {
         }
     };
-    private final Map<String, HttpParamExtractor> extractorMap = new ConcurrentHashMap<>(32);
+
+    private final Map<String, AbstractHttpParamExtractor> extractorMap = new ConcurrentHashMap<>(32);
 
     private HttpParamExtractorManager() {
-        Collection<HttpParamExtractor> extractors = NacosServiceLoader.load(HttpParamExtractor.class);
-        for (HttpParamExtractor extractor : extractors) {
+        Collection<AbstractHttpParamExtractor> extractors = NacosServiceLoader.load(AbstractHttpParamExtractor.class);
+        for (AbstractHttpParamExtractor extractor : extractors) {
             List<String> targetrequestlist = extractor.getTargetRequestList();
             for (String targetrequest : targetrequestlist) {
                 extractorMap.put(targetrequest, extractor);
@@ -42,8 +61,8 @@ public class HttpParamExtractorManager {
         return INSTANCE;
     }
 
-    public HttpParamExtractor getExtractor(String uri, String method, String module) {
-        HttpParamExtractor extractor = extractorMap.get(uri + SPLITTER + method);
+    public AbstractHttpParamExtractor getExtractor(String uri, String method, String module) {
+        AbstractHttpParamExtractor extractor = extractorMap.get(uri + SPLITTER + method);
         if (extractor == null) {
             extractor = extractorMap.get("default" + SPLITTER + module);
         }
