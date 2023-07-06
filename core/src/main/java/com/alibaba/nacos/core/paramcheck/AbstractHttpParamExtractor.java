@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.alibaba.nacos.common.paramcheck;
+package com.alibaba.nacos.core.paramcheck;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
@@ -26,13 +26,13 @@ import java.util.List;
  * @author zhuoguang
  */
 public abstract class AbstractHttpParamExtractor implements ParamExtractor<HttpServletRequest> {
-
+    
     private static final String SPLITTER = "@@";
-
+    
     private static final String NACOS_SERVER_CONTEXT = "/nacos";
-
+    
     private final List<String> targetRequestList;
-
+    
     /**
      * Instantiates a new Abstract http param extractor.
      */
@@ -40,25 +40,26 @@ public abstract class AbstractHttpParamExtractor implements ParamExtractor<HttpS
         targetRequestList = new ArrayList<>();
         init();
     }
-
+    
     /**
      * Init,add target request to the target request list.
      */
     public abstract void init();
-
+    
     @Override
     public List<String> getTargetRequestList() {
         return targetRequestList;
     }
-
+    
     /**
      * extract param and check.
+     *
      * @param request the request
      * @throws Exception exception
      */
     @Override
     public abstract void extractParamAndCheck(HttpServletRequest request) throws Exception;
-
+    
     /**
      * Add target request.
      *
@@ -68,7 +69,7 @@ public abstract class AbstractHttpParamExtractor implements ParamExtractor<HttpS
     public void addTargetRequest(String uri, String method) {
         targetRequestList.add(NACOS_SERVER_CONTEXT + uri + SPLITTER + method);
     }
-
+    
     /**
      * Add default target request.
      *

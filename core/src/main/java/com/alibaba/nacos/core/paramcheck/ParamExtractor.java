@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.alibaba.nacos.common.paramcheck;
+package com.alibaba.nacos.core.paramcheck;
 
 import java.util.List;
 
@@ -25,14 +25,14 @@ import java.util.List;
  * @author zhuoguang
  */
 public interface ParamExtractor<T> {
-
+    
     /**
      * Gets target request list.
      *
      * @return the target request list
      */
     List<String> getTargetRequestList();
-
+    
     /**
      * Extract param and check.
      *

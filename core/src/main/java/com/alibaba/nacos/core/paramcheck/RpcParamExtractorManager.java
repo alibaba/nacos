@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.alibaba.nacos.common.paramcheck;
+package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
@@ -30,21 +30,21 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author zhuoguang
  */
 public class RpcParamExtractorManager {
-
+    
     private static final RpcParamExtractorManager INSTANCE = new RpcParamExtractorManager();
-
+    
     private static final AbstractRpcParamExtractor DEFAULT_EXTRACTOR = new AbstractRpcParamExtractor() {
         @Override
         public void init() {
         }
-
+        
         @Override
         public void extractParamAndCheck(Request params) throws Exception {
         }
     };
-
+    
     private final Map<String, AbstractRpcParamExtractor> extractorMap = new ConcurrentHashMap<>(32);
-
+    
     private RpcParamExtractorManager() {
         Collection<AbstractRpcParamExtractor> extractors = NacosServiceLoader.load(AbstractRpcParamExtractor.class);
         for (AbstractRpcParamExtractor extractor : extractors) {
@@ -54,11 +54,11 @@ public class RpcParamExtractorManager {
             }
         }
     }
-
+    
     public static RpcParamExtractorManager getInstance() {
         return INSTANCE;
     }
-
+    
     public AbstractRpcParamExtractor getExtractor(String type) {
         AbstractRpcParamExtractor extractor = extractorMap.get(type);
         if (extractor == null) {
@@ -66,5 +66,5 @@ public class RpcParamExtractorManager {
         }
         return extractor;
     }
-
+    
 }

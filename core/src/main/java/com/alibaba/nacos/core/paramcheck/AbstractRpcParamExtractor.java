@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.alibaba.nacos.common.paramcheck;
+package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.api.remote.request.Request;
 
@@ -27,32 +27,33 @@ import java.util.List;
  * @author zhuoguang
  */
 public abstract class AbstractRpcParamExtractor implements ParamExtractor<Request> {
-
+    
     private final List<String> targetrequestlist;
-
+    
     public AbstractRpcParamExtractor() {
         targetrequestlist = new ArrayList<>();
         init();
     }
-
+    
     /**
      * Init, add target request to the target request list.
      */
     public abstract void init();
-
+    
     @Override
     public List<String> getTargetRequestList() {
         return targetrequestlist;
     }
-
+    
     /**
      * extract param and check.
-     * @param request    the request
+     *
+     * @param request the request
      * @throws Exception exception
      */
     @Override
     public abstract void extractParamAndCheck(Request request) throws Exception;
-
+    
     public void addTargetRequest(String type) {
         targetrequestlist.add(type);
     }

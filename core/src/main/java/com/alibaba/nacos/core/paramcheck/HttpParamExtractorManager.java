@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.alibaba.nacos.common.paramcheck;
+package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 
@@ -30,23 +30,23 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author zhuoguang
  */
 public class HttpParamExtractorManager {
-
+    
     private static final String SPLITTER = "@@";
-
+    
     private static final HttpParamExtractorManager INSTANCE = new HttpParamExtractorManager();
-
+    
     private static final AbstractHttpParamExtractor DEFAULT_EXTRACTOR = new AbstractHttpParamExtractor() {
         @Override
         public void init() {
         }
-
+        
         @Override
         public void extractParamAndCheck(HttpServletRequest request) throws Exception {
         }
     };
-
+    
     private final Map<String, AbstractHttpParamExtractor> extractorMap = new ConcurrentHashMap<>(32);
-
+    
     private HttpParamExtractorManager() {
         Collection<AbstractHttpParamExtractor> extractors = NacosServiceLoader.load(AbstractHttpParamExtractor.class);
         for (AbstractHttpParamExtractor extractor : extractors) {
@@ -56,11 +56,11 @@ public class HttpParamExtractorManager {
             }
         }
     }
-
+    
     public static HttpParamExtractorManager getInstance() {
         return INSTANCE;
     }
-
+    
     public AbstractHttpParamExtractor getExtractor(String uri, String method, String module) {
         AbstractHttpParamExtractor extractor = extractorMap.get(uri + SPLITTER + method);
         if (extractor == null) {
@@ -68,5 +68,5 @@ public class HttpParamExtractorManager {
         }
         return extractor == null ? DEFAULT_EXTRACTOR : extractor;
     }
-
+    
 }

@@ -25,9 +25,9 @@ import com.alibaba.nacos.api.common.Constants;
  * @version $Id: ConfigQueryRequest.java, v 0.1 2020年07月13日 9:06 PM liuzunfei Exp $
  */
 public class ConfigQueryRequest extends AbstractConfigRequest {
-
+    
     private String tag;
-
+    
     /**
      * request builder.
      *
@@ -43,7 +43,7 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
         request.setTenant(tenant);
         return request;
     }
-
+    
     /**
      * Getter method for property <tt>tag</tt>.
      *
@@ -52,7 +52,7 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     public String getTag() {
         return tag;
     }
-
+    
     /**
      * Setter method for property <tt>tag</tt>.
      *
@@ -61,7 +61,7 @@ public class ConfigQueryRequest extends AbstractConfigRequest {
     public void setTag(String tag) {
         this.tag = tag;
     }
-
+    
     public boolean isNotify() {
         String notify = getHeader(Constants.Config.NOTIFY_HEADER, Boolean.FALSE.toString());
         return Boolean.parseBoolean(notify);

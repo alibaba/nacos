@@ -14,7 +14,7 @@
  *  limitations under the License.
  */
 
-package com.alibaba.nacos.common.paramcheck.utils;
+package com.alibaba.nacos.common.paramcheck;
 
 import junit.framework.TestCase;
 
@@ -25,7 +25,7 @@ import java.util.Map;
  * The type Param check utils test.
  */
 public class ParamCheckUtilsTest extends TestCase {
-
+    
     /**
      * Test check param info format.
      */
@@ -33,7 +33,7 @@ public class ParamCheckUtilsTest extends TestCase {
         ParamInfo paramInfo = new ParamInfo();
         ParamCheckUtils.checkParamInfoFormat(paramInfo);
     }
-
+    
     /**
      * Test check namespace show name format.
      */
@@ -52,7 +52,7 @@ public class ParamCheckUtilsTest extends TestCase {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-
+    
     /**
      * Test check namespace id format.
      */
@@ -77,7 +77,7 @@ public class ParamCheckUtilsTest extends TestCase {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-
+    
     /**
      * Test check data id format.
      */
@@ -111,7 +111,7 @@ public class ParamCheckUtilsTest extends TestCase {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-
+    
     /**
      * Test check service name format.
      */
@@ -145,7 +145,7 @@ public class ParamCheckUtilsTest extends TestCase {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-
+    
     /**
      * Test check group format.
      */
@@ -177,7 +177,7 @@ public class ParamCheckUtilsTest extends TestCase {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-
+    
     /**
      * Test check cluster format.
      */
@@ -209,7 +209,7 @@ public class ParamCheckUtilsTest extends TestCase {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-
+    
     /**
      * Test check ip format.
      */
@@ -235,7 +235,7 @@ public class ParamCheckUtilsTest extends TestCase {
             assertTrue(e instanceof IllegalArgumentException);
         }
     }
-
+    
     /**
      * Test check port format.
      */
@@ -266,7 +266,7 @@ public class ParamCheckUtilsTest extends TestCase {
         port = "65535";
         ParamCheckUtils.checkPortFormat(port);
     }
-
+    
     /**
      * Test check metadata format.
      */
