@@ -17,7 +17,6 @@
 package com.alibaba.nacos.auth.parser.grpc;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -33,15 +32,10 @@ public class NamingGrpcResourceParser extends AbstractGrpcResourceParser {
     
     @Override
     protected String getNamespaceId(Request request) {
-        String namespaceId;
         if (request instanceof AbstractNamingRequest) {
-            namespaceId = ((AbstractNamingRequest) request).getNamespace();
-        } else if (request instanceof AbstractConfigRequest) {
-            namespaceId = ((AbstractConfigRequest) request).getTenant();
-        } else {
-            namespaceId = (String) ReflectUtils.getFieldValue(request, PropertyKeyConst.NAMESPACE, StringUtils.EMPTY);
+            return ((AbstractNamingRequest) request).getNamespace();
         }
-        return StringUtils.isBlank(namespaceId) ? StringUtils.EMPTY : namespaceId;
+        return (String) ReflectUtils.getFieldValue(request, PropertyKeyConst.NAMESPACE, StringUtils.EMPTY);
     }
     
     @Override
@@ -49,8 +43,6 @@ public class NamingGrpcResourceParser extends AbstractGrpcResourceParser {
         String groupName;
         if (request instanceof AbstractNamingRequest) {
             groupName = ((AbstractNamingRequest) request).getGroupName();
-        } else if (request instanceof AbstractConfigRequest) {
-            groupName = ((AbstractConfigRequest) request).getGroup();
         } else {
             groupName = (String) ReflectUtils.getFieldValue(request, CommonParams.GROUP_NAME, StringUtils.EMPTY);
         }
