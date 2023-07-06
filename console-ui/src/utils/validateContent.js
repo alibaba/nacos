@@ -141,7 +141,7 @@ export default {
    */
   validateYaml(str) {
     try {
-      return yaml.parse(str);
+      return yaml.load(str);
     } catch (e) {
       return false;
     }
