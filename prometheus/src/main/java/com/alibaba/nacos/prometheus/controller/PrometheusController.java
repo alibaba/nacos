@@ -116,21 +116,21 @@ public class PrometheusController {
      * @throws NacosException NacosException.
      */
     @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH, produces = "application/json; charset=UTF-8")
-    public ResponseEntity metricNamespaceService(@PathVariable("namespace") String namespace,
+    public ResponseEntity metricNamespaceService(@PathVariable("namespaceId") String namespaceId,
             @PathVariable("service") String service) throws NacosException {
         ArrayNode arrayNode = JacksonUtils.createEmptyArrayNode();
         Set<Instance> targetSet = new HashSet<>();
         Set<String> allNamespaces = serviceManager.getAllNamespaces();
-        if (!allNamespaces.contains(namespace)) {
+        if (!allNamespaces.contains(namespaceId)) {
             return ResponseEntity.ok().body(arrayNode.toString());
         }
         
-        Set<Service> singletons = serviceManager.getSingletons(namespace);
+        Set<Service> singletons = serviceManager.getSingletons(namespaceId);
         for (Service existService : singletons) {
             if (!existService.getName().equals(service)) {
                 continue;
             }
-            List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespace,
+            List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespaceId,
                     existService.getGroupedServiceName());
             
             targetSet.addAll(instances);
