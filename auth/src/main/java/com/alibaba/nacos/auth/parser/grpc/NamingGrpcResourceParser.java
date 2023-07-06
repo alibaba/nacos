@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package com.alibaba.nacos.auth.parser.grpc;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -32,10 +33,15 @@ public class NamingGrpcResourceParser extends AbstractGrpcResourceParser {
     
     @Override
     protected String getNamespaceId(Request request) {
+        String namespaceId;
         if (request instanceof AbstractNamingRequest) {
-            return ((AbstractNamingRequest) request).getNamespace();
+            namespaceId = ((AbstractNamingRequest) request).getNamespace();
+        } else if (request instanceof AbstractConfigRequest) {
+            namespaceId = ((AbstractConfigRequest) request).getTenant();
+        } else {
+            namespaceId = (String) ReflectUtils.getFieldValue(request, PropertyKeyConst.NAMESPACE, StringUtils.EMPTY);
         }
-        return (String) ReflectUtils.getFieldValue(request, PropertyKeyConst.NAMESPACE, StringUtils.EMPTY);
+        return StringUtils.isBlank(namespaceId) ? StringUtils.EMPTY : namespaceId;
     }
     
     @Override
@@ -43,6 +49,8 @@ public class NamingGrpcResourceParser extends AbstractGrpcResourceParser {
         String groupName;
         if (request instanceof AbstractNamingRequest) {
             groupName = ((AbstractNamingRequest) request).getGroupName();
+        } else if (request instanceof AbstractConfigRequest) {
+            groupName = ((AbstractConfigRequest) request).getGroup();
         } else {
             groupName = (String) ReflectUtils.getFieldValue(request, CommonParams.GROUP_NAME, StringUtils.EMPTY);
         }
