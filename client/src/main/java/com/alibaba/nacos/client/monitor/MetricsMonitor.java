@@ -55,6 +55,7 @@ public class MetricsMonitor {
         CompositeMeterRegistry nacosMeterRegistry = NACOS_METER_REGISTRY;
         
         nacosMeterRegistry.add(new OtlpMeterRegistry(new OtlpConfig() {
+            
             @Override
             public String get(final String key) {
                 return null;
@@ -77,7 +78,7 @@ public class MetricsMonitor {
             Tags.of("module", "naming", "name", "serviceInfoMapSize"), new AtomicInteger(0));
     
     private static AtomicInteger LISTENER_CONFIG_COUNT_GAUGE = NACOS_METER_REGISTRY.gauge("nacos.monitor",
-            Tags.of("module", "config", "name", "listenConfigCount"), new AtomicInteger(0));
+            Tags.of("module", "config", "name", "listenerConfigCount"), new AtomicInteger(0));
     
     /**
      * Set the value of serviceInfoMapSize gauge.

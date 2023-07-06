@@ -38,6 +38,53 @@ public class ValidatorUtilsTest {
         ValidatorUtils.checkContextPath(contextPath4);
     }
     
+    @Test
+    public void testValidUrlLegal() {
+        String url1 = "http://localhost:4318/v1/metrics";
+        String result1 = ValidatorUtils.checkValidUrl(url1);
+        Assert.assertNotNull(result1);
+        String url2 = "https://localhost:4318/v1/metrics";
+        String result2 = ValidatorUtils.checkValidUrl(url2);
+        Assert.assertNotNull(result2);
+        String url3 = "http://127.0.0.1:4318";
+        String result3 = ValidatorUtils.checkValidUrl(url3);
+        Assert.assertNotNull(result3);
+        String url4 = "https://127.0.0.1:4318";
+        String result4 = ValidatorUtils.checkValidUrl(url4);
+        Assert.assertNotNull(result4);
+        String url5 = "http://127.0.0.1";
+        String result5 = ValidatorUtils.checkValidUrl(url5);
+        Assert.assertNotNull(result5);
+        String url6 = "https://127.0.0.1";
+        String result6 = ValidatorUtils.checkValidUrl(url6);
+        Assert.assertNotNull(result6);
+    }
+    
+    @Test
+    public void testValidUrlIllegal() {
+        String url1 = "htt://localhost:4318/v1/metrics";
+        String result1 = ValidatorUtils.checkValidUrl(url1);
+        Assert.assertNull(result1);
+        String url2 = "https//localhost:4318/v1/metrics";
+        String result2 = ValidatorUtils.checkValidUrl(url2);
+        Assert.assertNull(result2);
+        String url3 = "http://127.0.0.:4318";
+        String result3 = ValidatorUtils.checkValidUrl(url3);
+        Assert.assertNull(result3);
+        String url4 = "https:/127.0.0.1:4318";
+        String result4 = ValidatorUtils.checkValidUrl(url4);
+        Assert.assertNull(result4);
+        String url5 = "http://127.0.0.14318";
+        String result5 = ValidatorUtils.checkValidUrl(url5);
+        Assert.assertNull(result5);
+        String url6 = "ftp://127.0.0.1:4318";
+        String result6 = ValidatorUtils.checkValidUrl(url6);
+        Assert.assertNull(result6);
+        String url7 = "nacos";
+        String result7 = ValidatorUtils.checkValidUrl(url7);
+        Assert.assertNull(result7);
+    }
+    
     @Test(expected = IllegalArgumentException.class)
     public void testContextPathIllegal1() {
         String contextPath1 = "//nacos/";
@@ -67,7 +114,7 @@ public class ValidatorUtilsTest {
         try {
             Properties properties = new Properties();
             properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "test");
-    
+            
             final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
             ValidatorUtils.checkInitParam(nacosClientProperties);
         } catch (NacosException e) {
