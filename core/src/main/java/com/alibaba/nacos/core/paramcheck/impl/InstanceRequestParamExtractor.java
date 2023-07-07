@@ -43,6 +43,9 @@ public class InstanceRequestParamExtractor extends AbstractRpcParamExtractor {
         paramInfo.setServiceName(req.getServiceName());
         paramInfo.setGroup(req.getGroupName());
         Instance instance = req.getInstance();
+        if (instance == null) {
+            return;
+        }
         paramInfo.setIp(instance.getIp());
         paramInfo.setPort(String.valueOf(instance.getPort()));
         paramInfo.setCluster(instance.getClusterName());

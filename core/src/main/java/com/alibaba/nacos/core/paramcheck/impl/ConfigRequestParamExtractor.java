@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.paramcheck.impl;
 
+import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
@@ -26,7 +27,7 @@ import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 
 /**
- * The type Config request param extractor.
+ * The type Config request param extractor {@link AbstractConfigRequest}.
  *
  * @author zhuoguang
  */
@@ -42,7 +43,7 @@ public class ConfigRequestParamExtractor extends AbstractRpcParamExtractor {
     
     @Override
     public void extractParamAndCheck(Request request) throws Exception {
-        ConfigPublishRequest req = (ConfigPublishRequest) request;
+        AbstractConfigRequest req = (AbstractConfigRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setDataId(req.getDataId());
         paramInfo.setGroup(req.getGroup());

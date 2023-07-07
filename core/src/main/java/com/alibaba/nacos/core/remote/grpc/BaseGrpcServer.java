@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -87,7 +87,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     @Override
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
-        addServices(handlerRegistry, new GrpcConnectionInterceptor());
+        addServices(handlerRegistry, new GrpcConnectionInterceptor(), new GrpcServerParamCheckInterceptor());
         NettyServerBuilder builder = NettyServerBuilder.forPort(getServicePort()).executor(getRpcExecutor());
         
         if (rpcServerTlsConfig.getEnableTls()) {
