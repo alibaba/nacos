@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.utils;
 
+import com.alibaba.nacos.api.common.Constants;
+
 /**
  * namespace(tenant) util. Because config and naming treat namespace(tenant) differently, this tool class can only be
  * used by the config module.
@@ -33,7 +35,7 @@ public class NamespaceUtil {
     /**
      * public id，默认值为 "".
      */
-    public static String namespaceDefaultId = "";
+    public static String namespaceDefaultId = Constants.DEFAULT_NAMESPACE_ID;
     
     private static final String NAMESPACE_NULL_KEY = "null";
     
