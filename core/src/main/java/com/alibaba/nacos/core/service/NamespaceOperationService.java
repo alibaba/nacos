@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.service;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
@@ -64,7 +65,7 @@ public class NamespaceOperationService {
         // TODO 获取用kp
         List<TenantInfo> tenantInfos = namespacePersistService.findTenantByKp(DEFAULT_KP);
         
-        Namespace namespace0 = new Namespace(NamespaceUtil.getNamespaceDefaultId(), DEFAULT_NAMESPACE, DEFAULT_QUOTA, 0,
+        Namespace namespace0 = new Namespace(Constants.DEFAULT_NAMESPACE_ID, DEFAULT_NAMESPACE, DEFAULT_QUOTA, 0,
                 NamespaceTypeEnum.GLOBAL.getType());
         NamespaceDetailInjectorHolder.getInstance().injectDetail(namespace0);
         List<Namespace> namespaceList = new ArrayList<>();
