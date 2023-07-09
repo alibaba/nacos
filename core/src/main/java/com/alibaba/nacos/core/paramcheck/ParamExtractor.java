@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.cmdb.pojo;
+package com.alibaba.nacos.core.paramcheck;
+
+import java.util.List;
 
 /**
- * CMDB preserved entity type.
+ * ParamExtractor interface.
  *
- * @author nkorange
- * @since 0.7.0
+ * @param <T> the type parameter
+ * @author zhuoguang
  */
-public enum PreservedEntityTypes {
+public interface ParamExtractor<T> {
+    
     /**
-     * Ip.
+     * Gets target request list.
+     *
+     * @return the target request list
      */
-    ip,
+    List<String> getTargetRequestList();
+    
     /**
-     * Service.
+     * Extract param and check.
+     *
+     * @param params the params
+     * @throws Exception the exception
      */
-    service
+    void extractParamAndCheck(T params) throws Exception;
 }
