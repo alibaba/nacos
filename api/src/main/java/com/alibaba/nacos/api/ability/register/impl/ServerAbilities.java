@@ -40,8 +40,8 @@ public class ServerAbilities extends AbstractAbilityRegistry {
          *       <code>DATA_COMPRESSION("compression", 1)</code>
          *   This field can be used outside, and the offset should be unique.
          *
-         *   And then you need to declare the offset of the flag bit of this ability in the ability table, you can:
-         *       <code>supportedAbilities.put(AbilityKey.DATA_COMPRESSION, true);</code> means that is the first bit from left to right in the table.
+         *   And then you need to declare whether turn on in the ability table, you can:
+         *       <code>supportedAbilities.put(AbilityKey.DATA_COMPRESSION, true);</code> means that current client support AbilityKey.DATA_COMPRESSION.
          *
          */
         // put ability here, which you want current server supports
