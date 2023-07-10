@@ -37,6 +37,7 @@ import io.grpc.stub.ServerCalls;
 import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -70,10 +71,11 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         addServices(handlerRegistry, new GrpcConnectionInterceptor());
         NettyServerBuilder builder = NettyServerBuilder.forPort(getServicePort()).executor(getRpcExecutor());
         
-        InternalProtocolNegotiator.ProtocolNegotiator negotiator = newProtocolNegotiator();
-        if (null != negotiator) {
-            Loggers.REMOTE.info("Add protocol negotiator {}", negotiator.getClass().getCanonicalName());
-            builder.protocolNegotiator(negotiator);
+        Optional<InternalProtocolNegotiator.ProtocolNegotiator> negotiator = newProtocolNegotiator();
+        if (negotiator.isPresent()) {
+            InternalProtocolNegotiator.ProtocolNegotiator actual = negotiator.get();
+            Loggers.REMOTE.info("Add protocol negotiator {}", actual.getClass().getCanonicalName());
+            builder.protocolNegotiator(actual);
         }
         
         server = builder.maxInboundMessageSize(getMaxInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
@@ -94,7 +96,9 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
      *
      * @return ProtocolNegotiator
      */
-    protected abstract InternalProtocolNegotiator.ProtocolNegotiator newProtocolNegotiator();
+    protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
+        return Optional.empty();
+    }
     
     protected long getPermitKeepAliveTime() {
         return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_PERMIT_KEEP_ALIVE_TIME;

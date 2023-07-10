@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator;
 
-import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
-
 /**
  * Protocol negotiator builder.
  *
@@ -30,7 +28,7 @@ public interface ProtocolNegotiatorBuilder {
      *
      * @return ProtocolNegotiator, Nullable.
      */
-    InternalProtocolNegotiator.ProtocolNegotiator build();
+    NacosGrpcProtocolNegotiator build();
     
     /**
      * Builder type of ProtocolNegotiator.

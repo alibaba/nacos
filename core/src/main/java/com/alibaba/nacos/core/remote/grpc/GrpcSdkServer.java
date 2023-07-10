@@ -17,29 +17,15 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.packagescan.resource.DefaultResourceLoader;
-import com.alibaba.nacos.common.packagescan.resource.Resource;
-import com.alibaba.nacos.common.packagescan.resource.ResourceLoader;
-import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.TlsTypeResolve;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
-import com.alibaba.nacos.core.remote.grpc.negotiator.tls.DefaultTlsProtocolNegotiatorBuilder;
-import com.alibaba.nacos.core.remote.grpc.negotiator.tls.OptionalTlsProtocolNegotiator;
+import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilderSingleton;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
-import io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth;
-import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
-import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
-import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import org.springframework.stereotype.Service;
 
-import javax.net.ssl.SSLException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -50,8 +36,6 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Service
 public class GrpcSdkServer extends BaseGrpcServer {
-    
-    private final ResourceLoader resourceLoader = new DefaultResourceLoader();
     
     private NacosGrpcProtocolNegotiator protocolNegotiator;
     
@@ -113,60 +97,9 @@ public class GrpcSdkServer extends BaseGrpcServer {
     }
     
     @Override
-    protected InternalProtocolNegotiator.ProtocolNegotiator newProtocolNegotiator() {
-        protocolNegotiator = (OptionalTlsProtocolNegotiator) new DefaultTlsProtocolNegotiatorBuilder().build();
-        return protocolNegotiator;
-    }
-    
-    private SslContext getSslContextBuilder() {
-        try {
-            if (StringUtils.isBlank(rpcServerTlsConfig.getCertChainFile()) || StringUtils
-                    .isBlank(rpcServerTlsConfig.getCertPrivateKey())) {
-                throw new IllegalArgumentException("Server certChainFile or certPrivateKey must be not null");
-            }
-            InputStream certificateChainFile = getInputStream(rpcServerTlsConfig.getCertChainFile(), "certChainFile");
-            InputStream privateKeyFile = getInputStream(rpcServerTlsConfig.getCertPrivateKey(), "certPrivateKey");
-            SslContextBuilder sslClientContextBuilder = SslContextBuilder
-                    .forServer(certificateChainFile, privateKeyFile, rpcServerTlsConfig.getCertPrivateKeyPassword());
-            
-            if (StringUtils.isNotBlank(rpcServerTlsConfig.getProtocols())) {
-                sslClientContextBuilder.protocols(rpcServerTlsConfig.getProtocols().split(","));
-            }
-            
-            if (StringUtils.isNotBlank(rpcServerTlsConfig.getCiphers())) {
-                sslClientContextBuilder.ciphers(Arrays.asList(rpcServerTlsConfig.getCiphers().split(",")));
-            }
-            if (rpcServerTlsConfig.getMutualAuthEnable()) {
-                // trust all certificate
-                if (rpcServerTlsConfig.getTrustAll()) {
-                    sslClientContextBuilder.trustManager(InsecureTrustManagerFactory.INSTANCE);
-                } else {
-                    if (StringUtils.isBlank(rpcServerTlsConfig.getTrustCollectionCertFile())) {
-                        throw new IllegalArgumentException(
-                                "enable mutual auth,trustCollectionCertFile must be not null");
-                    }
-                    
-                    InputStream clientCert = getInputStream(rpcServerTlsConfig.getTrustCollectionCertFile(),
-                            "trustCollectionCertFile");
-                    sslClientContextBuilder.trustManager(clientCert);
-                }
-                sslClientContextBuilder.clientAuth(ClientAuth.REQUIRE);
-            }
-            SslContextBuilder configure = GrpcSslContexts.configure(sslClientContextBuilder,
-                    TlsTypeResolve.getSslProvider(rpcServerTlsConfig.getSslProvider()));
-            return configure.build();
-        } catch (SSLException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    
-    private InputStream getInputStream(String path, String config) {
-        try {
-            Resource resource = resourceLoader.getResource(path);
-            return resource.getInputStream();
-        } catch (IOException e) {
-            throw new RuntimeException(config + " load fail", e);
-        }
+    protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
+        protocolNegotiator = ProtocolNegotiatorBuilderSingleton.getSingleton().build();
+        return Optional.ofNullable(protocolNegotiator);
     }
     
     /**

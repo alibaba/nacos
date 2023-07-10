@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadPoolExecutor;
@@ -49,8 +48,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getKeepAliveTime() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY,
-                Long.class);
+        Long property = EnvUtil
+                .getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY, Long.class);
         if (property != null) {
             return property;
         }
@@ -59,8 +58,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getKeepAliveTimeout() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY,
-                Long.class);
+        Long property = EnvUtil
+                .getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY, Long.class);
         if (property != null) {
             return property;
         }
@@ -69,8 +68,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getPermitKeepAliveTime() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_PERMIT_KEEP_ALIVE_TIME,
-                Long.class);
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_PERMIT_KEEP_ALIVE_TIME, Long.class);
         if (property != null) {
             return property;
         }
@@ -79,8 +77,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected int getMaxInboundMessageSize() {
-        Integer property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY,
-                Integer.class);
+        Integer property = EnvUtil
+                .getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY, Integer.class);
         if (property != null) {
             return property;
         }
@@ -92,12 +90,6 @@ public class GrpcClusterServer extends BaseGrpcServer {
                     GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY, size);
         }
         return size;
-    }
-    
-    @Override
-    protected InternalProtocolNegotiator.ProtocolNegotiator newProtocolNegotiator() {
-        // No need ProtocolNegotiator for cluster.
-        return null;
     }
     
     @Override

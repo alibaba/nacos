@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
+import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilder;
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
-import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 
 /**
@@ -31,7 +31,7 @@ public class DefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiatorBu
     public static final String TYPE_DEFAULT_TLS = "DEFAULT_TLS";
     
     @Override
-    public InternalProtocolNegotiator.ProtocolNegotiator build() {
+    public NacosGrpcProtocolNegotiator build() {
         RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
         if (rpcServerTlsConfig.getEnableTls()) {
             SslContext sslContext = DefaultTlsContextBuilder.getSslContextBuilder(rpcServerTlsConfig);

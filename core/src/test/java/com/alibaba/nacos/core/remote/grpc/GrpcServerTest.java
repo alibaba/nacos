@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -89,20 +88,15 @@ public class GrpcServerTest {
     public void testGrpcEnableTls() throws Exception {
         final BaseGrpcServer grpcSdkServer = new BaseGrpcServer() {
             @Override
-            protected InternalProtocolNegotiator.ProtocolNegotiator newProtocolNegotiator() {
-                return null;
-            }
-    
-            @Override
             public ThreadPoolExecutor getRpcExecutor() {
                 return null;
             }
-    
+            
             @Override
             public void reloadProtocolNegotiator() {
-        
+            
             }
-    
+            
             @Override
             public int rpcPortOffset() {
                 return 100;
@@ -124,21 +118,17 @@ public class GrpcServerTest {
     public void testGrpcEnableMutualAuthAndTrustAll() throws Exception {
         
         final BaseGrpcServer grpcSdkServer = new BaseGrpcServer() {
-            @Override
-            protected InternalProtocolNegotiator.ProtocolNegotiator newProtocolNegotiator() {
-                return null;
-            }
-    
+            
             @Override
             public ThreadPoolExecutor getRpcExecutor() {
                 return null;
             }
-    
+            
             @Override
             public void reloadProtocolNegotiator() {
-        
+            
             }
-    
+            
             @Override
             public int rpcPortOffset() {
                 return 100;
@@ -159,21 +149,17 @@ public class GrpcServerTest {
     @Test
     public void testGrpcEnableMutualAuthAndPart() throws Exception {
         final BaseGrpcServer grpcSdkServer = new BaseGrpcServer() {
-            @Override
-            protected InternalProtocolNegotiator.ProtocolNegotiator newProtocolNegotiator() {
-                return null;
-            }
-    
+            
             @Override
             public ThreadPoolExecutor getRpcExecutor() {
                 return null;
             }
-    
+            
             @Override
             public void reloadProtocolNegotiator() {
-        
+            
             }
-    
+            
             @Override
             public int rpcPortOffset() {
                 return 100;
