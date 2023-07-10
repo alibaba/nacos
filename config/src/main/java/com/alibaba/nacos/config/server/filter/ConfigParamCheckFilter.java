@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.filter;
 
-import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
