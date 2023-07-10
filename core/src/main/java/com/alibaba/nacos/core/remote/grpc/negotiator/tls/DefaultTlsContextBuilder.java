@@ -44,7 +44,7 @@ public class DefaultTlsContextBuilder {
     
     private static final ResourceLoader RESOURCE_LOADER = new DefaultResourceLoader();
     
-    static SslContext getSslContextBuilder(RpcServerTlsConfig rpcServerTlsConfig) {
+    static SslContext getSslContext(RpcServerTlsConfig rpcServerTlsConfig) {
         try {
             if (StringUtils.isBlank(rpcServerTlsConfig.getCertChainFile()) || StringUtils
                     .isBlank(rpcServerTlsConfig.getCertPrivateKey())) {

@@ -91,8 +91,4 @@ public class GrpcClusterServer extends BaseGrpcServer {
         }
         return size;
     }
-    
-    @Override
-    public void reloadProtocolNegotiator() {
-    }
 }

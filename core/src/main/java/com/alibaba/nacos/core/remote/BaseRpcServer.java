@@ -18,9 +18,7 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.tls.RpcServerSslContextRefresherHolder;
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
@@ -39,17 +37,13 @@ public abstract class BaseRpcServer {
         PayloadRegistry.init();
     }
     
-    protected RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
-    
     /**
      * Start sever.
      */
     @PostConstruct
     public void start() throws Exception {
         String serverName = getClass().getSimpleName();
-        String tlsConfig = JacksonUtils.toJson(rpcServerTlsConfig);
-        Loggers.REMOTE.info("Nacos {} Rpc server starting at port {} and tls config:{}", serverName, getServicePort(),
-                tlsConfig);
+        Loggers.REMOTE.info("Nacos {} Rpc server starting at port {}", serverName, getServicePort());
         
         startServer();
         
@@ -57,8 +51,7 @@ public abstract class BaseRpcServer {
             RpcServerSslContextRefresherHolder.getInstance().refresh(this);
         }
         
-        Loggers.REMOTE.info("Nacos {} Rpc server started at port {} and tls config:{}", serverName, getServicePort(),
-                tlsConfig);
+        Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", serverName, getServicePort());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Loggers.REMOTE.info("Nacos {} Rpc server stopping", serverName);
             try {
@@ -78,18 +71,15 @@ public abstract class BaseRpcServer {
      */
     public abstract ConnectionType getConnectionType();
     
-    public RpcServerTlsConfig getRpcServerTlsConfig() {
-        return rpcServerTlsConfig;
-    }
-    
-    public void setRpcServerTlsConfig(RpcServerTlsConfig rpcServerTlsConfig) {
-        this.rpcServerTlsConfig = rpcServerTlsConfig;
-    }
-    
     /**
-     * reload protocol negotiator.
+     * Reload protocol context if necessary.
+     *
+     * <p>
+     *     protocol like:
+     *     <li>Tls</li>
+     * </p>
      */
-    public abstract void reloadProtocolNegotiator();
+    public abstract void reloadProtocolContext();
     
     /**
      * Start sever.

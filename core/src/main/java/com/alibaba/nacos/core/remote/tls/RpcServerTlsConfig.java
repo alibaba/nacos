@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.tls;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
@@ -48,6 +49,7 @@ public class RpcServerTlsConfig extends TlsConfig {
                 instance = new RpcServerTlsConfig();
             }
         }
+        Loggers.REMOTE.info("Nacos Rpc server tls config:{}", JacksonUtils.toJson(instance));
         return instance;
     }
     

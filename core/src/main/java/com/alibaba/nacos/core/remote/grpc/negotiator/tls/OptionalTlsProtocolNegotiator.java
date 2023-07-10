@@ -76,7 +76,7 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
     public void reloadNegotiator() {
         RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
         if (rpcServerTlsConfig.getEnableTls()) {
-            sslContext = DefaultTlsContextBuilder.getSslContextBuilder(rpcServerTlsConfig);
+            sslContext = DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
         }
     }
     

@@ -89,6 +89,11 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
         server.start();
     }
     
+    @Override
+    public void reloadProtocolContext() {
+        reloadProtocolNegotiator();
+    }
+    
     /**
      * Build new one protocol negotiator.
      *
@@ -98,6 +103,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
      */
     protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
         return Optional.empty();
+    }
+    
+    /**
+     * reload protocol negotiator If necessary.
+     */
+    public void reloadProtocolNegotiator() {
     }
     
     protected long getPermitKeepAliveTime() {

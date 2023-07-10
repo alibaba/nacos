@@ -34,7 +34,7 @@ public class DefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiatorBu
     public NacosGrpcProtocolNegotiator build() {
         RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
         if (rpcServerTlsConfig.getEnableTls()) {
-            SslContext sslContext = DefaultTlsContextBuilder.getSslContextBuilder(rpcServerTlsConfig);
+            SslContext sslContext = DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
             return new OptionalTlsProtocolNegotiator(sslContext, rpcServerTlsConfig.getCompatibility());
         }
         return null;
