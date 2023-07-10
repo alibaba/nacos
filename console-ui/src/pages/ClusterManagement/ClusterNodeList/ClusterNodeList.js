@@ -29,6 +29,7 @@ import {
   Table,
   Dialog,
   ConfigProvider,
+  Message,
 } from '@alifd/next';
 import { request } from '../../../globalLib';
 import RegionGroup from '../../../components/RegionGroup';
@@ -105,17 +106,36 @@ class ClusterNodeList extends React.Component {
   }
 
   leave(nodes) {
+    const { locale = {} } = this.props;
+    const accessToken = JSON.parse(localStorage.token || '{}').accessToken;
     this.openLoading();
     axios
-      .post('v1/core/cluster/server/leave', nodes)
-      .then(() => {
+      .post(`v1/core/cluster/server/leave?accessToken=${accessToken}`, nodes)
+      .then(response => {
+        if (response.data.code === 200) {
+          Message.success(locale.leaveSucc);
+        } else {
+          const errorMessage = response.data.message || locale.leaveFail;
+          this.showErrorDialog(locale.leavePrompt, errorMessage);
+        }
+
         this.queryClusterStateList();
         this.closeLoading();
       })
-      .catch(() => {
+      .catch(error => {
+        const errorMessage = error.response?.data?.message || locale.leaveFail;
+        this.showErrorDialog(locale.leavePrompt, errorMessage);
+
         this.queryClusterStateList();
         this.closeLoading();
       });
+  }
+
+  showErrorDialog(title, content) {
+    Dialog.alert({
+      title,
+      content,
+    });
   }
 
   showLeaveDialog(value) {
