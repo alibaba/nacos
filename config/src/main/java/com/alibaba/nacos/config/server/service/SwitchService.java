@@ -85,7 +85,7 @@ public class SwitchService {
      */
     public static void load(String config) {
         if (StringUtils.isBlank(config)) {
-            FATAL_LOG.error("switch config is blank.");
+            FATAL_LOG.warn("switch config is blank.");
             return;
         }
         FATAL_LOG.warn("[switch-config] {}", config);

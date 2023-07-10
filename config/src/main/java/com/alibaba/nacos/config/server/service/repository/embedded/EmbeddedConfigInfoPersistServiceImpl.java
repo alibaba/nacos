@@ -1105,13 +1105,15 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
-    public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, final Timestamp endTime) {
+    public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize) {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
-        context.putWhereParameter(FieldConstant.END_TIME, endTime);
+        context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
+        context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
+        
         MapperResult mapperResult = configInfoMapper.findChangeConfig(context);
         List<Map<String, Object>> list = databaseOperate.queryMany(mapperResult.getSql(),
                 mapperResult.getParamList().toArray());
