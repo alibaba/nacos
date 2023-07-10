@@ -91,7 +91,7 @@ class Header extends React.Component {
     const BASE_URL = `https://nacos.io/${language.toLocaleLowerCase()}/`;
     const NAV_MENU = [
       { id: 1, title: home, link: BASE_URL },
-      { id: 2, title: docs, link: `${BASE_URL}docs/what-is-nacos.html` },
+      { id: 2, title: docs, link: `${BASE_URL}docs/v2/what-is-nacos.html` },
       { id: 3, title: blog, link: `${BASE_URL}blog/index.html` },
       { id: 4, title: community, link: `${BASE_URL}community/index.html` },
       {
