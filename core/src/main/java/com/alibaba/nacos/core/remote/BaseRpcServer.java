@@ -19,9 +19,10 @@ package com.alibaba.nacos.core.remote;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.remote.tls.RpcServerSslContextRefresherHolder;
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -38,8 +39,7 @@ public abstract class BaseRpcServer {
         PayloadRegistry.init();
     }
     
-    @Autowired
-    protected RpcServerTlsConfig rpcServerTlsConfig;
+    protected RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
     
     /**
      * Start sever.

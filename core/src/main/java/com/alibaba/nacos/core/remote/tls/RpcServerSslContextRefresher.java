@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.core.remote.tls;
+
+import com.alibaba.nacos.core.remote.BaseRpcServer;
 
 /**
  * ssl context refresher spi holder.
@@ -22,22 +24,20 @@ package com.alibaba.nacos.core.remote;
  * @author liuzunfei
  * @version $Id: RequestFilters.java, v 0.1 2023年03月17日 12:00 PM liuzunfei Exp $
  */
-public interface SslContextChangeAware {
+public interface RpcServerSslContextRefresher {
     
     /**
-     * init rpc server ssl context.
+     * listener current rpc server and do something on ssl context change.
      *
      * @param baseRpcServer rpc server.
+     * @return
      */
-    void init(BaseRpcServer baseRpcServer);
+    SslContextChangeAware refresh(BaseRpcServer baseRpcServer);
     
     /**
-     * do something on ssl context change.
+     * refresher name.
+     *
+     * @return
      */
-    void onSslContextChange();
-    
-    /**
-     * shutdown to clear context.
-     */
-    void shutdown();
+    String getName();
 }

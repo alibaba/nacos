@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.ThreadPoolExecutor;
@@ -93,4 +94,13 @@ public class GrpcClusterServer extends BaseGrpcServer {
         return size;
     }
     
+    @Override
+    protected InternalProtocolNegotiator.ProtocolNegotiator newProtocolNegotiator() {
+        // No need ProtocolNegotiator for cluster.
+        return null;
+    }
+    
+    @Override
+    public void reloadSslContext() {
+    }
 }

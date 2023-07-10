@@ -24,7 +24,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
-import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.After;
 import org.junit.Assert;
