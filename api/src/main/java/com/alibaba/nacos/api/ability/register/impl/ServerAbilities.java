@@ -37,11 +37,10 @@ public class ServerAbilities extends AbstractAbilityRegistry {
          *   The key is from <p>AbilityKey</p>, the value is whether turn on.
          *
          *   You can add a new public field in <p>AbilityKey</p> like:
-         *       <code>DATA_COMPRESSION("compression", 1)</code>
-         *   This field can be used outside, and the offset should be unique.
+         *       <code>DATA_COMPRESSION("compression", "description about this ability")</code>
          *
          *   And then you need to declare whether turn on in the ability table, you can:
-         *       <code>supportedAbilities.put(AbilityKey.DATA_COMPRESSION, true);</code> means that current client support AbilityKey.DATA_COMPRESSION.
+         *       <code>supportedAbilities.put(AbilityKey.DATA_COMPRESSION, true);</code> means that current client support compression.
          *
          */
         // put ability here, which you want current server supports
