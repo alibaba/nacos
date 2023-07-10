@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.packagescan.resource.DefaultResourceLoader;
 import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.packagescan.resource.ResourceLoader;
@@ -84,7 +86,7 @@ public class DefaultTlsContextBuilder {
         } catch (SSLException e) {
             Loggers.REMOTE.info("Nacos Rpc server reload ssl context fail tls config:{}",
                     JacksonUtils.toJson(rpcServerTlsConfig));
-            throw new RuntimeException(e);
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
     }
     
@@ -93,7 +95,7 @@ public class DefaultTlsContextBuilder {
             Resource resource = RESOURCE_LOADER.getResource(path);
             return resource.getInputStream();
         } catch (IOException e) {
-            throw new RuntimeException(config + " load fail", e);
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR, config + " load fail", e);
         }
     }
 }

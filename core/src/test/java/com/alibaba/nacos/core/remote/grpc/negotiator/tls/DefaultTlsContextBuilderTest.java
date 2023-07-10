@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import org.junit.After;
 import org.junit.Before;
@@ -38,6 +39,7 @@ public class DefaultTlsContextBuilderTest {
         RpcServerTlsConfig.getInstance().setCiphers(null);
         RpcServerTlsConfig.getInstance().setProtocols(null);
         RpcServerTlsConfig.getInstance().setTrustCollectionCertFile(null);
+        RpcServerTlsConfig.getInstance().setSslProvider("");
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -87,6 +89,16 @@ public class DefaultTlsContextBuilderTest {
         grpcServerConfig.setProtocols("TLSv1.2,TLSv1.3");
         grpcServerConfig.setCertPrivateKey("test-server-key.pem");
         grpcServerConfig.setCertChainFile("test-server-cert.pem");
+        DefaultTlsContextBuilder.getSslContext(RpcServerTlsConfig.getInstance());
+    }
+    
+    @Test(expected = NacosRuntimeException.class)
+    public void testGetSslContextForNonExistFile() {
+        RpcServerTlsConfig grpcServerConfig = RpcServerTlsConfig.getInstance();
+        grpcServerConfig.setCiphers("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
+        grpcServerConfig.setProtocols("TLSv1.2,TLSv1.3");
+        grpcServerConfig.setCertPrivateKey("non-exist-server-key.pem");
+        grpcServerConfig.setCertChainFile("non-exist-cert.pem");
         DefaultTlsContextBuilder.getSslContext(RpcServerTlsConfig.getInstance());
     }
 }
