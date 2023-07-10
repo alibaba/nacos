@@ -99,7 +99,7 @@ public class GrpcServerTest {
             }
     
             @Override
-            public void reloadSslContext() {
+            public void reloadProtocolNegotiator() {
         
             }
     
@@ -135,7 +135,7 @@ public class GrpcServerTest {
             }
     
             @Override
-            public void reloadSslContext() {
+            public void reloadProtocolNegotiator() {
         
             }
     
@@ -170,7 +170,7 @@ public class GrpcServerTest {
             }
     
             @Override
-            public void reloadSslContext() {
+            public void reloadProtocolNegotiator() {
         
             }
     

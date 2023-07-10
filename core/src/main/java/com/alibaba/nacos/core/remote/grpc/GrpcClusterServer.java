@@ -101,6 +101,6 @@ public class GrpcClusterServer extends BaseGrpcServer {
     }
     
     @Override
-    public void reloadSslContext() {
+    public void reloadProtocolNegotiator() {
     }
 }

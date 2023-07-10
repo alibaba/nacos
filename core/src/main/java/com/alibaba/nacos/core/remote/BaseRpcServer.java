@@ -87,9 +87,9 @@ public abstract class BaseRpcServer {
     }
     
     /**
-     * reload ssl context.
+     * reload protocol negotiator.
      */
-    public abstract void reloadSslContext();
+    public abstract void reloadProtocolNegotiator();
     
     /**
      * Start sever.

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,111 +14,37 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.grpc;
+package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.packagescan.resource.DefaultResourceLoader;
 import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.packagescan.resource.ResourceLoader;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.TlsTypeResolve;
-import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
-import com.alibaba.nacos.core.remote.grpc.negotiator.tls.DefaultTlsProtocolNegotiatorBuilder;
-import com.alibaba.nacos.core.remote.grpc.negotiator.tls.OptionalTlsProtocolNegotiator;
-import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
-import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-import org.springframework.stereotype.Service;
 
 import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * Grpc implementation as  a rpc server.
+ * Ssl context builder.
  *
- * @author liuzunfei
- * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-@Service
-public class GrpcSdkServer extends BaseGrpcServer {
+public class DefaultTlsContextBuilder {
     
-    private final ResourceLoader resourceLoader = new DefaultResourceLoader();
+    private static final ResourceLoader RESOURCE_LOADER = new DefaultResourceLoader();
     
-    private NacosGrpcProtocolNegotiator protocolNegotiator;
-    
-    @Override
-    public int rpcPortOffset() {
-        return Constants.SDK_GRPC_PORT_DEFAULT_OFFSET;
-    }
-    
-    @Override
-    public ThreadPoolExecutor getRpcExecutor() {
-        return GlobalExecutor.sdkRpcExecutor;
-    }
-    
-    @Override
-    protected long getKeepAliveTime() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_KEEP_ALIVE_TIME_PROPERTY, Long.class);
-        if (property != null) {
-            return property;
-        }
-        return super.getKeepAliveTime();
-    }
-    
-    @Override
-    protected long getKeepAliveTimeout() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_KEEP_ALIVE_TIMEOUT_PROPERTY, Long.class);
-        if (property != null) {
-            return property;
-        }
-        
-        return super.getKeepAliveTimeout();
-    }
-    
-    @Override
-    protected int getMaxInboundMessageSize() {
-        Integer property = EnvUtil
-                .getProperty(GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY, Integer.class);
-        if (property != null) {
-            return property;
-        }
-        
-        int size = super.getMaxInboundMessageSize();
-        
-        if (Loggers.REMOTE.isWarnEnabled()) {
-            Loggers.REMOTE.warn("Recommended use '{}' property instead '{}', now property value is {}",
-                    GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY,
-                    GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY, size);
-        }
-        
-        return size;
-    }
-    
-    @Override
-    protected long getPermitKeepAliveTime() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_PERMIT_KEEP_ALIVE_TIME, Long.class);
-        if (property != null) {
-            return property;
-        }
-        return super.getPermitKeepAliveTime();
-    }
-    
-    @Override
-    protected InternalProtocolNegotiator.ProtocolNegotiator newProtocolNegotiator() {
-        protocolNegotiator = (OptionalTlsProtocolNegotiator) new DefaultTlsProtocolNegotiatorBuilder().build();
-        return protocolNegotiator;
-    }
-    
-    private SslContext getSslContextBuilder() {
+    static SslContext getSslContextBuilder(RpcServerTlsConfig rpcServerTlsConfig) {
         try {
             if (StringUtils.isBlank(rpcServerTlsConfig.getCertChainFile()) || StringUtils
                     .isBlank(rpcServerTlsConfig.getCertPrivateKey())) {
@@ -156,32 +82,18 @@ public class GrpcSdkServer extends BaseGrpcServer {
                     TlsTypeResolve.getSslProvider(rpcServerTlsConfig.getSslProvider()));
             return configure.build();
         } catch (SSLException e) {
+            Loggers.REMOTE.info("Nacos Rpc server reload ssl context fail tls config:{}",
+                    JacksonUtils.toJson(rpcServerTlsConfig));
             throw new RuntimeException(e);
         }
     }
     
-    private InputStream getInputStream(String path, String config) {
+    private static InputStream getInputStream(String path, String config) {
         try {
-            Resource resource = resourceLoader.getResource(path);
+            Resource resource = RESOURCE_LOADER.getResource(path);
             return resource.getInputStream();
         } catch (IOException e) {
             throw new RuntimeException(config + " load fail", e);
-        }
-    }
-    
-    /**
-     * reload ssl context.
-     */
-    public void reloadProtocolNegotiator() {
-        if (protocolNegotiator != null) {
-            try {
-                protocolNegotiator.reloadNegotiator();
-            } catch (Throwable throwable) {
-                Loggers.REMOTE
-                        .info("Nacos {} Rpc server reload negotiator fail at port {}.", this.getClass().getSimpleName(),
-                                getServicePort());
-                throw throwable;
-            }
         }
     }
 }
