@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -60,6 +61,9 @@ public class RpcParamExtractorManager {
     }
     
     public AbstractRpcParamExtractor getExtractor(String type) {
+        if (StringUtils.isBlank(type)) {
+            return DEFAULT_EXTRACTOR;
+        }
         AbstractRpcParamExtractor extractor = extractorMap.get(type);
         if (extractor == null) {
             extractor = DEFAULT_EXTRACTOR;
