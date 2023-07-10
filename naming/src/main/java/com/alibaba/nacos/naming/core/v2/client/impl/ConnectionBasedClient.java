@@ -41,8 +41,8 @@ public class ConnectionBasedClient extends AbstractClient {
      */
     private volatile long lastRenewTime;
     
-    public ConnectionBasedClient(String connectionId, boolean isNative) {
-        super();
+    public ConnectionBasedClient(String connectionId, boolean isNative, Long revision) {
+        super(revision);
         this.connectionId = connectionId;
         this.isNative = isNative;
         lastRenewTime = getLastUpdatedTime();
@@ -73,5 +73,10 @@ public class ConnectionBasedClient extends AbstractClient {
     @Override
     public boolean isExpire(long currentTime) {
         return !isNative() && currentTime - getLastRenewTime() > ClientConfig.getInstance().getClientExpiredTime();
+    }
+    
+    @Override
+    public long recalculateRevision() {
+        return revision.addAndGet(1);
     }
 }

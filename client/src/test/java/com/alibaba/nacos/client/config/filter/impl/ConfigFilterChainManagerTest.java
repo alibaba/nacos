@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.config.filter.IConfigFilter;
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
-import com.alibaba.nacos.api.config.filter.IFilterConfig;
 import com.alibaba.nacos.api.exception.NacosException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -43,11 +42,7 @@ public class ConfigFilterChainManagerTest {
             this.name = name;
             this.order = order;
         }
-    
-        @Override
-        public void init(IFilterConfig filterConfig) {
-        }
-    
+        
         @Override
         public void init(Properties properties) {
         }

@@ -38,4 +38,7 @@ public class InstanceResponse extends Response {
         this.type = type;
     }
     
+    public String getType() {
+        return type;
+    }
 }

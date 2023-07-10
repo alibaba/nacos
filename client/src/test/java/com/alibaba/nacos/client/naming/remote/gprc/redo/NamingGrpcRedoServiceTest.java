@@ -17,10 +17,12 @@
 package com.alibaba.nacos.client.naming.remote.gprc.redo;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.naming.remote.TestConnection;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
+import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -68,13 +70,13 @@ public class NamingGrpcRedoServiceTest {
     @Test
     public void testOnConnected() {
         assertFalse(redoService.isConnected());
-        redoService.onConnected();
+        redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
         assertTrue(redoService.isConnected());
     }
     
     @Test
     public void testOnDisConnect() {
-        redoService.onConnected();
+        redoService.onConnected(new TestConnection(new RpcClient.ServerInfo()));
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         redoService.instanceRegistered(SERVICE, GROUP);
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
@@ -82,7 +84,7 @@ public class NamingGrpcRedoServiceTest {
         assertTrue(redoService.isConnected());
         assertTrue(redoService.findInstanceRedoData().isEmpty());
         assertTrue(redoService.findSubscriberRedoData().isEmpty());
-        redoService.onDisConnect();
+        redoService.onDisConnect(new TestConnection(new RpcClient.ServerInfo()));
         assertFalse(redoService.isConnected());
         assertFalse(redoService.findInstanceRedoData().isEmpty());
         assertFalse(redoService.findSubscriberRedoData().isEmpty());
@@ -101,6 +103,7 @@ public class NamingGrpcRedoServiceTest {
         assertEquals(instance, actual.get());
         assertFalse(actual.isRegistered());
         assertFalse(actual.isUnregistering());
+        assertTrue(actual.isExpectedRegistered());
     }
     
     @Test
@@ -136,6 +139,17 @@ public class NamingGrpcRedoServiceTest {
         redoService.instanceDeregister(SERVICE, GROUP);
         InstanceRedoData actual = registeredInstances.entrySet().iterator().next().getValue();
         assertTrue(actual.isUnregistering());
+        assertFalse(actual.isExpectedRegistered());
+    }
+    
+    @Test
+    public void testInstanceDeregistered() {
+        ConcurrentMap<String, InstanceRedoData> registeredInstances = getInstanceRedoDataMap();
+        redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
+        redoService.instanceDeregistered(SERVICE, GROUP);
+        InstanceRedoData actual = registeredInstances.entrySet().iterator().next().getValue();
+        assertFalse(actual.isRegistered());
+        assertTrue(actual.isUnregistering());
     }
     
     @Test
@@ -144,6 +158,7 @@ public class NamingGrpcRedoServiceTest {
         assertTrue(registeredInstances.isEmpty());
         redoService.cacheInstanceForRedo(SERVICE, GROUP, new Instance());
         assertFalse(registeredInstances.isEmpty());
+        redoService.instanceDeregister(SERVICE, GROUP);
         redoService.removeInstanceForRedo(SERVICE, GROUP);
         assertTrue(registeredInstances.isEmpty());
     }
@@ -196,11 +211,20 @@ public class NamingGrpcRedoServiceTest {
     }
     
     @Test
+    public void testIsSubscriberRegistered() {
+        assertFalse(redoService.isSubscriberRegistered(SERVICE, GROUP, CLUSTER));
+        redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
+        redoService.subscriberRegistered(SERVICE, GROUP, CLUSTER);
+        assertTrue(redoService.isSubscriberRegistered(SERVICE, GROUP, CLUSTER));
+    }
+    
+    @Test
     public void testRemoveSubscriberForRedo() {
         ConcurrentMap<String, SubscriberRedoData> subscribes = getSubscriberRedoDataMap();
         assertTrue(subscribes.isEmpty());
         redoService.cacheSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         assertFalse(subscribes.isEmpty());
+        redoService.subscriberDeregister(SERVICE, GROUP, CLUSTER);
         redoService.removeSubscriberForRedo(SERVICE, GROUP, CLUSTER);
         assertTrue(subscribes.isEmpty());
     }

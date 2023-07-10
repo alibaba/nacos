@@ -18,6 +18,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
@@ -72,7 +73,7 @@ public class HealthOperatorV2ImplTest {
             instance.setPort(8080);
             Mockito.when(cluster.getHealthyCheckType()).thenReturn(HealthCheckType.NONE.name());
             Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
-    
+            
             ConnectionBasedClient client = Mockito.mock(ConnectionBasedClient.class);
             Mockito.when(clientManager.getClient(Mockito.anyString())).thenReturn(client);
             

@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
@@ -35,10 +36,8 @@ import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -52,8 +51,9 @@ public class NamingClientProxyDelegateTest {
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
@@ -78,7 +78,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
@@ -104,7 +106,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
         Field mockHttpClientField = NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
         mockHttpClientField.setAccessible(true);
@@ -130,7 +134,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
@@ -156,7 +162,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
         Field mockHttpClientField = NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
         mockHttpClientField.setAccessible(true);
@@ -182,7 +190,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         String serviceName = "service1";
         String groupName = "group1";
         Instance instance = new Instance();
@@ -200,7 +210,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
@@ -220,7 +232,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         Service service = delegate.queryService("a", "b");
         Assert.assertNull(service);
     }
@@ -232,7 +246,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         Service service = new Service();
         try {
             delegate.createService(service, new NoneSelector());
@@ -248,7 +264,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         Assert.assertFalse(delegate.deleteService("service", "group1"));
     }
     
@@ -259,7 +277,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         Service service = new Service();
         try {
             delegate.updateService(service, new ExpressionSelector());
@@ -275,7 +295,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
@@ -297,7 +319,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
@@ -326,7 +350,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
@@ -341,32 +367,15 @@ public class NamingClientProxyDelegateTest {
     }
     
     @Test
-    public void testUpdateBeatInfo() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        String ns = "ns1";
-        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        Properties props = new Properties();
-        props.setProperty("serverAddr", "localhost");
-        InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
-        NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
-        Field mockHttpClientField = NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
-        mockHttpClientField.setAccessible(true);
-        mockHttpClientField.set(delegate, mockHttpClient);
-        
-        //HTTP ONLY
-        Set<Instance> set = new HashSet<>();
-        delegate.updateBeatInfo(set);
-        verify(mockHttpClient, times(1)).updateBeatInfo(set);
-    }
-    
-    @Test
     public void testServerHealthy() throws IllegalAccessException, NacosException, NoSuchFieldException {
         String ns = "ns1";
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);
@@ -383,7 +392,9 @@ public class NamingClientProxyDelegateTest {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         InstancesChangeNotifier notifier = new InstancesChangeNotifier();
-        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, props, notifier);
+    
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
+        NamingClientProxyDelegate delegate = new NamingClientProxyDelegate(ns, holder, nacosClientProperties, notifier);
         NamingGrpcClientProxy mockGrpcClient = Mockito.mock(NamingGrpcClientProxy.class);
         Field grpcClientProxyField = NamingClientProxyDelegate.class.getDeclaredField("grpcClientProxy");
         grpcClientProxyField.setAccessible(true);

@@ -49,7 +49,6 @@ public class ServerLoaderInfoRequestHandlerTest {
     public void testHandle() {
         Mockito.when(connectionManager.currentClientsCount()).thenReturn(1);
         Mockito.when(connectionManager.currentClientsCount(Mockito.any())).thenReturn(1);
-        Mockito.when(connectionManager.getConnectionLimitRule()).thenReturn(null);
     
         ServerLoaderInfoRequest request = new ServerLoaderInfoRequest();
         RequestMeta meta = new RequestMeta();

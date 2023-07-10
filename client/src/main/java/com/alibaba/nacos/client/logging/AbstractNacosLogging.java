@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.client.logging;
 
-import com.alibaba.nacos.client.constant.Constants;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-
-import java.io.File;
 
 /**
  * Abstract nacos logging.
@@ -34,18 +32,8 @@ public abstract class AbstractNacosLogging {
     
     private static final String NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY = "nacos.logging.default.config.enabled";
     
-    private static final String NACOS_LOGGING_PATH_DIR = "logs";
-    
-    static {
-        String loggingPath = System.getProperty(Constants.SysEnv.JM_LOG_PATH);
-        if (StringUtils.isBlank(loggingPath)) {
-            String userHome = System.getProperty(Constants.SysEnv.USER_HOME);
-            System.setProperty(Constants.SysEnv.JM_LOG_PATH, userHome + File.separator + NACOS_LOGGING_PATH_DIR);
-        }
-    }
-    
     protected String getLocation(String defaultLocation) {
-        String location = System.getProperty(NACOS_LOGGING_CONFIG_PROPERTY);
+        String location = NacosClientProperties.PROTOTYPE.getProperty(NACOS_LOGGING_CONFIG_PROPERTY);
         if (StringUtils.isBlank(location)) {
             if (isDefaultConfigEnabled()) {
                 return defaultLocation;
@@ -56,7 +44,7 @@ public abstract class AbstractNacosLogging {
     }
     
     private boolean isDefaultConfigEnabled() {
-        String property = System.getProperty(NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY);
+        String property = NacosClientProperties.PROTOTYPE.getProperty(NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY);
         // The default value is true.
         return property == null || ConvertUtils.toBoolean(property);
     }

@@ -16,10 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,34 +29,27 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.lang.reflect.Field;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
 @RunWith(MockitoJUnitRunner.class)
 public class EmbeddedUserPersistServiceImplTest {
     
     @Mock
     private DatabaseOperate databaseOperate;
     
-    @Mock
-    private EmbeddedStoragePersistServiceImpl persistService;
-    
-    @Mock
-    private PaginationHelper paginationHelper;
-    
     private EmbeddedUserPersistServiceImpl embeddedUserPersistService;
     
     @Before
     public void setUp() throws Exception {
+        when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class))).thenReturn(0);
         embeddedUserPersistService = new EmbeddedUserPersistServiceImpl();
         Class<EmbeddedUserPersistServiceImpl> embeddedUserPersistServiceClass = EmbeddedUserPersistServiceImpl.class;
         
         Field databaseOperateField = embeddedUserPersistServiceClass.getDeclaredField("databaseOperate");
         databaseOperateField.setAccessible(true);
         databaseOperateField.set(embeddedUserPersistService, databaseOperate);
-        
-        Field persistServiceClassDeclaredField = embeddedUserPersistServiceClass.getDeclaredField("persistService");
-        persistServiceClassDeclaredField.setAccessible(true);
-        persistServiceClassDeclaredField.set(embeddedUserPersistService, persistService);
-        
-        Mockito.when(persistService.createPaginationHelper()).thenReturn(paginationHelper);
     }
     
     @Test
@@ -91,7 +82,7 @@ public class EmbeddedUserPersistServiceImplTest {
     
     @Test
     public void testGetUsers() {
-        Page<User> users = embeddedUserPersistService.getUsers(1, 10);
+        Page<User> users = embeddedUserPersistService.getUsers(1, 10, "nacos");
         
         Assert.assertNotNull(users);
     }

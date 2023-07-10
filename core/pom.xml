@@ -31,23 +31,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-core ${project.version}</name>
-    <url>http://nacos.io</url>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>8</source>
-                    <target>8</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <url>https://nacos.io</url>
 
     <dependencies>
         <dependency>
@@ -58,10 +42,18 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-consistency</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-persistence</artifactId>
+        </dependency>
         
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-auth</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-trace-plugin</artifactId>
         </dependency>
         
         <dependency>
@@ -158,13 +150,16 @@
         
         <dependency>
             <groupId>io.grpc</groupId>
-            <artifactId>protoc-gen-grpc-java</artifactId>
-            <type>pom</type>
-        </dependency>
-    
-        <dependency>
-            <groupId>io.grpc</groupId>
             <artifactId>grpc-testing</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-contrl-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webmvc</artifactId>
         </dependency>
     </dependencies>
 </project>

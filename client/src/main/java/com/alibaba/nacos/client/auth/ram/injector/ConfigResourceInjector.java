@@ -16,23 +16,15 @@
 
 package com.alibaba.nacos.client.auth.ram.injector;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.RamContext;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
-import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
-import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
+import com.alibaba.nacos.client.auth.ram.identify.IdentifyConstants;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredential;
-import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.client.auth.ram.identify.StsCredentialHolder;
+import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.fasterxml.jackson.core.type.TypeReference;
-import org.slf4j.Logger;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 
 import java.util.Map;
 
@@ -43,15 +35,9 @@ import java.util.Map;
  */
 public class ConfigResourceInjector extends AbstractResourceInjector {
     
-    private static final Logger LOGGER = LogUtils.logger(ConfigResourceInjector.class);
-    
-    private static final String SECURITY_TOKEN_HEADER = "Spas-SecurityToken";
-    
     private static final String ACCESS_KEY_HEADER = "Spas-AccessKey";
     
     private static final String DEFAULT_RESOURCE = "";
-    
-    private StsCredential stsCredential;
     
     @Override
     public void doInject(RequestResource resource, RamContext context, LoginIdentityContext result) {
@@ -59,10 +45,10 @@ public class ConfigResourceInjector extends AbstractResourceInjector {
         String secretKey = context.getSecretKey();
         // STS 临时凭证鉴权的优先级高于 AK/SK 鉴权
         if (StsConfig.getInstance().isStsOn()) {
-            StsCredential stsCredential = getStsCredential();
+            StsCredential stsCredential = StsCredentialHolder.getInstance().getStsCredential();
             accessKey = stsCredential.getAccessKeyId();
             secretKey = stsCredential.getAccessKeySecret();
-            result.setParameter(SECURITY_TOKEN_HEADER, stsCredential.getSecurityToken());
+            result.setParameter(IdentifyConstants.SECURITY_TOKEN_HEADER, stsCredential.getSecurityToken());
         }
         
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
@@ -71,50 +57,6 @@ public class ConfigResourceInjector extends AbstractResourceInjector {
         Map<String, String> signHeaders = SpasAdapter
                 .getSignHeaders(getResource(resource.getNamespace(), resource.getGroup()), secretKey);
         result.setParameters(signHeaders);
-    }
-    
-    private StsCredential getStsCredential() {
-        boolean cacheSecurityCredentials = StsConfig.getInstance().isCacheSecurityCredentials();
-        if (cacheSecurityCredentials && stsCredential != null) {
-            long currentTime = System.currentTimeMillis();
-            long expirationTime = stsCredential.getExpiration().getTime();
-            int timeToRefreshInMillisecond = StsConfig.getInstance().getTimeToRefreshInMillisecond();
-            if (expirationTime - currentTime > timeToRefreshInMillisecond) {
-                return stsCredential;
-            }
-        }
-        String stsResponse = getStsResponse();
-        stsCredential = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
-        });
-        LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
-                stsCredential.getCode(), stsCredential.getAccessKeyId(), stsCredential.getLastUpdated(),
-                stsCredential.getExpiration());
-        return stsCredential;
-    }
-    
-    private static String getStsResponse() {
-        String securityCredentials = StsConfig.getInstance().getSecurityCredentials();
-        if (securityCredentials != null) {
-            return securityCredentials;
-        }
-        String securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
-        try {
-            HttpRestResult<String> result = ConfigHttpClientManager.getInstance().getNacosRestTemplate()
-                    .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
-            
-            if (!result.ok()) {
-                LOGGER.error(
-                        "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
-                        securityCredentialsUrl, result.getCode(), result.getMessage());
-                throw new NacosRuntimeException(NacosException.SERVER_ERROR,
-                        "can not get security credentials, responseCode: " + result.getCode() + ", response: " + result
-                                .getMessage());
-            }
-            return result.getData();
-        } catch (Exception e) {
-            LOGGER.error("can not get security credentials", e);
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
-        }
     }
     
     private String getResource(String tenant, String group) {

@@ -16,14 +16,7 @@
 
 package com.alibaba.nacos.naming;
 
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeer;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftPeerSet;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.ServiceManager;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
-import com.alibaba.nacos.naming.healthcheck.HealthCheckProcessorDelegate;
-import com.alibaba.nacos.naming.misc.NetUtils;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -33,11 +26,13 @@ import org.junit.Rule;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+
+import java.lang.reflect.Field;
 
 import static org.mockito.Mockito.doReturn;
 
@@ -60,15 +55,6 @@ public abstract class BaseTest {
             + "\"port\":9870,\"weight\":2.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true"
             + ",\"clusterName\":\"clusterName\",\"serviceName\":\"serviceName\",\"metadata\":{}}]";
     
-    @Mock
-    public ServiceManager serviceManager;
-    
-    @Mock
-    public RaftPeerSet peerSet;
-    
-    @Mock
-    public RaftCore raftCore;
-    
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
     
@@ -82,13 +68,7 @@ public abstract class BaseTest {
     protected SwitchDomain switchDomain;
     
     @Mock
-    protected HealthCheckProcessorDelegate delegate;
-    
-    @Mock
     protected UdpPushService pushService;
-    
-    @Mock
-    protected UpgradeJudgement upgradeJudgement;
     
     @Spy
     protected MockEnvironment environment;
@@ -99,21 +79,18 @@ public abstract class BaseTest {
         ApplicationUtils.injectContext(context);
     }
     
-    protected void mockRaft() {
-        RaftPeer peer = new RaftPeer();
-        peer.ip = NetUtils.localServer();
-        raftCore.setPeerSet(peerSet);
-        Mockito.when(peerSet.local()).thenReturn(peer);
-        Mockito.when(peerSet.getLeader()).thenReturn(peer);
-        Mockito.when(peerSet.isLeader(NetUtils.localServer())).thenReturn(true);
+    protected MockHttpServletRequestBuilder convert(Object simpleOb, MockHttpServletRequestBuilder builder)
+            throws IllegalAccessException {
+        Field[] declaredFields = simpleOb.getClass().getDeclaredFields();
+        for (Field declaredField : declaredFields) {
+            declaredField.setAccessible(true);
+            builder.param(declaredField.getName(), String.valueOf(declaredField.get(simpleOb)));
+        }
+        return builder;
     }
     
     protected void mockInjectPushServer() {
         doReturn(pushService).when(context).getBean(UdpPushService.class);
-    }
-    
-    protected void mockInjectHealthCheckProcessor() {
-        doReturn(delegate).when(context).getBean(HealthCheckProcessorDelegate.class);
     }
     
     protected void mockInjectSwitchDomain() {
@@ -122,9 +99,5 @@ public abstract class BaseTest {
     
     protected void mockInjectDistroMapper() {
         doReturn(distroMapper).when(context).getBean(DistroMapper.class);
-    }
-    
-    protected void mockInjectUpgradeJudgement() {
-        doReturn(upgradeJudgement).when(context).getBean(UpgradeJudgement.class);
     }
 }

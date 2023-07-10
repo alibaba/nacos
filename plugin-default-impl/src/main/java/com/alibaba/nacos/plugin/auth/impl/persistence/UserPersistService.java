@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.util.List;
 
@@ -67,7 +68,7 @@ public interface UserPersistService {
      * @param pageSize pageSize
      * @return user page info
      */
-    Page<User> getUsers(int pageNo, int pageSize);
+    Page<User> getUsers(int pageNo, int pageSize, String username);
 
     /**
      * fuzzy query user by username.
@@ -76,4 +77,16 @@ public interface UserPersistService {
      * @return usernames
      */
     List<String> findUserLikeUsername(String username);
+
+    Page<User> findUsersLike4Page(String username, int pageNo, int pageSize);
+
+    String generateLikeArgument(String s);
+    
+    /**
+     * create Pagination utils.
+     *
+     * @param <E> Generic object
+     * @return {@link PaginationHelper}
+     */
+    <E> PaginationHelper<E> createPaginationHelper();
 }

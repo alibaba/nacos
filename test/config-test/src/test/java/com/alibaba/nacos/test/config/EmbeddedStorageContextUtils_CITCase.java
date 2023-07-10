@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.test.config;
 
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
-import com.alibaba.nacos.config.server.service.sql.ModifyRequest;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -50,10 +50,10 @@ public class EmbeddedStorageContextUtils_CITCase {
             final int j = i;
             service.submit(() -> {
                 try {
-                    EmbeddedStorageContextUtils.addSqlContext("test_" + j, j);
-                    EmbeddedStorageContextUtils.addSqlContext("test_" + j * 10, j);
+                    EmbeddedStorageContextHolder.addSqlContext("test_" + j, j);
+                    EmbeddedStorageContextHolder.addSqlContext("test_" + j * 10, j);
                     
-                    List<ModifyRequest> list = EmbeddedStorageContextUtils.getCurrentSqlContext();
+                    List<ModifyRequest> list = EmbeddedStorageContextHolder.getCurrentSqlContext();
                     System.out.println(list);
                     Assert.assertEquals("test_" + j, list.get(0).getSql());
                     Assert.assertEquals("test_" + j * 10, list.get(0).getSql());

@@ -115,7 +115,12 @@ public class InstancePublishInfo implements Serializable {
     
     @Override
     public String toString() {
-        return "InstancePublishInfo{" + "ip='" + ip + '\'' + ", port=" + port + ", healthy=" + healthy + '}';
+        return "InstancePublishInfo{"
+                + "ip='" + ip + '\''
+                + ", port=" + port
+                + ", healthy=" + healthy
+                + ", cluster='" + cluster + '\''
+                + '}';
     }
     
     public static String genMetadataId(String ip, int port, String cluster) {

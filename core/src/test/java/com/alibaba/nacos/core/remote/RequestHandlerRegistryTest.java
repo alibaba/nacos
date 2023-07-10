@@ -18,7 +18,6 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -44,9 +43,6 @@ public class RequestHandlerRegistryTest {
     
     @InjectMocks
     private RequestHandlerRegistry registry;
-    
-    @Mock
-    private TpsMonitorManager tpsMonitorManager;
     
     @InjectMocks
     private ContextRefreshedEvent contextRefreshedEvent;

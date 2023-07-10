@@ -25,6 +25,7 @@ import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetails;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.ldap.core.LdapTemplate;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -40,23 +41,26 @@ import java.util.List;
  *
  * @author zjw
  */
+@Deprecated
 public class LdapAuthenticationProvider implements AuthenticationProvider {
     
-    private static final String DEFAULT_PASSWORD = "nacos";
-    
-    private static final String LDAP_PREFIX = "LDAP_";
-    
     private final NacosUserDetailsServiceImpl userDetailsService;
-
+    
     private final NacosRoleServiceImpl nacosRoleService;
-
+    
     private final LdapTemplate ldapTemplate;
     
+    private final String filterPrefix;
+    
+    private final boolean caseSensitive;
+    
     public LdapAuthenticationProvider(LdapTemplate ldapTemplate, NacosUserDetailsServiceImpl userDetailsService,
-            NacosRoleServiceImpl nacosRoleService) {
+            NacosRoleServiceImpl nacosRoleService, String filterPrefix, boolean caseSensitive) {
         this.ldapTemplate = ldapTemplate;
         this.nacosRoleService = nacosRoleService;
         this.userDetailsService = userDetailsService;
+        this.filterPrefix = filterPrefix;
+        this.caseSensitive = caseSensitive;
     }
     
     @Override
@@ -73,6 +77,10 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
             }
         }
         
+        if (!caseSensitive) {
+            username = StringUtils.lowerCase(username);
+        }
+        
         try {
             if (!ldapLogin(username, password)) {
                 return null;
@@ -84,12 +92,12 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
         
         UserDetails userDetails;
         try {
-            userDetails = userDetailsService.loadUserByUsername(LDAP_PREFIX + username);
+            userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
-            String nacosPassword = PasswordEncoderUtil.encode(DEFAULT_PASSWORD);
-            userDetailsService.createUser(LDAP_PREFIX + username, nacosPassword);
+            String nacosPassword = PasswordEncoderUtil.encode(AuthConstants.LDAP_DEFAULT_PASSWORD);
+            userDetailsService.createUser(AuthConstants.LDAP_PREFIX + username, nacosPassword);
             User user = new User();
-            user.setUsername(LDAP_PREFIX + username);
+            user.setUsername(AuthConstants.LDAP_PREFIX + username);
             user.setPassword(nacosPassword);
             userDetails = new NacosUserDetails(user);
         }
@@ -110,7 +118,7 @@ public class LdapAuthenticationProvider implements AuthenticationProvider {
     }
     
     private boolean ldapLogin(String username, String password) throws AuthenticationException {
-        return ldapTemplate.authenticate("", "(uid=" + username + ")", password);
+        return ldapTemplate.authenticate("", "(" + filterPrefix + "=" + username + ")", password);
     }
     
     @Override

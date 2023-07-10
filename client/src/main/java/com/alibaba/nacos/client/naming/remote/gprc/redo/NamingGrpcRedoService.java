@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 
 import java.util.HashSet;
@@ -73,13 +74,13 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     }
     
     @Override
-    public void onConnected() {
+    public void onConnected(Connection connection) {
         connected = true;
         LogUtils.NAMING_LOGGER.info("Grpc connection connect");
     }
     
     @Override
-    public void onDisConnect() {
+    public void onDisConnect(Connection connection) {
         connected = false;
         LogUtils.NAMING_LOGGER.warn("Grpc connection disconnect, mark to redo");
         synchronized (registeredInstances) {
@@ -132,7 +133,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
         synchronized (registeredInstances) {
             InstanceRedoData redoData = registeredInstances.get(key);
             if (null != redoData) {
-                redoData.setRegistered(true);
+                redoData.registered();
             }
         }
     }
@@ -149,6 +150,23 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
             InstanceRedoData redoData = registeredInstances.get(key);
             if (null != redoData) {
                 redoData.setUnregistering(true);
+                redoData.setExpectedRegistered(false);
+            }
+        }
+    }
+    
+    /**
+     * Instance deregister finished, mark unregistered status.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     */
+    public void instanceDeregistered(String serviceName, String groupName) {
+        String key = NamingUtils.getGroupedName(serviceName, groupName);
+        synchronized (registeredInstances) {
+            InstanceRedoData redoData = registeredInstances.get(key);
+            if (null != redoData) {
+                redoData.unregistered();
             }
         }
     }
@@ -160,8 +178,12 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param groupName   group name
      */
     public void removeInstanceForRedo(String serviceName, String groupName) {
+        String key = NamingUtils.getGroupedName(serviceName, groupName);
         synchronized (registeredInstances) {
-            registeredInstances.remove(NamingUtils.getGroupedName(serviceName, groupName));
+            InstanceRedoData redoData = registeredInstances.get(key);
+            if (null != redoData && !redoData.isExpectedRegistered()) {
+                registeredInstances.remove(key);
+            }
         }
     }
     
@@ -227,6 +249,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
             SubscriberRedoData redoData = subscribes.get(key);
             if (null != redoData) {
                 redoData.setUnregistering(true);
+                redoData.setExpectedRegistered(false);
             }
         }
     }
@@ -255,8 +278,12 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param cluster     cluster
      */
     public void removeSubscriberForRedo(String serviceName, String groupName, String cluster) {
+        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
-            subscribes.remove(ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster));
+            SubscriberRedoData redoData = subscribes.get(key);
+            if (null != redoData && !redoData.isExpectedRegistered()) {
+                subscribes.remove(key);
+            }
         }
     }
     
@@ -275,6 +302,14 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
             }
         }
         return result;
+    }
+    
+    /**
+     * get Cache service.
+     * @return cache service
+     */
+    public InstanceRedoData getRegisteredInstancesByKey(String combinedServiceName) {
+        return registeredInstances.get(combinedServiceName);
     }
     
     /**

@@ -260,6 +260,7 @@ const I18N_CONF = {
     operator: '操作人',
     sourceIp: '来源 IP',
     back: '返回',
+    namespace: '命名空间',
   },
   DashboardCard: {
     importantReminder0: '重要提醒',
@@ -289,6 +290,7 @@ const I18N_CONF = {
     configurationManagement8: '配置管理',
     queryResults: '查询到',
     articleMeetRequirements: '条满足要求的配置。',
+    fuzzydMode: '默认模糊匹配',
     fuzzyd: "添加通配符'*'进行模糊查询",
     defaultFuzzyd: '已开启默认模糊查询',
     fuzzyg: "添加通配符'*'进行模糊查询",
@@ -298,6 +300,8 @@ const I18N_CONF = {
     app1: '请输入应用名',
     tags: '标签',
     pleaseEnterTag: '请输入标签',
+    configDetailLabel: '配置项搜索',
+    configDetailH: '搜索具体配置项',
     application: '归属应用',
     operation: '操作',
     export: '导出查询结果',
@@ -381,6 +385,7 @@ const I18N_CONF = {
     confirmSyanx: '配置信息可能有语法错误, 确定提交吗?',
     dataIdExists: '配置已存在, 试试别的dataid和group的组合吧',
     dataRequired: '数据不能为空, 提交失败',
+    namespace: '命名空间',
   },
   CloneDialog: {
     terminate: '终止克隆',
@@ -442,6 +447,7 @@ const I18N_CONF = {
     dialogCurrentArea: '当前值',
     dialogOriginalArea: '原始值',
     publishFailed403: '发布失败,请检查是否有权限',
+    namespace: '命名空间',
   },
   EditorNameSpace: {
     notice: '提示',
@@ -539,6 +545,7 @@ const I18N_CONF = {
     groupInput: '请输入Group',
     namespaceSelect: '请选择命名空间',
     configNotFind: '未查询到指定配置,请重新选择',
+    namespace: '命名空间',
   },
   ConfigRollback: {
     rollBack: '回滚配置',
@@ -556,6 +563,7 @@ const I18N_CONF = {
     update: '更新',
     insert: '插入',
     additionalRollbackMessage: '此操作将删除以下配置！',
+    namespace: '命名空间',
   },
   UserManagement: {
     userManagement: '用户管理',
@@ -567,6 +575,10 @@ const I18N_CONF = {
     password: '密码',
     operation: '操作',
     refresh: '刷新',
+    query: '查询',
+    fuzzydMode: '默认模糊匹配',
+    defaultFuzzyd: '已开启默认模糊查询',
+    fuzzyd: "添加通配符'*'进行模糊查询",
   },
   NewUser: {
     createUser: '创建用户',
@@ -601,6 +613,10 @@ const I18N_CONF = {
     deleteRole: '删除',
     deleteRoleTip: '是否要删除该角色？',
     refresh: '刷新',
+    fuzzydMode: '默认模糊匹配',
+    defaultFuzzyd: '已开启默认模糊查询',
+    fuzzyd: "添加通配符'*'进行模糊查询",
+    query: '查询',
   },
   NewRole: {
     bindingRoles: '绑定角色',
@@ -624,6 +640,10 @@ const I18N_CONF = {
     writeOnly: '只写',
     readWrite: '读写',
     refresh: '刷新',
+    fuzzydMode: '默认模糊匹配',
+    defaultFuzzyd: '已开启默认模糊查询',
+    fuzzyd: "添加通配符'*'进行模糊查询",
+    query: '查询',
   },
   NewPermissions: {
     addPermission: '添加权限',

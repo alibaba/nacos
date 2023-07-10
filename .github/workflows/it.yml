@@ -1,7 +1,7 @@
 # This workflow will build a Java project with Maven
 # For more information see: https://help.github.com/actions/language-and-framework-guides/building-and-testing-java-with-maven
 
-name: Integration Test
+name: "Integration Test"
 
 on:
   push:
@@ -9,34 +9,40 @@ on:
   pull_request:
     branches: [ develop, v1.x-develop ]
 
+permissions:
+  contents: read # to fetch code (actions/checkout)
+
 jobs:
-  unix:
+  test:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest]
         java: [8, 8.0.192, 11, 11.0.3]
     steps:
-      - name: Cache Maven Repos
-        uses: actions/cache@v2
+      - name: "Cache Maven Repos"
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
           restore-keys: |
             ${{ runner.os }}-maven-
-      - uses: actions/checkout@v2
-      - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v2
+      - name: "Checkout"
+        uses: actions/checkout@v3
+      - name: "Set up JDK ${{ matrix.java }}"
+        uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
           architecture: x64
-      - name: Test Config
-        run: mvn clean package -Pcit-test
-      - name: Clean Env
-        run: mvn clean -Premove-test-data
-      - name: Test Naming
-        run: mvn clean package -Pnit-test
-      - name: Clean Env
-        run: mvn clean -Premove-test-data
+      - name: "Print maven version"
+        run: mvn -version
+      - name: "Test Config"
+        run: mvn clean package -Pcit-test -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: "Clean Env"
+        run: mvn clean -Premove-test-data -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: "Test Naming"
+        run: mvn clean package -Pnit-test -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+      - name: "Clean Env"
+        run: mvn clean -Premove-test-data -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 

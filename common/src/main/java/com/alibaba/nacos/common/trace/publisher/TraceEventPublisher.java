@@ -103,7 +103,6 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
         boolean success = this.queue.offer(event);
         if (!success) {
             LOGGER.warn("Trace Event Publish failed, event : {}, publish queue size : {}", event, currentEventSize());
-            return true;
         }
         return true;
     }

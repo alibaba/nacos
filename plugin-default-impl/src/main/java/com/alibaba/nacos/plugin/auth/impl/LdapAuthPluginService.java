@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.plugin.auth.impl;
 
+import com.alibaba.nacos.plugin.auth.impl.authenticate.LdapAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 /**
  * ldap auth plugin service.
+ *
  * @author onewe
  */
 public class LdapAuthPluginService extends NacosAuthPluginService {
@@ -27,5 +30,12 @@ public class LdapAuthPluginService extends NacosAuthPluginService {
     @Override
     public String getAuthServiceName() {
         return AuthConstants.LDAP_AUTH_PLUGIN_TYPE;
+    }
+    
+    @Override
+    protected void checkNacosAuthManager() {
+        if (null == authenticationManager) {
+            authenticationManager = ApplicationUtils.getBean(LdapAuthenticationManager.class);
+        }
     }
 }

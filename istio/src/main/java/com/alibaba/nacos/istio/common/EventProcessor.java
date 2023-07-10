@@ -39,17 +39,17 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class EventProcessor implements ApplicationListener<ContextRefreshedEvent> {
-
+    
     private static final int MAX_WAIT_EVENT_TIME = 100;
-
+    
     private NacosMcpService nacosMcpService;
-
+    
     private NacosXdsService nacosXdsService;
-
+    
     private NacosResourceManager resourceManager;
-
+    
     private final BlockingQueue<Event> events;
-
+    
     public EventProcessor() {
         events = new ArrayBlockingQueue<>(20);
     }
@@ -68,11 +68,13 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
             Thread.currentThread().interrupt();
         }
     }
-
-    public void handleEvents() {
-        new Consumer("handle events").start();
+    
+    private void handleEvents() {
+        Consumer handleEvents = new Consumer("handle events");
+        handleEvents.setDaemon(true);
+        handleEvents.start();
     }
-
+    
     @Override
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
         if (contextRefreshedEvent.getApplicationContext().getParent() == null) {
@@ -80,13 +82,13 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
             handleEvents();
         }
     }
-
+    
     private class Consumer extends Thread {
-
+        
         Consumer(String name) {
             setName(name);
         }
-
+        
         @Override
         @SuppressWarnings("InfiniteLoopStatement")
         public void run() {
@@ -115,23 +117,23 @@ public class EventProcessor implements ApplicationListener<ContextRefreshedEvent
             }
         }
     }
-
+    
     private boolean hasClientConnection() {
         return nacosMcpService.hasClientConnection() || nacosXdsService.hasClientConnection();
     }
-
+    
     private boolean needNewTask(boolean hasNewEvent, Future<Void> task) {
         return hasNewEvent && (task == null || task.isDone());
     }
-
+    
     private class EventHandleTask implements Callable<Void> {
-
+        
         private final Event event;
-
+        
         EventHandleTask(Event event) {
             this.event = event;
         }
-
+        
         @Override
         public Void call() throws Exception {
             ResourceSnapshot snapshot = resourceManager.createResourceSnapshot();

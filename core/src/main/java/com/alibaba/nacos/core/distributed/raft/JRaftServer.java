@@ -348,7 +348,7 @@ public class JRaftServer {
      * @return join success
      */
     void registerSelfToCluster(String groupId, PeerId selfIp, Configuration conf) {
-        for (; ; ) {
+        while (!isShutdown) {
             try {
                 List<PeerId> peerIds = cliService.getPeers(groupId, conf);
                 if (peerIds.contains(selfIp)) {

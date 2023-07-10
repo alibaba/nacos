@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 /**
  * Permission CRUD service.
@@ -54,4 +55,16 @@ public interface PermissionPersistService {
      * @param action action
      */
     void deletePermission(String role, String resource, String action);
+
+    Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize);
+
+    String generateLikeArgument(String s);
+    
+    /**
+     * create Pagination utils.
+     *
+     * @param <E> Generic object
+     * @return {@link PaginationHelper}
+     */
+    <E> PaginationHelper<E> createPaginationHelper();
 }

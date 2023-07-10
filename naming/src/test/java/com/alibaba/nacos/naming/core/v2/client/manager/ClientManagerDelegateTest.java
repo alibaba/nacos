@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager;
 
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.EphemeralIpPortClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
@@ -86,18 +87,20 @@ public class ClientManagerDelegateTest {
     
     @Test
     public void testChooseEphemeralIpPortClient() {
-        delegate.verifyClient(ephemeralIpPortId);
-        verify(connectionBasedClientManager, never()).verifyClient(ephemeralIpPortId);
-        verify(ephemeralIpPortClientManager).verifyClient(ephemeralIpPortId);
-        verify(persistentIpPortClientManager, never()).verifyClient(ephemeralIpPortId);
+        DistroClientVerifyInfo verify = new DistroClientVerifyInfo(ephemeralIpPortId, 0);
+        delegate.verifyClient(verify);
+        verify(connectionBasedClientManager, never()).verifyClient(verify);
+        verify(ephemeralIpPortClientManager).verifyClient(verify);
+        verify(persistentIpPortClientManager, never()).verifyClient(verify);
     }
     
     @Test
     public void testChoosePersistentIpPortClient() {
-        delegate.verifyClient(persistentIpPortId);
-        verify(connectionBasedClientManager, never()).verifyClient(persistentIpPortId);
-        verify(ephemeralIpPortClientManager, never()).verifyClient(persistentIpPortId);
-        verify(persistentIpPortClientManager).verifyClient(persistentIpPortId);
+        DistroClientVerifyInfo verify = new DistroClientVerifyInfo(persistentIpPortId, 0);
+        delegate.verifyClient(verify);
+        verify(connectionBasedClientManager, never()).verifyClient(verify);
+        verify(ephemeralIpPortClientManager, never()).verifyClient(verify);
+        verify(persistentIpPortClientManager).verifyClient(verify);
     }
     
     @Test
