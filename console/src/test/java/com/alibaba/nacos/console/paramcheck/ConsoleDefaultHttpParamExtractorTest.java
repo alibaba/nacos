@@ -38,6 +38,6 @@ public class ConsoleDefaultHttpParamExtractorTest {
         request.setRequestURI("/nacos/v2/console/namespace");
         HttpParamExtractorManager manager = HttpParamExtractorManager.getInstance();
         AbstractHttpParamExtractor extractor = manager.getExtractor(request.getRequestURI(), request.getMethod(), "console");
-        assertEquals(ConsoleDefaultHttpParamExtractor.class.getSimpleName(),extractor.getClass().getSimpleName());
+        assertEquals(ConsoleDefaultHttpParamExtractor.class.getSimpleName(), extractor.getClass().getSimpleName());
     }
 }

@@ -22,7 +22,7 @@ import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * The type Config default http param extractor test.
