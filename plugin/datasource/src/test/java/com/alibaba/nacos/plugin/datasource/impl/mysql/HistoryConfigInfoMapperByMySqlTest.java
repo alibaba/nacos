@@ -74,7 +74,8 @@ public class HistoryConfigInfoMapperByMySqlTest {
     public void testFindDeletedConfig() {
         MapperResult mapperResult = historyConfigInfoMapperByMySql.findDeletedConfig(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info WHERE op_type = 'D' AND gmt_modified >= ? and nid > ? order by nid limit ? ");
+                "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info "
+                        + "WHERE op_type = 'D' AND gmt_modified >= ? and nid > ? order by nid limit ? ");
         
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
     }

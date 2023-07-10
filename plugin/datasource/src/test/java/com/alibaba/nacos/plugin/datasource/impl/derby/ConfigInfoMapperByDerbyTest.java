@@ -68,8 +68,8 @@ public class ConfigInfoMapperByDerbyTest {
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
         context.putWhereParameter(FieldConstant.END_TIME, endTime);
         context.putWhereParameter(FieldConstant.IDS, ids);
-        context.putWhereParameter(FieldConstant.LAST_MAX_ID,lastMaxId);
-        context.putWhereParameter(FieldConstant.PAGE_SIZE,pageSize);
+        context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
+        context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
     }
     
     @Test
@@ -161,7 +161,8 @@ public class ConfigInfoMapperByDerbyTest {
     public void testFindChangeConfig() {
         MapperResult mapperResult = configInfoMapperByDerby.findChangeConfig(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT id, data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info WHERE gmt_modified >= ? and id > ? order by id  limit ? ");
+                "SELECT id, data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info "
+                        + "WHERE gmt_modified >= ? and id > ? order by id  limit ? ");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
     }
     
