@@ -29,6 +29,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.io.PrintWriter;
 
 /**
  * Config param check filter.
@@ -57,8 +58,10 @@ public class ConfigParamCheckFilter implements Filter {
             paramExtractor.extractParamAndCheck(req);
             chain.doFilter(req, resp);
         } catch (Exception e) {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Naming param check filter error," + ExceptionUtil.getAllExceptionMsg(e));
+            resp.setStatus(400);
+            PrintWriter writer = resp.getWriter();
+            writer.print(e.getMessage());
+            writer.flush();
         }
     }
 }
