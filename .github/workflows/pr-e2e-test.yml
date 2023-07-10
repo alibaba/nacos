@@ -173,7 +173,7 @@ jobs:
           test-code-git: "https://github.com/nacos-group/nacos-e2e.git"
           test-code-branch: "master"
           test-code-path: "java/nacos-2X"
-          test-cmd: 'mvn clean test -B -Dnacos.client.version=2.2.3'
+          test-cmd: 'mvn clean test -B'
           job-id: ${{ strategy.job-index }}
       - name: Publish Test Report
         uses: mikepenz/action-junit-report@v3
