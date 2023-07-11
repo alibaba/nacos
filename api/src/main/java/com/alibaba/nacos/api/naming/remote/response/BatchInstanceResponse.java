@@ -16,25 +16,18 @@
 
 package com.alibaba.nacos.api.naming.remote.response;
 
-import com.alibaba.nacos.api.remote.response.Response;
-
 /**
  * batch instance response.
  *
  * @author <a href="mailto:chenhao26@xiaomi.com">chenhao26</a>
  */
-public class BatchInstanceResponse extends Response {
-    
-    private String type;
+public class BatchInstanceResponse extends InstanceResponse {
     
     public BatchInstanceResponse() {
+        super();
     }
     
     public BatchInstanceResponse(String type) {
-        this.type = type;
-    }
-    
-    public void setType(String type) {
-        this.type = type;
+        super(type);
     }
 }

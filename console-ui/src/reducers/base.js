@@ -15,12 +15,15 @@
  */
 
 import request from '../utils/request';
-import { GET_STATE } from '../constants';
+import { GET_STATE, LOGINPAGE_ENABLED, GET_NOTICE } from '../constants';
 
 const initialState = {
   version: null,
   standaloneMode: '',
   functionMode: '',
+  loginPageEnabled: '',
+  authEnabled: '',
+  notice: '',
 };
 
 /**
@@ -33,21 +36,47 @@ const getState = () => dispatch =>
   request
     .get('v1/console/server/state')
     .then(res => {
+      localStorage.setItem(LOGINPAGE_ENABLED, res.login_page_enabled);
       dispatch({
         type: GET_STATE,
         data: {
           version: res.version,
           standaloneMode: res.standalone_mode,
           functionMode: res.function_mode,
+          loginPageEnabled: res.login_page_enabled,
+          authEnabled: res.auth_enabled,
         },
       });
     })
     .catch(() => {
+      localStorage.setItem(LOGINPAGE_ENABLED, null);
       dispatch({
         type: GET_STATE,
         data: {
           version: null,
           functionMode: null,
+          loginPageEnabled: null,
+          authEnabled: null,
+        },
+      });
+    });
+
+const getNotice = () => dispatch =>
+  request
+    .get('v1/console/server/announcement')
+    .then(res => {
+      dispatch({
+        type: GET_NOTICE,
+        data: {
+          notice: res.data,
+        },
+      });
+    })
+    .catch(() => {
+      dispatch({
+        type: GET_NOTICE,
+        data: {
+          notice: '',
         },
       });
     });
@@ -56,9 +85,11 @@ export default (state = initialState, action) => {
   switch (action.type) {
     case GET_STATE:
       return { ...state, ...action.data };
+    case GET_NOTICE:
+      return { ...state, ...action.data };
     default:
       return state;
   }
 };
 
-export { getState, login };
+export { getState, login, getNotice };

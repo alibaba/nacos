@@ -28,7 +28,6 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroCallback;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.core.distributed.distro.exception.DistroException;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -62,9 +61,6 @@ public class DistroClientTransportAgentTest {
     ServerMemberManager memberManager;
     
     @Mock
-    TpsMonitorManager tpsMonitorManager;
-    
-    @Mock
     ConfigurableApplicationContext context;
     
     @Mock
@@ -79,7 +75,6 @@ public class DistroClientTransportAgentTest {
     
     @Before
     public void setUp() throws Exception {
-        when(context.getBean(TpsMonitorManager.class)).thenReturn(tpsMonitorManager);
         ApplicationUtils.injectContext(context);
         EnvUtil.setEnvironment(new MockEnvironment());
         member = new Member();
@@ -95,7 +90,6 @@ public class DistroClientTransportAgentTest {
             return null;
         }).when(clusterRpcClientProxy).asyncRequest(eq(member), any(), any());
         // When run all project, the TpsNamingMonitor will be init by other unit test, will throw UnnecessaryStubbingException.
-        ApplicationUtils.getBean(TpsMonitorManager.class);
     }
     
     @After

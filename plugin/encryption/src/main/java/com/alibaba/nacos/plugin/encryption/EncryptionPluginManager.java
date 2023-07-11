@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class EncryptionPluginManager {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionPluginService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionPluginManager.class);
     
     private static final Map<String, EncryptionPluginService> ENCRYPTION_SPI_MAP = new ConcurrentHashMap<>();
     

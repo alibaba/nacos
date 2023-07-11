@@ -27,7 +27,7 @@ public class NacosRuntimeException extends RuntimeException {
     
     public static final String ERROR_MESSAGE_FORMAT = "errCode: %d, errMsg: %s ";
     
-    private int errCode;
+    private final int errCode;
     
     public NacosRuntimeException(int errCode) {
         super();
@@ -51,9 +51,5 @@ public class NacosRuntimeException extends RuntimeException {
     
     public int getErrCode() {
         return errCode;
-    }
-    
-    public void setErrCode(int errCode) {
-        this.errCode = errCode;
     }
 }

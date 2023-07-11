@@ -35,4 +35,16 @@ class JvmArgsPropertySource extends AbstractPropertySource {
     String getProperty(String key) {
         return properties.getProperty(key);
     }
+    
+    @Override
+    boolean containsKey(String key) {
+        return properties.containsKey(key);
+    }
+    
+    @Override
+    Properties asProperties() {
+        Properties properties = new Properties();
+        properties.putAll(this.properties);
+        return properties;
+    }
 }

@@ -22,6 +22,9 @@ package com.alibaba.nacos.common.utils;
  * @author Pixy Yuan on 2022/3/24
  */
 public class PropertyUtils {
+
+    private PropertyUtils() {
+    }
     
     private static final String PROCESSORS_ENV_NAME = "NACOS_COMMON_PROCESSORS";
     

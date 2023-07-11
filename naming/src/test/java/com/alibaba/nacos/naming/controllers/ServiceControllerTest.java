@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.junit.Assert;
@@ -33,7 +32,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -48,16 +46,11 @@ public class ServiceControllerTest extends BaseTest {
     private ServiceOperatorV2Impl serviceOperatorV2;
     
     @Mock
-    private UpgradeJudgement upgradeJudgement;
-    
-    @Mock
     private SubscribeManager subscribeManager;
     
     @Before
     public void before() {
         super.before();
-        ReflectionTestUtils.setField(serviceController, "upgradeJudgement", upgradeJudgement);
-        Mockito.when(upgradeJudgement.isUseGrpcFeatures()).thenReturn(true);
     }
     
     @Test
@@ -65,7 +58,7 @@ public class ServiceControllerTest extends BaseTest {
         
         Mockito.when(serviceOperatorV2.listService(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
                 .thenReturn(Collections.singletonList("DEFAULT_GROUP@@providers:com.alibaba.nacos.controller.test:1"));
-    
+        
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter("pageNo", "1");
         servletRequest.addParameter("pageSize", "10");
@@ -77,7 +70,6 @@ public class ServiceControllerTest extends BaseTest {
     @Test
     public void testCreate() {
         try {
-            Mockito.when(upgradeJudgement.isUseGrpcFeatures()).thenReturn(true);
             String res = serviceController.create(TEST_NAMESPACE, TEST_SERVICE_NAME, 0, "", "");
             Assert.assertEquals("ok", res);
         } catch (Exception e) {
@@ -128,10 +120,11 @@ public class ServiceControllerTest extends BaseTest {
     @Test
     public void testSearchService() {
         try {
-            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
+            Mockito.when(
+                    serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(Collections.singletonList("result"));
             
-            ObjectNode objectNode = serviceController.searchService(TEST_NAMESPACE, "", true);
+            ObjectNode objectNode = serviceController.searchService(TEST_NAMESPACE, "");
             Assert.assertEquals(1, objectNode.get("count").asInt());
         } catch (NacosException e) {
             e.printStackTrace();
@@ -139,11 +132,12 @@ public class ServiceControllerTest extends BaseTest {
         }
         
         try {
-            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
+            Mockito.when(
+                    serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(Arrays.asList("re1", "re2"));
             Mockito.when(serviceOperatorV2.listAllNamespace()).thenReturn(Arrays.asList("re1", "re2"));
             
-            ObjectNode objectNode = serviceController.searchService(null, "", true);
+            ObjectNode objectNode = serviceController.searchService(null, "");
             Assert.assertEquals(4, objectNode.get("count").asInt());
         } catch (NacosException e) {
             e.printStackTrace();

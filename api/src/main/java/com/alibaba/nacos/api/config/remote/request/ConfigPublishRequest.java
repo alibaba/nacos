@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,12 +27,6 @@ import java.util.Map;
  */
 public class ConfigPublishRequest extends AbstractConfigRequest {
     
-    String dataId;
-    
-    String group;
-    
-    String tenant;
-    
     String content;
     
     String casMd5;
@@ -41,6 +35,13 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
     
     public ConfigPublishRequest() {
     
+    }
+    
+    public ConfigPublishRequest(String dataId, String group, String tenant, String content) {
+        this.content = content;
+        super.setGroup(group);
+        super.setTenant(tenant);
+        super.setDataId(dataId);
     }
     
     /**
@@ -64,49 +65,6 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
             additionMap = new HashMap<>(2);
         }
         additionMap.put(key, value);
-    }
-    
-    public ConfigPublishRequest(String dataId, String group, String tenant, String content) {
-        this.content = content;
-        this.dataId = dataId;
-        this.group = group;
-        this.tenant = tenant;
-    }
-    
-    /**
-     * Getter method for property <tt>dataId</tt>.
-     *
-     * @return property value of dataId
-     */
-    public String getDataId() {
-        return dataId;
-    }
-    
-    /**
-     * Setter method for property <tt>dataId</tt>.
-     *
-     * @param dataId value to be assigned to property dataId
-     */
-    public void setDataId(String dataId) {
-        this.dataId = dataId;
-    }
-    
-    /**
-     * Getter method for property <tt>group</tt>.
-     *
-     * @return property value of group
-     */
-    public String getGroup() {
-        return group;
-    }
-    
-    /**
-     * Setter method for property <tt>group</tt>.
-     *
-     * @param group value to be assigned to property group
-     */
-    public void setGroup(String group) {
-        this.group = group;
     }
     
     /**
@@ -163,21 +121,4 @@ public class ConfigPublishRequest extends AbstractConfigRequest {
         this.additionMap = additionMap;
     }
     
-    /**
-     * Getter method for property <tt>tenant</tt>.
-     *
-     * @return property value of tenant
-     */
-    public String getTenant() {
-        return tenant;
-    }
-    
-    /**
-     * Setter method for property <tt>tenant</tt>.
-     *
-     * @param tenant value to be assigned to property tenant
-     */
-    public void setTenant(String tenant) {
-        this.tenant = tenant;
-    }
 }

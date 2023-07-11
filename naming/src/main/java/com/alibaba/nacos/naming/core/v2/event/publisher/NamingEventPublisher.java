@@ -101,7 +101,6 @@ public class NamingEventPublisher extends Thread implements ShardedEventPublishe
         if (!success) {
             Loggers.EVT_LOG.warn("Unable to plug in due to interruption, synchronize sending time, event : {}", event);
             handleEvent(event);
-            return true;
         }
         return true;
     }

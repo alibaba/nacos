@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -51,9 +50,9 @@ public class EncryptionHandler {
         if (!checkCipher(dataId)) {
             return Pair.with("", content);
         }
-        String algorithmName = parseAlgorithmName(dataId);
-        Optional<EncryptionPluginService> optional = EncryptionPluginManager.instance()
-                .findEncryptionService(algorithmName);
+        Optional<String> algorithmName = parseAlgorithmName(dataId);
+        Optional<EncryptionPluginService> optional = algorithmName
+                .flatMap(EncryptionPluginManager.instance()::findEncryptionService);
         if (!optional.isPresent()) {
             LOGGER.warn("[EncryptionHandler] [encryptHandler] No encryption program with the corresponding name found");
             return Pair.with("", content);
@@ -76,9 +75,9 @@ public class EncryptionHandler {
         if (!checkCipher(dataId)) {
             return Pair.with("", content);
         }
-        String algorithmName = parseAlgorithmName(dataId);
-        Optional<EncryptionPluginService> optional = EncryptionPluginManager.instance()
-                .findEncryptionService(algorithmName);
+        Optional<String> algorithmName = parseAlgorithmName(dataId);
+        Optional<EncryptionPluginService> optional = algorithmName
+                .flatMap(EncryptionPluginManager.instance()::findEncryptionService);
         if (!optional.isPresent()) {
             LOGGER.warn("[EncryptionHandler] [decryptHandler] No encryption program with the corresponding name found");
             return Pair.with("", content);
@@ -95,17 +94,17 @@ public class EncryptionHandler {
      * @param dataId dataId
      * @return algorithm name
      */
-    private static String parseAlgorithmName(String dataId) {
-        return Stream.of(dataId.split("-")).collect(Collectors.toList()).get(1);
+    private static Optional<String> parseAlgorithmName(String dataId) {
+        return Stream.of(dataId.split("-")).skip(1).findFirst();
     }
     
     /**
      * Check if encryption and decryption is needed.
      *
      * @param dataId dataId
-     * @return boolean
+     * @return boolean whether data id needs encrypt
      */
     private static boolean checkCipher(String dataId) {
-        return dataId.startsWith(PREFIX);
+        return dataId.startsWith(PREFIX) && !PREFIX.equals(dataId);
     }
 }

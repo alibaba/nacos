@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -242,7 +243,7 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     public ServerHttpAgent(Properties properties) throws NacosException {
-        this.serverListMgr = new ServerListManager(properties);
+        this.serverListMgr = new ServerListManager(NacosClientProperties.PROTOTYPE.derive(properties));
     }
     
     @Override
@@ -275,6 +276,7 @@ public class ServerHttpAgent implements HttpAgent {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
         ConfigHttpClientManager.getInstance().shutdown();
+        serverListMgr.shutdown();
         LOGGER.info("{} do shutdown stop", className);
     }
 }

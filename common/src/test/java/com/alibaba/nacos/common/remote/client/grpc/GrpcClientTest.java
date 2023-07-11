@@ -18,45 +18,66 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.common.remote.client.RpcClient;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import io.grpc.ManagedChannel;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.concurrent.TimeUnit;
 
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class GrpcClientTest {
 
-    GrpcClient grpcClient;
+    protected GrpcClient grpcClient;
 
-    Method createNewManagedChannelMethod;
+    @Mock(lenient = true)
+    RpcClientTlsConfig tlsConfig;
 
-    Method createNewChannelStubMethod;
+    protected Method createNewManagedChannelMethod;
 
-    ManagedChannel managedChannel;
+    protected Method createNewChannelStubMethod;
 
-    RpcClient.ServerInfo serverInfo;
+    protected ManagedChannel managedChannel;
+
+    protected RpcClient.ServerInfo serverInfo;
+
+    @Mock(lenient = true)
+    protected GrpcClientConfig clientConfig;
+
+    protected void init() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        when(clientConfig.channelKeepAlive()).thenReturn(6 * 60 * 1000);
+        when(clientConfig.channelKeepAliveTimeout()).thenReturn(TimeUnit.SECONDS.toMillis(20L));
+        RpcClient.ServerInfo serverInfo = spy(new RpcClient.ServerInfo("10.10.10.10", 8848));
+        createNewManagedChannelMethod = GrpcClient.class.getDeclaredMethod("createNewManagedChannel", String.class,
+                int.class);
+        createNewManagedChannelMethod.setAccessible(true);
+        int port = serverInfo.getServerPort() + grpcClient.rpcPortOffset();
+        managedChannel = (ManagedChannel) createNewManagedChannelMethod.invoke(grpcClient, serverInfo.getServerIp(),
+                port);
+    }
 
     @Before
-    public void setUp() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        grpcClient = spy(new GrpcClient("testClient") {
+    public void setUp() throws Exception {
+        when(clientConfig.name()).thenReturn("testClient");
+        grpcClient = spy(new GrpcClient(clientConfig) {
             @Override
             public int rpcPortOffset() {
                 return 1000;
             }
         });
-        RpcClient.ServerInfo serverInfo = spy(new RpcClient.ServerInfo("10.10.10.10", 8848));
-        createNewManagedChannelMethod = GrpcClient.class.getDeclaredMethod("createNewManagedChannel", String.class, int.class);
-        createNewManagedChannelMethod.setAccessible(true);
-        int port = serverInfo.getServerPort() + grpcClient.rpcPortOffset();
-        managedChannel = (ManagedChannel) createNewManagedChannelMethod.invoke(grpcClient, serverInfo.getServerIp(), port);
+        when(clientConfig.tlsConfig()).thenReturn(tlsConfig);
+
+        init();
     }
 
     @Test

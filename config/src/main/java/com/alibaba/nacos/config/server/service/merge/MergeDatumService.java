@@ -16,15 +16,17 @@
 
 package com.alibaba.nacos.config.server.service.merge;
 
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -54,19 +56,26 @@ public class MergeDatumService {
     
     final TaskManager mergeTasks;
     
-    private PersistService persistService;
-    
     static final int INIT_THREAD_COUNT = 40;
     
     static final AtomicInteger FINISHED = new AtomicInteger();
     
     static int total = 0;
     
+    private ConfigInfoPersistService configInfoPersistService;
+    
+    private ConfigInfoAggrPersistService configInfoAggrPersistService;
+    
     @Autowired
-    public MergeDatumService(PersistService persistService) {
-        this.persistService = persistService;
+    public MergeDatumService(ConfigInfoPersistService configInfoPersistService,
+            ConfigInfoAggrPersistService configInfoAggrPersistService,
+            ConfigInfoTagPersistService configInfoTagPersistService) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.configInfoAggrPersistService = configInfoAggrPersistService;
         mergeTasks = new TaskManager("com.alibaba.nacos.MergeDatum");
-        mergeTasks.setDefaultTaskProcessor(new MergeTaskProcessor(persistService, this));
+        mergeTasks.setDefaultTaskProcessor(
+                new MergeTaskProcessor(configInfoPersistService, configInfoAggrPersistService,
+                        configInfoTagPersistService, this));
     }
     
     static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
@@ -110,20 +119,20 @@ public class MergeDatumService {
         if (!canExecute()) {
             return;
         }
-        for (ConfigInfoChanged item : persistService.findAllAggrGroup()) {
+        for (ConfigInfoChanged item : configInfoAggrPersistService.findAllAggrGroup()) {
             addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIP());
         }
     }
     
     private boolean canExecute() {
-        if (!PropertyUtil.isEmbeddedStorage()) {
+        if (!DatasourceConfiguration.isEmbeddedStorage()) {
             return true;
         }
         if (EnvUtil.getStandaloneMode()) {
             return true;
         }
         ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
-        return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+        return protocolManager.getCpProtocol().isLeader(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP);
     }
     
     class MergeAllDataWorker extends Thread {
@@ -145,10 +154,10 @@ public class MergeDatumService {
                 String tenant = configInfo.getTenant();
                 try {
                     List<ConfigInfoAggr> datumList = new ArrayList<>();
-                    int rowCount = persistService.aggrConfigInfoCount(dataId, group, tenant);
+                    int rowCount = configInfoAggrPersistService.aggrConfigInfoCount(dataId, group, tenant);
                     int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
                     for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-                        Page<ConfigInfoAggr> page = persistService
+                        Page<ConfigInfoAggr> page = configInfoAggrPersistService
                                 .findConfigInfoAggrByPage(dataId, group, tenant, pageNo, PAGE_SIZE);
                         if (page != null) {
                             datumList.addAll(page.getPageItems());
@@ -162,13 +171,13 @@ public class MergeDatumService {
                     if (datumList.size() > 0) {
                         // merge
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
-                        persistService.insertOrUpdate(null, null, cf, time, null, false);
+                        configInfoPersistService.insertOrUpdate(null, null, cf, null);
                         LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
                                 datumList.size(), cf.getContent().length(), cf.getMd5(),
                                 ContentUtils.truncateContent(cf.getContent()));
                     } else {
                         // remove
-                        persistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
+                        configInfoPersistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
                         LOGGER.warn("[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
                                 + group);
                     }

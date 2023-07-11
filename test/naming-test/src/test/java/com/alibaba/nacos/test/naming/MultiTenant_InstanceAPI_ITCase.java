@@ -18,18 +18,14 @@ package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.client.naming.NacosNamingService;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.test.base.Params;
-import com.alibaba.nacos.test.utils.NamingTestUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -53,7 +49,6 @@ import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.TEST_GROUP_1;
 import static com.alibaba.nacos.test.naming.NamingBase.TEST_GROUP_2;
-import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT3_4_DOM_1;
 import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 
 /**
@@ -245,81 +240,6 @@ public class MultiTenant_InstanceAPI_ITCase {
     }
     
     /**
-     * @TCDescription : 多租户注册IP，deleteInstance接口，删除namespace-1中没有的IP
-     * @TestStep :
-     * @ExpectResult :
-     */
-    @Test
-    @Ignore("nacos 2.0 will not use beat to ensure healthy status")
-    public void multipleTenant_deleteInstance() throws Exception {
-        String serviceName = randomDomainName();
-        
-        naming1.registerInstance(serviceName, "11.11.11.11", 80);
-        
-        naming2.registerInstance(serviceName, "22.22.22.22", 80);
-        
-        naming.registerInstance(serviceName, "33.33.33.33", 8888);
-        naming.registerInstance(serviceName, "44.44.44.44", 8888);
-        
-        TimeUnit.SECONDS.sleep(3L);
-        //AP下，通过HTTP删除实例前必须删除心跳
-        NacosNamingService namingServiceImpl = (NacosNamingService) naming2;
-        NamingTestUtils.getBeatReactorByReflection(namingServiceImpl)
-                .removeBeatInfo(Constants.DEFAULT_GROUP + Constants.SERVICE_INFO_SPLITER + serviceName, "33.33.33.33",
-                        8888);
-        TimeUnit.SECONDS.sleep(3L);
-        ResponseEntity<String> response = request("/nacos/v1/ns/instance",
-                Params.newParams().appendParam("serviceName", serviceName).appendParam("ip", "33.33.33.33")
-                        .appendParam("port", "8888").appendParam("namespaceId", "namespace-1") //删除namespace-1中没有的IP
-                        .done(), String.class, HttpMethod.DELETE);
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        
-        response = request("/nacos/v1/ns/instance/list",
-                Params.newParams().appendParam("serviceName", serviceName) //获取naming中的实例
-                        .done(), String.class);
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JsonNode json = JacksonUtils.toObj(response.getBody());
-        Assert.assertEquals(2, json.get("hosts").size());
-    }
-    
-    /**
-     * @TCDescription : 多租户注册IP，group下，deleteInstance接口，正常删除IP
-     * @TestStep :
-     * @ExpectResult :
-     */
-    @Test
-    @Ignore("nacos 2.0 will not use beat to ensure healthy status")
-    public void multipleTenant_group_deleteInstance() throws Exception {
-        String serviceName = randomDomainName();
-        
-        naming1.registerInstance(serviceName, TEST_GROUP_1, "11.11.11.11", 80);
-        
-        naming2.registerInstance(serviceName, TEST_GROUP_2, "22.22.22.22", 80);
-        
-        TimeUnit.SECONDS.sleep(5L);
-        
-        //AP下，通过HTTP删除实例前必须删除心跳
-        NacosNamingService namingServiceImpl = (NacosNamingService) naming2;
-        NamingTestUtils.getBeatReactorByReflection(namingServiceImpl)
-                .removeBeatInfo(TEST_GROUP_2 + Constants.SERVICE_INFO_SPLITER + serviceName, "22.22.22.22", 80);
-        
-        ResponseEntity<String> response = request("/nacos/v1/ns/instance",
-                Params.newParams().appendParam("serviceName", serviceName)
-                        .appendParam("namespaceId", "namespace-2") //删除namespace-1中没有的IP
-                        .appendParam("groupName", TEST_GROUP_2).appendParam("ip", "22.22.22.22")
-                        .appendParam("port", TEST_PORT3_4_DOM_1).done(), String.class, HttpMethod.DELETE);
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        
-        response = request("/nacos/v1/ns/instance/list",
-                Params.newParams().appendParam("serviceName", serviceName) //获取naming中的实例
-                        .appendParam("namespaceId", "namespace-2").appendParam("groupName", TEST_GROUP_2).done(),
-                String.class);
-        Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JsonNode json = JacksonUtils.toObj(response.getBody());
-        Assert.assertEquals(0, json.get("hosts").size());
-    }
-    
-    /**
      * @TCDescription : 多租户注册IP，putInstance接口
      * @TestStep :
      * @ExpectResult :
@@ -491,7 +411,9 @@ public class MultiTenant_InstanceAPI_ITCase {
                         .appendParam("namespaceId", "namespace-1").appendParam("groupName", TEST_GROUP_1).done(),
                 String.class);
         Assert.assertTrue(response.getStatusCode().is2xxSuccessful());
-        JsonNode json = JacksonUtils.toObj(response.getBody());
+        String body = response.getBody();
+        System.out.println("multipleTenant_group_updateInstance_notExsitInstance received body:  " + body);
+        JsonNode json = JacksonUtils.toObj(body);
         Assert.assertEquals("33.33.33.33", json.get("hosts").get(0).get("ip").asText());
     }
     

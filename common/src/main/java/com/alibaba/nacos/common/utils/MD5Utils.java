@@ -26,20 +26,20 @@ import java.security.NoSuchAlgorithmException;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Utils {
+
+    private MD5Utils() {
+    }
     
     private static final char[] DIGITS_LOWER = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd',
             'e', 'f'};
     
-    private static final ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = new ThreadLocal<MessageDigest>() {
-        @Override
-        protected MessageDigest initialValue() {
-            try {
-                return MessageDigest.getInstance("MD5");
-            } catch (NoSuchAlgorithmException e) {
-                return null;
-            }
+    private static final ThreadLocal<MessageDigest> MESSAGE_DIGEST_LOCAL = ThreadLocal.withInitial(() -> {
+        try {
+            return MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            return null;
         }
-    };
+    });
     
     /**
      * Calculate MD5 hex string.

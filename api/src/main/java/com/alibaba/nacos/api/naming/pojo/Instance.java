@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Instance.
@@ -209,7 +210,7 @@ public class Instance implements Serializable {
     }
     
     private static boolean strEquals(final String str1, final String str2) {
-        return str1 == null ? str2 == null : str1.equals(str2);
+        return Objects.equals(str1, str2);
     }
     
     public long getInstanceHeartBeatInterval() {

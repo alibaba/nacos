@@ -27,6 +27,8 @@ public class IdentifyConstants {
     
     public static final String SECRET_KEY = "secretKey";
     
+    public static final String SECURITY_TOKEN_HEADER = "Spas-SecurityToken";
+    
     public static final String TENANT_ID = "tenantId";
     
     public static final String PROPERTIES_FILENAME = "spas.properties";

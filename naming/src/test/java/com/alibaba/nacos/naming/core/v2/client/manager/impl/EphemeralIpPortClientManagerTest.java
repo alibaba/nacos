@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 
+import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
+import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
@@ -67,7 +69,9 @@ public class EphemeralIpPortClientManagerTest {
     public void setUp() throws Exception {
         ephemeralIpPortClientManager = new EphemeralIpPortClientManager(distroMapper, switchDomain);
         when(client.getClientId()).thenReturn(ephemeralIpPortId);
+        when(client.getRevision()).thenReturn(1320L);
         ephemeralIpPortClientManager.clientConnected(client);
+        when(attributes.getClientAttribute(ClientConstants.REVISION, 0)).thenReturn(5120);
         ephemeralIpPortClientManager.syncClientConnected(syncedClientId, attributes);
     }
     
@@ -91,5 +95,19 @@ public class EphemeralIpPortClientManagerTest {
         assertTrue(ephemeralIpPortClientManager.contains(syncedClientId));
         String unUsedClientId = "127.0.0.1:8888#true";
         assertFalse(ephemeralIpPortClientManager.contains(unUsedClientId));
+    }
+    
+    @Test
+    public void testVerifyClient0() {
+        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 0)));
+        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(syncedClientId, 0)));
+    }
+    
+    @Test
+    public void testVerifyClient() {
+        assertFalse(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 1)));
+        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(ephemeralIpPortId, 1320)));
+        assertFalse(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(syncedClientId, 1)));
+        assertTrue(ephemeralIpPortClientManager.verifyClient(new DistroClientVerifyInfo(syncedClientId, 5120)));
     }
 }

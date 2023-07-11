@@ -65,8 +65,12 @@ public class RestAPI_ITCase extends NamingBase {
         JsonNode json = JacksonUtils.toObj(response.getBody());
         Assert.assertNotNull(json.get("serviceCount"));
         Assert.assertNotNull(json.get("instanceCount"));
-        Assert.assertNotNull(json.get("responsibleServiceCount"));
         Assert.assertNotNull(json.get("responsibleInstanceCount"));
+        Assert.assertNotNull(json.get("clientCount"));
+        Assert.assertNotNull(json.get("connectionBasedClientCount"));
+        Assert.assertNotNull(json.get("ephemeralIpPortClientCount"));
+        Assert.assertNotNull(json.get("persistentIpPortClientCount"));
+        Assert.assertNotNull(json.get("responsibleClientCount"));
     }
 
     /**

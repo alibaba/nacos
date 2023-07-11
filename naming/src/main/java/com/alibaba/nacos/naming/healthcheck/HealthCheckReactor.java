@@ -38,17 +38,6 @@ public class HealthCheckReactor {
     private static Map<String, ScheduledFuture> futureMap = new ConcurrentHashMap<>();
     
     /**
-     * Schedule health check task.
-     *
-     * @param task health check task
-     * @return scheduled future
-     */
-    public static ScheduledFuture<?> scheduleCheck(HealthCheckTask task) {
-        task.setStartTime(System.currentTimeMillis());
-        return GlobalExecutor.scheduleNamingHealth(task, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
-    }
-    
-    /**
      * Schedule health check task for v2.
      *
      * @param task health check task

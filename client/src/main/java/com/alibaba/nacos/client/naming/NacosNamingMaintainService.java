@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
@@ -72,15 +73,16 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
     
     private void init(Properties properties) throws NacosException {
-        ValidatorUtils.checkInitParam(properties);
-        namespace = InitUtils.initNamespaceForNaming(properties);
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ValidatorUtils.checkInitParam(nacosClientProperties);
+        namespace = InitUtils.initNamespaceForNaming(nacosClientProperties);
         InitUtils.initSerialization();
-        InitUtils.initWebRootContext(properties);
-        serverListManager = new ServerListManager(properties, namespace);
+        InitUtils.initWebRootContext(nacosClientProperties);
+        serverListManager = new ServerListManager(nacosClientProperties, namespace);
         securityProxy = new SecurityProxy(serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
-        serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties, null);
+        serverProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, nacosClientProperties);
     }
     
     private void initSecurityProxy(Properties properties) {
@@ -91,9 +93,10 @@ public class NacosNamingMaintainService implements NamingMaintainService {
             return t;
         });
         this.securityProxy.login(properties);
-        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(properties), 0,
-                SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
-    
+        this.executorService
+                .scheduleWithFixedDelay(() -> securityProxy.login(properties), 0, SECURITY_INFO_REFRESH_INTERVAL_MILLS,
+                        TimeUnit.MILLISECONDS);
+        
     }
     
     @Override

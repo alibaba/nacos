@@ -17,7 +17,7 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.service.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;

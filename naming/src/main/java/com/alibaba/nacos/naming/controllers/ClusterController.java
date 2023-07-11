@@ -26,10 +26,8 @@ import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.ClusterOperator;
-import com.alibaba.nacos.naming.core.ClusterOperatorV1Impl;
 import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
-import com.alibaba.nacos.naming.core.v2.upgrade.UpgradeJudgement;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -47,16 +45,9 @@ import javax.servlet.http.HttpServletRequest;
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)
 public class ClusterController {
     
-    private final UpgradeJudgement upgradeJudgement;
-    
-    private final ClusterOperatorV1Impl clusterOperatorV1;
-    
     private final ClusterOperatorV2Impl clusterOperatorV2;
     
-    public ClusterController(UpgradeJudgement upgradeJudgement, ClusterOperatorV1Impl clusterOperatorV1,
-            ClusterOperatorV2Impl clusterOperatorV2) {
-        this.upgradeJudgement = upgradeJudgement;
-        this.clusterOperatorV1 = clusterOperatorV1;
+    public ClusterController(ClusterOperatorV2Impl clusterOperatorV2) {
         this.clusterOperatorV2 = clusterOperatorV2;
     }
     
@@ -89,6 +80,6 @@ public class ClusterController {
     }
     
     private ClusterOperator judgeClusterOperator() {
-        return upgradeJudgement.isUseGrpcFeatures() ? clusterOperatorV2 : clusterOperatorV1;
+        return clusterOperatorV2;
     }
 }

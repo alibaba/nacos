@@ -165,13 +165,12 @@ class NameSpaceList extends React.Component {
     const namespacesBtn = namespaceList.map((obj, index) => {
       const style =
         obj.namespace === nownamespace
-          ? { color: '#00C1DE', paddingRight: 10, border: 'none', fontSize: 12 }
-          : { color: '#666', paddingRight: 10, border: 'none', fontSize: 12 };
+          ? { color: '#209BFA', paddingRight: 10, border: 'none', fontSize: 14 }
+          : { color: '#666', paddingRight: 10, border: 'none', fontSize: 14 };
       return (
-        <div key={index} style={{ float: 'left', cursor: 'pointer' }}>
-          {index === 0 ? '' : <span style={{ marginRight: 5, marginLeft: 5 }}>|</span>}
+        <div key={index} style={{ cursor: 'pointer' }}>
+          {index === 0 ? '' : <span style={{ marginRight: 8, color: '#999' }}>|</span>}
           <span
-            type={'light'}
             style={style}
             onClick={this.changeNameSpace.bind(this, obj.namespace, obj.namespaceShowName)}
             key={index}
@@ -181,23 +180,23 @@ class NameSpaceList extends React.Component {
         </div>
       );
     });
-    return <div style={{ paddingTop: 9 }}>{namespacesBtn}</div>;
+    return namespacesBtn;
   }
 
   render() {
     const namespaceList = this.state.namespaceList || [];
     const title = this.props.title || '';
-    const namespacestyle = {
-      marginTop: 5,
-      marginBottom: '10px',
-      paddingBottom: '10px',
-      borderBottom: '1px solid #ccc',
-    };
 
     return (
       <div
         className={namespaceList.length ? 'namespacewrapper' : ''}
-        style={namespaceList.length ? namespacestyle : {}}
+        style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          marginTop: 8,
+          marginBottom: 16,
+        }}
       >
         {}
         {title ? (
@@ -218,7 +217,7 @@ class NameSpaceList extends React.Component {
         ) : (
           ''
         )}
-        <div style={{ float: 'left' }}>{this.rendernamespace(namespaceList)}</div>
+        {this.rendernamespace(namespaceList)}
       </div>
     );
   }

@@ -43,6 +43,6 @@ public class PersistentHealthStatusSynchronizer implements HealthStatusSynchroni
             InstancePublishInfo instance) {
         Instance updateInstance = InstanceUtil.parseToApiInstance(service, instance);
         updateInstance.setHealthy(isHealthy);
-        persistentClientOperationService.registerInstance(service, updateInstance, client.getClientId());
+        persistentClientOperationService.updateInstance(service, updateInstance, client.getClientId());
     }
 }

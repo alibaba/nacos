@@ -173,7 +173,7 @@ class EditServiceDialog extends React.Component {
           <Form.Item
             required={isCreate}
             {...formItemLayout}
-            label={`${locale.serviceName}:`}
+            label={`${locale.serviceName}`}
             {...errors.name}
           >
             {!isCreate ? (
@@ -185,7 +185,7 @@ class EditServiceDialog extends React.Component {
           <Form.Item
             required
             {...formItemLayout}
-            label={`${locale.protectThreshold}:`}
+            label={`${locale.protectThreshold}`}
             {...errors.protectThreshold}
           >
             <Input
@@ -193,7 +193,7 @@ class EditServiceDialog extends React.Component {
               onChange={protectThreshold => this.onChangeCluster({ protectThreshold })}
             />
           </Form.Item>
-          <Form.Item {...formItemLayout} label={`${locale.groupName}:`}>
+          <Form.Item {...formItemLayout} label={`${locale.groupName}`}>
             <Input
               defaultValue={groupName}
               placeholder="DEFAULT_GROUP"
@@ -201,7 +201,7 @@ class EditServiceDialog extends React.Component {
               onChange={groupName => this.onChangeCluster({ groupName })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.metadata}:`} {...formItemLayout}>
+          <Form.Item label={`${locale.metadata}`} {...formItemLayout}>
             <MonacoEditor
               language="json"
               width={'100%'}
@@ -210,7 +210,7 @@ class EditServiceDialog extends React.Component {
               onChange={metadataText => this.onChangeCluster({ metadataText })}
             />
           </Form.Item>
-          <Form.Item label={`${locale.type}:`} {...formItemLayout}>
+          <Form.Item label={`${locale.type}`} {...formItemLayout}>
             <Select
               className="full-width"
               defaultValue={selector.type}
@@ -222,7 +222,7 @@ class EditServiceDialog extends React.Component {
             </Select>
           </Form.Item>
           {selector.type !== 'none' && (
-            <Form.Item label={`${locale.selector}:`} {...formItemLayout}>
+            <Form.Item label={`${locale.selector}`} {...formItemLayout}>
               <Input.TextArea
                 value={selector.expression}
                 onChange={expression =>
