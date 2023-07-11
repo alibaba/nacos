@@ -29,47 +29,51 @@ public class MetricsMonitorTest {
     
     @Test
     public void testServiceInfoMapSizeMonitor() {
-        MetricsMonitor.setServiceInfoMapSizeMonitor(8848);
+        int testCase = 8848;
+        MetricsMonitor.setServiceInfoMapSizeMonitor(testCase);
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Gauge gauge = r.find("nacos.monitor").tags("module", "naming", "name", "serviceInfoMapSize").gauge();
             Assert.assertNotNull(gauge);
-            Assert.assertEquals(8848, (int) gauge.value());
+            Assert.assertEquals(testCase, (int) gauge.value());
         });
     }
     
     @Test
     public void testListenerConfigCountMonitor() {
-        MetricsMonitor.setListenerConfigCountMonitor(8849);
+        int testCase = 8849;
+        MetricsMonitor.setListenerConfigCountMonitor(testCase);
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Gauge gauge = r.find("nacos.monitor").tags("module", "config", "name", "listenerConfigCount").gauge();
             Assert.assertNotNull(gauge);
-            Assert.assertEquals(8849, (int) gauge.value());
+            Assert.assertEquals(testCase, (int) gauge.value());
         });
     }
     
     @Test
     public void testConfigRequestMonitor() {
-        MetricsMonitor.recordConfigRequestMonitor("GET", "/testConfigRequest", "NA", 111L);
+        long testCase = 111L;
+        MetricsMonitor.recordConfigRequestMonitor("GET", "/testConfigRequest", "NA", testCase);
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Timer timer = r.find("nacos.client.request")
                     .tags("module", "config", "method", "GET", "url", "/testConfigRequest", "code", "NA").timer();
             Assert.assertNotNull(timer);
-            Assert.assertEquals(111L, (long) timer.totalTime(TimeUnit.MILLISECONDS));
+            Assert.assertEquals(testCase, (long) timer.totalTime(TimeUnit.MILLISECONDS));
         });
     }
     
     @Test
     public void testNamingRequestMonitor() {
-        MetricsMonitor.recordNamingRequestMonitor("GET", "/testNamingRequest", "NA", 222L);
+        long testCase = 222L;
+        MetricsMonitor.recordNamingRequestMonitor("GET", "/testNamingRequest", "NA", testCase);
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Timer timer = r.find("nacos.client.request")
                     .tags("module", "naming", "method", "GET", "url", "/testNamingRequest", "code", "NA").timer();
             Assert.assertNotNull(timer);
-            Assert.assertEquals(222L, (long) timer.totalTime(TimeUnit.MILLISECONDS));
+            Assert.assertEquals(testCase, (long) timer.totalTime(TimeUnit.MILLISECONDS));
         });
     }
 }
