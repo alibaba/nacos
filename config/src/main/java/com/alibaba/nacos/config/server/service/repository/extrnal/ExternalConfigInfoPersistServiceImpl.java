@@ -74,6 +74,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -749,7 +751,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                     TableConstant.CONFIG_INFO);
             return this.jt.queryForObject(configInfoMapper.select(
                             Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "type",
-                                    "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
+                                    "encrypted_data_key", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id")),
                     new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
@@ -1171,15 +1173,16 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
-    public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, final Timestamp endTime) {
+    public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize) {
         try {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
             
             MapperContext context = new MapperContext();
             context.putWhereParameter(FieldConstant.START_TIME, startTime);
-            context.putWhereParameter(FieldConstant.END_TIME, endTime);
-            
+            context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
+            context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
+    
             MapperResult mapperResult = configInfoMapper.findChangeConfig(context);
             List<Map<String, Object>> list = jt.queryForList(mapperResult.getSql(),
                     mapperResult.getParamList().toArray());
@@ -1360,12 +1363,14 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     public List<ConfigInfoWrapper> convertChangeConfig(List<Map<String, Object>> list) {
         List<ConfigInfoWrapper> configs = new ArrayList<>();
         for (Map<String, Object> map : list) {
+            Long id = (Long) map.get("id");
             String dataId = (String) map.get("data_id");
             String group = (String) map.get("group_id");
             String tenant = (String) map.get("tenant_id");
             String content = (String) map.get("content");
-            long mTime = ((Timestamp) map.get("gmt_modified")).getTime();
+            long mTime = ((LocalDateTime) map.get("gmt_modified")).toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
             ConfigInfoWrapper config = new ConfigInfoWrapper();
+            config.setId(id);
             config.setDataId(dataId);
             config.setGroup(group);
             config.setTenant(tenant);

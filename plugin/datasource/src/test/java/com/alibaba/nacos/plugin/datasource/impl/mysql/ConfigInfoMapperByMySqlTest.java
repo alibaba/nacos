@@ -48,6 +48,8 @@ public class ConfigInfoMapperByMySqlTest {
     
     String id = "123";
     
+    long lastMaxId = 1234;
+    
     List<Long> ids = Lists.newArrayList(1L, 2L, 3L, 5L, 144L);
     
     Timestamp startTime = new Timestamp(System.currentTimeMillis());
@@ -67,6 +69,8 @@ public class ConfigInfoMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
         context.putWhereParameter(FieldConstant.END_TIME, endTime);
         context.putWhereParameter(FieldConstant.IDS, ids);
+        context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
+        context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
         
     }
     
@@ -156,9 +160,9 @@ public class ConfigInfoMapperByMySqlTest {
     public void testFindChangeConfig() {
         MapperResult mapperResult = configInfoMapperByMySql.findChangeConfig(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key "
-                        + "FROM config_info WHERE gmt_modified >= ? AND gmt_modified <= ?");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, endTime});
+                "SELECT id, data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info"
+                        + " WHERE gmt_modified >= ? and id > ? order by id  limit ? ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
     }
     
     @Test

@@ -44,8 +44,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE;
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_GBK;
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
@@ -120,7 +118,7 @@ public class ConfigCacheService {
             boolean newLastModified = lastModifiedTs > ConfigCacheService.getLastModifiedTs(groupKey);
             
             if (md5 == null) {
-                md5 = MD5Utils.md5Hex(content, ENCODE);
+                md5 = MD5Utils.md5Hex(content, ENCODE_UTF8);
             }
             
             //check md5 & update local disk cache.
@@ -314,7 +312,7 @@ public class ConfigCacheService {
             
             boolean timestampChanged = lastModifiedTs > localTagLastModifiedTs;
             
-            final String md5 = MD5Utils.md5Hex(content, ENCODE_GBK);
+            final String md5 = MD5Utils.md5Hex(content, ENCODE_UTF8);
             
             String localContentTagMd5 = ConfigCacheService.getContentTagMd5(groupKey, tag);
             boolean md5Changed = !md5.equals(localContentTagMd5);
@@ -328,11 +326,10 @@ public class ConfigCacheService {
             }
             
             if (md5Changed) {
-                String md5Utf8 = MD5Utils.md5Hex(content, ENCODE_UTF8);
                 DUMP_LOG.warn(
-                        "[dump-tag] md5 changed, update local jvm cache, groupKey={},tag={}, md5UTF8={},oldMd5={},lastModifiedTs={}",
-                        new Object[] {groupKey, tag, md5Utf8, localContentTagMd5, lastModifiedTs});
-                updateTagMd5(groupKey, tag, md5Utf8, lastModifiedTs, encryptedDataKey4Tag);
+                        "[dump-tag] md5 changed, update local jvm cache, groupKey={},tag={}, newMd5={},oldMd5={},lastModifiedTs={}",
+                        new Object[] {groupKey, tag, md5, localContentTagMd5, lastModifiedTs});
+                updateTagMd5(groupKey, tag, md5, lastModifiedTs, encryptedDataKey4Tag);
             } else if (timestampChanged) {
                 DUMP_LOG.warn(
                         "[dump-tag] timestamp changed, update last modified in local jvm cache, groupKey={},tag={},"
@@ -379,35 +376,33 @@ public class ConfigCacheService {
             
             boolean newLastModified = lastModifiedTs > ConfigCacheService.getLastModifiedTs(groupKey);
             
-            String md5Gbk = MD5Utils.md5Hex(content, ENCODE_GBK);
-            String md5Utf8 = MD5Utils.md5Hex(content, ENCODE_UTF8);
+            String md5 = MD5Utils.md5Hex(content, ENCODE_UTF8);
             
             //check md5 & update local disk cache.
             String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
-            boolean md5Changed = !md5Gbk.equals(localContentMd5);
+            boolean md5Changed = !md5.equals(localContentMd5);
             if (md5Changed) {
                 if (!PropertyUtil.isDirectRead()) {
-                    DUMP_LOG.info("[dump-change] md5 changed, save to disk cache ,groupKey={}, md5={}", groupKey,
-                            md5Gbk);
+                    DUMP_LOG.info("[dump-change] md5 changed, save to disk cache ,groupKey={}, md5={}", groupKey, md5);
                     ConfigDiskServiceFactory.getInstance().saveToDisk(dataId, group, tenant, content);
                 } else {
                     //ignore to save disk cache in direct model
                 }
             } else {
                 DUMP_LOG.warn("[dump-change-ignore] ignore to save to disk cache. md5 consistent,groupKey={}, md5={}",
-                        groupKey, md5Gbk);
+                        groupKey, md5);
             }
             
             //check  md5 and timestamp & update local jvm cache.
             if (md5Changed) {
                 DUMP_LOG.info(
-                        "[dump-change] md5 changed, update md5 and timestamp in jvm cache ,groupKey={},newMd5UTF8={},oldMd5={},lastModifiedTs={}",
-                        groupKey, md5Utf8, localContentMd5, lastModifiedTs);
-                updateMd5(groupKey, md5Utf8, lastModifiedTs, encryptedDataKey);
+                        "[dump-change] md5 changed, update md5 and timestamp in jvm cache ,groupKey={},newMd5={},oldMd5={},lastModifiedTs={}",
+                        groupKey, md5, localContentMd5, lastModifiedTs);
+                updateMd5(groupKey, md5, lastModifiedTs, encryptedDataKey);
             } else if (newLastModified) {
                 DUMP_LOG.info(
                         "[dump-change] md5 consistent ,timestamp changed, update timestamp only in jvm cache ,groupKey={}, md5={},lastModifiedTs={}",
-                        groupKey, md5Utf8, lastModifiedTs);
+                        groupKey, md5, lastModifiedTs);
                 updateTimeStamp(groupKey, lastModifiedTs, encryptedDataKey);
             } else {
                 DUMP_LOG.warn(

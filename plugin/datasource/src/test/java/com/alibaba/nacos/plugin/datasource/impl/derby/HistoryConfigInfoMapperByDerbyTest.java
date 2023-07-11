@@ -37,6 +37,8 @@ public class HistoryConfigInfoMapperByDerbyTest {
     
     int limitSize = 6;
     
+    int lastMaxId = 123;
+    
     Timestamp startTime = new Timestamp(System.currentTimeMillis());
     
     Timestamp endTime = new Timestamp(System.currentTimeMillis());
@@ -50,6 +52,8 @@ public class HistoryConfigInfoMapperByDerbyTest {
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
         context.putWhereParameter(FieldConstant.END_TIME, endTime);
         context.putWhereParameter(FieldConstant.LIMIT_SIZE, limitSize);
+        context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
+        context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
         
     }
     
@@ -73,10 +77,10 @@ public class HistoryConfigInfoMapperByDerbyTest {
     public void testFindDeletedConfig() {
         MapperResult mapperResult = historyConfigInfoMapperByDerby.findDeletedConfig(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT DISTINCT data_id, group_id, tenant_id FROM his_config_info WHERE op_type = 'D' AND "
-                        + "gmt_modified >= ? AND gmt_modified <= ?");
+                "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info WHERE op_type = 'D' "
+                        + "AND gmt_modified >= ? and nid > ? order by nid limit ? ");
         
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, endTime});
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
     }
     
     @Test
