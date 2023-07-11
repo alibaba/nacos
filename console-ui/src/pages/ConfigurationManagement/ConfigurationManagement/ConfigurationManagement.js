@@ -1361,8 +1361,9 @@ class ConfigurationManagement extends React.Component {
                       locaid: 'configsDelete',
                       onClick: () => this.cloneSelectedDataConfirm(),
                     },
-                  ].map(item => (
+                  ].map((item, index) => (
                     <Button
+                      key={index}
                       warning={item.warning}
                       type="primary"
                       style={{ marginRight: 10 }}
