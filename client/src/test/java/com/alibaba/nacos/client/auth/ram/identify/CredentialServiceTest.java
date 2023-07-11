@@ -116,31 +116,4 @@ public class CredentialServiceTest extends TestCase {
         Assert.assertEquals(expect, actual);
         
     }
-    
-    @Test
-    public void testGetAkAndSk() {
-        CredentialService credentialService1 = CredentialService.getInstance();
-        Credentials c = new Credentials();
-        c.setAccessKey("ak");
-        c.setSecretKey("sk");
-        credentialService1.setCredential(c);
-        
-        Assert.assertEquals("ak", credentialService1.getAccessKey());
-        Assert.assertEquals("sk", credentialService1.getSecretKey());
-    }
-    
-    @Test
-    public void testSetSecretKey() {
-        CredentialService credentialService1 = CredentialService.getInstance();
-        Credentials c = new Credentials();
-        c.setAccessKey("ak");
-        c.setSecretKey("sk");
-        credentialService1.setCredential(c);
-        credentialService1.setAccessKey("ak1");
-        credentialService1.setSecretKey("sk1");
-        
-        Assert.assertEquals("ak1", credentialService1.getAccessKey());
-        Assert.assertEquals("sk1", credentialService1.getSecretKey());
-    }
-    
 }

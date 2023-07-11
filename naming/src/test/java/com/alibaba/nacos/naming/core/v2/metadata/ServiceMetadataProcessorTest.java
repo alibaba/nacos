@@ -28,7 +28,6 @@ import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.core.v2.upgrade.doublewrite.delay.DoubleWriteEventListener;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.protobuf.ByteString;
 import org.junit.Assert;
@@ -45,7 +44,6 @@ import java.util.List;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServiceMetadataProcessorTest {
@@ -65,16 +63,12 @@ public class ServiceMetadataProcessorTest {
     @Mock
     private ConfigurableApplicationContext context;
     
-    @Mock
-    private DoubleWriteEventListener doubleWriteEventListener;
-    
     private ServiceMetadataProcessor serviceMetadataProcessor;
     
     @Before
     public void setUp() throws Exception {
         Mockito.when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         ApplicationUtils.injectContext(context);
-        when(context.getBean(DoubleWriteEventListener.class)).thenReturn(doubleWriteEventListener);
         
         serviceMetadataProcessor = new ServiceMetadataProcessor(namingMetadataManager, protocolManager, serviceStorage);
     }
@@ -126,7 +120,6 @@ public class ServiceMetadataProcessorTest {
         Assert.assertTrue(addResponse.getSuccess());
         verify(namingMetadataManager).getServiceMetadata(service);
         verify(namingMetadataManager).updateServiceMetadata(service, serviceMetadata);
-        verify(context).getBean(DoubleWriteEventListener.class);
         
         // CHANGE
         operation.set(defaultInstance, "CHANGE");
@@ -135,7 +128,6 @@ public class ServiceMetadataProcessorTest {
         Assert.assertTrue(changeResponse.getSuccess());
         verify(namingMetadataManager, times(2)).getServiceMetadata(service);
         verify(namingMetadataManager).updateServiceMetadata(service, serviceMetadata);
-        verify(context, times(2)).getBean(DoubleWriteEventListener.class);
         
         // DELETE
         operation.set(defaultInstance, "DELETE");

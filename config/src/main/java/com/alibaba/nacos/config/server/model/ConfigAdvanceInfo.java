@@ -25,7 +25,7 @@ import java.io.Serializable;
  */
 public class ConfigAdvanceInfo implements Serializable {
     
-    static final long serialVersionUID = -1L;
+    static final long serialVersionUID = 3148031484920416869L;
     
     private long createTime;
     

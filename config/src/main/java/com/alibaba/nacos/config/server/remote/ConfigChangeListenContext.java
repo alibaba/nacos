@@ -173,4 +173,13 @@ public class ConfigChangeListenContext {
         return groupKeyContexts == null ? null : groupKeyContexts.get(groupKey);
     }
     
+    /**
+     * get connection count.
+     *
+     * @return count of long connections.
+     */
+    public int getConnectionCount() {
+        return connectionIdContext.size();
+    }
+    
 }

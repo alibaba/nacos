@@ -27,7 +27,6 @@ import java.util.Objects;
  * @author : ChenHao26
  * @ClassName: BatchInstancePublishInfo
  * @Date: 2022/4/21 16:19
- * @Description: TODO
  */
 public class BatchInstancePublishInfo extends InstancePublishInfo {
     

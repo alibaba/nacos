@@ -16,132 +16,56 @@
 
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.core.Cluster;
-import com.alibaba.nacos.naming.core.ClusterOperatorV1Impl;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.junit.Assert;
+import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.springframework.mock.web.MockServletContext;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.util.ReflectionTestUtils;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.hamcrest.CoreMatchers.isA;
-import static org.mockito.ArgumentMatchers.anyString;
+import javax.servlet.http.HttpServletRequest;
+
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doCallRealMethod;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(classes = MockServletContext.class)
-@WebAppConfiguration
+@RunWith(MockitoJUnitRunner.class)
 public class ClusterControllerTest extends BaseTest {
     
-    @InjectMocks
+    @Mock
+    private ClusterOperatorV2Impl clusterOperatorV2;
+    
+    @Mock
+    private HttpServletRequest request;
+    
     private ClusterController clusterController;
-    
-    @InjectMocks
-    private ClusterOperatorV1Impl clusterOperatorV1;
-    
-    private MockMvc mockmvc;
     
     @Before
     public void before() {
         super.before();
-        mockInjectSwitchDomain();
-        mockInjectDistroMapper();
-        mockmvc = MockMvcBuilders.standaloneSetup(clusterController).build();
-        ReflectionTestUtils.setField(clusterController, "upgradeJudgement", upgradeJudgement);
-        ReflectionTestUtils.setField(clusterController, "clusterOperatorV1", clusterOperatorV1);
-        try {
-            doCallRealMethod().when(serviceManager).checkServiceIsNull(eq(null), anyString(), anyString());
-        } catch (NacosException e) {
-            e.printStackTrace();
-        }
+        clusterController = new ClusterController(clusterOperatorV2);
     }
     
     @Test
     public void testUpdate() throws Exception {
-        Service service = new Service(TEST_SERVICE_NAME);
-        service.setNamespaceId("test-namespace");
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
-                .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"HTTP\"}")
-                .param("checkPort", "1").param("useInstancePort4Check", "true");
-        Assert.assertEquals("ok", mockmvc.perform(builder).andReturn().getResponse().getContentAsString());
-        
-        Cluster expectedCluster = new Cluster(TEST_CLUSTER_NAME, service);
-        Cluster actualCluster = service.getClusterMap().get(TEST_CLUSTER_NAME);
-        
-        Assert.assertEquals(expectedCluster, actualCluster);
-        Assert.assertEquals(1, actualCluster.getDefCkport());
-        Assert.assertTrue(actualCluster.isUseIPPort4Check());
+        mockRequestParameter(CommonParams.NAMESPACE_ID, "test-namespace");
+        mockRequestParameter(CommonParams.CLUSTER_NAME, TEST_CLUSTER_NAME);
+        mockRequestParameter(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME);
+        mockRequestParameter("checkPort", "1");
+        mockRequestParameter("useInstancePort4Check", "true");
+        mockRequestParameter("healthChecker", "{\"type\":\"HTTP\"}");
+        assertEquals("ok", clusterController.update(request));
+        verify(clusterOperatorV2)
+                .updateClusterMetadata(eq("test-namespace"), eq(TEST_SERVICE_NAME), eq(TEST_CLUSTER_NAME),
+                        any(ClusterMetadata.class));
     }
     
-    @Test
-    public void testUpdateNoService() throws Exception {
-        expectedException.expectCause(isA(NacosException.class));
-        expectedException.expectMessage("service not found, namespace: public, serviceName: test-service-not-found");
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
-                .param("serviceName", "test-service-not-found").param("healthChecker", "{\"type\":\"HTTP\"}")
-                .param("checkPort", "1").param("useInstancePort4Check", "true");
-        mockmvc.perform(builder);
+    private void mockRequestParameter(String paramKey, String value) {
+        when(request.getParameter(paramKey)).thenReturn(value);
     }
-    
-    @Test
-    public void testUpdateHealthCheckerType() throws Exception {
-        
-        Service service = new Service(TEST_SERVICE_NAME);
-        service.setNamespaceId(Constants.DEFAULT_NAMESPACE_ID);
-        when(serviceManager.getService(Constants.DEFAULT_NAMESPACE_ID, TEST_SERVICE_NAME)).thenReturn(service);
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
-                .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"123\"}")
-                .param("checkPort", "1").param("useInstancePort4Check", "true");
-        mockmvc.perform(builder);
-        
-        Assert.assertEquals("NONE", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
-        
-        MockHttpServletRequestBuilder builder2 = MockMvcRequestBuilders
-                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
-                .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"TCP\"}")
-                .param("checkPort", "1").param("useInstancePort4Check", "true");
-        mockmvc.perform(builder2);
-        
-        Assert.assertEquals("TCP", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
-        
-        MockHttpServletRequestBuilder builder3 = MockMvcRequestBuilders
-                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
-                .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"HTTP\"}")
-                .param("checkPort", "1").param("useInstancePort4Check", "true");
-        mockmvc.perform(builder3);
-        
-        Assert.assertEquals("HTTP", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
-        
-        MockHttpServletRequestBuilder builder4 = MockMvcRequestBuilders
-                .put(UtilsAndCommons.NACOS_NAMING_CONTEXT + "/cluster").param("clusterName", TEST_CLUSTER_NAME)
-                .param("serviceName", TEST_SERVICE_NAME).param("healthChecker", "{\"type\":\"MYSQL\"}")
-                .param("checkPort", "1").param("useInstancePort4Check", "true");
-        mockmvc.perform(builder4);
-        
-        Assert.assertEquals("MYSQL", service.getClusterMap().get(TEST_CLUSTER_NAME).getHealthChecker().getType());
-        
-    }
-    
 }

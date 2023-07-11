@@ -53,6 +53,16 @@ public interface CatalogService {
             throws NacosException;
     
     /**
+     * List all instances of specified services.
+     *
+     * @param namespaceId namespace id of service
+     * @param groupName   group name of service
+     * @param serviceName service name
+     * @return instances list
+     */
+    List<? extends Instance> listAllInstances(String namespaceId, String groupName, String serviceName);
+    
+    /**
      * List service by page.
      *
      * @param namespaceId        namespace id of service

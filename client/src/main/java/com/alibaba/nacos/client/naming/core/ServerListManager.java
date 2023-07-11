@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.core;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -79,20 +80,20 @@ public class ServerListManager implements ServerListFactory, Closeable {
     private long lastServerListRefreshTime = 0L;
     
     public ServerListManager(Properties properties) {
-        this(properties, null);
+        this(NacosClientProperties.PROTOTYPE.derive(properties), null);
     }
     
-    public ServerListManager(Properties properties, String namespace) {
+    public ServerListManager(NacosClientProperties properties, String namespace) {
         this.namespace = namespace;
         initServerAddr(properties);
-        if (!serverList.isEmpty()) {
-            currentIndex.set(new Random().nextInt(serverList.size()));
-        } else {
+        if (getServerList().isEmpty() && StringUtils.isEmpty(endpoint)) {
             throw new NacosLoadException("serverList is empty,please check configuration");
+        } else {
+            currentIndex.set(new Random().nextInt(getServerList().size()));
         }
     }
     
-    private void initServerAddr(Properties properties) {
+    private void initServerAddr(NacosClientProperties properties) {
         this.endpoint = InitUtils.initEndpoint(properties);
         if (StringUtils.isNotEmpty(endpoint)) {
             this.serversFromEndpoint = getServerListFromEndpoint();

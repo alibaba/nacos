@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.push.v2.task;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.core.remote.control.TpsMonitorManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
@@ -67,9 +66,6 @@ public class PushExecuteTaskTest {
     private ServiceStorage serviceStorage;
     
     @Mock
-    private TpsMonitorManager tpsMonitorManager;
-    
-    @Mock
     private NamingMetadataManager metadataManager;
     
     @Mock
@@ -95,7 +91,6 @@ public class PushExecuteTaskTest {
         when(delayTaskExecuteEngine.getMetadataManager()).thenReturn(metadataManager);
         when(metadataManager.getServiceMetadata(service)).thenReturn(Optional.empty());
         ApplicationUtils.injectContext(context);
-        when(context.getBean(TpsMonitorManager.class)).thenReturn(tpsMonitorManager);
     }
     
     @Test

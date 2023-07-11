@@ -25,7 +25,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <name>nacos-naming-test ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
     
     <artifactId>naming-test</artifactId>
     
@@ -35,6 +35,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <reuseForks>false</reuseForks>
+                    <forkCount>1</forkCount>
                     <argLine>-Dnacos.standalone=true -Dnacos.server.ip=127.0.0.1 -Dnacos.naming.clean.empty-service.expired-time=1800000</argLine>
                     <useUnlimitedThreads>true</useUnlimitedThreads>
                 </configuration>

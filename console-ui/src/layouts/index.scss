@@ -1396,30 +1396,27 @@ h6 {
 
 .main-container {
   height: calc(100vh - 66px);
-  .left-panel,
+  background-color: #fff!important;
   .right-panel {
-    float: left;
-    height: 100%;
-  }
-  .left-panel {
-    width: 180px;
-    background-color: #eaedf1;
-  }
-  .right-panel {
+    background-color: #fff;
     width: calc(100% - 180px);
-    padding: 10px;
+    padding: 12px 32px;
     overflow: scroll;
   }
   .nav-title {
     margin: 0;
+    // background-color: #E4F3FE;
     text-align: center;
     font-size: 14px;
     font-weight: bold;
-    line-height: 70px;
+    height: 72px;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
-    background-color: #d9dee4;
+    border-bottom: var(--shell-brand-navigation-ver-divider-size, 1px) var(--shell-brand-navigation-ver-divider-style, solid) var(--shell-brand-navigation-ver-divider-color, #EEEEEE);
+    display: flex;
+    justify-content: center;
+    align-items: center;
     span {
       margin-left: 5px;
     }

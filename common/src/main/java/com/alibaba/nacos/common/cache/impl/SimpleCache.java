@@ -32,7 +32,7 @@ public class SimpleCache<K, V> implements Cache<K, V> {
     private Map<K, V> cache;
     
     public SimpleCache(int size) {
-        cache = new HashMap(size);
+        cache = new HashMap<>(size);
     }
     
     @Override

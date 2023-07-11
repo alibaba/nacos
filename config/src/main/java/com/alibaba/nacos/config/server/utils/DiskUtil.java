@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import com.alibaba.nacos.common.pathencoder.PathEncoderManager;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -105,6 +106,10 @@ public class DiskUtil {
      * Returns the path of the server cache file.
      */
     public static File targetFile(String dataId, String group, String tenant) {
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
         File file;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), BASE_DIR);
@@ -121,6 +126,10 @@ public class DiskUtil {
      * Returns the path of cache file in server.
      */
     public static File targetBetaFile(String dataId, String group, String tenant) {
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
         File file;
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), BETA_DIR);
@@ -138,6 +147,10 @@ public class DiskUtil {
      */
     public static File targetTagFile(String dataId, String group, String tenant, String tag) {
         File file;
+        // fix https://github.com/alibaba/nacos/issues/10067
+        dataId = PathEncoderManager.getInstance().encode(dataId);
+        group = PathEncoderManager.getInstance().encode(group);
+        tenant = PathEncoderManager.getInstance().encode(tenant);
         if (StringUtils.isBlank(tenant)) {
             file = new File(EnvUtil.getNacosHome(), TAG_DIR);
         } else {
@@ -154,7 +167,7 @@ public class DiskUtil {
         File file = targetFile(dataId, group, tenant);
         if (file.exists()) {
             
-            try (FileInputStream fis = new FileInputStream(file);) {
+            try (FileInputStream fis = new FileInputStream(file)) {
                 return IoUtils.toString(fis, Constants.ENCODE);
             } catch (FileNotFoundException e) {
                 return StringUtils.EMPTY;

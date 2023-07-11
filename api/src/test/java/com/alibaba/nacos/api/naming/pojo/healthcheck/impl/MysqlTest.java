@@ -24,6 +24,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class MysqlTest {
@@ -58,5 +59,26 @@ public class MysqlTest {
         assertEquals("pwd", actual.getPwd());
         assertEquals("user", actual.getUser());
         assertEquals(Mysql.TYPE, actual.getType());
+    }
+    
+    @Test
+    public void testClone() throws CloneNotSupportedException {
+        Mysql cloned = mysql.clone();
+        assertEquals(mysql.hashCode(), cloned.hashCode());
+        assertTrue(mysql.equals(cloned));
+    }
+    
+    @Test
+    public void testNotEquals() throws CloneNotSupportedException {
+        assertFalse(mysql.equals(new Tcp()));
+        Mysql cloned = mysql.clone();
+        cloned.setUser("aaa");
+        assertFalse(mysql.equals(cloned));
+        cloned = mysql.clone();
+        cloned.setPwd("aaa");
+        assertFalse(mysql.equals(cloned));
+        cloned = mysql.clone();
+        cloned.setCmd("aaa");
+        assertFalse(mysql.equals(cloned));
     }
 }

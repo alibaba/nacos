@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.pojo;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -24,7 +25,9 @@ import java.util.List;
  * @author : ChenHao26
  * @Date: 2022/6/24 16:25
  */
-public class BatchInstanceData {
+public class BatchInstanceData implements Serializable {
+
+    private static final long serialVersionUID = 7845847904043098494L;
     
     private List<String> namespaces;
     

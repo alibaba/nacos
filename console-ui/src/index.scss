@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+
 html,
 body,
 :global(#root) {
@@ -64,7 +65,23 @@ body,
 :global(.viewFramework-product-navbar .product-nav-list li .active) {
   background-color: #fff !important;
 }
+.next-menu .next-menu-icon-arrow-down {
+  transform: rotate(0deg)!important;
+}
 
+li.next-menu-item:not(.next-disabled):hover, li.next-menu-item:not(.next-disabled).next-selected:hover, li.next-menu-item:not(.next-disabled).next-selected:focus:hover  {
+  background: #E4F3FE;
+  background: var(--nav-normal-sub-nav-hover-bg-color, #E4F3FE);
+  color: #209BFA;
+  color: var(--nav-normal-sub-nav-hover-text-color, #209BFA);
+}
+
+.next-menu.next-normal .next-menu-item.next-selected{
+  background: #E4F3FE!important;;
+  background: var(--nav-normal-sub-nav-selected-bg-color, #E4F3FE)!important;
+  color: #209BFA!important;
+  color: var(--nav-normal-sub-nav-selected-text-color, #209BFA)!important;
+}
 .clearfix:after {
   content: '.';
   clear: both;
@@ -76,6 +93,12 @@ body,
 
 .clearfix {
   zoom: 1;
+}
+
+.copy-icon {
+  cursor: pointer;
+  margin-left: 4px;
+  color: var(--color-link-1, #298dff);
 }
 
 .layouttitle {
@@ -578,7 +601,7 @@ form.vertical-margin-lg .form-group {
 .namespacewrapper {
   padding: 5px 15px;
   overflow: hidden;
-  background-color: #eee;
+  background-color: #efefef;
 }
 
 /*
@@ -1235,3 +1258,15 @@ form.vertical-margin-lg .form-group {
 .row-bg-red {
   background-color: #ffece4;
 }
+
+
+// 引用主题变量
+@import "~@alifd/theme-design-pro/variables.scss";
+
+$adv-icon-font-path: "http://at.alicdn.com/t/font_1533967_slipq25tezj.woff2" !default;
+$icon-font-path: $adv-icon-font-path;
+
+// 引用基础主题
+@import "~@alifd/next/index.scss";
+
+@import "~@alifd/theme-design-pro/icons.scss";

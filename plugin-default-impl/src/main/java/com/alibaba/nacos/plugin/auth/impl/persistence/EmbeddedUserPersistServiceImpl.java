@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
-import com.alibaba.nacos.config.server.configuration.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.repository.embedded.DatabaseOperate;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
+import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -43,8 +44,9 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Autowired
     private DatabaseOperate databaseOperate;
     
-    @Autowired
-    private EmbeddedStoragePersistServiceImpl persistService;
+    private static final String PATTERN_STR = "*";
+    
+    private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
     
     /**
      * Execute create user operation.
@@ -57,10 +59,10 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
         String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
         
         try {
-            EmbeddedStorageContextUtils.addSqlContext(sql, username, password, true);
+            EmbeddedStorageContextHolder.addSqlContext(sql, username, password, true);
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -73,10 +75,10 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     public void deleteUser(String username) {
         String sql = "DELETE FROM users WHERE username=?";
         try {
-            EmbeddedStorageContextUtils.addSqlContext(sql, username);
+            EmbeddedStorageContextHolder.addSqlContext(sql, username);
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -89,11 +91,11 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Override
     public void updateUserPassword(String username, String password) {
         try {
-            EmbeddedStorageContextUtils
+            EmbeddedStorageContextHolder
                     .addSqlContext("UPDATE users SET password = ? WHERE username=?", password, username);
             databaseOperate.blockUpdate();
         } finally {
-            EmbeddedStorageContextUtils.cleanAllContext();
+            EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
     
@@ -104,18 +106,23 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     }
     
     @Override
-    public Page<User> getUsers(int pageNo, int pageSize) {
+    public Page<User> getUsers(int pageNo, int pageSize, String username) {
         
-        PaginationHelper<User> helper = persistService.createPaginationHelper();
+        PaginationHelper<User> helper = createPaginationHelper();
         
-        String sqlCountRows = "SELECT count(*) FROM users WHERE ";
+        String sqlCountRows = "SELECT count(*) FROM users ";
         
-        String sqlFetchRows = "SELECT username,password FROM users WHERE ";
+        String sqlFetchRows = "SELECT username,password FROM users ";
         
-        String where = " 1=1 ";
+        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(username)) {
+            where.append(" AND username = ? ");
+            params.add(username);
+        }
         Page<User> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                        pageSize, USER_ROW_MAPPER);
+                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                        USER_ROW_MAPPER);
         if (pageInfo == null) {
             pageInfo = new Page<>();
             pageInfo.setTotalCount(0);
@@ -126,7 +133,45 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public List<String> findUserLikeUsername(String username) {
-        String sql = "SELECT username FROM users WHERE username LIKE ? ";
+        String sql = "SELECT username FROM users WHERE username LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
         return databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
+    }
+    
+    @Override
+    public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
+        String sqlCountRows = "SELECT count(*) FROM users ";
+        String sqlFetchRows = "SELECT username,password FROM users ";
+        
+        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(username)) {
+            where.append(" AND username LIKE ? ");
+            where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
+            params.add(generateLikeArgument(username));
+        }
+        
+        PaginationHelper<User> helper = createPaginationHelper();
+        return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                USER_ROW_MAPPER);
+    }
+    
+    @Override
+    public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
+        String fuzzySearchSign = "\\*";
+        String sqlLikePercentSign = "%";
+        if (s.contains(PATTERN_STR)) {
+            return s.replaceAll(fuzzySearchSign, sqlLikePercentSign);
+        } else {
+            return s;
+        }
+    }
+    
+    @Override
+    public <E> PaginationHelper<E> createPaginationHelper() {
+        return new EmbeddedPaginationHelperImpl<>(databaseOperate);
     }
 }

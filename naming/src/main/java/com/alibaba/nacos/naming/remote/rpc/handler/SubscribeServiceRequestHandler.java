@@ -25,7 +25,8 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.trace.event.NamingTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.SubscribeServiceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UnsubscribeServiceTraceEvent;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -74,11 +75,11 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
                 true, subscriber.getIp());
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
-            NotifyCenter.publishEvent(new NamingTraceEvent.SubscribeServiceTraceEvent(System.currentTimeMillis(),
+            NotifyCenter.publishEvent(new SubscribeServiceTraceEvent(System.currentTimeMillis(),
                     meta.getClientIp(), service.getNamespace(), service.getGroup(), service.getName()));
         } else {
             clientOperationService.unsubscribeService(service, subscriber, meta.getConnectionId());
-            NotifyCenter.publishEvent(new NamingTraceEvent.UnsubscribeServiceTraceEvent(System.currentTimeMillis(),
+            NotifyCenter.publishEvent(new UnsubscribeServiceTraceEvent(System.currentTimeMillis(),
                     meta.getClientIp(), service.getNamespace(), service.getGroup(), service.getName()));
         }
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);

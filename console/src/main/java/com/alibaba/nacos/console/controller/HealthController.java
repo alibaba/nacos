@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.console.controller;
 
-import com.alibaba.nacos.config.server.service.repository.PersistService;
-import com.alibaba.nacos.naming.controllers.OperatorController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.core.cluster.health.ModuleHealthCheckerHolder;
+import com.alibaba.nacos.core.cluster.health.ReadinessResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,18 +34,6 @@ import javax.servlet.http.HttpServletRequest;
 @RestController("consoleHealth")
 @RequestMapping("/v1/console/health")
 public class HealthController {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(HealthController.class);
-    
-    private final PersistService persistService;
-    
-    private final OperatorController apiCommands;
-    
-    @Autowired
-    public HealthController(PersistService persistService, OperatorController apiCommands) {
-        this.persistService = persistService;
-        this.apiCommands = apiCommands;
-    }
     
     /**
      * Whether the Nacos is in broken states or not, and cannot recover except by being restarted.
@@ -69,42 +54,11 @@ public class HealthController {
      */
     @GetMapping("/readiness")
     public ResponseEntity<String> readiness(HttpServletRequest request) {
-        boolean isConfigReadiness = isConfigReadiness();
-        boolean isNamingReadiness = isNamingReadiness(request);
-        
-        if (isConfigReadiness && isNamingReadiness) {
+        ReadinessResult result = ModuleHealthCheckerHolder.getInstance().checkReadiness();
+        if (result.isSuccess()) {
             return ResponseEntity.ok().body("OK");
         }
-        
-        if (!isConfigReadiness && !isNamingReadiness) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Config and Naming are not in readiness");
-        }
-        
-        if (!isConfigReadiness) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Config is not in readiness");
-        }
-        
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Naming is not in readiness");
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.getResultMessage());
     }
     
-    private boolean isConfigReadiness() {
-        // check db
-        try {
-            persistService.configInfoCount("");
-            return true;
-        } catch (Exception e) {
-            LOGGER.error("Config health check fail.", e);
-        }
-        return false;
-    }
-    
-    private boolean isNamingReadiness(HttpServletRequest request) {
-        try {
-            apiCommands.metrics(request);
-            return true;
-        } catch (Exception e) {
-            LOGGER.error("Naming health check fail.", e);
-        }
-        return false;
-    }
 }

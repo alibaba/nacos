@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.constant;
 
+import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+
 /**
  * All the constants.
  *
@@ -43,13 +45,13 @@ public class AuthConstants {
     
     public static final String NACOS_USER_KEY = "nacosuser";
     
-    public static final String TOKEN_SECRET_KEY = "token.secret.key";
+    public static final String TOKEN_SECRET_KEY = "nacos.core.auth.plugin.nacos.token.secret.key";
     
     public static final String DEFAULT_TOKEN_SECRET_KEY = "";
     
-    public static final String TOKEN_EXPIRE_SECONDS = "token.expire.seconds";
+    public static final String TOKEN_EXPIRE_SECONDS = "nacos.core.auth.plugin.nacos.token.expire.seconds";
     
-    public static final String DEFAULT_TOKEN_EXPIRE_SECONDS = "18000";
+    public static final Long DEFAULT_TOKEN_EXPIRE_SECONDS = 18_000L;
     
     public static final String NACOS_CORE_AUTH_LDAP_URL = "nacos.core.auth.ldap.url";
     
@@ -60,4 +62,20 @@ public class AuthConstants {
     public static final String NACOS_CORE_AUTH_LDAP_USERDN = "nacos.core.auth.ldap.userDn";
     
     public static final String NACOS_CORE_AUTH_LDAP_PASSWORD = "nacos.core.auth.ldap.password";
+    
+    public static final String NACOS_CORE_AUTH_LDAP_FILTER_PREFIX = "nacos.core.auth.ldap.filter.prefix";
+    
+    public static final String NACOS_CORE_AUTH_CASE_SENSITIVE = "nacos.core.auth.ldap.case.sensitive";
+    
+    /**
+     * LDAP Ignore partial result exception.
+     */
+    public static final String NACOS_CORE_AUTH_IGNORE_PARTIAL_RESULT_EXCEPTION = "nacos.core.auth.ldap.ignore.partial.result.exception";
+    
+    @Deprecated
+    public static final String LDAP_DEFAULT_PASSWORD = "nacos";
+    
+    public static final String LDAP_DEFAULT_ENCODED_PASSWORD = PasswordEncoderUtil.encode(LDAP_DEFAULT_PASSWORD);
+    
+    public static final String LDAP_PREFIX = "LDAP_";
 }

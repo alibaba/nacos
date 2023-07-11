@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
@@ -113,7 +114,7 @@ public class CredentialWatcher {
             }
             if (propertyPath == null || propertyPath.isEmpty()) {
                 
-                String value = System.getProperty("spas.identity");
+                String value = NacosClientProperties.PROTOTYPE.getProperty("spas.identity");
                 if (StringUtils.isNotEmpty(value)) {
                     propertyPath = value;
                 }
@@ -157,8 +158,8 @@ public class CredentialWatcher {
         String tenantId = null;
         if (propertiesIS == null) {
             propertyPath = null;
-            accessKey = System.getenv(IdentifyConstants.ENV_ACCESS_KEY);
-            secretKey = System.getenv(IdentifyConstants.ENV_SECRET_KEY);
+            accessKey = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_ACCESS_KEY);
+            secretKey = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.ENV_SECRET_KEY);
             if (accessKey == null && secretKey == null) {
                 if (init) {
                     SPAS_LOGGER.info("{} No credential found", appName);

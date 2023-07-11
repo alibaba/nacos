@@ -16,9 +16,10 @@
 
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.common.cache.Cache;
-import com.alibaba.nacos.common.cache.builder.CacheBuilder;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.RateLimiter;
 import org.slf4j.Logger;
 
@@ -37,15 +38,8 @@ public class Limiter {
     
     private static final int LIMIT_TIME = 1000;
     
-    private static final Cache<String, RateLimiter> CACHE;
-    
-    static {
-        CACHE = CacheBuilder.<String, RateLimiter>builder()
-                .expireNanos(1, TimeUnit.MINUTES)
-                .initializeCapacity(CAPACITY_SIZE)
-                .sync(true)
-                .build();
-    }
+    private static final Cache<String, RateLimiter> CACHE = CacheBuilder.newBuilder().initialCapacity(CAPACITY_SIZE)
+            .expireAfterAccess(1, TimeUnit.MINUTES).build();
     
     private static final String LIMIT_TIME_PROPERTY = "limitTime";
     
@@ -56,7 +50,7 @@ public class Limiter {
     
     static {
         try {
-            String limitTimeStr = System.getProperty(LIMIT_TIME_PROPERTY, String.valueOf(limit));
+            String limitTimeStr = NacosClientProperties.PROTOTYPE.getProperty(LIMIT_TIME_PROPERTY, String.valueOf(limit));
             limit = Double.parseDouble(limitTimeStr);
             LOGGER.info("limitTime:{}", limit);
         } catch (Exception e) {

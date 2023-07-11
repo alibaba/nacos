@@ -24,7 +24,8 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 
@@ -41,7 +42,9 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
     
     final DumpService dumpService;
     
-    final PersistService persistService;
+    final ConfigInfoPersistService configInfoPersistService;
+    
+    final HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
     final Timestamp startTime;
     
@@ -49,7 +52,8 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
     
     public DumpChangeProcessor(DumpService dumpService, Timestamp startTime, Timestamp endTime) {
         this.dumpService = dumpService;
-        this.persistService = dumpService.getPersistService();
+        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
+        this.historyConfigInfoPersistService = dumpService.getHistoryConfigInfoPersistService();
         this.startTime = startTime;
         this.endTime = endTime;
     }
@@ -59,7 +63,7 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
         LogUtil.DEFAULT_LOG.warn("quick start; startTime:{},endTime:{}", startTime, endTime);
         LogUtil.DEFAULT_LOG.warn("updateMd5 start");
         long startUpdateMd5 = System.currentTimeMillis();
-        List<ConfigInfoWrapper> updateMd5List = persistService.listAllGroupKeyMd5();
+        List<ConfigInfoWrapper> updateMd5List = configInfoPersistService.listAllGroupKeyMd5();
         LogUtil.DEFAULT_LOG.warn("updateMd5 count:{}", updateMd5List.size());
         for (ConfigInfoWrapper config : updateMd5List) {
             final String groupKey = GroupKey2.getKey(config.getDataId(), config.getGroup());
@@ -71,10 +75,10 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
         
         LogUtil.DEFAULT_LOG.warn("deletedConfig start");
         long startDeletedConfigTime = System.currentTimeMillis();
-        List<ConfigInfo> configDeleted = persistService.findDeletedConfig(startTime, endTime);
+        List<ConfigInfo> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime, endTime);
         LogUtil.DEFAULT_LOG.warn("deletedConfig count:{}", configDeleted.size());
         for (ConfigInfo configInfo : configDeleted) {
-            if (persistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant())
+            if (configInfoPersistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant())
                     == null) {
                 ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant());
             }
@@ -84,7 +88,7 @@ public class DumpChangeProcessor implements NacosTaskProcessor {
         
         LogUtil.DEFAULT_LOG.warn("changeConfig start");
         final long startChangeConfigTime = System.currentTimeMillis();
-        List<ConfigInfoWrapper> changeConfigs = persistService.findChangeConfig(startTime, endTime);
+        List<ConfigInfoWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime, endTime);
         LogUtil.DEFAULT_LOG.warn("changeConfig count:{}", changeConfigs.size());
         for (ConfigInfoWrapper cf : changeConfigs) {
           

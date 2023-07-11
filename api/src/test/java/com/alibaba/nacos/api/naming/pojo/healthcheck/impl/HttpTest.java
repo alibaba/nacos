@@ -76,4 +76,25 @@ public class HttpTest {
         assertEquals("x:a|y:", actual.getHeaders());
         assertEquals(Http.TYPE, actual.getType());
     }
+    
+    @Test
+    public void testClone() throws CloneNotSupportedException {
+        Http cloned = http.clone();
+        assertEquals(http.hashCode(), cloned.hashCode());
+        assertTrue(http.equals(cloned));
+    }
+    
+    @Test
+    public void testNotEquals() throws CloneNotSupportedException {
+        assertFalse(http.equals(new Tcp()));
+        Http cloned = http.clone();
+        cloned.setPath("aaa");
+        assertFalse(http.equals(cloned));
+        cloned = http.clone();
+        cloned.setHeaders("aaa");
+        assertFalse(http.equals(cloned));
+        cloned = http.clone();
+        cloned.setExpectedResponseCode(500);
+        assertFalse(http.equals(cloned));
+    }
 }

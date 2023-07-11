@@ -17,12 +17,12 @@
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.configuration.ConditionOnExternalStorage;
-import com.alibaba.nacos.config.server.model.Page;
-import com.alibaba.nacos.config.server.service.repository.PaginationHelper;
-import com.alibaba.nacos.config.server.service.repository.extrnal.ExternalStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
+import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -44,19 +44,18 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
 @Component
 public class ExternalPermissionPersistServiceImpl implements PermissionPersistService {
     
-    @Autowired
-    private ExternalStoragePersistServiceImpl persistService;
-    
     private JdbcTemplate jt;
+    
+    private static final String PATTERN_STR = "*";
     
     @PostConstruct
     protected void init() {
-        jt = persistService.getJdbcTemplate();
+        jt = DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
     }
     
     @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
-        PaginationHelper<PermissionInfo> helper = persistService.createPaginationHelper();
+        PaginationHelper<PermissionInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
         String sqlFetchRows = "SELECT role,resource,action FROM permissions WHERE ";
@@ -127,4 +126,56 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         }
     }
     
+    @Override
+    public Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize) {
+        PaginationHelper<PermissionInfo> helper = createPaginationHelper();
+        
+        String sqlCountRows = "SELECT count(*) FROM permissions ";
+        String sqlFetchRows = "SELECT role,resource,action FROM permissions ";
+        
+        StringBuilder where = new StringBuilder(" WHERE 1=1");
+        List<String> params = new ArrayList<>();
+        if (StringUtils.isNotBlank(role)) {
+            where.append(" AND role LIKE ?");
+            params.add(generateLikeArgument(role));
+        }
+        
+        try {
+            Page<PermissionInfo> pageInfo = helper
+                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                            PERMISSION_ROW_MAPPER);
+            
+            if (pageInfo == null) {
+                pageInfo = new Page<>();
+                pageInfo.setTotalCount(0);
+                pageInfo.setPageItems(new ArrayList<>());
+            }
+            
+            return pageInfo;
+            
+        } catch (CannotGetJdbcConnectionException e) {
+            LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
+            throw e;
+        }
+    }
+    
+    @Override
+    public String generateLikeArgument(String s) {
+        String underscore = "_";
+        if (s.contains(underscore)) {
+            s = s.replaceAll(underscore, "\\\\_");
+        }
+        String fuzzySearchSign = "\\*";
+        String sqlLikePercentSign = "%";
+        if (s.contains(PATTERN_STR)) {
+            return s.replaceAll(fuzzySearchSign, sqlLikePercentSign);
+        } else {
+            return s;
+        }
+    }
+    
+    @Override
+    public <E> PaginationHelper<E> createPaginationHelper() {
+        return new ExternalStoragePaginationHelperImpl<>(jt);
+    }
 }

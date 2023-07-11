@@ -20,11 +20,15 @@ import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.Callback;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
+import com.alibaba.nacos.common.http.HttpClientFactory;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.naming.misc.HttpClientManager.ProcessorHttpClientFactory;
+import com.alibaba.nacos.sys.env.EnvUtil;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -32,8 +36,11 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.Environment;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashMap;
@@ -57,13 +64,23 @@ public class NacosAsyncRestTemplate_ITCase {
     private NacosAsyncRestTemplate nacosRestTemplate = HttpClientBeanHolder
             .getNacosAsyncRestTemplate(LoggerFactory.getLogger(NacosAsyncRestTemplate_ITCase.class));
     
+    private static final HttpClientFactory PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY = new ProcessorHttpClientFactory();
+    
+    private NacosAsyncRestTemplate processorRestTemplate = null;
+    
     private final String CONFIG_INSTANCE_PATH = "/nacos/v1/ns";
     
     private String IP = null;
     
+    @Autowired
+    private Environment environment;
+    
     @Before
     public void init() throws NacosException {
         IP = String.format("http://localhost:%d", port);
+        EnvUtil.setEnvironment((ConfigurableEnvironment) environment);
+        processorRestTemplate = HttpClientBeanHolder
+                .getNacosAsyncRestTemplate(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY);
     }
     
     private class CallbackMap<T> implements Callback<T> {
@@ -105,6 +122,22 @@ public class NacosAsyncRestTemplate_ITCase {
         param.put("ip", "11.11.11.11");
         CallbackMap<String> callbackMap = new CallbackMap<>();
         nacosRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
+        Thread.sleep(2000);
+        HttpRestResult<String> restResult = callbackMap.getRestResult();
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
+        Assert.assertTrue(restResult.ok());
+    }
+    
+    @Test
+    public void test_url_post_form_by_processor() throws Exception {
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
+        Map<String, String> param = new HashMap<>();
+        param.put("serviceName", "app-test2");
+        param.put("port", "8080");
+        param.put("ip", "11.11.11.11");
+        CallbackMap<String> callbackMap = new CallbackMap<>();
+        processorRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
         Thread.sleep(2000);
         HttpRestResult<String> restResult = callbackMap.getRestResult();
         System.out.println(restResult.getData());

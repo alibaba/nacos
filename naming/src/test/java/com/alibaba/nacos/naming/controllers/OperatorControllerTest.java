@@ -17,14 +17,14 @@
 
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
-import com.alibaba.nacos.naming.consistency.persistent.raft.RaftCore;
 import com.alibaba.nacos.naming.core.DistroMapper;
-import com.alibaba.nacos.naming.core.Service;
-import com.alibaba.nacos.naming.core.ServiceManager;
+import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.misc.SwitchManager;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -67,13 +67,7 @@ public class OperatorControllerTest {
     private ServerStatusManager serverStatusManager;
     
     @Mock
-    private ServiceManager serviceManager;
-    
-    @Mock
     private ClientManager clientManager;
-    
-    @Mock
-    private RaftCore raftCore;
     
     @Mock
     private DistroMapper distroMapper;
@@ -99,17 +93,6 @@ public class OperatorControllerTest {
     }
     
     @Test
-    public void testSwitchDomainForNotSupportUpgrade() {
-        MockEnvironment environment = new MockEnvironment();
-        EnvUtil.setEnvironment(environment);
-        SwitchDomain switchDomain = operatorController.switches(new MockHttpServletRequest());
-        SwitchDomain expected = new SwitchDomain();
-        expected.update(switchDomain);
-        expected.setDoubleWriteEnabled(false);
-        Assert.assertEquals(expected.toString(), switchDomain.toString());
-    }
-    
-    @Test
     public void testUpdateSwitch() {
         try {
             String res = operatorController.updateSwitch(true, "test", "test");
@@ -123,43 +106,27 @@ public class OperatorControllerTest {
     @Test
     public void testMetrics() {
         Mockito.when(serverStatusManager.getServerStatus()).thenReturn(ServerStatus.UP);
-        Mockito.when(serviceManager.getResponsibleServiceCount()).thenReturn(1);
-        Mockito.when(serviceManager.getResponsibleInstanceCount()).thenReturn(1);
-        Mockito.when(raftCore.getNotifyTaskCount()).thenReturn(1);
         Collection<String> clients = new HashSet<>();
         clients.add("1628132208793_127.0.0.1_8080");
         clients.add("127.0.0.1:8081#true");
         clients.add("127.0.0.1:8082#false");
         Mockito.when(clientManager.allClientId()).thenReturn(clients);
-        Mockito.when(clientManager.isResponsibleClient(null)).thenReturn(Boolean.TRUE);
+        Client client = new IpPortBasedClient("127.0.0.1:8081#true", true);
+        client.addServiceInstance(Service.newService("", "", ""), new InstancePublishInfo());
+        Mockito.when(clientManager.getClient("127.0.0.1:8081#true")).thenReturn(client);
+        Mockito.when(clientManager.isResponsibleClient(client)).thenReturn(Boolean.TRUE);
         
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter("onlyStatus", "false");
         ObjectNode objectNode = operatorController.metrics(servletRequest);
         
-        Assert.assertEquals(1, objectNode.get("responsibleServiceCount").asInt());
         Assert.assertEquals(1, objectNode.get("responsibleInstanceCount").asInt());
         Assert.assertEquals(ServerStatus.UP.toString(), objectNode.get("status").asText());
         Assert.assertEquals(3, objectNode.get("clientCount").asInt());
         Assert.assertEquals(1, objectNode.get("connectionBasedClientCount").asInt());
         Assert.assertEquals(1, objectNode.get("ephemeralIpPortClientCount").asInt());
         Assert.assertEquals(1, objectNode.get("persistentIpPortClientCount").asInt());
-        Assert.assertEquals(3, objectNode.get("responsibleClientCount").asInt());
-    }
-    
-    @Test
-    public void testGetResponsibleServer4Service() {
-        try {
-            Mockito.when(serviceManager.getService(Mockito.anyString(), Mockito.anyString())).thenReturn(new Service());
-            Mockito.when(distroMapper.mapSrv(Mockito.anyString())).thenReturn("test");
-            
-            ObjectNode objectNode = operatorController.getResponsibleServer4Service("test", "test");
-            
-            Assert.assertEquals("test", objectNode.get("responsibleServer").asText());
-        } catch (NacosException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        }
+        Assert.assertEquals(1, objectNode.get("responsibleClientCount").asInt());
     }
     
     @Test

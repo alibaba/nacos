@@ -102,18 +102,12 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             int waitTimes = 60;
             // To ensure that messages are not lost, enable EventHandler when
             // waiting for the first Subscriber to register
-            for (; ; ) {
-                if (shutdown || hasSubscriber() || waitTimes <= 0) {
-                    break;
-                }
+            while (!shutdown && !hasSubscriber() && waitTimes > 0) {
                 ThreadUtils.sleep(1000L);
                 waitTimes--;
             }
-            
-            for (; ; ) {
-                if (shutdown) {
-                    break;
-                }
+
+            while (!shutdown) {
                 final Event event = queue.take();
                 receiveEvent(event);
                 UPDATER.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));

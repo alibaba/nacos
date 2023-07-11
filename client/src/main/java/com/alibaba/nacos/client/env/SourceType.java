@@ -16,21 +16,21 @@
 
 package com.alibaba.nacos.client.env;
 
-enum SourceType {
-    /**
-     * get value from system environment.
-     */
-    SYS,
-    /**
-     * get value from jvm args.
-     */
-    JVM,
+/**
+ * properties source type enum.
+ * @author onewe
+ */
+public enum SourceType {
     /**
      * get value from properties.
      */
     PROPERTIES,
     /**
-     * get value from default setting.
+     * get value from jvm args.
      */
-    DEFAULT_SETTING
+    JVM,
+    /**
+     * get value from system environment.
+     */
+    ENV
 }

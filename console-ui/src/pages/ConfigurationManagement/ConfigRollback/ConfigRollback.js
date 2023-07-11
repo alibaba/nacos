@@ -124,11 +124,11 @@ class ConfigRollback extends React.Component {
             {locale.determine} {locale.followingConfiguration} {additionalMsg}
           </h3>
           <p>
-            <span style={{ color: '#999', marginRight: 5 }}>Data ID:</span>
+            <span style={{ color: '#999', marginRight: 5 }}>Data ID</span>
             <span style={{ color: '#c7254e' }}>{self.field.getValue('dataId')}</span>
           </p>
           <p>
-            <span style={{ color: '#999', marginRight: 5 }}>Group:</span>
+            <span style={{ color: '#999', marginRight: 5 }}>Group</span>
             <span style={{ color: '#c7254e' }}>{self.field.getValue('group')}</span>
           </p>
         </div>
@@ -193,10 +193,13 @@ class ConfigRollback extends React.Component {
     };
     const { getOpType } = this;
     return (
-      <div style={{ padding: 10 }}>
+      <div>
         <h1>{locale.configurationRollback}</h1>
         <Form field={this.field}>
-          <FormItem label="Data ID:" required {...formItemLayout}>
+          <FormItem label={locale.namespace} required {...formItemLayout}>
+            <p>{this.tenant}</p>
+          </FormItem>
+          <FormItem label="Data ID" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('dataId')} />
             <div style={{ marginTop: 10 }}>
               <a style={{ fontSize: '12px' }} onClick={this.toggleMore.bind(this)}>

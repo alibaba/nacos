@@ -29,11 +29,8 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
-import com.alibaba.nacos.client.naming.beat.BeatInfo;
-import com.alibaba.nacos.client.naming.beat.BeatReactor;
-import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.core.PushReceiver;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -59,9 +56,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Random;
-import java.util.Set;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
@@ -103,29 +98,23 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     private static final String CLIENT_IP_PARAM = "clientIP";
     
     private static final String HEALTHY_ONLY_PARAM = "healthyOnly";
-
+    
     private static final String REGISTER_ENABLE_PARAM = "enable";
     
     private final String namespaceId;
     
     private final ServerListManager serverListManager;
     
-    private final BeatReactor beatReactor;
-    
-    private final PushReceiver pushReceiver;
-    
     private final int maxRetry;
     
     private int serverPort = DEFAULT_SERVER_PORT;
     
     public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
-            Properties properties, ServiceInfoHolder serviceInfoHolder) {
+            NacosClientProperties properties) {
         super(securityProxy);
         this.serverListManager = serverListManager;
         this.setServerPort(DEFAULT_SERVER_PORT);
         this.namespaceId = namespaceId;
-        this.beatReactor = new BeatReactor(this, properties);
-        this.pushReceiver = new PushReceiver(serviceInfoHolder);
         this.maxRetry = ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_REQUEST_DOMAIN_RETRY_COUNT,
                 String.valueOf(UtilAndComs.REQUEST_DOMAIN_RETRY_COUNT)));
     }
@@ -142,13 +131,12 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
-        
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance: {}", namespaceId, serviceName,
                 instance);
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         if (instance.isEphemeral()) {
-            BeatInfo beatInfo = beatReactor.buildBeatInfo(groupedServiceName, instance);
-            beatReactor.addBeatInfo(groupedServiceName, beatInfo);
+            throw new UnsupportedOperationException(
+                    "Do not support register ephemeral instances by HTTP, please use gRPC replaced.");
         }
         final Map<String, String> params = new HashMap<>(32);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -162,14 +150,20 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(HEALTHY_PARAM, String.valueOf(instance.isHealthy()));
         params.put(EPHEMERAL_PARAM, String.valueOf(instance.isEphemeral()));
         params.put(META_PARAM, JacksonUtils.toJson(instance.getMetadata()));
-        
         reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.POST);
-        
     }
     
     @Override
     public void batchRegisterService(String serviceName, String groupName, List<Instance> instances) {
-        throw new UnsupportedOperationException("Do not support persistent instances to perform batch registration methods.");
+        throw new UnsupportedOperationException(
+                "Do not support persistent instances to perform batch registration methods.");
+    }
+    
+    @Override
+    public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
+            throws NacosException {
+        throw new UnsupportedOperationException(
+                "Do not support persistent instances to perform batch de registration methods.");
     }
     
     @Override
@@ -178,8 +172,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
                         instance);
         if (instance.isEphemeral()) {
-            beatReactor.removeBeatInfo(NamingUtils.getGroupedName(serviceName, groupName), instance.getIp(),
-                    instance.getPort());
+            return;
         }
         final Map<String, String> params = new HashMap<>(16);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -288,39 +281,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.PUT);
     }
     
-    /**
-     * Send beat.
-     *
-     * @param beatInfo         beat info
-     * @param lightBeatEnabled light beat
-     * @return beat result
-     * @throws NacosException nacos exception
-     */
-    public JsonNode sendBeat(BeatInfo beatInfo, boolean lightBeatEnabled) throws NacosException {
-        
-        if (NAMING_LOGGER.isDebugEnabled()) {
-            NAMING_LOGGER.debug("[BEAT] {} sending beat to server: {}", namespaceId, beatInfo.toString());
-        }
-        Map<String, String> params = new HashMap<>(16);
-        Map<String, String> bodyMap = new HashMap<>(2);
-        if (!lightBeatEnabled) {
-            bodyMap.put("beat", JacksonUtils.toJson(beatInfo));
-        }
-        params.put(CommonParams.NAMESPACE_ID, namespaceId);
-        params.put(CommonParams.SERVICE_NAME, beatInfo.getServiceName());
-        params.put(CommonParams.CLUSTER_NAME, beatInfo.getCluster());
-        params.put(IP_PARAM, beatInfo.getIp());
-        params.put(PORT_PARAM, String.valueOf(beatInfo.getPort()));
-        String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/beat", params, bodyMap, HttpMethod.PUT);
-        return JacksonUtils.toObj(result);
-    }
-    
     @Override
     public boolean serverHealthy() {
         
         try {
-            String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<>(8),
-                    HttpMethod.GET);
+            String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<>(8), HttpMethod.GET);
             JsonNode json = JacksonUtils.toObj(result);
             String serverStatus = json.get("status").asText();
             return "UP".equals(serverStatus);
@@ -365,7 +330,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public ServiceInfo subscribe(String serviceName, String groupName, String clusters) throws NacosException {
-        return queryInstancesOfService(serviceName, groupName, clusters, pushReceiver.getUdpPort(), false);
+        throw new UnsupportedOperationException("Do not support subscribe service by UDP, please use gRPC replaced.");
     }
     
     @Override
@@ -375,17 +340,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     @Override
     public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
         return true;
-    }
-    
-    @Override
-    public void updateBeatInfo(Set<Instance> modifiedInstances) {
-        for (Instance instance : modifiedInstances) {
-            String key = beatReactor.buildKey(instance.getServiceName(), instance.getIp(), instance.getPort());
-            if (beatReactor.dom2Beat.containsKey(key) && instance.isEphemeral()) {
-                BeatInfo beatInfo = beatReactor.buildBeatInfo(instance);
-                beatReactor.addBeatInfo(instance.getServiceName(), beatInfo);
-            }
-        }
     }
     
     public String reqApi(String api, Map<String, String> params, String method) throws NacosException {
@@ -432,7 +386,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 }
             }
         } else {
-            Random random = new Random(System.currentTimeMillis());
+            Random random = new Random();
             int index = random.nextInt(servers.size());
             
             for (int i = 0; i < servers.size(); i++) {
@@ -491,7 +445,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             HttpRestResult<String> restResult = nacosRestTemplate
                     .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
-    
+            
             MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
                     .observe(end - start);
             
@@ -518,21 +472,16 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public void setServerPort(int serverPort) {
         this.serverPort = serverPort;
         
-        String sp = System.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
+        String sp = NacosClientProperties.PROTOTYPE.getProperty(SystemPropertyKeyConst.NAMING_SERVER_PORT);
         if (StringUtils.isNotBlank(sp)) {
             this.serverPort = Integer.parseInt(sp);
         }
-    }
-    
-    public BeatReactor getBeatReactor() {
-        return this.beatReactor;
     }
     
     @Override
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         NAMING_LOGGER.info("{} do shutdown begin", className);
-        beatReactor.shutdown();
         NamingHttpClientManager.getInstance().shutdown();
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
