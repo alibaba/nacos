@@ -18,9 +18,9 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -31,11 +31,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.util.concurrent.ThreadPoolExecutor;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 /**
  * {@link GrpcSdkServer} and {@link GrpcClusterServer} unit test.
  *
@@ -45,12 +40,12 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class GrpcServerTest {
     
-    private final RpcServerTlsConfig grpcServerConfig = mock(RpcServerTlsConfig.class);
-    
     static MockedStatic<ApplicationUtils> applicationUtilsMockedStatic = null;
     
+    private BaseGrpcServer grpcSdkServer;
+    
     @BeforeClass
-    public static void setUp() {
+    public static void setUpBeforeClass() {
         EnvUtil.setEnvironment(new MockEnvironment());
         applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
     }
@@ -60,107 +55,27 @@ public class GrpcServerTest {
         applicationUtilsMockedStatic.close();
     }
     
+    @After
+    public void tearDown() throws Exception {
+        if (null != grpcSdkServer) {
+            grpcSdkServer.stopServer();
+        }
+    }
+    
     @Test
     public void testGrpcSdkServer() throws Exception {
-        BaseGrpcServer grpcSdkServer = new GrpcSdkServer();
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        when(grpcServerConfig.getEnableTls()).thenReturn(false);
-        when(ApplicationUtils.getBean(RpcServerTlsConfig.class)).thenReturn(grpcServerConfig);
+        grpcSdkServer = new GrpcSdkServer();
         grpcSdkServer.start();
         Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
         Assert.assertEquals(grpcSdkServer.rpcPortOffset(), 1000);
-        grpcSdkServer.stopServer();
     }
     
     @Test
     public void testGrpcClusterServer() throws Exception {
-        BaseGrpcServer grpcSdkServer = new GrpcClusterServer();
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        when(grpcServerConfig.getEnableTls()).thenReturn(false);
-        when(ApplicationUtils.getBean(RpcServerTlsConfig.class)).thenReturn(grpcServerConfig);
+        grpcSdkServer = new GrpcClusterServer();
         grpcSdkServer.start();
         Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
         Assert.assertEquals(grpcSdkServer.rpcPortOffset(), 1001);
         grpcSdkServer.stopServer();
-    }
-    
-    @Test
-    public void testGrpcEnableTls() throws Exception {
-        final BaseGrpcServer grpcSdkServer = new BaseGrpcServer() {
-            @Override
-            public ThreadPoolExecutor getRpcExecutor() {
-                return null;
-            }
-            
-            @Override
-            public int rpcPortOffset() {
-                return 100;
-            }
-        };
-        when(grpcServerConfig.getEnableTls()).thenReturn(true);
-        when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
-        
-        when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
-        when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
-        when(ApplicationUtils.getBean(RpcServerTlsConfig.class)).thenReturn(grpcServerConfig);
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        grpcSdkServer.start();
-        grpcSdkServer.shutdownServer();
-    }
-    
-    @Test
-    public void testGrpcEnableMutualAuthAndTrustAll() throws Exception {
-        
-        final BaseGrpcServer grpcSdkServer = new BaseGrpcServer() {
-            @Override
-            public ThreadPoolExecutor getRpcExecutor() {
-                return null;
-            }
-            
-            @Override
-            public int rpcPortOffset() {
-                return 100;
-            }
-        };
-        
-        when(grpcServerConfig.getEnableTls()).thenReturn(true);
-        when(grpcServerConfig.getTrustAll()).thenReturn(true);
-        when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
-        when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
-        when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        grpcSdkServer.start();
-        grpcSdkServer.shutdownServer();
-    }
-    
-    @Test
-    public void testGrpcEnableMutualAuthAndPart() throws Exception {
-        final BaseGrpcServer grpcSdkServer = new BaseGrpcServer() {
-            @Override
-            public ThreadPoolExecutor getRpcExecutor() {
-                return null;
-            }
-            
-            @Override
-            public int rpcPortOffset() {
-                return 100;
-            }
-        };
-        when(grpcServerConfig.getEnableTls()).thenReturn(true);
-        when(grpcServerConfig.getMutualAuthEnable()).thenReturn(true);
-        when(grpcServerConfig.getEnableTls()).thenReturn(true);
-        when(grpcServerConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        when(grpcServerConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
-        
-        when(grpcServerConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
-        when(grpcServerConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
-        when(grpcServerConfig.getTrustCollectionCertFile()).thenReturn("test-ca-cert.pem");
-        
-        grpcSdkServer.setRpcServerTlsConfig(grpcServerConfig);
-        
-        grpcSdkServer.start();
-        grpcSdkServer.shutdownServer();
     }
 }
