@@ -29,28 +29,32 @@ import java.util.stream.Collectors;
  * @date 2022/8/31 12:27
  **/
 public enum AbilityKey {
-    
-    /**.
-     * just for junit test
-     */
-    TEST_1("test_1"),
-    
-    /**.
-     * just for junit test
-     */
-    TEST_2("test_2");
+
+    TEST_1("test_1", "just for junit test"),
+
+    TEST_2("test_2", "just for junit test");
     
     /**.
      * the name of a certain ability
      */
     private final String keyName;
-    
-    AbilityKey(String name) {
+
+    /**
+     * description or comment about this ability.
+     */
+    private final String description;
+
+    AbilityKey(String name, String description) {
         this.keyName = name;
+        this.description = description;
     }
     
     public String getName() {
         return keyName;
+    }
+
+    public String getDescription() {
+        return description;
     }
     
     /**.
