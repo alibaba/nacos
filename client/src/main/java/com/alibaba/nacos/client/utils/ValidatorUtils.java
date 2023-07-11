@@ -32,7 +32,11 @@ import java.util.regex.Pattern;
  */
 public final class ValidatorUtils {
     
-    private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
+    private static final String HTTP_PROTOCOL = "http";
+    
+    private static final String HTTPS_PROTOCOL = "https";
+    
+    private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(/)\\1+");
     
     public static void checkInitParam(NacosClientProperties properties) throws NacosException {
         checkContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH));
@@ -72,7 +76,7 @@ public final class ValidatorUtils {
         if (url.getHost() == null) {
             return null;
         }
-        if (url.getScheme().equalsIgnoreCase("http") || url.getScheme().equalsIgnoreCase("https")) {
+        if (url.getScheme().equalsIgnoreCase(HTTP_PROTOCOL) || url.getScheme().equalsIgnoreCase(HTTPS_PROTOCOL)) {
             return url.toString();
         }
         return null;
