@@ -29,6 +29,8 @@ import java.util.regex.Pattern;
  */
 public class DefaultParamChecker extends AbstractParamChecker {
     
+    private static final Pattern NAMESPACE_SHOW_NAME_PATTERN = Pattern.compile(ParamCheckRules.NAMESPACE_SHOW_NAME_PATTERN_STRING);
+    
     private static final Pattern NAMESPACE_ID_PATTERN = Pattern.compile(ParamCheckRules.NAMESPACE_ID_PATTERN_STRING);
     
     private static final Pattern DATA_ID_PATTERN = Pattern.compile(ParamCheckRules.DATA_ID_PATTERN_STRING);
@@ -70,7 +72,8 @@ public class DefaultParamChecker extends AbstractParamChecker {
         checkDataIdFormat(paramInfo.getDataId());
         checkServiceNameFormat(paramInfo.getServiceName());
         checkGroupFormat(paramInfo.getGroup());
-        checkClusterFormat(paramInfo.getCluster());
+        checkClusterFormat(paramInfo.getClusters());
+        checkSingleClusterFormat(paramInfo.getCluster());
         checkIpFormat(paramInfo.getIp());
         checkPortFormat(paramInfo.getPort());
         checkMetadataFormat(paramInfo.getMetadata());
@@ -90,6 +93,10 @@ public class DefaultParamChecker extends AbstractParamChecker {
                     String.format("Param 'namespaceShowName' is illegal, the param length should not exceed %d.",
                             ParamCheckRules.MAX_NAMESPACE_SHOW_NAME_LENGTH));
         }
+        if (!NAMESPACE_SHOW_NAME_PATTERN.matcher(namespaceShowName).matches()) {
+            throw new IllegalArgumentException(
+                    "Param 'namespaceShowName' is illegal, illegal characters should not appear in the param.");
+        }
     }
     
     /**
@@ -108,7 +115,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (!NAMESPACE_ID_PATTERN.matcher(namespaceId).matches()) {
             throw new IllegalArgumentException(
-                    "Param 'namespaceId/tenant' is illegal, Chinese characters should not appear in the param.");
+                    "Param 'namespaceId/tenant' is illegal, illegal characters should not appear in the param.");
         }
     }
     
@@ -128,7 +135,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (!DATA_ID_PATTERN.matcher(dataId).matches()) {
             throw new IllegalArgumentException(
-                    "Param 'dataId' is illegal, Chinese characters and '@@' should not appear in the param.");
+                    "Param 'dataId' is illegal, illegal characters should not appear in the param.");
         }
     }
     
@@ -148,7 +155,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (!SERVICE_NAME_PATTERN.matcher(serviceName).matches()) {
             throw new IllegalArgumentException(
-                    "Param 'serviceName' is illegal, Chinese characters and '@@' should not appear in the param.");
+                    "Param 'serviceName' is illegal, illegal characters should not appear in the param.");
         }
     }
     
@@ -168,7 +175,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (!GROUP_PATTERN.matcher(group).matches()) {
             throw new IllegalArgumentException(
-                    "Param 'group' is illegal, Chinese characters and '@@' should not appear in the param");
+                    "Param 'group' is illegal, illegal characters should not appear in the param.");
         }
     }
     
@@ -204,7 +211,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (!CLUSTER_PATTERN.matcher(cluster).matches()) {
             throw new IllegalArgumentException(
-                    "Param 'cluster' is illegal, Chinese characters and ',' should not appear in the param");
+                    "Param 'cluster' is illegal, illegal characters should not appear in the param.");
         }
     }
     
@@ -224,7 +231,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         }
         if (!IP_PATTERN.matcher(ip).matches()) {
             throw new IllegalArgumentException(
-                    "Param 'ip' is illegal, Chinese characters should not appear in the param");
+                    "Param 'ip' is illegal, illegal characters should not appear in the param.");
         }
     }
     

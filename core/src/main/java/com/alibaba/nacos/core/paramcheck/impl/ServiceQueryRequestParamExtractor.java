@@ -44,7 +44,7 @@ public class ServiceQueryRequestParamExtractor extends AbstractRpcParamExtractor
         paramInfo.setServiceName(req.getServiceName());
         paramInfo.setGroup(req.getGroupName());
         paramInfo.setPort(String.valueOf(req.getUdpPort()));
-        paramInfo.setCluster(req.getCluster());
+        paramInfo.setClusters(req.getCluster());
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
         return paramInfos;

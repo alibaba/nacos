@@ -43,7 +43,7 @@ public class SubscribeServiceRequestParamExtractor extends AbstractRpcParamExtra
         paramInfo.setNamespaceId(req.getNamespace());
         paramInfo.setServiceName(req.getServiceName());
         paramInfo.setGroup(req.getGroupName());
-        paramInfo.setCluster(req.getClusters());
+        paramInfo.setClusters(req.getClusters());
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
         return paramInfos;
