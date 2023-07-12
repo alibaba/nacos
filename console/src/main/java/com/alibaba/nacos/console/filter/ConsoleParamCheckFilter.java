@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.console.filter;
 
+import com.alibaba.nacos.common.paramcheck.AbstractParamChecker;
+import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -29,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * console param check filter.
@@ -54,7 +58,10 @@ public class ConsoleParamCheckFilter implements Filter {
             String method = req.getMethod();
             HttpParamExtractorManager extractorManager = HttpParamExtractorManager.getInstance();
             AbstractHttpParamExtractor paramExtractor = extractorManager.getExtractor(uri, method, MODULE);
-            paramExtractor.extractParamAndCheck(req);
+            List<ParamInfo> paramInfoList = paramExtractor.extractParam(req);
+            ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
+            AbstractParamChecker paramChecker = paramCheckerManager.getDefaultParamChecker();
+            paramChecker.checkParamInfoList(paramInfoList);
             chain.doFilter(request, resp);
         } catch (Exception e) {
             resp.setStatus(400);

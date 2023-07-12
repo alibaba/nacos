@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.paramcheck;
 
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 
 import javax.servlet.http.HttpServletRequest;
@@ -41,7 +42,8 @@ public class HttpParamExtractorManager {
         }
         
         @Override
-        public void extractParamAndCheck(HttpServletRequest request) throws Exception {
+        public List<ParamInfo> extractParam(HttpServletRequest params) throws Exception {
+            return null;
         }
     };
     

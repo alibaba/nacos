@@ -16,12 +16,13 @@
 
 package com.alibaba.nacos.console.paramcheck;
 
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Console default http param extractor.
@@ -36,11 +37,13 @@ public class ConsoleDefaultHttpParamExtractor extends AbstractHttpParamExtractor
     }
     
     @Override
-    public void extractParamAndCheck(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(getAliasNamespaceId(request));
         paramInfo.setNamespaceShowName(getAliasNamespaceShowName(request));
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        return paramInfos;
     }
     
     private String getAliasNamespaceId(HttpServletRequest request) {

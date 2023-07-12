@@ -18,6 +18,9 @@ package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.common.paramcheck.AbstractParamChecker;
+import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 import com.alibaba.nacos.core.paramcheck.RpcParamExtractorManager;
@@ -28,6 +31,8 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
+
+import java.util.List;
 
 /**
  * Grpc server interceptor for param check.
@@ -56,7 +61,10 @@ public class GrpcServerParamCheckInterceptor implements ServerInterceptor {
                         Request request = (Request) parseObj;
                         RpcParamExtractorManager extractorManager = RpcParamExtractorManager.getInstance();
                         AbstractRpcParamExtractor extractor = extractorManager.getExtractor(type);
-                        extractor.extractParamAndCheck(request);
+                        List<ParamInfo> paramInfoList = extractor.extractParam(request);
+                        ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
+                        AbstractParamChecker paramChecker = paramCheckerManager.getDefaultParamChecker();
+                        paramChecker.checkParamInfoList(paramInfoList);
                     }
                     super.onMessage(message);
                 } catch (Exception e) {

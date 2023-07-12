@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.paramcheck;
 
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -25,6 +24,8 @@ import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * ConfigListener http param extractor.
@@ -43,14 +44,15 @@ public class ConfigListenerHttpParamExtractor extends AbstractHttpParamExtractor
     }
     
     @Override
-    public void extractParamAndCheck(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         String listenConfigs = request.getParameter("Listening-Configs");
         if (StringUtils.isBlank(listenConfigs)) {
-            return;
+            return paramInfos;
         }
         listenConfigs = URLDecoder.decode(listenConfigs, Constants.ENCODE);
         if (StringUtils.isBlank(listenConfigs)) {
-            return;
+            return paramInfos;
         }
         String[] lines = listenConfigs.split(Character.toString(LINE_SEPARATOR_CHAR));
         for (String line : lines) {
@@ -64,7 +66,8 @@ public class ConfigListenerHttpParamExtractor extends AbstractHttpParamExtractor
             if (words.length == 4) {
                 paramInfo.setNamespaceId(words[3]);
             }
-            ParamCheckUtils.checkParamInfoFormat(paramInfo);
+            paramInfos.add(paramInfo);
         }
+        return paramInfos;
     }
 }

@@ -54,18 +54,18 @@ public class ConfigRequestParamExtractorTest {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
         AbstractRpcParamExtractor extractor1 = paramExtractorManager.getExtractor(req1.getClass().getSimpleName());
         assertEquals(extractor1.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
-        extractor1.extractParamAndCheck(req1);
+        extractor1.extractParam(req1);
         
         AbstractRpcParamExtractor extractor2 = paramExtractorManager.getExtractor(req2.getClass().getSimpleName());
         assertEquals(extractor2.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
-        extractor2.extractParamAndCheck(req2);
+        extractor2.extractParam(req2);
         
         AbstractRpcParamExtractor extractor3 = paramExtractorManager.getExtractor(req3.getClass().getSimpleName());
         assertEquals(extractor3.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
-        extractor3.extractParamAndCheck(req3);
+        extractor3.extractParam(req3);
         
         AbstractRpcParamExtractor extractor4 = paramExtractorManager.getExtractor(req4.getClass().getSimpleName());
         assertEquals(extractor4.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
-        extractor4.extractParamAndCheck(req4);
+        extractor4.extractParam(req4);
     }
 }

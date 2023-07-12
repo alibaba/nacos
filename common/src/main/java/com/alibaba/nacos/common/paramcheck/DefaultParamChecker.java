@@ -18,15 +18,16 @@ package com.alibaba.nacos.common.paramcheck;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 /**
- * Param Check Utils.
+ * The type Default param checker.
  *
  * @author zhuoguang
  */
-public class ParamCheckUtils {
+public class DefaultParamChecker extends AbstractParamChecker {
     
     private static final Pattern NAMESPACE_ID_PATTERN = Pattern.compile(ParamCheckRules.NAMESPACE_ID_PATTERN_STRING);
     
@@ -40,12 +41,27 @@ public class ParamCheckUtils {
     
     private static final Pattern IP_PATTERN = Pattern.compile(ParamCheckRules.IP_PATTERN_STRING);
     
+    @Override
+    public String getCheckerType() {
+        return StringUtils.EMPTY;
+    }
+    
+    @Override
+    public void checkParamInfoList(List<ParamInfo> paramInfos) {
+        if (paramInfos == null) {
+            return;
+        }
+        for (ParamInfo paramInfo : paramInfos) {
+            checkParamInfoFormat(paramInfo);
+        }
+    }
+    
     /**
      * Check param info format.
      *
      * @param paramInfo the param info
      */
-    public static void checkParamInfoFormat(ParamInfo paramInfo) {
+    public void checkParamInfoFormat(ParamInfo paramInfo) {
         if (paramInfo == null) {
             return;
         }
@@ -65,7 +81,7 @@ public class ParamCheckUtils {
      *
      * @param namespaceShowName the namespace show name
      */
-    public static void checkNamespaceShowNameFormat(String namespaceShowName) {
+    public void checkNamespaceShowNameFormat(String namespaceShowName) {
         if (StringUtils.isBlank(namespaceShowName)) {
             return;
         }
@@ -81,7 +97,7 @@ public class ParamCheckUtils {
      *
      * @param namespaceId the namespace id
      */
-    public static void checkNamespaceIdFormat(String namespaceId) {
+    public void checkNamespaceIdFormat(String namespaceId) {
         if (StringUtils.isBlank(namespaceId)) {
             return;
         }
@@ -101,7 +117,7 @@ public class ParamCheckUtils {
      *
      * @param dataId the data id
      */
-    public static void checkDataIdFormat(String dataId) {
+    public void checkDataIdFormat(String dataId) {
         if (StringUtils.isBlank(dataId)) {
             return;
         }
@@ -121,7 +137,7 @@ public class ParamCheckUtils {
      *
      * @param serviceName the service name
      */
-    public static void checkServiceNameFormat(String serviceName) {
+    public void checkServiceNameFormat(String serviceName) {
         if (StringUtils.isBlank(serviceName)) {
             return;
         }
@@ -141,7 +157,7 @@ public class ParamCheckUtils {
      *
      * @param group the group
      */
-    public static void checkGroupFormat(String group) {
+    public void checkGroupFormat(String group) {
         if (StringUtils.isBlank(group)) {
             return;
         }
@@ -159,12 +175,28 @@ public class ParamCheckUtils {
     /**
      * Check cluster format.
      *
+     * @param clusterString the cluster string
+     */
+    public void checkClusterFormat(String clusterString) {
+        if (StringUtils.isBlank(clusterString)) {
+            return;
+        }
+        String[] clusters = clusterString.split(",");
+        for (String cluster : clusters) {
+            checkSingleClusterFormat(cluster);
+        }
+    }
+    
+    /**
+     * Check single cluster format.
+     *
      * @param cluster the cluster
      */
-    public static void checkClusterFormat(String cluster) {
+    public void checkSingleClusterFormat(String cluster) {
         if (StringUtils.isBlank(cluster)) {
             return;
         }
+        
         if (cluster.length() > ParamCheckRules.MAX_CLUSTER_LENGTH) {
             throw new IllegalArgumentException(
                     String.format("Param 'cluster' is illegal, the param length should not exceed %d.",
@@ -181,7 +213,7 @@ public class ParamCheckUtils {
      *
      * @param ip the ip
      */
-    public static void checkIpFormat(String ip) {
+    public void checkIpFormat(String ip) {
         if (StringUtils.isBlank(ip)) {
             return;
         }
@@ -201,7 +233,7 @@ public class ParamCheckUtils {
      *
      * @param port the port
      */
-    public static void checkPortFormat(String port) {
+    public void checkPortFormat(String port) {
         if (StringUtils.isBlank(port)) {
             return;
         }
@@ -225,7 +257,7 @@ public class ParamCheckUtils {
      *
      * @param metadata the metadata
      */
-    public static void checkMetadataFormat(Map<String, String> metadata) {
+    public void checkMetadataFormat(Map<String, String> metadata) {
         if (metadata == null || metadata.isEmpty()) {
             return;
         }
