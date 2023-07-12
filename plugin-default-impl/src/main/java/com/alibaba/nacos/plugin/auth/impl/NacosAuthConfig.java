@@ -19,7 +19,7 @@ package com.alibaba.nacos.plugin.auth.impl;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.plugin.auth.impl.authenticate.AuthenticationNamagerDelegator;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.AuthenticationManagerDelegator;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.LdapAuthenticationManager;
@@ -161,7 +161,7 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     public IAuthenticationManager authenticationManager(
             ObjectProvider<LdapAuthenticationManager> ldapAuthenticatoinManagerObjectProvider,
             ObjectProvider<DefaultAuthenticationManager> defaultAuthenticationManagers, AuthConfigs authConfigs) {
-        return new AuthenticationNamagerDelegator(defaultAuthenticationManagers,
+        return new AuthenticationManagerDelegator(defaultAuthenticationManagers,
                 ldapAuthenticatoinManagerObjectProvider, authConfigs);
     }
     
