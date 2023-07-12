@@ -33,7 +33,7 @@ public class ParamCheckRules {
     
     public static final int MAX_DATA_ID_LENGTH = 512;
     
-    public static final String DATA_ID_PATTERN_STRING = "^[a-zA-Z0-9_-.:]*$";
+    public static final String DATA_ID_PATTERN_STRING = "^[a-zA-Z0-9-_:\\.]*$";
     
     public static final int MAX_SERVICE_NAME_LENGTH = 512;
     
@@ -41,7 +41,7 @@ public class ParamCheckRules {
     
     public static final int MAX_GROUP_LENGTH = 64;
     
-    public static final String GROUP_PATTERN_STRING = "^[a-zA-Z0-9_-.:]*$";
+    public static final String GROUP_PATTERN_STRING = "^[a-zA-Z0-9-_:\\.]*$";
     
     public static final int MAX_CLUSTER_LENGTH = 64;
     
