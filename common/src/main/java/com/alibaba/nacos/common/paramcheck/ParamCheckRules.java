@@ -45,7 +45,7 @@ public class ParamCheckRules {
     
     public static final int MAX_CLUSTER_LENGTH = 64;
     
-    public static final String CLUSTER_PATTERN_STRING = "^[0-9a-zA-Z-]+$";
+    public static final String CLUSTER_PATTERN_STRING = "^[0-9a-zA-Z-_]+$";
     
     public static final int MAX_IP_LENGTH = 128;
     
