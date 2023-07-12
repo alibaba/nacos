@@ -71,7 +71,7 @@ public abstract class AbstractHttpParamExtractor implements ParamExtractor<HttpS
      */
     public void addTargetRequest(String uri, String method) {
         targetRequestList.add(NACOS_SERVER_CONTEXT + uri + SPLITTER + method);
-        targetRequestList.add(uri + SPLITTER +method);
+        targetRequestList.add(uri + SPLITTER + method);
     }
     
     /**
