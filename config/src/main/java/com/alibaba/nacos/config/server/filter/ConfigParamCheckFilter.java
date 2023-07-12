@@ -46,7 +46,7 @@ public class ConfigParamCheckFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        boolean ifParamCheck = EnvUtil.getProperty("nacos.paramcheck", Boolean.class, true);
+        boolean ifParamCheck = EnvUtil.getProperty("nacos.ifparamcheck", Boolean.class, true);
         if (!ifParamCheck) {
             chain.doFilter(request, response);
             return;

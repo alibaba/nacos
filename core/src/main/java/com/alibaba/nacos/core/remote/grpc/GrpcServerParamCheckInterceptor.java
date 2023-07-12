@@ -47,7 +47,7 @@ public class GrpcServerParamCheckInterceptor implements ServerInterceptor {
         return new ForwardingServerCallListener.SimpleForwardingServerCallListener<T>(next.startCall(call, headers)) {
             @Override
             public void onMessage(T message) {
-                boolean ifParamCheck = EnvUtil.getProperty("nacos.paramcheck", Boolean.class, true);
+                boolean ifParamCheck = EnvUtil.getProperty("nacos.ifparamcheck", Boolean.class, true);
                 if (!ifParamCheck) {
                     super.onMessage(message);
                     return;

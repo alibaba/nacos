@@ -46,7 +46,7 @@ public class NamingParamCheckFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-        boolean ifParamCheck = EnvUtil.getProperty("nacos.paramcheck", Boolean.class, true);
+        boolean ifParamCheck = EnvUtil.getProperty("nacos.ifparamcheck", Boolean.class, true);
         if (!ifParamCheck) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
