@@ -25,11 +25,11 @@ public class ParamCheckRules {
     
     public static final int MAX_NAMESPACE_SHOW_NAME_LENGTH = 256;
     
-    public static final String NAMESPACE_SHOW_NAME_PATTERN_STRING = "^[\\w-]+";
+    public static final String NAMESPACE_SHOW_NAME_PATTERN_STRING = "^[^@#$%^&*]+$";
     
     public static final int MAX_NAMESPACE_ID_LENGTH = 64;
     
-    public static final String NAMESPACE_ID_PATTERN_STRING = "^[^@#$%^&*]+$";
+    public static final String NAMESPACE_ID_PATTERN_STRING = "^[\\w-]+";
     
     public static final int MAX_DATA_ID_LENGTH = 512;
     
