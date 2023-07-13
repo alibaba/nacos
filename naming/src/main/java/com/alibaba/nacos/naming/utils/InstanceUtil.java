@@ -18,6 +18,7 @@ package com.alibaba.nacos.naming.utils;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
@@ -49,7 +50,7 @@ public final class InstanceUtil {
         Map<String, String> instanceMetadata = new HashMap<>(instanceInfo.getExtendDatum().size());
         for (Map.Entry<String, Object> entry : instanceInfo.getExtendDatum().entrySet()) {
             switch (entry.getKey()) {
-                case Constants.CUSTOM_INSTANCE_ID:
+                case Constants.INSTANCE_ID:
                     result.setInstanceId(entry.getValue().toString());
                     break;
                 case Constants.PUBLISH_INSTANCE_ENABLE:
@@ -100,5 +101,16 @@ public final class InstanceUtil {
         target.setServiceName(source.getServiceName());
         target.setMetadata(new HashMap<>(source.getMetadata()));
         return target;
+    }
+    
+    /**
+     * generate instance id.
+     *
+     * @param instance instance to be registered
+     * @return
+     */
+    public static String generateInstanceId(Instance instance) {
+        return instance.getIp() + InternetAddressUtil.IP_PORT_SPLITER + instance.getPort() + "_"
+                + System.currentTimeMillis();
     }
 }

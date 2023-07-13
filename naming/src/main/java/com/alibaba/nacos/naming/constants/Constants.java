@@ -76,9 +76,9 @@ public final class Constants {
     public static final long ACK_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(10L);
     
     /**
-     * The custom instance id key.
+     * The instance id key.
      */
-    public static final String CUSTOM_INSTANCE_ID = "customInstanceId";
+    public static final String INSTANCE_ID = "instanceId";
     
     /**
      * The weight of instance according to instance self publish.

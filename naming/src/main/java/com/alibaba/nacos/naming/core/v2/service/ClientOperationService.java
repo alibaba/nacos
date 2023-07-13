@@ -19,11 +19,12 @@ package com.alibaba.nacos.naming.core.v2.service;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.constants.Constants;
+import com.alibaba.nacos.naming.utils.InstanceUtil;
 
 import java.util.List;
 import java.util.Map;
@@ -97,9 +98,10 @@ public interface ClientOperationService {
         if (null != instance.getMetadata() && !instance.getMetadata().isEmpty()) {
             extendDatum.putAll(instance.getMetadata());
         }
-        if (StringUtils.isNotEmpty(instance.getInstanceId())) {
-            extendDatum.put(Constants.CUSTOM_INSTANCE_ID, instance.getInstanceId());
+        if (StringUtils.isEmpty(instance.getInstanceId())) {
+            instance.setInstanceId(InstanceUtil.generateInstanceId(instance));
         }
+        extendDatum.put(Constants.INSTANCE_ID, instance.getInstanceId());
         if (Constants.DEFAULT_INSTANCE_WEIGHT != instance.getWeight()) {
             extendDatum.put(Constants.PUBLISH_INSTANCE_WEIGHT, instance.getWeight());
         }
