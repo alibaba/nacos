@@ -174,6 +174,9 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
                                     ejectingCount--;
                                 }
                             }
+                        } else {
+                            // reach the count
+                            break;
                         }
                     }
                 }
