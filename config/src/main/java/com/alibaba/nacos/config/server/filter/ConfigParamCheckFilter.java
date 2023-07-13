@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -46,8 +46,8 @@ public class ConfigParamCheckFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        boolean ifParamCheck = EnvUtil.getProperty("nacos.ifparamcheck", Boolean.class, true);
-        if (!ifParamCheck) {
+        boolean paramCheckEnabled = ServerParamCheckConfig.getInstance().isParamCheckEnabled();
+        if (!paramCheckEnabled) {
             chain.doFilter(request, response);
             return;
         }
@@ -60,7 +60,7 @@ public class ConfigParamCheckFilter implements Filter {
             AbstractHttpParamExtractor paramExtractor = extractorManager.getExtractor(uri, method, MODULE);
             List<ParamInfo> paramInfoList = paramExtractor.extractParam(req);
             ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
-            AbstractParamChecker paramChecker = paramCheckerManager.getDefaultParamChecker();
+            AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(ServerParamCheckConfig.getInstance().getActiveParamChecker());
             paramChecker.checkParamInfoList(paramInfoList);
             chain.doFilter(req, resp);
         } catch (Exception e) {

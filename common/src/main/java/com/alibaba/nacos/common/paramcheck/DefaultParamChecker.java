@@ -43,9 +43,11 @@ public class DefaultParamChecker extends AbstractParamChecker {
     
     private static final Pattern IP_PATTERN = Pattern.compile(ParamCheckRules.IP_PATTERN_STRING);
     
+    private static final String CHECKER_TYPE = "default";
+    
     @Override
     public String getCheckerType() {
-        return StringUtils.EMPTY;
+        return CHECKER_TYPE;
     }
     
     @Override

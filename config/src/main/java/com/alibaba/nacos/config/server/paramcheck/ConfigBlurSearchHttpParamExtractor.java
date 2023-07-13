@@ -33,6 +33,8 @@ import java.util.List;
  */
 public class ConfigBlurSearchHttpParamExtractor extends AbstractHttpParamExtractor {
     
+    private static final String BLUR_SEARCH_MODE = "blur";
+    
     @Override
     public void init() {
         addTargetRequest(Constants.CONFIG_CONTROLLER_PATH, HttpMethod.GET);
@@ -42,9 +44,8 @@ public class ConfigBlurSearchHttpParamExtractor extends AbstractHttpParamExtract
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
         String searchMode = request.getParameter("search");
-        String blur = "blur";
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
-        if (StringUtils.equals(searchMode, blur)) {
+        if (StringUtils.equals(searchMode, BLUR_SEARCH_MODE)) {
             return paramInfos;
         }
         ParamInfo paramInfo = new ParamInfo();

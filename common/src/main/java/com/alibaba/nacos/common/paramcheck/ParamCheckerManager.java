@@ -32,9 +32,9 @@ public class ParamCheckerManager {
     
     private static final ParamCheckerManager INSTANCE = new ParamCheckerManager();
     
-    private final Map<String, AbstractParamChecker> paramCheckerMap = new ConcurrentHashMap<>();
-    
     private static final AbstractParamChecker DEFAULT_PARAM_CHECKER = new DefaultParamChecker();
+    
+    private final Map<String, AbstractParamChecker> paramCheckerMap = new ConcurrentHashMap<>();
     
     private ParamCheckerManager() {
         Collection<AbstractParamChecker> paramCheckers = NacosServiceLoader.load(AbstractParamChecker.class);
@@ -44,7 +44,11 @@ public class ParamCheckerManager {
         }
     }
     
-    public AbstractParamChecker getParamCheckerByType(String checkerType) {
+    public static ParamCheckerManager getInstance() {
+        return INSTANCE;
+    }
+    
+    public AbstractParamChecker getParamChecker(String checkerType) {
         if (StringUtils.isBlank(checkerType)) {
             return DEFAULT_PARAM_CHECKER;
         }
@@ -53,13 +57,5 @@ public class ParamCheckerManager {
             paramChecker = DEFAULT_PARAM_CHECKER;
         }
         return paramChecker;
-    }
-    
-    public AbstractParamChecker getDefaultParamChecker() {
-        return DEFAULT_PARAM_CHECKER;
-    }
-    
-    public static ParamCheckerManager getInstance() {
-        return INSTANCE;
     }
 }

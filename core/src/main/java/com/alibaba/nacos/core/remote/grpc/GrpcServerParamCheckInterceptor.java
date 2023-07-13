@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 import com.alibaba.nacos.core.paramcheck.RpcParamExtractorManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
 import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
@@ -47,8 +47,8 @@ public class GrpcServerParamCheckInterceptor implements ServerInterceptor {
         return new ForwardingServerCallListener.SimpleForwardingServerCallListener<T>(next.startCall(call, headers)) {
             @Override
             public void onMessage(T message) {
-                boolean ifParamCheck = EnvUtil.getProperty("nacos.ifparamcheck", Boolean.class, true);
-                if (!ifParamCheck) {
+                boolean paramCheckEnabled = ServerParamCheckConfig.getInstance().isParamCheckEnabled();
+                if (!paramCheckEnabled) {
                     super.onMessage(message);
                     return;
                 }
@@ -63,7 +63,8 @@ public class GrpcServerParamCheckInterceptor implements ServerInterceptor {
                         AbstractRpcParamExtractor extractor = extractorManager.getExtractor(type);
                         List<ParamInfo> paramInfoList = extractor.extractParam(request);
                         ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
-                        AbstractParamChecker paramChecker = paramCheckerManager.getDefaultParamChecker();
+                        AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(
+                                ServerParamCheckConfig.getInstance().getActiveParamChecker());
                         paramChecker.checkParamInfoList(paramInfoList);
                     }
                     super.onMessage(message);
