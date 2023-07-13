@@ -635,4 +635,19 @@ public class RpcClientTest {
             }
         };
     }
+    
+    @Test(expected = RuntimeException.class)
+    public void testHandleServerRequestWhenExceptionThenThrowException() throws RuntimeException {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        Request request = new Request() {
+            @Override
+            public String getModule() {
+                return null;
+            }
+        };
+        rpcClient.serverRequestHandlers.add(req -> {
+            throw new RuntimeException();
+        });
+        rpcClient.handleServerRequest(request);
+    }
 }
