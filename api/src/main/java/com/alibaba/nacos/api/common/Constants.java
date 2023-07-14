@@ -237,6 +237,15 @@ public class Constants {
     }
     
     /**
+     * The constants in lock directory.
+     */
+    public static class Lock {
+        
+        public static final String LOCK_MODULE = "lock";
+        
+    }
+    
+    /**
      * The constants in remote directory.
      */
     public static class Remote {
