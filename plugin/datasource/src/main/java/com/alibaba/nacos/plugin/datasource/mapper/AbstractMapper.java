@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
+
 import java.util.List;
 
 /**
@@ -43,7 +45,7 @@ public abstract class AbstractMapper implements Mapper {
         sql.append(getTableName());
         sql.append(" ");
 
-        if (where.size() == 0) {
+        if (CollectionUtils.isEmpty(where)) {
             return sql.toString();
         }
 
@@ -94,7 +96,7 @@ public abstract class AbstractMapper implements Mapper {
             }
         }
 
-        if (where.size() == 0) {
+        if (CollectionUtils.isEmpty(where)) {
             return sql.toString();
         }
 

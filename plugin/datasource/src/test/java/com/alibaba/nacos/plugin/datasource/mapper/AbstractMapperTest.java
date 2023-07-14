@@ -71,13 +71,13 @@ public class AbstractMapperTest {
 
     @Test
     public void testSelectAll() {
-        String sql = abstractMapper.select(Arrays.asList("id", "name"), Collections.emptyList());
+        String sql = abstractMapper.select(Arrays.asList("id", "name"), null);
         Assert.assertEquals(sql, "SELECT id,name FROM tenant_info ");
     }
 
     @Test
     public void testCountAll() {
-        String sql = abstractMapper.count(Collections.emptyList());
+        String sql = abstractMapper.count(null);
         Assert.assertEquals(sql, "SELECT COUNT(*) FROM tenant_info ");
     }
 }
