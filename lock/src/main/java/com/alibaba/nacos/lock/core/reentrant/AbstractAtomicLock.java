@@ -51,7 +51,17 @@ public abstract class AbstractAtomicLock implements AtomicLockService {
         return false;
     }
     
+    /**
+     * inner try lock.
+     * @param service service
+     * @return Boolean
+     */
     protected abstract Boolean innerTryLock(Service service);
     
+    /**
+     * inner unLock.
+     * @param service service
+     * @return Boolean
+     */
     protected abstract Boolean innerUnLock(Service service);
 }
