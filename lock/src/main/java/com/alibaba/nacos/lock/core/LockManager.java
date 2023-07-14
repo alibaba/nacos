@@ -33,10 +33,24 @@ public interface LockManager {
      * @return atomicLock
      */
     AbstractAtomicLock getMutexLock(String key);
-
+    
+    /**
+     * acquire lock.
+     * @param connectionId connectionId
+     * @param service service
+     */
     void acquireLock(String connectionId, Service service);
     
+    /**
+     * getSingleton service.
+     * @param service service
+     * @return Service
+     */
     Service getSingletonService(Service service);
     
+    /**
+     * disConnected.
+     * @param connectionId connectionId
+     */
     void disConnected(String connectionId);
 }
