@@ -25,7 +25,7 @@ import java.util.List;
  **/
 
 public abstract class AbstractMapper implements Mapper {
-    
+
     @Override
     public String select(List<String> columns, List<String> where) {
         StringBuilder sql = new StringBuilder();
@@ -42,28 +42,22 @@ public abstract class AbstractMapper implements Mapper {
         sql.append("FROM ");
         sql.append(getTableName());
         sql.append(" ");
-        
+
         if (where.size() == 0) {
             return sql.toString();
         }
-        
-        sql.append("WHERE ");
-        for (int i = 0; i < where.size(); i++) {
-            sql.append(where.get(i)).append(" = ").append("?");
-            if (i != where.size() - 1) {
-                sql.append(" AND ");
-            }
-        }
+
+        appendWhereClause(where, sql);
         return sql.toString();
     }
-    
+
     @Override
     public String insert(List<String> columns) {
         StringBuilder sql = new StringBuilder();
         String method = "INSERT INTO ";
         sql.append(method);
         sql.append(getTableName());
-        
+
         int size = columns.size();
         sql.append("(");
         for (int i = 0; i < size; i++) {
@@ -73,7 +67,7 @@ public abstract class AbstractMapper implements Mapper {
             }
         }
         sql.append(") ");
-        
+
         sql.append("VALUES");
         sql.append("(");
         for (int i = 0; i < size; i++) {
@@ -85,36 +79,30 @@ public abstract class AbstractMapper implements Mapper {
         sql.append(")");
         return sql.toString();
     }
-    
+
     @Override
     public String update(List<String> columns, List<String> where) {
         StringBuilder sql = new StringBuilder();
         String method = "UPDATE ";
         sql.append(method);
         sql.append(getTableName()).append(" ").append("SET ");
-        
+
         for (int i = 0; i < columns.size(); i++) {
             sql.append(columns.get(i)).append(" = ").append("?");
             if (i != columns.size() - 1) {
                 sql.append(",");
             }
         }
-        
+
         if (where.size() == 0) {
             return sql.toString();
         }
-        
-        sql.append(" WHERE ");
-        
-        for (int i = 0; i < where.size(); i++) {
-            sql.append(where.get(i)).append(" = ").append("?");
-            if (i != where.size() - 1) {
-                sql.append(" AND ");
-            }
-        }
+
+        appendWhereClause(where, sql);
+
         return sql.toString();
     }
-    
+
     @Override
     public String delete(List<String> params) {
         StringBuilder sql = new StringBuilder();
@@ -126,10 +114,10 @@ public abstract class AbstractMapper implements Mapper {
                 sql.append("AND ");
             }
         }
-        
+
         return sql.toString();
     }
-    
+
     @Override
     public String count(List<String> where) {
         StringBuilder sql = new StringBuilder();
@@ -138,11 +126,22 @@ public abstract class AbstractMapper implements Mapper {
         sql.append("COUNT(*) FROM ");
         sql.append(getTableName());
         sql.append(" ");
-        
+
         if (null == where || where.size() == 0) {
             return sql.toString();
         }
-        
+
+        appendWhereClause(where, sql);
+
+        return sql.toString();
+    }
+
+    @Override
+    public String[] getPrimaryKeyGeneratedKeys() {
+        return new String[]{"id"};
+    }
+
+    private void appendWhereClause(List<String> where, StringBuilder sql) {
         sql.append("WHERE ");
         for (int i = 0; i < where.size(); i++) {
             sql.append(where.get(i)).append(" = ").append("?");
@@ -150,11 +149,5 @@ public abstract class AbstractMapper implements Mapper {
                 sql.append(" AND ");
             }
         }
-        return sql.toString();
-    }
-    
-    @Override
-    public String[] getPrimaryKeyGeneratedKeys() {
-        return new String[]{"id"};
     }
 }
