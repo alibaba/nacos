@@ -25,11 +25,13 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.event.IstioConfigChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
+import com.alibaba.nacos.config.server.utils.ConfigTagUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -102,6 +104,12 @@ public class ConfigOperationService {
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
                                 configForm.getNamespaceId(), configOperateResult.getLastModified()));
+                if (ConfigTagUtil.isIstio(configForm.getConfigTags())) {
+                    ConfigChangePublisher.notifyConfigChange(
+                            new IstioConfigChangeEvent(configForm.getDataId(), configForm.getGroup(),
+                                    configOperateResult.getLastModified(), configForm.getContent(),
+                                    ConfigTagUtil.getIstioType(configForm.getConfigTags())));
+                }
             } else {
                 persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + configForm.getTag();
                 configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
