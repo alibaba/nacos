@@ -19,6 +19,7 @@ package com.alibaba.nacos.lock.core;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.lock.core.connect.LockConnectionManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,12 +46,19 @@ public class LockConnectionManagerTest {
     @Mock
     private ProtocolManager protocolManager;
     
+    private MockedStatic<ApplicationUtils> mockUtil;
+    
     @Before
     public void setUp() {
-        MockedStatic<ApplicationUtils> mockUtil = Mockito.mockStatic(ApplicationUtils.class);
+        mockUtil = Mockito.mockStatic(ApplicationUtils.class);
         mockUtil.when(() -> ApplicationUtils.getBean(ProtocolManager.class)).thenReturn(protocolManager);
         
         lockConnectionManager = new LockConnectionManager();
+    }
+    
+    @After
+    public void destroy() {
+        mockUtil.close();
     }
     
     @Test

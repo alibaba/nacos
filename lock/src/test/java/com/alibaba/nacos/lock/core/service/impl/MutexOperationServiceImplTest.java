@@ -94,6 +94,7 @@ public class MutexOperationServiceImplTest {
     
     /**
      * create default lock info.
+     *
      * @return LockInfo
      */
     public LockInfo createDefaultLockInfo() {
@@ -156,7 +157,6 @@ public class MutexOperationServiceImplTest {
         
         ByteString bytes = ByteString.copyFrom(serializer.serialize(true));
         assertEquals(mutexOperationService.onApply(writeRequest).getData(), bytes);
-        
     }
     
     public String group() {
