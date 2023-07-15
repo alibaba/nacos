@@ -52,7 +52,7 @@ public class IstioEnabledFilter implements NacosPackageExcludeFilter {
                     functionMode);
             return true;
         }
-        boolean istioDisabled = !EnvUtil.getProperty(ISTIO_ENABLED_KEY, Boolean.class, false);
+        boolean istioDisabled = !EnvUtil.getProperty(ISTIO_ENABLED_KEY, Boolean.class, true);
         if (istioDisabled) {
             LOGGER.warn("Istio module disabled because set {} as false", ISTIO_ENABLED_KEY);
         }
