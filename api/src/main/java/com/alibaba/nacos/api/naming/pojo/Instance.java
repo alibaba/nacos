@@ -19,6 +19,7 @@ package com.alibaba.nacos.api.naming.pojo;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
@@ -26,6 +27,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Instance.
@@ -34,6 +36,11 @@ import java.util.Objects;
  */
 @JsonInclude(Include.NON_NULL)
 public class Instance implements Serializable {
+    
+    /**
+     * Instance auto-increment index, used to generate instance ID.
+     */
+    private static final AtomicLong AUTO_INCREMENT_ID = new AtomicLong();
     
     private static final long serialVersionUID = -742906310567291979L;
     
@@ -264,4 +271,14 @@ public class Instance implements Serializable {
         return getMetadata().get(key);
     }
     
+    /**
+     * Generate and set the instance id when the instance id is empty.
+     */
+    public void setInstanceIdIfNeeded() {
+        if (StringUtils.isEmpty(this.instanceId)) {
+            long curIndex = AUTO_INCREMENT_ID.getAndIncrement();
+            this.instanceId = ip + Constants.COLON + port + Constants.NAMING_INSTANCE_ID_SPLITTER + curIndex
+                    + Constants.NAMING_INSTANCE_ID_SPLITTER + System.currentTimeMillis();
+        }
+    }
 }

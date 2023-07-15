@@ -184,4 +184,24 @@ public class NamingUtils {
     public static boolean isNumber(String str) {
         return !StringUtils.isEmpty(str) && NUMBER_PATTERN.matcher(str).matches();
     }
+    
+    /**
+     * Set instanceId if needed.
+     *
+     * @param instance Instance to be registered
+     */
+    public static void setInstanceIdIfNeeded(Instance instance) {
+        instance.setInstanceIdIfNeeded();
+    }
+    
+    /**
+     * Batch set instanceId if needed.
+     *
+     * @param instances List of instances to be registered
+     */
+    public static void batchSetInstanceIdIfNeeded(List<Instance> instances) {
+        for (Instance instance : instances) {
+            instance.setInstanceIdIfNeeded();
+        }
+    }
 }

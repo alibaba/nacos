@@ -140,6 +140,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
+        NamingUtils.setInstanceIdIfNeeded(instance);
         clientProxy.registerService(serviceName, groupName, instance);
     }
     
@@ -147,6 +148,7 @@ public class NacosNamingService implements NamingService {
     public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
             throws NacosException {
         NamingUtils.batchCheckInstanceIsLegal(instances);
+        NamingUtils.batchSetInstanceIdIfNeeded(instances);
         clientProxy.batchRegisterService(serviceName, groupName, instances);
     }
     

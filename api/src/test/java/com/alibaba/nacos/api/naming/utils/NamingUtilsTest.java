@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public class NamingUtilsTest {
@@ -239,5 +241,57 @@ public class NamingUtilsTest {
     
         String str2 = "123456";
         assertTrue(NamingUtils.isNumber(str2));
+    }
+    
+    @Test
+    public void testSetInstanceIdIfNeeded() {
+        Instance instance = new Instance();
+        NamingUtils.setInstanceIdIfNeeded(instance);
+        assertNotNull(instance.getInstanceId());
+        String customInsId = "customId_1";
+        instance.setInstanceId(customInsId);
+        assertEquals(customInsId, instance.getInstanceId());
+        
+        Instance instance1 = new Instance();
+        Instance instance2 = new Instance();
+        Instance instance3 = new Instance();
+        
+        NamingUtils.setInstanceIdIfNeeded(instance1);
+        NamingUtils.setInstanceIdIfNeeded(instance2);
+        NamingUtils.setInstanceIdIfNeeded(instance3);
+        
+        assertNotNull(instance1.getInstanceId());
+        assertNotNull(instance2.getInstanceId());
+        assertNotNull(instance3.getInstanceId());
+        
+        assertNotEquals(instance1.getInstanceId(), instance2.getInstanceId());
+        assertNotEquals(instance1.getInstanceId(), instance3.getInstanceId());
+        assertNotEquals(instance2.getInstanceId(), instance3.getInstanceId());
+    }
+    
+    @Test
+    public void testBatchSetInstanceIdIfNeeded() {
+        List<Instance> instances = new ArrayList<>();
+        Instance instance1 = new Instance();
+        String customInsId = "customId_1";
+        instance1.setInstanceId(customInsId);
+        Instance instance2 = new Instance();
+        Instance instance3 = new Instance();
+        
+        instances.add(instance1);
+        instances.add(instance2);
+        instances.add(instance3);
+        
+        NamingUtils.batchSetInstanceIdIfNeeded(instances);
+        
+        assertNotNull(instance1.getInstanceId());
+        assertNotNull(instance2.getInstanceId());
+        assertNotNull(instance3.getInstanceId());
+        
+        assertEquals(customInsId, instance1.getInstanceId());
+        
+        assertNotEquals(instance1.getInstanceId(), instance2.getInstanceId());
+        assertNotEquals(instance1.getInstanceId(), instance3.getInstanceId());
+        assertNotEquals(instance2.getInstanceId(), instance3.getInstanceId());
     }
 }
