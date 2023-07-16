@@ -296,7 +296,7 @@ public class NacosNamingService implements NamingService {
         
         ServiceInfo serviceInfo;
         String clusterString = StringUtils.join(clusters, ",");
-        if (subscribe) {
+        if (subscribe || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
             serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
             if (null == serviceInfo) {
                 serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
@@ -366,7 +366,7 @@ public class NacosNamingService implements NamingService {
     public Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters,
             boolean subscribe) throws NacosException {
         String clusterString = StringUtils.join(clusters, ",");
-        if (subscribe) {
+        if (subscribe || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
             ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
             if (null == serviceInfo) {
                 serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
