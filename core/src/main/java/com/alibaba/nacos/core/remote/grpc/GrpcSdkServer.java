@@ -17,11 +17,15 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
+import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilderSingleton;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -32,6 +36,8 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Service
 public class GrpcSdkServer extends BaseGrpcServer {
+    
+    private NacosGrpcProtocolNegotiator protocolNegotiator;
     
     @Override
     public int rpcPortOffset() {
@@ -64,8 +70,8 @@ public class GrpcSdkServer extends BaseGrpcServer {
     
     @Override
     protected int getMaxInboundMessageSize() {
-        Integer property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY,
-                Integer.class);
+        Integer property = EnvUtil
+                .getProperty(GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY, Integer.class);
         if (property != null) {
             return property;
         }
@@ -88,5 +94,27 @@ public class GrpcSdkServer extends BaseGrpcServer {
             return property;
         }
         return super.getPermitKeepAliveTime();
+    }
+    
+    @Override
+    protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
+        protocolNegotiator = ProtocolNegotiatorBuilderSingleton.getSingleton().build();
+        return Optional.ofNullable(protocolNegotiator);
+    }
+    
+    /**
+     * reload ssl context.
+     */
+    public void reloadProtocolNegotiator() {
+        if (protocolNegotiator != null) {
+            try {
+                protocolNegotiator.reloadNegotiator();
+            } catch (Throwable throwable) {
+                Loggers.REMOTE
+                        .info("Nacos {} Rpc server reload negotiator fail at port {}.", this.getClass().getSimpleName(),
+                                getServicePort());
+                throw throwable;
+            }
+        }
     }
 }

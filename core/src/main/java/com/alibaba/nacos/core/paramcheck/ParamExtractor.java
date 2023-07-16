@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.core.paramcheck;
+
+import java.util.List;
 
 /**
- * ssl context refresher spi holder.
+ * ParamExtractor interface.
  *
- * @author liuzunfei
- * @version $Id: RequestFilters.java, v 0.1 2023年03月17日 12:00 PM liuzunfei Exp $
+ * @param <T> the type parameter
+ * @author zhuoguang
  */
-public interface SslContextChangeAware {
+public interface ParamExtractor<T> {
     
     /**
-     * init rpc server ssl context.
+     * Gets target request list.
      *
-     * @param baseRpcServer rpc server.
+     * @return the target request list
      */
-    void init(BaseRpcServer baseRpcServer);
+    List<String> getTargetRequestList();
     
     /**
-     * do something on ssl context change.
+     * Extract param and check.
+     *
+     * @param params the params
+     * @throws Exception the exception
      */
-    void onSslContextChange();
-    
-    /**
-     * shutdown to clear context.
-     */
-    void shutdown();
+    void extractParamAndCheck(T params) throws Exception;
 }

@@ -54,7 +54,7 @@ public class ServiceInfoUpdateServiceTest {
                 notifyer);
         
         serviceInfoUpdateService.scheduleUpdateIfAbsent("aa", "bb", "cc");
-        TimeUnit.SECONDS.sleep(2);
+        TimeUnit.MILLISECONDS.sleep(1500);
         Mockito.verify(proxy).queryInstancesOfService(serviceName, group, clusters, 0, false);
     }
     

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.parser.grpc;
 
+import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.utils.ReflectUtils;
@@ -39,23 +40,35 @@ public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
             if (!configListenContexts.isEmpty()) {
                 namespaceId = ((ConfigBatchListenRequest) request).getConfigListenContexts().get(0).getTenant();
             }
+        } else if (request instanceof AbstractConfigRequest) {
+            namespaceId = ((AbstractConfigRequest) request).getTenant();
         } else {
             namespaceId = (String) ReflectUtils.getFieldValue(request, "tenant", StringUtils.EMPTY);
         }
-        return namespaceId;
+        return StringUtils.isBlank(namespaceId) ? StringUtils.EMPTY : namespaceId;
     }
     
     @Override
     protected String getGroup(Request request) {
-        String groupName = (String) ReflectUtils
-                .getFieldValue(request, com.alibaba.nacos.api.common.Constants.GROUP, StringUtils.EMPTY);
+        String groupName;
+        if (request instanceof AbstractConfigRequest) {
+            groupName = ((AbstractConfigRequest) request).getGroup();
+        } else {
+            groupName = (String) ReflectUtils
+                    .getFieldValue(request, com.alibaba.nacos.api.common.Constants.GROUP, StringUtils.EMPTY);
+        }
         return StringUtils.isBlank(groupName) ? StringUtils.EMPTY : groupName;
     }
     
     @Override
     protected String getResourceName(Request request) {
-        String dataId = (String) ReflectUtils
-                .getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATAID, StringUtils.EMPTY);
+        String dataId;
+        if (request instanceof AbstractConfigRequest) {
+            dataId = ((AbstractConfigRequest) request).getDataId();
+        } else {
+            dataId = (String) ReflectUtils
+                    .getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATAID, StringUtils.EMPTY);
+        }
         return StringUtils.isBlank(dataId) ? StringUtils.EMPTY : dataId;
     }
 }

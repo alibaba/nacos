@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import * as yamljs from 'yamljs';
+import * as yaml from 'js-yaml';
 
 /**
  * 校验一个配置项
@@ -141,7 +141,7 @@ export default {
    */
   validateYaml(str) {
     try {
-      return yamljs.parse(str);
+      return yaml.load(str);
     } catch (e) {
       return false;
     }
