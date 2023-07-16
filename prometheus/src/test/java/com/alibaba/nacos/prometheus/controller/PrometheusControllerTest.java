@@ -107,7 +107,7 @@ public class PrometheusControllerTest {
     public void testMetricNamespace() throws Exception {
         when(instanceServiceV2.listAllInstances(nameSpace, NamingUtils.getGroupedName(name, group))).thenReturn(
                 testInstanceList);
-        String prometheusNamespacePath = ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH.replace("{namespace}",
+        String prometheusNamespacePath = ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH.replace("{namespaceId}",
                 nameSpace);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(prometheusNamespacePath);
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
@@ -119,7 +119,7 @@ public class PrometheusControllerTest {
     public void testMetricNamespaceService() throws Exception {
         when(instanceServiceV2.listAllInstances(nameSpace, NamingUtils.getGroupedName(name, group))).thenReturn(
                 testInstanceList);
-        String promethesuNamespaceServicePath = ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH.replace("{namespace}",
+        String promethesuNamespaceServicePath = ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH.replace("{namespaceId}",
                 nameSpace);
         promethesuNamespaceServicePath = promethesuNamespaceServicePath.replace("{service}", service.getName());
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(promethesuNamespaceServicePath);
