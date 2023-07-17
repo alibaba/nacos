@@ -20,8 +20,8 @@ import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,7 +44,7 @@ public class HttpParamExtractorManager {
         
         @Override
         public List<ParamInfo> extractParam(HttpServletRequest params) throws Exception {
-            return new ArrayList<>();
+            return Collections.emptyList();
         }
     };
     
