@@ -137,7 +137,7 @@ public abstract class AbstractMapper implements Mapper {
 
         return sql.toString();
     }
-    
+
     @Override
     public String[] getPrimaryKeyGeneratedKeys() {
         return new String[]{"id"};
