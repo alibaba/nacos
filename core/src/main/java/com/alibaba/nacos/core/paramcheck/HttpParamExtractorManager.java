@@ -44,7 +44,7 @@ public class HttpParamExtractorManager {
         
         @Override
         public List<ParamInfo> extractParam(HttpServletRequest params) throws Exception {
-            return new ArrayList<ParamInfo>();
+            return new ArrayList<>();
         }
     };
     

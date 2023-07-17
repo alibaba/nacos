@@ -43,7 +43,7 @@ public class RpcParamExtractorManager {
         
         @Override
         public List<ParamInfo> extractParam(Request request) throws Exception {
-            return new ArrayList<ParamInfo>();
+            return new ArrayList<>();
         }
     };
     
