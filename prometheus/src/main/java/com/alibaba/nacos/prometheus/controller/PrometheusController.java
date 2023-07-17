@@ -23,20 +23,19 @@ import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.prometheus.api.ApiConstants;
+import com.alibaba.nacos.prometheus.utils.PrometheusUtils;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import static java.util.stream.Collectors.groupingBy;
 
 /**
  * Support Prometheus SD Controller.
@@ -73,26 +72,73 @@ public class PrometheusController {
                 List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespace,
                         service.getGroupedServiceName());
                 
-                for (Instance instance : instances) {
-                    targetSet.add(instance);
-                }
+                targetSet.addAll(instances);
                 
             }
         }
-        Map<String, List<Instance>> groupingInsMap = targetSet.stream().collect(groupingBy(Instance::getClusterName));
-        groupingInsMap.forEach((key, value) -> {
-            ObjectNode jsonNode = JacksonUtils.createEmptyJsonNode();
-            ArrayNode targetsNode = JacksonUtils.createEmptyArrayNode();
-            ObjectNode labelNode = JacksonUtils.createEmptyJsonNode();
-            value.forEach(e -> {
-                targetsNode.add(e.getIp() + ":" + e.getPort());
-            });
-            labelNode.put("__meta_clusterName", key);
-            jsonNode.replace("targets", targetsNode);
-            jsonNode.replace("labels", labelNode);
-            arrayNode.add(jsonNode);
+        
+        PrometheusUtils.assembleArrayNodes(targetSet, arrayNode);
+        return ResponseEntity.ok().body(arrayNode.toString());
+    }
+    
+    
+    /**
+     * Get service instances from designated namespace.
+     *
+     * @throws NacosException NacosException.
+     */
+    @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH, produces = "application/json; charset=UTF-8")
+    public ResponseEntity metricNamespace(@PathVariable("namespaceId") String namespaceId) throws NacosException {
+        ArrayNode arrayNode = JacksonUtils.createEmptyArrayNode();
+        Set<Instance> targetSet = new HashSet<>();
+        Set<String> allNamespaces = serviceManager.getAllNamespaces();
+        if (!allNamespaces.contains(namespaceId)) {
+            return ResponseEntity.ok().body(arrayNode.toString());
+        }
+        
+        Set<Service> singletons = serviceManager.getSingletons(namespaceId);
+        for (Service service : singletons) {
             
-        });
+            List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespaceId,
+                    service.getGroupedServiceName());
+            
+            targetSet.addAll(instances);
+            
+        }
+        
+        PrometheusUtils.assembleArrayNodes(targetSet, arrayNode);
+        return ResponseEntity.ok().body(arrayNode.toString());
+    }
+    
+    /**
+     * Get service instances from designated namespace and service.
+     *
+     * @throws NacosException NacosException.
+     */
+    @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH, produces = "application/json; charset=UTF-8")
+    public ResponseEntity metricNamespaceService(@PathVariable("namespaceId") String namespaceId,
+            @PathVariable("service") String service) throws NacosException {
+        ArrayNode arrayNode = JacksonUtils.createEmptyArrayNode();
+        Set<Instance> targetSet = new HashSet<>();
+        Set<String> allNamespaces = serviceManager.getAllNamespaces();
+        if (!allNamespaces.contains(namespaceId)) {
+            return ResponseEntity.ok().body(arrayNode.toString());
+        }
+        
+        Set<Service> singletons = serviceManager.getSingletons(namespaceId);
+        for (Service existService : singletons) {
+            if (!existService.getName().equals(service)) {
+                continue;
+            }
+            List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespaceId,
+                    existService.getGroupedServiceName());
+            
+            targetSet.addAll(instances);
+            
+        }
+        
+        PrometheusUtils.assembleArrayNodes(targetSet, arrayNode);
+        
         return ResponseEntity.ok().body(arrayNode.toString());
     }
 }
