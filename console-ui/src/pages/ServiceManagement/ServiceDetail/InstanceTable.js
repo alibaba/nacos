@@ -162,7 +162,7 @@ class InstanceTable extends React.Component {
             cell={(metadata = {}) => {
               if (!metadata) return null;
               return Object.keys(metadata).map(k => (
-                <p>
+                <p key={k}>
                   {k}={metadata[k]}
                 </p>
               ));
