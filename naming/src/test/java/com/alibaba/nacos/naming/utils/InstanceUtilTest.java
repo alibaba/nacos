@@ -20,10 +20,13 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.pojo.instance.DefaultInstanceIdGenerator;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -82,5 +85,39 @@ public class InstanceUtilTest {
         source.setMetadata(new HashMap<>(metaData));
         Instance instance = InstanceUtil.deepCopy(source);
         assertNotNull(instance);
+    }
+    
+    @Test
+    public void testSetInstanceIdIfEmpty() {
+        Instance instance = new Instance();
+        instance.setIp("1.1.1.1");
+        instance.setPort(8890);
+        String groupedServiceName = "test";
+        InstanceUtil.setInstanceIdIfEmpty(instance, groupedServiceName);
+        assertNotNull(instance.getInstanceId());
+        DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(groupedServiceName,
+                instance.getClusterName(), instance.getIp(), instance.getPort());
+        assertEquals(instance.getInstanceId(), idGenerator.generateInstanceId());
+        String customInsId = "customInstanceId_1";
+        Instance instance1 = new Instance();
+        instance1.setInstanceId(customInsId);
+        InstanceUtil.setInstanceIdIfEmpty(instance1, groupedServiceName);
+        assertEquals(instance1.getInstanceId(), customInsId);
+    }
+    
+    @Test
+    public void testBatchSetInstanceIdIfEmpty() {
+        List<Instance> instances = new ArrayList<>();
+        Instance instance1 = new Instance();
+        Instance instance2 = new Instance();
+        Instance instance3 = new Instance();
+        instances.add(instance1);
+        instances.add(instance2);
+        instances.add(instance3);
+        String groupedServiceName = "test";
+        InstanceUtil.batchSetInstanceIdIfEmpty(instances, groupedServiceName);
+        assertNotNull(instance1.getInstanceId());
+        assertNotNull(instance2.getInstanceId());
+        assertNotNull(instance3.getInstanceId());
     }
 }
