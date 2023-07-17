@@ -52,7 +52,7 @@ public abstract class AbstractMapper implements Mapper {
         appendWhereClause(where, sql);
         return sql.toString();
     }
-
+    
     @Override
     public String insert(List<String> columns) {
         StringBuilder sql = new StringBuilder();
