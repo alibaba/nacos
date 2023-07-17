@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.console.controller.v2;
 
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.core.cluster.health.ModuleHealthCheckerHolder;
 import com.alibaba.nacos.core.cluster.health.ReadinessResult;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,8 +41,8 @@ public class HealthControllerV2 {
      * Nacos is in broken states.
      */
     @GetMapping("/liveness")
-    public ResponseEntity<String> liveness() {
-        return ResponseEntity.ok().body("OK");
+    public Result<String> liveness() {
+        return Result.success("ok");
     }
     
     /**
@@ -53,12 +52,12 @@ public class HealthControllerV2 {
      * ready.
      */
     @GetMapping("/readiness")
-    public ResponseEntity<String> readiness(HttpServletRequest request) {
+    public Result<String> readiness(HttpServletRequest request) {
         ReadinessResult result = ModuleHealthCheckerHolder.getInstance().checkReadiness();
         if (result.isSuccess()) {
-            return ResponseEntity.ok().body("OK");
+            return Result.success("ok");
         }
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result.getResultMessage());
+        return Result.failure(result.getResultMessage());
     }
     
 }

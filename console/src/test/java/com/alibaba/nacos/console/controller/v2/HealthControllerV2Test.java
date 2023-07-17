@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.controller.v2;
 
+import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.service.ConfigReadinessCheckService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.cluster.health.ModuleHealthCheckerHolder;
@@ -31,7 +32,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.http.ResponseEntity;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -71,8 +71,8 @@ public class HealthControllerV2Test {
     
     @Test
     public void testLiveness() throws Exception {
-        ResponseEntity<String> response = healthControllerV2.liveness();
-        Assert.assertEquals(200, response.getStatusCodeValue());
+        Result<String> result = healthControllerV2.liveness();
+        Assert.assertEquals(0, result.getCode().intValue());
     }
     
     @Test
@@ -80,9 +80,9 @@ public class HealthControllerV2Test {
         
         Mockito.when(configInfoPersistService.configInfoCount(any(String.class))).thenReturn(0);
         Mockito.when(serverStatusManager.getServerStatus()).thenReturn(ServerStatus.UP);
-        ResponseEntity<String> response = healthControllerV2.readiness(null);
-        Assert.assertEquals(200, response.getStatusCodeValue());
-        Assert.assertEquals("OK", response.getBody());
+        Result<String> result = healthControllerV2.readiness(null);
+        Assert.assertEquals(0, result.getCode().intValue());
+        Assert.assertEquals("success", result.getMessage());
     }
     
     @Test
@@ -92,9 +92,9 @@ public class HealthControllerV2Test {
                 .thenThrow(new RuntimeException("HealthControllerV2Test.testReadiness"));
         Mockito.when(serverStatusManager.getServerStatus())
                 .thenThrow(new RuntimeException("HealthControllerV2Test.testReadiness"));
-        ResponseEntity<String> response = healthControllerV2.readiness(null);
-        Assert.assertEquals(500, response.getStatusCodeValue());
-        Assert.assertEquals("naming and config not in readiness", response.getBody());
+        Result<String> result = healthControllerV2.readiness(null);
+        Assert.assertEquals(30000, result.getCode().intValue());
+        Assert.assertEquals("naming and config not in readiness", result.getMessage());
     }
     
     @Test
@@ -103,9 +103,9 @@ public class HealthControllerV2Test {
         Mockito.when(configInfoPersistService.configInfoCount(any(String.class)))
                 .thenThrow(new RuntimeException("HealthControllerV2Test.testReadiness"));
         Mockito.when(serverStatusManager.getServerStatus()).thenReturn(ServerStatus.UP);
-        ResponseEntity<String> response = healthControllerV2.readiness(null);
-        Assert.assertEquals(500, response.getStatusCodeValue());
-        Assert.assertEquals("config not in readiness", response.getBody());
+        Result<String> result = healthControllerV2.readiness(null);
+        Assert.assertEquals(30000, result.getCode().intValue());
+        Assert.assertEquals("config not in readiness", result.getMessage());
     }
     
     @Test
@@ -114,9 +114,9 @@ public class HealthControllerV2Test {
         Mockito.when(configInfoPersistService.configInfoCount(any(String.class))).thenReturn(0);
         Mockito.when(serverStatusManager.getServerStatus())
                 .thenThrow(new RuntimeException("HealthControllerV2Test.testReadiness"));
-        ResponseEntity<String> response = healthControllerV2.readiness(null);
-        Assert.assertEquals(500, response.getStatusCodeValue());
-        Assert.assertEquals("naming not in readiness", response.getBody());
+        Result<String> result = healthControllerV2.readiness(null);
+        Assert.assertEquals(30000, result.getCode().intValue());
+        Assert.assertEquals("naming not in readiness", result.getMessage());
     }
     
 }
