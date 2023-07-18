@@ -110,7 +110,6 @@ public class ConfigOperationService {
                                     configOperateResult.getLastModified(), configForm.getContent(),
                                     ConfigTagUtil.getIstioType(configForm.getConfigTags())));
                 }
-                
             } else {
                 persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + configForm.getTag();
                 configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
