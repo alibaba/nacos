@@ -16,7 +16,7 @@ env:
   BASE_RUN_URL: https://api.github.com/repos/Wuyunfan-BUPT/nacos/actions/runs
 
 jobs:
-  wait-dist-tar:
+  wait-dist:
     runs-on: ubuntu-latest
     steps:
       - name: waiting pr-ci
@@ -32,7 +32,7 @@ jobs:
           echo "github.event.workflow_run.event: ${{ github.event.workflow_run.event }} "
           echo "github.event.workflow_run.conclusion: ${{ github.event.workflow_run.conclusion }}"
   docker:
-    needs: [wait-dist-tar]
+    needs: [wait-dist]
     runs-on: ubuntu-latest
     if: >
       github.event.workflow_run.event == 'pull_request' &&
