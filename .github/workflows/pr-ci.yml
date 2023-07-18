@@ -4,6 +4,12 @@ on:
   pull_request:
     branches: [ develop, v1.x-develop ]
 
+env:
+  DOCKER_REPO: wuyfeedocker/nacos-ci
+  REPO_NAME: Wuyunfan-BUPT/nacos
+  HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  BASE_URL: https://api.github.com/repos/Wuyunfan-BUPT/nacos/actions/variables
+
 jobs:
   dist-tar:
     name: Build distribution tar
@@ -34,3 +40,29 @@ jobs:
         with:
           name: pr
           path: pr/
+      - name: generate variables
+        run: |
+          curl -L -X POST ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }} -d "{\"name\":\"VARI_${{ github.run_id }}\",\"value\":\"waiting\"}"
+  show-runID:
+    name: Generate and show run-id
+    needs: [dist-tar]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Waiting e2e
+        run: |
+          values="waiting"
+          while [ ${values} == "waiting" ]
+          do
+            echo "${values}..."
+            sleep 5
+            values=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }} | jq -r '.variables[] | select(.name == "VARI_${{ github.run_id }}") | .value'`
+          done
+          echo "########## pr-e2e-test end ##########"
+          echo  "https://github.com/${{ env.REPO_NAME }}/actions/runs/${values}" >> $GITHUB_STEP_SUMMARY
+      - name: delete variables
+        run: |
+          curl -L -X DELETE ${{ env.HEADER }} ${{ env.BASE_URL }}/VARI_${{ github.run_id }}
+
+
+
+
