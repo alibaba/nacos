@@ -5,18 +5,38 @@ on:
   workflow_run:
     workflows: ["PR-CI"]
     types:
-      - completed
+      - requested
   
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  REPO_NAME: Wuyunfan-BUPT/nacos
+  HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  BASE_VARI_URL: https://api.github.com/${REPO_NAME}/nacos/actions/variables
+  BASE_RUN_URL: https://api.github.com/repos/${REPO_NAME}/actions/runs
 
 jobs:
+  wait-dist-tar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: waiting pr-ci
+        run: |
+          status="running"
+          while [ ${status} != "completed" ]
+          do
+            echo "waitting dist-tar..."
+            sleep 3
+            status=`curl -s ${{ env.BASE_RUN_URL }}/${{ github.event.workflow_run.id }}/jobs | jq -r '.jobs[] | select(.name == "dist-tar") | .status'`
+          done
+          echo "dist-tar completed!"
+          echo "github.event.workflow_run.event: ${{ github.event.workflow_run.event }} "
+          echo "github.event.workflow_run.conclusion: ${{ github.event.workflow_run.conclusion }}"
   docker:
+    needs: [wait-dist-tar]
     runs-on: ubuntu-latest
     if: >
       github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success'
+      `curl -s ${{ env.BASE_RUN_URL }}/${{ github.event.workflow_run.id }}/jobs | jq -r '.jobs[] | select(.name == "dist-tar") | .conclusion'` == 'success'
     timeout-minutes: 30
     strategy:
       matrix:
@@ -208,3 +228,12 @@ jobs:
           ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
           test-version: "${{ matrix.version }}"
           job-id: ${{ strategy.job-index }}
+  return-runID:
+    if: always()
+    needs: [clean]
+    name: return e2e run-id
+    runs-on: ubuntu-latest
+    steps:
+        - name: return workflow_run id
+          run: |
+            curl -L -X PATCH ${{ env.HEADER_PARAMS }} ${{ env.BASE_VARI_URL }}/VARI_${{ github.event.workflow_run.id }} -d "{\"name\": \"VARI_${{ github.event.workflow_run.id }}\",\"value\": \"${{ github.run_id }}\"}" 
