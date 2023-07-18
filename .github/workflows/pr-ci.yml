@@ -8,7 +8,7 @@ env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   REPO_NAME: Wuyunfan-BUPT/nacos
   HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
-  BASE_URL: https://api.github.com/Wuyunfan-BUPT/nacos/nacos/actions/variables
+  BASE_URL: https://api.github.com/Wuyunfan-BUPT/nacos/actions/variables
 
 jobs:
   dist-tar:
