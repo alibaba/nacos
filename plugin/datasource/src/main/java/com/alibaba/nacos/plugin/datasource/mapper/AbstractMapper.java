@@ -100,6 +100,7 @@ public abstract class AbstractMapper implements Mapper {
             return sql.toString();
         }
         
+        sql.append(" ");
         appendWhereClause(where, sql);
         
         return sql.toString();
@@ -144,7 +145,7 @@ public abstract class AbstractMapper implements Mapper {
     }
     
     private void appendWhereClause(List<String> where, StringBuilder sql) {
-        sql.append(" WHERE ");
+        sql.append("WHERE ");
         for (int i = 0; i < where.size(); i++) {
             sql.append(where.get(i)).append(" = ").append("?");
             if (i != where.size() - 1) {

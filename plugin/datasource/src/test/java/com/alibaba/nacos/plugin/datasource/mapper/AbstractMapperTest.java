@@ -35,7 +35,7 @@ public class AbstractMapperTest {
     @Test
     public void testSelect() {
         String sql = abstractMapper.select(Arrays.asList("id", "name"), Arrays.asList("id"));
-        Assert.assertEquals(sql, "SELECT id,name FROM tenant_info  WHERE id = ?");
+        Assert.assertEquals(sql, "SELECT id,name FROM tenant_info WHERE id = ?");
     }
     
     @Test
@@ -59,7 +59,7 @@ public class AbstractMapperTest {
     @Test
     public void testCount() {
         String sql = abstractMapper.count(Arrays.asList("id"));
-        Assert.assertEquals(sql, "SELECT COUNT(*) FROM tenant_info  WHERE id = ?");
+        Assert.assertEquals(sql, "SELECT COUNT(*) FROM tenant_info WHERE id = ?");
     }
     
     @Test
