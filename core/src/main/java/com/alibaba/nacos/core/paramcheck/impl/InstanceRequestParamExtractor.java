@@ -19,9 +19,11 @@ package com.alibaba.nacos.core.paramcheck.impl;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Param extractor for {@link InstanceRequest}.
@@ -29,27 +31,30 @@ import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
  * @author zhuoguang
  */
 public class InstanceRequestParamExtractor extends AbstractRpcParamExtractor {
-
+    
     @Override
     public void init() {
         addTargetRequest(InstanceRequest.class.getSimpleName());
     }
-
+    
     @Override
-    public void extractParamAndCheck(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) throws Exception {
         InstanceRequest req = (InstanceRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(req.getNamespace());
         paramInfo.setServiceName(req.getServiceName());
         paramInfo.setGroup(req.getGroupName());
         Instance instance = req.getInstance();
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         if (instance == null) {
-            return;
+            paramInfos.add(paramInfo);
+            return paramInfos;
         }
         paramInfo.setIp(instance.getIp());
         paramInfo.setPort(String.valueOf(instance.getPort()));
         paramInfo.setCluster(instance.getClusterName());
         paramInfo.setMetadata(instance.getMetadata());
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
+        paramInfos.add(paramInfo);
+        return paramInfos;
     }
 }

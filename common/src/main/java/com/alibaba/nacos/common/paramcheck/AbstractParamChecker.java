@@ -14,33 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.paramcheck;
-
-import com.alibaba.nacos.common.paramcheck.ParamInfo;
+package com.alibaba.nacos.common.paramcheck;
 
 import java.util.List;
 
 /**
- * ParamExtractor interface.
+ * The type Abstract param checker.
  *
- * @param <T> the type parameter
  * @author zhuoguang
  */
-public interface ParamExtractor<T> {
+public abstract class AbstractParamChecker {
     
     /**
-     * Gets target request list.
+     * Gets checker type.
      *
-     * @return the target request list
+     * @return the checker type
      */
-    List<String> getTargetRequestList();
+    public abstract String getCheckerType();
     
     /**
-     * Extract param.
+     * Check param info list.
      *
-     * @param params the params
-     * @return the list
-     * @throws Exception the exception
+     * @param paramInfos the param infos
      */
-    List<ParamInfo> extractParam(T params) throws Exception;
+    public abstract void checkParamInfoList(List<ParamInfo> paramInfos);
 }

@@ -14,7 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor
-com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor
-com.alibaba.nacos.naming.paramcheck.NamingInstanceBeatHttpParamExtractor
-com.alibaba.nacos.naming.paramcheck.NamingInstanceMetadataBatchHttpParamExtractor
+com.alibaba.nacos.common.paramcheck.DefaultParamChecker

@@ -17,10 +17,12 @@
 package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +42,8 @@ public class RpcParamExtractorManager {
         }
         
         @Override
-        public void extractParamAndCheck(Request params) throws Exception {
+        public List<ParamInfo> extractParam(Request request) throws Exception {
+            return Collections.emptyList();
         }
     };
     

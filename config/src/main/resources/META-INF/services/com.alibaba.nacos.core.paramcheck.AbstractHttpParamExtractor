@@ -15,4 +15,5 @@
 #
 
 com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor
+com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor
 com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor

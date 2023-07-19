@@ -41,6 +41,6 @@ public class InstanceRequestParamExtractorTest {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
         AbstractRpcParamExtractor extractor = paramExtractorManager.getExtractor(req.getClass().getSimpleName());
         assertEquals(extractor.getClass().getSimpleName(), InstanceRequestParamExtractor.class.getSimpleName());
-        extractor.extractParamAndCheck(req);
+        extractor.extractParam(req);
     }
 }

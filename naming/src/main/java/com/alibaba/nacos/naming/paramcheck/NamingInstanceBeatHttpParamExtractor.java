@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.paramcheck;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -27,6 +26,8 @@ import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Naming instance beat http param extractor.
@@ -44,7 +45,7 @@ public class NamingInstanceBeatHttpParamExtractor extends AbstractHttpParamExtra
     }
     
     @Override
-    public void extractParamAndCheck(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
         ParamInfo paramInfo = new ParamInfo();
         String serviceName = request.getParameter("serviceName");
         String groupName = request.getParameter("groupName");
@@ -59,7 +60,8 @@ public class NamingInstanceBeatHttpParamExtractor extends AbstractHttpParamExtra
         paramInfo.setIp(request.getParameter("ip"));
         paramInfo.setPort(request.getParameter("port"));
         paramInfo.setNamespaceId(request.getParameter("namespaceId"));
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
         String beatString = request.getParameter("beat");
         if (StringUtils.isNotBlank(beatString)) {
             RsInfo clientBeat = JacksonUtils.toObj(beatString, RsInfo.class);
@@ -67,7 +69,8 @@ public class NamingInstanceBeatHttpParamExtractor extends AbstractHttpParamExtra
             beatParamInfo.setIp(clientBeat.getIp());
             beatParamInfo.setPort(String.valueOf(clientBeat.getPort()));
             beatParamInfo.setCluster(clientBeat.getCluster());
-            ParamCheckUtils.checkParamInfoFormat(beatParamInfo);
+            paramInfos.add(beatParamInfo);
         }
+        return paramInfos;
     }
 }

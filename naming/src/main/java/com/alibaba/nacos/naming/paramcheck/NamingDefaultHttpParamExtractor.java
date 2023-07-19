@@ -18,13 +18,14 @@ package com.alibaba.nacos.naming.paramcheck;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Naming default http param extractor.
@@ -39,7 +40,7 @@ public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
     }
     
     @Override
-    public void extractParamAndCheck(HttpServletRequest request) throws NacosException {
+    public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException {
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setIp(getAliasIp(request));
         paramInfo.setPort(getAliasPort(request));
@@ -56,7 +57,9 @@ public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         paramInfo.setServiceName(serviceName);
         paramInfo.setGroup(groupName);
         paramInfo.setMetadata(UtilsAndCommons.parseMetadata(request.getParameter("metadata")));
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        return paramInfos;
     }
     
     private String getAliasNamespaceId(HttpServletRequest request) {
@@ -97,6 +100,8 @@ public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         String clusterName = request.getParameter("clusterName");
         if (StringUtils.isBlank(clusterName)) {
             clusterName = request.getParameter("cluster");
+        } else if (StringUtils.isBlank(clusterName)) {
+            clusterName = request.getParameter("clusters");
         }
         return clusterName;
     }

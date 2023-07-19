@@ -14,33 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.paramcheck;
+package com.alibaba.nacos.common.paramcheck;
 
-import com.alibaba.nacos.common.paramcheck.ParamInfo;
+import org.junit.Test;
 
-import java.util.List;
+import java.util.ArrayList;
 
 /**
- * ParamExtractor interface.
+ * The type Default param checker test.
  *
- * @param <T> the type parameter
  * @author zhuoguang
  */
-public interface ParamExtractor<T> {
+public class DefaultParamCheckerTest {
     
     /**
-     * Gets target request list.
-     *
-     * @return the target request list
+     * Check param info list.
      */
-    List<String> getTargetRequestList();
-    
-    /**
-     * Extract param.
-     *
-     * @param params the params
-     * @return the list
-     * @throws Exception the exception
-     */
-    List<ParamInfo> extractParam(T params) throws Exception;
+    @Test
+    public void checkParamInfoList() {
+        AbstractParamChecker paramChecker = new DefaultParamChecker();
+        ParamInfo paramInfo = new ParamInfo();
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        paramChecker.checkParamInfoList(paramInfos);
+    }
 }

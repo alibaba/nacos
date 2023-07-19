@@ -18,10 +18,10 @@ package com.alibaba.nacos.core.paramcheck.impl;
 
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -30,25 +30,27 @@ import java.util.List;
  * @author zhuoguang
  */
 public class ConfigBatchListenRequestParamExtractor extends AbstractRpcParamExtractor {
-
+    
     @Override
     public void init() {
         addTargetRequest(ConfigBatchListenRequest.class.getSimpleName());
     }
-
+    
     @Override
-    public void extractParamAndCheck(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) throws Exception {
         ConfigBatchListenRequest req = (ConfigBatchListenRequest) request;
         List<ConfigBatchListenRequest.ConfigListenContext> configListenContextList = req.getConfigListenContexts();
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         if (configListenContextList == null) {
-            return;
+            return paramInfos;
         }
         for (ConfigBatchListenRequest.ConfigListenContext configListenContext : configListenContextList) {
             ParamInfo configListContextParamInfo = new ParamInfo();
             configListContextParamInfo.setNamespaceId(configListenContext.getTenant());
             configListContextParamInfo.setGroup(configListenContext.getGroup());
             configListContextParamInfo.setDataId(configListenContext.getDataId());
-            ParamCheckUtils.checkParamInfoFormat(configListContextParamInfo);
+            paramInfos.add(configListContextParamInfo);
         }
+        return paramInfos;
     }
 }

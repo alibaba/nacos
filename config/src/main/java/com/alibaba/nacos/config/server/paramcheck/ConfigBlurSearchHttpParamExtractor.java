@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.paramcheck;
+package com.alibaba.nacos.config.server.paramcheck;
 
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
+import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 
 import javax.servlet.http.HttpServletRequest;
@@ -25,37 +27,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Console default http param extractor.
+ * The type Config blur search http param extractor.
  *
  * @author zhuoguang
  */
-public class ConsoleDefaultHttpParamExtractor extends AbstractHttpParamExtractor {
+public class ConfigBlurSearchHttpParamExtractor extends AbstractHttpParamExtractor {
+    
+    private static final String BLUR_SEARCH_MODE = "blur";
     
     @Override
     public void init() {
-        addDefaultTargetRequest("console");
+        addTargetRequest(Constants.CONFIG_CONTROLLER_PATH, HttpMethod.GET);
+        addTargetRequest(Constants.CONFIG_CONTROLLER_PATH + "/", HttpMethod.GET);
     }
     
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
-        ParamInfo paramInfo = new ParamInfo();
-        paramInfo.setNamespaceId(getAliasNamespaceId(request));
-        paramInfo.setNamespaceShowName(getAliasNamespaceShowName(request));
+        String searchMode = request.getParameter("search");
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        if (StringUtils.equals(searchMode, BLUR_SEARCH_MODE)) {
+            return paramInfos;
+        }
+        ParamInfo paramInfo = new ParamInfo();
+        paramInfo.setNamespaceId(request.getParameter("tenant"));
+        paramInfo.setDataId(request.getParameter("dataId"));
+        paramInfo.setGroup(request.getParameter("group"));
         paramInfos.add(paramInfo);
         return paramInfos;
-    }
-    
-    private String getAliasNamespaceId(HttpServletRequest request) {
-        String namespaceId = request.getParameter("namespaceId");
-        if (StringUtils.isBlank(namespaceId)) {
-            namespaceId = request.getParameter("customNamespaceId");
-        }
-        return namespaceId;
-    }
-    
-    private String getAliasNamespaceShowName(HttpServletRequest request) {
-        String namespaceShowName = request.getParameter("namespaceName");
-        return namespaceShowName;
     }
 }
