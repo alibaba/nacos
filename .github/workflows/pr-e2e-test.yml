@@ -10,6 +10,8 @@ on:
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+  HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
+  BASE_URL: https://api.github.com/repos/${GITHUB_REPOSITORY}
 
 jobs:
   docker:
@@ -23,6 +25,12 @@ jobs:
         base-image: ["ubuntu"]
         java-version: ["8"]
     steps:
+      - name: write issue comment
+        run: |
+          number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[] | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
+          echo ${number}
+          curl -L -X POST ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/issues/${number}/comments -d "{\"body\":\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
+          curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
       - name: 'Download artifact'
         uses: actions/github-script@v3.1.0
         with:
