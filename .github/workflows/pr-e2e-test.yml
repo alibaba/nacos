@@ -1,7 +1,6 @@
 name: E2E test for pull request
 
 
-
 on:
   workflow_run:
     workflows: ["PR-CI"]
