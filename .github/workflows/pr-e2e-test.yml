@@ -14,6 +14,13 @@ env:
   BASE_URL: https://api.github.com/repos/${GITHUB_REPOSITORY}
 
 jobs:
+  write-issue:
+    - name: write issue comment
+      run: |
+        number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[] | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
+        echo ${number}
+        curl -L -X POST ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/issues/${number}/comments -d "{\"body\":\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
+        curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
   docker:
     runs-on: ubuntu-latest
     if: >
@@ -25,12 +32,6 @@ jobs:
         base-image: ["ubuntu"]
         java-version: ["8"]
     steps:
-      - name: write issue comment
-        run: |
-          number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[] | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
-          echo ${number}
-          curl -L -X POST ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/issues/${number}/comments -d "{\"body\":\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
-          curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
       - name: 'Download artifact'
         uses: actions/github-script@v3.1.0
         with:
