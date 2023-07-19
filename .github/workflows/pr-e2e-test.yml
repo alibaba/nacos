@@ -1,6 +1,7 @@
 name: E2E test for pull request
 
 
+
 on:
   workflow_run:
     workflows: ["PR-CI"]
@@ -25,7 +26,7 @@ jobs:
           while [ ${status} != "completed" ]
           do
             echo "waitting dist-tar..."
-            sleep 3
+            sleep 20
             status=`curl -s ${BASE_RUN_URL}/${{ github.event.workflow_run.id }}/jobs | jq -r '.jobs[] | select(.name == "Build distribution tar") | .status'`
           done
           echo "dist-tar completed!"

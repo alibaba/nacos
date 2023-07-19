@@ -54,7 +54,7 @@ jobs:
           while [ ${values} == "waiting" ]
           do
             echo "${values}..."
-            sleep 5
+            sleep 30
             values=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }} | jq -r '.variables[] | select(.name == "VARI_${{ github.run_id }}") | .value'`
           done
           echo "########## pr-e2e-test end ##########"
