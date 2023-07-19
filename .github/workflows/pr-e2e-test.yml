@@ -1,11 +1,12 @@
 name: E2E test for pull request
 
 
+
 on:
   workflow_run:
     workflows: ["PR-CI"]
     types:
-      - completed
+      - requested
   
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
@@ -22,10 +23,11 @@ jobs:
         curl -L -X POST ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/issues/${number}/comments -d "{\"body\":\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
         curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
   docker:
+    needs: [wait-dist]
     runs-on: ubuntu-latest
     if: >
       github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'success'
+      `curl -s ${BASE_RUN_URL}/${{ github.event.workflow_run.id }}/jobs | jq -r '.jobs[] | select(.name == "Build distribution tar") | .conclusion'` == 'success'
     timeout-minutes: 30
     strategy:
       matrix:
@@ -217,3 +219,12 @@ jobs:
           ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
           test-version: "${{ matrix.version }}"
           job-id: ${{ strategy.job-index }}
+  return-runID:
+    if: always()
+    needs: [clean]
+    name: return e2e run-id
+    runs-on: ubuntu-latest
+    steps:
+        - name: return workflow_run id
+          run: |
+            curl -L -X PATCH ${{ env.HEADER_PARAMS }} ${{ env.BASE_VARI_URL }}/VARI_${{ github.event.workflow_run.id }} -d "{\"name\": \"VARI_${{ github.event.workflow_run.id }}\",\"value\": \"${{ github.run_id }}\"}" 
