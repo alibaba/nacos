@@ -26,7 +26,7 @@ jobs:
           do
             echo "waitting dist-tar..."
             sleep 3
-            status=`curl -s ${{ env.BASE_RUN_URL }}/${{ github.event.workflow_run.id }}/jobs | jq -r '.jobs[] | select(.name == "Build distribution tar") | .status'`
+            status=`curl -s ${BASE_RUN_URL}/${{ github.event.workflow_run.id }}/jobs | jq -r '.jobs[] | select(.name == "Build distribution tar") | .status'`
           done
           echo "dist-tar completed!"
           echo "github.event.workflow_run.event: ${{ github.event.workflow_run.event }} "
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event.workflow_run.event == 'pull_request' &&
-      `curl -s ${env.BASE_RUN_URL}/${{ github.event.workflow_run.id }}/jobs | jq -r '.jobs[] | select(.name == "Build distribution tar") | .conclusion'` == 'success'
+      `curl -s ${BASE_RUN_URL}/${{ github.event.workflow_run.id }}/jobs | jq -r '.jobs[] | select(.name == "Build distribution tar") | .conclusion'` == 'success'
     timeout-minutes: 30
     strategy:
       matrix:
