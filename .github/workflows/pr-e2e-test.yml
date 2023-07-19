@@ -11,27 +11,17 @@ on:
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-  REPO_NAME: Wuyunfan-BUPT/nacos
   HEADER_PARAMS: "-H \"Accept: application/vnd.github+json\" -H \"Authorization: Bearer ${{ secrets.ACTION_TOKEN }}\" -H \"X-GitHub-Api-Version: 2022-11-28\""
-  BASE_VARI_URL: https://api.github.com/repos/Wuyunfan-BUPT/nacos/actions/variables
-  BASE_RUN_URL: https://api.github.com/repos/Wuyunfan-BUPT/nacos/actions/runs
+  BASE_URL: https://api.github.com/repos/${GITHUB_REPOSITORY}
 
 jobs:
-  wait-dist:
-    runs-on: ubuntu-latest
-    steps:
-      - name: waiting pr-ci
-        run: |
-          status="running"
-          while [ ${status} != "completed" ]
-          do
-            echo "waitting dist-tar..."
-            sleep 20
-            status=`curl -s ${BASE_RUN_URL}/${{ github.event.workflow_run.id }}/jobs | jq -r '.jobs[] | select(.name == "Build distribution tar") | .status'`
-          done
-          echo "dist-tar completed!"
-          echo "github.event.workflow_run.event: ${{ github.event.workflow_run.event }} "
-          echo "github.event.workflow_run.conclusion: ${{ github.event.workflow_run.conclusion }}"
+  write-issue:
+    - name: write issue comment
+      run: |
+        number=`curl -L ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables | jq -r '.variables[] | select(.name == "VAR_${{ github.event.workflow_run.id }}") | .value'`
+        echo ${number}
+        curl -L -X POST ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/issues/${number}/comments -d "{\"body\":\"https://github.com/${GITHUB_REPOSITORY}/actions/runs/${{ github.run_id }}\"}"
+        curl -L -X DELETE ${{ env.HEADER_PARAMS }} ${{ env.BASE_URL }}/actions/variables/VAR_${{ github.event.workflow_run.id }}
   docker:
     needs: [wait-dist]
     runs-on: ubuntu-latest
