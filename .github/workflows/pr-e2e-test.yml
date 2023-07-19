@@ -6,7 +6,7 @@ on:
   workflow_run:
     workflows: ["PR-CI"]
     types:
-      - requested
+      - completed
   
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
