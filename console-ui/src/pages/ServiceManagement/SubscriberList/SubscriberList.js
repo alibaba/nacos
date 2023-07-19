@@ -111,6 +111,8 @@ class SubscriberList extends React.Component {
   render() {
     const { locale = {}, subscriberData = {} } = this.props;
     const { count = 0, subscribers = [] } = subscriberData;
+    const subscribersArray = Array.isArray(subscribers) ? subscribers : [];
+
     const {
       pubNoData,
       subscriberList,
@@ -186,7 +188,7 @@ class SubscriberList extends React.Component {
           </Row>
           <Row style={{ padding: 0 }}>
             <Col span="24" style={{ padding: 0 }}>
-              <Table dataSource={subscribers} locale={{ empty: pubNoData }}>
+              <Table dataSource={subscribersArray} locale={{ empty: pubNoData }}>
                 <Column title={locale.serviceName} dataIndex="serviceName" />
                 <Column title={locale.address} dataIndex="addrStr" />
                 <Column title={locale.clientVersion} dataIndex="agent" />

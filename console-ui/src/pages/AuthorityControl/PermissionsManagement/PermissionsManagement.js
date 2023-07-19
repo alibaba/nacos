@@ -48,7 +48,7 @@ class PermissionsManagement extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     permissions: PropTypes.object,
-    namespaces: PropTypes.object,
+    namespaces: PropTypes.array,
     getPermissions: PropTypes.func,
     getNamespaces: PropTypes.func,
   };
