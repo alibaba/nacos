@@ -41,6 +41,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
@@ -124,6 +125,17 @@ public class PrometheusControllerTest {
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         Assert.assertEquals(200, response.getStatus());
         assertEquals(testInstanceList.size(), JacksonUtils.toObj(response.getContentAsString()).size());
+    }
+    
+    @Test
+    public void testEmptyMetricNamespaceService() throws Exception {
+        String prometheusNamespaceServicePath = ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH.replace("{namespaceId}",
+                nameSpace);
+        prometheusNamespaceServicePath = prometheusNamespaceServicePath.replace("{service}", "D");  //query non-existed service
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(prometheusNamespaceServicePath);
+        MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
+        Assert.assertEquals(200, response.getStatus());
+        assertEquals(0, JacksonUtils.toObj(response.getContentAsString()).size());
     }
     
 }
