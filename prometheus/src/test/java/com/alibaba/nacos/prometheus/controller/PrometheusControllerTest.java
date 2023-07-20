@@ -131,7 +131,8 @@ public class PrometheusControllerTest {
     public void testEmptyMetricNamespaceService() throws Exception {
         String prometheusNamespaceServicePath = ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH.replace("{namespaceId}",
                 nameSpace);
-        prometheusNamespaceServicePath = prometheusNamespaceServicePath.replace("{service}", "D");  //query non-existed service
+        prometheusNamespaceServicePath = prometheusNamespaceServicePath.replace("{service}",
+                "D");  //query non-existed service
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(prometheusNamespaceServicePath);
         MockHttpServletResponse response = mockMvc.perform(builder).andReturn().getResponse();
         Assert.assertEquals(200, response.getStatus());
