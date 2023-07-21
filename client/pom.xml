@@ -29,11 +29,8 @@
     <packaging>jar</packaging>
     
     <name>nacos-client ${project.version}</name>
-    <url>http://nacos.io</url>
-    
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <url>https://nacos.io</url>
+    <description>Nacos client pom.xml file</description>
     
     <dependencies>
         
@@ -125,156 +122,160 @@
     </dependencies>
     
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>8</source>
-                    <target>8</target>
-                </configuration>
-            </plugin>
-        </plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>3.2.4</version>
+                    <configuration>
+                        <createDependencyReducedPom>false</createDependencyReducedPom>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>shade</goal>
+                            </goals>
+                            <configuration>
+                                <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
+                                <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
+                                <createDependencyReducedPom>false</createDependencyReducedPom>
+                                <minimizeJar>true</minimizeJar>
+                                <createSourcesJar>true</createSourcesJar>
+                                <shadeSourcesContent>true</shadeSourcesContent>
+
+                                <filters>
+                                    <filter>
+                                        <artifact>*:*</artifact>
+                                        <excludes>
+                                            <exclude>META-INF/*.SF</exclude>
+                                            <exclude>META-INF/*.DSA</exclude>
+                                            <exclude>META-INF/*.RSA</exclude>
+                                        </excludes>
+                                    </filter>
+                                    <filter>
+                                        <artifact>io.grpc:grpc-netty-shaded</artifact>
+                                        <excludes>
+                                            <exclude>
+                                                META-INF/native/*.*
+                                            </exclude>
+                                        </excludes>
+                                    </filter>
+                                    <filter>
+                                        <artifact>com.google.*:*</artifact>
+                                        <excludes>
+                                            <exclude>
+                                                google/**/*.proto
+                                            </exclude>
+                                        </excludes>
+                                    </filter>
+                                    <filter>
+                                        <artifact>com.alibaba.nacos:nacos-api</artifact>
+                                        <includes>
+                                            <include>
+                                                com/alibaba/nacos/api/**/**
+                                            </include>
+                                            <include>
+                                                META-INF/**/*.*
+                                            </include>
+                                        </includes>
+                                    </filter>
+                                </filters>
+
+                                <artifactSet>
+                                    <includes>
+                                        <include>com.alibaba.nacos:nacos-api</include>
+                                        <include>com.alibaba.nacos:nacos-common</include>
+                                        <include>org.conscrypt:conscrypt-openjdk</include>
+                                        <include>org.mortbay.jetty.alpn:alpn-boot</include>
+                                        <include>org.eclipse.jetty.npn:npn-api</include>
+                                        <include>org.reflections:reflections</include>
+                                        <include>com.google.guava:guava</include>
+                                        <include>io.grpc:*</include>
+                                        <include>io.opencensus:*</include>
+                                        <include>org.javassist:*</include>
+                                        <include>io.perfmark:perfmark-api</include>
+                                        <include>com.google.*:*</include>
+                                        <include>javax.annotation:javax.annotation-api</include>
+                                        <include>org.checkerframework:*</include>
+                                        <include>org.codehaus.mojo:*</include>
+                                    </includes>
+                                </artifactSet>
+
+                                <relocations>
+                                    <relocation>
+                                        <pattern>io.grpc</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.io.grpc</shadedPattern>
+                                        <excludes>
+                                            <exclude>io.grpc.netty.shaded.io.grpc.netty.*</exclude>
+                                        </excludes>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>io.grpc.netty.shaded.io.grpc.netty</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty
+                                        </shadedPattern>
+                                        <includes>
+                                            <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
+                                        </includes>
+                                    </relocation>
+
+                                    <relocation>
+                                        <pattern>com.google</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
+                                    </relocation>
+
+                                    <relocation>
+                                        <pattern>javax.annotation</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.javax.annotation</shadedPattern>
+                                    </relocation>
+
+                                    <relocation>
+                                        <pattern>io.perfmark</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>io.opencensus</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.io.opencensus</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>org.codehaus</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.org.codehaus</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>org.checkerframework</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.org.checkerframework</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>android.annotation</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.android.annotation</shadedPattern>
+                                    </relocation>
+                                    <relocation>
+                                        <pattern>org.example</pattern>
+                                        <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
+                                    </relocation>
+                                </relocations>
+
+                                <transformers>
+                                    <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
+                                    <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                </transformers>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
-    
+
     <profiles>
         <profile>
             <id>release-sign-artifacts</id>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.4</version>
-                        <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>shade</goal>
-                                </goals>
-                                <configuration>
-                                    <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
-                                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
-                                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                                    <minimizeJar>true</minimizeJar>
-                                    <filters>
-                                        <filter>
-                                            <artifact>*:*</artifact>
-                                            <excludes>
-                                                <exclude>META-INF/*.SF</exclude>
-                                                <exclude>META-INF/*.DSA</exclude>
-                                                <exclude>META-INF/*.RSA</exclude>
-                                            </excludes>
-                                        </filter>
-                                        <filter>
-                                            <artifact>io.grpc:grpc-netty-shaded</artifact>
-                                            <excludes>
-                                                <exclude>
-                                                    META-INF/native/*.*
-                                                </exclude>
-                                            </excludes>
-                                        </filter>
-                                        <filter>
-                                            <artifact>com.alibaba.nacos:nacos-api</artifact>
-                                            <includes>
-                                                <include>
-                                                    com/alibaba/nacos/api/**/**
-                                                </include>
-                                            </includes>
-                                        </filter>
-                    
-                                    </filters>
-                                    <createSourcesJar>true</createSourcesJar>
-                                    <shadeSourcesContent>true</shadeSourcesContent>
-                    
-                                    <artifactSet>
-                                        <includes>
-                                            <include>com.alibaba.nacos:nacos-api</include>
-                                            <include>com.alibaba.nacos:nacos-common</include>
-                                            <include>org.conscrypt:conscrypt-openjdk</include>
-                                            <include>org.mortbay.jetty.alpn:alpn-boot</include>
-                                            <include>org.eclipse.jetty.npn:npn-api</include>
-                                            <include>org.reflections:reflections</include>
-                                            <include>com.google.guava:guava</include>
-                                            <include>io.grpc:*</include>
-                                            <include>io.opencensus:*</include>
-                                            <include>org.javassist:*</include>
-                                            <include>io.perfmark:perfmark-api</include>
-                                            <include>com.google.*:*</include>
-                                            <include>javax.annotation:javax.annotation-api</include>
-                                            <include>org.checkerframework:*</include>
-                                            <include>org.codehaus.mojo:*</include>
-                                        </includes>
-                    
-                                    </artifactSet>
-                    
-                                    <relocations>
-                        
-                                        <relocation>
-                                            <pattern>io.grpc</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.io.grpc</shadedPattern>
-                                            <excludes>
-                                                <exclude>io.grpc.netty.shaded.io.grpc.netty.*</exclude>
-                                            </excludes>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>io.grpc.netty.shaded.io.grpc.netty</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty
-                                            </shadedPattern>
-                                            <includes>
-                                                <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
-                                            </includes>
-                                        </relocation>
-                        
-                                        <relocation>
-                                            <pattern>com.google</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
-                                        </relocation>
-                        
-                                        <relocation>
-                                            <pattern>javax.annotation</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.javax.annotation</shadedPattern>
-                                        </relocation>
-                        
-                                        <relocation>
-                                            <pattern>io.perfmark</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>io.opencensus</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.io.opencensus</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>org.codehaus</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.org.codehaus</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>org.checkerframework</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.org.checkerframework</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>android.annotation</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.android.annotation</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>org.example</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
-                                        </relocation>
-                    
-                                    </relocations>
-                                    <transformers>
-                                        <transformer
-                                            implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
-                                        <transformer
-                                            implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                    
-                                    </transformers>
-                                </configuration>
-                            </execution>
-                        </executions>
                     </plugin>
                     <plugin>
                         <artifactId>maven-jar-plugin</artifactId>
@@ -299,138 +300,7 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
-                        <version>3.2.4</version>
-                        <configuration>
-                            <createDependencyReducedPom>false</createDependencyReducedPom>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>shade</goal>
-                                </goals>
-                                <configuration>
-                                    <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
-                                    <promoteTransitiveDependencies>true</promoteTransitiveDependencies>
-                                    <createDependencyReducedPom>false</createDependencyReducedPom>
-                                    <minimizeJar>true</minimizeJar>
-                                    <filters>
-                                        <filter>
-                                            <artifact>*:*</artifact>
-                                            <excludes>
-                                                <exclude>META-INF/*.SF</exclude>
-                                                <exclude>META-INF/*.DSA</exclude>
-                                                <exclude>META-INF/*.RSA</exclude>
-                                            </excludes>
-                                        </filter>
-                                        <filter>
-                                            <artifact>io.grpc:grpc-netty-shaded</artifact>
-                                            <excludes>
-                                                <exclude>
-                                                    META-INF/native/*.*
-                                                </exclude>
-                                            </excludes>
-                                        </filter>
-                                        <filter>
-                                            <artifact>com.alibaba.nacos:nacos-api</artifact>
-                                            <includes>
-                                                <include>
-                                                    com/alibaba/nacos/api/**/**
-                                                </include>
-                                            </includes>
-                                        </filter>
-                                       
-                                    </filters>
-                                    <createSourcesJar>true</createSourcesJar>
-                                    <shadeSourcesContent>true</shadeSourcesContent>
-                                  
-                                    <artifactSet>
-                                        <includes>
-                                            <include>com.alibaba.nacos:nacos-api</include>
-                                            <include>com.alibaba.nacos:nacos-common</include>
-                                            <include>org.conscrypt:conscrypt-openjdk</include>
-                                            <include>org.mortbay.jetty.alpn:alpn-boot</include>
-                                            <include>org.eclipse.jetty.npn:npn-api</include>
-                                            <include>org.reflections:reflections</include>
-                                            <include>com.google.guava:guava</include>
-                                            <include>io.grpc:*</include>
-                                            <include>io.opencensus:*</include>
-                                            <include>org.javassist:*</include>
-                                            <include>io.perfmark:perfmark-api</include>
-                                            <include>com.google.*:*</include>
-                                            <include>javax.annotation:javax.annotation-api</include>
-                                            <include>org.checkerframework:*</include>
-                                            <include>org.codehaus.mojo:*</include>
-                                        </includes>
-                                        
-                                    </artifactSet>
-    
-                                    <relocations>
-        
-                                        <relocation>
-                                            <pattern>io.grpc</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.io.grpc</shadedPattern>
-                                            <excludes>
-                                                <exclude>io.grpc.netty.shaded.io.grpc.netty.*</exclude>
-                                            </excludes>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>io.grpc.netty.shaded.io.grpc.netty</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.io.grpc.netty.shaded.io.grpc.netty
-                                            </shadedPattern>
-                                            <includes>
-                                                <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
-                                            </includes>
-                                        </relocation>
-    
-                                        <relocation>
-                                            <pattern>com.google</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
-                                        </relocation>
-    
-                                        <relocation>
-                                            <pattern>javax.annotation</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.javax.annotation</shadedPattern>
-                                        </relocation>
-    
-                                        <relocation>
-                                            <pattern>io.perfmark</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>io.opencensus</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.io.opencensus</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>org.codehaus</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.org.codehaus</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>org.checkerframework</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.org.checkerframework</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>android.annotation</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.android.annotation</shadedPattern>
-                                        </relocation>
-                                        <relocation>
-                                            <pattern>org.example</pattern>
-                                            <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
-                                        </relocation>
-    
-                                    </relocations>
-                                    <transformers>
-                                        <transformer
-                                            implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
-                                        <transformer
-                                            implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-    
-                                    </transformers>
-                                </configuration>
-                            </execution>
-                        </executions>
                     </plugin>
                     <plugin>
                         <artifactId>maven-jar-plugin</artifactId>

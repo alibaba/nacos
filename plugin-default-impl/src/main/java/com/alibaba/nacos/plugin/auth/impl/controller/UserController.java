@@ -22,16 +22,17 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
-import com.alibaba.nacos.plugin.auth.impl.NacosAuthManager;
+import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
@@ -69,9 +70,10 @@ import java.util.List;
 public class UserController {
     
     @Autowired
-    private JwtTokenManager jwtTokenManager;
+    private TokenManagerDelegate jwtTokenManager;
     
     @Autowired
+    @Deprecated
     private AuthenticationManager authenticationManager;
     
     @Autowired
@@ -84,7 +86,7 @@ public class UserController {
     private AuthConfigs authConfigs;
     
     @Autowired
-    private NacosAuthManager authManager;
+    private IAuthenticationManager iAuthenticationManager;
     
     /**
      * Create a new user.
@@ -153,8 +155,11 @@ public class UserController {
         } catch (HttpSessionRequiredException e) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "session expired!");
             return null;
+        } catch (AccessException exception) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "authorization failed!");
+            return null;
         }
-    
+        
         User user = userDetailsService.getUserFromDatabase(username);
         if (user == null) {
             throw new IllegalArgumentException("user " + username + " not exist!");
@@ -165,12 +170,16 @@ public class UserController {
         return RestResultUtils.success("update user ok!");
     }
     
-    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException {
+    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException, AccessException {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
-        NacosUser user = (NacosUser) request.getSession().getAttribute(AuthConstants.NACOS_USER_KEY);
-        if (user == null) {
+        IdentityContext identityContext = (IdentityContext) request.getSession()
+                .getAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT);
+        NacosUser user;
+        if (identityContext == null
+                || (user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY)) == null
+                || (user = iAuthenticationManager.authenticate(request)) == null) {
             throw new HttpSessionRequiredException("session expired!");
         }
         // admin
@@ -180,7 +189,7 @@ public class UserController {
         // same user
         return user.getUserName().equals(username);
     }
-
+    
     /**
      * Get paged users.
      *
@@ -195,7 +204,7 @@ public class UserController {
             @RequestParam(name = "username", required = false, defaultValue = "") String username) {
         return userDetailsService.getUsersFromDatabase(pageNo, pageSize, username);
     }
-
+    
     @GetMapping(params = "search=blur")
     @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "users", action = ActionTypes.READ)
     public Page<User> fuzzySearchUser(@RequestParam int pageNo, @RequestParam int pageSize,
@@ -219,16 +228,16 @@ public class UserController {
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
             HttpServletRequest request) throws AccessException {
         
-        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType()) || AuthSystemTypes.LDAP
-                .name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            NacosUser user = (NacosUser) authManager.login(request);
+        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
+                || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            NacosUser user = iAuthenticationManager.authenticate(request);
             
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
             
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
             result.put(Constants.ACCESS_TOKEN, user.getToken());
-            result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenValidityInSeconds());
-            result.put(Constants.GLOBAL_ADMIN, user.isGlobalAdmin());
+            result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
+            result.put(Constants.GLOBAL_ADMIN, iAuthenticationManager.hasGlobalAdminRole(user));
             result.put(Constants.USERNAME, user.getUserName());
             return result;
         }

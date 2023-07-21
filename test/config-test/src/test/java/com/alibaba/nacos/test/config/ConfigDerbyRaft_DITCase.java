@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.config.server.model.event.RaftDbErrorEvent;
+import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorRecoverEvent;
 import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
@@ -32,6 +32,7 @@ import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.utils.GenericType;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.utils.InetUtils;
 
 import com.alibaba.nacos.test.base.BaseClusterTest;
@@ -347,7 +348,7 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         CPProtocol protocol8 = context8.getBean(CPProtocol.class);
         CPProtocol protocol9 = context9.getBean(CPProtocol.class);
         
-        final String configGroup = com.alibaba.nacos.config.server.constant.Constants.CONFIG_MODEL_RAFT_GROUP;
+        final String configGroup = PersistenceConstant.CONFIG_MODEL_RAFT_GROUP;
         long preId = -1L;
         long currentId = -1L;
         

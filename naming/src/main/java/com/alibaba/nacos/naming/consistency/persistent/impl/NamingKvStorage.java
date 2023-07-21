@@ -21,7 +21,7 @@ import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.core.storage.StorageFactory;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.storage.kv.MemoryKvStorage;
-import com.alibaba.nacos.core.utils.TimerContext;
+import com.alibaba.nacos.sys.utils.TimerContext;
 import com.alibaba.nacos.naming.misc.Loggers;
 
 import java.util.HashMap;

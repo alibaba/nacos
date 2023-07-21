@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
@@ -85,38 +86,44 @@ public class ConfigOperationService {
                     "dataId:" + configForm.getDataId() + " is aggr");
         }
         
-        final Timestamp time = TimeUtils.getCurrentTime();
-        ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
-                configForm.getAppName(), configForm.getContent());
+        ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(),
+                configForm.getNamespaceId(), configForm.getAppName(), configForm.getContent());
         
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(encryptedDataKey);
+        ConfigOperateResult configOperateResult = null;
+        
+        String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
         
         if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
             if (StringUtils.isBlank(configForm.getTag())) {
-                configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(), configForm.getSrcUser(),
-                        configInfo, time, configAdvanceInfo, false);
+                configOperateResult = configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(),
+                        configForm.getSrcUser(), configInfo, configAdvanceInfo);
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
-                                configForm.getNamespaceId(), time.getTime()));
+                                configForm.getNamespaceId(), configOperateResult.getLastModified()));
             } else {
-                configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
-                        configRequestInfo.getSrcIp(), configForm.getSrcUser(), time, false);
+                persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + configForm.getTag();
+                configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
+                        configRequestInfo.getSrcIp(), configForm.getSrcUser());
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
-                                configForm.getNamespaceId(), configForm.getTag(), time.getTime()));
+                                configForm.getNamespaceId(), configForm.getTag(),
+                                configOperateResult.getLastModified()));
             }
         } else {
+            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_BETA;
+            
             // beta publish
-            configInfoBetaPersistService.insertOrUpdateBeta(configInfo, configRequestInfo.getBetaIps(),
-                    configRequestInfo.getSrcIp(), configForm.getSrcUser(), time, false);
+            configOperateResult = configInfoBetaPersistService.insertOrUpdateBeta(configInfo,
+                    configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
             ConfigChangePublisher.notifyConfigChange(
-                    new ConfigDataChangeEvent(true, configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
-                            time.getTime()));
+                    new ConfigDataChangeEvent(true, configForm.getDataId(), configForm.getGroup(),
+                            configForm.getNamespaceId(), configOperateResult.getLastModified()));
         }
-        ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(), configForm.getNamespaceId(),
-                configRequestInfo.getRequestIpApp(), time.getTime(), InetUtils.getSelfIP(),
-                ConfigTraceService.PERSISTENCE_EVENT_PUB, configForm.getContent());
+        ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(),
+                configForm.getNamespaceId(), configRequestInfo.getRequestIpApp(), configOperateResult.getLastModified(),
+                InetUtils.getSelfIP(), persistEvent, ConfigTraceService.PERSISTENCE_TYPE_PUB, configForm.getContent());
         
         return true;
     }
@@ -126,16 +133,18 @@ public class ConfigOperationService {
      */
     public Boolean deleteConfig(String dataId, String group, String namespaceId, String tag, String clientIp,
             String srcUser) {
+        String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
         if (StringUtils.isBlank(tag)) {
             configInfoPersistService.removeConfigInfo(dataId, group, namespaceId, clientIp, srcUser);
         } else {
+            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
             configInfoTagPersistService.removeConfigInfoTag(dataId, group, namespaceId, tag, clientIp, srcUser);
         }
         final Timestamp time = TimeUtils.getCurrentTime();
-        ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), clientIp,
-                ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-        ConfigChangePublisher
-                .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, namespaceId, tag, time.getTime()));
+        ConfigTraceService.logPersistenceEvent(dataId, group, namespaceId, null, time.getTime(), clientIp, persistEvent,
+                ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
+        ConfigChangePublisher.notifyConfigChange(
+                new ConfigDataChangeEvent(false, dataId, group, namespaceId, tag, time.getTime()));
         
         return true;
     }

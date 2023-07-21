@@ -196,6 +196,9 @@ class ConfigRollback extends React.Component {
       <div>
         <h1>{locale.configurationRollback}</h1>
         <Form field={this.field}>
+          <FormItem label={locale.namespace} required {...formItemLayout}>
+            <p>{this.tenant}</p>
+          </FormItem>
           <FormItem label="Data ID" required {...formItemLayout}>
             <Input htmlType="text" readOnly {...init('dataId')} />
             <div style={{ marginTop: 10 }}>

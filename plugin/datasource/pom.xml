@@ -26,8 +26,8 @@
     
     <artifactId>nacos-datasource-plugin</artifactId>
     <name>nacos-datasource-plugin ${project.version}</name>
-    <url>http://nacos.io</url>
-    
+    <url>https://nacos.io</url>
+    <description>Nacos datasource plugin pom.xml file</description>
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>

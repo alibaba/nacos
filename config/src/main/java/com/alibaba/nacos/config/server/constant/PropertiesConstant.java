@@ -53,19 +53,10 @@ public class PropertiesConstant {
     
     public static final String INITIAL_EXPANSION_PERCENT = "initialExpansionPercent";
     
-    /**
-     * May be removed with the upgrade of springboot version.
-     */
-    public static final String DATASOURCE_PLATFORM_PROPERTY_OLD = "spring.datasource.platform";
+    public static final String SEARCH_MAX_CAPACITY = "nacos.config.search.max_capacity";
     
-    public static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
+    public static final String SEARCH_MAX_THREAD = "nacos.config.search.max_thread";
     
-    public static final String MYSQL = "mysql";
-    
-    public static final String DERBY = "derby";
-    
-    public static final String EMPTY_DATASOURCE_PLATFORM = "";
-    
-    public static final String EMBEDDED_STORAGE = "embeddedStorage";
+    public static final String SEARCH_WAIT_TIMEOUT = "nacos.config.search.wait_timeout";
     
 }

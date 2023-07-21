@@ -28,7 +28,7 @@
     
     <artifactId>nacos-plugin</artifactId>
     <name>nacos-plugin ${project.version}</name>
-    <url>http://nacos.io</url>
+    <url>https://nacos.io</url>
     <modules>
         <module>auth</module>
         <module>encryption</module>
@@ -36,6 +36,7 @@
         <module>datasource</module>
         <module>environment</module>
         <module>control</module>
+        <module>config</module>
     </modules>
     <packaging>pom</packaging>
 

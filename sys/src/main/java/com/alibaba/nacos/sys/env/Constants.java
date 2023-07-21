@@ -24,6 +24,8 @@ package com.alibaba.nacos.sys.env;
  */
 public interface Constants {
     
+    String SYS_MODULE = "sys";
+    
     /**
      * Spring Profile : "standalone".
      */
@@ -34,10 +36,14 @@ public interface Constants {
      */
     String STANDALONE_MODE_PROPERTY_NAME = "nacos.standalone";
     
+    String STARTUP_MODE_STATE = "startup_mode";
+    
     /**
      * The System property name of  Function mode.
      */
     String FUNCTION_MODE_PROPERTY_NAME = "nacos.functionMode";
+    
+    String FUNCTION_MODE_STATE = "function_mode";
     
     /**
      * The System property name of prefer hostname over ip.
@@ -49,7 +55,13 @@ public interface Constants {
      */
     String ROOT_WEB_CONTEXT_PATH = "/";
     
+    String NACOS_VERSION = "version";
+    
     String NACOS_SERVER_IP = "nacos.server.ip";
+    
+    String NACOS_SERVER_IP_STATE = "nacos_server_ip";
+    
+    String SERVER_PORT_STATE = "server_port";
     
     String USE_ONLY_SITE_INTERFACES = "nacos.inetutils.use-only-site-local-interfaces";
     String PREFERRED_NETWORKS = "nacos.inetutils.preferred-networks";

@@ -21,9 +21,11 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
 
 /**
@@ -41,6 +43,7 @@ public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceReq
     }
     
     @Override
+    @Secured(action = ActionTypes.WRITE)
     public BatchInstanceResponse handle(BatchInstanceRequest request, RequestMeta meta) throws NacosException {
         Service service = Service.newService(request.getNamespace(), request.getGroupName(), request.getServiceName(),
                 true);

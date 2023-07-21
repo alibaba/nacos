@@ -84,8 +84,9 @@ public class UdpConnectorTest {
     }
     
     @After
-    public void tearDown() {
+    public void tearDown() throws InterruptedException {
         udpConnector.shutdown();
+        TimeUnit.SECONDS.sleep(1);
     }
     
     @Test

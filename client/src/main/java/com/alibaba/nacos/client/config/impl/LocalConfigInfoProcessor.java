@@ -31,6 +31,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import static com.alibaba.nacos.client.utils.ParamUtil.simplyEnvNameIfOverLimit;
+
 /**
  * Local Disaster Recovery Directory Tool.
  *
@@ -39,8 +41,6 @@ import java.io.InputStream;
 public class LocalConfigInfoProcessor {
     
     private static final Logger LOGGER = LogUtils.logger(LocalConfigInfoProcessor.class);
-    
-    public static final String LOCAL_FILEROOT_PATH;
     
     public static final String LOCAL_SNAPSHOT_PATH;
     
@@ -59,12 +59,9 @@ public class LocalConfigInfoProcessor {
     private static final String SNAPSHOT_FILE_CHILD_2 = "snapshot-tenant";
     
     static {
-        LOCAL_FILEROOT_PATH = NacosClientProperties.PROTOTYPE.getProperty("JM.LOG.PATH",
-                NacosClientProperties.PROTOTYPE.getProperty("user.home")) + File.separator + "nacos" + File.separator
-                + "config";
-        LOCAL_SNAPSHOT_PATH = NacosClientProperties.PROTOTYPE.getProperty("JM.SNAPSHOT.PATH",
-                NacosClientProperties.PROTOTYPE.getProperty("user.home")) + File.separator + "nacos" + File.separator
-                + "config";
+        LOCAL_SNAPSHOT_PATH = NacosClientProperties.PROTOTYPE.getProperty(com.alibaba.nacos.client.constant.Constants.SysEnv.JM_SNAPSHOT_PATH,
+                NacosClientProperties.PROTOTYPE.getProperty(com.alibaba.nacos.client.constant.Constants.SysEnv.USER_HOME)) + File.separator
+                + "nacos" + File.separator + "config";
         LOGGER.info("LOCAL_SNAPSHOT_PATH:{}", LOCAL_SNAPSHOT_PATH);
     }
     
@@ -194,6 +191,7 @@ public class LocalConfigInfoProcessor {
     }
     
     static File getFailoverFile(String serverName, String dataId, String group, String tenant) {
+        serverName = simplyEnvNameIfOverLimit(serverName);
         File tmp = new File(LOCAL_SNAPSHOT_PATH, serverName + SUFFIX);
         tmp = new File(tmp, FAILOVER_FILE_CHILD_1);
         if (StringUtils.isBlank(tenant)) {
@@ -206,6 +204,7 @@ public class LocalConfigInfoProcessor {
     }
     
     static File getSnapshotFile(String envName, String dataId, String group, String tenant) {
+        envName = simplyEnvNameIfOverLimit(envName);
         File tmp = new File(LOCAL_SNAPSHOT_PATH, envName + SUFFIX);
         if (StringUtils.isBlank(tenant)) {
             tmp = new File(tmp, SNAPSHOT_FILE_CHILD_1);

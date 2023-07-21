@@ -17,9 +17,15 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
+import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilderSingleton;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -31,6 +37,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Service
 public class GrpcSdkServer extends BaseGrpcServer {
     
+    private NacosGrpcProtocolNegotiator protocolNegotiator;
+    
     @Override
     public int rpcPortOffset() {
         return Constants.SDK_GRPC_PORT_DEFAULT_OFFSET;
@@ -39,5 +47,74 @@ public class GrpcSdkServer extends BaseGrpcServer {
     @Override
     public ThreadPoolExecutor getRpcExecutor() {
         return GlobalExecutor.sdkRpcExecutor;
+    }
+    
+    @Override
+    protected long getKeepAliveTime() {
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_KEEP_ALIVE_TIME_PROPERTY, Long.class);
+        if (property != null) {
+            return property;
+        }
+        return super.getKeepAliveTime();
+    }
+    
+    @Override
+    protected long getKeepAliveTimeout() {
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_KEEP_ALIVE_TIMEOUT_PROPERTY, Long.class);
+        if (property != null) {
+            return property;
+        }
+        
+        return super.getKeepAliveTimeout();
+    }
+    
+    @Override
+    protected int getMaxInboundMessageSize() {
+        Integer property = EnvUtil
+                .getProperty(GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY, Integer.class);
+        if (property != null) {
+            return property;
+        }
+        
+        int size = super.getMaxInboundMessageSize();
+        
+        if (Loggers.REMOTE.isWarnEnabled()) {
+            Loggers.REMOTE.warn("Recommended use '{}' property instead '{}', now property value is {}",
+                    GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY,
+                    GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY, size);
+        }
+        
+        return size;
+    }
+    
+    @Override
+    protected long getPermitKeepAliveTime() {
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_PERMIT_KEEP_ALIVE_TIME, Long.class);
+        if (property != null) {
+            return property;
+        }
+        return super.getPermitKeepAliveTime();
+    }
+    
+    @Override
+    protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
+        protocolNegotiator = ProtocolNegotiatorBuilderSingleton.getSingleton().build();
+        return Optional.ofNullable(protocolNegotiator);
+    }
+    
+    /**
+     * reload ssl context.
+     */
+    public void reloadProtocolNegotiator() {
+        if (protocolNegotiator != null) {
+            try {
+                protocolNegotiator.reloadNegotiator();
+            } catch (Throwable throwable) {
+                Loggers.REMOTE
+                        .info("Nacos {} Rpc server reload negotiator fail at port {}.", this.getClass().getSimpleName(),
+                                getServicePort());
+                throw throwable;
+            }
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
+import com.alibaba.nacos.core.remote.tls.RpcServerSslContextRefresherHolder;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
@@ -45,7 +46,11 @@ public abstract class BaseRpcServer {
         Loggers.REMOTE.info("Nacos {} Rpc server starting at port {}", serverName, getServicePort());
         
         startServer();
-    
+        
+        if (RpcServerSslContextRefresherHolder.getInstance() != null) {
+            RpcServerSslContextRefresherHolder.getInstance().refresh(this);
+        }
+        
         Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", serverName, getServicePort());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Loggers.REMOTE.info("Nacos {} Rpc server stopping", serverName);
@@ -56,7 +61,7 @@ public abstract class BaseRpcServer {
                 Loggers.REMOTE.error("Nacos {} Rpc server stopped fail...", serverName, e);
             }
         }));
-
+        
     }
     
     /**
@@ -65,6 +70,16 @@ public abstract class BaseRpcServer {
      * @return connection type.
      */
     public abstract ConnectionType getConnectionType();
+    
+    /**
+     * Reload protocol context if necessary.
+     *
+     * <p>
+     *     protocol like:
+     *     <li>Tls</li>
+     * </p>
+     */
+    public abstract void reloadProtocolContext();
     
     /**
      * Start sever.
@@ -103,5 +118,5 @@ public abstract class BaseRpcServer {
      */
     @PreDestroy
     public abstract void shutdownServer();
-
+    
 }

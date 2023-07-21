@@ -16,6 +16,14 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+
+import java.util.Collections;
+
 /**
  * The history config info mapper.
  *
@@ -25,49 +33,89 @@ package com.alibaba.nacos.plugin.datasource.mapper;
 public interface HistoryConfigInfoMapper extends Mapper {
     
     /**
-     * Delete data before startTime.
-     * The default sql:
-     * DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?
+     * Delete data before startTime. The default sql: DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?
      *
+     * @param context sql paramMap
      * @return The sql of deleting data before startTime.
      */
-    String removeConfigHistory();
+    MapperResult removeConfigHistory(MapperContext context);
     
     /**
-     * Get the number of configurations before the specified time.
-     * The default sql:
-     * SELECT count(*) FROM his_config_info WHERE gmt_modified < ?
+     * Get the number of configurations before the specified time. The default sql: SELECT count(*) FROM his_config_info
+     * WHERE gmt_modified < ?
      *
+     * @param context sql paramMap
      * @return The sql of getting the number of configurations before the specified time.
      */
-    String findConfigHistoryCountByTime();
+    default MapperResult findConfigHistoryCountByTime(MapperContext context) {
+        return new MapperResult("SELECT count(*) FROM his_config_info WHERE gmt_modified < ?",
+                Collections.singletonList(context.getWhereParameter(FieldConstant.START_TIME)));
+    }
     
     /**
-     * Query deleted config.
-     * The default sql:
-     * SELECT DISTINCT data_id, group_id, tenant_id FROM his_config_info WHERE op_type = 'D' AND gmt_modified >=? AND gmt_modified <= ?
+     * Query deleted config. The default sql: SELECT DISTINCT data_id, group_id, tenant_id FROM his_config_info WHERE
+     * op_type = 'D' AND gmt_modified >=? AND gmt_modified <= ?
      *
+     * @param context sql paramMap
      * @return The sql of querying deleted config.
      */
-    String findDeletedConfig();
+    default MapperResult findDeletedConfig(MapperContext context) {
+        return new MapperResult(
+                "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info WHERE op_type = 'D' AND "
+                        + "gmt_modified >= ? and nid > ? order by nid limit ? ",
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+                        context.getWhereParameter(FieldConstant.LAST_MAX_ID),
+                        context.getWhereParameter(FieldConstant.PAGE_SIZE)));
+    }
     
     /**
-     * List configuration history change record.
-     * The default sql:
-     * SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info
+     * List configuration history change record. The default sql: SELECT
+     * nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info
      * WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC
      *
+     * @param context sql paramMap
      * @return The sql of listing configuration history change record.
      */
-    String findConfigHistoryFetchRows();
+    default MapperResult findConfigHistoryFetchRows(MapperContext context) {
+        return new MapperResult(
+                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
+                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC",
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
+                        context.getWhereParameter(FieldConstant.GROUP_ID),
+                        context.getWhereParameter(FieldConstant.TENANT_ID)));
+    }
     
     /**
-     * Get previous config detail.
-     * The default sql:
-     * SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified
-     * FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)
+     * page search List configuration history. SELECT
+     * nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info
+     * WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC limit ?,?
      *
+     * @param context pageNo
+     * @return
+     */
+    MapperResult pageFindConfigHistoryFetchRows(MapperContext context);
+    
+    /**
+     * Get previous config detail. The default sql: SELECT
+     * nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified FROM
+     * his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)
+     *
+     * @param context sql paramMap
      * @return The sql of getting previous config detail.
      */
-    String detailPreviousConfigHistory();
+    default MapperResult detailPreviousConfigHistory(MapperContext context) {
+        return new MapperResult(
+                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,gmt_modified "
+                        + "FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)",
+                Collections.singletonList(context.getWhereParameter(FieldConstant.ID)));
+    }
+    
+    /**
+     * 获取返回表名.
+     *
+     * @return 表名
+     */
+    default String getTableName() {
+        return TableConstant.HIS_CONFIG_INFO;
+    }
 }

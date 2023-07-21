@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,8 @@ public class NamingConfig {
     
     private static final String UTL_PATTERNS = "/v1/ns/*";
     
+    private static final String UTL_PATTERNS_V2 = "/v2/ns/*";
+    
     private static final String DISTRO_FILTER = "distroFilter";
     
     private static final String SERVICE_NAME_FILTER = "serviceNameFilter";
@@ -38,18 +40,20 @@ public class NamingConfig {
     
     private static final String CLIENT_ATTRIBUTES_FILTER = "clientAttributes_filter";
     
+    private static final String NAMING_PARAM_CHECK_FILTER = "namingparamCheckFilter";
+    
     @Bean
-    public FilterRegistrationBean distroFilterRegistration() {
+    public FilterRegistrationBean<DistroFilter> distroFilterRegistration() {
         FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(distroFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
         registration.setName(DISTRO_FILTER);
-        registration.setOrder(6);
+        registration.setOrder(7);
         return registration;
     }
     
     @Bean
-    public FilterRegistrationBean serviceNameFilterRegistration() {
+    public FilterRegistrationBean<ServiceNameFilter> serviceNameFilterRegistration() {
         FilterRegistrationBean<ServiceNameFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(serviceNameFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
@@ -59,7 +63,7 @@ public class NamingConfig {
     }
     
     @Bean
-    public FilterRegistrationBean trafficReviseFilterRegistration() {
+    public FilterRegistrationBean<TrafficReviseFilter> trafficReviseFilterRegistration() {
         FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(trafficReviseFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
@@ -69,12 +73,23 @@ public class NamingConfig {
     }
     
     @Bean
-    public FilterRegistrationBean clientAttributesFilterRegistration() {
+    public FilterRegistrationBean<ClientAttributesFilter> clientAttributesFilterRegistration() {
         FilterRegistrationBean<ClientAttributesFilter> registration = new FilterRegistrationBean<>();
         registration.setFilter(clientAttributesFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
         registration.setName(CLIENT_ATTRIBUTES_FILTER);
-        registration.setOrder(7);
+        registration.setOrder(8);
+        return registration;
+    }
+    
+    @Bean
+    public FilterRegistrationBean<NamingParamCheckFilter> paramCheckFilterRegistration() {
+        FilterRegistrationBean<NamingParamCheckFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(namingParamCheckFilter());
+        registration.addUrlPatterns(UTL_PATTERNS);
+        registration.addUrlPatterns(UTL_PATTERNS_V2);
+        registration.setName(NAMING_PARAM_CHECK_FILTER);
+        registration.setOrder(10);
         return registration;
     }
     
@@ -96,5 +111,10 @@ public class NamingConfig {
     @Bean
     public ClientAttributesFilter clientAttributesFilter() {
         return new ClientAttributesFilter();
+    }
+    
+    @Bean
+    public NamingParamCheckFilter namingParamCheckFilter() {
+        return new NamingParamCheckFilter();
     }
 }

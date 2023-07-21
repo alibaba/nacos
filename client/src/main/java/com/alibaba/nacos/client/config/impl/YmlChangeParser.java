@@ -20,9 +20,11 @@ import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.StringUtils;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.ConstructorException;
+import org.yaml.snakeyaml.composer.ComposerException;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.error.MarkedYAMLException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -50,7 +52,7 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
         Map<String, Object> oldMap = Collections.emptyMap();
         Map<String, Object> newMap = Collections.emptyMap();
         try {
-            Yaml yaml = new Yaml(new SafeConstructor());
+            Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
             if (StringUtils.isNotBlank(oldContent)) {
                 oldMap = yaml.load(oldContent);
                 oldMap = getFlattenedMap(oldMap);
@@ -59,15 +61,15 @@ public class YmlChangeParser extends AbstractConfigChangeParser {
                 newMap = yaml.load(newContent);
                 newMap = getFlattenedMap(newMap);
             }
-        } catch (ConstructorException e) {
+        } catch (MarkedYAMLException e) {
             handleYamlException(e);
         }
         
         return filterChangeData(oldMap, newMap);
     }
     
-    private void handleYamlException(ConstructorException e) {
-        if (e.getMessage().startsWith(INVALID_CONSTRUCTOR_ERROR_INFO)) {
+    private void handleYamlException(MarkedYAMLException e) {
+        if (e.getMessage().startsWith(INVALID_CONSTRUCTOR_ERROR_INFO) || e instanceof ComposerException) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
                     "AbstractConfigChangeListener only support basic java data type for yaml. If you want to listen "
                             + "key changes for custom classes, please use `Listener` to listener whole yaml configuration and parse it by yourself.",

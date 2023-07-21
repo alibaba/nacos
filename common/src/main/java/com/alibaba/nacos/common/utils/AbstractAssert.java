@@ -58,6 +58,9 @@ import java.util.function.Supplier;
  */
 public abstract class AbstractAssert {
 
+    private AbstractAssert() {
+    }
+
     /**
      * Assert a boolean expression, throwing an {@code IllegalStateException}
      * if the expression evaluates to {@code false}.

@@ -20,7 +20,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;

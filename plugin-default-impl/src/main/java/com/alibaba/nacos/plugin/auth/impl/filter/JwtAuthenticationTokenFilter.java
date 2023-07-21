@@ -18,8 +18,9 @@ package com.alibaba.nacos.plugin.auth.impl.filter;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.auth.impl.JwtTokenManager;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -39,9 +40,9 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
     
     private static final String TOKEN_PREFIX = "Bearer ";
     
-    private final JwtTokenManager tokenManager;
+    private final TokenManagerDelegate tokenManager;
     
-    public JwtAuthenticationTokenFilter(JwtTokenManager tokenManager) {
+    public JwtAuthenticationTokenFilter(TokenManagerDelegate tokenManager) {
         this.tokenManager = tokenManager;
     }
     
@@ -52,9 +53,12 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         String jwt = resolveToken(request);
         
         if (StringUtils.isNotBlank(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
-            this.tokenManager.validateToken(jwt);
-            Authentication authentication = this.tokenManager.getAuthentication(jwt);
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+            try {
+                Authentication authentication = this.tokenManager.getAuthentication(jwt);
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            } catch (AccessException e) {
+                throw new RuntimeException(e);
+            }
         }
         chain.doFilter(request, response);
     }

@@ -72,18 +72,21 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
             ParamUtils.checkTenant(tenant);
             ParamUtils.checkParam(dataId, group, "datumId", "rm");
             ParamUtils.checkParam(tag);
+            String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
             
             String clientIp = meta.getClientIp();
             if (StringUtils.isBlank(tag)) {
                 configInfoPersistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
             } else {
+                persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
+                
                 configInfoTagPersistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
             }
             final Timestamp time = TimeUtils.getCurrentTime();
-            ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp,
-                    ConfigTraceService.PERSISTENCE_EVENT_REMOVE, null);
-            ConfigChangePublisher
-                    .notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
+            ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp, persistEvent,
+                    ConfigTraceService.PERSISTENCE_TYPE_REMOVE, null);
+            ConfigChangePublisher.notifyConfigChange(
+                    new ConfigDataChangeEvent(false, dataId, group, tenant, tag, time.getTime()));
             return ConfigRemoveResponse.buildSuccessResponse();
             
         } catch (Exception e) {

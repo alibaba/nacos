@@ -613,6 +613,9 @@ class ConfigEditor extends React.Component {
           )}
 
           <Form field={this.field}>
+            <FormItem label={locale.namespace} required>
+              <p>{this.tenant}</p>
+            </FormItem>
             <FormItem label="Data ID" {...formItemLayout}>
               <Input
                 disabled

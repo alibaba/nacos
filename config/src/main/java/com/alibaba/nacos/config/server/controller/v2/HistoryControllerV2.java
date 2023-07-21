@@ -26,7 +26,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -77,6 +77,8 @@ public class HistoryControllerV2 {
             @RequestParam(value = "pageNo", required = false, defaultValue = "1") Integer pageNo,
             @RequestParam(value = "pageSize", required = false, defaultValue = "100") Integer pageSize) {
         pageSize = Math.min(500, pageSize);
+        //fix issue #9783
+        namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
         return Result.success(historyService.listConfigHistory(dataId, group, namespaceId, pageNo, pageSize));
     }
     
@@ -97,6 +99,8 @@ public class HistoryControllerV2 {
             @RequestParam("nid") Long nid) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         try {
+            //fix issue #9783
+            namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
             configHistoryInfo = historyService.getConfigHistoryInfo(dataId, group, namespaceId, nid);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,
@@ -122,6 +126,8 @@ public class HistoryControllerV2 {
             @RequestParam("id") Long id) throws AccessException, NacosApiException {
         ConfigHistoryInfo configHistoryInfo;
         try {
+            //fix issue #9783.
+            namespaceId = NamespaceUtil.processNamespaceParameter(namespaceId);
             configHistoryInfo = historyService.getPreviousConfigHistoryInfo(dataId, group, namespaceId, id);
         } catch (DataAccessException e) {
             throw new NacosApiException(HttpStatus.NOT_FOUND.value(), ErrorCode.RESOURCE_NOT_FOUND,

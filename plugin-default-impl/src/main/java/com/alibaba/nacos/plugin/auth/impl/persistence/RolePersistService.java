@@ -18,7 +18,8 @@ package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import java.util.List;
 
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 /**
  * Role CRUD service.
@@ -96,4 +97,12 @@ public interface RolePersistService {
      * @return {@link Page} with {@link RoleInfo} generation
      */
     Page<RoleInfo> findRolesLike4Page(String username, String role, int pageNo, int pageSize);
+    
+    /**
+     * create Pagination utils.
+     *
+     * @param <E> Generic object
+     * @return {@link PaginationHelper}
+     */
+    <E> PaginationHelper<E> createPaginationHelper();
 }
