@@ -100,4 +100,12 @@ public final class MetricsMonitor {
     public static DistributionSummary getRaftFromLeader() {
         return RAFT_FROM_LEADER;
     }
+
+    public static Timer getRpcRequestTimer(String type, int errorCode) {
+        return Timer.builder("nacos_rpc_server_requests_seconds")
+                .publishPercentiles(0.5, 0.90, 0.95, 0.99)
+                .tag("type", type)
+                .tag("error", Integer.toString(errorCode))
+                .register(NacosMeterRegistryCenter.getMeterRegistry(METER_REGISTRY));
+    }
 }
