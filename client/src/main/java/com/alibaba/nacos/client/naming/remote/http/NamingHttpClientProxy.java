@@ -93,8 +93,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private static final String CLUSTERS_PARAM = "clusters";
     
-    private static final String UDP_PORT_PARAM = "udpPort";
-    
     private static final String CLIENT_IP_PARAM = "clientIP";
     
     private static final String HEALTHY_ONLY_PARAM = "healthyOnly";
@@ -168,9 +166,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
-                        instance);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+                serviceName, instance);
         if (instance.isEphemeral()) {
             return;
         }
@@ -187,8 +184,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[UPDATE-SERVICE] {} update service {} with instance: {}", namespaceId, serviceName, instance);
+        NAMING_LOGGER.info("[UPDATE-SERVICE] {} update service {} with instance: {}", namespaceId, serviceName,
+                instance);
         
         final Map<String, String> params = new HashMap<>(32);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -212,7 +209,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, NamingUtils.getGroupedName(serviceName, groupName));
         params.put(CLUSTERS_PARAM, clusters);
-        params.put(UDP_PORT_PARAM, String.valueOf(udpPort));
         params.put(CLIENT_IP_PARAM, NetUtils.localIP());
         params.put(HEALTHY_ONLY_PARAM, String.valueOf(healthyOnly));
         String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/list", params, HttpMethod.GET);
@@ -442,8 +438,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
         try {
-            HttpRestResult<String> restResult = nacosRestTemplate
-                    .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
+            HttpRestResult<String> restResult = nacosRestTemplate.exchangeForm(url, header,
+                    Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
             
             MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
