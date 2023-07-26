@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import com.alibaba.nacos.client.monitor.ConfigMetrics;
 import com.alibaba.nacos.common.http.HttpRestResult;
 
 import java.util.Date;
@@ -59,7 +59,7 @@ public class MetricsHttpAgent implements HttpAgent {
             result = httpAgent.httpGet(path, headers, paramValues, encode, readTimeoutMs);
             responseCode = String.valueOf(result.getCode());
         } finally {
-            MetricsMonitor.recordConfigRequestMonitor(GET, path, responseCode,
+            ConfigMetrics.recordConfigRequestMonitor(GET, path, responseCode,
                     System.currentTimeMillis() - start.getTime());
         }
         
@@ -76,7 +76,7 @@ public class MetricsHttpAgent implements HttpAgent {
             result = httpAgent.httpPost(path, headers, paramValues, encode, readTimeoutMs);
             responseCode = String.valueOf(result.getCode());
         } finally {
-            MetricsMonitor.recordConfigRequestMonitor(GET, path, responseCode,
+            ConfigMetrics.recordConfigRequestMonitor(GET, path, responseCode,
                     System.currentTimeMillis() - start.getTime());
         }
         
@@ -93,7 +93,7 @@ public class MetricsHttpAgent implements HttpAgent {
             result = httpAgent.httpDelete(path, headers, paramValues, encode, readTimeoutMs);
             responseCode = String.valueOf(result.getCode());
         } finally {
-            MetricsMonitor.recordConfigRequestMonitor(GET, path, responseCode,
+            ConfigMetrics.recordConfigRequestMonitor(GET, path, responseCode,
                     System.currentTimeMillis() - start.getTime());
         }
         

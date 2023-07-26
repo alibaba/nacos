@@ -30,7 +30,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import com.alibaba.nacos.client.monitor.NamingMetrics;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -445,7 +445,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                     Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
             
-            MetricsMonitor.recordNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()), end - start);
+            NamingMetrics.recordNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()), end - start);
             
             if (restResult.ok()) {
                 return restResult.getData();

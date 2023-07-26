@@ -42,7 +42,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import com.alibaba.nacos.client.monitor.ConfigMetrics;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
@@ -274,7 +274,7 @@ public class ClientWorker implements Closeable {
         }
         LOGGER.info("[{}] [unsubscribe] {}", agent.getName(), groupKey);
         
-        MetricsMonitor.setListenerConfigCountMonitor(cacheMap.get().size());
+        ConfigMetrics.setListenerConfigCountMonitor(cacheMap.get().size());
     }
     
     /**
@@ -349,7 +349,7 @@ public class ClientWorker implements Closeable {
         
         LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
         
-        MetricsMonitor.setListenerConfigCountMonitor(cacheMap.get().size());
+        ConfigMetrics.setListenerConfigCountMonitor(cacheMap.get().size());
         
         return cache;
     }
@@ -396,7 +396,7 @@ public class ClientWorker implements Closeable {
         }
         LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
         
-        MetricsMonitor.setListenerConfigCountMonitor(cacheMap.get().size());
+        ConfigMetrics.setListenerConfigCountMonitor(cacheMap.get().size());
         
         return cache;
     }

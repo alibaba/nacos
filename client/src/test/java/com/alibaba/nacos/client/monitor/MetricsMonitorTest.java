@@ -30,7 +30,7 @@ public class MetricsMonitorTest {
     @Test
     public void testServiceInfoMapSizeMonitor() {
         int testCase = 8848;
-        MetricsMonitor.setServiceInfoMapSizeMonitor(testCase);
+        NamingMetrics.setServiceInfoMapSizeMonitor(testCase);
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Gauge gauge = r.find("nacos.monitor").tags("module", "naming", "name", "serviceInfoMapSize").gauge();
@@ -42,7 +42,7 @@ public class MetricsMonitorTest {
     @Test
     public void testListenerConfigCountMonitor() {
         int testCase = 8849;
-        MetricsMonitor.setListenerConfigCountMonitor(testCase);
+        ConfigMetrics.setListenerConfigCountMonitor(testCase);
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Gauge gauge = r.find("nacos.monitor").tags("module", "config", "name", "listenerConfigCount").gauge();
@@ -54,7 +54,7 @@ public class MetricsMonitorTest {
     @Test
     public void testConfigRequestMonitor() {
         long testCase = 111L;
-        MetricsMonitor.recordConfigRequestMonitor("GET", "/testConfigRequest", "NA", testCase);
+        ConfigMetrics.recordConfigRequestMonitor("GET", "/testConfigRequest", "NA", testCase);
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Timer timer = r.find("nacos.client.request")
@@ -67,7 +67,7 @@ public class MetricsMonitorTest {
     @Test
     public void testNamingRequestMonitor() {
         long testCase = 222L;
-        MetricsMonitor.recordNamingRequestMonitor("GET", "/testNamingRequest", "NA", testCase);
+        NamingMetrics.recordNamingRequestMonitor("GET", "/testNamingRequest", "NA", testCase);
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Timer timer = r.find("nacos.client.request")
