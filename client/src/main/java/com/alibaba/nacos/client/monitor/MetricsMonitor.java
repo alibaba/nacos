@@ -19,11 +19,11 @@
 package com.alibaba.nacos.client.monitor;
 
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.core.instrument.Clock;
-import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.lang.NonNull;
-import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.micrometer.registry.otlp.OtlpConfig;
 import io.micrometer.registry.otlp.OtlpMeterRegistry;
@@ -36,13 +36,10 @@ import io.micrometer.registry.otlp.OtlpMeterRegistry;
 public class MetricsMonitor {
     
     /**
-     * The <strong>NACOS_METER_REGISTRY</strong> is pointing to
-     * {@link io.micrometer.core.instrument.Metrics#globalRegistry}.
-     *
-     * <p><strong>DO NOT</strong> directly use {@link io.micrometer.core.instrument.Metrics#globalRegistry} in Nacos
-     * client, or the metrics of Nacos client may not export to Prometheus and OpenTelemetry.
+     * To prevent impact on some middleware such as `MeterFilter`, create an independent
+     * {@link CompositeMeterRegistry}.
      */
-    private static final CompositeMeterRegistry NACOS_METER_REGISTRY = Metrics.globalRegistry;
+    private static final CompositeMeterRegistry NACOS_METER_REGISTRY = new CompositeMeterRegistry();
     
     private static final String NACOS_OTEL_ENV = "NACOS_OTEL_COLLECTOR_ENDPOINT";
     
@@ -50,6 +47,8 @@ public class MetricsMonitor {
     
     static {
         CompositeMeterRegistry nacosMeterRegistry = NACOS_METER_REGISTRY;
+        
+        nacosMeterRegistry.config().commonTags("nacos.client.version", VersionUtils.getFullClientVersion());
         
         // OpenTelemetry metrics exporter
         nacosMeterRegistry.add(new OtlpMeterRegistry(new OtlpConfig() {
@@ -68,7 +67,7 @@ public class MetricsMonitor {
         }, Clock.SYSTEM));
         
         // Prometheus metrics exporter
-        nacosMeterRegistry.add(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
+        nacosMeterRegistry.add(ApplicationUtils.getBean(PrometheusMeterRegistry.class));
     }
     
     public static CompositeMeterRegistry getNacosMeterRegistry() {

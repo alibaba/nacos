@@ -28,6 +28,10 @@ public class NamingMetrics {
     // “heisen-gauge” principal: https://micrometer.io/docs/concepts#_gauges
     // DO NOT interact with the gauge object directly. Rather, interacting with the thing that will cause the gauge
     
+    /**
+     * Micrometer recommends using <b>. (dots)</b> to uniformly separate meter names, see <a
+     * href="https://micrometer.io/docs/concepts#_naming_meters">official docs</a> .
+     */
     private static final AtomicInteger SERVICE_INFO_MAP_SIZE_GAUGE = MetricsMonitor.getNacosMeterRegistry()
             .gauge("nacos.monitor", Tags.of("module", "naming", "name", "serviceInfoMapSize"), new AtomicInteger(0));
     

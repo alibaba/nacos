@@ -28,6 +28,10 @@ public class ConfigMetrics {
     // “heisen-gauge” principal: https://micrometer.io/docs/concepts#_gauges
     // DO NOT interact with the gauge object directly. Rather, interacting with the thing that will cause the gauge
     
+    /**
+     * Micrometer recommends using <b>. (dots)</b> to uniformly separate meter names, see <a
+     * href="https://micrometer.io/docs/concepts#_naming_meters">official docs</a> .
+     */
     private static final AtomicInteger LISTENER_CONFIG_COUNT_GAUGE = MetricsMonitor.getNacosMeterRegistry()
             .gauge("nacos.monitor", Tags.of("module", "config", "name", "listenerConfigCount"), new AtomicInteger(0));
     

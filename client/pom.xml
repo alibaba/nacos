@@ -79,6 +79,12 @@
             <artifactId>nacos-api</artifactId>
             <optional>true</optional>
         </dependency>
+        
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-sys</artifactId>
+        </dependency>
+        
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
