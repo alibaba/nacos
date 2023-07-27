@@ -180,9 +180,9 @@ public class ConnectionManager {
      */
     public List<Connection> getConnectionByIp(String clientIp) {
         List<Connection> connectionList = new ArrayList<>();
-        for (Connection connection : connections.values()) {
-            if (clientIp.equals(connection.getMetaInfo().getClientIp())) {
-                connectionList.add(connection);
+        for (Connection value : connections.values()) {
+            if (clientIp.equals(value.getMetaInfo().getClientIp())) {
+                connectionList.add(value);
             }
         }
         return connectionList;
