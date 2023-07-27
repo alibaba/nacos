@@ -56,13 +56,13 @@ public class ConnectionManager {
     
     private static final Logger LOGGER = com.alibaba.nacos.plugin.control.Loggers.CONNECTION;
     
-    private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<>(16);
+    private final Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<>(16);
     
     Map<String, Connection> connections = new ConcurrentHashMap<>();
     
     private RuntimeConnectionEjector runtimeConnectionEjector;
     
-    private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
+    private final ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
     
     public ConnectionManager(ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry) {
         this.clientConnectionEventListenerRegistry = clientConnectionEventListenerRegistry;
@@ -179,17 +179,17 @@ public class ConnectionManager {
      * @return connections of the client ip.
      */
     public List<Connection> getConnectionByIp(String clientIp) {
-        Set<Map.Entry<String, Connection>> entries = connections.entrySet();
-        List<Connection> connections = new ArrayList<>();
-        for (Map.Entry<String, Connection> entry : entries) {
-            Connection value = entry.getValue();
-            if (clientIp.equals(value.getMetaInfo().clientIp)) {
-                connections.add(value);
+        List<Connection> connectionList = new ArrayList<>();
+
+        for (Connection connection : connections.values()) {
+            if (clientIp.equals(connection.getMetaInfo().getClientIp())) {
+                connectionList.add(connection);
             }
         }
-        return connections;
+
+        return connectionList;
     }
-    
+
     /**
      * init connection ejector.
      */
