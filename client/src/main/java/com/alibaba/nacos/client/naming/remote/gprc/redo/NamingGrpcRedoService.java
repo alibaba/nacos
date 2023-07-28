@@ -68,6 +68,10 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
                 DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
     }
     
+    public ConcurrentMap<String, InstanceRedoData> getRegisteredInstances() {
+        return registeredInstances;
+    }
+    
     public boolean isConnected() {
         return connected;
     }

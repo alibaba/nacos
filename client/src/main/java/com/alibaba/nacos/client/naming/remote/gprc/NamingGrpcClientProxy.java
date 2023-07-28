@@ -54,8 +54,8 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
@@ -139,8 +139,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     @Override
     public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
             throws NacosException {
-        List<Instance> retainInstance = getRetainInstance(serviceName, groupName, instances);
-        batchRegisterService(serviceName, groupName, retainInstance);
+        synchronized (redoService.getRegisteredInstances()) {
+            List<Instance> retainInstance = getRetainInstance(serviceName, groupName, instances);
+            batchRegisterService(serviceName, groupName, retainInstance);
+        }
     }
     
     /**
@@ -218,11 +220,20 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
-                        instance);
-        redoService.instanceDeregister(serviceName, groupName);
-        doDeregisterService(serviceName, groupName, instance);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+                serviceName, instance);
+        String key = NamingUtils.getGroupedName(serviceName, groupName);
+        InstanceRedoData instanceRedoData = redoService.getRegisteredInstancesByKey(key);
+        if (instanceRedoData instanceof BatchInstanceRedoData) {
+            List<Instance> instances = new ArrayList<>();
+            if (null != instance) {
+                instances.add(instance);
+            }
+            batchDeregisterService(serviceName, groupName, instances);
+        } else {
+            redoService.instanceDeregister(serviceName, groupName);
+            doDeregisterService(serviceName, groupName, instance);
+        }
     }
     
     /**

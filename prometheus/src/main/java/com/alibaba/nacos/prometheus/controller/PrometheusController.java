@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 
 /**
@@ -61,7 +62,7 @@ public class PrometheusController {
      * @throws NacosException NacosException.
      */
     @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_PATH, produces = "application/json; charset=UTF-8")
-    public ResponseEntity metric() throws NacosException {
+    public ResponseEntity<String> metric() throws NacosException {
         ArrayNode arrayNode = JacksonUtils.createEmptyArrayNode();
         Set<Instance> targetSet = new HashSet<>();
         Set<String> allNamespaces = serviceManager.getAllNamespaces();
@@ -88,25 +89,10 @@ public class PrometheusController {
      * @throws NacosException NacosException.
      */
     @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH, produces = "application/json; charset=UTF-8")
-    public ResponseEntity metricNamespace(@PathVariable("namespaceId") String namespaceId) throws NacosException {
-        ArrayNode arrayNode = JacksonUtils.createEmptyArrayNode();
-        Set<Instance> targetSet = new HashSet<>();
-        Set<String> allNamespaces = serviceManager.getAllNamespaces();
-        if (!allNamespaces.contains(namespaceId)) {
-            return ResponseEntity.ok().body(arrayNode.toString());
-        }
+    public ResponseEntity<String> metricNamespace(@PathVariable("namespaceId") String namespaceId)
+            throws NacosException {
+        ArrayNode arrayNode = getServiceArrayNode(namespaceId, s -> true);
         
-        Set<Service> singletons = serviceManager.getSingletons(namespaceId);
-        for (Service service : singletons) {
-            
-            List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespaceId,
-                    service.getGroupedServiceName());
-            
-            targetSet.addAll(instances);
-            
-        }
-        
-        PrometheusUtils.assembleArrayNodes(targetSet, arrayNode);
         return ResponseEntity.ok().body(arrayNode.toString());
     }
     
@@ -116,18 +102,25 @@ public class PrometheusController {
      * @throws NacosException NacosException.
      */
     @GetMapping(value = ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH, produces = "application/json; charset=UTF-8")
-    public ResponseEntity metricNamespaceService(@PathVariable("namespaceId") String namespaceId,
+    public ResponseEntity<String> metricNamespaceService(@PathVariable("namespaceId") String namespaceId,
             @PathVariable("service") String service) throws NacosException {
+        ArrayNode arrayNode = getServiceArrayNode(namespaceId, s -> s.getName().equals(service));
+        
+        return ResponseEntity.ok().body(arrayNode.toString());
+    }
+    
+    private ArrayNode getServiceArrayNode(String namespaceId, Predicate<Service> serviceFilter) throws NacosException {
         ArrayNode arrayNode = JacksonUtils.createEmptyArrayNode();
-        Set<Instance> targetSet = new HashSet<>();
         Set<String> allNamespaces = serviceManager.getAllNamespaces();
         if (!allNamespaces.contains(namespaceId)) {
-            return ResponseEntity.ok().body(arrayNode.toString());
+            return arrayNode;
         }
+        
+        Set<Instance> targetSet = new HashSet<>();
         
         Set<Service> singletons = serviceManager.getSingletons(namespaceId);
         for (Service existService : singletons) {
-            if (!existService.getName().equals(service)) {
+            if (!serviceFilter.test(existService)) {
                 continue;
             }
             List<? extends Instance> instances = instanceServiceV2.listAllInstances(namespaceId,
@@ -139,6 +132,6 @@ public class PrometheusController {
         
         PrometheusUtils.assembleArrayNodes(targetSet, arrayNode);
         
-        return ResponseEntity.ok().body(arrayNode.toString());
+        return arrayNode;
     }
 }
