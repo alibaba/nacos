@@ -101,11 +101,14 @@ public final class MetricsMonitor {
         return RAFT_FROM_LEADER;
     }
 
-    public static Timer getRpcRequestTimer(String type, int errorCode) {
+    public static Timer getRpcRequestTimer(String protocol, String type, String outcome, String exception, int errorCode) {
         return Timer.builder("nacos_rpc_server_requests_seconds")
                 .publishPercentiles(0.5, 0.90, 0.95, 0.99)
+                .tag("protocol", protocol)
                 .tag("type", type)
-                .tag("error", Integer.toString(errorCode))
+                .tag("outcome", outcome)
+                .tag("exception", exception)
+                .tag("code", Integer.toString(errorCode))
                 .register(NacosMeterRegistryCenter.getMeterRegistry(METER_REGISTRY));
     }
 }

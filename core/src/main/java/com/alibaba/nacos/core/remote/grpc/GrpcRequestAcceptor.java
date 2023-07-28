@@ -19,11 +19,13 @@ package com.alibaba.nacos.core.remote.grpc;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
@@ -69,6 +71,18 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         }
         
     }
+
+    private void recordRequestMetric(Payload grpcRequest, Response response, long durationMillis) {
+        String outcome = "SUCCESS";
+        if (response.getResultCode() == ResponseCode.FAIL.getCode()) {
+            outcome = "FAIL";
+        }
+        MetricsMonitor.getRpcRequestTimer(RemoteConstants.REMOTE_PROTOCOL_GRPC,
+                        grpcRequest.getMetadata().getType(),
+                        outcome,
+                        response.getExceptionName(),
+                        response.getErrorCode()).record(durationMillis, TimeUnit.MILLISECONDS);
+    }
     
     @Override
     public void request(Payload grpcRequest, StreamObserver<Payload> responseObserver) {
@@ -79,13 +93,12 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         //server is on starting.
         if (!ApplicationUtils.isStarted()) {
-            Payload payloadResponse = GrpcUtils.convert(
-                    ErrorResponse.build(NacosException.INVALID_SERVER_STATUS, "Server is starting,please try later."));
+            Response response = ErrorResponse.build(NacosException.INVALID_SERVER_STATUS, "Server is starting,please try later.");
+            Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
+            recordRequestMetric(grpcRequest, response, System.currentTimeMillis() - startTime);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
-            MetricsMonitor.getRpcRequestTimer(type, NacosException.INVALID_SERVER_STATUS)
-                    .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
             return;
         }
         
@@ -102,13 +115,12 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         //no handler found.
         if (requestHandler == null) {
             Loggers.REMOTE_DIGEST.warn(String.format("[%s] No handler for request type : %s :", "grpc", type));
-            Payload payloadResponse = GrpcUtils
-                    .convert(ErrorResponse.build(NacosException.NO_HANDLER, "RequestHandler Not Found"));
+            Response response = ErrorResponse.build(NacosException.NO_HANDLER, "RequestHandler Not Found");
+            Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
+            recordRequestMetric(grpcRequest, response, System.currentTimeMillis() - startTime);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
-            MetricsMonitor.getRpcRequestTimer(type, NacosException.NO_HANDLER)
-                    .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
             return;
         }
         
@@ -118,13 +130,12 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         if (!requestValid) {
             Loggers.REMOTE_DIGEST
                     .warn("[{}] Invalid connection Id ,connection [{}] is un registered ,", "grpc", connectionId);
-            Payload payloadResponse = GrpcUtils
-                    .convert(ErrorResponse.build(NacosException.UN_REGISTER, "Connection is unregistered."));
+            Response response = ErrorResponse.build(NacosException.UN_REGISTER, "Connection is unregistered.");
+            Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
+            recordRequestMetric(grpcRequest, response, System.currentTimeMillis() - startTime);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
-            MetricsMonitor.getRpcRequestTimer(type, NacosException.UN_REGISTER)
-                    .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
             return;
         }
         
@@ -134,24 +145,23 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST
                     .warn("[{}] Invalid request receive from connection [{}] ,error={}", "grpc", connectionId, e);
-            Payload payloadResponse = GrpcUtils.convert(ErrorResponse.build(NacosException.BAD_GATEWAY, e.getMessage()));
+            Response response = ErrorResponse.build(NacosException.BAD_GATEWAY, e.getMessage());
+            Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
+            recordRequestMetric(grpcRequest, response, System.currentTimeMillis() - startTime);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
-            MetricsMonitor.getRpcRequestTimer(type, NacosException.BAD_GATEWAY)
-                    .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
             return;
         }
         
         if (parseObj == null) {
             Loggers.REMOTE_DIGEST.warn("[{}] Invalid request receive  ,parse request is null", connectionId);
-            Payload payloadResponse = GrpcUtils
-                    .convert(ErrorResponse.build(NacosException.BAD_GATEWAY, "Invalid request"));
+            Response response = ErrorResponse.build(NacosException.BAD_GATEWAY, "Invalid request");
+            Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
+            recordRequestMetric(grpcRequest, response, System.currentTimeMillis() - startTime);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
-            MetricsMonitor.getRpcRequestTimer(type, NacosException.BAD_GATEWAY)
-                    .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
             return;
         }
         
@@ -159,13 +169,12 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             Loggers.REMOTE_DIGEST
                     .warn("[{}] Invalid request receive  ,parsed payload is not a request,parseObj={}", connectionId,
                             parseObj);
-            Payload payloadResponse = GrpcUtils
-                    .convert(ErrorResponse.build(NacosException.BAD_GATEWAY, "Invalid request"));
+            Response response = ErrorResponse.build(NacosException.BAD_GATEWAY, "Invalid request");
+            Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
+            recordRequestMetric(grpcRequest, response, System.currentTimeMillis() - startTime);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
-            MetricsMonitor.getRpcRequestTimer(type, NacosException.BAD_GATEWAY)
-                    .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
             return;
         }
         
@@ -181,10 +190,9 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             Response response = requestHandler.handleRequest(request, requestMeta);
             Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
+            recordRequestMetric(grpcRequest, response, System.currentTimeMillis() - startTime);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
-            MetricsMonitor.getRpcRequestTimer(type, response.getErrorCode())
-                    .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
         } catch (Throwable e) {
             Loggers.REMOTE_DIGEST
                     .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,
@@ -192,10 +200,9 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             Response response = ErrorResponse.build(e);
             Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
+            recordRequestMetric(grpcRequest, response, System.currentTimeMillis() - startTime);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
-            MetricsMonitor.getRpcRequestTimer(type, response.getErrorCode())
-                    .record(System.currentTimeMillis() - startTime, TimeUnit.MILLISECONDS);
         }
         
     }

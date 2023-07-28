@@ -30,9 +30,11 @@ public abstract class Response implements Payload {
     int resultCode = ResponseCode.SUCCESS.getCode();
     
     int errorCode;
-    
+
     String message;
-    
+
+    String exceptionName = "None";
+
     String requestId;
     
     /**
@@ -115,16 +117,41 @@ public abstract class Response implements Payload {
     public void setErrorCode(int errorCode) {
         this.errorCode = errorCode;
     }
-    
+
+    /**
+     * Getter method for property <tt>exceptionName</tt>.
+     *
+     * @return property value of exceptionName
+     */
+    public String getExceptionName() {
+        return exceptionName;
+    }
+
+    /**
+     * Setter method for property <tt>exceptionName</tt>.
+     *
+     * @param exceptionName value to be assigned to property exceptionName
+     */
+    public void setExceptionName(String exceptionName) {
+        this.exceptionName = exceptionName;
+    }
+
     public void setErrorInfo(int errorCode, String errorMsg) {
         this.resultCode = ResponseCode.FAIL.getCode();
         this.errorCode = errorCode;
         this.message = errorMsg;
     }
+
+    public void setErrorInfo(int errorCode, String errorMsg, String exceptionName) {
+        this.resultCode = ResponseCode.FAIL.getCode();
+        this.errorCode = errorCode;
+        this.message = errorMsg;
+        this.exceptionName =  exceptionName;
+    }
     
     @Override
     public String toString() {
         return "Response{" + "resultCode=" + resultCode + ", errorCode=" + errorCode + ", message='" + message + '\''
-                + ", requestId='" + requestId + '\'' + '}';
+                + ", exceptionName='" + exceptionName + '\'' + ", requestId='" + requestId + '\'' + '}';
     }
 }

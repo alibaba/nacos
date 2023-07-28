@@ -32,7 +32,7 @@ public class EmptyContentResponseTest {
     
     private static final String COMMON_JSON = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"success\":true}";
     
-    private static final String TO_STRING = "Response{resultCode=200, errorCode=0, message='null', requestId='1'}";
+    private static final String TO_STRING = "Response{resultCode=200, errorCode=0, message='null', exceptionName='None', requestId='1'}";
     
     ObjectMapper mapper = new ObjectMapper();
     

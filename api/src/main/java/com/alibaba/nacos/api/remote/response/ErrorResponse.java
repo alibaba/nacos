@@ -56,7 +56,7 @@ public class ErrorResponse extends Response {
             errorCode = ResponseCode.FAIL.getCode();
         }
         ErrorResponse response = new ErrorResponse();
-        response.setErrorInfo(errorCode, exception.getMessage());
+        response.setErrorInfo(errorCode, exception.getMessage(), exception.getClass().getSimpleName());
         return response;
     }
     

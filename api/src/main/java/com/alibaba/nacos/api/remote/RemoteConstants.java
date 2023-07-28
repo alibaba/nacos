@@ -38,4 +38,9 @@ public class RemoteConstants {
     public static final String LABEL_MODULE_CONFIG = "config";
     
     public static final String LABEL_MODULE_NAMING = "naming";
+
+    /**
+     * remote protocol define.
+     */
+    public static final String REMOTE_PROTOCOL_GRPC = "grpc";
 }
