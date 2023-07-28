@@ -37,7 +37,7 @@ public class ParamCheckRules {
     
     public static final int MAX_SERVICE_NAME_LENGTH = 512;
     
-    public static final String SERVICE_NAME_PATTERN_STRING = "^(?!@).((?!@@)[^\\u4E00-\\u9FA5])*$";
+    public static final String SERVICE_NAME_PATTERN_STRING = "^(?!@).((?!@@)[^\\u4E00-\\u9FA5\\s])*$";
     
     public static final int MAX_GROUP_LENGTH = 128;
     
@@ -49,7 +49,7 @@ public class ParamCheckRules {
     
     public static final int MAX_IP_LENGTH = 128;
     
-    public static final String IP_PATTERN_STRING = "^[^\\u4E00-\\u9FA5]*$";
+    public static final String IP_PATTERN_STRING = "^[^\\u4E00-\\u9FA5\\s]*$";
     
     public static final int MAX_PORT = 65535;
     
