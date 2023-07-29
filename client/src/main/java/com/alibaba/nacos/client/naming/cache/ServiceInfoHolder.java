@@ -199,50 +199,38 @@ public class ServiceInfoHolder implements Closeable {
         for (Instance host : newService.getHosts()) {
             newHostMap.put(host.toInetAddr(), host);
         }
-        
-        Set<Instance> modHosts = new HashSet<>();
-        Set<Instance> newHosts = new HashSet<>();
-        Set<Instance> remvHosts = new HashSet<>();
-        
-        List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(
-                newHostMap.entrySet());
-        for (Map.Entry<String, Instance> entry : newServiceHosts) {
-            Instance host = entry.getValue();
-            String key = entry.getKey();
-            if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(), oldHostMap.get(key).toString())) {
-                modHosts.add(host);
-                continue;
-            }
-            
-            if (!oldHostMap.containsKey(key)) {
-                newHosts.add(host);
-            }
-        }
-        
-        for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
-            Instance host = entry.getValue();
-            String key = entry.getKey();
-            if (newHostMap.containsKey(key)) {
-                continue;
-            }
 
-            //add to remove hosts
-            remvHosts.add(host);
+        List<Instance> modHosts = new ArrayList<>();
+        List<Instance> newHosts = new ArrayList<>();
+        List<Instance> remvHosts = new ArrayList<>();
+
+        Set<String> allHostMapKeys = new HashSet<>(newHostMap.keySet());
+        allHostMapKeys.addAll(oldHostMap.keySet());
+        for (String key : allHostMapKeys) {
+            Instance newHost = newHostMap.get(key);
+            Instance oldHost = oldHostMap.get(key);
+            if (newHost != null && oldHost != null && !StringUtils.equals(newHost.toString(), oldHost.toString())) {
+                modHosts.add(newHost);
+            } else if (newHost != null && oldHost == null) {
+                newHosts.add(newHost);
+            } else if (newHost == null && oldHost != null) {
+                remvHosts.add(oldHost);
+            }
         }
-        
-        if (newHosts.size() > 0) {
+
+        if (!newHosts.isEmpty()) {
             changed = true;
             NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(newHosts));
         }
-        
-        if (remvHosts.size() > 0) {
+
+        if (!remvHosts.isEmpty()) {
             changed = true;
             NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(remvHosts));
         }
-        
-        if (modHosts.size() > 0) {
+
+        if (!modHosts.isEmpty()) {
             changed = true;
             NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(modHosts));
