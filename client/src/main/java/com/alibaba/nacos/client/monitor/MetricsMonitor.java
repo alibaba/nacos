@@ -18,12 +18,14 @@
 
 package com.alibaba.nacos.client.monitor;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 import io.micrometer.core.lang.NonNull;
+import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.micrometer.registry.otlp.OtlpConfig;
 import io.micrometer.registry.otlp.OtlpMeterRegistry;
@@ -36,12 +38,11 @@ import io.micrometer.registry.otlp.OtlpMeterRegistry;
 public class MetricsMonitor {
     
     /**
-     * To prevent impact on some middleware such as `MeterFilter`, create an independent
-     * {@link CompositeMeterRegistry}.
+     * Directly use the <tt> globalRegistry </tt> of Micrometer.
      */
-    private static final CompositeMeterRegistry NACOS_METER_REGISTRY = new CompositeMeterRegistry();
+    private static final CompositeMeterRegistry NACOS_METER_REGISTRY = Metrics.globalRegistry;
     
-    private static final String NACOS_OTEL_ENV = "NACOS_OTEL_COLLECTOR_ENDPOINT";
+    private static final String NACOS_OTEL_PROPERTY = "nacos.otel.collector.endpoint";
     
     private static final String NACOS_OTEL_DEFAULT_ENDPOINT = "http://localhost:4318/v1/metrics";
     
@@ -61,13 +62,14 @@ public class MetricsMonitor {
             @Override
             public @NonNull String url() {
                 // User should set the environment variable `NACOS_OTEL_COLLECTOR_ENDPOINT` to customize the OpenTelemetry collector endpoint.
-                String url = ValidatorUtils.checkValidUrl(System.getenv(NACOS_OTEL_ENV));
+                String url = ValidatorUtils.checkValidUrl(
+                        NacosClientProperties.PROTOTYPE.getProperty(NACOS_OTEL_PROPERTY));
                 return url == null ? NACOS_OTEL_DEFAULT_ENDPOINT : url;
             }
         }, Clock.SYSTEM));
         
         // Prometheus metrics exporter
-        nacosMeterRegistry.add(ApplicationUtils.getBean(PrometheusMeterRegistry.class));
+        nacosMeterRegistry.add(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
     }
     
     public static CompositeMeterRegistry getNacosMeterRegistry() {

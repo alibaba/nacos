@@ -81,11 +81,6 @@
         </dependency>
         
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-sys</artifactId>
-        </dependency>
-        
-        <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <optional>true</optional>

@@ -36,9 +36,10 @@ public class ConfigMetrics {
             .gauge("nacos.monitor", Tags.of("module", "config", "name", "listenerConfigCount"), new AtomicInteger(0));
     
     /**
-     * set the value of `listenConfigCount` gauge. `listenerConfigCount` is to record the number of listening configs.
+     * set the value of <b>listenConfigCount</b> gauge. <b>listenConfigCount</b> is to record the number of listening
+     * configs. As a matter of fact, this value reflects the actual size of the config <tt>cacheMap</tt>
      *
-     * @param count the count of listen config
+     * @param count the count of listened configs
      */
     public static void setListenerConfigCountMonitor(int count) {
         if (LISTENER_CONFIG_COUNT_GAUGE != null) {

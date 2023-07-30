@@ -36,8 +36,8 @@ public class NamingMetrics {
             .gauge("nacos.monitor", Tags.of("module", "naming", "name", "serviceInfoMapSize"), new AtomicInteger(0));
     
     /**
-     * Set the value of `serviceInfoMapSize` gauge. `serviceInfoMapSize` is to record the number of stored service
-     * info.
+     * Set the value of <b>serviceInfoMapSize</b> gauge. <b>serviceInfoMapSize</b> is to record the number of stored
+     * service info.
      *
      * @param size the size of serviceInfoMap
      */
