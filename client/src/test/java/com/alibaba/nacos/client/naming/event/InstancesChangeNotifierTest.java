@@ -49,7 +49,9 @@ public class InstancesChangeNotifierTest {
         List<Instance> hosts = new ArrayList<>();
         Instance ins = new Instance();
         hosts.add(ins);
-        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, name, group, clusters, hosts);
+        InstancesDiff diff = new InstancesDiff();
+        diff.setAddedInstances(hosts);
+        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, name, group, clusters, hosts, diff);
         Assert.assertEquals(true, instancesChangeNotifier.scopeMatches(event));
     }
     
