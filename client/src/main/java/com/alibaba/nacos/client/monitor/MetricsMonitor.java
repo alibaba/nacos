@@ -20,6 +20,7 @@ package com.alibaba.nacos.client.monitor;
 
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Metrics;
@@ -42,11 +43,17 @@ public class MetricsMonitor {
      */
     private static final CompositeMeterRegistry NACOS_METER_REGISTRY = Metrics.globalRegistry;
     
+    private static final String NACOS_METRICS_ENABLE_PROPERTY = "nacos.metrics.enable";
+    
     private static final String NACOS_OTEL_PROPERTY = "nacos.otel.collector.endpoint";
     
     private static final String NACOS_OTEL_DEFAULT_ENDPOINT = "http://localhost:4318/v1/metrics";
     
+    private static final Boolean NACOS_METRICS_ENABLE = ConvertUtils.toBoolean(
+            NacosClientProperties.PROTOTYPE.getProperty(NACOS_METRICS_ENABLE_PROPERTY, "false"));
+    
     static {
+        
         CompositeMeterRegistry nacosMeterRegistry = NACOS_METER_REGISTRY;
         
         nacosMeterRegistry.config().commonTags("nacos.client.version", VersionUtils.getFullClientVersion());
@@ -70,6 +77,23 @@ public class MetricsMonitor {
         
         // Prometheus metrics exporter
         nacosMeterRegistry.add(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
+    }
+    
+    /**
+     * User should set the property <tt>nacos.metrics.enable</tt> to enable the <b>new</b> metrics. For backward
+     * compatible reason, the <b>old</b> metrics are always enabled and can not be influenced by this property. They are
+     * including:
+     * <ul>
+     *     <li>nacos.monitor-listenerConfigCount</li>
+     *     <li>nacos.monitor-serviceInfoMapSize</li>
+     *     <li>nacos.client.request-configRequest</li>
+     *     <li>nacos.client.request-namingRequest</li>
+     * </ul>
+     *
+     * @return true if the <b>new</b> metrics are enabled, otherwise false.
+     */
+    public static boolean isEnable() {
+        return NACOS_METRICS_ENABLE;
     }
     
     public static CompositeMeterRegistry getNacosMeterRegistry() {

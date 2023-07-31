@@ -36,18 +36,22 @@ public class NamingMetrics {
             .gauge("nacos.monitor", Tags.of("module", "naming", "name", "serviceInfoMapSize"), new AtomicInteger(0));
     
     /**
+     * <i>This metric can not be disabled.</i>
+     * <p></p>
      * Set the value of <b>serviceInfoMapSize</b> gauge. <b>serviceInfoMapSize</b> is to record the number of stored
      * service info.
      *
      * @param size the size of serviceInfoMap
      */
-    public static void setServiceInfoMapSizeMonitor(int size) {
+    public static void setServiceInfoMapSize(int size) {
         if (SERVICE_INFO_MAP_SIZE_GAUGE != null) {
             SERVICE_INFO_MAP_SIZE_GAUGE.set(size);
         }
     }
     
     /**
+     * <i>This metric can not be disabled.</i>
+     * <p></p>
      * Record the request time in naming module.
      *
      * @param url      request url
@@ -55,9 +59,9 @@ public class NamingMetrics {
      * @param code     response code
      * @param duration request duration, unit: ms
      */
-    public static void recordNamingRequestMonitor(String method, String url, String code, long duration) {
-        MetricsMonitor.getNacosMeterRegistry()
-                .timer("nacos.client.request", Tags.of("module", "naming", "method", method, "url", url, "code", code))
+    public static void recordNamingRequest(String method, String url, String code, long duration) {
+        MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.request",
+                        Tags.of("module", "naming", "method", method, "url", url, "code", code, "name", "namingRequest"))
                 .record(duration, TimeUnit.MILLISECONDS);
     }
 }

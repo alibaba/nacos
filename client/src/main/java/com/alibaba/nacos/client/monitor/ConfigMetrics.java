@@ -36,18 +36,22 @@ public class ConfigMetrics {
             .gauge("nacos.monitor", Tags.of("module", "config", "name", "listenerConfigCount"), new AtomicInteger(0));
     
     /**
-     * set the value of <b>listenConfigCount</b> gauge. <b>listenConfigCount</b> is to record the number of listening
+     * <i>This metric can not be disabled.</i>
+     * <p></p>
+     * Set the value of <b>listenConfigCount</b> gauge. <b>listenConfigCount</b> is to record the number of listening
      * configs. As a matter of fact, this value reflects the actual size of the config <tt>cacheMap</tt>
      *
      * @param count the count of listened configs
      */
-    public static void setListenerConfigCountMonitor(int count) {
+    public static void setListenerConfigCount(int count) {
         if (LISTENER_CONFIG_COUNT_GAUGE != null) {
             LISTENER_CONFIG_COUNT_GAUGE.set(count);
         }
     }
     
     /**
+     * <i>This metric can not be disabled.</i>
+     * <p></p>
      * Record the request time in config module.
      *
      * @param url      request url
@@ -55,9 +59,27 @@ public class ConfigMetrics {
      * @param code     response code
      * @param duration request duration, unit: ms
      */
-    public static void recordConfigRequestMonitor(String method, String url, String code, long duration) {
-        MetricsMonitor.getNacosMeterRegistry()
-                .timer("nacos.client.request", Tags.of("module", "config", "method", method, "url", url, "code", code))
+    public static void recordConfigRequest(String method, String url, String code, long duration) {
+        MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.request",
+                        Tags.of("module", "config", "method", method, "url", url, "code", code, "name", "configRequest"))
                 .record(duration, TimeUnit.MILLISECONDS);
+    }
+    
+    /**
+     * Record the notification time for a single config change on the client.
+     *
+     * @param envName  client name
+     * @param dataId   config data id
+     * @param group    config group
+     * @param tenant   config tenant
+     * @param duration request duration, unit: ms
+     */
+    public static void recordConfigNotifyCostDuration(String envName, String dataId, String group, String tenant,
+            long duration) {
+        if (MetricsMonitor.isEnable()) {
+            MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.notify",
+                    Tags.of("module", "config", "env", envName, "dataId", dataId, "group", group, "tenant", tenant,
+                            "name", "configNotifyCostDuration")).record(duration, TimeUnit.MILLISECONDS);
+        }
     }
 }

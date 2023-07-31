@@ -165,7 +165,7 @@ public class ServiceInfoHolder implements Closeable {
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
-        NamingMetrics.setServiceInfoMapSizeMonitor(serviceInfoMap.size());
+        NamingMetrics.setServiceInfoMapSize(serviceInfoMap.size());
         if (changed) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
