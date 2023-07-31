@@ -33,7 +33,7 @@ public abstract class AbstractNamingChangeListener extends AbstractEventListener
     }
 
     /**
-     * Callback when instances have changed
+     * Callback when instances have changed.
      * @param event NamingChangeEvent
      */
     public abstract void onChange(NamingChangeEvent event);

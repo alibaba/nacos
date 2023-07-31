@@ -96,6 +96,28 @@ public class NamingChaneEventTest {
         assertEquals(0, event.getRemovedInstances().size());
     }
 
+    @Test
+    public void testGetChanges() {
+        NamingChangeEvent event = new NamingChangeEvent("serviceName", Collections.EMPTY_LIST, instancesDiff);
+        assertTrue(event.isAdded());
+        assertEquals(3, event.getAddedInstances().size());
+        event.getAddedInstances().clear();
+        assertFalse(event.isAdded());
+        assertEquals(0, event.getAddedInstances().size());
+
+        assertTrue(event.isRemoved());
+        assertEquals(2, event.getRemovedInstances().size());
+        event.getRemovedInstances().clear();
+        assertFalse(event.isRemoved());
+        assertEquals(0, event.getRemovedInstances().size());
+
+        assertTrue(event.isModified());
+        assertEquals(1, event.getModifiedInstances().size());
+        event.getModifiedInstances().clear();
+        assertFalse(event.isModified());
+        assertEquals(0, event.getRemovedInstances().size());
+    }
+
     private static class MockNamingEventListener extends AbstractNamingChangeListener {
 
         @Override
