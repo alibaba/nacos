@@ -50,6 +50,9 @@ db.pool.config.validationTimeout=10000
 db.pool.config.maximumPoolSize=20
 db.pool.config.minimumIdle=2
 
+### the maximum retry times for push
+nacos.config.push.maxRetryTime=50
+
 #*************** Naming Module Related Configurations ***************#
 ### If enable data warmup. If set to false, the server would accept request without local data preparation:
 # nacos.naming.data.warmup=true
