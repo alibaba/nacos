@@ -79,10 +79,6 @@ window.require(['vs/editor/editor.main'], () => {
     },
   });
   window.monaco.languages.setMonarchTokensProvider('toml', {
-    // brackets: [
-    //   ['{', '}', 'delimiter.curly'],
-    //   ['[', ']', 'delimiter.square'],
-    // ],
     // The main tokenizer for our languages
     tokenizer: {
       root: [
