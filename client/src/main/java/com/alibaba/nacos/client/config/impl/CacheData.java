@@ -445,7 +445,7 @@ public class CacheData {
                     listenerWrap.lastCallMd5 = md5;
                     
                     long jobCost = System.currentTimeMillis() - start;
-                    ConfigMetrics.recordConfigNotifyCostDuration(envName, dataId, group, tenant, jobCost);
+                    ConfigMetrics.recordConfigNotifyCostDurationTimer(envName, dataId, group, tenant, jobCost);
                     LOGGER.info(
                             "[{}] [notify-ok] dataId={}, group={},tenant={}, md5={}, listener={} ,job run cost={} millis.",
                             envName, dataId, group, tenant, md5, listener, jobCost);
@@ -523,6 +523,9 @@ public class CacheData {
     
     public void setConsistentWithServer(boolean consistentWithServer) {
         isConsistentWithServer.set(consistentWithServer);
+        if (consistentWithServer) {
+            ConfigMetrics.incSyncWithServerCounter();
+        }
     }
     
     public boolean isDiscard() {

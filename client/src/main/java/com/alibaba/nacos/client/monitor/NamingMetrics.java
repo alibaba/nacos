@@ -43,7 +43,7 @@ public class NamingMetrics {
      *
      * @param size the size of serviceInfoMap
      */
-    public static void setServiceInfoMapSize(int size) {
+    public static void setServiceInfoMapSizeGauge(int size) {
         if (SERVICE_INFO_MAP_SIZE_GAUGE != null) {
             SERVICE_INFO_MAP_SIZE_GAUGE.set(size);
         }
@@ -59,7 +59,7 @@ public class NamingMetrics {
      * @param code     response code
      * @param duration request duration, unit: ms
      */
-    public static void recordNamingRequest(String method, String url, String code, long duration) {
+    public static void recordNamingRequestTimer(String method, String url, String code, long duration) {
         MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.request",
                         Tags.of("module", "naming", "method", method, "url", url, "code", code, "name", "namingRequest"))
                 .record(duration, TimeUnit.MILLISECONDS);

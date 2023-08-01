@@ -445,7 +445,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                     Query.newInstance().initParams(params), body, method, String.class);
             end = System.currentTimeMillis();
             
-            NamingMetrics.recordNamingRequest(method, url, String.valueOf(restResult.getCode()), end - start);
+            NamingMetrics.recordNamingRequestTimer(method, url, String.valueOf(restResult.getCode()), end - start);
             
             if (restResult.ok()) {
                 return restResult.getData();

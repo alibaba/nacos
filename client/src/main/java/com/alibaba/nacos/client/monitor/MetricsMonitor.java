@@ -45,52 +45,59 @@ public class MetricsMonitor {
     
     private static final String NACOS_METRICS_ENABLE_PROPERTY = "nacos.metrics.enable";
     
-    private static final String NACOS_OTEL_PROPERTY = "nacos.otel.collector.endpoint";
+    private static final String NACOS_OTEL_ENABLE_PROPERTY = "nacos.metrics.otel.enable";
+    
+    private static final String NACOS_OTEL_ENDPOINT_PROPERTY = "nacos.metrics.otel.collector.endpoint";
     
     private static final String NACOS_OTEL_DEFAULT_ENDPOINT = "http://localhost:4318/v1/metrics";
     
     private static final Boolean NACOS_METRICS_ENABLE = ConvertUtils.toBoolean(
             NacosClientProperties.PROTOTYPE.getProperty(NACOS_METRICS_ENABLE_PROPERTY, "false"));
     
+    /**
+     * Whether to enable OpenTelemetry metrics exporter. Default is false. Once enabled, Micrometer will keep trying
+     * connecting to the OpenTelemetry collector, even if the collector is not available.
+     */
+    private static final Boolean NACOS_OTEL_ENABLE = ConvertUtils.toBoolean(
+            NacosClientProperties.PROTOTYPE.getProperty(NACOS_OTEL_ENABLE_PROPERTY, "false"));
+    
     static {
-        
-        CompositeMeterRegistry nacosMeterRegistry = NACOS_METER_REGISTRY;
-        
-        nacosMeterRegistry.config().commonTags("nacos.client.version", VersionUtils.getFullClientVersion());
-        
-        // OpenTelemetry metrics exporter
-        nacosMeterRegistry.add(new OtlpMeterRegistry(new OtlpConfig() {
+        if (isEnable()) {
+            CompositeMeterRegistry nacosMeterRegistry = NACOS_METER_REGISTRY;
             
-            @Override
-            public String get(final @NonNull String key) {
-                return null;
+            nacosMeterRegistry.config().commonTags("nacos.client.version", VersionUtils.getFullClientVersion());
+            
+            // OpenTelemetry metrics exporter
+            if (NACOS_OTEL_ENABLE) {
+                nacosMeterRegistry.add(new OtlpMeterRegistry(new OtlpConfig() {
+                    
+                    @Override
+                    public String get(final @NonNull String key) {
+                        return null;
+                    }
+                    
+                    @Override
+                    public @NonNull String url() {
+                        // User should set the environment variable `NACOS_OTEL_COLLECTOR_ENDPOINT` to customize the OpenTelemetry collector endpoint.
+                        String url = ValidatorUtils.checkValidUrl(
+                                NacosClientProperties.PROTOTYPE.getProperty(NACOS_OTEL_ENDPOINT_PROPERTY));
+                        return url == null ? NACOS_OTEL_DEFAULT_ENDPOINT : url;
+                    }
+                }, Clock.SYSTEM));
             }
             
-            @Override
-            public @NonNull String url() {
-                // User should set the environment variable `NACOS_OTEL_COLLECTOR_ENDPOINT` to customize the OpenTelemetry collector endpoint.
-                String url = ValidatorUtils.checkValidUrl(
-                        NacosClientProperties.PROTOTYPE.getProperty(NACOS_OTEL_PROPERTY));
-                return url == null ? NACOS_OTEL_DEFAULT_ENDPOINT : url;
-            }
-        }, Clock.SYSTEM));
-        
-        // Prometheus metrics exporter
-        nacosMeterRegistry.add(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
+            // Prometheus metrics exporter
+            nacosMeterRegistry.add(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
+        }
     }
     
     /**
-     * User should set the property <tt>nacos.metrics.enable</tt> to enable the <b>new</b> metrics. For backward
-     * compatible reason, the <b>old</b> metrics are always enabled and can not be influenced by this property. They are
-     * including:
-     * <ul>
-     *     <li>nacos.monitor-listenerConfigCount</li>
-     *     <li>nacos.monitor-serviceInfoMapSize</li>
-     *     <li>nacos.client.request-configRequest</li>
-     *     <li>nacos.client.request-namingRequest</li>
-     * </ul>
+     * User should set the property <tt>nacos.metrics.enable</tt> to enable the metrics to be collected.
+     * <p></p>
+     * <tt>config</tt> and <tt>naming</tt> modules will be affected by this property. However, they both have their own
+     * enable switch additionally.
      *
-     * @return true if the <b>new</b> metrics are enabled, otherwise false.
+     * @return true if the monitor of metrics is enabled, otherwise false.
      */
     public static boolean isEnable() {
         return NACOS_METRICS_ENABLE;

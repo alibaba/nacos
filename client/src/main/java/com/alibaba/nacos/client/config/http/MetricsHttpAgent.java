@@ -59,7 +59,7 @@ public class MetricsHttpAgent implements HttpAgent {
             result = httpAgent.httpGet(path, headers, paramValues, encode, readTimeoutMs);
             responseCode = String.valueOf(result.getCode());
         } finally {
-            ConfigMetrics.recordConfigRequest(GET, path, responseCode,
+            ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
                     System.currentTimeMillis() - start.getTime());
         }
         
@@ -76,7 +76,7 @@ public class MetricsHttpAgent implements HttpAgent {
             result = httpAgent.httpPost(path, headers, paramValues, encode, readTimeoutMs);
             responseCode = String.valueOf(result.getCode());
         } finally {
-            ConfigMetrics.recordConfigRequest(GET, path, responseCode,
+            ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
                     System.currentTimeMillis() - start.getTime());
         }
         
@@ -93,7 +93,7 @@ public class MetricsHttpAgent implements HttpAgent {
             result = httpAgent.httpDelete(path, headers, paramValues, encode, readTimeoutMs);
             responseCode = String.valueOf(result.getCode());
         } finally {
-            ConfigMetrics.recordConfigRequest(GET, path, responseCode,
+            ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
                     System.currentTimeMillis() - start.getTime());
         }
         
