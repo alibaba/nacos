@@ -160,8 +160,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances)
-            throws NacosException {
+    public void batchDeregisterService(String serviceName, String groupName, List<Instance> instances) {
         throw new UnsupportedOperationException(
                 "Do not support persistent instances to perform batch de registration methods.");
     }
@@ -212,7 +211,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
         params.put(CommonParams.SERVICE_NAME, NamingUtils.getGroupedName(serviceName, groupName));
         params.put(CLUSTERS_PARAM, clusters);
-        params.put(UDP_PORT_PARAM, String.valueOf(udpPort));
         params.put(CLIENT_IP_PARAM, NetUtils.localIP());
         params.put(HEALTHY_ONLY_PARAM, String.valueOf(healthyOnly));
         String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/list", params, HttpMethod.GET);

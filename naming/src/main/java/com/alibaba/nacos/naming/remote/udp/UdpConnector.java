@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.remote.udp;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PushCallBack;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
@@ -29,9 +28,7 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.InetSocketAddress;
 import java.net.SocketException;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +53,6 @@ public class UdpConnector {
         this.ackMap = new ConcurrentHashMap<>();
         this.callbackMap = new ConcurrentHashMap<>();
         this.udpSocket = new DatagramSocket();
-        GlobalExecutor.scheduleUdpReceiver(new UdpReceiver());
     }
     
     public void shutdown() {
@@ -180,37 +176,5 @@ public class UdpConnector {
                 ackMap.remove(ackEntry.getKey());
             }
         }
-    }
-    
-    private class UdpReceiver implements Runnable {
-        
-        @Override
-        public void run() {
-            while (running) {
-                byte[] buffer = new byte[1024 * 64];
-                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
-                try {
-                    udpSocket.receive(packet);
-                    String json = new String(packet.getData(), 0, packet.getLength(), StandardCharsets.UTF_8).trim();
-                    AckPacket ackPacket = JacksonUtils.toObj(json, AckPacket.class);
-                    InetSocketAddress socketAddress = (InetSocketAddress) packet.getSocketAddress();
-                    String ip = socketAddress.getAddress().getHostAddress();
-                    int port = socketAddress.getPort();
-                    if (System.nanoTime() - ackPacket.lastRefTime > Constants.ACK_TIMEOUT_NANOS) {
-                        Loggers.PUSH.warn("ack takes too long from {} ack json: {}", packet.getSocketAddress(), json);
-                    }
-                    String ackKey = AckEntry.getAckKey(ip, port, ackPacket.lastRefTime);
-                    AckEntry ackEntry = ackMap.remove(ackKey);
-                    if (ackEntry == null) {
-                        throw new IllegalStateException(
-                                "unable to find ackEntry for key: " + ackKey + ", ack json: " + json);
-                    }
-                    callbackSuccess(ackKey);
-                } catch (Throwable e) {
-                    Loggers.PUSH.error("[NACOS-PUSH] error while receiving ack data", e);
-                }
-            }
-        }
-        
     }
 }
