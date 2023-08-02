@@ -29,7 +29,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
-public class NamingChaneEventTest {
+public class NamingChangeEventTest {
 
     private MockNamingEventListener eventListener;
 
