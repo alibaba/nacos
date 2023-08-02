@@ -18,6 +18,8 @@
 
 package com.alibaba.nacos.client.monitor;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.utils.ConvertUtils;
 import io.micrometer.core.instrument.Tags;
 
 import java.util.concurrent.TimeUnit;
@@ -25,33 +27,53 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class NamingMetrics {
     
-    // “heisen-gauge” principal: https://micrometer.io/docs/concepts#_gauges
-    // DO NOT interact with the gauge object directly. Rather, interacting with the thing that will cause the gauge
+    // Micrometer recommends using <b>. (dots)</b> to uniformly separate meter names, see <a
+    // href="https://micrometer.io/docs/concepts#_naming_meters">official docs</a> .
+    
+    private static final String METRIC_MODULE_NAME = "naming";
+    
+    private static final String NACOS_NAMING_METRICS_ENABLE_PROPERTY = "nacos.metrics.naming.enable";
     
     /**
-     * Micrometer recommends using <b>. (dots)</b> to uniformly separate meter names, see <a
-     * href="https://micrometer.io/docs/concepts#_naming_meters">official docs</a> .
+     * This property aims to control which module (config or naming, here is naming) is <b>not</b> monitored by
+     * Micrometer. It's default value is <b>true</b> so that users who want to monitor whole Nacos client can ignore
+     * this property and just only need to set <tt>nacos.metrics.enable</tt> in {@link MetricsMonitor}.
      */
+    private static final Boolean NACOS_NAMING_METRICS_ENABLE = ConvertUtils.toBoolean(
+            NacosClientProperties.PROTOTYPE.getProperty(NACOS_NAMING_METRICS_ENABLE_PROPERTY, "true"));
+    
+    public static boolean isEnable() {
+        return NACOS_NAMING_METRICS_ENABLE && MetricsMonitor.isEnable();
+    }
+    
+    // ------------------------ Gauges ------------------------
+    
+    // “heisen-gauge” principal: https://micrometer.io/docs/concepts#_gauges
+    // DO NOT interact with the gauge object directly. Rather, interacting with the thing that will cause the gauge.
+    
     private static final AtomicInteger SERVICE_INFO_MAP_SIZE_GAUGE = MetricsMonitor.getNacosMeterRegistry()
-            .gauge("nacos.monitor", Tags.of("module", "naming", "name", "serviceInfoMapSize"), new AtomicInteger(0));
+            .gauge("nacos.monitor", Tags.of("module", METRIC_MODULE_NAME, "name", "serviceInfoMapSize"),
+                    new AtomicInteger(0));
     
     /**
-     * <i>This metric can not be disabled.</i>
-     * <p></p>
      * Set the value of <b>serviceInfoMapSize</b> gauge. <b>serviceInfoMapSize</b> is to record the number of stored
      * service info.
      *
      * @param size the size of serviceInfoMap
      */
     public static void setServiceInfoMapSizeGauge(int size) {
-        if (SERVICE_INFO_MAP_SIZE_GAUGE != null) {
+        if (SERVICE_INFO_MAP_SIZE_GAUGE != null && isEnable()) {
             SERVICE_INFO_MAP_SIZE_GAUGE.set(size);
         }
     }
     
+    // ------------------------ Timers ------------------------
+    
+    // For evey meter, Micrometer will generate an id (key) by its name, description and tags.
+    // Then the meters will be stored in a ConcurrentHashMap as a cache.
+    // So it is OK to build a new timer meter every time.
+    
     /**
-     * <i>This metric can not be disabled.</i>
-     * <p></p>
      * Record the request time in naming module.
      *
      * @param url      request url
@@ -60,8 +82,28 @@ public class NamingMetrics {
      * @param duration request duration, unit: ms
      */
     public static void recordNamingRequestTimer(String method, String url, String code, long duration) {
-        MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.request",
-                        Tags.of("module", "naming", "method", method, "url", url, "code", code, "name", "namingRequest"))
-                .record(duration, TimeUnit.MILLISECONDS);
+        if (isEnable()) {
+            MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.request",
+                    Tags.of("module", METRIC_MODULE_NAME, "method", method, "url", url, "code", code, "name",
+                            "namingRequest")).record(duration, TimeUnit.MILLISECONDS);
+        }
+    }
+    
+    /**
+     * Record the duration of a rpc request on the client.
+     *
+     * @param connectionType connection type, such as: GRPC
+     * @param currentServer  current rpc server
+     * @param rpcResultCode  rpc result code, usually <b>200</b> means success
+     * @param duration       request duration, unit: ms
+     */
+    public static void recordRpcCostDurationTimer(String connectionType, String currentServer, String rpcResultCode,
+            long duration) {
+        if (isEnable()) {
+            MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.naming.timer",
+                            Tags.of("module", METRIC_MODULE_NAME, "connectionType", connectionType, "currentServer",
+                                    currentServer, "rpcResultCode", rpcResultCode, "name", "rpcCostDuration"))
+                    .record(duration, TimeUnit.MILLISECONDS);
+        }
     }
 }

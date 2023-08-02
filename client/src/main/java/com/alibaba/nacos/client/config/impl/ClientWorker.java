@@ -1125,7 +1125,7 @@ public class ClientWorker implements Closeable {
             long start = System.currentTimeMillis();
             Response rpcResponse = rpcClientInner.request(request, timeoutMills);
             long cost = System.currentTimeMillis() - start;
-            ConfigMetrics.recordConfigRpcCostDurationTimer(rpcClientInner.getConnectionType().getType(),
+            ConfigMetrics.recordRpcCostDurationTimer(rpcClientInner.getConnectionType().getType(),
                     rpcClientInner.getCurrentServer().getAddress(), String.valueOf(rpcResponse.getResultCode()), cost);
             
             return rpcResponse;

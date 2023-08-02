@@ -445,7 +445,7 @@ public class CacheData {
                     listenerWrap.lastCallMd5 = md5;
                     
                     long jobCost = System.currentTimeMillis() - start;
-                    ConfigMetrics.recordConfigNotifyCostDurationTimer(envName, dataId, group, tenant, jobCost);
+                    ConfigMetrics.recordNotifyCostDurationTimer(envName, dataId, group, tenant, jobCost);
                     LOGGER.info(
                             "[{}] [notify-ok] dataId={}, group={},tenant={}, md5={}, listener={} ,job run cost={} millis.",
                             envName, dataId, group, tenant, md5, listener, jobCost);

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.ConfigMetrics;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -58,7 +59,8 @@ public class ServerHttpAgent implements HttpAgent {
     @Override
     public HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        final long endTime = System.currentTimeMillis() + readTimeoutMs;
+        final long startTime = System.currentTimeMillis();
+        final long endTime = startTime + readTimeoutMs;
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
         HttpClientConfig httpConfig = HttpClientConfig.builder()
@@ -71,8 +73,12 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 Query query = Query.newInstance().initParams(paramValues);
-                HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                        .get(getUrl(currentServerAddr, path), httpConfig, newHeaders, query, String.class);
+                HttpRestResult<String> result = NACOS_RESTTEMPLATE.get(getUrl(currentServerAddr, path), httpConfig,
+                        newHeaders, query, String.class);
+                
+                ConfigMetrics.recordConfigRequestTimer("GET", getUrl(currentServerAddr, path),
+                        String.valueOf(result.getCode()), System.currentTimeMillis() - startTime);
+                
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                             serverListMgr.getCurrentServerAddr(), result.getCode());
@@ -113,7 +119,8 @@ public class ServerHttpAgent implements HttpAgent {
     @Override
     public HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        final long endTime = System.currentTimeMillis() + readTimeoutMs;
+        final long startTime = System.currentTimeMillis();
+        final long endTime = startTime + readTimeoutMs;
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
         HttpClientConfig httpConfig = HttpClientConfig.builder()
@@ -125,8 +132,11 @@ public class ServerHttpAgent implements HttpAgent {
                 if (headers != null) {
                     newHeaders.addAll(headers);
                 }
-                HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                        .postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders, paramValues, String.class);
+                HttpRestResult<String> result = NACOS_RESTTEMPLATE.postForm(getUrl(currentServerAddr, path), httpConfig,
+                        newHeaders, paramValues, String.class);
+                
+                ConfigMetrics.recordConfigRequestTimer("POST", getUrl(currentServerAddr, path),
+                        String.valueOf(result.getCode()), System.currentTimeMillis() - startTime);
                 
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", currentServerAddr,
@@ -167,7 +177,8 @@ public class ServerHttpAgent implements HttpAgent {
     @Override
     public HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
             String encode, long readTimeoutMs) throws Exception {
-        final long endTime = System.currentTimeMillis() + readTimeoutMs;
+        final long startTime = System.currentTimeMillis();
+        final long endTime = startTime + readTimeoutMs;
         String currentServerAddr = serverListMgr.getCurrentServerAddr();
         int maxRetry = this.maxRetry;
         HttpClientConfig httpConfig = HttpClientConfig.builder()
@@ -180,8 +191,12 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 Query query = Query.newInstance().initParams(paramValues);
-                HttpRestResult<String> result = NACOS_RESTTEMPLATE
-                        .delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, query, String.class);
+                HttpRestResult<String> result = NACOS_RESTTEMPLATE.delete(getUrl(currentServerAddr, path), httpConfig,
+                        newHeaders, query, String.class);
+                
+                ConfigMetrics.recordConfigRequestTimer("DELETE", getUrl(currentServerAddr, path),
+                        String.valueOf(result.getCode()), System.currentTimeMillis() - startTime);
+                
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                             serverListMgr.getCurrentServerAddr(), result.getCode());

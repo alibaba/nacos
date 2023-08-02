@@ -28,6 +28,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConfigMetrics {
     
+    // Micrometer recommends using <b>. (dots)</b> to uniformly separate meter names, see <a
+    // href="https://micrometer.io/docs/concepts#_naming_meters">official docs</a> .
+    
     private static final String METRIC_MODULE_NAME = "config";
     
     private static final String NACOS_CONFIG_METRICS_ENABLE_PROPERTY = "nacos.metrics.config.enable";
@@ -44,13 +47,10 @@ public class ConfigMetrics {
         return NACOS_CONFIG_METRICS_ENABLE && MetricsMonitor.isEnable();
     }
     
-    // Micrometer recommends using <b>. (dots)</b> to uniformly separate meter names, see <a
-    // href="https://micrometer.io/docs/concepts#_naming_meters">official docs</a> .
-    
     // ------------------------ Gauges ------------------------
     
     // “heisen-gauge” principal: https://micrometer.io/docs/concepts#_gauges
-    // DO NOT interact with the gauge object directly. Rather, interacting with the thing that will cause the gauge
+    // DO NOT interact with the gauge object directly. Rather, interacting with the thing that will cause the gauge.
     
     private static final AtomicInteger LISTENER_CONFIG_COUNT_GAUGE = MetricsMonitor.getNacosMeterRegistry()
             .gauge("nacos.monitor", Tags.of("module", METRIC_MODULE_NAME, "name", "listenerConfigCount"),
@@ -164,6 +164,10 @@ public class ConfigMetrics {
     
     // ------------------------ Timers ------------------------
     
+    // For evey meter, Micrometer will generate an id (key) by its name, description and tags.
+    // Then the meters will be stored in a ConcurrentHashMap as a cache.
+    // So it is OK to build a new timer meter every time.
+    
     /**
      * Record the HTTP request time in config module.
      *
@@ -189,7 +193,7 @@ public class ConfigMetrics {
      * @param tenant   config tenant
      * @param duration request duration, unit: ms
      */
-    public static void recordConfigNotifyCostDurationTimer(String envName, String dataId, String group, String tenant,
+    public static void recordNotifyCostDurationTimer(String envName, String dataId, String group, String tenant,
             long duration) {
         if (isEnable()) {
             MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.config.timer",
@@ -206,8 +210,8 @@ public class ConfigMetrics {
      * @param rpcResultCode  rpc result code, usually <b>200</b> means success
      * @param duration       request duration, unit: ms
      */
-    public static void recordConfigRpcCostDurationTimer(String connectionType, String currentServer,
-            String rpcResultCode, long duration) {
+    public static void recordRpcCostDurationTimer(String connectionType, String currentServer, String rpcResultCode,
+            long duration) {
         if (isEnable()) {
             MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.config.timer",
                             Tags.of("module", METRIC_MODULE_NAME, "connectionType", connectionType, "currentServer",

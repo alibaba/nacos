@@ -41,6 +41,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.NamingMetrics;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -218,9 +219,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
-                        instance);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+                serviceName, instance);
         redoService.instanceDeregister(serviceName, groupName);
         doDeregisterService(serviceName, groupName, instance);
     }
@@ -321,8 +321,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         if (NAMING_LOGGER.isDebugEnabled()) {
-            NAMING_LOGGER
-                    .debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
+            NAMING_LOGGER.debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName,
+                    clusters);
         }
         redoService.subscriberDeregister(serviceName, groupName, clusters);
         doUnsubscribe(serviceName, groupName, clusters);
@@ -358,8 +358,14 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         try {
             request.putAllHeader(
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
+            
+            long start = System.currentTimeMillis();
             Response response =
                     requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            NamingMetrics.recordRpcCostDurationTimer(rpcClient.getConnectionType().getType(),
+                    rpcClient.getCurrentServer().getAddress(), String.valueOf(response.getResultCode()),
+                    System.currentTimeMillis() - start);
+            
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }
