@@ -47,7 +47,6 @@ public class UdpConnector {
     
     private final DatagramSocket udpSocket;
     
-    private volatile boolean running = true;
     
     public UdpConnector() throws SocketException {
         this.ackMap = new ConcurrentHashMap<>();
@@ -56,7 +55,6 @@ public class UdpConnector {
     }
     
     public void shutdown() {
-        running = false;
     }
     
     public boolean containAck(String ackId) {
