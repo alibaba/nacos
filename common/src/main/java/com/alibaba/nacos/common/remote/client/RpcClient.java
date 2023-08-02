@@ -832,6 +832,7 @@ public abstract class RpcClient implements Closeable {
             } catch (Exception e) {
                 LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] HandleServerRequest:{}, errorMessage = {}",
                         rpcClientConfig.name(), serverRequestHandler.getClass().getName(), e.getMessage());
+                throw e;
             }
             
         }

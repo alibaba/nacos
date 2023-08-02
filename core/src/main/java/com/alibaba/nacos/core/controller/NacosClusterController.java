@@ -150,7 +150,7 @@ public class NacosClusterController {
     @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
     public RestResult<String> leave(@RequestBody Collection<String> params,
             @RequestParam(defaultValue = "true") Boolean notifyOtherMembers) throws Exception {
-        return RestResultUtils.failed(405, "/v1/core/cluster/server/leave API not allow to use temporarily.");
+        return RestResultUtils.failed(405, null, "/v1/core/cluster/server/leave API not allow to use temporarily.");
     }
     
 }

@@ -39,6 +39,8 @@ public class ConfigInfoMapperByDerbyTest {
     
     int pageSize = 5;
     
+    long lastMaxId = 123;
+    
     String appName = "appName";
     
     String groupId = "groupId";
@@ -66,7 +68,8 @@ public class ConfigInfoMapperByDerbyTest {
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
         context.putWhereParameter(FieldConstant.END_TIME, endTime);
         context.putWhereParameter(FieldConstant.IDS, ids);
-        
+        context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
+        context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
     }
     
     @Test
@@ -158,9 +161,9 @@ public class ConfigInfoMapperByDerbyTest {
     public void testFindChangeConfig() {
         MapperResult mapperResult = configInfoMapperByDerby.findChangeConfig(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info "
-                        + "WHERE gmt_modified >= ? AND gmt_modified <= ?");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, endTime});
+                "SELECT id, data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info "
+                        + "WHERE gmt_modified >= ? and id > ? order by id  limit ? ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
     }
     
     @Test
@@ -177,10 +180,9 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.findChangeConfigFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info "
-                        + "WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=?  OFFSET "
-                        + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
-                new Object[] {appName, startTime, endTime});
+                        + "WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=?  OFFSET " + startRow
+                        + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {appName, startTime, endTime});
     }
     
     @Test
@@ -267,8 +269,8 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoLike4PageFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info "
-                        + "WHERE  tenant_id LIKE ?  AND app_name = ?  OFFSET " + startRow
-                        + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
+                        + "WHERE  tenant_id LIKE ?  AND app_name = ?  OFFSET " + startRow + " ROWS FETCH NEXT "
+                        + pageSize + " ROWS ONLY");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
     }
     

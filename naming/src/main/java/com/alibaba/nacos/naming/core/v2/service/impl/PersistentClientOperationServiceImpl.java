@@ -118,7 +118,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         try {
             protocol.write(writeRequest);
-            Loggers.RAFT.info("Client registered. service={}, clientId={}, instance={}", service, instance, clientId);
+            Loggers.RAFT.info("Client registered. service={}, clientId={}, instance={}", service, clientId, instance);
         } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
@@ -165,7 +165,7 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
         
         try {
             protocol.write(writeRequest);
-            Loggers.RAFT.info("Client unregistered. service={}, clientId={}, instance={}", service, instance, clientId);
+            Loggers.RAFT.info("Client unregistered. service={}, clientId={}, instance={}", service, clientId, instance);
         } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }

@@ -32,7 +32,7 @@ module.exports = {
       {
         key: 'docs',
         text: 'DOCS',
-        link: 'https://nacos.io/en-us/docs/quick-start.html',
+        link: 'https://nacos.io/en-us/docs/v2/quickstart/quick-start.html',
       },
       {
         key: 'blog',
@@ -64,15 +64,15 @@ module.exports = {
       list: [
         {
           text: 'Overview',
-          link: '/en-us/docs/what-is-nacos.html',
+          link: '/en-us/docs/v2/what-is-nacos.html',
         },
         {
           text: 'Quick start',
-          link: '/en-us/docs/quick-start.html',
+          link: '/en-us/docs/v2/quickstart/quick-start.html',
         },
         {
           text: 'Developer guide',
-          link: '/en-us/docs/contributing.html',
+          link: '/en-us/docs/v2/contribution/contributing.html',
         },
       ],
     },
@@ -97,7 +97,7 @@ module.exports = {
       {
         key: 'docs',
         text: '文档',
-        link: 'https://nacos.io/zh-cn/docs/what-is-nacos.html',
+        link: 'https://nacos.io/zh-cn/docs/v2/what-is-nacos.html',
       },
       {
         key: 'blog',
@@ -129,15 +129,15 @@ module.exports = {
       list: [
         {
           text: '概览',
-          link: '/zh-cn/docs/what-is-nacos.html',
+          link: '/zh-cn/docs/v2/concepts.html',
         },
         {
           text: '快速开始',
-          link: '/zh-cn/docs/quick-start.html',
+          link: '/zh-cn/docs/v2/quickstart/quick-start.html',
         },
         {
           text: '开发者指南',
-          link: '/zh-cn/docs/contributing.html',
+          link: '/zh-cn/docs/v2/contribution/contributing.html',
         },
       ],
     },

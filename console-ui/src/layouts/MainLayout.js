@@ -39,7 +39,7 @@ class MainLayout extends React.Component {
     getState: PropTypes.func,
     functionMode: PropTypes.string,
     authEnabled: PropTypes.string,
-    children: PropTypes.object,
+    children: PropTypes.array,
     getNotice: PropTypes.func,
     notice: PropTypes.string,
   };
@@ -152,7 +152,9 @@ class MainLayout extends React.Component {
             </div>
             <div className="right-panel next-shell-sub-main">
               {authEnabled === 'false' ? (
-                <Message type="notice"><div dangerouslySetInnerHTML={{ __html: this.props.notice }} /></Message>
+                <Message type="notice">
+                  <div dangerouslySetInnerHTML={{ __html: this.props.notice }} />
+                </Message>
               ) : null}
               {this.props.children}
             </div>

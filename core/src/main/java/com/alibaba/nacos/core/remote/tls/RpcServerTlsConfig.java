@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,32 +14,49 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.core.remote.tls;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.stereotype.Component;
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.PropertiesUtil;
+
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Grpc config.
  *
  * @author githubcheng2978.
  */
-
-@ConfigurationProperties(prefix = RpcServerTlsConfig.PREFIX)
-@Component
 public class RpcServerTlsConfig extends TlsConfig {
-
-    public static final  String PREFIX = "nacos.remote.server.rpc.tls";
+    
+    public static final String PREFIX = "nacos.remote.server.rpc.tls";
+    
+    private static RpcServerTlsConfig instance;
     
     private String sslContextRefresher = "";
     
     private Boolean compatibility = true;
-
+    
+    public static synchronized RpcServerTlsConfig getInstance() {
+        if (null == instance) {
+            try {
+                instance = PropertiesUtil
+                        .handleSpringBinder(EnvUtil.getEnvironment(), PREFIX, RpcServerTlsConfig.class);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
+                Loggers.REMOTE.warn("TLS config bind failed, use default value", e);
+                instance = new RpcServerTlsConfig();
+            }
+        }
+        Loggers.REMOTE.info("Nacos Rpc server tls config:{}", JacksonUtils.toJson(instance));
+        return instance;
+    }
+    
     public Boolean getCompatibility() {
         return compatibility;
     }
-
+    
     public void setCompatibility(Boolean compatibility) {
         this.compatibility = compatibility;
     }

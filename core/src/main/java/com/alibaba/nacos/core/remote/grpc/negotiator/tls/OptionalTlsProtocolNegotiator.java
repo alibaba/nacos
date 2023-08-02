@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.grpc;
+package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
+import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcHttp2ConnectionHandler;
-import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiators;
 import io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiationEvent;
 import io.grpc.netty.shaded.io.netty.buffer.ByteBuf;
@@ -36,11 +37,11 @@ import java.util.List;
  *
  * @author githubcheng2978.
  */
-public class OptionalTlsProtocolNegotiator implements InternalProtocolNegotiator.ProtocolNegotiator {
+public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiator {
     
     private static final int MAGIC_VALUE = 5;
     
-    private boolean supportPlainText;
+    private final boolean supportPlainText;
     
     private SslContext sslContext;
     
@@ -69,6 +70,14 @@ public class OptionalTlsProtocolNegotiator implements InternalProtocolNegotiator
     @Override
     public void close() {
     
+    }
+    
+    @Override
+    public void reloadNegotiator() {
+        RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
+        if (rpcServerTlsConfig.getEnableTls()) {
+            sslContext = DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
+        }
     }
     
     private ProtocolNegotiationEvent getDefPne() {

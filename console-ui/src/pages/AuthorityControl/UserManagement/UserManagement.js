@@ -123,7 +123,7 @@ class UserManagement extends React.Component {
         <Form inline>
           <Form.Item label={locale.username}>
             <Input
-              value={this.username}
+              value={this.state.username || ''}
               htmlType="text"
               placeholder={this.state.defaultFuzzySearch ? locale.defaultFuzzyd : locale.fuzzyd}
               style={{ width: 200 }}

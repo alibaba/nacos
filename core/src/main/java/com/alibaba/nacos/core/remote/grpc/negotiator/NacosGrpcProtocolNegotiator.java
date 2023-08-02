@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.service.dump.task;
+package com.alibaba.nacos.core.remote.grpc.negotiator;
 
-import com.alibaba.nacos.common.task.AbstractDelayTask;
+import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 
 /**
- * Dump change task.
+ * Nacos Grpc protocol negotiator.
  *
- * @author Nacos
- * @date 2020/7/5 12:19 PM
+ * @author xiweng.yy
  */
-public class DumpChangeTask extends AbstractDelayTask {
+public interface NacosGrpcProtocolNegotiator extends InternalProtocolNegotiator.ProtocolNegotiator {
     
-    @Override
-    public void merge(AbstractDelayTask task) {
-    }
-    
-    public static final String TASK_ID = "dumpChangeConfigTask";
+    /**
+     * Reload this negotiator, such as config, tls context and so on if necessary.
+     */
+    void reloadNegotiator();
 }

@@ -222,6 +222,33 @@ public class NamingGrpcClientProxyTest {
     }
     
     @Test
+    public void testDeregisterServiceForBatchRegistered() throws NacosException {
+        try {
+            List<Instance> instanceList = new ArrayList<>();
+            instance.setHealthy(true);
+            instanceList.add(instance);
+            instanceList.add(new Instance());
+            client.batchRegisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+        } catch (Exception ignored) {
+        }
+        response = new BatchInstanceResponse();
+        when(this.rpcClient.request(any())).thenReturn(response);
+        List<Instance> instanceList = new ArrayList<>();
+        instance.setHealthy(true);
+        instanceList.add(instance);
+        client.deregisterService(SERVICE_NAME, GROUP_NAME, instance);
+        verify(this.rpcClient, times(1)).request(argThat(request -> {
+            if (request instanceof BatchInstanceRequest) {
+                BatchInstanceRequest request1 = (BatchInstanceRequest) request;
+                request1.setRequestId("1");
+                return request1.getInstances().size() == 1 && request1.getType()
+                        .equals(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
+            }
+            return false;
+        }));
+    }
+    
+    @Test
     public void testBatchRegisterService() throws NacosException {
         List<Instance> instanceList = new ArrayList<>();
         instance.setHealthy(true);
