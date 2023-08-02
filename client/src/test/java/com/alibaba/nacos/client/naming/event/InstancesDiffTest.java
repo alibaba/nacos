@@ -33,7 +33,7 @@ public class InstancesDiffTest {
         Instance removedIns = InstanceBuilder.newBuilder()
                 .setServiceName(serviceName)
                 .setClusterName("b").build();
-        Instance  modifiedIns = InstanceBuilder.newBuilder()
+        Instance modifiedIns = InstanceBuilder.newBuilder()
                 .setServiceName(serviceName)
                 .setClusterName("c").build();
 
