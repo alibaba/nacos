@@ -47,7 +47,6 @@ public class UdpConnector {
     
     private final DatagramSocket udpSocket;
     
-    
     public UdpConnector() throws SocketException {
         this.ackMap = new ConcurrentHashMap<>();
         this.callbackMap = new ConcurrentHashMap<>();
