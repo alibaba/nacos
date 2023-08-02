@@ -39,8 +39,6 @@ import java.net.DatagramSocket;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
 /**
@@ -75,10 +73,6 @@ public class UdpConnectorTest {
         ReflectionTestUtils.setField(udpConnector, "callbackMap", callbackMap);
         DatagramSocket oldSocket = (DatagramSocket) ReflectionTestUtils.getField(udpConnector, "udpSocket");
         ReflectionTestUtils.setField(udpConnector, "udpSocket", udpSocket);
-        doAnswer(invocationOnMock -> {
-            TimeUnit.SECONDS.sleep(3);
-            return null;
-        }).when(udpSocket).receive(any(DatagramPacket.class));
         oldSocket.close();
         TimeUnit.SECONDS.sleep(1);
     }
