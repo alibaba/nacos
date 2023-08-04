@@ -43,6 +43,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Service
 public class KubernetesConfigMapSyncService {
@@ -102,29 +103,35 @@ public class KubernetesConfigMapSyncService {
         nodeInformer.addEventHandler(new ResourceEventHandler<V1ConfigMap>() {
             @Override
             public void onAdd(V1ConfigMap obj) {
-                if (obj.getMetadata() == null || obj.getData() == null) {
+                if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
                     return;
                 }
-                
-                Loggers.MAIN.info("add configMap " + obj.toString());
-                configInfoPersistService.addConfigInfo4(...);
+                Loggers.MAIN.info("add configMap ");
+                ConfigInfo configInfo = configMapToNacosConfigInfo(obj);
+                String srcIp = apiClient.getBasePath();
+                configInfoPersistService.addConfigInfo(srcIp, "configmap/k8s", configInfo, null);
             }
             
             @Override
             public void onUpdate(V1ConfigMap oldObj, V1ConfigMap newObj) {
                 Loggers.MAIN.info(
                         "update configMap " + oldObj.getMetadata().getName() + " to " + newObj.getMetadata().getName());
-                String content = convertToYaml(newObj);
                 compareConfigMaps(oldObj, newObj);
-                configInfoPersistService.updateConfigInfo4(...);
-                // TODO: 修改
+                ConfigInfo configInfo = configMapToNacosConfigInfo(newObj);
+                String srcIp = apiClient.getBasePath();
+                configInfoPersistService.updateConfigInfo(configInfo, "configmap/k8s", srcIp, null);
             }
             
             @Override
             public void onDelete(V1ConfigMap obj, boolean deletedFinalStateUnknown) {
-                // print log
+                if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
+                    return;
+                }
                 Loggers.MAIN.info("delete configMap " + obj.getMetadata().getName());
-                configInfoPersistService.removeConfigInfo(...);
+                String dataId = obj.getMetadata().getName();
+                String tenant = obj.getMetadata().getNamespace();
+                String srcIp = apiClient.getBasePath();
+                configInfoPersistService.removeConfigInfo(dataId, "K8S_GROUP", tenant, srcIp, "configmap/k8s");
             }
             
             private String convertToYaml(Object kubernetesResource) {
@@ -176,13 +183,24 @@ public class KubernetesConfigMapSyncService {
     }
     
     private ConfigInfo configMapToNacosConfigInfo(V1ConfigMap configMap) {
+        Loggers.MAIN.info("Converting configMap to nacos ConfigInfo...");
         String dataId = configMap.getMetadata().getName();
         String group = "K8S_GROUP";
         String tenant = configMap.getMetadata().getNamespace();
         String appName = null;
-        String content = configMap.getData().toString();
+        // 将 ConfigMap 的数据转换为 Nacos 的配置内容
+        Map<String, String> dataMap = configMap.getData();
+        StringBuilder contentBuilder = new StringBuilder();
+        for (Map.Entry<String, String> entry : dataMap.entrySet()) {
+            String key = entry.getKey();
+            String value = entry.getValue();
+            // 拼接配置项的格式，例如 key=value\n
+            contentBuilder.append(key).append("=").append(value).append("\n");
+        }
+        String content = contentBuilder.toString();
         return new ConfigInfo(dataId, group, tenant, appName, content);
     }
+    
     
     public boolean isRunning() {
         return isRunning;
