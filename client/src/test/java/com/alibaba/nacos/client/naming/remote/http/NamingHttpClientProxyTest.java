@@ -227,12 +227,9 @@ public class NamingHttpClientProxyTest {
         String serviceName = "service1";
         String groupName = "group1";
         String clusters = "cluster1";
-        //when
-        ServiceInfo serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusters, false);
-        //then
-        verify(nacosRestTemplate, times(1)).exchangeForm(any(), any(), any(), any(), eq(HttpMethod.GET), any());
-        Assert.assertEquals(groupName + "@@" + serviceName, serviceInfo.getName());
-        Assert.assertEquals(clusters, serviceInfo.getClusters());
+        //assert exception
+        Assert.assertThrows(UnsupportedOperationException.class,
+                () -> clientProxy.queryInstancesOfService(serviceName, groupName, clusters, false));
     }
     
     @Test
