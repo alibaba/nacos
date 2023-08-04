@@ -339,7 +339,7 @@ public class NamingGrpcClientProxyTest {
         ServiceInfo info = new ServiceInfo(GROUP_NAME + "@@" + SERVICE_NAME + "@@" + CLUSTERS);
         res.setServiceInfo(info);
         when(this.rpcClient.request(any())).thenReturn(res);
-        ServiceInfo actual = client.queryInstancesOfService(SERVICE_NAME, GROUP_NAME, CLUSTERS, 0, false);
+        ServiceInfo actual = client.queryInstancesOfService(SERVICE_NAME, GROUP_NAME, CLUSTERS, false);
         Assert.assertEquals(info, actual);
     }
     

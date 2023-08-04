@@ -257,12 +257,11 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
+    public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters,
             boolean healthyOnly) throws NacosException {
         ServiceQueryRequest request = new ServiceQueryRequest(namespaceId, serviceName, groupName);
         request.setCluster(clusters);
         request.setHealthyOnly(healthyOnly);
-        request.setUdpPort(udpPort);
         QueryServiceResponse response = requestToServer(request, QueryServiceResponse.class);
         return response.getServiceInfo();
     }
@@ -332,8 +331,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         if (NAMING_LOGGER.isDebugEnabled()) {
-            NAMING_LOGGER
-                    .debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
+            NAMING_LOGGER.debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName,
+                    clusters);
         }
         redoService.subscriberDeregister(serviceName, groupName, clusters);
         doUnsubscribe(serviceName, groupName, clusters);
