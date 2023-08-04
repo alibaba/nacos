@@ -212,22 +212,11 @@ public class NamingHttpClientProxyTest {
     }
     
     @Test
-    public void testQueryInstancesOfService() throws Exception {
-        //given
-        NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
-        HttpRestResult<Object> a = new HttpRestResult<Object>();
-        a.setData("");
-        a.setCode(200);
-        when(nacosRestTemplate.exchangeForm(any(), any(), any(), any(), any(), any())).thenReturn(a);
-        
-        final Field nacosRestTemplateField = NamingHttpClientProxy.class.getDeclaredField("nacosRestTemplate");
-        nacosRestTemplateField.setAccessible(true);
-        nacosRestTemplateField.set(clientProxy, nacosRestTemplate);
-        
+    public void testQueryInstancesOfServiceThrowsException() {
+        //assert exception
         String serviceName = "service1";
         String groupName = "group1";
         String clusters = "cluster1";
-        //assert exception
         Assert.assertThrows(UnsupportedOperationException.class,
                 () -> clientProxy.queryInstancesOfService(serviceName, groupName, clusters, false));
     }
