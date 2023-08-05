@@ -32,10 +32,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -178,7 +176,7 @@ public class ServiceInfoHolder implements Closeable {
     private boolean isEmptyOrErrorPush(ServiceInfo serviceInfo) {
         return null == serviceInfo.getHosts() || (pushEmptyProtection && !serviceInfo.validate());
     }
-    
+
     private boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
         if (null == oldService) {
             NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(), newService.getKey(),
@@ -191,32 +189,28 @@ public class ServiceInfoHolder implements Closeable {
             return false;
         }
         boolean changed = false;
-        Map<String, Instance> oldHostMap = new HashMap<>(oldService.getHosts().size());
+        Map<String, Instance> oldHostMap = new HashMap<>(newService.getHosts().size());
         for (Instance host : oldService.getHosts()) {
             oldHostMap.put(host.toInetAddr(), host);
         }
-        Map<String, Instance> newHostMap = new HashMap<>(newService.getHosts().size());
-        for (Instance host : newService.getHosts()) {
-            newHostMap.put(host.toInetAddr(), host);
-        }
 
-        List<Instance> modHosts = new ArrayList<>();
-        List<Instance> newHosts = new ArrayList<>();
-        List<Instance> remvHosts = new ArrayList<>();
+        Set<Instance> modHosts = new HashSet<>();
+        Set<Instance> newHosts = new HashSet<>();
+        Set<Instance> remvHosts;
 
-        Set<String> allHostMapKeys = new HashSet<>(newHostMap.keySet());
-        allHostMapKeys.addAll(oldHostMap.keySet());
-        for (String key : allHostMapKeys) {
-            Instance newHost = newHostMap.get(key);
+        for (Instance newHost : newService.getHosts()) {
+            String key = newHost.toInetAddr();
             Instance oldHost = oldHostMap.get(key);
-            if (newHost != null && oldHost != null && !StringUtils.equals(newHost.toString(), oldHost.toString())) {
-                modHosts.add(newHost);
-            } else if (newHost != null && oldHost == null) {
+            if (oldHost != null) {
+                if (!StringUtils.equals(newHost.toString(), oldHost.toString())) {
+                    modHosts.add(newHost);
+                }
+                oldHostMap.remove(key);
+            } else {
                 newHosts.add(newHost);
-            } else if (newHost == null && oldHost != null) {
-                remvHosts.add(oldHost);
             }
         }
+        remvHosts = new HashSet<>(oldHostMap.values());
 
         if (!newHosts.isEmpty()) {
             changed = true;
