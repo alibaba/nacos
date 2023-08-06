@@ -106,7 +106,7 @@ public class KubernetesConfigMapSyncService {
                 if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
                     return;
                 }
-                Loggers.MAIN.info("add configMap ");
+                Loggers.MAIN.info("Add configMap ");
                 ConfigInfo configInfo = configMapToNacosConfigInfo(obj);
                 String srcIp = apiClient.getBasePath();
                 configInfoPersistService.addConfigInfo(srcIp, "configmap/k8s", configInfo, null);
@@ -115,7 +115,7 @@ public class KubernetesConfigMapSyncService {
             @Override
             public void onUpdate(V1ConfigMap oldObj, V1ConfigMap newObj) {
                 Loggers.MAIN.info(
-                        "update configMap " + oldObj.getMetadata().getName() + " to " + newObj.getMetadata().getName());
+                        "Update configMap " + oldObj.getMetadata().getName() + " to " + newObj.getMetadata().getName());
                 compareConfigMaps(oldObj, newObj);
                 ConfigInfo configInfo = configMapToNacosConfigInfo(newObj);
                 String srcIp = apiClient.getBasePath();
@@ -127,7 +127,7 @@ public class KubernetesConfigMapSyncService {
                 if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
                     return;
                 }
-                Loggers.MAIN.info("delete configMap " + obj.getMetadata().getName());
+                Loggers.MAIN.info("Delete configMap " + obj.getMetadata().getName());
                 String dataId = obj.getMetadata().getName();
                 String tenant = obj.getMetadata().getNamespace();
                 String srcIp = apiClient.getBasePath();
