@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.naming.event.InstancesDiff;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -160,16 +161,17 @@ public class ServiceInfoHolder implements Closeable {
             return oldService;
         }
         serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-        boolean changed = isChangedServiceInfo(oldService, serviceInfo);
+        InstancesDiff diff = getServiceInfoDiff(oldService, serviceInfo);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
-        if (changed) {
+        if (diff.hasDifferent()) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
+
             NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
-                    serviceInfo.getClusters(), serviceInfo.getHosts()));
+                    serviceInfo.getClusters(), serviceInfo.getHosts(), diff));
             DiskCache.write(serviceInfo, cacheDir);
         }
         return serviceInfo;
@@ -179,18 +181,20 @@ public class ServiceInfoHolder implements Closeable {
         return null == serviceInfo.getHosts() || (pushEmptyProtection && !serviceInfo.validate());
     }
     
-    private boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
+    private InstancesDiff getServiceInfoDiff(ServiceInfo oldService, ServiceInfo newService) {
+        InstancesDiff instancesDiff = new InstancesDiff();
         if (null == oldService) {
             NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(), newService.getKey(),
                     JacksonUtils.toJson(newService.getHosts()));
-            return true;
+            instancesDiff.setAddedInstances(newService.getHosts());
+            return instancesDiff;
         }
         if (oldService.getLastRefTime() > newService.getLastRefTime()) {
             NAMING_LOGGER.warn("out of date data received, old-t: {}, new-t: {}", oldService.getLastRefTime(),
                     newService.getLastRefTime());
-            return false;
+            return instancesDiff;
         }
-        boolean changed = false;
+
         Map<String, Instance> oldHostMap = new HashMap<>(oldService.getHosts().size());
         for (Instance host : oldService.getHosts()) {
             oldHostMap.put(host.toInetAddr(), host);
@@ -231,23 +235,23 @@ public class ServiceInfoHolder implements Closeable {
         }
         
         if (newHosts.size() > 0) {
-            changed = true;
             NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(newHosts));
+            instancesDiff.setAddedInstances(newHosts);
         }
         
         if (remvHosts.size() > 0) {
-            changed = true;
             NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(remvHosts));
+            instancesDiff.setRemovedInstances(remvHosts);
         }
         
         if (modHosts.size() > 0) {
-            changed = true;
             NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(modHosts));
+            instancesDiff.setModifiedInstances(modHosts);
         }
-        return changed;
+        return instancesDiff;
     }
     
     @Override

@@ -34,7 +34,9 @@ public class InstancesChangeEventTest {
         List<Instance> hosts = new ArrayList<>();
         Instance ins = new Instance();
         hosts.add(ins);
-        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts);
+        InstancesDiff diff = new InstancesDiff();
+        diff.setAddedInstances(hosts);
+        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts, diff);
         Assert.assertEquals(eventScope, event.scope());
         Assert.assertEquals(serviceName, event.getServiceName());
         Assert.assertEquals(clusters, event.getClusters());
@@ -42,5 +44,11 @@ public class InstancesChangeEventTest {
         List<Instance> hosts1 = event.getHosts();
         Assert.assertEquals(hosts.size(), hosts1.size());
         Assert.assertEquals(hosts.get(0), hosts1.get(0));
+        InstancesDiff diff1 = event.getInstancesDiff();
+        Assert.assertTrue(diff1.hasDifferent());
+        Assert.assertEquals(diff.getAddedInstances().size(), diff1.getAddedInstances().size());
+        Assert.assertEquals(diff.getAddedInstances().get(0), diff.getAddedInstances().get(0));
+        Assert.assertEquals(diff.getRemovedInstances().size(), diff1.getRemovedInstances().size());
+        Assert.assertEquals(diff.getModifiedInstances().size(), diff1.getModifiedInstances().size());
     }
 }

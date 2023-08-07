@@ -18,9 +18,9 @@ package com.alibaba.nacos.client.naming.event;
 
 import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
-import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.naming.listener.NamingChangeEvent;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -130,8 +130,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     private com.alibaba.nacos.api.naming.listener.Event transferToNamingEvent(
             InstancesChangeEvent instancesChangeEvent) {
-        return new NamingEvent(instancesChangeEvent.getServiceName(), instancesChangeEvent.getGroupName(),
-                instancesChangeEvent.getClusters(), instancesChangeEvent.getHosts());
+        return new NamingChangeEvent(instancesChangeEvent.getServiceName(), instancesChangeEvent.getGroupName(),
+                instancesChangeEvent.getClusters(), instancesChangeEvent.getHosts(), instancesChangeEvent.getInstancesDiff());
     }
     
     @Override
