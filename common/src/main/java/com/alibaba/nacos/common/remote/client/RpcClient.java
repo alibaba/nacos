@@ -716,7 +716,7 @@ public abstract class RpcClient implements Closeable {
             try {
                 if (this.currentConnection == null || !isRunning()) {
                     waitReconnect = true;
-                    throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
+                    throw new NacosException(NacosException.CLIENT_DISCONNECT, "Client not connected.");
                 }
                 this.currentConnection.asyncRequest(request, callback);
                 return;
@@ -766,7 +766,7 @@ public abstract class RpcClient implements Closeable {
             try {
                 if (this.currentConnection == null || !isRunning()) {
                     waitReconnect = true;
-                    throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "Client not connected.");
+                    throw new NacosException(NacosException.CLIENT_DISCONNECT, "Client not connected.");
                 }
                 return this.currentConnection.requestFuture(request);
             } catch (Exception e) {
