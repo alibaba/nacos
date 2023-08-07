@@ -18,10 +18,11 @@ package com.alibaba.nacos.core.paramcheck.impl;
 
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Param extractor for {@link SubscribeServiceRequest}.
@@ -36,19 +37,15 @@ public class SubscribeServiceRequestParamExtractor extends AbstractRpcParamExtra
     }
     
     @Override
-    public void extractParamAndCheck(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) throws Exception {
         SubscribeServiceRequest req = (SubscribeServiceRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(req.getNamespace());
         paramInfo.setServiceName(req.getServiceName());
         paramInfo.setGroup(req.getGroupName());
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
-        String clusterString = req.getClusters();
-        if (StringUtils.isNotBlank(clusterString)) {
-            String[] clusters = clusterString.split(",");
-            for (String cluster : clusters) {
-                ParamCheckUtils.checkClusterFormat(cluster);
-            }
-        }
+        paramInfo.setClusters(req.getClusters());
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        return paramInfos;
     }
 }

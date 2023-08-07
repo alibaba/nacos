@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.configuration.ConfigCommonConfig;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
@@ -113,7 +114,8 @@ public class RpcConfigChangeNotifier extends Subscriber<LocalDataChangeEvent> {
             
             ConfigChangeNotifyRequest notifyRequest = ConfigChangeNotifyRequest.build(dataId, group, tenant);
             
-            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest, 50, client, clientIp, metaInfo.getAppName());
+            RpcPushTask rpcPushRetryTask = new RpcPushTask(notifyRequest,
+                    ConfigCommonConfig.getInstance().getMaxPushRetryTimes(), client, clientIp, metaInfo.getAppName());
             push(rpcPushRetryTask);
             notifyClientCount++;
         }

@@ -17,14 +17,15 @@
 package com.alibaba.nacos.naming.paramcheck;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
+import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Naming instance list http param extractor.
@@ -32,15 +33,15 @@ import javax.servlet.http.HttpServletRequest;
  * @author zhuoguang
  */
 public class NamingInstanceListHttpParamExtractor extends AbstractHttpParamExtractor {
-    
+
     @Override
     public void init() {
         addTargetRequest(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/list",
                 HttpMethod.GET);
     }
-    
+
     @Override
-    public void extractParamAndCheck(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
         ParamInfo paramInfo = new ParamInfo();
         String serviceName = request.getParameter("serviceName");
         String groupName = request.getParameter("groupName");
@@ -53,13 +54,9 @@ public class NamingInstanceListHttpParamExtractor extends AbstractHttpParamExtra
         paramInfo.setServiceName(serviceName);
         paramInfo.setGroup(groupName);
         paramInfo.setNamespaceId(request.getParameter("namespaceId"));
-        String clusters = request.getParameter(request.getParameter("clusters"));
-        if (StringUtils.isNotBlank(clusters)) {
-            String[] cluster = clusters.split(",");
-            for (String clusterName : cluster) {
-                ParamCheckUtils.checkClusterFormat(clusterName);
-            }
-        }
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
+        paramInfo.setClusters(request.getParameter("clusters"));
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        return paramInfos;
     }
 }

@@ -41,7 +41,7 @@ public class SubscribeServiceRequestParamExtractorTest {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
         AbstractRpcParamExtractor extractor = paramExtractorManager.getExtractor(req.getClass().getSimpleName());
         assertEquals(extractor.getClass().getSimpleName(), SubscribeServiceRequestParamExtractor.class.getSimpleName());
-        extractor.extractParamAndCheck(req);
+        extractor.extractParam(req);
     }
     
 }

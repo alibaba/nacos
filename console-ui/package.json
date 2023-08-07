@@ -67,6 +67,7 @@
   "dependencies": {
     "@alifd/next": "^1.19.4",
     "@alifd/theme-design-pro": "0.x",
+    "@iarna/toml": "^3.0.0",
     "axios": "^0.21.1",
     "js-yaml": "^4.1.0",
     "moment": "^2.23.0",

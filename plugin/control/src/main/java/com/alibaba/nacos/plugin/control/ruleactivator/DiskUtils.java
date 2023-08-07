@@ -64,9 +64,9 @@ public final class DiskUtils {
     
     private static final String NO_SPACE_EN = "No space left on device";
     
-    private static final String DISK_QUATA_CN = "超出磁盘限额";
+    private static final String DISK_QUOTA_CN = "超出磁盘限额";
     
-    private static final String DISK_QUATA_EN = "Disk quota exceeded";
+    private static final String DISK_QUOTA_EN = "Disk quota exceeded";
     
     private static final Charset CHARSET = StandardCharsets.UTF_8;
     
@@ -237,8 +237,8 @@ public final class DiskUtils {
         } catch (IOException ioe) {
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN) || errMsg
-                        .contains(DISK_QUATA_EN)) {
+                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUOTA_CN) || errMsg
+                        .contains(DISK_QUOTA_EN)) {
                     LOGGER.warn("磁盘满，自杀退出");
                     System.exit(0);
                 }

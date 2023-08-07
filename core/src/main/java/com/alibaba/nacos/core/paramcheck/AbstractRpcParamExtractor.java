@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.api.remote.request.Request;
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,13 +47,14 @@ public abstract class AbstractRpcParamExtractor implements ParamExtractor<Reques
     }
     
     /**
-     * extract param and check.
+     * Extract param.
      *
      * @param request the request
-     * @throws Exception exception
+     * @return the list
+     * @throws Exception the exception
      */
     @Override
-    public abstract void extractParamAndCheck(Request request) throws Exception;
+    public abstract List<ParamInfo> extractParam(Request request) throws Exception;
     
     public void addTargetRequest(String type) {
         targetrequestlist.add(type);

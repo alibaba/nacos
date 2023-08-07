@@ -130,7 +130,7 @@ class NewConfig extends React.Component {
       roundedSelection: false,
       readOnly: false,
       lineNumbersMinChars: true,
-      theme: 'vs-dark',
+      theme: 'vs-dark-enhanced',
       folding: true,
       showFoldingControls: 'always',
       cursorStyle: 'line',
@@ -457,6 +457,10 @@ class NewConfig extends React.Component {
       {
         value: 'properties',
         label: 'Properties',
+      },
+      {
+        value: 'toml',
+        label: 'TOML',
       },
     ];
     const { editorClass } = this.state;

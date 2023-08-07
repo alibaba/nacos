@@ -147,10 +147,16 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     
     @Override
     public long getTokenTtlInSeconds(String token) throws AccessException {
+        if (!authConfigs.isAuthEnabled()) {
+            return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + tokenValidityInSeconds;
+        }
         return jwtParser.getExpireTimeInSeconds(token) - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
     }
     
     public long getExpiredTimeInSeconds(String token) throws AccessException {
+        if (!authConfigs.isAuthEnabled()) {
+            return tokenValidityInSeconds;
+        }
         return jwtParser.getExpireTimeInSeconds(token);
     }
     

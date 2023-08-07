@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.naming.web;
 
+import com.alibaba.nacos.common.paramcheck.AbstractParamChecker;
+import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
+import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -29,6 +32,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.List;
 
 /**
  * Naming param check filter.
@@ -42,8 +46,8 @@ public class NamingParamCheckFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
-        boolean ifParamCheck = EnvUtil.getProperty("nacos.paramcheck", Boolean.class, true);
-        if (!ifParamCheck) {
+        boolean paramCheckEnabled = ServerParamCheckConfig.getInstance().isParamCheckEnabled();
+        if (!paramCheckEnabled) {
             filterChain.doFilter(servletRequest, servletResponse);
             return;
         }
@@ -54,7 +58,10 @@ public class NamingParamCheckFilter implements Filter {
             String method = request.getMethod();
             HttpParamExtractorManager extractorManager = HttpParamExtractorManager.getInstance();
             AbstractHttpParamExtractor paramExtractor = extractorManager.getExtractor(uri, method, MODULE);
-            paramExtractor.extractParamAndCheck(request);
+            List<ParamInfo> paramInfoList = paramExtractor.extractParam(request);
+            ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
+            AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(ServerParamCheckConfig.getInstance().getActiveParamChecker());
+            paramChecker.checkParamInfoList(paramInfoList);
             filterChain.doFilter(request, resp);
         } catch (Exception e) {
             resp.setStatus(400);

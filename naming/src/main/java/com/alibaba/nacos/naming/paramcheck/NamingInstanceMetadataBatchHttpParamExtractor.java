@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.paramcheck;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -28,6 +27,7 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.core.type.TypeReference;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,7 +50,7 @@ public class NamingInstanceMetadataBatchHttpParamExtractor extends AbstractHttpP
     }
     
     @Override
-    public void extractParamAndCheck(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
         ParamInfo paramInfo = new ParamInfo();
         String serviceName = request.getParameter("serviceName");
         String groupName = request.getParameter("groupName");
@@ -64,7 +64,8 @@ public class NamingInstanceMetadataBatchHttpParamExtractor extends AbstractHttpP
         paramInfo.setGroup(groupName);
         paramInfo.setNamespaceId(request.getParameter("namespaceId"));
         paramInfo.setMetadata(UtilsAndCommons.parseMetadata(request.getParameter("metadata")));
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
         
         String instances = request.getParameter("instances");
         if (StringUtils.isNotBlank(instances)) {
@@ -75,8 +76,9 @@ public class NamingInstanceMetadataBatchHttpParamExtractor extends AbstractHttpP
                 instanceParamInfo.setIp(instance.getIp());
                 instanceParamInfo.setPort(String.valueOf(instance.getPort()));
                 instanceParamInfo.setCluster(instance.getClusterName());
-                ParamCheckUtils.checkParamInfoFormat(instanceParamInfo);
+                paramInfos.add(instanceParamInfo);
             }
         }
+        return paramInfos;
     }
 }
