@@ -72,7 +72,6 @@ public class ConfigCacheService {
      */
     private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
-    @Autowired
     private static ConfigInfoPersistService configInfoPersistService;
 
     public static ConfigInfoPersistService getConfigInfoPersistService() {
