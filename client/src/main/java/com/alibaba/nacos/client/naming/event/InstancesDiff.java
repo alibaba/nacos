@@ -35,6 +35,15 @@ public class InstancesDiff {
 
     private final List<Instance> modifiedInstances = new ArrayList<>();
 
+    public InstancesDiff() {
+    }
+
+    public InstancesDiff(List<Instance> addedInstances, List<Instance> removedInstances, List<Instance> modifiedInstances) {
+        setAddedInstances(addedInstances);
+        setRemovedInstances(removedInstances);
+        setModifiedInstances(modifiedInstances);
+    }
+
     public List<Instance> getAddedInstances() {
         return addedInstances;
     }
