@@ -32,6 +32,7 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +74,14 @@ public class ConfigCacheService {
     
     @Autowired
     private static ConfigInfoPersistService configInfoPersistService;
-    
+
+    public static ConfigInfoPersistService getConfigInfoPersistService() {
+        if (configInfoPersistService == null) {
+            configInfoPersistService = ApplicationUtils.getBean(ConfigInfoPersistService.class);
+        }
+        return configInfoPersistService;
+    }
+
     public static int groupCount() {
         return CACHE.size();
     }
@@ -426,7 +434,7 @@ public class ConfigCacheService {
         String aggreds = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = configInfoPersistService.findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
+                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
                         "DEFAULT_GROUP");
                 if (config != null) {
                     aggreds = config.getContent();
@@ -444,7 +452,7 @@ public class ConfigCacheService {
         String clientIpWhitelist = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = configInfoPersistService.findConfigInfoBase(
+                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(
                         ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
                     clientIpWhitelist = config.getContent();
@@ -463,7 +471,7 @@ public class ConfigCacheService {
         String switchContent = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = configInfoPersistService.findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
+                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
                         "DEFAULT_GROUP");
                 if (config != null) {
                     switchContent = config.getContent();
