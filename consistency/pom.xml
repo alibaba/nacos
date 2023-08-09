@@ -25,7 +25,7 @@
             <extension>
                 <groupId>kr.motd.maven</groupId>
                 <artifactId>os-maven-plugin</artifactId>
-                <version>1.5.0.Final</version>
+                <version>1.7.1</version>
             </extension>
         </extensions>
         <plugins>
@@ -35,11 +35,13 @@
                 <artifactId>protobuf-maven-plugin</artifactId>
                 <version>0.5.0</version>
                 <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}
-                    </protocArtifact>
+			<!-- <protocArtifact>com.google.protobuf:protoc:${protobuf-java.version}:exe:${os.detected.classifier}
+		    </protocArtifact> -->
+		    <protocExecutable>/usr/local/bin/protoc</protocExecutable>
                     <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc-java.version}:exe:${os.detected.classifier}
-                    </pluginArtifact>
+		    <!-- <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc-java.version}:exe:${os.detected.classifier} 
+		    </pluginArtifact> -->
+		    <pluginExecutable>/grpc-java/compiler/build/exe/java_plugin/protoc-gen-grpc-java</pluginExecutable>
                 </configuration>
                 <executions>
                     <execution>
