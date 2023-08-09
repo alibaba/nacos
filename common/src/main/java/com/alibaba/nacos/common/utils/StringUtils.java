@@ -400,7 +400,7 @@ public class StringUtils {
         }
         if (ignoreCase) {
             String lowerCaseStr = str.toString().toLowerCase();
-            String lowerCasePrefix = str.toString().toLowerCase();
+            String lowerCasePrefix = prefix.toString().toLowerCase();
             return lowerCaseStr.startsWith(lowerCasePrefix);
         } else {
             return str.toString().startsWith(prefix.toString());
