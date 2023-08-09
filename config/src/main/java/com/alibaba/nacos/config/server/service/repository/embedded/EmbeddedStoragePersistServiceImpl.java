@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.exception.NacosConfigException;
@@ -37,21 +36,22 @@ import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SubInfo;
-import com.alibaba.nacos.core.namespace.model.TenantInfo;
-import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
-import com.alibaba.nacos.persistence.datasource.DataSourceService;
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.config.server.service.sql.EmbeddedStorageContextUtils;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
-import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -100,9 +100,9 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_KEY_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
-import static com.alibaba.nacos.persistence.repository.RowMapperManager.MAP_ROW_MAPPER;
-import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
+import static com.alibaba.nacos.persistence.repository.RowMapperManager.MAP_ROW_MAPPER;
 
 /**
  * For Apache Derby.
@@ -914,7 +914,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 TableConstant.CONFIG_INFO_BETA);
         final String sql = configInfoBetaMapper.select(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "beta_ips",
-                        "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
+                        "encrypted_data_key", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id"));
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp},
                 CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
@@ -929,8 +929,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_TAG);
         final String sql = configInfoTagMapper.select(
-                Arrays.asList("id", "data_id", "group_id", "tenant_id", "tag_id", "app_name", "content"),
-                Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
+                Arrays.asList("id", "data_id", "group_id", "tenant_id", "tag_id", "app_name", "content",
+                        "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp, tagTmp},
                 CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);
@@ -964,7 +964,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.select(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "type",
-                        "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
+                        "encrypted_data_key", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp};
         return databaseOperate.queryOne(sql, args, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
@@ -2347,7 +2347,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.select(
-                Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "type"),
+                Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "type", "gmt_modified"),
                 Collections.singletonList("tenant_id"));
         return databaseOperate.queryMany(sql, new Object[] {tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
     }

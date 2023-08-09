@@ -718,7 +718,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.select(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "type",
-                        "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
+                        "encrypted_data_key", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp};
         return databaseOperate.queryOne(sql, args, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
@@ -1353,7 +1353,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.select(
-                Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "type"),
+                Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "type", "gmt_modified"),
                 Collections.singletonList("tenant_id"));
         return databaseOperate.queryMany(sql, new Object[] {tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
     }

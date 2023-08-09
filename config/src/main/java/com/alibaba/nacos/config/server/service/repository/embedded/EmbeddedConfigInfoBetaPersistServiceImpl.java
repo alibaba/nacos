@@ -277,7 +277,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                 TableConstant.CONFIG_INFO_BETA);
         final String sql = configInfoBetaMapper.select(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "beta_ips",
-                        "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
+                        "encrypted_data_key", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id"));
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp},
                 CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
