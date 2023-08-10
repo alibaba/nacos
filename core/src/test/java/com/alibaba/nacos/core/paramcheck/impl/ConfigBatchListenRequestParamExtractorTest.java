@@ -41,6 +41,6 @@ public class ConfigBatchListenRequestParamExtractorTest {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
         AbstractRpcParamExtractor extractor = paramExtractorManager.getExtractor(req.getClass().getSimpleName());
         assertEquals(extractor.getClass().getSimpleName(), ConfigBatchListenRequestParamExtractor.class.getSimpleName());
-        extractor.extractParamAndCheck(req);
+        extractor.extractParam(req);
     }
 }

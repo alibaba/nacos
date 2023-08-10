@@ -433,13 +433,14 @@ public interface ConfigInfoPersistService {
             final String group, final String content) throws IOException;
     
     /**
-     * Query change config.
+     * Query change config.order by id asc.
      *
      * @param startTime start time
-     * @param endTime   end time
+     * @param lastMaxId lastMaxId
+     * @param pageSize  pageSize
      * @return {@link ConfigInfoWrapper} list
      */
-    List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, final Timestamp endTime);
+    List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize);
     
     /**
      * According to the time period and configuration conditions to query the eligible configuration.

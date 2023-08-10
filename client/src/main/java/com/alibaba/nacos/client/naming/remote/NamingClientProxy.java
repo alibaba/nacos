@@ -91,13 +91,12 @@ public interface NamingClientProxy extends Closeable {
      * @param serviceName service name
      * @param groupName   group name
      * @param clusters    clusters
-     * @param udpPort     udp port
      * @param healthyOnly healthy only
      * @return service info
      * @throws NacosException nacos exception
      */
-    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
-            boolean healthyOnly) throws NacosException;
+    ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, boolean healthyOnly)
+            throws NacosException;
     
     /**
      * Query Service.

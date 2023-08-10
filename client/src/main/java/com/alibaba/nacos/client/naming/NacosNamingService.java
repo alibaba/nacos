@@ -54,7 +54,7 @@ import java.util.UUID;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
     
-    private static final String DEFAULT_NAMING_LOG_FILE_PATH =  "naming.log";
+    private static final String DEFAULT_NAMING_LOG_FILE_PATH = "naming.log";
     
     private static final String UP = "UP";
     
@@ -93,13 +93,14 @@ public class NacosNamingService implements NamingService {
         InitUtils.initSerialization();
         InitUtils.initWebRootContext(nacosClientProperties);
         initLogName(nacosClientProperties);
-    
+        
         this.notifierEventScope = UUID.randomUUID().toString();
         this.changeNotifier = new InstancesChangeNotifier(this.notifierEventScope);
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(changeNotifier);
         this.serviceInfoHolder = new ServiceInfoHolder(namespace, this.notifierEventScope, nacosClientProperties);
-        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, nacosClientProperties, changeNotifier);
+        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, nacosClientProperties,
+                changeNotifier);
     }
     
     private void initLogName(NacosClientProperties properties) {
@@ -241,7 +242,7 @@ public class NacosNamingService implements NamingService {
                 serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
             }
         } else {
-            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
+            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
         }
         List<Instance> list;
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
@@ -298,11 +299,11 @@ public class NacosNamingService implements NamingService {
         String clusterString = StringUtils.join(clusters, ",");
         if (subscribe) {
             serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
-            if (null == serviceInfo) {
+            if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
                 serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
             }
         } else {
-            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
+            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
         }
         return selectInstances(serviceInfo, healthy);
     }
@@ -368,13 +369,12 @@ public class NacosNamingService implements NamingService {
         String clusterString = StringUtils.join(clusters, ",");
         if (subscribe) {
             ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
-            if (null == serviceInfo) {
+            if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
                 serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
             }
             return Balancer.RandomByWeight.selectHost(serviceInfo);
         } else {
-            ServiceInfo serviceInfo = clientProxy
-                    .queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
+            ServiceInfo serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
             return Balancer.RandomByWeight.selectHost(serviceInfo);
         }
     }
@@ -467,6 +467,6 @@ public class NacosNamingService implements NamingService {
         serviceInfoHolder.shutdown();
         clientProxy.shutdown();
         NotifyCenter.deregisterSubscriber(changeNotifier);
-    
+        
     }
 }

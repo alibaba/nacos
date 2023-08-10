@@ -41,6 +41,6 @@ public class ServiceListRequestParamExtractorTest {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
         AbstractRpcParamExtractor extractor = paramExtractorManager.getExtractor(req.getClass().getSimpleName());
         assertEquals(extractor.getClass().getSimpleName(), ServiceListRequestParamExtractor.class.getSimpleName());
-        extractor.extractParamAndCheck(req);
+        extractor.extractParam(req);
     }
 }

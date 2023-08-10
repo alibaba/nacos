@@ -263,8 +263,9 @@ public class ConnectionManager {
      *
      * @param connectionId    connection id of client.
      * @param redirectAddress server address to redirect.
+     * @return whether remove connection.
      */
-    public void loadSingle(String connectionId, String redirectAddress) {
+    public boolean loadSingle(String connectionId, String redirectAddress) {
         Connection connection = getConnection(connectionId);
         
         if (connection != null) {
@@ -281,9 +282,11 @@ public class ConnectionManager {
                     unregister(connectionId);
                 } catch (Exception e) {
                     LOGGER.error("error occurs when expel connection, connectionId: {} ", connectionId, e);
+                    return false;
                 }
             }
         }
+        return true;
         
     }
     

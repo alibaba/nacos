@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
@@ -43,7 +44,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigInteger;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -86,16 +90,20 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list) {
-        List<ConfigInfo> configs = new ArrayList<>();
+    public List<ConfigInfoWrapper> convertDeletedConfig(List<Map<String, Object>> list) {
+        List<ConfigInfoWrapper> configs = new ArrayList<>();
         for (Map<String, Object> map : list) {
+            BigInteger id = (BigInteger) map.get("nid");
             String dataId = (String) map.get("data_id");
             String group = (String) map.get("group_id");
             String tenant = (String) map.get("tenant_id");
-            ConfigInfo config = new ConfigInfo();
+            long mTime = ((LocalDateTime) map.get("gmt_modified")).toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
+            ConfigInfoWrapper config = new ConfigInfoWrapper();
+            config.setId(id.longValue());
             config.setDataId(dataId);
             config.setGroup(group);
             config.setTenant(tenant);
+            config.setLastModified(mTime);
             configs.add(config);
         }
         return configs;
@@ -137,13 +145,14 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     }
     
     @Override
-    public List<ConfigInfo> findDeletedConfig(final Timestamp startTime, final Timestamp endTime) {
+    public List<ConfigInfoWrapper> findDeletedConfig(final Timestamp startTime, long startId, int pageSize) {
         try {
             HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                     dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
             MapperContext context = new MapperContext();
             context.putWhereParameter(FieldConstant.START_TIME, startTime);
-            context.putWhereParameter(FieldConstant.END_TIME, endTime);
+            context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
+            context.putWhereParameter(FieldConstant.LAST_MAX_ID, startId);
             
             MapperResult mapperResult = historyConfigInfoMapper.findDeletedConfig(context);
             List<Map<String, Object>> list = jt.queryForList(mapperResult.getSql(),

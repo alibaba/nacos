@@ -40,6 +40,6 @@ public class RpcParamExtractorManagerTest extends TestCase {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
         ConfigQueryRequest request = new ConfigQueryRequest();
         AbstractRpcParamExtractor extractor = paramExtractorManager.getExtractor(request.getClass().getSimpleName());
-        extractor.extractParamAndCheck(request);
+        extractor.extractParam(request);
     }
 }

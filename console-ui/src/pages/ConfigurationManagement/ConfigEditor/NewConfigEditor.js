@@ -49,6 +49,7 @@ const LANGUAGE_LIST = [
   { value: 'yaml', label: 'YAML' },
   { value: 'html', label: 'HTML' },
   { value: 'properties', label: 'Properties' },
+  { value: 'toml', label: 'TOML' },
 ];
 
 const TAB_LIST = ['production', 'beta'];
@@ -137,7 +138,7 @@ class ConfigEditor extends React.Component {
       roundedSelection: false,
       readOnly: false,
       lineNumbersMinChars: true,
-      theme: 'vs-dark',
+      theme: 'vs-dark-enhanced',
       folding: true,
       showFoldingControls: 'always',
       cursorStyle: 'line',

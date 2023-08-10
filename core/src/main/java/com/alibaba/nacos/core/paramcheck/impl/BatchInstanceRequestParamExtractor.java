@@ -19,10 +19,10 @@ package com.alibaba.nacos.core.paramcheck.impl;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,23 +31,24 @@ import java.util.List;
  * @author zhuoguang
  */
 public class BatchInstanceRequestParamExtractor extends AbstractRpcParamExtractor {
-
+    
     @Override
     public void init() {
         addTargetRequest(BatchInstanceRequest.class.getSimpleName());
     }
-
+    
     @Override
-    public void extractParamAndCheck(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) throws Exception {
         BatchInstanceRequest req = (BatchInstanceRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(req.getNamespace());
         paramInfo.setServiceName(req.getServiceName());
         paramInfo.setGroup(req.getGroupName());
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
         List<Instance> instanceList = req.getInstances();
         if (instanceList == null) {
-            return;
+            return paramInfos;
         }
         for (Instance instance : instanceList) {
             ParamInfo instanceParamInfo = new ParamInfo();
@@ -56,7 +57,8 @@ public class BatchInstanceRequestParamExtractor extends AbstractRpcParamExtracto
             instanceParamInfo.setServiceName(instance.getServiceName());
             instanceParamInfo.setCluster(instance.getClusterName());
             instanceParamInfo.setMetadata(instance.getMetadata());
-            ParamCheckUtils.checkParamInfoFormat(instanceParamInfo);
+            paramInfos.add(instanceParamInfo);
         }
+        return paramInfos;
     }
 }

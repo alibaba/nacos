@@ -43,6 +43,6 @@ public class HttpParamExtractorManagerTest extends TestCase {
         request.setRequestURI("/nacos/v1/ns/instance");
         request.setMethod(HttpMethod.POST);
         AbstractHttpParamExtractor extractor = paramExtractorManager.getExtractor(request.getRequestURI(), request.getMethod(), "naming");
-        extractor.extractParamAndCheck(request);
+        extractor.extractParam(request);
     }
 }

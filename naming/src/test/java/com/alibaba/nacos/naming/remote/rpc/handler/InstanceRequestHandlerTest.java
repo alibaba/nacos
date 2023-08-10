@@ -50,12 +50,14 @@ public class InstanceRequestHandlerTest {
     public void testHandle() throws NacosException {
         InstanceRequest instanceRequest = new InstanceRequest();
         instanceRequest.setType(NamingRemoteConstants.REGISTER_INSTANCE);
+        instanceRequest.setServiceName("service1");
+        instanceRequest.setGroupName("group1");
         Instance instance = new Instance();
         instanceRequest.setInstance(instance);
         RequestMeta requestMeta = new RequestMeta();
         instanceRequestHandler.handle(instanceRequest, requestMeta);
         Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
-    
+        
         instanceRequest.setType(NamingRemoteConstants.DE_REGISTER_INSTANCE);
         instanceRequestHandler.handle(instanceRequest, requestMeta);
         Mockito.verify(clientOperationService).deregisterInstance(Mockito.any(), Mockito.any(), Mockito.anyString());

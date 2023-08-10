@@ -31,18 +31,18 @@ import javax.servlet.http.HttpServletRequest;
  * @author Weizhan▪Yun
  * @date 2023/1/12 23:31
  */
-public class AuthenticationNamagerDelegator implements IAuthenticationManager {
+public class AuthenticationManagerDelegator implements IAuthenticationManager {
     
     private ObjectProvider<DefaultAuthenticationManager> defaultAuthenticationManager;
     
-    private ObjectProvider<LdapAuthenticationManager> ldapAuthenticatoinManager;
+    private ObjectProvider<LdapAuthenticationManager> ldapAuthenticationManager;
     
     private AuthConfigs authConfigs;
     
-    public AuthenticationNamagerDelegator(ObjectProvider<DefaultAuthenticationManager> nacosAuthManager,
-            ObjectProvider<LdapAuthenticationManager> ldapAuthenticationProvider, AuthConfigs authConfigs) {
+    public AuthenticationManagerDelegator(ObjectProvider<DefaultAuthenticationManager> nacosAuthManager,
+                                          ObjectProvider<LdapAuthenticationManager> ldapAuthenticationProvider, AuthConfigs authConfigs) {
         this.defaultAuthenticationManager = nacosAuthManager;
-        this.ldapAuthenticatoinManager = ldapAuthenticationProvider;
+        this.ldapAuthenticationManager = ldapAuthenticationProvider;
         this.authConfigs = authConfigs;
     }
     
@@ -78,7 +78,7 @@ public class AuthenticationNamagerDelegator implements IAuthenticationManager {
     
     private IAuthenticationManager getManager() {
         if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            return ldapAuthenticatoinManager.getIfAvailable();
+            return ldapAuthenticationManager.getIfAvailable();
         }
         
         return defaultAuthenticationManager.getIfAvailable();

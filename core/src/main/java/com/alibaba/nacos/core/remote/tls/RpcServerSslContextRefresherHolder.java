@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote;
+package com.alibaba.nacos.core.remote.tls;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.Collection;
 
@@ -43,11 +42,11 @@ public class RpcServerSslContextRefresherHolder {
             if (init) {
                 return instance;
             }
-            RpcServerTlsConfig rpcServerTlsConfig = ApplicationUtils.getBean(RpcServerTlsConfig.class);
+            RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
             String sslContextRefresher = rpcServerTlsConfig.getSslContextRefresher();
             if (StringUtils.isNotBlank(sslContextRefresher)) {
-                Collection<RpcServerSslContextRefresher> load = NacosServiceLoader.load(
-                        RpcServerSslContextRefresher.class);
+                Collection<RpcServerSslContextRefresher> load = NacosServiceLoader
+                        .load(RpcServerSslContextRefresher.class);
                 for (RpcServerSslContextRefresher contextRefresher : load) {
                     if (sslContextRefresher.equals(contextRefresher.getName())) {
                         instance = contextRefresher;
@@ -61,8 +60,8 @@ public class RpcServerSslContextRefresherHolder {
                 }
                 
             } else {
-                Loggers.REMOTE.info(
-                        "No RpcServerSslContextRefresher specified,Ssl Context auto refresh not supported.");
+                Loggers.REMOTE
+                        .info("No RpcServerSslContextRefresher specified,Ssl Context auto refresh not supported.");
             }
             
             Loggers.REMOTE.info("RpcServerSslContextRefresher init end");

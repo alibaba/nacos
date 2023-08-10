@@ -18,10 +18,11 @@ package com.alibaba.nacos.core.paramcheck.impl;
 
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Param extractor for {@link ServiceQueryRequest}.
@@ -29,27 +30,23 @@ import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
  * @author zhuoguang
  */
 public class ServiceQueryRequestParamExtractor extends AbstractRpcParamExtractor {
-
+    
     @Override
     public void init() {
         addTargetRequest(ServiceQueryRequest.class.getSimpleName());
     }
-
+    
     @Override
-    public void extractParamAndCheck(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) throws Exception {
         ServiceQueryRequest req = (ServiceQueryRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(req.getNamespace());
         paramInfo.setServiceName(req.getServiceName());
         paramInfo.setGroup(req.getGroupName());
         paramInfo.setPort(String.valueOf(req.getUdpPort()));
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
-        String clusterString = req.getCluster();
-        if (StringUtils.isNotBlank(clusterString)) {
-            String[] clusters = clusterString.split(",");
-            for (String cluster : clusters) {
-                ParamCheckUtils.checkClusterFormat(cluster);
-            }
-        }
+        paramInfo.setClusters(req.getCluster());
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        return paramInfos;
     }
 }
