@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.remote.gprc.redo;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.monitor.NamingMetrics;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
@@ -37,7 +38,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Naming client gprc redo service.
+ * Naming client grpc redo service.
  *
  * <p>When connection reconnect to server, redo the register and subscribe.
  *
@@ -63,6 +64,8 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     private volatile boolean connected = false;
     
     public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy) {
+        NamingMetrics.gaugeMapSize(NamingMetrics.getCacheMeterName(), "instanceRedoCacheSize", registeredInstances);
+        NamingMetrics.gaugeMapSize(NamingMetrics.getCacheMeterName(), "subscriberRedoCacheSize", subscribes);
         this.redoExecutor = new ScheduledThreadPoolExecutor(REDO_THREAD, new NameThreadFactory(REDO_THREAD_NAME));
         this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this), DEFAULT_REDO_DELAY,
                 DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
@@ -111,7 +114,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      *
      * @param serviceName service name
      * @param groupName   group name
-     * @param instances    batch registered instance
+     * @param instances   batch registered instance
      */
     public void cacheInstanceForRedo(String serviceName, String groupName, List<Instance> instances) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
@@ -305,6 +308,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     /**
      * get Cache service.
+     *
      * @return cache service
      */
     public InstanceRedoData getRegisteredInstancesByKey(String combinedServiceName) {

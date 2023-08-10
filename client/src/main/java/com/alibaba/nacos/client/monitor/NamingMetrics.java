@@ -22,6 +22,8 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import io.micrometer.core.instrument.Tags;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -33,6 +35,12 @@ public class NamingMetrics {
     private static final String METRIC_MODULE_NAME = "naming";
     
     private static final String NACOS_NAMING_METRICS_ENABLE_PROPERTY = "nacos.metrics.naming.enable";
+    
+    private static final String DEFAULT_METER_NAME = "nacos.monitor";
+    
+    private static final String CACHE_METER_NAME = "nacos.client.naming.cache";
+    
+    private static final String COMMON_GAUGE_METER_NAME = "nacos.client.naming.common";
     
     /**
      * This property aims to control which module (config or naming, here is naming) is <b>not</b> monitored by
@@ -52,7 +60,11 @@ public class NamingMetrics {
     // DO NOT interact with the gauge object directly. Rather, interacting with the thing that will cause the gauge.
     
     private static final AtomicInteger SERVICE_INFO_MAP_SIZE_GAUGE = MetricsMonitor.getNacosMeterRegistry()
-            .gauge("nacos.monitor", Tags.of("module", METRIC_MODULE_NAME, "name", "serviceInfoMapSize"),
+            .gauge(DEFAULT_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "serviceInfoMapSize"),
+                    new AtomicInteger(0));
+    
+    private static final AtomicInteger SERVICE_INFO_FAILOVER_CACHE_SIZE_GAUGE = MetricsMonitor.getNacosMeterRegistry()
+            .gauge(CACHE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "serviceInfoFailoverCacheSize"),
                     new AtomicInteger(0));
     
     /**
@@ -64,6 +76,50 @@ public class NamingMetrics {
     public static void setServiceInfoMapSizeGauge(int size) {
         if (SERVICE_INFO_MAP_SIZE_GAUGE != null && isEnable()) {
             SERVICE_INFO_MAP_SIZE_GAUGE.set(size);
+        }
+    }
+    
+    /**
+     * Set the value of <b>serviceInfoFailoverCacheSize</b> gauge. <b>serviceInfoFailoverCacheSize</b> is to record the
+     * number of stored service info failover cache.
+     *
+     * @param size the size of serviceInfoFailoverCache
+     */
+    public static void setServiceInfoFailoverCacheSizeGauge(int size) {
+        if (SERVICE_INFO_FAILOVER_CACHE_SIZE_GAUGE != null && isEnable()) {
+            SERVICE_INFO_FAILOVER_CACHE_SIZE_GAUGE.set(size);
+        }
+    }
+    
+    /**
+     * Gauge the size of a collection. Only used when the reference to the collection is unchanged. It is best not to
+     * call this function in a multithreaded code block
+     *
+     * @param meterName  meter name, get the value in the public constant of this class
+     * @param tagName    tag name
+     * @param collection collection
+     * @param <T>        collection type
+     */
+    public static <T extends Collection<?>> void gaugeCollectionSize(String meterName, String tagName, T collection) {
+        if (isEnable()) {
+            MetricsMonitor.getNacosMeterRegistry()
+                    .gaugeCollectionSize(meterName, Tags.of("module", METRIC_MODULE_NAME, "name", tagName), collection);
+        }
+    }
+    
+    /**
+     * Gauge the size of a map. Only used when the reference to the map is <b>unchanged</b>. It is best not to call this
+     * function in a multithreaded code block
+     *
+     * @param meterName meter name, get the value in the public constant of this class
+     * @param tagName   tag name
+     * @param map       map
+     * @param <T>       map type
+     */
+    public static <T extends Map<?, ?>> void gaugeMapSize(String meterName, String tagName, T map) {
+        if (isEnable()) {
+            MetricsMonitor.getNacosMeterRegistry()
+                    .gaugeMapSize(meterName, Tags.of("module", METRIC_MODULE_NAME, "name", tagName), map);
         }
     }
     
@@ -105,5 +161,19 @@ public class NamingMetrics {
                                     currentServer, "rpcResultCode", rpcResultCode, "name", "rpcCostDuration"))
                     .record(duration, TimeUnit.MILLISECONDS);
         }
+    }
+    
+    // ------------------------ Others ------------------------
+    
+    public static String getDefaultMeterName() {
+        return DEFAULT_METER_NAME;
+    }
+    
+    public static String getCacheMeterName() {
+        return CACHE_METER_NAME;
+    }
+    
+    public static String getCommonMeterName() {
+        return COMMON_GAUGE_METER_NAME;
     }
 }

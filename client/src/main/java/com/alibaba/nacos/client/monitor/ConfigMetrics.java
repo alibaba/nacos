@@ -35,6 +35,12 @@ public class ConfigMetrics {
     
     private static final String NACOS_CONFIG_METRICS_ENABLE_PROPERTY = "nacos.metrics.config.enable";
     
+    private static final String DEFAULT_METER_NAME = "nacos.monitor";
+    
+    private static final String TIMER_METER_NAME = "nacos.client.naming.cache";
+    
+    private static final String COUNTER_GAUGE_METER_NAME = "nacos.client.naming.gauge";
+    
     /**
      * This property aims to control which module (config or naming, here is config) is <b>not</b> monitored by
      * Micrometer. It's default value is <b>true</b> so that users who want to monitor whole Nacos client can ignore
@@ -53,7 +59,7 @@ public class ConfigMetrics {
     // DO NOT interact with the gauge object directly. Rather, interacting with the thing that will cause the gauge.
     
     private static final AtomicInteger LISTENER_CONFIG_COUNT_GAUGE = MetricsMonitor.getNacosMeterRegistry()
-            .gauge("nacos.monitor", Tags.of("module", METRIC_MODULE_NAME, "name", "listenerConfigCount"),
+            .gauge(DEFAULT_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "listenerConfigCount"),
                     new AtomicInteger(0));
     
     /**
@@ -72,25 +78,25 @@ public class ConfigMetrics {
     // ------------------------ Counters ------------------------
     
     private static final Counter SYNC_WITH_SERVER_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter("nacos.client.config.counter", Tags.of("module", METRIC_MODULE_NAME, "name", "syncWithServer"));
+            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "syncWithServer"));
     
     private static final Counter QUERY_SUCCESS_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter("nacos.client.config.counter", Tags.of("module", METRIC_MODULE_NAME, "name", "querySuccess"));
+            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "querySuccess"));
     
     private static final Counter QUERY_FAILED_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter("nacos.client.config.counter", Tags.of("module", METRIC_MODULE_NAME, "name", "queryFailed"));
+            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "queryFailed"));
     
     private static final Counter PUBLISH_SUCCESS_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter("nacos.client.config.counter", Tags.of("module", METRIC_MODULE_NAME, "name", "publishSuccess"));
+            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "publishSuccess"));
     
     private static final Counter PUBLISH_FAILED_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter("nacos.client.config.counter", Tags.of("module", METRIC_MODULE_NAME, "name", "publishFailed"));
+            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "publishFailed"));
     
     private static final Counter REMOVE_SUCCESS_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter("nacos.client.config.counter", Tags.of("module", METRIC_MODULE_NAME, "name", "removeSuccess"));
+            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "removeSuccess"));
     
     private static final Counter REMOVE_FAILED_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter("nacos.client.config.counter", Tags.of("module", METRIC_MODULE_NAME, "name", "removeFailed"));
+            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "removeFailed"));
     
     /**
      * Increment the value of <tt>SYNC_WITH_SERVER_COUNTER</tt> counter. This metric is to record the number of sync
@@ -178,7 +184,7 @@ public class ConfigMetrics {
      */
     public static void recordConfigRequestTimer(String method, String url, String code, long duration) {
         if (isEnable()) {
-            MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.request",
+            MetricsMonitor.getNacosMeterRegistry().timer(TIMER_METER_NAME,
                     Tags.of("module", METRIC_MODULE_NAME, "method", method, "url", url, "code", code, "name",
                             "configRequest")).record(duration, TimeUnit.MILLISECONDS);
         }
@@ -196,7 +202,7 @@ public class ConfigMetrics {
     public static void recordNotifyCostDurationTimer(String envName, String dataId, String group, String tenant,
             long duration) {
         if (isEnable()) {
-            MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.config.timer",
+            MetricsMonitor.getNacosMeterRegistry().timer(TIMER_METER_NAME,
                     Tags.of("module", METRIC_MODULE_NAME, "clientName", envName, "dataId", dataId, "group", group,
                             "tenant", tenant, "name", "notifyCostDuration")).record(duration, TimeUnit.MILLISECONDS);
         }
@@ -213,7 +219,7 @@ public class ConfigMetrics {
     public static void recordRpcCostDurationTimer(String connectionType, String currentServer, String rpcResultCode,
             long duration) {
         if (isEnable()) {
-            MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.config.timer",
+            MetricsMonitor.getNacosMeterRegistry().timer(TIMER_METER_NAME,
                             Tags.of("module", METRIC_MODULE_NAME, "connectionType", connectionType, "currentServer",
                                     currentServer, "rpcResultCode", rpcResultCode, "name", "rpcCostDuration"))
                     .record(duration, TimeUnit.MILLISECONDS);

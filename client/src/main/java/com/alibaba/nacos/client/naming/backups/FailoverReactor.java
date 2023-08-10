@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.backups;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.monitor.NamingMetrics;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
@@ -100,11 +101,11 @@ public class FailoverReactor implements Closeable {
         executorService.schedule(() -> {
             try {
                 File cacheDir = new File(failoverDir);
-
+                
                 if (!cacheDir.exists() && !cacheDir.mkdirs()) {
                     throw new IllegalStateException("failed to create cache dir: " + failoverDir);
                 }
-
+                
                 File[] files = cacheDir.listFiles();
                 if (files == null || files.length <= 0) {
                     new DiskFileWriter().run();
@@ -112,7 +113,7 @@ public class FailoverReactor implements Closeable {
             } catch (Throwable e) {
                 NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
             }
-
+            
         }, 10000L, TimeUnit.MILLISECONDS);
     }
     
@@ -247,8 +248,9 @@ public class FailoverReactor implements Closeable {
                 NAMING_LOGGER.error("[NA] failed to read cache file", e);
             }
             
-            if (domMap.size() > 0) {
+            if (!domMap.isEmpty()) {
                 serviceMap = domMap;
+                NamingMetrics.setServiceInfoFailoverCacheSizeGauge(serviceMap.size());
             }
         }
     }
@@ -260,11 +262,11 @@ public class FailoverReactor implements Closeable {
             Map<String, ServiceInfo> map = serviceInfoHolder.getServiceInfoMap();
             for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
                 ServiceInfo serviceInfo = entry.getValue();
-                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils
-                        .equals(serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY) || StringUtils
-                        .equals(serviceInfo.getName(), UtilAndComs.ENV_CONFIGS) || StringUtils
-                        .equals(serviceInfo.getName(), UtilAndComs.VIP_CLIENT_FILE) || StringUtils
-                        .equals(serviceInfo.getName(), UtilAndComs.ALL_HOSTS)) {
+                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils.equals(
+                        serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY) || StringUtils.equals(serviceInfo.getName(),
+                        UtilAndComs.ENV_CONFIGS) || StringUtils.equals(serviceInfo.getName(),
+                        UtilAndComs.VIP_CLIENT_FILE) || StringUtils.equals(serviceInfo.getName(),
+                        UtilAndComs.ALL_HOSTS)) {
                     continue;
                 }
                 
