@@ -22,7 +22,6 @@ import com.alibaba.nacos.auth.exception.AccessException;
 import com.alibaba.nacos.auth.model.Permission;
 import com.alibaba.nacos.auth.model.User;
 import com.alibaba.nacos.config.server.auth.RoleInfo;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.console.security.nacos.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.console.security.nacos.users.NacosUser;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -91,7 +90,6 @@ public class NacosAuthManager implements AuthManager {
                 }
             }
         }
-        req.getSession().setAttribute(RequestUtil.NACOS_USER_KEY, user);
         return user;
     }
     
