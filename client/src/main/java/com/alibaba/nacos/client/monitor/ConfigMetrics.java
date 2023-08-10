@@ -39,7 +39,7 @@ public class ConfigMetrics {
     
     private static final String TIMER_METER_NAME = "nacos.client.naming.cache";
     
-    private static final String COUNTER_GAUGE_METER_NAME = "nacos.client.naming.gauge";
+    private static final String COUNTER_METER_NAME = "nacos.client.naming.gauge";
     
     /**
      * This property aims to control which module (config or naming, here is config) is <b>not</b> monitored by
@@ -78,25 +78,25 @@ public class ConfigMetrics {
     // ------------------------ Counters ------------------------
     
     private static final Counter SYNC_WITH_SERVER_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "syncWithServer"));
+            .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "syncWithServer"));
     
     private static final Counter QUERY_SUCCESS_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "querySuccess"));
+            .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "querySuccess"));
     
     private static final Counter QUERY_FAILED_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "queryFailed"));
+            .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "queryFailed"));
     
     private static final Counter PUBLISH_SUCCESS_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "publishSuccess"));
+            .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "publishSuccess"));
     
     private static final Counter PUBLISH_FAILED_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "publishFailed"));
+            .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "publishFailed"));
     
     private static final Counter REMOVE_SUCCESS_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "removeSuccess"));
+            .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "removeSuccess"));
     
     private static final Counter REMOVE_FAILED_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter(COUNTER_GAUGE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "removeFailed"));
+            .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "removeFailed"));
     
     /**
      * Increment the value of <tt>SYNC_WITH_SERVER_COUNTER</tt> counter. This metric is to record the number of sync

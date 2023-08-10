@@ -40,7 +40,7 @@ public class NamingMetrics {
     
     private static final String CACHE_METER_NAME = "nacos.client.naming.cache";
     
-    private static final String COMMON_GAUGE_METER_NAME = "nacos.client.naming.common";
+    private static final String COMMON_METER_NAME = "nacos.client.naming.common";
     
     /**
      * This property aims to control which module (config or naming, here is naming) is <b>not</b> monitored by
@@ -174,6 +174,6 @@ public class NamingMetrics {
     }
     
     public static String getCommonMeterName() {
-        return COMMON_GAUGE_METER_NAME;
+        return COMMON_METER_NAME;
     }
 }
