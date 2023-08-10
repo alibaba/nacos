@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -32,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <S> the type of selector wrapper
  * @author lideyou
  */
-public class SelectorManager<S extends SelectorWrapper<?, ?>> {
+public class SelectorManager<S extends AbstractSelectorWrapper<?, ?>> {
     Map<String, Set<S>> selectorMap = new ConcurrentHashMap<>();
 
     /**
@@ -42,33 +41,61 @@ public class SelectorManager<S extends SelectorWrapper<?, ?>> {
      * @param selector selector wrapper
      */
     public void addSelectorWrapper(String subId, S selector) {
-        Set<S> selectorSet = selectorMap.get(subId);
-        if (selectorSet != null) {
-            selectorSet.add(selector);
-        } else {
-            selectorSet = new ConcurrentHashSet<>();
-            selectorSet.add(selector);
-            selectorMap.put(subId, selectorSet);
-        }
+        Set<S> selectors = selectorMap.computeIfAbsent(subId, key -> new ConcurrentHashSet<>());
+        selectors.add(selector);
     }
 
-    public Collection<S> getSelectorWrappers(String subId) {
+    /**
+     * Get all SelectorWrappers by id.
+     *
+     * @param subId subscription id
+     * @return the set of SelectorWrappers
+     */
+    public Set<S> getSelectorWrappers(String subId) {
         return selectorMap.get(subId);
     }
 
+    /**
+     * Remove a SelectorWrapper by id.
+     *
+     * @param subId    subscription id
+     * @param selector selector wrapper
+     */
     public void removeSelectorWrapper(String subId, S selector) {
-        Set<S> selectorSet = selectorMap.get(subId);
-        selectorSet.remove(selector);
+        Set<S> selectors = selectorMap.get(subId);
+        if (selectors == null) {
+            return;
+        }
+        selectors.remove(selector);
+        if (CollectionUtils.isEmpty(selectors)) {
+            selectorMap.remove(subId);
+        }
     }
 
+    /**
+     * Remove a subscription by id.
+     *
+     * @param subId subscription id
+     */
     public void removeSubscription(String subId) {
         selectorMap.remove(subId);
     }
 
+    /**
+     * Get all subscriptions.
+     *
+     * @return all subscriptions
+     */
     public List<String> getSubscriptions() {
         return new ArrayList<>(selectorMap.keySet());
     }
 
+    /**
+     * Determine whether subId is subscribed.
+     *
+     * @param subId subscription id
+     * @return true if is subscribed
+     */
     public boolean isSubscribed(String subId) {
         return CollectionUtils.isNotEmpty(this.getSelectorWrappers(subId));
     }

@@ -27,19 +27,29 @@ import java.util.Objects;
  * @param <E> the type of select result
  * @author lideyou
  */
-public abstract class SelectorWrapper<C, E> {
+public abstract class AbstractSelectorWrapper<C, E> {
     private final Selector<C, E> selector;
 
     private final ListenerInvoker<E> listener;
 
-    public SelectorWrapper(Selector<C, E> selector, ListenerInvoker<E> listener) {
+    public AbstractSelectorWrapper(Selector<C, E> selector, ListenerInvoker<E> listener) {
         this.selector = selector;
         this.listener = listener;
     }
 
-    public abstract boolean isSelectable(C context);
+    /**
+     * Determine whether the context is selectable.
+     * @param context selector
+     * @return true if the context is selectable
+     */
+    protected abstract boolean isSelectable(C context);
 
-    public abstract boolean isCallable(E event);
+    /**
+     * Determine whether the result can be callback.
+     * @param event select result
+     * @return true if the result can be callback
+     */
+    protected abstract boolean isCallable(E event);
 
     /**
      * Notify listener.
@@ -48,9 +58,9 @@ public abstract class SelectorWrapper<C, E> {
      */
     public void notifyListener(C context) {
         if (isSelectable(context)) {
-            E newEvent = selector.select(context);
-            if (isCallable(newEvent)) {
-                listener.invoke(newEvent);
+            E event = selector.select(context);
+            if (isCallable(event)) {
+                listener.invoke(event);
             }
         }
     }
@@ -71,7 +81,7 @@ public abstract class SelectorWrapper<C, E> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        SelectorWrapper<?, ?> that = (SelectorWrapper<?, ?>) o;
+        AbstractSelectorWrapper<?, ?> that = (AbstractSelectorWrapper<?, ?>) o;
         return Objects.equals(selector, that.selector) && Objects.equals(listener, that.listener);
     }
 

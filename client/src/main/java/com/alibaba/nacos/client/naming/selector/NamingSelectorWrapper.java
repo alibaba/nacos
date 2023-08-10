@@ -22,10 +22,11 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.selector.NamingContext;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.client.naming.listener.NamingChangeEvent;
-import com.alibaba.nacos.client.selector.SelectorWrapper;
+import com.alibaba.nacos.client.selector.AbstractSelectorWrapper;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,9 +34,9 @@ import java.util.Map;
  *
  * @author lideyou
  */
-public class NamingSelectorWrapper extends SelectorWrapper<NamingContext, NamingEvent> {
+public class NamingSelectorWrapper extends AbstractSelectorWrapper<NamingContext, NamingEvent> {
 
-    private NamingEvent cachedEvent;
+    private Map<String, String> cachedInsMap;
 
     public NamingSelectorWrapper(NamingSelector selector, EventListener listener) {
         super(selector, new NamingListenerInvoker(listener));
@@ -56,30 +57,27 @@ public class NamingSelectorWrapper extends SelectorWrapper<NamingContext, Naming
                     || changeEvent.isModified();
         } else {
             isChanged = isChanged(event);
+            if (isChanged) {
+                refreshCachedInsMap(event.getInstances());
+            }
         }
-        cachedEvent = event;
         return isChanged;
     }
 
     private boolean isChanged(NamingEvent namingEvent) {
-        if (null == namingEvent) {
+        if (namingEvent == null) {
             return false;
         }
 
-        if (null == cachedEvent) {
+        if (cachedInsMap == null) {
             return true;
         }
 
         int newSize = namingEvent.getInstances().size();
-        int oldSize = cachedEvent.getInstances().size();
+        int oldSize = cachedInsMap.size();
 
         if (newSize != oldSize) {
             return true;
-        }
-
-        Map<String, Instance> oldInsMap = new HashMap<>(oldSize);
-        for (Instance ins : cachedEvent.getInstances()) {
-            oldInsMap.put(ins.toInetAddr(), ins);
         }
 
         Map<String, Instance> newInsMap = new HashMap<>(newSize);
@@ -90,11 +88,22 @@ public class NamingSelectorWrapper extends SelectorWrapper<NamingContext, Naming
         for (Map.Entry<String, Instance> entry : newInsMap.entrySet()) {
             String key = entry.getKey();
             Instance ins1 = entry.getValue();
-            Instance ins2 = oldInsMap.get(key);
-            if (null == ins2 || !StringUtils.equals(ins1.toString(), ins2.toString())) {
+            String ins2 = cachedInsMap.get(key);
+
+            if (ins2 == null || !StringUtils.equals(ins1.toString(), ins2)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private void refreshCachedInsMap(List<Instance> instances) {
+        if (cachedInsMap == null) {
+            cachedInsMap = new HashMap<>(instances.size());
+        }
+        cachedInsMap.clear();
+        for (Instance ins : instances) {
+            cachedInsMap.put(ins.toInetAddr(), ins.toString());
+        }
     }
 }
