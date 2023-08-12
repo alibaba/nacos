@@ -30,13 +30,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class NamingSelectorWrapperTest {
 
@@ -116,9 +120,21 @@ public class NamingSelectorWrapperTest {
         assertFalse(selectorWrapper.isCallable(changeEvent));
     }
 
+    @Test
+    public void testNotifyListener() {
+        EventListener listener = mock(EventListener.class);
+        NamingSelectorWrapper selectorWrapper = new NamingSelectorWrapper(new DefaultNamingSelector(Instance::isHealthy), listener);
+        List<Instance> instances = Collections.singletonList(new Instance());
+        NamingContext namingContext = mock(NamingContext.class);
+        when(namingContext.getCurrentInstances()).thenReturn(instances);
+        when(namingContext.getAddedInstances()).thenReturn(instances);
+        selectorWrapper.notifyListener(namingContext);
+        verify(listener).onEvent(argThat(Objects::nonNull));
+    }
+
     private NamingSelectorWrapper getSelectorWrapper() {
         return new NamingSelectorWrapper(
-                new DefaultNamingSelector(Instance::isEphemeral),
+                new DefaultNamingSelector(Instance::isHealthy),
                 event -> {
                 }
         );
