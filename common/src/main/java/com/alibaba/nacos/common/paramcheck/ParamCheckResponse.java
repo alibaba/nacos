@@ -16,38 +16,30 @@
 
 package com.alibaba.nacos.common.paramcheck;
 
-import java.util.List;
-
 /**
- * The type Abstract param checker.
+ * The type Param check response.
  *
  * @author zhuoguang
  */
-public abstract class AbstractParamChecker {
+public class ParamCheckResponse {
     
-    protected ParamCheckRule paramCheckRule;
+    private boolean success;
     
-    public AbstractParamChecker() {
-        initParamCheckRule();
+    private String message;
+    
+    public boolean isSuccess() {
+        return success;
     }
     
-    /**
-     * Gets checker type.
-     *
-     * @return the checker type
-     */
-    public abstract String getCheckerType();
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
     
-    /**
-     * Check param info list param check response.
-     *
-     * @param paramInfos the param infos
-     * @return the param check response
-     */
-    public abstract ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos);
+    public String getMessage() {
+        return message;
+    }
     
-    /**
-     * Init param check rule.
-     */
-    public abstract void initParamCheckRule();
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }
