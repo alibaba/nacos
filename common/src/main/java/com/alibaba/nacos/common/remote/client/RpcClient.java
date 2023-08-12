@@ -351,11 +351,9 @@ public abstract class RpcClient implements Closeable {
         // connect to server, try to connect to server sync retryTimes times, async starting if failed.
         Connection connectToServer = null;
         rpcClientStatus.set(RpcClientStatus.STARTING);
-        
-        int startUpRetryTimes = rpcClientConfig.retryTimes();
-        while (startUpRetryTimes > 0 && connectToServer == null) {
+        int retryTimes = 0;
+        while (retryTimes >= rpcClientConfig.retryTimes() && connectToServer == null) {
             try {
-                startUpRetryTimes--;
                 ServerInfo serverInfo = nextRpcServer();
                 
                 LoggerUtils.printIfInfoEnabled(LOGGER, "[{}] Try to connect to server on start up, server: {}",
@@ -365,9 +363,9 @@ public abstract class RpcClient implements Closeable {
             } catch (Throwable e) {
                 LoggerUtils.printIfWarnEnabled(LOGGER,
                         "[{}] Fail to connect to server on start up, error message = {}, start up retry times left: {}",
-                        rpcClientConfig.name(), e.getMessage(), startUpRetryTimes, e);
+                        rpcClientConfig.name(), e.getMessage(), retryTimes, e);
             }
-            
+            retryTimes++;
         }
         
         if (connectToServer != null) {
@@ -636,7 +634,8 @@ public abstract class RpcClient implements Closeable {
         Response response;
         Throwable exceptionThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < rpcClientConfig.retryTimes() && (timeoutMills <= 0 || System.currentTimeMillis() < timeoutMills + start)) {
+        while (retryTimes <= rpcClientConfig.retryTimes() && (timeoutMills <= 0
+                || System.currentTimeMillis() < timeoutMills + start)) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
@@ -707,10 +706,9 @@ public abstract class RpcClient implements Closeable {
      */
     public void asyncRequest(Request request, RequestCallBack callback) throws NacosException {
         int retryTimes = 0;
-        
         Throwable exceptionToThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < rpcClientConfig.retryTimes()
+        while (retryTimes <= rpcClientConfig.retryTimes()
                 && System.currentTimeMillis() < start + callback.getTimeout()) {
             boolean waitReconnect = false;
             try {
@@ -760,7 +758,7 @@ public abstract class RpcClient implements Closeable {
         int retryTimes = 0;
         long start = System.currentTimeMillis();
         Exception exceptionToThrow = null;
-        while (retryTimes < rpcClientConfig.retryTimes()
+        while (retryTimes <= rpcClientConfig.retryTimes()
                 && System.currentTimeMillis() < start + rpcClientConfig.timeOutMills()) {
             boolean waitReconnect = false;
             try {

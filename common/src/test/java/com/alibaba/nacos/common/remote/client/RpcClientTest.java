@@ -437,7 +437,7 @@ public class RpcClientTest {
             exception = e;
         }
         
-        verify(connection, times(3)).requestFuture(any());
+        verify(connection, times(4)).requestFuture(any());
         verify(rpcClient).switchServerAsyncOnRequestFail();
         Assert.assertNotNull(exception);
         assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
