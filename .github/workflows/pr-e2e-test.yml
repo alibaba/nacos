@@ -190,7 +190,7 @@ jobs:
           ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
           test-version: "${{ matrix.version }}"
           test-code-git: "https://github.com/nacos-group/nacos-e2e.git"
-          test-code-branch: "master"
+          test-code-branch: "main"
           test-code-path: "java/nacos-2X"
           test-cmd: 'mvn clean test -B'
           job-id: ${{ strategy.job-index }}
