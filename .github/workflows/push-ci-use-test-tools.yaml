@@ -1,4 +1,4 @@
-name: PUSH-CI-USE-TEST_TOOLS
+name: wyf-PUSH-CI-DISPLAY_test
 
 on:
   push:
