@@ -222,23 +222,23 @@ jobs:
   #       run: |
   #         cat result.md >> $GITHUB_STEP_SUMMARY
 
-  clean:
-    if: always()
-    name: Clean
-    needs: [list-version, e2e-test]
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-      matrix:
-        mode: ["cluster","standalone"]
-        version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
-    steps:
-      - uses: Wuyunfan-BUPT/test-tools@add_display_tools
-        name: clean
-        with:
-          yamlString: |
-            action: clean
-            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
-            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
-            velauxUsername: ${{ secrets.VELA_USERNAME }}
-            velauxPassword: ${{ secrets.VELA_PASSWORD }}
+  # clean:
+  #   if: always()
+  #   name: Clean
+  #   needs: [list-version, e2e-test]
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 60
+  #   strategy:
+  #     matrix:
+  #       mode: ["cluster","standalone"]
+  #       version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
+  #   steps:
+  #     - uses: Wuyunfan-BUPT/test-tools@add_display_tools
+  #       name: clean
+  #       with:
+  #         yamlString: |
+  #           action: clean
+  #           namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
+  #           askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+  #           velauxUsername: ${{ secrets.VELA_USERNAME }}
+  #           velauxPassword: ${{ secrets.VELA_PASSWORD }}
