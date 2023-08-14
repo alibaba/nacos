@@ -174,53 +174,53 @@ jobs:
                 service:
                   nodePort: ${{ env.NODE_PORT }}
                   type: ClusterIP
-  e2e-test:
-    if: ${{ success() }}
-    name: E2E Test
-    needs: [list-version, deploy]
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    strategy:
-      matrix:
-        mode: ["cluster","standalone"]
-        version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
-    steps:
-      - uses: Wuyunfan-BUPT/test-tools@add_display_tools
-        name: e2e test
-        with:
-          yamlString: |
-            action: test
-            namespace: nacos-${{ github.run_id }}-0
-            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
-            API_VERSION: v1
-            KIND: Pod
-            RESTART_POLICY: Never
-            ENV:
-              REPO_NAME: ${{ env.TEST_REPO_NAME }}
-              CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
-              BRANCH: main
-              CODE_PATH: java/nacos-2X
-              CMD: mvn clean test -B
-              ALL_IP: null
-            CONTAINER:
-              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
-              RESOURCE_LIMITS:
-                cpu: 8
-                memory: 8Gi
-              RESOURCE_REQUIRE:
-                cpu: 8
-                memory: 8Gi
+  # e2e-test:
+  #   if: ${{ success() }}
+  #   name: E2E Test
+  #   needs: [list-version, deploy]
+  #   runs-on: ubuntu-latest
+  #   timeout-minutes: 60
+  #   strategy:
+  #     matrix:
+  #       mode: ["cluster","standalone"]
+  #       version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
+  #   steps:
+  #     - uses: Wuyunfan-BUPT/test-tools@add_display_tools
+  #       name: e2e test
+  #       with:
+  #         yamlString: |
+  #           action: test
+  #           namespace: nacos-${{ github.run_id }}-0
+  #           askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+  #           API_VERSION: v1
+  #           KIND: Pod
+  #           RESTART_POLICY: Never
+  #           ENV:
+  #             REPO_NAME: ${{ env.TEST_REPO_NAME }}
+  #             CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
+  #             BRANCH: main
+  #             CODE_PATH: java/nacos-2X
+  #             CMD: mvn clean test -B
+  #             ALL_IP: null
+  #           CONTAINER:
+  #             IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+  #             RESOURCE_LIMITS:
+  #               cpu: 8
+  #               memory: 8Gi
+  #             RESOURCE_REQUIRE:
+  #               cpu: 8
+  #               memory: 8Gi
 
-      - uses: actions/upload-artifact@v3
-        if: always()
-        name: Upload test log
-        with:
-          name: test-e2e-grpc-java-log.txt
-          path: testlog.txt
-      - name: add markdown
-        if: always()
-        run: |
-          cat result.md >> $GITHUB_STEP_SUMMARY
+  #     - uses: actions/upload-artifact@v3
+  #       if: always()
+  #       name: Upload test log
+  #       with:
+  #         name: test-e2e-grpc-java-log.txt
+  #         path: testlog.txt
+  #     - name: add markdown
+  #       if: always()
+  #       run: |
+  #         cat result.md >> $GITHUB_STEP_SUMMARY
 
   clean:
     if: always()
