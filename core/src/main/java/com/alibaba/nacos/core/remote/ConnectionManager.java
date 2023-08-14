@@ -259,7 +259,7 @@ public class ConnectionManager {
     }
     
     /**
-     * send load request to spefic connetionId.
+     * send load request to specific connectionId.
      *
      * @param connectionId    connection id of client.
      * @param redirectAddress server address to redirect.
