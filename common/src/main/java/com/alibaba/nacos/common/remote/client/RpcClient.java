@@ -353,7 +353,7 @@ public abstract class RpcClient implements Closeable {
         rpcClientStatus.set(RpcClientStatus.STARTING);
         
         int startUpRetryTimes = rpcClientConfig.retryTimes();
-        while (startUpRetryTimes > 0 && connectToServer == null) {
+        while (startUpRetryTimes >= 0 && connectToServer == null) {
             try {
                 startUpRetryTimes--;
                 ServerInfo serverInfo = nextRpcServer();
@@ -636,7 +636,8 @@ public abstract class RpcClient implements Closeable {
         Response response;
         Throwable exceptionThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < rpcClientConfig.retryTimes() && (timeoutMills <= 0 || System.currentTimeMillis() < timeoutMills + start)) {
+        while (retryTimes <= rpcClientConfig.retryTimes() && (timeoutMills <= 0
+                || System.currentTimeMillis() < timeoutMills + start)) {
             boolean waitReconnect = false;
             try {
                 if (this.currentConnection == null || !isRunning()) {
@@ -707,10 +708,9 @@ public abstract class RpcClient implements Closeable {
      */
     public void asyncRequest(Request request, RequestCallBack callback) throws NacosException {
         int retryTimes = 0;
-        
         Throwable exceptionToThrow = null;
         long start = System.currentTimeMillis();
-        while (retryTimes < rpcClientConfig.retryTimes()
+        while (retryTimes <= rpcClientConfig.retryTimes()
                 && System.currentTimeMillis() < start + callback.getTimeout()) {
             boolean waitReconnect = false;
             try {
@@ -760,7 +760,7 @@ public abstract class RpcClient implements Closeable {
         int retryTimes = 0;
         long start = System.currentTimeMillis();
         Exception exceptionToThrow = null;
-        while (retryTimes < rpcClientConfig.retryTimes()
+        while (retryTimes <= rpcClientConfig.retryTimes()
                 && System.currentTimeMillis() < start + rpcClientConfig.timeOutMills()) {
             boolean waitReconnect = false;
             try {
