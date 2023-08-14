@@ -144,7 +144,7 @@ jobs:
             namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
             waitTimes: 1200
-            velaAppDescription: rocketmq-${{ env.GITHUB_WORKFLOW }}-${{ github.run_id }}@${{ matrix.version }}
+            velaAppDescription: nacos-${{ env.GITHUB_WORKFLOW }}-${{ github.run_id }}@${{ matrix.version }}
             repoName: nacos
             velauxUsername: ${{ secrets.VELA_USERNAME }}
             velauxPassword: ${{ secrets.VELA_PASSWORD }}
@@ -154,7 +154,7 @@ jobs:
                 branch: main
               repoType: git
               retries: 3
-              url: https://ghproxy.com/https://github.com/nacos-group/nacos-e2e.git
+              url: https://github.com/nacos-group/nacos-e2e.git
               values:
                 namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
                 global:
