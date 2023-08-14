@@ -144,7 +144,11 @@ class RolesManagement extends React.Component {
             <Button
               type={'primary'}
               style={{ marginRight: 10 }}
-              onClick={() => this.getRoles()}
+              onClick={() => {
+                this.setState({ pageNo: 1 }, () => {
+                  this.getRoles();
+                });
+              }}
               data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
             >
               {locale.query}
