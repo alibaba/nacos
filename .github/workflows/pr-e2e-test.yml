@@ -6,7 +6,7 @@ on:
     workflows: ["PR-CI"]
     types:
       - completed
-
+  
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
@@ -95,12 +95,12 @@ jobs:
           path: versionlist
       - name: Show versions
         id: show_versions
-        run: |
+        run: | 
           a=(`ls versionlist`)
           printf '%s\n' "${a[@]}" | jq -R . | jq -s .
           echo version-json=`printf '%s\n' "${a[@]}" | jq -R . | jq -s .` >> $GITHUB_OUTPUT
   
-
+  
   deploy:
     if: ${{ success() }}
     name: Deploy nacos
@@ -118,7 +118,7 @@ jobs:
     steps:
       - name: set nodeport
         run: |
-          echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
+            echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
       - name: set cluster params
         if: ${{ matrix.mode == 'standalone' }}
         run: |
