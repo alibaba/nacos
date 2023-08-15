@@ -228,7 +228,7 @@ public class ConnectionManager {
     }
     
     /**
-     * regresh connection active time.
+     * refresh connection active time.
      *
      * @param connectionId connectionId.
      */
