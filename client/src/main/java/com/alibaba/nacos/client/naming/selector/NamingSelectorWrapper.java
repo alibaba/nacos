@@ -43,6 +43,37 @@ public class NamingSelectorWrapper extends AbstractSelectorWrapper<NamingSelecto
 
     private String clusters;
 
+    private final InnerNamingContext namingContext = new InnerNamingContext();
+
+    private class InnerNamingContext implements NamingContext {
+
+        private List<Instance> instances;
+
+        @Override
+        public String getServiceName() {
+            return serviceName;
+        }
+
+        @Override
+        public String getGroupName() {
+            return groupName;
+        }
+
+        @Override
+        public String getClusters() {
+            return clusters;
+        }
+
+        @Override
+        public List<Instance> getInstances() {
+            return instances;
+        }
+
+        private void setInstances(List<Instance> instances) {
+            this.instances = instances;
+        }
+    }
+
     public NamingSelectorWrapper(NamingSelector selector, EventListener listener) {
         super(selector, new NamingListenerInvoker(listener));
     }
@@ -102,26 +133,7 @@ public class NamingSelectorWrapper extends AbstractSelectorWrapper<NamingSelecto
     }
 
     private NamingContext getNamingContext(final List<Instance> instances) {
-        return new NamingContext() {
-            @Override
-            public String getServiceName() {
-                return serviceName;
-            }
-
-            @Override
-            public String getGroupName() {
-                return groupName;
-            }
-
-            @Override
-            public String getClusters() {
-                return clusters;
-            }
-
-            @Override
-            public List<Instance> getInstances() {
-                return instances;
-            }
-        };
+        namingContext.setInstances(instances);
+        return namingContext;
     }
 }
