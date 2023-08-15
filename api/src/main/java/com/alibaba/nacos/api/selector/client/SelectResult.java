@@ -14,44 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming.selector;
-
-import com.alibaba.nacos.api.naming.pojo.Instance;
-
-import java.util.List;
+package com.alibaba.nacos.api.selector.client;
 
 /**
- * Naming selector context.
+ * Select result.
  *
+ * @param <T> the type of result
  * @author lideyou
  */
-public interface NamingContext {
-
+public interface SelectResult<T> {
     /**
-     * Get service name.
+     * Get select result.
      *
-     * @return service name
+     * @return select result
      */
-    String getServiceName();
-
-    /**
-     * Get group name.
-     *
-     * @return group name
-     */
-    String getGroupName();
-
-    /**
-     * Get clusters.
-     *
-     * @return clusters
-     */
-    String getClusters();
-
-    /**
-     * Get current instances.
-     *
-     * @return current instances
-     */
-    List<Instance> getInstances();
+    T getResult();
 }

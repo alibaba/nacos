@@ -46,6 +46,9 @@ public class InstancesDiffTest {
         instancesDiff.setModifiedInstances(Collections.singletonList(modifiedIns));
 
         Assert.assertTrue(instancesDiff.hasDifferent());
+        Assert.assertTrue(instancesDiff.isAdded());
+        Assert.assertTrue(instancesDiff.isRemoved());
+        Assert.assertTrue(instancesDiff.isModified());
         Assert.assertEquals(addedIns, instancesDiff.getAddedInstances().get(0));
         Assert.assertEquals(removedIns, instancesDiff.getRemovedInstances().get(0));
         Assert.assertEquals(modifiedIns, instancesDiff.getModifiedInstances().get(0));
@@ -64,6 +67,9 @@ public class InstancesDiffTest {
         );
 
         Assert.assertTrue(instancesDiff.hasDifferent());
+        Assert.assertTrue(instancesDiff.isAdded());
+        Assert.assertTrue(instancesDiff.isRemoved());
+        Assert.assertTrue(instancesDiff.isModified());
         Assert.assertEquals(addedCount, instancesDiff.getAddedInstances().size());
         Assert.assertEquals(removedCount, instancesDiff.getRemovedInstances().size());
         Assert.assertEquals(modifiedCount, instancesDiff.getModifiedInstances().size());
@@ -71,6 +77,10 @@ public class InstancesDiffTest {
         instancesDiff.getRemovedInstances().clear();
         instancesDiff.getModifiedInstances().clear();
         Assert.assertFalse(instancesDiff.hasDifferent());
+        Assert.assertFalse(instancesDiff.hasDifferent());
+        Assert.assertFalse(instancesDiff.isAdded());
+        Assert.assertFalse(instancesDiff.isRemoved());
+        Assert.assertFalse(instancesDiff.isModified());
     }
 
     @Test
@@ -92,6 +102,9 @@ public class InstancesDiffTest {
         instancesDiff.getRemovedInstances().clear();
         instancesDiff.getModifiedInstances().clear();
         Assert.assertFalse(instancesDiff.hasDifferent());
+        Assert.assertFalse(instancesDiff.isAdded());
+        Assert.assertFalse(instancesDiff.isRemoved());
+        Assert.assertFalse(instancesDiff.isModified());
     }
 
     private static List<Instance> getInstanceList(int count) {

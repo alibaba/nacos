@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.naming.listener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.event.InstancesDiff;
-import com.alibaba.nacos.common.utils.CollectionUtils;
 
 import java.util.List;
 
@@ -42,15 +41,15 @@ public class NamingChangeEvent extends NamingEvent {
     }
 
     public boolean isAdded() {
-        return CollectionUtils.isNotEmpty(this.instancesDiff.getAddedInstances());
+        return this.instancesDiff.isAdded();
     }
 
     public boolean isRemoved() {
-        return CollectionUtils.isNotEmpty(this.instancesDiff.getRemovedInstances());
+        return this.instancesDiff.isRemoved();
     }
 
     public boolean isModified() {
-        return CollectionUtils.isNotEmpty(this.instancesDiff.getModifiedInstances());
+        return this.instancesDiff.isModified();
     }
 
     public List<Instance> getAddedInstances() {

@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @param <S> the type of selector wrapper
  * @author lideyou
  */
-public class SelectorManager<S extends AbstractSelectorWrapper<?, ?>> {
+public class SelectorManager<S extends AbstractSelectorWrapper<?, ?, ?>> {
     Map<String, Set<S>> selectorMap = new ConcurrentHashMap<>();
 
     /**

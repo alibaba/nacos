@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.api.naming.selector;
 
-import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.selector.client.Selector;
 
 /**
@@ -24,5 +23,5 @@ import com.alibaba.nacos.api.selector.client.Selector;
  *
  * @author lideyou
  */
-public interface NamingSelector extends Selector<NamingContext, NamingEvent> {
+public interface NamingSelector extends Selector<NamingContext, NamingResult> {
 }

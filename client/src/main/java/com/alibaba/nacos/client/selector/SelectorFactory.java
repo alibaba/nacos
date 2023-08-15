@@ -16,12 +16,8 @@
 
 package com.alibaba.nacos.client.selector;
 
-import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.NamingContext;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
-import com.alibaba.nacos.client.naming.event.InstancesDiff;
-import com.alibaba.nacos.client.naming.listener.NamingChangeEvent;
 import com.alibaba.nacos.client.naming.selector.DefaultNamingSelector;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -39,11 +35,11 @@ import java.util.function.Predicate;
  * @author lideyou
  */
 public final class SelectorFactory {
-    private static final NamingSelector EMPTY_SELECTOR = SelectorFactory::transferToNamingEvent;
+    private static final NamingSelector EMPTY_SELECTOR = context -> context::getInstances;
 
-    private SelectorFactory() {
-    }
-
+    /**
+     * Cluster selector.
+     */
     private static class ClusterSelector extends DefaultNamingSelector {
         private final String clusterString;
 
@@ -70,6 +66,9 @@ public final class SelectorFactory {
         }
     }
 
+    private SelectorFactory() {
+    }
+
     /**
      * Create a cluster selector.
      *
@@ -90,15 +89,5 @@ public final class SelectorFactory {
     private static String getUniqueClusterString(Collection<String> cluster) {
         TreeSet<String> treeSet = new TreeSet<>(cluster);
         return StringUtils.join(treeSet, ",");
-    }
-
-    private static NamingEvent transferToNamingEvent(NamingContext context) {
-        InstancesDiff instancesDiff = new InstancesDiff(
-                context.getAddedInstances(),
-                context.getRemovedInstances(),
-                context.getModifiedInstances()
-        );
-        return new NamingChangeEvent(context.getServiceName(), context.getGroupName(),
-                context.getClusters(), context.getCurrentInstances(), instancesDiff);
     }
 }

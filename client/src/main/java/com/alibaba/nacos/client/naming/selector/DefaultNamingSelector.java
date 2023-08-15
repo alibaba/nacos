@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.client.naming.selector;
 
-import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.selector.NamingContext;
+import com.alibaba.nacos.api.naming.selector.NamingResult;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
-import com.alibaba.nacos.client.naming.event.InstancesDiff;
-import com.alibaba.nacos.client.naming.listener.NamingChangeEvent;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,16 +39,9 @@ public class DefaultNamingSelector implements NamingSelector {
     }
 
     @Override
-    public NamingEvent select(NamingContext context) {
-        List<Instance> currentIns = doFilter(context.getCurrentInstances());
-
-        InstancesDiff instancesDiff = new InstancesDiff(
-                doFilter(context.getAddedInstances()),
-                doFilter(context.getRemovedInstances()),
-                doFilter(context.getModifiedInstances()));
-
-        return new NamingChangeEvent(context.getServiceName(), context.getGroupName(),
-                context.getClusters(), currentIns, instancesDiff);
+    public NamingResult select(NamingContext context) {
+        List<Instance> instances = doFilter(context.getInstances());
+        return () -> instances;
     }
 
     private List<Instance> doFilter(List<Instance> instances) {

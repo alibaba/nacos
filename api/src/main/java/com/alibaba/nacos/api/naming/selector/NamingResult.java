@@ -17,41 +17,14 @@
 package com.alibaba.nacos.api.naming.selector;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.selector.client.SelectResult;
 
 import java.util.List;
 
 /**
- * Naming selector context.
+ * Naming select result.
  *
  * @author lideyou
  */
-public interface NamingContext {
-
-    /**
-     * Get service name.
-     *
-     * @return service name
-     */
-    String getServiceName();
-
-    /**
-     * Get group name.
-     *
-     * @return group name
-     */
-    String getGroupName();
-
-    /**
-     * Get clusters.
-     *
-     * @return clusters
-     */
-    String getClusters();
-
-    /**
-     * Get current instances.
-     *
-     * @return current instances
-     */
-    List<Instance> getInstances();
+public interface NamingResult extends SelectResult<List<Instance>> {
 }

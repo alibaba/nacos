@@ -82,8 +82,30 @@ public class InstancesDiff {
      * @return true if there are instances that have changed
      */
     public boolean hasDifferent() {
-        return CollectionUtils.isNotEmpty(this.addedInstances)
-                || CollectionUtils.isNotEmpty(this.removedInstances)
-                || CollectionUtils.isNotEmpty(this.modifiedInstances);
+        return isAdded() || isRemoved() || isModified();
+    }
+
+    /**
+     * Check if any instances have been added.
+     * @return true if there are instances that have been added.
+     */
+    public boolean isAdded() {
+        return CollectionUtils.isNotEmpty(this.addedInstances);
+    }
+
+    /**
+     * Check if any instances have been added.
+     * @return true if there are instances that have been added.
+     */
+    public boolean isRemoved() {
+        return CollectionUtils.isNotEmpty(this.removedInstances);
+    }
+
+    /**
+     * Check if any instances have been added.
+     * @return true if there are instances that have been added.
+     */
+    public boolean isModified() {
+        return CollectionUtils.isNotEmpty(this.modifiedInstances);
     }
 }

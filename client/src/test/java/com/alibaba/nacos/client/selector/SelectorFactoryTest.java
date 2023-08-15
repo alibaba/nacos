@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.client.selector;
 
-import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.selector.NamingContext;
+import com.alibaba.nacos.api.naming.selector.NamingResult;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import org.junit.Test;
 
@@ -42,15 +42,15 @@ public class SelectorFactoryTest {
         ins3.setClusterName("c");
 
         NamingContext namingContext = mock(NamingContext.class);
-        when(namingContext.getCurrentInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
+        when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
 
         NamingSelector namingSelector1 = SelectorFactory.newClusterSelector(Collections.singletonList("a"));
-        NamingEvent namingEvent1 = namingSelector1.select(namingContext);
-        assertEquals("a", namingEvent1.getInstances().get(0).getClusterName());
+        NamingResult result1 = namingSelector1.select(namingContext);
+        assertEquals("a", result1.getResult().get(0).getClusterName());
 
         NamingSelector namingSelector2 = SelectorFactory.newClusterSelector(Collections.emptyList());
-        NamingEvent namingEvent2 = namingSelector2.select(namingContext);
-        assertEquals(3, namingEvent2.getInstances().size());
+        NamingResult result2 = namingSelector2.select(namingContext);
+        assertEquals(3, result2.getResult().size());
     }
 
     @Test

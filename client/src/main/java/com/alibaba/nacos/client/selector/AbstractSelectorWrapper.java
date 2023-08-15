@@ -17,51 +17,63 @@
 package com.alibaba.nacos.client.selector;
 
 import com.alibaba.nacos.api.selector.client.Selector;
+import com.alibaba.nacos.common.notify.Event;
 
 import java.util.Objects;
 
 /**
  * Selector Wrapper.
  *
- * @param <C> the type of selector context
- * @param <E> the type of select result
+ * @param <S> the type of selector
+ * @param <T> the type of original event
+ * @param <E> the type of listener callback event
  * @author lideyou
  */
-public abstract class AbstractSelectorWrapper<C, E> {
-    private final Selector<C, E> selector;
+public abstract class AbstractSelectorWrapper<S extends Selector<?, ?>, E, T extends Event> {
+    private final S selector;
 
     private final ListenerInvoker<E> listener;
 
-    public AbstractSelectorWrapper(Selector<C, E> selector, ListenerInvoker<E> listener) {
+    public AbstractSelectorWrapper(S selector, ListenerInvoker<E> listener) {
         this.selector = selector;
         this.listener = listener;
     }
 
     /**
-     * Determine whether the context is selectable.
-     * @param context selector
-     * @return true if the context is selectable
+     * Check whether the event can be callback.
+     *
+     * @param event original event
+     * @return true if the event can be callback
      */
-    protected abstract boolean isSelectable(C context);
+    protected abstract boolean isSelectable(T event);
 
     /**
-     * Determine whether the result can be callback.
+     * Check whether the result can be callback.
+     *
      * @param event select result
      * @return true if the result can be callback
      */
     protected abstract boolean isCallable(E event);
 
     /**
+     * Build an event received by the listener.
+     * @param event original event
+     * @return listener event
+     */
+    protected abstract E buildListenerEvent(T event);
+
+    /**
      * Notify listener.
      *
-     * @param context selector context
+     * @param event original event
      */
-    public void notifyListener(C context) {
-        if (isSelectable(context)) {
-            E event = selector.select(context);
-            if (isCallable(event)) {
-                listener.invoke(event);
-            }
+    public void notifyListener(T event) {
+        if (!isSelectable(event)) {
+            return;
+        }
+        E newEvent = buildListenerEvent(event);
+        if (isCallable(newEvent)) {
+            listener.invoke(newEvent);
         }
     }
 
@@ -69,7 +81,7 @@ public abstract class AbstractSelectorWrapper<C, E> {
         return this.listener;
     }
 
-    public Selector<C, E> getSelector() {
+    public S getSelector() {
         return this.selector;
     }
 
@@ -81,7 +93,7 @@ public abstract class AbstractSelectorWrapper<C, E> {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        AbstractSelectorWrapper<?, ?> that = (AbstractSelectorWrapper<?, ?>) o;
+        AbstractSelectorWrapper<?, ?, ?> that = (AbstractSelectorWrapper<?, ?, ?>) o;
         return Objects.equals(selector, that.selector) && Objects.equals(listener, that.listener);
     }
 

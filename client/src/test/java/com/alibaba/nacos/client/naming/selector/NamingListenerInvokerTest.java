@@ -62,20 +62,14 @@ public class NamingListenerInvokerTest {
 
     @Test
     public void testEquals() {
-        EventListener listener = mock(EventListener.class);
-        NamingListenerInvoker invoker1 = new NamingListenerInvoker(listener);
-        NamingListenerInvoker invoker2 = new NamingListenerInvoker(listener);
-        assertEquals(invoker1.hashCode(), invoker2.hashCode());
-        assertEquals(invoker1, invoker2);
-    }
-
-    @Test
-    public void testNotEquals() {
         EventListener listener1 = mock(EventListener.class);
         EventListener listener2 = mock(EventListener.class);
         NamingListenerInvoker invoker1 = new NamingListenerInvoker(listener1);
-        NamingListenerInvoker invoker2 = new NamingListenerInvoker(listener2);
-        assertNotEquals(invoker1.hashCode(), invoker2.hashCode());
-        assertNotEquals(invoker1, invoker2);
+        NamingListenerInvoker invoker2 = new NamingListenerInvoker(listener1);
+        NamingListenerInvoker invoker3 = new NamingListenerInvoker(listener2);
+        assertEquals(invoker1.hashCode(), invoker2.hashCode());
+        assertEquals(invoker1, invoker2);
+        assertNotEquals(invoker1.hashCode(), invoker3.hashCode());
+        assertNotEquals(invoker1, invoker3);
     }
 }

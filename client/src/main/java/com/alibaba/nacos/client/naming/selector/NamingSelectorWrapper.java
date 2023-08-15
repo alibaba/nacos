@@ -21,89 +21,107 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.selector.NamingContext;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.naming.event.InstancesDiff;
 import com.alibaba.nacos.client.naming.listener.NamingChangeEvent;
 import com.alibaba.nacos.client.selector.AbstractSelectorWrapper;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Naming selector wrapper.
  *
  * @author lideyou
  */
-public class NamingSelectorWrapper extends AbstractSelectorWrapper<NamingContext, NamingEvent> {
+public class NamingSelectorWrapper extends AbstractSelectorWrapper<NamingSelector, NamingEvent, InstancesChangeEvent> {
 
-    private Map<String, String> cachedInsMap;
+    private String serviceName;
+
+    private String groupName;
+
+    private String clusters;
 
     public NamingSelectorWrapper(NamingSelector selector, EventListener listener) {
         super(selector, new NamingListenerInvoker(listener));
     }
 
     @Override
-    public boolean isSelectable(NamingContext context) {
-        return context != null;
+    protected boolean isSelectable(InstancesChangeEvent event) {
+        return event != null
+                && event.getHosts() != null
+                && event.getInstancesDiff() != null;
     }
 
     @Override
     public boolean isCallable(NamingEvent event) {
-        boolean isChanged;
-        if (event instanceof NamingChangeEvent) {
-            NamingChangeEvent changeEvent = (NamingChangeEvent) event;
-            isChanged = changeEvent.isAdded()
-                    || changeEvent.isRemoved()
-                    || changeEvent.isModified();
-        } else {
-            isChanged = isChanged(event);
-            if (isChanged) {
-                refreshCachedInsMap(event.getInstances());
-            }
-        }
-        return isChanged;
-    }
-
-    private boolean isChanged(NamingEvent namingEvent) {
-        if (namingEvent == null) {
+        if (event == null) {
             return false;
         }
-
-        if (cachedInsMap == null) {
-            return true;
-        }
-
-        int newSize = namingEvent.getInstances().size();
-        int oldSize = cachedInsMap.size();
-
-        if (newSize != oldSize) {
-            return true;
-        }
-
-        Map<String, Instance> newInsMap = new HashMap<>(newSize);
-        for (Instance ins : namingEvent.getInstances()) {
-            newInsMap.put(ins.toInetAddr(), ins);
-        }
-
-        for (Map.Entry<String, Instance> entry : newInsMap.entrySet()) {
-            String key = entry.getKey();
-            Instance ins1 = entry.getValue();
-            String ins2 = cachedInsMap.get(key);
-
-            if (ins2 == null || !StringUtils.equals(ins1.toString(), ins2)) {
-                return true;
-            }
-        }
-        return false;
+        NamingChangeEvent changeEvent = (NamingChangeEvent) event;
+        return changeEvent.isAdded()
+                || changeEvent.isRemoved()
+                || changeEvent.isModified();
     }
 
-    private void refreshCachedInsMap(List<Instance> instances) {
-        if (cachedInsMap == null) {
-            cachedInsMap = new HashMap<>(instances.size());
+    @Override
+    protected NamingEvent buildListenerEvent(InstancesChangeEvent event) {
+        this.serviceName = event.getServiceName();
+        this.groupName = event.getGroupName();
+        this.clusters = event.getClusters();
+
+        List<Instance> currentIns = Collections.emptyList();
+        if (CollectionUtils.isNotEmpty(event.getHosts())) {
+            currentIns = doSelect(event.getHosts());
         }
-        cachedInsMap.clear();
-        for (Instance ins : instances) {
-            cachedInsMap.put(ins.toInetAddr(), ins.toString());
+
+        InstancesDiff diff = event.getInstancesDiff();
+        InstancesDiff newDiff = new InstancesDiff();
+        if (diff.isAdded()) {
+            newDiff.setAddedInstances(
+                    doSelect(diff.getAddedInstances()));
         }
+        if (diff.isRemoved()) {
+            newDiff.setRemovedInstances(
+                    doSelect(diff.getRemovedInstances()));
+        }
+        if (diff.isModified()) {
+            newDiff.setModifiedInstances(
+                    doSelect(diff.getModifiedInstances()));
+        }
+
+        return new NamingChangeEvent(serviceName, groupName, clusters, currentIns, newDiff);
+    }
+
+    private List<Instance> doSelect(List<Instance> instances) {
+        NamingContext context = getNamingContext(instances);
+        return this.getSelector()
+                .select(context)
+                .getResult();
+    }
+
+    private NamingContext getNamingContext(final List<Instance> instances) {
+        return new NamingContext() {
+            @Override
+            public String getServiceName() {
+                return serviceName;
+            }
+
+            @Override
+            public String getGroupName() {
+                return groupName;
+            }
+
+            @Override
+            public String getClusters() {
+                return clusters;
+            }
+
+            @Override
+            public List<Instance> getInstances() {
+                return instances;
+            }
+        };
     }
 }
