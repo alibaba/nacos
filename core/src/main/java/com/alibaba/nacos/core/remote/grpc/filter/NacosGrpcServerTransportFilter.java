@@ -23,6 +23,7 @@ import io.grpc.ServerTransportFilter;
  *
  * @author xiweng.yy
  */
+@SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class NacosGrpcServerTransportFilter extends ServerTransportFilter {
     
     public static final String SDK_FILTER = "SDK";
