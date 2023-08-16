@@ -47,24 +47,25 @@ import java.util.Map;
 
 @Service
 public class KubernetesConfigMapSyncService {
-    
+
     private static final Gson gson = new Gson();
-    
+
     @Value("${nacos.k8s.configMap.enabled:false}")
     private boolean enabled = true;
-    
+
     @Value("${nacos.k8s.configMap.responsible:true")
     private boolean responsible = false;
-    
+
+    @Autowired
+    @Qualifier("embeddedConfigInfoPersistServiceImpl")
     private ConfigInfoPersistService configInfoPersistService;
-    
+
     private ApiClient apiClient;
-    
+
     private boolean isRunning;
-    
-    
-    public KubernetesConfigMapSyncService(
-            @Qualifier("embeddedConfigInfoPersistServiceImpl") ConfigInfoPersistService configInfoPersistService) {
+
+
+    public KubernetesConfigMapSyncService(ConfigInfoPersistService configInfoPersistService) {
         this.configInfoPersistService = configInfoPersistService;
         enabled = Boolean.parseBoolean(System.getProperty("nacos.k8s.configMap.enabled"));
         // If sync is turned on, continue execution.
@@ -72,27 +73,27 @@ public class KubernetesConfigMapSyncService {
             Loggers.MAIN.warn("The nacos KubernetesConfigMapSyncService is disabled.");
             return;
         }
-        
+
         // Calculate whether you are responsible.
         // If the current node is responsible, it will continue to execute.
         if (!responsible) {
             Loggers.MAIN.info("The current node is not responsible.");
             return;
         }
-        
+
         try {
             this.apiClient = ClientBuilder.cluster().build();
         } catch (IOException e) {
             Loggers.MAIN.error("The KubernetesApiClient build failed.");
             isRunning = false;
         }
-        
+
         if (enabled) {
             watchConfigMap();
             isRunning = true;
         }
     }
-    
+
     private void watchConfigMap() {
         SharedInformerFactory factory = new SharedInformerFactory(apiClient);
         CoreV1Api coreV1Api = new CoreV1Api();
@@ -111,7 +112,7 @@ public class KubernetesConfigMapSyncService {
                 String srcIp = apiClient.getBasePath();
                 configInfoPersistService.addConfigInfo(srcIp, "configmap/k8s", configInfo, null);
             }
-            
+
             @Override
             public void onUpdate(V1ConfigMap oldObj, V1ConfigMap newObj) {
                 Loggers.MAIN.info(
@@ -121,7 +122,7 @@ public class KubernetesConfigMapSyncService {
                 String srcIp = apiClient.getBasePath();
                 configInfoPersistService.updateConfigInfo(configInfo, "configmap/k8s", srcIp, null);
             }
-            
+
             @Override
             public void onDelete(V1ConfigMap obj, boolean deletedFinalStateUnknown) {
                 if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
@@ -133,7 +134,7 @@ public class KubernetesConfigMapSyncService {
                 String srcIp = apiClient.getBasePath();
                 configInfoPersistService.removeConfigInfo(dataId, "K8S_GROUP", tenant, srcIp, "configmap/k8s");
             }
-            
+
             private String convertToYaml(Object kubernetesResource) {
                 return Yaml.dump(kubernetesResource);
             }
@@ -141,18 +142,18 @@ public class KubernetesConfigMapSyncService {
         // Synchronize initialization data to config
         // 启动SharedInformerFactory在后台运行事件监听器
         factory.startAllRegisteredInformers();
-        
+
     }
-    
+
     private void compareConfigMaps(V1ConfigMap previousConfigMap, V1ConfigMap currentConfigMap) {
         // 将先前的 ConfigMap 和当前的 ConfigMap 转换成 JSON 字符串
         String previousJson = gson.toJson(previousConfigMap);
         String currentJson = gson.toJson(currentConfigMap);
-        
+
         // 将 JSON 字符串解析成 JsonElement
         JsonElement previousElement = gson.fromJson(previousJson, JsonElement.class);
         JsonElement currentElement = gson.fromJson(currentJson, JsonElement.class);
-        
+
         if (previousElement.isJsonObject() && currentElement.isJsonObject()) {
             JsonObject previousObj = previousElement.getAsJsonObject();
             JsonObject currentObj = currentElement.getAsJsonObject();
@@ -162,7 +163,7 @@ public class KubernetesConfigMapSyncService {
             Loggers.MAIN.error("Element is not json.");
         }
     }
-    
+
     private void compareJsonObjects(JsonObject previousObj, JsonObject currentObj) {
         for (String key : previousObj.keySet()) {
             if (!currentObj.has(key)) {
@@ -173,7 +174,7 @@ public class KubernetesConfigMapSyncService {
                 Loggers.MAIN.info("Current value: " + currentObj.get(key));
             }
         }
-        
+
         for (String key : currentObj.keySet()) {
             if (!previousObj.has(key)) {
                 Loggers.MAIN.info("Field " + key + " added.");
@@ -181,7 +182,7 @@ public class KubernetesConfigMapSyncService {
             }
         }
     }
-    
+
     private ConfigInfo configMapToNacosConfigInfo(V1ConfigMap configMap) {
         Loggers.MAIN.info("Converting configMap to nacos ConfigInfo...");
         String dataId = configMap.getMetadata().getName();
@@ -200,8 +201,8 @@ public class KubernetesConfigMapSyncService {
         String content = contentBuilder.toString();
         return new ConfigInfo(dataId, group, tenant, appName, content);
     }
-    
-    
+
+
     public boolean isRunning() {
         return isRunning;
     }
