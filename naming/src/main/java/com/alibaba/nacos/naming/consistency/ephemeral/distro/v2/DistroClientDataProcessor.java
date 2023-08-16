@@ -181,6 +181,8 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 client.addServiceInstance(singleton, instancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                NotifyCenter.publishEvent(
+                        new MetadataEvent.InstanceMetadataEvent(singleton, instancePublishInfo.getMetadataId(), false));
             }
         }
         for (Service each : client.getAllPublishedService()) {
