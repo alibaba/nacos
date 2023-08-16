@@ -62,7 +62,7 @@ public class ConfigMapSyncTask {
                 String dataId = configMap.getMetadata().getName();
                 String group = "K8S_GROUP";
                 String content = configMap.getData().toString();
-
+                
                 if (nacosConfigService.getConfig(dataId, group, 1000).isEmpty()) {
                     Loggers.MAIN.info("find config missed");
                     coreV1Api.createNamespacedConfigMap("default", configMap, null, null, null);
