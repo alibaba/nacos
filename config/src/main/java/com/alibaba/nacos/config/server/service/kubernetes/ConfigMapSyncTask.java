@@ -62,11 +62,10 @@ public class ConfigMapSyncTask {
                 String dataId = configMap.getMetadata().getName();
                 String group = "K8S_GROUP";
                 String content = configMap.getData().toString();
-                
-                boolean existInNacos = nacosConfigService.publishConfig(dataId, group, content);
-                if (!existInNacos) {
+
+                if (nacosConfigService.getConfig(dataId, group, 1000).isEmpty()) {
                     Loggers.MAIN.info("find config missed");
-                    coreV1Api.createNamespacedConfigMap("your-namespace", configMap, null, null, null);
+                    coreV1Api.createNamespacedConfigMap("default", configMap, null, null, null);
                 }
             }
         } catch (Exception e) {
