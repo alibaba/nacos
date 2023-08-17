@@ -19,21 +19,17 @@ package com.alibaba.nacos.core.remote.grpc;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
-import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.HealthCheckRequestHandler;
-import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mockStatic;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -45,13 +41,13 @@ public class RemoteParamCheckFilterTest {
     private static MockedStatic<EnvUtil> envUtilMockedStatic;
     
     @BeforeClass
-    public static void init(){
+    public static void init() {
         envUtilMockedStatic = mockStatic(EnvUtil.class);
         envUtilMockedStatic.when(
-                ()->EnvUtil.getProperty("nacos.core.param.check.enabled", Boolean.class, true))
+                        () -> EnvUtil.getProperty("nacos.core.param.check.enabled", Boolean.class, true))
                 .thenReturn(Boolean.TRUE);
         envUtilMockedStatic.when(
-                ()->EnvUtil.getProperty("nacos.core.param.check.checker", String.class, "default")
+                () -> EnvUtil.getProperty("nacos.core.param.check.checker", String.class, "default")
         ).thenReturn("default");
         remoteParamCheckFilter = new RemoteParamCheckFilter();
         
@@ -60,7 +56,7 @@ public class RemoteParamCheckFilterTest {
     
     @Test
     public void filter() {
-        InstanceRequest  instanceRequest = new InstanceRequest();
+        InstanceRequest instanceRequest = new InstanceRequest();
         Instance instance = new Instance();
         instance.setIp("11.11.11.11");
         instance.setPort(-1);
@@ -70,19 +66,19 @@ public class RemoteParamCheckFilterTest {
         instanceRequest.setServiceName("test");
         Response response = null;
         try {
-            response = remoteParamCheckFilter.filter(instanceRequest,new RequestMeta(), HealthCheckRequestHandler.class);
-        }catch (Exception e){
+            response = remoteParamCheckFilter.filter(instanceRequest, new RequestMeta(), HealthCheckRequestHandler.class);
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        assertEquals(response.getMessage(),"Tps Flow restricted:Param 'port' is illegal, the value should be between 0 and 65535");
+        assertEquals(response.getMessage(), "Tps Flow restricted:Param 'port' is illegal, the value should be between 0 and 65535");
         
         BatchInstanceRequest batchInstanceRequest = new BatchInstanceRequest();
         batchInstanceRequest.setServiceName("test@@@@");
         try {
-            response = remoteParamCheckFilter.filter(batchInstanceRequest,new RequestMeta(), HealthCheckRequestHandler.class);
-        }catch (Exception e){
+            response = remoteParamCheckFilter.filter(batchInstanceRequest, new RequestMeta(), HealthCheckRequestHandler.class);
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        assertEquals(response.getMessage(),"Tps Flow restricted:Param 'serviceName' is illegal, illegal characters should not appear in the param.");
+        assertEquals(response.getMessage(), "Tps Flow restricted:Param 'serviceName' is illegal, illegal characters should not appear in the param.");
     }
 }
