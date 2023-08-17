@@ -21,7 +21,10 @@ import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 public class InstancesDiffTest {
     @Test
@@ -43,9 +46,72 @@ public class InstancesDiffTest {
         instancesDiff.setModifiedInstances(Collections.singletonList(modifiedIns));
 
         Assert.assertTrue(instancesDiff.hasDifferent());
+        Assert.assertTrue(instancesDiff.isAdded());
+        Assert.assertTrue(instancesDiff.isRemoved());
+        Assert.assertTrue(instancesDiff.isModified());
         Assert.assertEquals(addedIns, instancesDiff.getAddedInstances().get(0));
         Assert.assertEquals(removedIns, instancesDiff.getRemovedInstances().get(0));
         Assert.assertEquals(modifiedIns, instancesDiff.getModifiedInstances().get(0));
+    }
 
+    @Test
+    public void testWithFullConstructor() {
+        Random random = new Random();
+        int addedCount = random.nextInt(32) + 1;
+        int removedCount = random.nextInt(32) + 1;
+        int modifiedCount = random.nextInt(32) + 1;
+        InstancesDiff instancesDiff = new InstancesDiff(
+                getInstanceList(addedCount),
+                getInstanceList(removedCount),
+                getInstanceList(modifiedCount)
+        );
+
+        Assert.assertTrue(instancesDiff.hasDifferent());
+        Assert.assertTrue(instancesDiff.isAdded());
+        Assert.assertTrue(instancesDiff.isRemoved());
+        Assert.assertTrue(instancesDiff.isModified());
+        Assert.assertEquals(addedCount, instancesDiff.getAddedInstances().size());
+        Assert.assertEquals(removedCount, instancesDiff.getRemovedInstances().size());
+        Assert.assertEquals(modifiedCount, instancesDiff.getModifiedInstances().size());
+        instancesDiff.getAddedInstances().clear();
+        instancesDiff.getRemovedInstances().clear();
+        instancesDiff.getModifiedInstances().clear();
+        Assert.assertFalse(instancesDiff.hasDifferent());
+        Assert.assertFalse(instancesDiff.hasDifferent());
+        Assert.assertFalse(instancesDiff.isAdded());
+        Assert.assertFalse(instancesDiff.isRemoved());
+        Assert.assertFalse(instancesDiff.isModified());
+    }
+
+    @Test
+    public void testWithNoConstructor() {
+        Random random = new Random();
+        int addedCount = random.nextInt(32) + 1;
+        int removedCount = random.nextInt(32) + 1;
+        int modifiedCount = random.nextInt(32) + 1;
+        InstancesDiff instancesDiff = new InstancesDiff();
+        instancesDiff.setAddedInstances(getInstanceList(addedCount));
+        instancesDiff.setRemovedInstances(getInstanceList(removedCount));
+        instancesDiff.setModifiedInstances(getInstanceList(modifiedCount));
+
+        Assert.assertTrue(instancesDiff.hasDifferent());
+        Assert.assertEquals(addedCount, instancesDiff.getAddedInstances().size());
+        Assert.assertEquals(removedCount, instancesDiff.getRemovedInstances().size());
+        Assert.assertEquals(modifiedCount, instancesDiff.getModifiedInstances().size());
+        instancesDiff.getAddedInstances().clear();
+        instancesDiff.getRemovedInstances().clear();
+        instancesDiff.getModifiedInstances().clear();
+        Assert.assertFalse(instancesDiff.hasDifferent());
+        Assert.assertFalse(instancesDiff.isAdded());
+        Assert.assertFalse(instancesDiff.isRemoved());
+        Assert.assertFalse(instancesDiff.isModified());
+    }
+
+    private static List<Instance> getInstanceList(int count) {
+        ArrayList<Instance> list = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            list.add(new Instance());
+        }
+        return list;
     }
 }
