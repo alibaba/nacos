@@ -19,12 +19,11 @@
 package com.alibaba.nacos.config.server.service.kubernetes;
 
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
@@ -32,40 +31,108 @@ import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.Yaml;
+import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.Map;
 
 @Service
-public class KubernetesConfigMapSyncService {
+public class KubernetesConfigMapSyncServer {
     
     private static final Gson gson = new Gson();
     
-    @Value("${nacos.k8s.configMap.enabled:false}")
-    private boolean enabled = true;
+    private boolean isRunning;
     
-    @Value("${nacos.k8s.configMap.responsible:true")
-    private boolean responsible = false;
+    private SharedInformerFactory factory;
+    
+    @Autowired
+    private ConfigMapSyncConfig configMapSyncConfig;
+    
+    @Autowired
+    private ConfigOperationService configOperationService;
     
     @Autowired
     @Qualifier("embeddedConfigInfoPersistServiceImpl")
     private ConfigInfoPersistService configInfoPersistService;
     
-    private ApiClient apiClient;
+    public void start() {
+        if (!configMapSyncConfig.isEnabled()) {
+            Loggers.MAIN.info("The configMap-sync is disabled.");
+            return;
+        }
+        Loggers.MAIN.info("Starting configMap-sync ...");
+        startWatchConfigMap();
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                Loggers.MAIN.info("Stopping configMap-sync ...");
+                KubernetesConfigMapSyncServer.this.stop();
+                Loggers.MAIN.info("ConfigMap-sync stopped...");
+            }
+        });
+    }
     
-    private boolean isRunning;
+    
+    public void startWatchConfigMap() {
+        CoreV1Api coreV1Api = new CoreV1Api();
+        ApiClient apiClient = coreV1Api.getApiClient();
+        OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().build();
+        apiClient.setHttpClient(httpClient);
+        factory = new SharedInformerFactory(apiClient);
+        SharedIndexInformer<V1ConfigMap> configInformer = factory.sharedIndexInformerFor((CallGeneratorParams params) -> {
+            return coreV1Api.listConfigMapForAllNamespacesCall(true, null, null, null, null, null,
+                    params.resourceVersion, null, params.timeoutSeconds, params.watch, null);
+        }, V1ConfigMap.class, V1ConfigMapList.class);
+        configInformer.addEventHandler(new ResourceEventHandler<V1ConfigMap>() {
+            @Override
+            public void onAdd(V1ConfigMap obj) {
+                if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
+                    return;
+                }
+                Loggers.MAIN.info("Add configMap ");
+                ConfigInfo configInfo = configMapToNacosConfigInfo(obj);
+                String srcIp = apiClient.getBasePath();
+                configInfoPersistService.addConfigInfo(srcIp, "configmap/k8s", configInfo, null);
+            }
+            
+            @Override
+            public void onUpdate(V1ConfigMap oldObj, V1ConfigMap newObj) {
+                Loggers.MAIN.info(
+                        "Update configMap " + oldObj.getMetadata().getName() + " to " + newObj.getMetadata().getName());
+                compareConfigMaps(oldObj, newObj);
+                ConfigInfo configInfo = configMapToNacosConfigInfo(newObj);
+                String srcUser = apiClient.getBasePath();
+                configInfoPersistService.updateConfigInfo(configInfo, "configmap/k8s", srcUser, null);
+            }
+            
+            @Override
+            public void onDelete(V1ConfigMap obj, boolean deletedFinalStateUnknown) {
+                if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
+                    return;
+                }
+                Loggers.MAIN.info("Delete configMap " + obj.getMetadata().getName());
+                String dataId = obj.getMetadata().getName();
+                String tenant = obj.getMetadata().getNamespace();
+                String srcIp = apiClient.getBasePath();
+                configInfoPersistService.removeConfigInfo(dataId, "K8S_GROUP", tenant, srcIp, "configmap/k8s");
+            }
+            
+            private String convertToYaml(Object kubernetesResource) {
+                return Yaml.dump(kubernetesResource);
+            }
+        });
+        // 启动SharedInformerFactory在后台运行事件监听器
+        factory.startAllRegisteredInformers();
+    }
     
     
-    public KubernetesConfigMapSyncService(ConfigInfoPersistService configInfoPersistService) {
+    public KubernetesConfigMapSyncServer(ConfigInfoPersistService configInfoPersistService) {
         this.configInfoPersistService = configInfoPersistService;
         enabled = Boolean.parseBoolean(System.getProperty("nacos.k8s.configMap.enabled"));
         // If sync is turned on, continue execution.
@@ -94,56 +161,6 @@ public class KubernetesConfigMapSyncService {
         }
     }
     
-    private void watchConfigMap() {
-        SharedInformerFactory factory = new SharedInformerFactory(apiClient);
-        CoreV1Api coreV1Api = new CoreV1Api();
-        SharedIndexInformer<V1ConfigMap> nodeInformer = factory.sharedIndexInformerFor((CallGeneratorParams params) -> {
-            return coreV1Api.listConfigMapForAllNamespacesCall(true, null, null, null, null, null,
-                    params.resourceVersion, null, params.timeoutSeconds, params.watch, null);
-        }, V1ConfigMap.class, V1ConfigMapList.class);
-        nodeInformer.addEventHandler(new ResourceEventHandler<V1ConfigMap>() {
-            @Override
-            public void onAdd(V1ConfigMap obj) {
-                if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
-                    return;
-                }
-                Loggers.MAIN.info("Add configMap ");
-                ConfigInfo configInfo = configMapToNacosConfigInfo(obj);
-                String srcIp = apiClient.getBasePath();
-                configInfoPersistService.addConfigInfo(srcIp, "configmap/k8s", configInfo, null);
-            }
-            
-            @Override
-            public void onUpdate(V1ConfigMap oldObj, V1ConfigMap newObj) {
-                Loggers.MAIN.info(
-                        "Update configMap " + oldObj.getMetadata().getName() + " to " + newObj.getMetadata().getName());
-                compareConfigMaps(oldObj, newObj);
-                ConfigInfo configInfo = configMapToNacosConfigInfo(newObj);
-                String srcIp = apiClient.getBasePath();
-                configInfoPersistService.updateConfigInfo(configInfo, "configmap/k8s", srcIp, null);
-            }
-            
-            @Override
-            public void onDelete(V1ConfigMap obj, boolean deletedFinalStateUnknown) {
-                if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
-                    return;
-                }
-                Loggers.MAIN.info("Delete configMap " + obj.getMetadata().getName());
-                String dataId = obj.getMetadata().getName();
-                String tenant = obj.getMetadata().getNamespace();
-                String srcIp = apiClient.getBasePath();
-                configInfoPersistService.removeConfigInfo(dataId, "K8S_GROUP", tenant, srcIp, "configmap/k8s");
-            }
-            
-            private String convertToYaml(Object kubernetesResource) {
-                return Yaml.dump(kubernetesResource);
-            }
-        });
-        // Synchronize initialization data to config
-        // 启动SharedInformerFactory在后台运行事件监听器
-        factory.startAllRegisteredInformers();
-        
-    }
     
     private void compareConfigMaps(V1ConfigMap previousConfigMap, V1ConfigMap currentConfigMap) {
         // 将先前的 ConfigMap 和当前的 ConfigMap 转换成 JSON 字符串
@@ -183,7 +200,7 @@ public class KubernetesConfigMapSyncService {
         }
     }
     
-    private ConfigInfo configMapToNacosConfigInfo(V1ConfigMap configMap) {
+    public ConfigInfo configMapToNacosConfigInfo(V1ConfigMap configMap) {
         Loggers.MAIN.info("Converting configMap to nacos ConfigInfo...");
         String dataId = configMap.getMetadata().getName();
         String group = "K8S_GROUP";
@@ -205,5 +222,11 @@ public class KubernetesConfigMapSyncService {
     
     public boolean isRunning() {
         return isRunning;
+    }
+    
+    public void stop() {
+        if (factory != null) {
+            factory.stopAllRegisteredInformers();
+        }
     }
 }

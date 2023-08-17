@@ -21,12 +21,13 @@ package com.alibaba.nacos.config.server.service.kubernetes;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -42,6 +43,12 @@ public class ConfigMapSyncTask {
     private final ApiClient apiClient;
     
     private final ConfigService nacosConfigService;
+    
+    @Autowired
+    public KubernetesConfigMapSyncServer kubernetesConfigMapSyncServer;
+    
+    @Autowired
+    public ConfigInfoPersistService configInfoPersistService;
     
     
     public ConfigMapSyncTask() throws IOException, NacosException {
@@ -65,7 +72,10 @@ public class ConfigMapSyncTask {
                 
                 if (nacosConfigService.getConfig(dataId, group, 1000).isEmpty()) {
                     Loggers.MAIN.info("find config missed");
-                    coreV1Api.createNamespacedConfigMap("default", configMap, null, null, null);
+                    ConfigInfo configInfo = kubernetesConfigMapSyncServer.configMapToNacosConfigInfo(configMap);
+                    configInfoPersistService.updateConfigInfo(configInfo, "configmap/k8s", apiClient.getBasePath(), null);
+                    nacosConfigService.publishConfig(dataId, group, content);
+                    //                    coreV1Api.createNamespacedConfigMap("default", configMap, null, null, null);
                 }
             }
         } catch (Exception e) {
