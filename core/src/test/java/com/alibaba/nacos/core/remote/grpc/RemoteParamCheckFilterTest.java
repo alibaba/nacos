@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.HealthCheckRequestHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -50,6 +51,11 @@ public class RemoteParamCheckFilterTest {
         ).thenReturn("default");
         remoteParamCheckFilter = new RemoteParamCheckFilter();
         
+    }
+    
+    @AfterClass
+    public static void close() {
+        envUtilMockedStatic.close();
     }
     
     @Test
