@@ -35,7 +35,6 @@ import static org.mockito.Mockito.mockStatic;
 @RunWith(SpringJUnit4ClassRunner.class)
 public class RemoteParamCheckFilterTest {
     
-    
     private static RemoteParamCheckFilter remoteParamCheckFilter;
     
     private static MockedStatic<EnvUtil> envUtilMockedStatic;
@@ -44,7 +43,7 @@ public class RemoteParamCheckFilterTest {
     public static void init() {
         envUtilMockedStatic = mockStatic(EnvUtil.class);
         envUtilMockedStatic.when(
-                        () -> EnvUtil.getProperty("nacos.core.param.check.enabled", Boolean.class, true))
+                () -> EnvUtil.getProperty("nacos.core.param.check.enabled", Boolean.class, true))
                 .thenReturn(Boolean.TRUE);
         envUtilMockedStatic.when(
                 () -> EnvUtil.getProperty("nacos.core.param.check.checker", String.class, "default")
@@ -53,14 +52,13 @@ public class RemoteParamCheckFilterTest {
         
     }
     
-    
     @Test
     public void filter() {
-        InstanceRequest instanceRequest = new InstanceRequest();
         Instance instance = new Instance();
         instance.setIp("11.11.11.11");
         instance.setPort(-1);
         instance.setServiceName("test");
+        InstanceRequest instanceRequest = new InstanceRequest();
         instanceRequest.setInstance(instance);
         instanceRequest.setNamespace("public");
         instanceRequest.setServiceName("test");
