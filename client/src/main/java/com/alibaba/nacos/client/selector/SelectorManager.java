@@ -19,8 +19,6 @@ package com.alibaba.nacos.client.selector;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -86,8 +84,8 @@ public class SelectorManager<S extends AbstractSelectorWrapper<?, ?, ?>> {
      *
      * @return all subscriptions
      */
-    public List<String> getSubscriptions() {
-        return new ArrayList<>(selectorMap.keySet());
+    public Set<String> getSubscriptions() {
+        return selectorMap.keySet();
     }
 
     /**
