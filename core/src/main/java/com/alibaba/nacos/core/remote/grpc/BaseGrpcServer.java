@@ -141,7 +141,6 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     protected List<ServerInterceptor> getSeverInterceptors() {
         List<ServerInterceptor> result = new LinkedList<>();
         result.add(new GrpcConnectionInterceptor());
-        result.add(new GrpcServerParamCheckInterceptor());
         return result;
     }
     
