@@ -19,13 +19,15 @@
 package com.alibaba.nacos.config.server.service.kubernetes;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ConfigMapSyncConfig {
     
     @Value("${nacos.k8s.configMap.enabled:false}")
     private boolean enabled;
     
-    @Value("${nacos.k8s.configMap.responsible:false}")
+    @Value("${nacos.k8s.configMap.responsible:true}")
     private boolean responsible;
     
     @Value("${nacos.k8s.configMap.outSideCluster:false}")
@@ -33,6 +35,10 @@ public class ConfigMapSyncConfig {
     
     @Value("${nacos.k8s.configMap.kubeConfig:}")
     private String kubeConfig;
+    
+    public static final String K8S_GROUP = "K8S_GROUP";
+    
+    public static final String SRC_USER = "configMap/k8s";
     
     public boolean isEnabled() {
         return enabled;

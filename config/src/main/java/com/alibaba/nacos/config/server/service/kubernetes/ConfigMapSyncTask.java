@@ -55,7 +55,7 @@ public class ConfigMapSyncTask {
         this.apiClient = Config.defaultClient();
         Configuration.setDefaultApiClient(apiClient);
         coreV1Api = new CoreV1Api();
-        
+        // TODO 明确serverAddr
         nacosConfigService = NacosFactory.createConfigService("TODO");
     }
     
