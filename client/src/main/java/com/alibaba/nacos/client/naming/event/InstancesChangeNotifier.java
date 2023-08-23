@@ -29,7 +29,9 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A subscriber to notify eventListener callback.
@@ -42,6 +44,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     private final String eventScope;
 
     private final SelectorManager<NamingSelectorWrapper> selectorManager = new SelectorManager<>();
+
+    private final Map<String, InstancesChangeEvent> eventCache = new ConcurrentHashMap<>();
 
     @JustForTest
     public InstancesChangeNotifier() {
@@ -65,7 +69,9 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
             return;
         }
         String subId = NamingUtils.getGroupedName(serviceName, groupName);
-        selectorManager.addSelectorWrapper(subId, wrap(selector, listener));
+        NamingSelectorWrapper wrapper = wrap(selector, listener);
+        selectorManager.addSelectorWrapper(subId, wrapper);
+        notifyIfCached(subId, wrapper);
     }
 
     /**
@@ -82,6 +88,9 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         }
         String subId = NamingUtils.getGroupedName(serviceName, groupName);
         selectorManager.removeSelectorWrapper(subId, wrap(selector, listener));
+        if (!isSubscribed(groupName, serviceName)) {
+            eventCache.remove(subId);
+        }
     }
 
     /**
@@ -111,6 +120,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
         for (NamingSelectorWrapper selectorWrapper : selectorWrappers) {
             selectorWrapper.notifyListener(event);
         }
+        eventCache.put(subId, event);
     }
 
     @Override
@@ -121,6 +131,13 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     @Override
     public boolean scopeMatches(InstancesChangeEvent event) {
         return this.eventScope.equals(event.scope());
+    }
+
+    private void notifyIfCached(String subId, NamingSelectorWrapper wrapper) {
+        InstancesChangeEvent event = eventCache.get(subId);
+        if (event != null) {
+            wrapper.notifyListener(event);
+        }
     }
 
     private static NamingSelectorWrapper wrap(NamingSelector selector, EventListener listener) {
