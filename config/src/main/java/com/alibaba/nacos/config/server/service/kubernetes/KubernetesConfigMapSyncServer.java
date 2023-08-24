@@ -18,9 +18,6 @@
 
 package com.alibaba.nacos.config.server.service.kubernetes;
 
-import com.alibaba.nacos.api.NacosFactory;
-import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -29,7 +26,6 @@ import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -38,27 +34,32 @@ import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.util.CallGeneratorParams;
 import io.kubernetes.client.util.ClientBuilder;
-import io.kubernetes.client.util.Yaml;
+import io.kubernetes.client.util.KubeConfig;
 import okhttp3.OkHttpClient;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
-
 import javax.annotation.PostConstruct;
+import java.io.FileReader;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Map;
-import java.util.Properties;
 
+/**
+ * ConfigMap synchronization server.
+ *
+ * @author wangyixing
+ */
 @Service
 public class KubernetesConfigMapSyncServer {
     
-    private static final Gson gson = new Gson();
+    private Gson gson = new Gson();
     
     private boolean isRunning;
     
@@ -74,8 +75,11 @@ public class KubernetesConfigMapSyncServer {
     @Qualifier("embeddedConfigInfoPersistServiceImpl")
     private ConfigInfoPersistService configInfoPersistService;
     
+    /**
+     * start.
+     */
     @PostConstruct
-    public void start() {
+    public void start() throws IOException {
         if (!configMapSyncConfig.isEnabled()) {
             Loggers.MAIN.info("The configMap-sync is disabled.");
             return;
@@ -92,11 +96,34 @@ public class KubernetesConfigMapSyncServer {
         });
     }
     
+    /**
+     * use the Java API from an application outside a kubernetes cluster.
+     * you should load a kubeConfig to generate apiClient instead of getting it from coreV1api.
+     */
+    public ApiClient getOutsideApiClient() throws IOException {
+        String kubeConfigPath = configMapSyncConfig.getKubeConfig();
+        
+        // loading the out-of-cluster config, a kubeconfig from file-system
+        ApiClient apiClient = ClientBuilder.kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath))).build();
+        
+        // set the global default api-client to the in-cluster one from above
+        Configuration.setDefaultApiClient(apiClient);
+        return apiClient;
+    }
     
-    public void startWatchConfigMap() {
+    /**
+     *  Start watch ConfigMap.
+     */
+    public void startWatchConfigMap() throws IOException {
+        ApiClient apiClient;
         CoreV1Api coreV1Api = new CoreV1Api();
-        ApiClient apiClient = coreV1Api.getApiClient();
-        OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().build();
+        if (configMapSyncConfig.isOutsideCluster()) {
+            Loggers.MAIN.debug("Use outside cluster Apiclient.");
+            apiClient = getOutsideApiClient();
+        } else {
+            apiClient = coreV1Api.getApiClient();
+        }
+        OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().readTimeout(Duration.ZERO).build();
         apiClient.setHttpClient(httpClient);
         factory = new SharedInformerFactory(apiClient);
         SharedIndexInformer<V1ConfigMap> configInformer = factory.sharedIndexInformerFor(
@@ -150,7 +177,6 @@ public class KubernetesConfigMapSyncServer {
         factory.startAllRegisteredInformers();
     }
     
-    
     private void compareConfigMaps(V1ConfigMap previousConfigMap, V1ConfigMap currentConfigMap) {
         // 将先前的 ConfigMap 和当前的 ConfigMap 转换成 JSON 字符串
         String previousJson = gson.toJson(previousConfigMap);
@@ -170,6 +196,11 @@ public class KubernetesConfigMapSyncServer {
         }
     }
     
+    /**
+     * compare old and new ConfigMap.
+     * @param previousObj old ConfigMap
+     * @param currentObj new ConfigMap
+     */
     private void compareJsonObjects(JsonObject previousObj, JsonObject currentObj) {
         for (String key : previousObj.keySet()) {
             if (!currentObj.has(key)) {
@@ -189,6 +220,11 @@ public class KubernetesConfigMapSyncServer {
         }
     }
     
+    /**
+     * Convert ConfigMap to nacos ConfigInfo.
+     * @param configMap k8sConfigMap
+     * @return nacos configInfo
+     */
     public ConfigInfo configMapToNacosConfigInfo(V1ConfigMap configMap) {
         Loggers.MAIN.info("Converting configMap to nacos ConfigInfo...");
         String dataId = configMap.getMetadata().getName();
@@ -201,9 +237,15 @@ public class KubernetesConfigMapSyncServer {
         return new ConfigInfo(dataId, group, tenant, appName, content);
     }
     
+    /**
+     * publish ConfigMap.
+     * @param configMap k8sConfigMap
+     * @param srcIp source Ip
+     * @throws NacosException nacos exception
+     */
     public void publishConfigMap(V1ConfigMap configMap, String srcIp) throws NacosException {
         Loggers.MAIN.info("Converting configMap to nacos ConfigForm...");
-        ConfigForm configForm = new ConfigForm();
+        final ConfigForm configForm = new ConfigForm();
         
         String namespaceId = configMap.getMetadata().getNamespace();
         String dataId = configMap.getMetadata().getName();
@@ -211,7 +253,7 @@ public class KubernetesConfigMapSyncServer {
         String group = ConfigMapSyncConfig.K8S_GROUP;
         Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
         content = pair.getSecond();
-        String encryptedDataKey = pair.getFirst();
+        final String encryptedDataKey = pair.getFirst();
         
         ParamUtils.checkTenant(namespaceId);
         ParamUtils.checkParam(dataId, group, "datumId", content);
@@ -228,6 +270,11 @@ public class KubernetesConfigMapSyncServer {
         configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKey);
     }
     
+    /**
+     * delete k8sConfigMap.
+     * @param configMap k8sConfigMap
+     * @param clientIp client Ip
+     */
     public void deleteConfigMap(V1ConfigMap configMap, String clientIp) {
         String dataId = configMap.getMetadata().getName();
         String group = ConfigMapSyncConfig.K8S_GROUP;
@@ -247,11 +294,13 @@ public class KubernetesConfigMapSyncServer {
         return contentBuilder.toString();
     }
     
-    
     public boolean isRunning() {
         return isRunning;
     }
     
+    /**
+     * stop.
+     */
     public void stop() {
         if (factory != null) {
             factory.stopAllRegisteredInformers();

@@ -21,20 +21,21 @@ package com.alibaba.nacos.config.server.service.kubernetes;
 import com.alibaba.nacos.api.NacosFactory;
 import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
-import io.kubernetes.client.util.Config;
-import org.springframework.beans.factory.annotation.Autowired;
+import okhttp3.OkHttpClient;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
+/**
+ * ConfigMap synchronization task.
+ *
+ * @author wangyixing
+ */
 @Component
 public class ConfigMapSyncTask {
     
@@ -44,23 +45,18 @@ public class ConfigMapSyncTask {
     
     private final ConfigService nacosConfigService;
     
-    @Autowired
-    public KubernetesConfigMapSyncServer kubernetesConfigMapSyncServer;
-    
-    @Autowired
-    public ConfigInfoPersistService configInfoPersistService;
-    
-    
     public ConfigMapSyncTask() throws IOException, NacosException {
-        this.apiClient = Config.defaultClient();
-        Configuration.setDefaultApiClient(apiClient);
         coreV1Api = new CoreV1Api();
-        // TODO 明确serverAddr
-        nacosConfigService = NacosFactory.createConfigService("TODO");
+        apiClient = coreV1Api.getApiClient();
+        OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().build();
+        apiClient.setHttpClient(httpClient);
+        nacosConfigService = NacosFactory.createConfigService(apiClient.getBasePath());
     }
     
-    // 每小时从k8s中list所有的configmaps, 如果nacos中没有则添加
-    @Scheduled(fixedDelay = 3600000) // 每小时对帐
+    /**
+     * Checks and synchronizes configuration maps.
+     */
+    @Scheduled(fixedDelay = 3600000)
     public void checkAndSyncConfigMaps() {
         try {
             V1ConfigMapList configMapList = (V1ConfigMapList) coreV1Api.listConfigMapForAllNamespacesCall(null, null,
@@ -69,13 +65,9 @@ public class ConfigMapSyncTask {
                 String dataId = configMap.getMetadata().getName();
                 String group = "K8S_GROUP";
                 String content = configMap.getData().toString();
-                
                 if (nacosConfigService.getConfig(dataId, group, 1000).isEmpty()) {
-                    Loggers.MAIN.info("find config missed");
-                    ConfigInfo configInfo = kubernetesConfigMapSyncServer.configMapToNacosConfigInfo(configMap);
-                    configInfoPersistService.updateConfigInfo(configInfo, "configmap/k8s", apiClient.getBasePath(), null);
+                    Loggers.MAIN.info("find config missed.");
                     nacosConfigService.publishConfig(dataId, group, content);
-                    //                    coreV1Api.createNamespacedConfigMap("default", configMap, null, null, null);
                 }
             }
         } catch (Exception e) {

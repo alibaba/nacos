@@ -21,13 +21,18 @@ package com.alibaba.nacos.config.server.service.kubernetes;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+/**
+ * ConfigMap synchronization configuration.
+ *
+ * @author wangyixing
+ */
 @Component
 public class ConfigMapSyncConfig {
     
     @Value("${nacos.k8s.configMap.enabled:false}")
     private boolean enabled;
     
-    @Value("${nacos.k8s.configMap.responsible:true}")
+    @Value("${nacos.k8s.configMap.responsible:false}")
     private boolean responsible;
     
     @Value("${nacos.k8s.configMap.outSideCluster:false}")
