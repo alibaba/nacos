@@ -37,20 +37,20 @@ public class ConfigMetrics {
     
     private static final String DEFAULT_METER_NAME = "nacos.monitor";
     
-    private static final String TIMER_METER_NAME = "nacos.client.naming.cache";
+    private static final String TIMER_METER_NAME = "nacos.client.config.timer";
     
-    private static final String COUNTER_METER_NAME = "nacos.client.naming.gauge";
+    private static final String COUNTER_METER_NAME = "nacos.client.config.counter";
     
     /**
-     * This property aims to control which module (config or naming, here is config) is <b>not</b> monitored by
-     * Micrometer. It's default value is <b>true</b> so that users who want to monitor whole Nacos client can ignore
-     * this property and just only need to set <tt>nacos.metrics.enable</tt> in {@link MetricsMonitor}.
+     * Property {@value NACOS_CONFIG_METRICS_ENABLE_PROPERTY} aims to control which module (config or naming, here is
+     * config) is <b>not</b> monitored by Micrometer. It's default value is <b>true</b> so that users who want to
+     * monitor whole Nacos client can ignore this property and just only need to set <tt>nacos.metrics.enable</tt> in
+     * {@link MetricsMonitor}.
      */
-    private static final Boolean NACOS_CONFIG_METRICS_ENABLE = ConvertUtils.toBoolean(
-            NacosClientProperties.PROTOTYPE.getProperty(NACOS_CONFIG_METRICS_ENABLE_PROPERTY, "true"));
-    
     public static boolean isEnable() {
-        return NACOS_CONFIG_METRICS_ENABLE && MetricsMonitor.isEnable();
+        return ConvertUtils.toBoolean(
+                NacosClientProperties.PROTOTYPE.getProperty(NACOS_CONFIG_METRICS_ENABLE_PROPERTY, "true"))
+                && MetricsMonitor.isEnable();
     }
     
     // ------------------------ Gauges ------------------------
@@ -193,17 +193,17 @@ public class ConfigMetrics {
     /**
      * Record the notification time for a single config change on the client.
      *
-     * @param envName  client name
-     * @param dataId   config data id
-     * @param group    config group
-     * @param tenant   config tenant
-     * @param duration request duration, unit: ms
+     * @param clientName client name
+     * @param dataId     config data id
+     * @param group      config group
+     * @param tenant     config tenant
+     * @param duration   request duration, unit: ms
      */
-    public static void recordNotifyCostDurationTimer(String envName, String dataId, String group, String tenant,
+    public static void recordNotifyCostDurationTimer(String clientName, String dataId, String group, String tenant,
             long duration) {
         if (isEnable()) {
             MetricsMonitor.getNacosMeterRegistry().timer(TIMER_METER_NAME,
-                    Tags.of("module", METRIC_MODULE_NAME, "clientName", envName, "dataId", dataId, "group", group,
+                    Tags.of("module", METRIC_MODULE_NAME, "clientName", clientName, "dataId", dataId, "group", group,
                             "tenant", tenant, "name", "notifyCostDuration")).record(duration, TimeUnit.MILLISECONDS);
         }
     }
@@ -224,5 +224,23 @@ public class ConfigMetrics {
                                     currentServer, "rpcResultCode", rpcResultCode, "name", "rpcCostDuration"))
                     .record(duration, TimeUnit.MILLISECONDS);
         }
+    }
+    
+    // ------------------------ Others ------------------------
+    
+    public static String getMetricModuleName() {
+        return METRIC_MODULE_NAME;
+    }
+    
+    public static String getDefaultMeterName() {
+        return DEFAULT_METER_NAME;
+    }
+    
+    public static String getTimerMeterName() {
+        return TIMER_METER_NAME;
+    }
+    
+    public static String getCounterMeterName() {
+        return COUNTER_METER_NAME;
     }
 }

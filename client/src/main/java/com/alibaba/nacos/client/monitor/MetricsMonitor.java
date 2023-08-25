@@ -51,25 +51,16 @@ public class MetricsMonitor {
     
     private static final String NACOS_OTEL_DEFAULT_ENDPOINT = "http://localhost:4318/v1/metrics";
     
-    private static final Boolean NACOS_METRICS_ENABLE = ConvertUtils.toBoolean(
-            NacosClientProperties.PROTOTYPE.getProperty(NACOS_METRICS_ENABLE_PROPERTY, "false"));
-    
     /**
-     * Whether to enable OpenTelemetry metrics exporter. Default is false. Once enabled, Micrometer will keep trying
-     * connecting to the OpenTelemetry collector, even if the collector is not available.
+     * Initialize the Micrometer registry.
      */
-    private static final Boolean NACOS_OTEL_ENABLE = ConvertUtils.toBoolean(
-            NacosClientProperties.PROTOTYPE.getProperty(NACOS_OTEL_ENABLE_PROPERTY, "false"));
-    
-    static {
+    public static void init() {
         if (isEnable()) {
             CompositeMeterRegistry nacosMeterRegistry = NACOS_METER_REGISTRY;
             
-            nacosMeterRegistry.config().commonTags("nacos.client.version", VersionUtils.getFullClientVersion());
-            
             // OpenTelemetry metrics exporter
-            if (NACOS_OTEL_ENABLE) {
-                nacosMeterRegistry.add(new OtlpMeterRegistry(new OtlpConfig() {
+            if (isOtelEnable()) {
+                OtlpMeterRegistry otlpMeterRegistry = new OtlpMeterRegistry(new OtlpConfig() {
                     
                     @Override
                     public String get(final @NonNull String key) {
@@ -83,12 +74,20 @@ public class MetricsMonitor {
                                 NacosClientProperties.PROTOTYPE.getProperty(NACOS_OTEL_ENDPOINT_PROPERTY));
                         return url == null ? NACOS_OTEL_DEFAULT_ENDPOINT : url;
                     }
-                }, Clock.SYSTEM));
+                }, Clock.SYSTEM);
+                otlpMeterRegistry.config().commonTags("nacos.client.version", VersionUtils.getFullClientVersion());
+                nacosMeterRegistry.add(otlpMeterRegistry);
             }
             
             // Prometheus metrics exporter
-            nacosMeterRegistry.add(new PrometheusMeterRegistry(PrometheusConfig.DEFAULT));
+            PrometheusMeterRegistry prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+            prometheusMeterRegistry.config().commonTags("nacos.client.version", VersionUtils.getFullClientVersion());
+            nacosMeterRegistry.add(prometheusMeterRegistry);
         }
+    }
+    
+    static {
+        init();
     }
     
     /**
@@ -100,10 +99,37 @@ public class MetricsMonitor {
      * @return true if the monitor of metrics is enabled, otherwise false.
      */
     public static boolean isEnable() {
-        return NACOS_METRICS_ENABLE;
+        return ConvertUtils.toBoolean(
+                NacosClientProperties.PROTOTYPE.getProperty(NACOS_METRICS_ENABLE_PROPERTY, "false"));
+    }
+    
+    /**
+     * Whether to enable OpenTelemetry metrics exporter. Default is false. Once enabled, Micrometer will keep trying
+     * connecting to the OpenTelemetry collector, even if the collector is not available.
+     *
+     * @return true if the OpenTelemetry metrics exporter is enabled, otherwise false.
+     */
+    public static boolean isOtelEnable() {
+        return ConvertUtils.toBoolean(NacosClientProperties.PROTOTYPE.getProperty(NACOS_OTEL_ENABLE_PROPERTY, "false"));
     }
     
     public static CompositeMeterRegistry getNacosMeterRegistry() {
         return NACOS_METER_REGISTRY;
+    }
+    
+    public static String getNacosMetricsEnableProperty() {
+        return NACOS_METRICS_ENABLE_PROPERTY;
+    }
+    
+    public static String getNacosOtelEnableProperty() {
+        return NACOS_OTEL_ENABLE_PROPERTY;
+    }
+    
+    public static String getNacosOtelEndpointProperty() {
+        return NACOS_OTEL_ENDPOINT_PROPERTY;
+    }
+    
+    public static String getNacosOtelDefaultEndpoint() {
+        return NACOS_OTEL_DEFAULT_ENDPOINT;
     }
 }

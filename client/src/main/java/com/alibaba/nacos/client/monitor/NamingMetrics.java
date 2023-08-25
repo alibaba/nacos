@@ -42,16 +42,18 @@ public class NamingMetrics {
     
     private static final String COMMON_METER_NAME = "nacos.client.naming.common";
     
-    /**
-     * This property aims to control which module (config or naming, here is naming) is <b>not</b> monitored by
-     * Micrometer. It's default value is <b>true</b> so that users who want to monitor whole Nacos client can ignore
-     * this property and just only need to set <tt>nacos.metrics.enable</tt> in {@link MetricsMonitor}.
-     */
-    private static final Boolean NACOS_NAMING_METRICS_ENABLE = ConvertUtils.toBoolean(
-            NacosClientProperties.PROTOTYPE.getProperty(NACOS_NAMING_METRICS_ENABLE_PROPERTY, "true"));
+    private static final String TIMER_METRIC_NAME = "nacos.client.naming.timer";
     
+    /**
+     * Property {@value NACOS_NAMING_METRICS_ENABLE_PROPERTY} aims to control which module (config or naming, here is
+     * naming) is <b>not</b> monitored by Micrometer. It's default value is <b>true</b> so that users who want to
+     * monitor whole Nacos client can ignore this property and just only need to set <tt>nacos.metrics.enable</tt> in
+     * {@link MetricsMonitor}.
+     */
     public static boolean isEnable() {
-        return NACOS_NAMING_METRICS_ENABLE && MetricsMonitor.isEnable();
+        return ConvertUtils.toBoolean(
+                NacosClientProperties.PROTOTYPE.getProperty(NACOS_NAMING_METRICS_ENABLE_PROPERTY, "true"))
+                && MetricsMonitor.isEnable();
     }
     
     // ------------------------ Gauges ------------------------
@@ -139,7 +141,7 @@ public class NamingMetrics {
      */
     public static void recordNamingRequestTimer(String method, String url, String code, long duration) {
         if (isEnable()) {
-            MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.request",
+            MetricsMonitor.getNacosMeterRegistry().timer(TIMER_METRIC_NAME,
                     Tags.of("module", METRIC_MODULE_NAME, "method", method, "url", url, "code", code, "name",
                             "namingRequest")).record(duration, TimeUnit.MILLISECONDS);
         }
@@ -156,7 +158,7 @@ public class NamingMetrics {
     public static void recordRpcCostDurationTimer(String connectionType, String currentServer, String rpcResultCode,
             long duration) {
         if (isEnable()) {
-            MetricsMonitor.getNacosMeterRegistry().timer("nacos.client.naming.timer",
+            MetricsMonitor.getNacosMeterRegistry().timer(TIMER_METRIC_NAME,
                             Tags.of("module", METRIC_MODULE_NAME, "connectionType", connectionType, "currentServer",
                                     currentServer, "rpcResultCode", rpcResultCode, "name", "rpcCostDuration"))
                     .record(duration, TimeUnit.MILLISECONDS);
@@ -164,6 +166,10 @@ public class NamingMetrics {
     }
     
     // ------------------------ Others ------------------------
+    
+    public static String getMetricModuleName() {
+        return METRIC_MODULE_NAME;
+    }
     
     public static String getDefaultMeterName() {
         return DEFAULT_METER_NAME;
@@ -175,5 +181,9 @@ public class NamingMetrics {
     
     public static String getCommonMeterName() {
         return COMMON_METER_NAME;
+    }
+    
+    public static String getTimerMeterName() {
+        return TIMER_METRIC_NAME;
     }
 }
