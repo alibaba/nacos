@@ -43,6 +43,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.ConfigMetrics;
+import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
@@ -68,6 +69,9 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -1122,9 +1126,31 @@ public class ClientWorker implements Closeable {
                         "More than client-side current limit threshold");
             }
             
+            Response rpcResponse;
+            // Trace
+            Span span = TraceMonitor.getClientConfigRpcSpan();
             long start = System.currentTimeMillis();
-            Response rpcResponse = rpcClientInner.request(request, timeoutMills);
+            try (Scope ignored = span.makeCurrent()) {
+                rpcResponse = rpcClientInner.request(request, timeoutMills);
+                
+                if (rpcResponse.isSuccess()) {
+                    span.setStatus(StatusCode.OK);
+                }
+                
+                if (span.isRecording()) {
+                    span.setAttribute("connection.type", rpcClientInner.getConnectionType().getType());
+                    span.setAttribute("server.address", rpcClientInner.getCurrentServer().getAddress());
+                    span.setAttribute("response.code", String.valueOf(rpcResponse.getResultCode()));
+                }
+            } catch (NacosException e) {
+                span.recordException(e);
+                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                throw e;
+            } finally {
+                span.end();
+            }
             long cost = System.currentTimeMillis() - start;
+            // Metrics
             ConfigMetrics.recordRpcCostDurationTimer(rpcClientInner.getConnectionType().getType(),
                     rpcClientInner.getCurrentServer().getAddress(), String.valueOf(rpcResponse.getResultCode()), cost);
             

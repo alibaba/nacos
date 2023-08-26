@@ -18,8 +18,13 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.monitor.ConfigMetrics;
+import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.common.http.HttpRestResult;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
 
+import java.net.HttpURLConnection;
 import java.util.Date;
 import java.util.Map;
 
@@ -55,12 +60,26 @@ public class MetricsHttpAgent implements HttpAgent {
         Date start = new Date();
         String responseCode = DEFAULT_CODE;
         HttpRestResult<String> result;
-        try {
+        
+        Span span = TraceMonitor.getClientConfigHttpSpan(TraceMonitor.RestfulMethod.GET);
+        try (Scope ignored = span.makeCurrent()) {
             result = httpAgent.httpGet(path, headers, paramValues, encode, readTimeoutMs);
+            
+            if (isFail(result)) {
+                span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
+            } else {
+                span.setStatus(StatusCode.OK);
+            }
+            
             responseCode = String.valueOf(result.getCode());
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
         } finally {
             ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
                     System.currentTimeMillis() - start.getTime());
+            span.end();
         }
         
         return result;
@@ -72,12 +91,26 @@ public class MetricsHttpAgent implements HttpAgent {
         Date start = new Date();
         String responseCode = DEFAULT_CODE;
         HttpRestResult<String> result;
-        try {
+        
+        Span span = TraceMonitor.getClientConfigHttpSpan(TraceMonitor.RestfulMethod.POST);
+        try (Scope ignored = span.makeCurrent()) {
             result = httpAgent.httpPost(path, headers, paramValues, encode, readTimeoutMs);
+            
+            if (isFail(result)) {
+                span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
+            } else {
+                span.setStatus(StatusCode.OK);
+            }
+            
             responseCode = String.valueOf(result.getCode());
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
         } finally {
-            ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
+            ConfigMetrics.recordConfigRequestTimer(POST, path, responseCode,
                     System.currentTimeMillis() - start.getTime());
+            span.end();
         }
         
         return result;
@@ -89,12 +122,26 @@ public class MetricsHttpAgent implements HttpAgent {
         Date start = new Date();
         String responseCode = DEFAULT_CODE;
         HttpRestResult<String> result;
-        try {
+        
+        Span span = TraceMonitor.getClientConfigHttpSpan(TraceMonitor.RestfulMethod.DELETE);
+        try (Scope ignored = span.makeCurrent()) {
             result = httpAgent.httpDelete(path, headers, paramValues, encode, readTimeoutMs);
+            
+            if (isFail(result)) {
+                span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
+            } else {
+                span.setStatus(StatusCode.OK);
+            }
+            
             responseCode = String.valueOf(result.getCode());
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
         } finally {
-            ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
+            ConfigMetrics.recordConfigRequestTimer(DELETE, path, responseCode,
                     System.currentTimeMillis() - start.getTime());
+            span.end();
         }
         
         return result;
@@ -124,5 +171,13 @@ public class MetricsHttpAgent implements HttpAgent {
     public void shutdown() throws NacosException {
         httpAgent.shutdown();
     }
+    
+    private boolean isFail(HttpRestResult<String> result) {
+        return result.getCode() == HttpURLConnection.HTTP_INTERNAL_ERROR
+                || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
+                || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE
+                || result.getCode() == HttpURLConnection.HTTP_NOT_FOUND;
+    }
+    
 }
 
