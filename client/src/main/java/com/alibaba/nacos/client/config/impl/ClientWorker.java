@@ -775,7 +775,6 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void executeConfigListen() {
-            
             Map<String, List<CacheData>> listenCachesMap = new HashMap<>(16);
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<>(16);
             long now = System.currentTimeMillis();
@@ -783,7 +782,6 @@ public class ClientWorker implements Closeable {
             for (CacheData cache : cacheMap.get().values()) {
                 
                 synchronized (cache) {
-                    
                     //check local listeners consistent.
                     if (cache.isConsistentWithServer()) {
                         cache.checkListenerMd5();
@@ -791,32 +789,15 @@ public class ClientWorker implements Closeable {
                             continue;
                         }
                     }
-                    
-                    if (!cache.isDiscard()) {
-                        //get listen  config
-                        if (!cache.isUseLocalConfigInfo()) {
-                            List<CacheData> cacheDatas = listenCachesMap.get(String.valueOf(cache.getTaskId()));
-                            if (cacheDatas == null) {
-                                cacheDatas = new LinkedList<>();
-                                listenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
-                            }
-                            cacheDatas.add(cache);
-                            
-                        }
-                    } else if (cache.isDiscard() && CollectionUtils.isEmpty(cache.getListeners())) {
-                        
-                        if (!cache.isUseLocalConfigInfo()) {
-                            List<CacheData> cacheDatas = removeListenCachesMap.get(String.valueOf(cache.getTaskId()));
-                            if (cacheDatas == null) {
-                                cacheDatas = new LinkedList<>();
-                                removeListenCachesMap.put(String.valueOf(cache.getTaskId()), cacheDatas);
-                            }
-                            cacheDatas.add(cache);
-                            
+                    if (!cache.isUseLocalConfigInfo()) {
+                        String taskId = String.valueOf(cache.getTaskId());
+                        if (!cache.isDiscard() || CollectionUtils.isEmpty(cache.getListeners())) {
+                            listenCachesMap.computeIfAbsent(taskId, k -> new LinkedList<>()).add(cache);
+                        } else {
+                            removeListenCachesMap.computeIfAbsent(taskId, k -> new LinkedList<>()).add(cache);
                         }
                     }
                 }
-                
             }
             
             //execute check listen ,return true if has change keys.
