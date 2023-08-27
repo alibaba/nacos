@@ -31,6 +31,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.NamingMetrics;
+import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -50,6 +51,9 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
 import org.apache.http.HttpStatus;
 
 import java.util.Collections;
@@ -424,7 +428,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public String callServer(String api, Map<String, String> params, Map<String, String> body, String curServer,
             String method) throws NacosException {
         long start = System.currentTimeMillis();
-        long end = 0;
         String namespace = params.get(CommonParams.NAMESPACE_ID);
         String group = params.get(CommonParams.GROUP_NAME);
         String serviceName = params.get(CommonParams.SERVICE_NAME);
@@ -441,11 +444,34 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
         try {
-            HttpRestResult<String> restResult = nacosRestTemplate.exchangeForm(url, header,
-                    Query.newInstance().initParams(params), body, method, String.class);
-            end = System.currentTimeMillis();
             
-            NamingMetrics.recordNamingRequestTimer(method, url, String.valueOf(restResult.getCode()), end - start);
+            HttpRestResult<String> restResult;
+            Span span = TraceMonitor.getClientNamingHttpSpan(method);
+            try (Scope ignored = span.makeCurrent()) {
+                
+                restResult = nacosRestTemplate.exchangeForm(url, header, Query.newInstance().initParams(params), body,
+                        method, String.class);
+                
+                if (restResult.ok()) {
+                    span.setStatus(StatusCode.OK);
+                } else {
+                    span.setStatus(StatusCode.ERROR, String.valueOf(restResult.getCode()));
+                }
+                
+                if (span.isRecording()) {
+                    span.setAttribute("request.url", url);
+                    span.setAttribute("response.code", restResult.getCode());
+                }
+            } catch (Throwable e) {
+                span.recordException(e);
+                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                throw e;
+            } finally {
+                span.end();
+            }
+            
+            NamingMetrics.recordNamingRequestTimer(method, url, String.valueOf(restResult.getCode()),
+                    System.currentTimeMillis() - start);
             
             if (restResult.ok()) {
                 return restResult.getData();

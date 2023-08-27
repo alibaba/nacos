@@ -18,6 +18,7 @@
 
 package com.alibaba.nacos.client.monitor;
 
+import com.alibaba.nacos.common.utils.HttpMethod;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Timer;
 import org.junit.AfterClass;
@@ -109,7 +110,7 @@ public class NamingMetricsTest {
     @Test
     public void testNamingRequestTimer() {
         long testCase = 222L;
-        NamingMetrics.recordNamingRequestTimer("GET", "/testNamingRequest", "NA", testCase);
+        NamingMetrics.recordNamingRequestTimer(HttpMethod.GET, "/testNamingRequest", "NA", testCase);
         String meterName = NamingMetrics.getTimerMeterName();
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {

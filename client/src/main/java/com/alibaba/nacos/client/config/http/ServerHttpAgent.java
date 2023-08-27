@@ -31,6 +31,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.common.utils.HttpMethod;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
@@ -79,7 +80,7 @@ public class ServerHttpAgent implements HttpAgent {
                 Query query = Query.newInstance().initParams(paramValues);
                 
                 HttpRestResult<String> result;
-                Span span = TraceMonitor.getClientConfigHttpSpan(TraceMonitor.RestfulMethod.GET);
+                Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.GET);
                 try (Scope ignored = span.makeCurrent()) {
                     result = NACOS_RESTTEMPLATE.get(getUrl(currentServerAddr, path), httpConfig, newHeaders, query,
                             String.class);
@@ -106,7 +107,7 @@ public class ServerHttpAgent implements HttpAgent {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                             serverListMgr.getCurrentServerAddr(), result.getCode());
                 } else {
-                    ConfigMetrics.recordConfigRequestTimer("GET", getUrl(currentServerAddr, path),
+                    ConfigMetrics.recordConfigRequestTimer(HttpMethod.GET, getUrl(currentServerAddr, path),
                             String.valueOf(result.getCode()), System.currentTimeMillis() - startTime);
                     // Update the currently available server addr
                     serverListMgr.updateCurrentServerAddr(currentServerAddr);
@@ -159,7 +160,7 @@ public class ServerHttpAgent implements HttpAgent {
                 }
                 
                 HttpRestResult<String> result;
-                Span span = TraceMonitor.getClientConfigHttpSpan(TraceMonitor.RestfulMethod.POST);
+                Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.POST);
                 try (Scope ignored = span.makeCurrent()) {
                     result = NACOS_RESTTEMPLATE.postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders,
                             paramValues, String.class);
@@ -186,7 +187,7 @@ public class ServerHttpAgent implements HttpAgent {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", currentServerAddr,
                             result.getCode());
                 } else {
-                    ConfigMetrics.recordConfigRequestTimer("POST", getUrl(currentServerAddr, path),
+                    ConfigMetrics.recordConfigRequestTimer(HttpMethod.POST, getUrl(currentServerAddr, path),
                             String.valueOf(result.getCode()), System.currentTimeMillis() - startTime);
                     // Update the currently available server addr
                     serverListMgr.updateCurrentServerAddr(currentServerAddr);
@@ -239,7 +240,7 @@ public class ServerHttpAgent implements HttpAgent {
                 Query query = Query.newInstance().initParams(paramValues);
                 
                 HttpRestResult<String> result;
-                Span span = TraceMonitor.getClientConfigHttpSpan(TraceMonitor.RestfulMethod.DELETE);
+                Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.DELETE);
                 try (Scope ignored = span.makeCurrent()) {
                     result = NACOS_RESTTEMPLATE.delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, query,
                             String.class);
@@ -266,7 +267,7 @@ public class ServerHttpAgent implements HttpAgent {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
                             serverListMgr.getCurrentServerAddr(), result.getCode());
                 } else {
-                    ConfigMetrics.recordConfigRequestTimer("DELETE", getUrl(currentServerAddr, path),
+                    ConfigMetrics.recordConfigRequestTimer(HttpMethod.DELETE, getUrl(currentServerAddr, path),
                             String.valueOf(result.getCode()), System.currentTimeMillis() - startTime);
                     // Update the currently available server addr
                     serverListMgr.updateCurrentServerAddr(currentServerAddr);

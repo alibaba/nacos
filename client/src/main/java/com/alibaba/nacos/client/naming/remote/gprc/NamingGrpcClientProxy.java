@@ -42,6 +42,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.NamingMetrics;
+import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -59,6 +60,9 @@ import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -358,10 +362,37 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         try {
             request.putAllHeader(
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
-            
             long start = System.currentTimeMillis();
-            Response response =
-                    requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            
+            Response response;
+            Span span = TraceMonitor.getClientNamingRpcSpan();
+            try (Scope ignored = span.makeCurrent()) {
+                response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+                
+                if (responseClass.isAssignableFrom(response.getClass())) {
+                    if (ResponseCode.SUCCESS.getCode() == response.getResultCode()) {
+                        span.setStatus(StatusCode.OK);
+                    } else {
+                        span.setStatus(StatusCode.ERROR, String.valueOf(response.getResultCode()));
+                    }
+                } else {
+                    span.setStatus(StatusCode.ERROR, "Server return unexpected response");
+                }
+                
+                if (span.isRecording()) {
+                    span.setAttribute("connection.type", rpcClient.getConnectionType().getType());
+                    span.setAttribute("server.address", rpcClient.getCurrentServer().getAddress());
+                    span.setAttribute("response.code", String.valueOf(response.getResultCode()));
+                }
+                
+            } catch (NacosException e) {
+                span.recordException(e);
+                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                throw e;
+            } finally {
+                span.end();
+            }
+            
             NamingMetrics.recordRpcCostDurationTimer(rpcClient.getConnectionType().getType(),
                     rpcClient.getCurrentServer().getAddress(), String.valueOf(response.getResultCode()),
                     System.currentTimeMillis() - start);

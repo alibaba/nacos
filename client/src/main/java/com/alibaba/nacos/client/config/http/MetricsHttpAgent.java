@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.monitor.ConfigMetrics;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.utils.HttpMethod;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
@@ -61,7 +62,7 @@ public class MetricsHttpAgent implements HttpAgent {
         String responseCode = DEFAULT_CODE;
         HttpRestResult<String> result;
         
-        Span span = TraceMonitor.getClientConfigHttpSpan(TraceMonitor.RestfulMethod.GET);
+        Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.GET);
         try (Scope ignored = span.makeCurrent()) {
             result = httpAgent.httpGet(path, headers, paramValues, encode, readTimeoutMs);
             
@@ -77,10 +78,10 @@ public class MetricsHttpAgent implements HttpAgent {
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
-                    System.currentTimeMillis() - start.getTime());
             span.end();
         }
+        
+        ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode, System.currentTimeMillis() - start.getTime());
         
         return result;
     }
@@ -92,7 +93,7 @@ public class MetricsHttpAgent implements HttpAgent {
         String responseCode = DEFAULT_CODE;
         HttpRestResult<String> result;
         
-        Span span = TraceMonitor.getClientConfigHttpSpan(TraceMonitor.RestfulMethod.POST);
+        Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.POST);
         try (Scope ignored = span.makeCurrent()) {
             result = httpAgent.httpPost(path, headers, paramValues, encode, readTimeoutMs);
             
@@ -108,10 +109,11 @@ public class MetricsHttpAgent implements HttpAgent {
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            ConfigMetrics.recordConfigRequestTimer(POST, path, responseCode,
-                    System.currentTimeMillis() - start.getTime());
+            
             span.end();
         }
+        
+        ConfigMetrics.recordConfigRequestTimer(POST, path, responseCode, System.currentTimeMillis() - start.getTime());
         
         return result;
     }
@@ -123,7 +125,7 @@ public class MetricsHttpAgent implements HttpAgent {
         String responseCode = DEFAULT_CODE;
         HttpRestResult<String> result;
         
-        Span span = TraceMonitor.getClientConfigHttpSpan(TraceMonitor.RestfulMethod.DELETE);
+        Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.DELETE);
         try (Scope ignored = span.makeCurrent()) {
             result = httpAgent.httpDelete(path, headers, paramValues, encode, readTimeoutMs);
             
@@ -139,10 +141,11 @@ public class MetricsHttpAgent implements HttpAgent {
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            ConfigMetrics.recordConfigRequestTimer(DELETE, path, responseCode,
-                    System.currentTimeMillis() - start.getTime());
             span.end();
         }
+        
+        ConfigMetrics.recordConfigRequestTimer(DELETE, path, responseCode,
+                System.currentTimeMillis() - start.getTime());
         
         return result;
     }

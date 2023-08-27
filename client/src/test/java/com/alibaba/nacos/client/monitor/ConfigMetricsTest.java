@@ -18,6 +18,7 @@
 
 package com.alibaba.nacos.client.monitor;
 
+import com.alibaba.nacos.common.utils.HttpMethod;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Timer;
@@ -146,7 +147,7 @@ public class ConfigMetricsTest {
     @Test
     public void testConfigRequestTimer() {
         long testCase = 111L;
-        ConfigMetrics.recordConfigRequestTimer("GET", "/testConfigRequest", "NA", testCase);
+        ConfigMetrics.recordConfigRequestTimer(HttpMethod.GET, "/testConfigRequest", "NA", testCase);
         String meterName = ConfigMetrics.getTimerMeterName();
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
