@@ -463,20 +463,20 @@ public class ConfigCacheService {
         String switchContent = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = configInfoPersistService.findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
+                ConfigInfoBase config = configInfoPersistService.findConfigInfoBase(SwitchService.SWITCH_META_DATA_ID,
                         "DEFAULT_GROUP");
                 if (config != null) {
                     switchContent = config.getContent();
                 }
             } else {
-                switchContent = DiskUtil.getConfig(SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP",
+                switchContent = DiskUtil.getConfig(SwitchService.SWITCH_META_DATA_ID, "DEFAULT_GROUP",
                         StringUtils.EMPTY);
             }
             if (switchContent != null) {
                 SwitchService.load(switchContent);
             }
         } catch (IOException e) {
-            DUMP_LOG.error("reload fail:" + SwitchService.SWITCH_META_DATAID, e);
+            DUMP_LOG.error("reload fail:" + SwitchService.SWITCH_META_DATA_ID, e);
         }
     }
     

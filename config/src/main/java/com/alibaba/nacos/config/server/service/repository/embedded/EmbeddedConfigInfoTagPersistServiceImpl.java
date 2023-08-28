@@ -103,7 +103,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     }
     
     private ConfigOperateResult getTagOperateResult(String dataId, String group, String tenant, String tag) {
-        String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(tenant);
         
         ConfigInfoStateWrapper configInfo4Tag = this.findConfigInfo4TagState(dataId, group, tenantTmp, tag);
         if (configInfo4Tag == null) {
@@ -115,8 +115,8 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     
     @Override
     public ConfigOperateResult addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
         configInfo.setTenant(tenantTmp);
@@ -186,8 +186,8 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     
     @Override
     public ConfigOperateResult updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
         configInfo.setTenant(tenantTmp);
@@ -219,8 +219,8 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public ConfigOperateResult updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp,
             String srcUser) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
         configInfo.setTenant(tenantTmp);

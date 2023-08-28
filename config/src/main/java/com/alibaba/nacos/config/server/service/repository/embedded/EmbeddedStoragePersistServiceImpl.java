@@ -250,10 +250,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public void addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-        String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
-                : configInfo.getEncryptedDataKey();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
+        String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
         
         configInfo.setTenant(tenantTmp);
         try {
@@ -278,8 +277,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public void addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
         configInfo.setTenant(tenantTmp);
@@ -382,10 +381,9 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public void updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
             Timestamp time, boolean notify) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-        String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
-                : configInfo.getEncryptedDataKey();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
+        String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
         
         configInfo.setTenant(tenantTmp);
         try {
@@ -411,8 +409,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public boolean updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser,
             Timestamp time, boolean notify) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         
         configInfo.setTenant(tenantTmp);
         try {
@@ -453,8 +451,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public void updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser, Timestamp time,
             boolean notify) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
         configInfo.setTenant(tenantTmp);
@@ -482,8 +480,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public boolean updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp, String srcUser,
             Timestamp time, boolean notify) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
         
         configInfo.setTenant(tenantTmp);
@@ -1501,7 +1499,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
         final int startRow = (pageNo - 1) * pageSize;
-        final String sqlCountRows = configInfoAggrMapper.select(Arrays.asList("count(*)"),
+        final String sqlCountRows = configInfoAggrMapper.select(Collections.singletonList("count(*)"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
         
         MapperContext context = new MapperContext();
@@ -1512,10 +1510,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         context.setPageSize(pageSize);
         MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(context);
         String sqlFetchRows = mapperResult.getSql();
-        Object[] sqlFethcArgs = mapperResult.getParamList().toArray();
+        Object[] sqlFetchArgs = mapperResult.getParamList().toArray();
         
         PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
-        return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows, sqlFethcArgs,
+        return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows, sqlFetchArgs,
                 pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
     }
     
@@ -1527,7 +1525,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String sqlFetchRows = "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE ";
         StringBuilder where = new StringBuilder(" 1=1 ");
         // White list, please synchronize the condition is empty, there is no qualified configuration
-        if (configKeys.length == 0 && blacklist == false) {
+        if (configKeys.length == 0 && !blacklist) {
             Page<ConfigInfoAggr> page = new Page<>();
             page.setTotalCount(0);
             return page;
@@ -1704,10 +1702,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser,
             final ConfigInfo configInfo, final Timestamp time, Map<String, Object> configAdvanceInfo) {
-        final String appNameTmp =
-                StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        final String tenantTmp =
-                StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        final String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        final String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
@@ -1820,10 +1816,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, Map<String, Object> configAdvanceInfo) {
-        final String appNameTmp =
-                StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        final String tenantTmp =
-                StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        final String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        final String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
@@ -1847,10 +1841,8 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     private void updateConfigInfoAtomicCas(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             final Timestamp time, Map<String, Object> configAdvanceInfo) {
-        final String appNameTmp =
-                StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        final String tenantTmp =
-                StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        final String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        final String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
@@ -1961,11 +1953,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     @Override
     public void insertConfigHistoryAtomic(long configHistoryId, ConfigInfo configInfo, String srcIp, String srcUser,
             final Timestamp time, String ops) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-        String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
-                : configInfo.getEncryptedDataKey();
+        String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
         
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
@@ -2022,14 +2013,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResoure, final long time) {
+            String createResource, final long time) {
         
         TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper.insert(
                 Arrays.asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
                         "gmt_modified"));
-        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResoure, time, time};
+        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResource, time, time};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
@@ -2330,7 +2321,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         }
         TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_INFO);
-        String sql = tenantInfoMapper.count(Arrays.asList("tenant_id"));
+        String sql = tenantInfoMapper.count(Collections.singletonList("tenant_id"));
         Integer result = databaseOperate.queryOne(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {
             return 0;
