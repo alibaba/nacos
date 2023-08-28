@@ -107,9 +107,12 @@ public class ExternalUserPersistServiceImplTest {
     
     @Test
     public void testGetUsers() {
-        Page<User> users = externalUserPersistService.getUsers(1, 10, "nacos");
+        int pageNo = 1;
+        int pageSize = 10;
+        Page<User> users = externalUserPersistService.getUsers(pageNo, pageSize, "nacos");
         
         Assert.assertNotNull(users);
+        Assert.assertTrue(users.getPageItems().size() <= pageSize);
     }
     
     @Test
