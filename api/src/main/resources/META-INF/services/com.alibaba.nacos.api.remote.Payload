@@ -58,3 +58,5 @@ com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse
 com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse
 com.alibaba.nacos.api.naming.remote.response.ServiceListResponse
 com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse
+com.alibaba.nacos.api.lock.remote.request.LockOperationRequest
+com.alibaba.nacos.api.lock.remote.response.LockOperationResponse

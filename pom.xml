@@ -629,6 +629,7 @@
     
     <!-- Default dependencies in all subprojects -->
     <dependencies>
+        
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
@@ -737,6 +738,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-lock</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
