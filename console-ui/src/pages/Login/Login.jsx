@@ -21,7 +21,7 @@ import { withRouter } from 'react-router-dom';
 import './index.scss';
 import Header from '../../layouts/Header';
 import PropTypes from 'prop-types';
-import { login } from '../../reducers/base';
+import { login, guide, state } from '../../reducers/base';
 
 const FormItem = Form.Item;
 
@@ -37,6 +37,10 @@ class Login extends React.Component {
 
   constructor(props) {
     super(props);
+    this.state = {
+      consoleUiEnable: true,
+      guideMsg: '',
+    };
     this.field = new Field(this);
   }
 
@@ -45,7 +49,21 @@ class Login extends React.Component {
       const [baseUrl] = location.href.split('#');
       location.href = `${baseUrl}#/`;
     }
+    this.handleSearch();
   }
+
+  handleSearch = () => {
+    state().then(res => {
+      if (res?.console_ui_enabled === 'false') {
+        this.setState({ consoleUiEnable: true });
+        guide().then(res => {
+          this.setState({ guideMsg: res?.data });
+        });
+      } else {
+        this.setState({ consoleUiEnable: false });
+      }
+    });
+  };
 
   handleSubmit = () => {
     const { locale = {} } = this.props;
@@ -77,6 +95,7 @@ class Login extends React.Component {
 
   render() {
     const { locale = {} } = this.props;
+    const { consoleUiEnable, guideMsg } = this.state;
 
     return (
       <div className="home-page">
@@ -103,40 +122,47 @@ class Login extends React.Component {
               <div>{locale.internalSysTip1}</div>
               <div>{locale.internalSysTip2}</div>
             </div>
-            <Form className="login-form" field={this.field}>
-              <FormItem>
-                <Input
-                  {...this.field.init('username', {
-                    rules: [
-                      {
-                        required: true,
-                        message: locale.usernameRequired,
-                      },
-                    ],
-                  })}
-                  placeholder={locale.pleaseInputUsername}
-                  onKeyDown={this.onKeyDown}
-                />
-              </FormItem>
-              <FormItem>
-                <Input
-                  htmlType="password"
-                  placeholder={locale.pleaseInputPassword}
-                  {...this.field.init('password', {
-                    rules: [
-                      {
-                        required: true,
-                        message: locale.passwordRequired,
-                      },
-                    ],
-                  })}
-                  onKeyDown={this.onKeyDown}
-                />
-              </FormItem>
-              <FormItem label=" ">
-                <Form.Submit onClick={this.handleSubmit}>{locale.submit}</Form.Submit>
-              </FormItem>
-            </Form>
+            {!consoleUiEnable && (
+              <Form className="login-form" field={this.field}>
+                <FormItem>
+                  <Input
+                    {...this.field.init('username', {
+                      rules: [
+                        {
+                          required: true,
+                          message: locale.usernameRequired,
+                        },
+                      ],
+                    })}
+                    placeholder={locale.pleaseInputUsername}
+                    onKeyDown={this.onKeyDown}
+                  />
+                </FormItem>
+                <FormItem>
+                  <Input
+                    htmlType="password"
+                    placeholder={locale.pleaseInputPassword}
+                    {...this.field.init('password', {
+                      rules: [
+                        {
+                          required: true,
+                          message: locale.passwordRequired,
+                        },
+                      ],
+                    })}
+                    onKeyDown={this.onKeyDown}
+                  />
+                </FormItem>
+                <FormItem label=" ">
+                  <Form.Submit onClick={this.handleSubmit}>{locale.submit}</Form.Submit>
+                </FormItem>
+              </Form>
+            )}
+            {consoleUiEnable && (
+              <Message type="notice" style={{ marginTop: 30 }}>
+                <div dangerouslySetInnerHTML={{ __html: guideMsg }} />
+              </Message>
+            )}
           </Card>
         </section>
       </div>
