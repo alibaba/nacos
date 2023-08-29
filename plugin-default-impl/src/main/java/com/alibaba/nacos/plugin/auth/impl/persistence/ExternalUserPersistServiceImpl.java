@@ -131,9 +131,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         PaginationHelper<User> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM users ";
-        
         String sqlFetchRows = "SELECT username,password FROM users ";
-        
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
