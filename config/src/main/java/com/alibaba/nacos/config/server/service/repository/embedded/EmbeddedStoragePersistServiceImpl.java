@@ -1512,10 +1512,10 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         context.setPageSize(pageSize);
         MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(context);
         String sqlFetchRows = mapperResult.getSql();
-        Object[] sqlFethcArgs = mapperResult.getParamList().toArray();
+        Object[] sqlFetchArgs = mapperResult.getParamList().toArray();
         
         PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
-        return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows, sqlFethcArgs,
+        return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows, sqlFetchArgs,
                 pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
     }
     
@@ -1527,7 +1527,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         String sqlFetchRows = "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE ";
         StringBuilder where = new StringBuilder(" 1=1 ");
         // White list, please synchronize the condition is empty, there is no qualified configuration
-        if (configKeys.length == 0 && blacklist == false) {
+        if (configKeys.length == 0 && !blacklist) {
             Page<ConfigInfoAggr> page = new Page<>();
             page.setTotalCount(0);
             return page;
@@ -2022,14 +2022,14 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     
     @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResoure, final long time) {
+                                       String createResource, final long time) {
         
         TenantInfoMapper tenantInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper.insert(
                 Arrays.asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
                         "gmt_modified"));
-        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResoure, time, time};
+        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResource, time, time};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
