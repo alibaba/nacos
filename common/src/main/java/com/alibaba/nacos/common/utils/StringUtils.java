@@ -128,7 +128,30 @@ public class StringUtils {
     public static String defaultIfEmpty(String str, String defaultStr) {
         return isEmpty(str) ? defaultStr : str;
     }
-    
+
+    /**
+     * <p>Returns either the passed in CharSequence, or if the CharSequence is
+     * empty or {@code null} or whitespace only, the value of {@code defaultStr}.</p>
+     *
+     * @param str        the CharSequence to check, may be null, may be whitespace only
+     * @param defaultStr the default CharSequence to return if the input is empty ("") or {@code null}, may be null
+     * @return the passed in CharSequence, or the default
+     */
+    public static String defaultIfBlank(String str, String defaultStr) {
+        return isBlank(str) ? defaultStr : str;
+    }
+
+    /**
+     * <p>Returns either the passed in CharSequence, or if the CharSequence is
+     * empty or {@code null} or whitespace only, the value of {@code EmptyString}.</p>
+     *
+     * @param str        the CharSequence to check, may be null, may be whitespace only
+     * @return the passed in CharSequence, or the empty string
+     */
+    public static String defaultEmptyIfBlank(String str) {
+        return defaultIfBlank(str, EMPTY);
+    }
+
     /**
      * <p>Compares two CharSequences, returning {@code true} if they represent
      * equal sequences of characters.</p>
@@ -853,7 +876,7 @@ public class StringUtils {
     }
     
     /**
-     * Extract the filename from the given Java resource path, e.g. {@code "mypath/myfile.txt" &rarr; "myfile.txt"}.
+     * Extract the filename from the given Java resource path, e.g. {@code "myPath/myFile.txt" &rarr; "myFile.txt"}.
      *
      * @param path the file path (may be {@code null})
      * @return the extracted filename, or {@code null} if none
