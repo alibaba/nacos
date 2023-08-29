@@ -100,7 +100,7 @@ public abstract class GrpcClient extends RpcClient {
     public GrpcClient(Properties properties) {
         this(DefaultGrpcClientConfig.newBuilder().fromProperties(properties).build());
     }
-
+    
     /**
      * constructor.
      *
@@ -110,7 +110,7 @@ public abstract class GrpcClient extends RpcClient {
         super(clientConfig);
         this.clientConfig = clientConfig;
     }
-
+    
     /**
      * constructor.
      *
@@ -121,7 +121,7 @@ public abstract class GrpcClient extends RpcClient {
         super(clientConfig, serverListFactory);
         this.clientConfig = clientConfig;
     }
-
+    
     /**
      * constructor.
      *
@@ -134,13 +134,13 @@ public abstract class GrpcClient extends RpcClient {
         this(DefaultGrpcClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize)
                 .setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build());
     }
-
+    
     public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
             RpcClientTlsConfig tlsConfig) {
         this(DefaultGrpcClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize)
                 .setTlsConfig(tlsConfig).setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build());
     }
-
+    
     protected ThreadPoolExecutor createGrpcExecutor(String serverIp) {
         // Thread name will use String.format, ipv6 maybe contain special word %, so handle it first.
         serverIp = serverIp.replaceAll("%", "-");
