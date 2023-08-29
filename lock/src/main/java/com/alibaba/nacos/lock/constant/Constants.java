@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.lock.constants;
+package com.alibaba.nacos.lock.constant;
 
 /**
  * constants.

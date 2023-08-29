@@ -30,8 +30,8 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.constant.PropertiesConstant;
-import com.alibaba.nacos.lock.constants.Constants;
-import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
+import com.alibaba.nacos.lock.constant.Constants;
+import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.raft.request.MutexLockRequest;
 import com.alibaba.nacos.lock.service.LockOperationService;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -93,13 +93,13 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     
     private Boolean releaseLock(MutexLockRequest request) {
         LockInstance lockInstance = request.getLockInstance();
-        AbstractAtomicLock mutexLock = lockManager.getMutexLock(lockInstance.getLockType(), lockInstance.getKey());
+        AtomicLockService mutexLock = lockManager.getMutexLock(lockInstance.getLockType(), lockInstance.getKey());
         return mutexLock.unLock(request.getLockInstance());
     }
     
     private Boolean acquireLock(MutexLockRequest request) {
         LockInstance lockInstance = request.getLockInstance();
-        AbstractAtomicLock mutexLock = lockManager.getMutexLock(lockInstance.getLockType(), lockInstance.getKey());
+        AtomicLockService mutexLock = lockManager.getMutexLock(lockInstance.getLockType(), lockInstance.getKey());
         return mutexLock.tryLock(request.getLockInstance());
     }
     

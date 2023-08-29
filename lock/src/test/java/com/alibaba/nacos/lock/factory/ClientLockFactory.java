@@ -14,44 +14,37 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.lock.core.reentrant;
+package com.alibaba.nacos.lock.factory;
 
 import com.alibaba.nacos.api.lock.model.LockInstance;
+import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
+import com.alibaba.nacos.lock.core.reentrant.mutex.ClientAtomicLock;
 
 /**
- * Atomic Lock Service.
+ * create clientLock.
  *
  * @author 985492783@qq.com
- * @description AtomicLockService
- * @date 2023/7/10 15:34
+ * @date 2023/8/30 0:59
  */
-public interface AtomicLockService {
+public class ClientLockFactory implements LockFactory {
     
-    /**
-     * try lock with expireTime.
-     *
-     * @param instance request Lock
-     * @return boolean
-     */
-    Boolean tryLock(LockInstance instance);
+    public static final String TYPE = "CLIENT_LOCK_TYPE";
     
-    /**
-     * release lock.
-     *
-     * @param instance instance
-     * @return boolean
-     */
-    Boolean unLock(LockInstance instance);
+    @Override
+    public String getLockType() {
+        return TYPE;
+    }
     
-    /**
-     * return is auto expire.
-     * @return Boolean
-     */
-    Boolean autoExpire();
+    @Override
+    public AbstractAtomicLock createLock(String key) {
+        return new ClientAtomicLock(key);
+    }
     
-    /**
-     * get key.
-     * @return key
-     */
-    String getKey();
+    public static class ClinetLockInstance extends LockInstance {
+        
+        @Override
+        public String getLockType() {
+            return TYPE;
+        }
+    }
 }
