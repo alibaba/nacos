@@ -70,13 +70,13 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     
     @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResoure, final long time) {
+            String createResource, final long time) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
                     .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.insert(Arrays
                     .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
-                            "gmt_modified")), kp, tenantId, tenantName, tenantDesc, createResoure, time, time);
+                            "gmt_modified")), kp, tenantId, tenantName, tenantDesc, createResource, time, time);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
@@ -176,11 +176,11 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
         }
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
-        String sql = tenantInfoMapper.count(Arrays.asList("tenant_id"));
+        String sql = tenantInfoMapper.count(Collections.singletonList("tenant_id"));
         Integer result = this.jt.queryForObject(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {
             return 0;
         }
-        return result.intValue();
+        return result;
     }
 }
