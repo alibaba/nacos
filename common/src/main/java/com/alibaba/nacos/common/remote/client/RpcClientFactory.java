@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -92,7 +93,9 @@ public class RpcClientFactory {
         LOCK.writeLock().lock();
         List<String> successfullyDestroyedKeys = new ArrayList<>();
         try {
-            for (Map.Entry<String, RpcClient> entry : CLIENT_MAP.entrySet()) {
+            Iterator<Map.Entry<String, RpcClient>> iterator = CLIENT_MAP.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, RpcClient> entry = iterator.next();
                 if (predicate.test(entry)) {
                     destroyClient(entry.getKey());
                     successfullyDestroyedKeys.add(entry.getKey());
