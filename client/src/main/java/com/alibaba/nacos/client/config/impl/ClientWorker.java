@@ -71,6 +71,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 
@@ -1131,6 +1132,10 @@ public class ClientWorker implements Closeable {
             Span span = TraceMonitor.getClientConfigRpcSpan();
             long start = System.currentTimeMillis();
             try (Scope ignored = span.makeCurrent()) {
+                
+                TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                        .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
+                
                 rpcResponse = rpcClientInner.request(request, timeoutMills);
                 
                 if (rpcResponse.isSuccess()) {

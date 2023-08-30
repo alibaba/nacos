@@ -18,12 +18,7 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.monitor.ConfigMetrics;
-import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.utils.HttpMethod;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.context.Scope;
 
 import java.net.HttpURLConnection;
 import java.util.Date;
@@ -61,27 +56,13 @@ public class MetricsHttpAgent implements HttpAgent {
         Date start = new Date();
         String responseCode = DEFAULT_CODE;
         HttpRestResult<String> result;
-        
-        Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.GET);
-        try (Scope ignored = span.makeCurrent()) {
+        try {
             result = httpAgent.httpGet(path, headers, paramValues, encode, readTimeoutMs);
-            
-            if (isFail(result)) {
-                span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
-            } else {
-                span.setStatus(StatusCode.OK);
-            }
-            
             responseCode = String.valueOf(result.getCode());
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
         } finally {
-            span.end();
+            ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
+                    System.currentTimeMillis() - start.getTime());
         }
-        
-        ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode, System.currentTimeMillis() - start.getTime());
         
         return result;
     }
@@ -92,28 +73,13 @@ public class MetricsHttpAgent implements HttpAgent {
         Date start = new Date();
         String responseCode = DEFAULT_CODE;
         HttpRestResult<String> result;
-        
-        Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.POST);
-        try (Scope ignored = span.makeCurrent()) {
+        try {
             result = httpAgent.httpPost(path, headers, paramValues, encode, readTimeoutMs);
-            
-            if (isFail(result)) {
-                span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
-            } else {
-                span.setStatus(StatusCode.OK);
-            }
-            
             responseCode = String.valueOf(result.getCode());
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
         } finally {
-            
-            span.end();
+            ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
+                    System.currentTimeMillis() - start.getTime());
         }
-        
-        ConfigMetrics.recordConfigRequestTimer(POST, path, responseCode, System.currentTimeMillis() - start.getTime());
         
         return result;
     }
@@ -124,28 +90,13 @@ public class MetricsHttpAgent implements HttpAgent {
         Date start = new Date();
         String responseCode = DEFAULT_CODE;
         HttpRestResult<String> result;
-        
-        Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.DELETE);
-        try (Scope ignored = span.makeCurrent()) {
+        try {
             result = httpAgent.httpDelete(path, headers, paramValues, encode, readTimeoutMs);
-            
-            if (isFail(result)) {
-                span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
-            } else {
-                span.setStatus(StatusCode.OK);
-            }
-            
             responseCode = String.valueOf(result.getCode());
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
         } finally {
-            span.end();
+            ConfigMetrics.recordConfigRequestTimer(GET, path, responseCode,
+                    System.currentTimeMillis() - start.getTime());
         }
-        
-        ConfigMetrics.recordConfigRequestTimer(DELETE, path, responseCode,
-                System.currentTimeMillis() - start.getTime());
         
         return result;
     }

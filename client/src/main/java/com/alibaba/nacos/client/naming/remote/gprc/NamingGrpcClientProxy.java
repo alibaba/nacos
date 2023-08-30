@@ -62,6 +62,7 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 
 import java.util.ArrayList;
@@ -367,6 +368,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             Response response;
             Span span = TraceMonitor.getClientNamingRpcSpan();
             try (Scope ignored = span.makeCurrent()) {
+                
+                TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                        .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
+                
                 response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
                 
                 if (responseClass.isAssignableFrom(response.getClass())) {

@@ -53,6 +53,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import org.apache.http.HttpStatus;
 
@@ -448,6 +449,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             HttpRestResult<String> restResult;
             Span span = TraceMonitor.getClientNamingHttpSpan(method);
             try (Scope ignored = span.makeCurrent()) {
+                
+                TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                        .inject(Context.current(), header, TraceMonitor.getHttpContextSetter());
                 
                 restResult = nacosRestTemplate.exchangeForm(url, header, Query.newInstance().initParams(params), body,
                         method, String.class);

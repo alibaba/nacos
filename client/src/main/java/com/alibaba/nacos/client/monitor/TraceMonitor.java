@@ -1,5 +1,6 @@
 package com.alibaba.nacos.client.monitor;
 
+import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import io.opentelemetry.api.GlobalOpenTelemetry;
@@ -7,10 +8,25 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.propagation.TextMapSetter;
+
+import java.util.Map;
 
 public class TraceMonitor {
     
-    private static Tracer tracer = GlobalOpenTelemetry.getTracer("Nacos-Java-Client", VersionUtils.version);
+    private static OpenTelemetry nacosOpenTelemetry = GlobalOpenTelemetry.get();
+    
+    private static Tracer tracer = nacosOpenTelemetry.getTracer("Nacos-Java-Client", VersionUtils.version);
+    
+    private static final TextMapSetter<Header> HTTP_CONTEXT_SETTER = (carrier, key, value) -> {
+        assert carrier != null;
+        carrier.addParam(key, value);
+    };
+    
+    private static final TextMapSetter<Map<String, String>> RPC_CONTEXT_SETTER = (carrier, key, value) -> {
+        assert carrier != null;
+        carrier.put(key, value);
+    };
     
     public static Span getClientConfigRpcSpan() {
         return tracer.spanBuilder("nacos.client.config.rpc").setSpanKind(SpanKind.CLIENT)
@@ -74,6 +90,14 @@ public class TraceMonitor {
         }
     }
     
+    public static TextMapSetter<Header> getHttpContextSetter() {
+        return HTTP_CONTEXT_SETTER;
+    }
+    
+    public static TextMapSetter<Map<String, String>> getRpcContextSetter() {
+        return RPC_CONTEXT_SETTER;
+    }
+    
     /**
      * Get the Nacos client OpenTelemetry tracer.
      *
@@ -84,7 +108,16 @@ public class TraceMonitor {
     }
     
     /**
-     * Set the Nacos client OpenTelemetry tracer.
+     * Get the Nacos client OpenTelemetry instance.
+     *
+     * @return the OpenTelemetry instance
+     */
+    public static OpenTelemetry getOpenTelemetry() {
+        return nacosOpenTelemetry;
+    }
+    
+    /**
+     * Set the Nacos client OpenTelemetry tracer with new OpenTelemetry instance.
      *
      * @param openTelemetry the OpenTelemetry instance
      */
@@ -92,8 +125,44 @@ public class TraceMonitor {
         return setTracer(openTelemetry, "Nacos-Java-Client", VersionUtils.version);
     }
     
+    /**
+     * Set the Nacos client OpenTelemetry tracer with new OpenTelemetry instance, tracer name and version.
+     *
+     * @param openTelemetry the OpenTelemetry instance
+     * @param name          the tracer name
+     * @param version       the tracer version
+     */
     public static Tracer setTracer(OpenTelemetry openTelemetry, String name, String version) {
-        tracer = openTelemetry.getTracer(name, version);
+        nacosOpenTelemetry = openTelemetry;
+        tracer = setTracer(name, version);
         return tracer;
+    }
+    
+    /**
+     * Set the Nacos client OpenTelemetry tracer with new tracer name and version.
+     *
+     * @param name    the tracer name
+     * @param version the tracer version
+     */
+    public static Tracer setTracer(String name, String version) {
+        tracer = nacosOpenTelemetry.getTracer(name, version);
+        return tracer;
+    }
+    
+    /**
+     * Set the Nacos client OpenTelemetry instance.
+     *
+     * @param openTelemetry the OpenTelemetry instance
+     */
+    public static void setOpenTelemetry(OpenTelemetry openTelemetry) {
+        setTracer(openTelemetry);
+    }
+    
+    /**
+     * Reset the Nacos client OpenTelemetry instance to global. Then reset the tracer.
+     */
+    public static void resetOpenTelemetryAndTrace() {
+        nacosOpenTelemetry = GlobalOpenTelemetry.get();
+        tracer = nacosOpenTelemetry.getTracer("Nacos-Java-Client", VersionUtils.version);
     }
 }

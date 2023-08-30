@@ -34,6 +34,7 @@ import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import org.slf4j.Logger;
 
@@ -82,6 +83,10 @@ public class ServerHttpAgent implements HttpAgent {
                 HttpRestResult<String> result;
                 Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.GET);
                 try (Scope ignored = span.makeCurrent()) {
+                    
+                    TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                            .inject(Context.current(), newHeaders, TraceMonitor.getHttpContextSetter());
+                    
                     result = NACOS_RESTTEMPLATE.get(getUrl(currentServerAddr, path), httpConfig, newHeaders, query,
                             String.class);
                     
@@ -162,6 +167,10 @@ public class ServerHttpAgent implements HttpAgent {
                 HttpRestResult<String> result;
                 Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.POST);
                 try (Scope ignored = span.makeCurrent()) {
+                    
+                    TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                            .inject(Context.current(), newHeaders, TraceMonitor.getHttpContextSetter());
+                    
                     result = NACOS_RESTTEMPLATE.postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders,
                             paramValues, String.class);
                     
@@ -242,6 +251,10 @@ public class ServerHttpAgent implements HttpAgent {
                 HttpRestResult<String> result;
                 Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.DELETE);
                 try (Scope ignored = span.makeCurrent()) {
+                    
+                    TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                            .inject(Context.current(), newHeaders, TraceMonitor.getHttpContextSetter());
+                    
                     result = NACOS_RESTTEMPLATE.delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, query,
                             String.class);
                     
