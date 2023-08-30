@@ -74,7 +74,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -593,36 +592,17 @@ public class ClientWorker implements Closeable {
         @Override
         public void shutdown() throws NacosException {
             super.shutdown();
-            synchronized (RpcClientFactory.getAllClientEntries()) {
-                LOGGER.info("Trying to shutdown transport client {}", this);
-                Set<Map.Entry<String, RpcClient>> allClientEntries = RpcClientFactory.getAllClientEntries();
-                Iterator<Map.Entry<String, RpcClient>> iterator = allClientEntries.iterator();
-                while (iterator.hasNext()) {
-                    Map.Entry<String, RpcClient> entry = iterator.next();
-                    if (entry.getKey().startsWith(uuid)) {
-                        LOGGER.info("Trying to shutdown rpc client {}", entry.getKey());
-                        
-                        try {
-                            entry.getValue().shutdown();
-                        } catch (NacosException nacosException) {
-                            nacosException.printStackTrace();
-                        }
-                        LOGGER.info("Remove rpc client {}", entry.getKey());
-                        iterator.remove();
-                    }
-                }
-                
-                LOGGER.info("Shutdown executor {}", executor);
-                executor.shutdown();
-                Map<String, CacheData> stringCacheDataMap = cacheMap.get();
-                for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
-                    entry.getValue().setConsistentWithServer(false);
-                }
-                if (subscriber != null) {
-                    NotifyCenter.deregisterSubscriber(subscriber);
-                }
+            List<String> destroyClients = RpcClientFactory.destroyClient(entry -> entry.getKey().startsWith(uuid));
+            LOGGER.info("Remove rpc clients: {}", destroyClients);
+            LOGGER.info("Shutdown executor {}", executor);
+            executor.shutdown();
+            Map<String, CacheData> stringCacheDataMap = cacheMap.get();
+            for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
+                entry.getValue().setConsistentWithServer(false);
             }
-            
+            if (subscriber != null) {
+                NotifyCenter.deregisterSubscriber(subscriber);
+            }
         }
         
         private Map<String, String> getLabels() {

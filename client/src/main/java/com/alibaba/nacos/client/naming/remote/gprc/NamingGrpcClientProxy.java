@@ -395,13 +395,11 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     }
     
     private void shutDownAndRemove(String uuid) {
-        synchronized (RpcClientFactory.getAllClientEntries()) {
-            try {
-                RpcClientFactory.destroyClient(uuid);
-                NAMING_LOGGER.info("shutdown and remove naming rpc client  for uuid ->{}", uuid);
-            } catch (NacosException e) {
-                NAMING_LOGGER.warn("Fail to shutdown naming rpc client  for uuid ->{}", uuid);
-            }
+        try {
+            RpcClientFactory.destroyClient(uuid);
+            NAMING_LOGGER.info("shutdown and remove naming rpc client for uuid ->{}", uuid);
+        } catch (NacosException e) {
+            NAMING_LOGGER.warn("Fail to shutdown naming rpc client  for uuid ->{}", uuid);
         }
     }
     
