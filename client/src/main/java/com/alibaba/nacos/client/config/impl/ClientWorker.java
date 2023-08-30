@@ -775,15 +775,13 @@ public class ClientWorker implements Closeable {
         
         @Override
         public void executeConfigListen() {
-
             Map<String, List<CacheData>> listenCachesMap = new HashMap<>(16);
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<>(16);
             long now = System.currentTimeMillis();
             boolean needAllSync = now - lastAllSyncTime >= ALL_SYNC_INTERNAL;
+            
             for (CacheData cache : cacheMap.get().values()) {
-
                 synchronized (cache) {
-
                     //check local listeners consistent.
                     if (cache.isConsistentWithServer()) {
                         cache.checkListenerMd5();
@@ -804,9 +802,8 @@ public class ClientWorker implements Closeable {
                         }
                     }
                 }
-
             }
-            
+    
             //execute check listen ,return true if has change keys.
             boolean hasChangedKeys = checkListenCache(listenCachesMap);
             
