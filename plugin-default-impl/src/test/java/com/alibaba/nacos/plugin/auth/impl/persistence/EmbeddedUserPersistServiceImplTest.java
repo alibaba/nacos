@@ -82,9 +82,12 @@ public class EmbeddedUserPersistServiceImplTest {
     
     @Test
     public void testGetUsers() {
-        Page<User> users = embeddedUserPersistService.getUsers(1, 10, "nacos");
+        int pageNo = 1;
+        int pageSize = 10;
+        Page<User> users = embeddedUserPersistService.getUsers(pageNo, pageSize, "nacos");
         
         Assert.assertNotNull(users);
+        Assert.assertTrue(users.getPageItems().size() <= pageSize);
     }
     
     @Test

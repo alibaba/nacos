@@ -140,10 +140,17 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             where.append(" AND username = ? ");
             params.add(username);
         }
+    
+    
+        sqlFetchRows += where;
+        if (pageNo > 0 && pageSize > 0) {
+            int offset = (pageNo - 1) * pageSize;
+            sqlFetchRows = String.format(sqlFetchRows + " LIMIT %s , %s ", offset, pageSize);
+        }
         
         try {
             Page<User> pageInfo = helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+                    .fetchPage(sqlCountRows + where, sqlFetchRows, params.toArray(), pageNo, pageSize,
                             USER_ROW_MAPPER);
             if (pageInfo == null) {
                 pageInfo = new Page<>();
@@ -176,9 +183,15 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             params.add(generateLikeArgument(username));
         }
         
+        sqlFetchRows += where;
+        if (pageNo > 0 && pageSize > 0) {
+            int offset = (pageNo - 1) * pageSize;
+            sqlFetchRows = String.format(sqlFetchRows + " LIMIT %s , %s ", offset, pageSize);
+        }
+        
         PaginationHelper<User> helper = createPaginationHelper();
         try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+            return helper.fetchPage(sqlCountRows + where, sqlFetchRows, params.toArray(), pageNo, pageSize,
                     USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
