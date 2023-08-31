@@ -238,8 +238,8 @@ public class ServiceController {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        boolean aggregation = Boolean
-                .parseBoolean(WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
+        boolean aggregation = Boolean.parseBoolean(
+                WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         
