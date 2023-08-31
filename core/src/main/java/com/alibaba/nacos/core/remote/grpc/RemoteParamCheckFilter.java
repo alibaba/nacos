@@ -28,6 +28,7 @@ import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 import com.alibaba.nacos.core.paramcheck.RpcParamExtractorManager;
 import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
+import com.alibaba.nacos.plugin.control.Loggers;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -64,13 +65,12 @@ public class RemoteParamCheckFilter extends AbstractRequestFilter {
         Response response;
         try {
             response = super.getDefaultResponseInstance(handlerClazz);
-            response.setErrorInfo(NacosException.OVER_THRESHOLD,
-                    "Tps Flow restricted:" + message);
+            response.setErrorInfo(NacosException.INVALID_PARAM,
+                    "Param check invalid:" + message);
+            Loggers.CONTROL.info("Param check invalid,{},request:{}:", message, request.getClass().getSimpleName());
             return response;
         } catch (Exception e) {
-            com.alibaba.nacos.plugin.control.Loggers.TPS
-                    .warn("Tps check fail , request: {},exception:{}", request.getClass().getSimpleName(),
-                            e);
+            Loggers.CONTROL.error("Param check fail ,request:{}", request.getClass().getSimpleName(), e);
             return null;
         }
     }
