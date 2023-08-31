@@ -838,7 +838,7 @@ public class ConfigCacheService {
      */
     public static int tryReadLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
-        int result = (null == groupItem) ? 0 : (groupItem.rwLock.tryReadLock() ? 1 : -1);
+        int result = (null == groupItem) ? 0 : (groupItem.getRwLock().tryReadLock() ? 1 : -1);
         if (result < 0) {
             DEFAULT_LOG.warn("[read-lock] failed, {}, {}", result, groupKey);
         }
@@ -853,7 +853,7 @@ public class ConfigCacheService {
     public static void releaseReadLock(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         if (null != item) {
-            item.rwLock.releaseReadLock();
+            item.getRwLock().releaseReadLock();
         }
     }
     
@@ -866,7 +866,7 @@ public class ConfigCacheService {
      */
     static int tryWriteLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
-        int result = (null == groupItem) ? 0 : (groupItem.rwLock.tryWriteLock() ? 1 : -1);
+        int result = (null == groupItem) ? 0 : (groupItem.getRwLock().tryWriteLock() ? 1 : -1);
         if (result < 0) {
             DEFAULT_LOG.warn("[write-lock] failed, {}, {}", result, groupKey);
         }
@@ -876,7 +876,7 @@ public class ConfigCacheService {
     static void releaseWriteLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
         if (null != groupItem) {
-            groupItem.rwLock.releaseWriteLock();
+            groupItem.getRwLock().releaseWriteLock();
         }
     }
     
