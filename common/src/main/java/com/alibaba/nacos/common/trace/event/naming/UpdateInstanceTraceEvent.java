@@ -34,9 +34,33 @@ public class UpdateInstanceTraceEvent extends NamingTraceEvent {
     
     private final DeregisterInstanceReason reason;
     
-    private String instanceIp;
+    private final String instanceIp;
     
-    private int instancePort;
+    private final int instancePort;
+    
+    public String getClientIp() {
+        return clientIp;
+    }
+    
+    public boolean isRpc() {
+        return rpc;
+    }
+    
+    public String getInstanceIp() {
+        return instanceIp;
+    }
+    
+    public int getInstancePort() {
+        return instancePort;
+    }
+    
+    public String toInetAddr() {
+        return instanceIp + ":" + instancePort;
+    }
+    
+    public DeregisterInstanceReason getReason() {
+        return reason;
+    }
     
     public UpdateInstanceTraceEvent(long eventTime, String clientIp, boolean rpc, DeregisterInstanceReason reason,
             String serviceNamespace, String serviceGroup, String serviceName, String instanceIp, int instancePort) {
