@@ -54,4 +54,14 @@ public class HistoryConfigInfoMapperByDerby extends AbstractMapper implements Hi
     public String getDataSource() {
         return DataSourceConstant.DERBY;
     }
+
+    @Override
+    public MapperResult findDeletedConfig(MapperContext context) {
+        return new MapperResult(
+                "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info WHERE op_type = 'D' AND "
+                        + "gmt_modified >= ? and nid > ? order by nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+                        context.getWhereParameter(FieldConstant.LAST_MAX_ID),
+                        context.getWhereParameter(FieldConstant.PAGE_SIZE)));
+    }
 }
