@@ -27,6 +27,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
@@ -85,9 +86,8 @@ public class ServiceControllerV2 {
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
         serviceMetadata.setEphemeral(serviceForm.getEphemeral());
-        serviceOperatorV2.create(Service
-                .newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(), serviceForm.getServiceName(),
-                        serviceForm.getEphemeral()), serviceMetadata);
+        serviceOperatorV2.create(Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                serviceForm.getServiceName(), serviceForm.getEphemeral()), serviceMetadata);
         NotifyCenter.publishEvent(
                 new RegisterServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
                         serviceForm.getGroupName(), serviceForm.getServiceName()));
@@ -120,8 +120,8 @@ public class ServiceControllerV2 {
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName)
             throws Exception {
-        ServiceDetailInfo result = serviceOperatorV2
-                .queryService(Service.newService(namespaceId, groupName, serviceName));
+        ServiceDetailInfo result = serviceOperatorV2.queryService(
+                Service.newService(namespaceId, groupName, serviceName));
         return Result.success(result);
     }
     
@@ -156,9 +156,11 @@ public class ServiceControllerV2 {
         serviceMetadata.setProtectThreshold(serviceForm.getProtectThreshold());
         serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
-        Service service = Service
-                .newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(), serviceForm.getServiceName());
+        Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
+                serviceForm.getServiceName());
         serviceOperatorV2.update(service, serviceMetadata);
+        NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
+                serviceForm.getGroupName(), serviceForm.getServiceName()));
         return Result.success("ok");
     }
     

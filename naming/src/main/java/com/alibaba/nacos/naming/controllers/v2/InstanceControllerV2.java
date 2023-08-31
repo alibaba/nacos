@@ -33,6 +33,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
@@ -141,7 +142,12 @@ public class InstanceControllerV2 {
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm), instance);
+        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
+                instance);
+        NotifyCenter.publishEvent(
+                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", false, DeregisterInstanceReason.REQUEST,
+                        instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
+                        instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
     
