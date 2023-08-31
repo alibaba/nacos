@@ -42,6 +42,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.NamingMetrics;
+import com.alibaba.nacos.client.monitor.NamingTrace;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
@@ -366,7 +367,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             long start = System.currentTimeMillis();
             
             Response response;
-            Span span = TraceMonitor.getClientNamingRpcSpan();
+            Span span = NamingTrace.getClientNamingRpcSpan();
             try (Scope ignored = span.makeCurrent()) {
                 
                 TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()

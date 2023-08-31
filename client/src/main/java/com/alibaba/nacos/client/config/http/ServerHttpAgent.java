@@ -21,6 +21,7 @@ import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.ConfigMetrics;
+import com.alibaba.nacos.client.monitor.ConfigTrace;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -81,7 +82,7 @@ public class ServerHttpAgent implements HttpAgent {
                 Query query = Query.newInstance().initParams(paramValues);
                 
                 HttpRestResult<String> result;
-                Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.GET);
+                Span span = ConfigTrace.getClientConfigHttpSpan(HttpMethod.GET);
                 try (Scope ignored = span.makeCurrent()) {
                     
                     TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
@@ -165,7 +166,7 @@ public class ServerHttpAgent implements HttpAgent {
                 }
                 
                 HttpRestResult<String> result;
-                Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.POST);
+                Span span = ConfigTrace.getClientConfigHttpSpan(HttpMethod.POST);
                 try (Scope ignored = span.makeCurrent()) {
                     
                     TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
@@ -249,7 +250,7 @@ public class ServerHttpAgent implements HttpAgent {
                 Query query = Query.newInstance().initParams(paramValues);
                 
                 HttpRestResult<String> result;
-                Span span = TraceMonitor.getClientConfigHttpSpan(HttpMethod.DELETE);
+                Span span = ConfigTrace.getClientConfigHttpSpan(HttpMethod.DELETE);
                 try (Scope ignored = span.makeCurrent()) {
                     
                     TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()

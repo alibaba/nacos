@@ -48,7 +48,7 @@ public class TraceMonitorTest {
     
     @Test
     public void testGetClientConfigRpcSpan() {
-        Span span = TraceMonitor.getClientConfigRpcSpan();
+        Span span = ConfigTrace.getClientConfigRpcSpan();
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
         runSpan(span);
@@ -64,7 +64,7 @@ public class TraceMonitorTest {
     
     @Test
     public void testGetClientConfigHttpSpan() {
-        Span span = TraceMonitor.getClientConfigHttpSpan("GET");
+        Span span = ConfigTrace.getClientConfigHttpSpan("GET");
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
         runSpan(span);
@@ -80,7 +80,7 @@ public class TraceMonitorTest {
     
     @Test
     public void testGetClientNamingRpcSpan() {
-        Span span = TraceMonitor.getClientNamingRpcSpan();
+        Span span = NamingTrace.getClientNamingRpcSpan();
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
         runSpan(span);
@@ -96,7 +96,7 @@ public class TraceMonitorTest {
     
     @Test
     public void testGetClientNamingHttpSpan() {
-        Span span = TraceMonitor.getClientNamingHttpSpan("GET");
+        Span span = NamingTrace.getClientNamingHttpSpan("GET");
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
         runSpan(span);

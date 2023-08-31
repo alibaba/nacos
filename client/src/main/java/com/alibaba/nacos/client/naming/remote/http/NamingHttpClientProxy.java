@@ -31,6 +31,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.NamingMetrics;
+import com.alibaba.nacos.client.monitor.NamingTrace;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
@@ -447,7 +448,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         try {
             
             HttpRestResult<String> restResult;
-            Span span = TraceMonitor.getClientNamingHttpSpan(method);
+            Span span = NamingTrace.getClientNamingHttpSpan(method);
             try (Scope ignored = span.makeCurrent()) {
                 
                 TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
