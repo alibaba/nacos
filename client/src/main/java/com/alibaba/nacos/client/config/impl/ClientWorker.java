@@ -779,7 +779,6 @@ public class ClientWorker implements Closeable {
             Map<String, List<CacheData>> removeListenCachesMap = new HashMap<>(16);
             long now = System.currentTimeMillis();
             boolean needAllSync = now - lastAllSyncTime >= ALL_SYNC_INTERNAL;
-            
             for (CacheData cache : cacheMap.get().values()) {
                 synchronized (cache) {
                     //check local listeners consistent.
@@ -803,7 +802,6 @@ public class ClientWorker implements Closeable {
                     }
                 }
             }
-    
             //execute check listen ,return true if has change keys.
             boolean hasChangedKeys = checkListenCache(listenCachesMap);
             
@@ -817,7 +815,6 @@ public class ClientWorker implements Closeable {
             if (hasChangedKeys) {
                 notifyListenConfig();
             }
-            
         }
         
         private ExecutorService ensureSyncExecutor(String taskId) {
