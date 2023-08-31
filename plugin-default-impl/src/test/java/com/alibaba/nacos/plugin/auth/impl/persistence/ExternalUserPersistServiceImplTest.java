@@ -20,6 +20,8 @@ import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -28,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
@@ -54,9 +57,11 @@ public class ExternalUserPersistServiceImplTest {
     
     @Before
     public void setUp() throws Exception {
+        EnvUtil.setEnvironment(new StandardEnvironment());
         externalUserPersistService = new ExternalUserPersistServiceImpl();
         when(jdbcTemplate.queryForObject(any(), any(), eq(Integer.class))).thenReturn(0);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
+        when(dataSourceService.getDataSourceType()).thenReturn(DataSourceConstant.MYSQL);
         embeddedStorageCache = DatasourceConfiguration.isEmbeddedStorage();
         DatasourceConfiguration.setEmbeddedStorage(false);
         Field datasourceField = DynamicDataSource.class.getDeclaredField("basicDataSourceService");

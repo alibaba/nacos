@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +28,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.core.env.StandardEnvironment;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
 import java.util.List;
@@ -39,10 +44,20 @@ public class EmbeddedUserPersistServiceImplTest {
     @Mock
     private DatabaseOperate databaseOperate;
     
+    @Mock
+    private JdbcTemplate jdbcTemplate;
+    
+    @Mock
+    private DataSourceService dataSourceService;
+    
     private EmbeddedUserPersistServiceImpl embeddedUserPersistService;
     
     @Before
     public void setUp() throws Exception {
+        EnvUtil.setEnvironment(new StandardEnvironment());
+        when(jdbcTemplate.queryForObject(any(), any(), eq(Integer.class))).thenReturn(0);
+        when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
+        when(dataSourceService.getDataSourceType()).thenReturn(DataSourceConstant.DERBY);
         when(databaseOperate.queryOne(any(String.class), any(Object[].class), eq(Integer.class))).thenReturn(0);
         embeddedUserPersistService = new EmbeddedUserPersistServiceImpl();
         Class<EmbeddedUserPersistServiceImpl> embeddedUserPersistServiceClass = EmbeddedUserPersistServiceImpl.class;

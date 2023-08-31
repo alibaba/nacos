@@ -19,10 +19,19 @@ package com.alibaba.nacos.plugin.auth.impl.persistence;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
+import com.alibaba.nacos.plugin.datasource.MapperManager;
+import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.UserMapper;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -46,11 +55,20 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     
     private JdbcTemplate jt;
     
+    private DataSourceService dataSourceService;
+    
+    private MapperManager mapperManager;
+    
     private static final String PATTERN_STR = "*";
+    
     
     @PostConstruct
     protected void init() {
         jt = DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
+        this.dataSourceService = DynamicDataSource.getInstance().getDataSource();
+        Boolean isDataSourceLogEnable = EnvUtil.getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class,
+                false);
+        this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
     /**
@@ -127,30 +145,22 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
+        final int startRow = (pageNo - 1) * pageSize;
+        String usernameTemp = StringUtils.isBlank(username) ? StringUtils.EMPTY : username;
+        UserMapper userMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
+        String sqlCountRows = userMapper.count(null);
+        
+        MapperContext context = new MapperContext(startRow, pageSize);
+        context.putWhereParameter(FieldConstant.USER_NAME, usernameTemp);
+        
+        MapperResult mapperResult = userMapper.getUsers(context);
+        String sqlFetchRows = mapperResult.getSql();
         
         PaginationHelper<User> helper = createPaginationHelper();
         
-        String sqlCountRows = "SELECT count(*) FROM users ";
-        
-        String sqlFetchRows = "SELECT username,password FROM users ";
-        
-        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
-        List<String> params = new ArrayList<>();
-        if (StringUtils.isNotBlank(username)) {
-            where.append(" AND username = ? ");
-            params.add(username);
-        }
-        
         try {
-            Page<User> pageInfo = helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                            USER_ROW_MAPPER);
-            if (pageInfo == null) {
-                pageInfo = new Page<>();
-                pageInfo.setTotalCount(0);
-                pageInfo.setPageItems(new ArrayList<>());
-            }
-            return pageInfo;
+            return helper.fetchPage(sqlCountRows, sqlFetchRows, mapperResult.getParamList().toArray(), pageNo, pageSize,
+                    USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
