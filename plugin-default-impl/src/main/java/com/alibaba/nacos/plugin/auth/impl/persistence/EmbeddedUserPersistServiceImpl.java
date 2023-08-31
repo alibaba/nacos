@@ -51,7 +51,7 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
 @Conditional(value = ConditionOnEmbeddedStorage.class)
 @Component
 public class EmbeddedUserPersistServiceImpl implements UserPersistService {
-    
+
     @Autowired
     private DatabaseOperate databaseOperate;
 
@@ -60,7 +60,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     private MapperManager mapperManager;
 
     private static final String PATTERN_STR = "*";
-    
+
     private static final String SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE = " ESCAPE '\\' ";
 
 
@@ -85,7 +85,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
     @Override
     public void createUser(String username, String password) {
         String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
-        
+
         try {
             EmbeddedStorageContextHolder.addSqlContext(sql, username, password, true);
             databaseOperate.blockUpdate();
@@ -93,7 +93,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
-    
+
     /**
      * Execute delete user operation.
      *
@@ -109,7 +109,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
-    
+
     /**
      * Execute update user password operation.
      *
@@ -126,44 +126,42 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
     }
-    
+
     @Override
     public User findUserByUsername(String username) {
         String sql = "SELECT username,password FROM users WHERE username=? ";
-        return databaseOperate.queryOne(sql, new Object[] {username}, USER_ROW_MAPPER);
+        return databaseOperate.queryOne(sql, new Object[]{username}, USER_ROW_MAPPER);
     }
-    
+
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
         String usernameTemp = StringUtils.isBlank(username) ? StringUtils.EMPTY : username;
         UserMapper userMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(), TableConstant.USERS);
         String sqlCountRows = userMapper.count(null);
 
-        MapperContext context = new MapperContext((pageNo - 1) * pageSize, pageSize);
-        context.setStartRow(pageNo);
-        context.setPageSize(pageSize);
+        MapperContext context = new MapperContext(pageNo, pageSize);
         context.putWhereParameter(FieldConstant.USER_NAME, usernameTemp);
 
         MapperResult mapperResult = userMapper.getUsers(context);
-
         String sqlFetchRows = mapperResult.getSql();
 
         PaginationHelper<User> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows, sqlFetchRows, new Object[] {}, pageNo, pageSize,
-                        USER_ROW_MAPPER);
+        Page<User> userPage = helper.fetchPage(sqlCountRows, sqlFetchRows, mapperResult.getParamList().toArray(), pageNo, pageSize,
+                USER_ROW_MAPPER);
+        return userPage;
     }
-    
+
     @Override
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username LIKE ? " + SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE;
-        return databaseOperate.queryMany(sql, new String[] {"%" + username + "%"}, String.class);
+        return databaseOperate.queryMany(sql, new String[]{"%" + username + "%"}, String.class);
     }
-    
+
     @Override
     public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
         String sqlCountRows = "SELECT count(*) FROM users ";
         String sqlFetchRows = "SELECT username,password FROM users ";
-        
+
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
@@ -171,12 +169,12 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             where.append(SQL_DERBY_ESCAPE_BACK_SLASH_FOR_LIKE);
             params.add(generateLikeArgument(username));
         }
-        
+
         PaginationHelper<User> helper = createPaginationHelper();
         return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                 USER_ROW_MAPPER);
     }
-    
+
     @Override
     public String generateLikeArgument(String s) {
         String underscore = "_";
@@ -191,7 +189,7 @@ public class EmbeddedUserPersistServiceImpl implements UserPersistService {
             return s;
         }
     }
-    
+
     @Override
     public <E> PaginationHelper<E> createPaginationHelper() {
         return new EmbeddedPaginationHelperImpl<>(databaseOperate);

@@ -12,13 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * <p>
+ * The mysql implementation of UserMapper.
  *
- * </p>
- *
- * @author huangKeMing
- * @since 2023/8/31
- */
+ * @author hkm
+ **/
 public class UserMapperByMySql extends AbstractMapper implements UserMapper {
 
     @Override
@@ -28,21 +25,18 @@ public class UserMapperByMySql extends AbstractMapper implements UserMapper {
 
     @Override
     public MapperResult getUsers(MapperContext context) {
-        StringBuilder sql = new StringBuilder("SELECT username,password FROM users ");
-        String username = context.getWhereParameter(FieldConstant.USER_NAME).toString();
+        final String sqlFetchRows = "SELECT username,password FROM users ";
+        final String username = context.getWhereParameter(FieldConstant.USER_NAME).toString();
+        StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<Object> paramList = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
-            sql.append(" WHERE AND username = ? ");
+            where.append(" AND username = ? ");
             paramList.add(username);
         }
 
-        int startRow = context.getStartRow();
-        int pageSize = context.getPageSize();
-        sql.append(" LIMIT " + startRow + "," + pageSize );
-
-        paramList.add(startRow);
-        paramList.add(pageSize);
-
-        return new MapperResult(sql.toString(), paramList);
+        String sql =
+                sqlFetchRows + where + " LIMIT "
+                        + context.getStartRow() + "," + context.getPageSize();
+        return new MapperResult(sql, paramList);
     }
 }
