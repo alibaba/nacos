@@ -36,7 +36,6 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -73,14 +72,14 @@ public class ConfigCacheService {
     private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
     private static ConfigInfoPersistService configInfoPersistService;
-
+    
     public static ConfigInfoPersistService getConfigInfoPersistService() {
         if (configInfoPersistService == null) {
             configInfoPersistService = ApplicationUtils.getBean(ConfigInfoPersistService.class);
         }
         return configInfoPersistService;
     }
-
+    
     public static int groupCount() {
         return CACHE.size();
     }
@@ -166,8 +165,8 @@ public class ConfigCacheService {
             DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe);
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN)
-                        || errMsg.contains(DISK_QUATA_EN)) {
+                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN) || errMsg
+                        .contains(DISK_QUATA_EN)) {
                     // Protect from disk full.
                     FATAL_LOG.error("Local Disk Full,Exit", ioe);
                     System.exit(0);
@@ -433,8 +432,8 @@ public class ConfigCacheService {
         String aggreds = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
-                        "DEFAULT_GROUP");
+                ConfigInfoBase config = getConfigInfoPersistService()
+                        .findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
                     aggreds = config.getContent();
                 }
@@ -451,14 +450,14 @@ public class ConfigCacheService {
         String clientIpWhitelist = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(
-                        ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
+                ConfigInfoBase config = getConfigInfoPersistService()
+                        .findConfigInfoBase(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
                     clientIpWhitelist = config.getContent();
                 }
             } else {
-                clientIpWhitelist = DiskUtil.getConfig(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP",
-                        StringUtils.EMPTY);
+                clientIpWhitelist = DiskUtil
+                        .getConfig(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP", StringUtils.EMPTY);
             }
             if (clientIpWhitelist != null) {
                 ClientIpWhiteList.load(clientIpWhitelist);
@@ -470,14 +469,14 @@ public class ConfigCacheService {
         String switchContent = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
-                        "DEFAULT_GROUP");
+                ConfigInfoBase config = getConfigInfoPersistService()
+                        .findConfigInfoBase(SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP");
                 if (config != null) {
                     switchContent = config.getContent();
                 }
             } else {
-                switchContent = DiskUtil.getConfig(SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP",
-                        StringUtils.EMPTY);
+                switchContent = DiskUtil
+                        .getConfig(SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP", StringUtils.EMPTY);
             }
             if (switchContent != null) {
                 SwitchService.load(switchContent);
@@ -674,8 +673,8 @@ public class ConfigCacheService {
         CacheItem cache = makeSure(groupKey, null);
         cache.initBetaCacheIfEmpty();
         String betaMd5Utf8 = cache.getConfigCacheBeta().getMd5(ENCODE_UTF8);
-        if (betaMd5Utf8 == null || !betaMd5Utf8.equals(md5Utf8) || !CollectionUtils.isListEqual(ips4Beta,
-                cache.ips4Beta)) {
+        if (betaMd5Utf8 == null || !betaMd5Utf8.equals(md5Utf8) || !CollectionUtils
+                .isListEqual(ips4Beta, cache.ips4Beta)) {
             cache.isBeta = true;
             cache.ips4Beta = ips4Beta;
             cache.getConfigCacheBeta().setMd5Utf8(md5Utf8);
@@ -718,8 +717,8 @@ public class ConfigCacheService {
             return item.getConfigCacheBeta().getMd5(ENCODE_UTF8);
         }
         
-        if (item != null && StringUtils.isNotBlank(tag) && item.getConfigCacheTags() != null
-                && item.getConfigCacheTags().containsKey(tag)) {
+        if (item != null && StringUtils.isNotBlank(tag) && item.getConfigCacheTags() != null && item
+                .getConfigCacheTags().containsKey(tag)) {
             return item.getConfigCacheTags().get(tag).getMd5(ENCODE_UTF8);
         }
         
