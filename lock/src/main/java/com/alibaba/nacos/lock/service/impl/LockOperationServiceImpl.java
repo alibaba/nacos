@@ -106,11 +106,11 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     @Override
     public Boolean lock(LockInstance lockInstance) {
         MutexLockRequest request = new MutexLockRequest();
-        Long expireTimestamp = lockInstance.getExpireTimestamp();
+        long expireTimestamp = lockInstance.getExpireTimestamp();
         if (expireTimestamp <= 0) {
-            lockInstance.setExpireTimestamp(defaultExpireTime + System.currentTimeMillis());
+            lockInstance.setExpireTimestamp(defaultExpireTime + getNowTimestamp());
         } else {
-            lockInstance.setExpireTimestamp(Math.min(maxExpireTime, expireTimestamp) + System.currentTimeMillis());
+            lockInstance.setExpireTimestamp(Math.min(maxExpireTime, expireTimestamp) + getNowTimestamp());
         }
         request.setLockInstance(lockInstance);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
@@ -137,6 +137,10 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
+    }
+    
+    public long getNowTimestamp() {
+        return System.currentTimeMillis();
     }
     
     @Override

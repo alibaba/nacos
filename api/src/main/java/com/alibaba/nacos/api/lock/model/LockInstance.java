@@ -47,11 +47,11 @@ public class LockInstance implements Serializable {
     public LockInstance() {
     }
     
-    public Long getExpireTimestamp() {
+    public long getExpireTimestamp() {
         return expireTimestamp;
     }
     
-    public void setExpireTimestamp(Long expireTimestamp) {
+    public void setExpireTimestamp(long expireTimestamp) {
         this.expireTimestamp = expireTimestamp;
     }
     
