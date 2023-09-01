@@ -41,6 +41,6 @@ public class TableConstant {
     public static final String TENANT_CAPACITY = "tenant_capacity";
     
     public static final String TENANT_INFO = "tenant_info";
-
+    
     public static final String USERS = "users";
 }
