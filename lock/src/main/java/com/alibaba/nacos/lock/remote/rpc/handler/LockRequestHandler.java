@@ -26,7 +26,6 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.lock.service.LockOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 /**
@@ -39,8 +38,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class LockRequestHandler extends RequestHandler<LockOperationRequest, LockOperationResponse> {
     
-    @Autowired
-    private LockOperationService lockOperationService;
+    private final LockOperationService lockOperationService;
+    
+    public LockRequestHandler(LockOperationService lockOperationService) {
+        this.lockOperationService = lockOperationService;
+    }
     
     @Override
     @Secured(action = ActionTypes.WRITE)
