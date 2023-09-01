@@ -492,7 +492,36 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public String getServerStatus() {
-        if (worker.isHealthServer()) {
+        boolean result;
+        
+        Span span = ConfigTrace.getClientConfigServiceSpan("getServerStatus");
+        try (Scope ignored = span.makeCurrent()) {
+            
+            result = worker.isHealthServer();
+            
+            if (result) {
+                span.setStatus(StatusCode.OK, "Server is up");
+            } else {
+                span.setStatus(StatusCode.ERROR, "Server is down");
+            }
+            
+            if (span.isRecording()) {
+                span.setAttribute("function.current.name",
+                        "com.alibaba.nacos.client.config.NacosConfigService.getServerStatus()");
+                span.setAttribute("function.called.name",
+                        " com.alibaba.nacos.client.config.impl.ClientWorker.isHealthServer()");
+                span.setAttribute("agent.name", worker.getAgentName());
+            }
+            
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            span.end();
+        }
+        
+        if (result) {
             return UP;
         } else {
             return DOWN;

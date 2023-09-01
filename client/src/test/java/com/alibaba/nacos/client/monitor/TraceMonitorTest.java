@@ -80,7 +80,7 @@ public class TraceMonitorTest {
     
     @Test
     public void testGetClientNamingRpcSpan() {
-        Span span = NamingTrace.getClientNamingRpcSpan();
+        Span span = NamingTrace.getClientNamingRpcSpan("GRPC");
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
         runSpan(span);

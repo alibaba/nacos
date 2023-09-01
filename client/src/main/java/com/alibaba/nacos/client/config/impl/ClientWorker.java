@@ -159,7 +159,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         
         CacheData cache;
-        Span addListenerCacheSpan = ConfigTrace.getClientConfigServiceSpan("addListenerCache");
+        Span addListenerCacheSpan = ConfigTrace.getClientConfigWorkerSpan("addListenerCache");
         try (Scope ignored = addListenerCacheSpan.makeCurrent()) {
             
             cache = addCacheDataIfAbsent(dataId, group);
@@ -207,7 +207,7 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         
         CacheData cache;
-        Span addTenantListenerCacheSpan = ConfigTrace.getClientConfigServiceSpan("addTenantListenerCache");
+        Span addTenantListenerCacheSpan = ConfigTrace.getClientConfigWorkerSpan("addTenantListenerCache");
         try (Scope ignored = addTenantListenerCacheSpan.makeCurrent()) {
             
             cache = addCacheDataIfAbsent(dataId, group, tenant);
@@ -256,7 +256,7 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         
         CacheData cache;
-        Span addTenantListenersWithContentCacheSpan = ConfigTrace.getClientConfigServiceSpan(
+        Span addTenantListenersWithContentCacheSpan = ConfigTrace.getClientConfigWorkerSpan(
                 "addTenantListenersWithContentCache");
         try (Scope ignored = addTenantListenersWithContentCacheSpan.makeCurrent()) {
             
@@ -304,7 +304,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         
         CacheData cache;
-        Span removeListenerSpan = ConfigTrace.getClientConfigServiceSpan("removeListenerCache");
+        Span removeListenerSpan = ConfigTrace.getClientConfigWorkerSpan("removeListenerCache");
         try (Scope ignored = removeListenerSpan.makeCurrent()) {
             
             cache = getCache(dataId, group);
@@ -351,7 +351,7 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         
         CacheData cache;
-        Span removeTenantListenerSpan = ConfigTrace.getClientConfigServiceSpan("removeTenantListenerCache");
+        Span removeTenantListenerSpan = ConfigTrace.getClientConfigWorkerSpan("removeTenantListenerCache");
         try (Scope ignored = removeTenantListenerSpan.makeCurrent()) {
             
             cache = getCache(dataId, group, tenant);

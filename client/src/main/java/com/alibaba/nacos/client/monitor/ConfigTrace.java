@@ -16,8 +16,6 @@ public class ConfigTrace {
     
     private static final String NACOS_CLIENT_CONFIG_WORKER_SPAN = NACOS_CLIENT_CONFIG_BASE_SPAN + ".worker";
     
-    private static final String NACOS_CLIENT_FILTER_SPAN = NACOS_CLIENT_CONFIG_BASE_SPAN + ".filter";
-    
     private static final String NACOS_CLIENT_VERSION_ATTRIBUTE = "nacos.client.version";
     
     public static Span getClientConfigRpcSpan() {
@@ -49,8 +47,4 @@ public class ConfigTrace {
                 .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
     }
     
-    public static Span getClientConfigFilterSpan() {
-        return TraceMonitor.getTracer().spanBuilder(NACOS_CLIENT_FILTER_SPAN).setSpanKind(SpanKind.CLIENT)
-                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
-    }
 }
