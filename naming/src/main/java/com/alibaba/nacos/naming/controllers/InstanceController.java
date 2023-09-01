@@ -161,7 +161,7 @@ public class InstanceController {
         getInstanceOperator().updateInstance(namespaceId, serviceName, instance);
         NotifyCenter.publishEvent(new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", namespaceId,
                 NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName), instance.getIp(),
-                instance.getPort()));
+                instance.getPort(), instance.getMetadata()));
         return "ok";
     }
     

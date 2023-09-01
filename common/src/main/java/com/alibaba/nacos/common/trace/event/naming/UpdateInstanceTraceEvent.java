@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.common.trace.event.naming;
 
+import java.util.Map;
+
 /**
  * Naming update instance trace event.
  *
@@ -25,6 +27,8 @@ package com.alibaba.nacos.common.trace.event.naming;
 public class UpdateInstanceTraceEvent extends NamingTraceEvent {
     
     private static final long serialVersionUID = -6995370254824508523L;
+    
+    private final Map<String, String> metadata;
     
     private final String clientIp;
     
@@ -49,11 +53,12 @@ public class UpdateInstanceTraceEvent extends NamingTraceEvent {
     }
     
     public UpdateInstanceTraceEvent(long eventTime, String clientIp, String serviceNamespace, String serviceGroup,
-            String serviceName, String instanceIp, int instancePort) {
+            String serviceName, String instanceIp, int instancePort, Map<String, String> metadata) {
         super("UPDATE_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
         this.clientIp = clientIp;
         this.instanceIp = instanceIp;
         this.instancePort = instancePort;
+        this.metadata = metadata;
     }
     
 }

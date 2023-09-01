@@ -150,7 +150,7 @@ public class InstanceControllerV2 {
         NotifyCenter.publishEvent(
                 new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", instanceForm.getNamespaceId(),
                         instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
-                        instance.getPort()));
+                        instance.getPort(), instance.getMetadata()));
         return Result.success("ok");
     }
     
