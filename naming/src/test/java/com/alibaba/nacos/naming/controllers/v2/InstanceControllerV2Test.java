@@ -48,6 +48,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -169,6 +170,7 @@ public class InstanceControllerV2Test extends BaseTest {
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
+        TimeUnit.SECONDS.sleep(1);
         assertEquals(eventReceivedClass, UpdateInstanceTraceEvent.class);
     }
     
