@@ -159,10 +159,9 @@ public class InstanceController {
         Instance instance = HttpRequestInstanceBuilder.newBuilder()
                 .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         getInstanceOperator().updateInstance(namespaceId, serviceName, instance);
-        NotifyCenter.publishEvent(
-                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", DeregisterInstanceReason.REQUEST,
-                        namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
-                        instance.getIp(), instance.getPort()));
+        NotifyCenter.publishEvent(new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", namespaceId,
+                NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName), instance.getIp(),
+                instance.getPort()));
         return "ok";
     }
     

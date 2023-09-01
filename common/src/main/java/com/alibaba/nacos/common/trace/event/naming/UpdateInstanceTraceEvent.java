@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.trace.event.naming;
 
-import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
-
 /**
  * Naming update instance trace event.
  *
@@ -29,8 +27,6 @@ public class UpdateInstanceTraceEvent extends NamingTraceEvent {
     private static final long serialVersionUID = -6995370254824508523L;
     
     private final String clientIp;
-    
-    private final DeregisterInstanceReason reason;
     
     private final String instanceIp;
     
@@ -52,15 +48,10 @@ public class UpdateInstanceTraceEvent extends NamingTraceEvent {
         return instanceIp + ":" + instancePort;
     }
     
-    public DeregisterInstanceReason getReason() {
-        return reason;
-    }
-    
-    public UpdateInstanceTraceEvent(long eventTime, String clientIp, DeregisterInstanceReason reason,
-            String serviceNamespace, String serviceGroup, String serviceName, String instanceIp, int instancePort) {
+    public UpdateInstanceTraceEvent(long eventTime, String clientIp, String serviceNamespace, String serviceGroup,
+            String serviceName, String instanceIp, int instancePort) {
         super("UPDATE_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
         this.clientIp = clientIp;
-        this.reason = reason;
         this.instanceIp = instanceIp;
         this.instancePort = instancePort;
     }
