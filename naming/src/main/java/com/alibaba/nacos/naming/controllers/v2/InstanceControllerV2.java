@@ -148,7 +148,7 @@ public class InstanceControllerV2 {
         instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
                 instance);
         NotifyCenter.publishEvent(
-                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", false, DeregisterInstanceReason.REQUEST,
+                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", DeregisterInstanceReason.REQUEST,
                         instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
                         instance.getIp(), instance.getPort()));
         return Result.success("ok");

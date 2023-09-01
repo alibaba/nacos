@@ -30,8 +30,6 @@ public class UpdateInstanceTraceEvent extends NamingTraceEvent {
     
     private final String clientIp;
     
-    private final boolean rpc;
-    
     private final DeregisterInstanceReason reason;
     
     private final String instanceIp;
@@ -40,10 +38,6 @@ public class UpdateInstanceTraceEvent extends NamingTraceEvent {
     
     public String getClientIp() {
         return clientIp;
-    }
-    
-    public boolean isRpc() {
-        return rpc;
     }
     
     public String getInstanceIp() {
@@ -62,12 +56,11 @@ public class UpdateInstanceTraceEvent extends NamingTraceEvent {
         return reason;
     }
     
-    public UpdateInstanceTraceEvent(long eventTime, String clientIp, boolean rpc, DeregisterInstanceReason reason,
+    public UpdateInstanceTraceEvent(long eventTime, String clientIp, DeregisterInstanceReason reason,
             String serviceNamespace, String serviceGroup, String serviceName, String instanceIp, int instancePort) {
         super("UPDATE_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
         this.clientIp = clientIp;
         this.reason = reason;
-        this.rpc = rpc;
         this.instanceIp = instanceIp;
         this.instancePort = instancePort;
     }

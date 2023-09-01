@@ -160,7 +160,7 @@ public class InstanceController {
                 .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         getInstanceOperator().updateInstance(namespaceId, serviceName, instance);
         NotifyCenter.publishEvent(
-                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", false, DeregisterInstanceReason.REQUEST,
+                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", DeregisterInstanceReason.REQUEST,
                         namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
                         instance.getIp(), instance.getPort()));
         return "ok";
