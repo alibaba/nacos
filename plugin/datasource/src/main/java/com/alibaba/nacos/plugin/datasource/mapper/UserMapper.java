@@ -31,7 +31,7 @@ public interface UserMapper extends Mapper {
     /**
      * used to select user info.
      *
-     * <p>Example: SELECT username,password FROM users WHERE username>? LIMIT ?;
+     * <p>Example: SELECT username,password FROM users WHERE username = ? LIMIT ?;
      *
      * @param context sql paramMap
      * @return The sql of get user info.
