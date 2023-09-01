@@ -14,6 +14,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 /**
+ * lockRequest handler test.
+ *
  * @author 985492783@qq.com
  * @date 2023/9/1 10:00
  */
@@ -35,7 +37,7 @@ public class LockRequestHandlerTest {
         request.setLockOperationEnum(LockOperationEnum.ACQUIRE);
         Mockito.when(lockOperationService.lock(lockInstance)).thenReturn(true);
         LockOperationResponse response = lockRequestHandler.handle(request, null);
-        Assert.assertTrue((Boolean)response.getResult());
+        Assert.assertTrue((Boolean) response.getResult());
     }
     
     @Test
@@ -48,6 +50,6 @@ public class LockRequestHandlerTest {
         request.setLockOperationEnum(LockOperationEnum.RELEASE);
         Mockito.when(lockOperationService.unLock(lockInstance)).thenReturn(true);
         LockOperationResponse response = lockRequestHandler.handle(request, null);
-        Assert.assertTrue((Boolean)response.getResult());
+        Assert.assertTrue((Boolean) response.getResult());
     }
 }
