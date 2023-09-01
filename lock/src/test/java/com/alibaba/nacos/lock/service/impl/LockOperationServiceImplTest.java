@@ -29,6 +29,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import static com.alibaba.nacos.lock.constant.Constants.LOCK_ACQUIRE_SERVICE_GROUP_V2;
 
 /**
+ * lock operation service test.
+ *
  * @author 985492783@qq.com
  * @date 2023/8/30 14:01
  */
@@ -60,6 +62,9 @@ public class LockOperationServiceImplTest {
                 .thenAnswer(ins -> ins.getArgument(2));
     }
     
+    /**
+     * build test service.
+     */
     public void buildService() {
         mockedStatic.when(() -> ApplicationUtils.getBean(ProtocolManager.class)).thenReturn(protocolManager);
         Mockito.when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
@@ -134,7 +139,8 @@ public class LockOperationServiceImplTest {
     @Test
     public void testOnApply() {
         buildService();
-        Mockito.when(lockManager.getMutexLock(LockConstants.NACOS_LOCK_TYPE, "key")).thenReturn(new MutexAtomicLock("key"));
+        Mockito.when(lockManager.getMutexLock(LockConstants.NACOS_LOCK_TYPE, "key"))
+                .thenReturn(new MutexAtomicLock("key"));
         
         WriteRequest request = getRequest(LockOperationEnum.ACQUIRE);
         Response response = lockOperationService.onApply(request);
