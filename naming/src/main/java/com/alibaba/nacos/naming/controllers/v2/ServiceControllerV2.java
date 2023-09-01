@@ -52,6 +52,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URLDecoder;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -152,15 +153,16 @@ public class ServiceControllerV2 {
     @Secured(action = ActionTypes.WRITE)
     public Result<String> update(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
+        Map<String, String> metadata = UtilsAndCommons.parseMetadata(serviceForm.getMetadata());
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(serviceForm.getProtectThreshold());
-        serviceMetadata.setExtendData(UtilsAndCommons.parseMetadata(serviceForm.getMetadata()));
+        serviceMetadata.setExtendData(metadata);
         serviceMetadata.setSelector(parseSelector(serviceForm.getSelector()));
         Service service = Service.newService(serviceForm.getNamespaceId(), serviceForm.getGroupName(),
                 serviceForm.getServiceName());
         serviceOperatorV2.update(service, serviceMetadata);
         NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), serviceForm.getNamespaceId(),
-                serviceForm.getGroupName(), serviceForm.getServiceName()));
+                serviceForm.getGroupName(), serviceForm.getServiceName(), metadata));
         return Result.success("ok");
     }
     
