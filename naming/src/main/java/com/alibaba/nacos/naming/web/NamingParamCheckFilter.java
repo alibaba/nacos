@@ -66,6 +66,7 @@ public class NamingParamCheckFilter implements Filter {
             if (paramCheckResponse.isSuccess()) {
                 filterChain.doFilter(request, resp);
             } else {
+                Loggers.CONTROL.info("Param check invalid,{},url:{}", paramCheckResponse.getMessage(), uri);
                 generate400Response(resp, paramCheckResponse.getMessage());
             }
         } catch (Exception e) {
