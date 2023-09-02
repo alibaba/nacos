@@ -135,6 +135,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                         "com.alibaba.nacos.common.remote.client.RpcClient.onServerListChange()");
                 span.setAttribute("client.protocol", "grpc");
                 span.setAttribute("event", event.toString());
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -210,6 +211,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instances", StringUtils.join(instances, ", "));
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -261,11 +263,12 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("function.current.name",
                         "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doBatchRegisterService()");
                 span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService.instanceRegistered()");
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
                 span.setAttribute("client.protocol", "grpc");
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instances", StringUtils.join(instances, ", "));
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -299,11 +302,12 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("function.current.name",
                         "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doRegisterService()");
                 span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService.instanceRegistered()");
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
                 span.setAttribute("client.protocol", "grpc");
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instances", instance.toString());
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -345,11 +349,12 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("function.current.name",
                         "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doRegisterService()");
                 span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService.instanceDeregistered()");
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
                 span.setAttribute("client.protocol", "grpc");
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instances", instance.toString());
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -390,6 +395,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("clusters", clusters);
                 span.setAttribute("udp.port", udpPort);
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -447,6 +453,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("page.number", pageNo);
                 span.setAttribute("page.size", pageSize);
                 span.setAttribute("group.name", groupName);
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -495,7 +502,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("function.current.name",
                         "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doSubscribe()");
                 span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService.subscriberRegistered()");
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
                 span.setAttribute("client.protocol", "grpc");
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
@@ -549,7 +556,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("function.current.name",
                         "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doUnsubscribe()");
                 span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService.removeSubscriberForRedo()");
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
                 span.setAttribute("client.protocol", "grpc");
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
@@ -581,6 +588,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                         "com.alibaba.nacos.common.remote.client.RpcClient.isRunning()");
                 span.setAttribute("client.protocol", "grpc");
                 span.setAttribute("server.healthy", result);
+                span.setAttribute("namespace", namespaceId);
             }
         } finally {
             span.end();

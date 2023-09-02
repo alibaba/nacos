@@ -25,17 +25,17 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public class TraceMonitorTest {
+public class NamingTraceTest {
     
     public static Tracer testTracer = null;
     
     public static OpenTelemetry testOpenTelemetry = null;
     
-    public static TestExporter testExporter = null;
+    public static NamingTraceTest.TestExporter testExporter = null;
     
     @BeforeClass
     public static void init() {
-        testExporter = new TestExporter();
+        testExporter = new NamingTraceTest.TestExporter();
         testOpenTelemetry = OpenTelemetrySdk.builder().setTracerProvider(
                 SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(testExporter)).build()).build();
         testTracer = TraceMonitor.setTracer(testOpenTelemetry);
@@ -44,38 +44,6 @@ public class TraceMonitorTest {
     @After
     public void clear() {
         testExporter.exportedSpans.clear();
-    }
-    
-    @Test
-    public void testGetClientConfigRpcSpan() {
-        Span span = ConfigTrace.getClientConfigRpcSpan();
-        AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
-        AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
-        runSpan(span);
-        
-        for (SpanData spanData : testExporter.exportedSpans) {
-            Attributes attributes = spanData.getAttributes();
-            
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.rpc");
-        }
-    }
-    
-    @Test
-    public void testGetClientConfigHttpSpan() {
-        Span span = ConfigTrace.getClientConfigHttpSpan("GET");
-        AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
-        AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
-        runSpan(span);
-        
-        for (SpanData spanData : testExporter.exportedSpans) {
-            Attributes attributes = spanData.getAttributes();
-            
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.http.get");
-        }
     }
     
     @Test
@@ -90,7 +58,7 @@ public class TraceMonitorTest {
             
             Assert.assertEquals(attributes.get(testKey), "test.value");
             Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.naming.rpc");
+            Assert.assertEquals(spanData.getName(), "nacos.client.naming.rpc.GRPC");
         }
     }
     
@@ -106,7 +74,39 @@ public class TraceMonitorTest {
             
             Assert.assertEquals(attributes.get(testKey), "test.value");
             Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.naming.http.get");
+            Assert.assertEquals(spanData.getName(), "nacos.client.naming.http.GET");
+        }
+    }
+    
+    @Test
+    public void testGetClientNamingServiceSpan() {
+        Span span = NamingTrace.getClientNamingServiceSpan("test");
+        AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
+        AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
+        runSpan(span);
+        
+        for (SpanData spanData : testExporter.exportedSpans) {
+            Attributes attributes = spanData.getAttributes();
+            
+            Assert.assertEquals(attributes.get(testKey), "test.value");
+            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
+            Assert.assertEquals(spanData.getName(), "nacos.client.naming.service.test");
+        }
+    }
+    
+    @Test
+    public void testGetClientNamingWorkerSpan() {
+        Span span = NamingTrace.getClientNamingWorkerSpan("test");
+        AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
+        AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
+        runSpan(span);
+        
+        for (SpanData spanData : testExporter.exportedSpans) {
+            Attributes attributes = spanData.getAttributes();
+            
+            Assert.assertEquals(attributes.get(testKey), "test.value");
+            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
+            Assert.assertEquals(spanData.getName(), "nacos.client.naming.worker.test");
         }
     }
     

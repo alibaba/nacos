@@ -158,6 +158,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instance", instance.toString());
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -187,6 +188,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instances", StringUtils.join(instances, ", "));
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -216,6 +218,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instances", StringUtils.join(instances, ", "));
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -273,6 +276,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instance", instance.toString());
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -349,6 +353,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("clusters", clusterString);
                 span.setAttribute("subscribe", subscribe);
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -433,6 +438,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("clusters", clusterString);
                 span.setAttribute("subscribe", subscribe);
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -527,6 +533,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("clusters", clusterString);
                 span.setAttribute("subscribe", subscribe);
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -577,6 +584,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("clusters", clusterString);
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -625,6 +633,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("clusters", clustersString);
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -671,6 +680,7 @@ public class NacosNamingService implements NamingService {
                 span.setAttribute("page.number", pageNo);
                 span.setAttribute("page.size", pageSize);
                 span.setAttribute("group.name", groupName);
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {
@@ -709,6 +719,7 @@ public class NacosNamingService implements NamingService {
                         "com.alibaba.nacos.client.naming.NacosNamingService.getServerStatus()");
                 span.setAttribute("function.called.name",
                         "com.alibaba.nacos.client.naming.remote.NamingClientProxy.serverHealthy()");
+                span.setAttribute("namespace", namespace);
             }
             
         } catch (Throwable e) {

@@ -1271,7 +1271,7 @@ public class ClientWorker implements Closeable {
             
             Response rpcResponse;
             // Trace
-            Span span = ConfigTrace.getClientConfigRpcSpan();
+            Span span = ConfigTrace.getClientConfigRpcSpan("GRPC");
             long start = System.currentTimeMillis();
             try (Scope ignored = span.makeCurrent()) {
                 

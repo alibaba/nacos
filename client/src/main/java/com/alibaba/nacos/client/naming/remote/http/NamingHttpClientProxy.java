@@ -172,6 +172,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instances", instance.toString());
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -226,6 +227,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instances", instance.toString());
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -269,6 +271,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("instances", instance.toString());
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -309,6 +312,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("clusters", clusters);
                 span.setAttribute("udp.port", udpPort);
                 span.setAttribute("request.result", result);
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -349,6 +353,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("request.result", result);
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -388,6 +393,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("http.method", HttpMethod.POST);
                 span.setAttribute("service.name", service.getName());
                 span.setAttribute("group.name", service.getGroupName());
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -425,6 +431,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("service.name", serviceName);
                 span.setAttribute("group.name", groupName);
                 span.setAttribute("request.result", result);
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -463,6 +470,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("http.method", HttpMethod.PUT);
                 span.setAttribute("service.name", service.getName());
                 span.setAttribute("group.name", service.getGroupName());
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -495,6 +503,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                     span.setAttribute("client.protocol", "http");
                     span.setAttribute("http.method", HttpMethod.GET);
                     span.setAttribute("server.healthy", "UP".equals(serverStatus));
+                    span.setAttribute("namespace", namespaceId);
                 }
             } finally {
                 span.end();
@@ -545,6 +554,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.setAttribute("page.number", pageNo);
                 span.setAttribute("page.size", pageSize);
                 span.setAttribute("group.name", groupName);
+                span.setAttribute("namespace", namespaceId);
             }
         } catch (Throwable e) {
             span.recordException(e);

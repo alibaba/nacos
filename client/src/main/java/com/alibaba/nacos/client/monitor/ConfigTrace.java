@@ -18,8 +18,9 @@ public class ConfigTrace {
     
     private static final String NACOS_CLIENT_VERSION_ATTRIBUTE = "nacos.client.version";
     
-    public static Span getClientConfigRpcSpan() {
-        return TraceMonitor.getTracer().spanBuilder(NACOS_CLIENT_CONFIG_RPC_SPAN).setSpanKind(SpanKind.CLIENT)
+    public static Span getClientConfigRpcSpan(String rpcType) {
+        String spanName = NACOS_CLIENT_CONFIG_RPC_SPAN + "." + rpcType;
+        return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
                 .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
     }
     
