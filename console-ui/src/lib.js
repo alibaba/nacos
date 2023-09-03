@@ -66,6 +66,7 @@ window.require.config({
 window.require(['vs/editor/editor.main'], () => {
   // Register a new language
   window.monaco.languages.register({ id: 'properties' });
+  window.monaco.languages.register({ id: 'toml' });
 
   // Register a tokens provider for the language
   window.monaco.languages.setMonarchTokensProvider('properties', {
@@ -77,15 +78,77 @@ window.require(['vs/editor/editor.main'], () => {
       ],
     },
   });
+  window.monaco.languages.setMonarchTokensProvider('toml', {
+    // The main tokenizer for our languages
+    tokenizer: {
+      root: [
+        { include: '@comment' },
+        { include: '@datetime' },
+        { include: '@boolean' },
+        { include: '@number' },
+        { include: '@string' },
+        { include: '@table' },
+        [/"""/, { token: 'string.block', bracket: '@open', next: '@string' }],
+        [/'''/, { token: 'stringLiteral.block', bracket: '@open', next: '@string' }],
+        [
+          /\s*((?:(?:(?:[A-Za-z0-9_+-]+)|(?:"[^"]+")|(?:'[^']+'))\s*\.?\s*)+)\s*(=)/,
+          ['variable.name', 'eq'],
+        ],
+      ],
+      comment: [[/\s*((#).*)$/, 'comment']],
+      datetime: [
+        [/\d{2}:\d{2}:\d{2}(?:\.\d+)?/, 'localTime'],
+        [/\d{4}\-\d{2}\-\d{2}/, 'localDate'],
+        [/\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?/, 'localDateTime'],
+        [
+          /(?<!\w)(\d{4}\-\d{2}\-\d{2}[T| ]\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[\+\-]\d{2}:\d{2}))(?!\w)/,
+          'offsetDateTime',
+        ],
+      ],
+      boolean: [[/(?<!\w)(true|false)(?!\w)/, 'boolean']],
+      number: [
+        [/(?<!\w)((?:[\+\-]?(0|([1-9](([0-9]|_[0-9])+)?))))(?!\w)/, 'number'],
+        [
+          /(?<!\w)([\+\-]?(0|([1-9](([0-9]|_[0-9])+)?))(?:(?:\.([0-9]+))?[eE][\+\-]?[1-9]_?[0-9]*|(?:\.[0-9_]*)))(?!\w)/,
+          'number.float',
+        ],
+        [/(?<!\w)((?:0x(([0-9a-fA-F](([0-9a-fA-F]|_[0-9a-fA-F])+)?))))(?!\w)/, 'number.hex'],
+        [/(?<!\w)(0o[0-7](_?[0-7])*)(?!\w)/, 'number.octal'],
+        [/(?<!\w)(0b[01](_?[01])*)(?!\w)/, 'number.binary'],
+        [/(?<!\w)([\+\-]?inf)(?!\w)/, 'number.inf'],
+        [/(?<!\w)([\+\-]?nan)(?!\w)/, 'number.nan'],
+      ],
+      string: [
+        [/\\([btnfr"\\\n/ ]|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})/, 'string.escape'],
+        [/\\[^btnfr/"\\\n]/, 'string.escape.invalid'],
+        [/".+?"/, 'string'],
+        [/"""/, { token: 'string.block', bracket: '@close', next: '@pop' }],
+        [/'.+?'/, 'stringLiteral'],
+        [/'''/, { token: 'stringLiteral.block', bracket: '@close', next: '@pop' }],
+      ],
+      table: [
+        [/^\s*(\[)([^\[\]]*)(\])/, 'table'],
+        [/^\s*(\[\[)([^\[\]]*)(\]\])/, 'table.array'],
+        [/(?<!\w)(\{)((.)+)(\})(?!\w)/, 'table.inline'],
+      ],
+    },
+  });
 
   // Define a new theme that constains only rules that match this language
-  window.monaco.editor.defineTheme('properties', {
-    base: 'vs',
-    inherit: false,
+  window.monaco.editor.defineTheme('vs-dark-enhanced', {
+    base: 'vs-dark',
+    inherit: true,
     rules: [
       { token: 'key', foreground: '009968' },
       { token: 'value', foreground: '009968' },
-      { token: 'comment', foreground: '666666' },
+      { token: 'table', foreground: 'eee8aa' },
+      { token: 'table.array', foreground: 'eee8aa' },
+      { token: 'table.inline', foreground: 'eee8aa' },
+      { token: 'string.block', foreground: 'ce9178' },
+      { token: 'stringLiteral', foreground: 'ce9178' },
+      { token: 'stringLiteral.block', foreground: 'ce9178' },
+      { token: 'boolean', foreground: '3dc9b0' },
+      // { token: 'eq', foreground: '000000' },
     ],
   });
 

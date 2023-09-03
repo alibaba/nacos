@@ -20,13 +20,13 @@ import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
 import { ConfigProvider, Icon, Menu, Message } from '@alifd/next';
 import Header from './Header';
-import { getState, getNotice } from '../reducers/base';
+import { getState, getNotice, getGuide } from '../reducers/base';
 import getMenuData from './menu';
 
 const { SubMenu, Item } = Menu;
 
 @withRouter
-@connect(state => ({ ...state.locale, ...state.base }), { getState, getNotice })
+@connect(state => ({ ...state.locale, ...state.base }), { getState, getNotice, getGuide })
 @ConfigProvider.config
 class MainLayout extends React.Component {
   static displayName = 'MainLayout';
@@ -42,11 +42,15 @@ class MainLayout extends React.Component {
     children: PropTypes.array,
     getNotice: PropTypes.func,
     notice: PropTypes.string,
+    consoleUiEnable: PropTypes.string,
+    getGuide: PropTypes.func,
+    guideMsg: PropTypes.string,
   };
 
   componentDidMount() {
     this.props.getState();
     this.props.getNotice();
+    this.props.getGuide();
   }
 
   goBack() {
@@ -87,7 +91,7 @@ class MainLayout extends React.Component {
   }
 
   render() {
-    const { locale = {}, version, functionMode, authEnabled } = this.props;
+    const { locale = {}, version, functionMode, authEnabled, consoleUiEnable } = this.props;
     const MenuData = getMenuData(functionMode);
     return (
       <section
@@ -117,45 +121,52 @@ class MainLayout extends React.Component {
                       className="next-nav next-normal next-active next-right next-no-arrow next-nav-embeddable"
                       openMode="single"
                     >
-                      {MenuData.map((subMenu, idx) => {
-                        if (subMenu.children) {
+                      {consoleUiEnable &&
+                        consoleUiEnable === 'true' &&
+                        MenuData.map((subMenu, idx) => {
+                          if (subMenu.children) {
+                            return (
+                              <SubMenu key={String(idx)} label={locale[subMenu.key]}>
+                                {subMenu.children.map((item, i) => (
+                                  <Item
+                                    key={[idx, i].join('-')}
+                                    onClick={() => this.navTo(item.url)}
+                                    className={this.isCurrentPath(item.url)}
+                                  >
+                                    {locale[item.key]}
+                                  </Item>
+                                ))}
+                              </SubMenu>
+                            );
+                          }
                           return (
-                            <SubMenu key={String(idx)} label={locale[subMenu.key]}>
-                              {subMenu.children.map((item, i) => (
-                                <Item
-                                  key={[idx, i].join('-')}
-                                  onClick={() => this.navTo(item.url)}
-                                  className={this.isCurrentPath(item.url)}
-                                >
-                                  {locale[item.key]}
-                                </Item>
-                              ))}
-                            </SubMenu>
+                            <Item
+                              key={String(idx)}
+                              className={['first-menu', this.isCurrentPath(subMenu.url)]
+                                .filter(c => c)
+                                .join(' ')}
+                              onClick={() => this.navTo(subMenu.url)}
+                            >
+                              {locale[subMenu.key]}
+                            </Item>
                           );
-                        }
-                        return (
-                          <Item
-                            key={String(idx)}
-                            className={['first-menu', this.isCurrentPath(subMenu.url)]
-                              .filter(c => c)
-                              .join(' ')}
-                            onClick={() => this.navTo(subMenu.url)}
-                          >
-                            {locale[subMenu.key]}
-                          </Item>
-                        );
-                      })}
+                        })}
                     </Menu>
                   </>
                 )}
               </div>
             </div>
             <div className="right-panel next-shell-sub-main">
-              {authEnabled === 'false' ? (
+              {authEnabled === 'false' && consoleUiEnable === 'true' ? (
                 <Message type="notice">
                   <div dangerouslySetInnerHTML={{ __html: this.props.notice }} />
                 </Message>
               ) : null}
+              {consoleUiEnable === 'false' && (
+                <Message type="notice">
+                  <div dangerouslySetInnerHTML={{ __html: this.props.guideMsg }} />
+                </Message>
+              )}
               {this.props.children}
             </div>
           </div>

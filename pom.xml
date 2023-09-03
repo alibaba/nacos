@@ -353,6 +353,7 @@
                         <exclude>src/main/java/com/alibaba/nacos/common/packagescan/classreading/**</exclude>
                         <exclude>.flattened-pom.xml</exclude>
                         <exclude>**/announcement.conf</exclude>
+                        <exclude>**/console-guide.conf</exclude>
                         <exclude>**/reflect-config.json</exclude>
                         <exclude>**/resource-config.json</exclude>
                         <exclude>**/proxy-config.json</exclude>

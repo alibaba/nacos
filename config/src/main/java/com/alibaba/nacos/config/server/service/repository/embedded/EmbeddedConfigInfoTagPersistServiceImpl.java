@@ -270,8 +270,8 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_TAG);
         final String sql = configInfoTagMapper.select(
-                Arrays.asList("id", "data_id", "group_id", "tenant_id", "tag_id", "app_name", "content"),
-                Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
+                Arrays.asList("id", "data_id", "group_id", "tenant_id", "tag_id", "app_name", "content",
+                        "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
         
         return databaseOperate.queryOne(sql, new Object[] {dataId, group, tenantTmp, tagTmp},
                 CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER);

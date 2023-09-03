@@ -42,6 +42,8 @@ public class ServerStateController {
     
     private static final String ANNOUNCEMENT_FILE = "announcement.conf";
     
+    private static final String GUIDE_FILE = "console-guide.conf";
+    
     /**
      * Get server state of current server.
      *
@@ -64,5 +66,15 @@ public class ServerStateController {
             announcement = DiskUtils.readFile(announcementFile);
         }
         return RestResultUtils.success(announcement);
+    }
+    
+    @GetMapping("/guide")
+    public RestResult<String> getConsoleUiGuide() {
+        File guideFile = new File(EnvUtil.getConfPath(), GUIDE_FILE);
+        String guideInformation = null;
+        if (guideFile.exists() && guideFile.isFile()) {
+            guideInformation = DiskUtils.readFile(guideFile);
+        }
+        return RestResultUtils.success(guideInformation);
     }
 }

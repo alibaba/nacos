@@ -17,14 +17,22 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilter;
+import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilterServiceLoader;
+import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptor;
+import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptorServiceLoader;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilderSingleton;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import io.grpc.ServerInterceptor;
+import io.grpc.ServerTransportFilter;
 import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import org.springframework.stereotype.Service;
 
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -100,6 +108,24 @@ public class GrpcSdkServer extends BaseGrpcServer {
     protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
         protocolNegotiator = ProtocolNegotiatorBuilderSingleton.getSingleton().build();
         return Optional.ofNullable(protocolNegotiator);
+    }
+    
+    @Override
+    protected List<ServerInterceptor> getSeverInterceptors() {
+        List<ServerInterceptor> result = new LinkedList<>();
+        result.addAll(super.getSeverInterceptors());
+        result.addAll(NacosGrpcServerInterceptorServiceLoader
+                .loadServerInterceptors(NacosGrpcServerInterceptor.SDK_INTERCEPTOR));
+        return result;
+    }
+    
+    @Override
+    protected List<ServerTransportFilter> getServerTransportFilters() {
+        List<ServerTransportFilter> result = new LinkedList<>();
+        result.addAll(super.getServerTransportFilters());
+        result.addAll(NacosGrpcServerTransportFilterServiceLoader
+                .loadServerTransportFilters(NacosGrpcServerTransportFilter.SDK_FILTER));
+        return result;
     }
     
     /**
