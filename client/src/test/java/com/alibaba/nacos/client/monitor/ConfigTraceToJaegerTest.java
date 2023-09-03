@@ -36,7 +36,7 @@ public class ConfigTraceToJaegerTest {
     @Before
     public void mock() throws Exception {
         final Properties properties = new Properties();
-        properties.put("serverAddr", "1.1.1.1");
+        properties.put("serverAddr", "10.3.242.223:8848");
         nacosConfigService = new NacosConfigService(properties);
     }
     
@@ -46,18 +46,21 @@ public class ConfigTraceToJaegerTest {
     }
     
     @Test
-    public void testGetConfig() throws NacosException {
+    public void testConfigJaeger() throws NacosException {
         final String dataId = "1";
         final String group = "2";
         final int timeout = 3000;
         Span testSpan = TraceMonitor.getTracer().spanBuilder("nacos.client.config.test").startSpan();
         String config;
+        boolean b;
         try (Scope ignored = testSpan.makeCurrent()) {
             config = nacosConfigService.getConfig(dataId, group, timeout);
+            b = nacosConfigService.removeConfig(dataId, group);
         } finally {
             testSpan.end();
         }
         Assert.assertNull(config);
+        Assert.assertTrue(b);
     }
     
     /**

@@ -47,14 +47,13 @@ public class NamingTraceToJaegerTest {
     }
     
     @Test
-    public void testGetConfig() throws NacosException {
+    public void testNamingJaeger() throws NacosException {
         //given
         String serviceName = "service1";
         String ip = "1.1.1.1";
         int port = 10000;
         //when
         Span testSpan = TraceMonitor.getTracer().spanBuilder("nacos.client.naming.test").startSpan();
-        String config;
         try (Scope ignored = testSpan.makeCurrent()) {
             client.registerInstance(serviceName, ip, port);
             client.selectInstances(serviceName, true, false);
