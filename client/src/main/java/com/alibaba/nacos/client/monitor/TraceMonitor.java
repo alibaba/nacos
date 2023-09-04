@@ -9,6 +9,11 @@ import io.opentelemetry.context.propagation.TextMapSetter;
 
 import java.util.Map;
 
+/**
+ * Unified management of OpenTelemetry tracer.
+ *
+ * @author <a href="https://github.com/FAWC438">FAWC438</a>
+ */
 public class TraceMonitor {
     
     private static final String NACOS_CLIENT_NAME = "Nacos-Java-Client";

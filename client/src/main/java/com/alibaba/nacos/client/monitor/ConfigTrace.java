@@ -4,6 +4,11 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 
+/**
+ * Config traces management.
+ *
+ * @author <a href="https://github.com/FAWC438">FAWC438</a>
+ */
 public class ConfigTrace {
     
     private static final String NACOS_CLIENT_CONFIG_BASE_SPAN = "nacos.client.config";

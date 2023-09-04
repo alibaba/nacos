@@ -27,6 +27,11 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Naming metrics management.
+ *
+ * @author <a href="https://github.com/FAWC438">FAWC438</a>
+ */
 public class NamingMetrics {
     
     // Micrometer recommends using <b>. (dots)</b> to uniformly separate meter names, see <a

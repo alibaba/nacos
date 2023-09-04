@@ -26,6 +26,11 @@ import io.micrometer.core.instrument.Tags;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Config metrics management.
+ *
+ * @author <a href="https://github.com/FAWC438">FAWC438</a>
+ */
 public class ConfigMetrics {
     
     // Micrometer recommends using <b>. (dots)</b> to uniformly separate meter names, see <a

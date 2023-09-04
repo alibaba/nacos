@@ -4,8 +4,11 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanKind;
 
-// TODO: Add namespace attr
-
+/**
+ * Naming traces management.
+ *
+ * @author <a href="https://github.com/FAWC438">FAWC438</a>
+ */
 public class NamingTrace {
     
     private static final String NACOS_CLIENT_NAMING_BASE_SPAN = "nacos.client.naming";
