@@ -70,10 +70,11 @@ public abstract class AbstractClient implements Client {
     
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
-        if (null == publishers.put(service, instancePublishInfo)) {
-            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
-                MetricsMonitor.incrementIpCountWithBatchRegister(instancePublishInfo);
-            } else {
+        if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+            InstancePublishInfo old = publishers.put(service, instancePublishInfo);
+            MetricsMonitor.incrementIpCountWithBatchRegister(old, (BatchInstancePublishInfo) instancePublishInfo);
+        } else {
+            if (null == publishers.put(service, instancePublishInfo)) {
                 MetricsMonitor.incrementInstanceCount();
             }
         }
