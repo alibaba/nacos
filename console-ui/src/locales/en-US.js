@@ -62,6 +62,7 @@ const I18N_CONF = {
     userList: 'User List',
     roleManagement: 'Role Management',
     privilegeManagement: 'Privilege Management',
+    consoleClosed: 'Console Closed',
   },
   Password: {
     passwordNotConsistent: 'The passwords are not consistent',
