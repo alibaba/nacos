@@ -408,8 +408,8 @@ public class ServerListManager implements Closeable {
         currentServerAddr = iterator.next();
         
         // Using unified event processor, NotifyCenter
-        NotifyCenter.publishEvent(new ServerlistChangeEvent());
-        LOGGER.info("[{}] [update-serverlist] serverlist updated to {}", name, serverUrls);
+        NotifyCenter.publishEvent(new ServerListChangeEvent());
+        LOGGER.info("[{}] [update-serverList] serverList updated to {}", name, serverUrls);
     }
     
     private List<String> getApacheServerList(String url, String name) {
