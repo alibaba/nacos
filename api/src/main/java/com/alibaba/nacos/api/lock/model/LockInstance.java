@@ -18,7 +18,6 @@ package com.alibaba.nacos.api.lock.model;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.lock.LockService;
-import com.alibaba.nacos.api.lock.common.LockConstants;
 
 import java.io.Serializable;
 import java.util.Map;
@@ -39,9 +38,12 @@ public class LockInstance implements Serializable {
     
     private Map<String, ? extends Serializable> params;
     
-    public LockInstance(String key, Long expireTimestamp) {
+    private String keyType;
+    
+    public LockInstance(String key, Long expireTimestamp, String keyType) {
         this.key = key;
         this.expireTimestamp = expireTimestamp;
+        this.keyType = keyType;
     }
     
     public LockInstance() {
@@ -96,6 +98,6 @@ public class LockInstance implements Serializable {
      * @return type
      */
     public String getLockType() {
-        return LockConstants.NACOS_LOCK_TYPE;
+        return keyType;
     }
 }
