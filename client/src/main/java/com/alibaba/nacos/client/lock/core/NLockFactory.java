@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.lock.core;
 
+import com.alibaba.nacos.api.lock.common.LockConstants;
+
 /**
  * NLock factory.
  *
@@ -32,7 +34,7 @@ public class NLockFactory {
      * @return NLock
      */
     public static NLock getLock(String key) {
-        return new NLock(key, -1L);
+        return new NLock(key, -1L, LockConstants.NACOS_LOCK_TYPE);
     }
     
     /**
@@ -42,6 +44,6 @@ public class NLockFactory {
      * @return NLock
      */
     public static NLock getLock(String key, Long expireTimestamp) {
-        return new NLock(key, expireTimestamp);
+        return new NLock(key, expireTimestamp, LockConstants.NACOS_LOCK_TYPE);
     }
 }

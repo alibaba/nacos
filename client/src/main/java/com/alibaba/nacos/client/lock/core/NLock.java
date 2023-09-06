@@ -32,7 +32,7 @@ public class NLock extends LockInstance {
     public NLock() {
     }
     
-    public NLock(String key, Long expireTimestamp) {
-        super(key, expireTimestamp);
+    public NLock(String key, Long expireTimestamp, String keyType) {
+        super(key, expireTimestamp, keyType);
     }
 }
