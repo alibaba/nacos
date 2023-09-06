@@ -27,6 +27,7 @@ import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -179,15 +180,17 @@ public class ServiceController {
     public String update(HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
+        Map<String, String> metadata = UtilsAndCommons.parseMetadata(
+                WebUtils.optional(request, "metadata", StringUtils.EMPTY));
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(NumberUtils.toFloat(WebUtils.required(request, "protectThreshold")));
-        serviceMetadata.setExtendData(
-                UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
+        serviceMetadata.setExtendData(metadata);
         serviceMetadata.setSelector(parseSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
-        com.alibaba.nacos.naming.core.v2.pojo.Service service = com.alibaba.nacos.naming.core.v2.pojo.Service
-                .newService(namespaceId, NamingUtils.getGroupName(serviceName),
-                        NamingUtils.getServiceName(serviceName));
+        com.alibaba.nacos.naming.core.v2.pojo.Service service = com.alibaba.nacos.naming.core.v2.pojo.Service.newService(
+                namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName));
         getServiceOperator().update(service, serviceMetadata);
+        NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), namespaceId,
+                NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName), metadata));
         return "ok";
     }
     
@@ -236,8 +239,8 @@ public class ServiceController {
         
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
-        boolean aggregation = Boolean
-                .parseBoolean(WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
+        boolean aggregation = Boolean.parseBoolean(
+                WebUtils.optional(request, "aggregation", String.valueOf(Boolean.TRUE)));
         
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         

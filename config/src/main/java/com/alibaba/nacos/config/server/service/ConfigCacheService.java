@@ -32,10 +32,10 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -71,9 +71,15 @@ public class ConfigCacheService {
      */
     private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
-    @Autowired
     private static ConfigInfoPersistService configInfoPersistService;
-    
+
+    public static ConfigInfoPersistService getConfigInfoPersistService() {
+        if (configInfoPersistService == null) {
+            configInfoPersistService = ApplicationUtils.getBean(ConfigInfoPersistService.class);
+        }
+        return configInfoPersistService;
+    }
+
     public static int groupCount() {
         return CACHE.size();
     }
@@ -426,7 +432,7 @@ public class ConfigCacheService {
         String aggreds = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = configInfoPersistService.findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
+                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
                         "DEFAULT_GROUP");
                 if (config != null) {
                     aggreds = config.getContent();
@@ -444,7 +450,7 @@ public class ConfigCacheService {
         String clientIpWhitelist = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = configInfoPersistService.findConfigInfoBase(
+                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(
                         ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
                 if (config != null) {
                     clientIpWhitelist = config.getContent();
@@ -463,7 +469,7 @@ public class ConfigCacheService {
         String switchContent = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = configInfoPersistService.findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
+                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
                         "DEFAULT_GROUP");
                 if (config != null) {
                     switchContent = config.getContent();
@@ -831,7 +837,7 @@ public class ConfigCacheService {
      */
     public static int tryReadLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
-        int result = (null == groupItem) ? 0 : (groupItem.rwLock.tryReadLock() ? 1 : -1);
+        int result = (null == groupItem) ? 0 : (groupItem.getRwLock().tryReadLock() ? 1 : -1);
         if (result < 0) {
             DEFAULT_LOG.warn("[read-lock] failed, {}, {}", result, groupKey);
         }
@@ -846,7 +852,7 @@ public class ConfigCacheService {
     public static void releaseReadLock(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         if (null != item) {
-            item.rwLock.releaseReadLock();
+            item.getRwLock().releaseReadLock();
         }
     }
     
@@ -859,7 +865,7 @@ public class ConfigCacheService {
      */
     static int tryWriteLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
-        int result = (null == groupItem) ? 0 : (groupItem.rwLock.tryWriteLock() ? 1 : -1);
+        int result = (null == groupItem) ? 0 : (groupItem.getRwLock().tryWriteLock() ? 1 : -1);
         if (result < 0) {
             DEFAULT_LOG.warn("[write-lock] failed, {}, {}", result, groupKey);
         }
@@ -869,7 +875,7 @@ public class ConfigCacheService {
     static void releaseWriteLock(String groupKey) {
         CacheItem groupItem = CACHE.get(groupKey);
         if (null != groupItem) {
-            groupItem.rwLock.releaseWriteLock();
+            groupItem.getRwLock().releaseWriteLock();
         }
     }
     

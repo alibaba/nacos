@@ -251,7 +251,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                     TableConstant.CONFIG_INFO_BETA);
             return this.jt.queryForObject(configInfoBetaMapper.select(
                             Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "beta_ips",
-                                    "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
+                                    "encrypted_data_key", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id")),
                     new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;

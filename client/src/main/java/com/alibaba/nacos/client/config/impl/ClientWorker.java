@@ -709,7 +709,7 @@ public class ClientWorker implements Closeable {
                 
                 @Override
                 public Class<? extends Event> subscribeType() {
-                    return ServerlistChangeEvent.class;
+                    return ServerListChangeEvent.class;
                 }
             };
             NotifyCenter.registerSubscriber(subscriber);

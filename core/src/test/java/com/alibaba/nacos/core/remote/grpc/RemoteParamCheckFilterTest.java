@@ -74,7 +74,7 @@ public class RemoteParamCheckFilterTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        assertEquals(response.getMessage(), "Tps Flow restricted:Param 'port' is illegal, the value should be between 0 and 65535");
+        assertEquals(response.getMessage(), "Param check invalid:Param 'port' is illegal, the value should be between 0 and 65535");
         
         BatchInstanceRequest batchInstanceRequest = new BatchInstanceRequest();
         batchInstanceRequest.setServiceName("test@@@@");
@@ -83,6 +83,6 @@ public class RemoteParamCheckFilterTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        assertEquals(response.getMessage(), "Tps Flow restricted:Param 'serviceName' is illegal, illegal characters should not appear in the param.");
+        assertEquals(response.getMessage(), "Param check invalid:Param 'serviceName' is illegal, illegal characters should not appear in the param.");
     }
 }
