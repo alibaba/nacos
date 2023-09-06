@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -52,7 +51,6 @@ import org.springframework.stereotype.Service;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URLEncoder;
@@ -79,11 +77,11 @@ public class ConfigServletInner {
     
     private final LongPollingService longPollingService;
     
-    private ConfigInfoPersistService configInfoPersistService;
+    private final ConfigInfoPersistService configInfoPersistService;
     
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
+    private final ConfigInfoBetaPersistService configInfoBetaPersistService;
     
-    private ConfigInfoTagPersistService configInfoTagPersistService;
+    private final ConfigInfoTagPersistService configInfoTagPersistService;
     
     public ConfigServletInner(LongPollingService longPollingService, ConfigInfoPersistService configInfoPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
@@ -172,7 +170,6 @@ public class ConfigServletInner {
         boolean isSli = false;
         if (lockResult > 0) {
             // LockResult > 0 means cacheItem is not null and other thread can`t delete this cacheItem
-            FileInputStream fis = null;
             try {
                 String md5 = Constants.NULL;
                 long lastModified = 0L;
@@ -212,7 +209,7 @@ public class ConfigServletInner {
                 } else {
                     if (StringUtils.isBlank(tag)) {
                         if (isUseTag(cacheItem, autoTag)) {
-                            if (cacheItem != null && cacheItem.getConfigCacheTags() != null) {
+                            if (cacheItem.getConfigCacheTags() != null) {
                                 ConfigCache configCacheTag = cacheItem.getConfigCacheTags().get(autoTag);
                                 if (configCacheTag != null) {
                                     md5 = configCacheTag.getMd5(acceptCharset);
@@ -254,10 +251,8 @@ public class ConfigServletInner {
                             isSli = true;
                         }
                     } else {
-                        if (cacheItem != null) {
-                            md5 = cacheItem.getTagMd5(tag, acceptCharset);
-                            lastModified = cacheItem.getTagLastModified(tag);
-                        }
+                        md5 = cacheItem.getTagMd5(tag, acceptCharset);
+                        lastModified = cacheItem.getTagLastModified(tag);
                         if (PropertyUtil.isDirectRead()) {
                             configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
                         } else {
@@ -298,8 +293,6 @@ public class ConfigServletInner {
                     } else {
                         out.print(pair.getSecond());
                     }
-                    out.flush();
-                    out.close();
                 } else {
                     String encryptedDataKey = response.getHeader("Encrypted-Data-Key");
                     Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
@@ -310,9 +303,9 @@ public class ConfigServletInner {
                     } else {
                         out.print(decryptContent);
                     }
-                    out.flush();
-                    out.close();
                 }
+                out.flush();
+                out.close();
                 
                 LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
                 
@@ -329,7 +322,6 @@ public class ConfigServletInner {
                 
             } finally {
                 releaseConfigReadLock(groupKey);
-                IoUtils.closeQuietly(fis);
             }
         } else if (lockResult == 0) {
             
