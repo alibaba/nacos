@@ -977,7 +977,7 @@ public interface PersistService {
      * @date 2019/7/5 16:37
      */
     @Deprecated
-    List<ConfigInfo> findConfigInfoByIds(final String ids);
+    List<ConfigInfo> findConfigInfosByIds(final String ids);
     
     /**
      * Query configuration information; database atomic operation, minimum SQL action, no business encapsulation.

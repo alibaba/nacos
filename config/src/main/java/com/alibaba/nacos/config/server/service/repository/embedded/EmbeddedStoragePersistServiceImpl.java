@@ -655,7 +655,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
         final Timestamp time = new Timestamp(System.currentTimeMillis());
         try {
             String idsStr = StringUtils.join(ids, StringUtils.COMMA);
-            List<ConfigInfo> configInfoList = findConfigInfoByIds(idsStr);
+            List<ConfigInfo> configInfoList = findConfigInfosByIds(idsStr);
             if (CollectionUtils.isNotEmpty(configInfoList)) {
                 removeConfigInfoByIdsAtomic(idsStr);
                 for (ConfigInfo configInfo : configInfoList) {
@@ -1883,7 +1883,7 @@ public class EmbeddedStoragePersistServiceImpl implements PersistService {
     }
     
     @Override
-    public List<ConfigInfo> findConfigInfoByIds(final String ids) {
+    public List<ConfigInfo> findConfigInfosByIds(final String ids) {
         if (StringUtils.isBlank(ids)) {
             return null;
         }
