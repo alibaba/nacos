@@ -86,7 +86,7 @@ public final class SelectorFactory {
         }
     }
 
-    private static String getUniqueClusterString(Collection<String> cluster) {
+    public static String getUniqueClusterString(Collection<String> cluster) {
         TreeSet<String> treeSet = new TreeSet<>(cluster);
         return StringUtils.join(treeSet, ",");
     }

@@ -22,6 +22,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -54,8 +55,8 @@ public class SelectorManagerTest {
             assertTrue(selectorManager.isSubscribed(subId));
         }
 
-        List<String> subsList = selectorManager.getSubscriptions();
-        for (String subId : subsList) {
+        Set<String> subsSet = selectorManager.getSubscriptions();
+        for (String subId : subsSet) {
             assertTrue(list.contains(subId));
         }
 

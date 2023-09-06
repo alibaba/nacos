@@ -38,7 +38,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 public class NamingSelectorWrapperTest {
-
+    
     @Test
     public void testEquals() {
         EventListener listener = mock(EventListener.class);
@@ -47,12 +47,12 @@ public class NamingSelectorWrapperTest {
         NamingSelectorWrapper sw1 = new NamingSelectorWrapper(selector1, listener);
         NamingSelectorWrapper sw2 = new NamingSelectorWrapper(selector2, listener);
         NamingSelectorWrapper sw3 = new NamingSelectorWrapper(selector1, listener);
-
+        
         assertNotEquals(sw1.hashCode(), sw2.hashCode());
         assertEquals(sw1.hashCode(), sw3.hashCode());
         assertNotEquals(sw1, sw2);
         assertEquals(sw1, sw3);
-
+        
         Set<NamingSelectorWrapper> set = new HashSet<>();
         set.add(sw1);
         assertFalse(set.contains(sw2));
@@ -60,8 +60,10 @@ public class NamingSelectorWrapperTest {
         assertTrue(set.add(sw2));
         assertFalse(set.add(sw3));
         assertTrue(set.remove(sw3));
+        
+        assertEquals(sw1, new NamingSelectorWrapper("a", "b", "c", selector1, listener));
     }
-
+    
     @Test
     public void testSelectable() {
         NamingSelectorWrapper selectorWrapper = new NamingSelectorWrapper(null, null);
@@ -72,10 +74,11 @@ public class NamingSelectorWrapperTest {
         assertFalse(selectorWrapper.isSelectable(event2));
         InstancesChangeEvent event3 = new InstancesChangeEvent(null, null, null, null, Collections.emptyList(), null);
         assertFalse(selectorWrapper.isSelectable(event3));
-        InstancesChangeEvent event4 = new InstancesChangeEvent(null, null, null, null, Collections.emptyList(), new InstancesDiff());
+        InstancesChangeEvent event4 = new InstancesChangeEvent(null, null, null, null, Collections.emptyList(),
+                new InstancesDiff());
         assertTrue(selectorWrapper.isSelectable(event4));
     }
-
+    
     @Test
     public void testCallable() {
         NamingSelectorWrapper selectorWrapper = new NamingSelectorWrapper(null, null);
@@ -85,14 +88,15 @@ public class NamingSelectorWrapperTest {
         changeEvent.getRemovedInstances().clear();
         assertFalse(selectorWrapper.isCallable(changeEvent));
     }
-
+    
     @Test
     public void testNotifyListener() {
         EventListener listener = mock(EventListener.class);
-        NamingSelectorWrapper selectorWrapper = new NamingSelectorWrapper(new DefaultNamingSelector(Instance::isHealthy), listener);
+        NamingSelectorWrapper selectorWrapper = new NamingSelectorWrapper(
+                new DefaultNamingSelector(Instance::isHealthy), listener);
         InstancesDiff diff = new InstancesDiff(null, Collections.singletonList(new Instance()), null);
-        InstancesChangeEvent event =
-                new InstancesChangeEvent(null, "serviceName", "groupName", "clusters", Collections.emptyList(), diff);
+        InstancesChangeEvent event = new InstancesChangeEvent(null, "serviceName", "groupName", "clusters",
+                Collections.emptyList(), diff);
         selectorWrapper.notifyListener(event);
         verify(listener).onEvent(argThat(Objects::nonNull));
     }

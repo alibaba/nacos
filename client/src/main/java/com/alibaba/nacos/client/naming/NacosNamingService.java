@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -31,11 +32,14 @@ import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
+import com.alibaba.nacos.client.naming.event.InstancesDiff;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate;
+import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.selector.SelectorFactory;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -46,6 +50,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
+import static com.alibaba.nacos.client.selector.SelectorFactory.getUniqueClusterString;
+
 /**
  * Nacos Naming Service.
  *
@@ -54,7 +60,7 @@ import java.util.UUID;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosNamingService implements NamingService {
     
-    private static final String DEFAULT_NAMING_LOG_FILE_PATH =  "naming.log";
+    private static final String DEFAULT_NAMING_LOG_FILE_PATH = "naming.log";
     
     private static final String UP = "UP";
     
@@ -93,13 +99,14 @@ public class NacosNamingService implements NamingService {
         InitUtils.initSerialization();
         InitUtils.initWebRootContext(nacosClientProperties);
         initLogName(nacosClientProperties);
-    
+        
         this.notifierEventScope = UUID.randomUUID().toString();
         this.changeNotifier = new InstancesChangeNotifier(this.notifierEventScope);
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(changeNotifier);
         this.serviceInfoHolder = new ServiceInfoHolder(namespace, this.notifierEventScope, nacosClientProperties);
-        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, nacosClientProperties, changeNotifier);
+        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, nacosClientProperties,
+                changeNotifier);
     }
     
     private void initLogName(NacosClientProperties properties) {
@@ -373,8 +380,8 @@ public class NacosNamingService implements NamingService {
             }
             return Balancer.RandomByWeight.selectHost(serviceInfo);
         } else {
-            ServiceInfo serviceInfo = clientProxy
-                    .queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
+            ServiceInfo serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0,
+                    false);
             return Balancer.RandomByWeight.selectHost(serviceInfo);
         }
     }
@@ -397,12 +404,25 @@ public class NacosNamingService implements NamingService {
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        if (null == listener) {
+        NamingSelector clusterSelector = SelectorFactory.newClusterSelector(clusters);
+        doSubscribe(serviceName, groupName, getUniqueClusterString(clusters), clusterSelector, listener);
+    }
+    
+    @Override
+    public void subscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+            throws NacosException {
+        doSubscribe(serviceName, groupName, Constants.NULL, selector, listener);
+    }
+    
+    private void doSubscribe(String serviceName, String groupName, String clusters, NamingSelector selector,
+            EventListener listener) throws NacosException {
+        if (selector == null || listener == null) {
             return;
         }
-        String clusterString = StringUtils.join(clusters, ",");
-        changeNotifier.registerListener(groupName, serviceName, clusterString, listener);
-        clientProxy.subscribe(serviceName, groupName, clusterString);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(serviceName, groupName, clusters, selector, listener);
+        notifyIfSubscribed(serviceName, groupName, wrapper);
+        changeNotifier.registerListener(groupName, serviceName, wrapper);
+        clientProxy.subscribe(serviceName, groupName, Constants.NULL);
     }
     
     @Override
@@ -423,10 +443,25 @@ public class NacosNamingService implements NamingService {
     @Override
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        String clustersString = StringUtils.join(clusters, ",");
-        changeNotifier.deregisterListener(groupName, serviceName, clustersString, listener);
-        if (!changeNotifier.isSubscribed(groupName, serviceName, clustersString)) {
-            clientProxy.unsubscribe(serviceName, groupName, clustersString);
+        NamingSelector clusterSelector = SelectorFactory.newClusterSelector(clusters);
+        unsubscribe(serviceName, groupName, clusterSelector, listener);
+    }
+    
+    @Override
+    public void unsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+            throws NacosException {
+        doUnsubscribe(serviceName, groupName, selector, listener);
+    }
+    
+    private void doUnsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+            throws NacosException {
+        if (selector == null || listener == null) {
+            return;
+        }
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(selector, listener);
+        changeNotifier.deregisterListener(groupName, serviceName, wrapper);
+        if (!changeNotifier.isSubscribed(groupName, serviceName)) {
+            clientProxy.unsubscribe(serviceName, groupName, Constants.NULL);
         }
     }
     
@@ -467,6 +502,23 @@ public class NacosNamingService implements NamingService {
         serviceInfoHolder.shutdown();
         clientProxy.shutdown();
         NotifyCenter.deregisterSubscriber(changeNotifier);
+    }
     
+    private void notifyIfSubscribed(String serviceName, String groupName, NamingSelectorWrapper wrapper) {
+        if (changeNotifier.isSubscribed(groupName, serviceName)) {
+            ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, Constants.NULL);
+            InstancesChangeEvent event = transferToEvent(serviceInfo);
+            wrapper.notifyListener(event);
+        }
+    }
+    
+    private InstancesChangeEvent transferToEvent(ServiceInfo serviceInfo) {
+        if (serviceInfo == null) {
+            return null;
+        }
+        InstancesDiff diff = new InstancesDiff();
+        diff.setAddedInstances(serviceInfo.getHosts());
+        return new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
+                serviceInfo.getClusters(), serviceInfo.getHosts(), diff);
     }
 }

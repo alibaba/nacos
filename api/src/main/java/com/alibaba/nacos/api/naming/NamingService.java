@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 
 import java.util.List;
@@ -490,6 +491,18 @@ public interface NamingService {
      */
     void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException;
+
+    /**
+     * Subscribe service to receive events of instances alteration.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
+            throws NacosException;
     
     /**
      * Unsubscribe event listener of service.
@@ -530,6 +543,18 @@ public interface NamingService {
      * @throws NacosException nacos exception
      */
     void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
+            throws NacosException;
+
+    /**
+     * Unsubscribe event listener of service.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
             throws NacosException;
     
     /**

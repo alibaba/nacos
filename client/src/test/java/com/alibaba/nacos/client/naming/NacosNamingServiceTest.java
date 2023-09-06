@@ -29,7 +29,9 @@ import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
+import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
+import com.alibaba.nacos.client.selector.SelectorFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -39,9 +41,11 @@ import org.junit.rules.ExpectedException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
+import static com.alibaba.nacos.client.selector.SelectorFactory.getUniqueClusterString;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -710,8 +714,10 @@ public class NacosNamingServiceTest {
         };
         //when
         client.subscribe(serviceName, listener);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(serviceName, Constants.DEFAULT_GROUP, Constants.NULL,
+                SelectorFactory.newClusterSelector(Collections.emptyList()), listener);
         //then
-        verify(changeNotifier, times(1)).registerListener(Constants.DEFAULT_GROUP, serviceName, "", listener);
+        verify(changeNotifier, times(1)).registerListener(Constants.DEFAULT_GROUP, serviceName, wrapper);
         verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "");
     }
     
@@ -725,8 +731,10 @@ public class NacosNamingServiceTest {
         };
         //when
         client.subscribe(serviceName, groupName, listener);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(serviceName, groupName, Constants.NULL,
+                SelectorFactory.newClusterSelector(Collections.emptyList()), listener);
         //then
-        verify(changeNotifier, times(1)).registerListener(groupName, serviceName, "", listener);
+        verify(changeNotifier, times(1)).registerListener(groupName, serviceName, wrapper);
         verify(proxy, times(1)).subscribe(serviceName, groupName, "");
     }
     
@@ -740,10 +748,11 @@ public class NacosNamingServiceTest {
         };
         //when
         client.subscribe(serviceName, clusterList, listener);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(serviceName, Constants.DEFAULT_GROUP, Constants.NULL,
+                SelectorFactory.newClusterSelector(clusterList), listener);
         //then
-        verify(changeNotifier, times(1)).registerListener(Constants.DEFAULT_GROUP, serviceName, "cluster1,cluster2",
-                listener);
-        verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2");
+        verify(changeNotifier, times(1)).registerListener(Constants.DEFAULT_GROUP, serviceName, wrapper);
+        verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, Constants.NULL);
     }
     
     @Test
@@ -757,9 +766,11 @@ public class NacosNamingServiceTest {
         };
         //when
         client.subscribe(serviceName, groupName, clusterList, listener);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(serviceName, groupName,
+                getUniqueClusterString(clusterList), SelectorFactory.newClusterSelector(clusterList), listener);
         //then
-        verify(changeNotifier, times(1)).registerListener(groupName, serviceName, "cluster1,cluster2", listener);
-        verify(proxy, times(1)).subscribe(serviceName, groupName, "cluster1,cluster2");
+        verify(changeNotifier, times(1)).registerListener(groupName, serviceName, wrapper);
+        verify(proxy, times(1)).subscribe(serviceName, groupName, Constants.NULL);
     }
     
     @Test
@@ -769,12 +780,14 @@ public class NacosNamingServiceTest {
         EventListener listener = event -> {
         
         };
-        when(changeNotifier.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "")).thenReturn(false);
+        when(changeNotifier.isSubscribed(serviceName, Constants.DEFAULT_GROUP)).thenReturn(false);
         //when
         client.unsubscribe(serviceName, listener);
         //then
-        verify(changeNotifier, times(1)).deregisterListener(Constants.DEFAULT_GROUP, serviceName, "", listener);
-        verify(proxy, times(1)).unsubscribe(serviceName, Constants.DEFAULT_GROUP, "");
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(
+                SelectorFactory.newClusterSelector(Collections.emptyList()), listener);
+        verify(changeNotifier, times(1)).deregisterListener(Constants.DEFAULT_GROUP, serviceName, wrapper);
+        verify(proxy, times(1)).unsubscribe(serviceName, Constants.DEFAULT_GROUP, Constants.NULL);
     }
     
     @Test
@@ -785,13 +798,15 @@ public class NacosNamingServiceTest {
         EventListener listener = event -> {
         
         };
-        when(changeNotifier.isSubscribed(serviceName, groupName, "")).thenReturn(false);
+        when(changeNotifier.isSubscribed(serviceName, groupName)).thenReturn(false);
         
         //when
         client.unsubscribe(serviceName, groupName, listener);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(
+                SelectorFactory.newClusterSelector(Collections.emptyList()), listener);
         //then
-        verify(changeNotifier, times(1)).deregisterListener(groupName, serviceName, "", listener);
-        verify(proxy, times(1)).unsubscribe(serviceName, groupName, "");
+        verify(changeNotifier, times(1)).deregisterListener(groupName, serviceName, wrapper);
+        verify(proxy, times(1)).unsubscribe(serviceName, groupName, Constants.NULL);
     }
     
     @Test
@@ -802,14 +817,15 @@ public class NacosNamingServiceTest {
         EventListener listener = event -> {
         
         };
-        when(changeNotifier.isSubscribed(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2")).thenReturn(false);
+        when(changeNotifier.isSubscribed(serviceName, Constants.DEFAULT_GROUP)).thenReturn(false);
         
         //when
         client.unsubscribe(serviceName, clusterList, listener);
-        //then
-        verify(changeNotifier, times(1)).deregisterListener(Constants.DEFAULT_GROUP, serviceName, "cluster1,cluster2",
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(SelectorFactory.newClusterSelector(clusterList),
                 listener);
-        verify(proxy, times(1)).unsubscribe(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2");
+        //then
+        verify(changeNotifier, times(1)).deregisterListener(Constants.DEFAULT_GROUP, serviceName, wrapper);
+        verify(proxy, times(1)).unsubscribe(serviceName, Constants.DEFAULT_GROUP, Constants.NULL);
     }
     
     @Test
@@ -821,13 +837,15 @@ public class NacosNamingServiceTest {
         EventListener listener = event -> {
         
         };
-        when(changeNotifier.isSubscribed(serviceName, groupName, "cluster1,cluster2")).thenReturn(false);
+        when(changeNotifier.isSubscribed(serviceName, groupName)).thenReturn(false);
         
         //when
         client.unsubscribe(serviceName, groupName, clusterList, listener);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(SelectorFactory.newClusterSelector(clusterList),
+                listener);
         //then
-        verify(changeNotifier, times(1)).deregisterListener(groupName, serviceName, "cluster1,cluster2", listener);
-        verify(proxy, times(1)).unsubscribe(serviceName, groupName, "cluster1,cluster2");
+        verify(changeNotifier, times(1)).deregisterListener(groupName, serviceName, wrapper);
+        verify(proxy, times(1)).unsubscribe(serviceName, groupName, Constants.NULL);
     }
     
     @Test

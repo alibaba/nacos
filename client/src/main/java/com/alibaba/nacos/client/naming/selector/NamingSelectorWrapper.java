@@ -36,102 +36,97 @@ import java.util.List;
  * @author lideyou
  */
 public class NamingSelectorWrapper extends AbstractSelectorWrapper<NamingSelector, NamingEvent, InstancesChangeEvent> {
-
+    
     private String serviceName;
-
+    
     private String groupName;
-
+    
     private String clusters;
-
+    
     private final InnerNamingContext namingContext = new InnerNamingContext();
-
+    
     private class InnerNamingContext implements NamingContext {
-
+        
         private List<Instance> instances;
-
+        
         @Override
         public String getServiceName() {
             return serviceName;
         }
-
+        
         @Override
         public String getGroupName() {
             return groupName;
         }
-
+        
         @Override
         public String getClusters() {
             return clusters;
         }
-
+        
         @Override
         public List<Instance> getInstances() {
             return instances;
         }
-
+        
         private void setInstances(List<Instance> instances) {
             this.instances = instances;
         }
     }
-
+    
     public NamingSelectorWrapper(NamingSelector selector, EventListener listener) {
         super(selector, new NamingListenerInvoker(listener));
     }
-
+    
+    public NamingSelectorWrapper(String serviceName, String groupName, String clusters, NamingSelector selector,
+            EventListener listener) {
+        this(selector, listener);
+        this.serviceName = serviceName;
+        this.groupName = groupName;
+        this.clusters = clusters;
+    }
+    
     @Override
     protected boolean isSelectable(InstancesChangeEvent event) {
-        return event != null
-                && event.getHosts() != null
-                && event.getInstancesDiff() != null;
+        return event != null && event.getHosts() != null && event.getInstancesDiff() != null;
     }
-
+    
     @Override
     public boolean isCallable(NamingEvent event) {
         if (event == null) {
             return false;
         }
         NamingChangeEvent changeEvent = (NamingChangeEvent) event;
-        return changeEvent.isAdded()
-                || changeEvent.isRemoved()
-                || changeEvent.isModified();
+        return changeEvent.isAdded() || changeEvent.isRemoved() || changeEvent.isModified();
     }
-
+    
     @Override
     protected NamingEvent buildListenerEvent(InstancesChangeEvent event) {
-        this.serviceName = event.getServiceName();
-        this.groupName = event.getGroupName();
-        this.clusters = event.getClusters();
-
         List<Instance> currentIns = Collections.emptyList();
         if (CollectionUtils.isNotEmpty(event.getHosts())) {
             currentIns = doSelect(event.getHosts());
         }
-
+        
         InstancesDiff diff = event.getInstancesDiff();
         InstancesDiff newDiff = new InstancesDiff();
         if (diff.isAdded()) {
-            newDiff.setAddedInstances(
-                    doSelect(diff.getAddedInstances()));
+            newDiff.setAddedInstances(doSelect(diff.getAddedInstances()));
         }
         if (diff.isRemoved()) {
-            newDiff.setRemovedInstances(
-                    doSelect(diff.getRemovedInstances()));
+            newDiff.setRemovedInstances(doSelect(diff.getRemovedInstances()));
         }
         if (diff.isModified()) {
-            newDiff.setModifiedInstances(
-                    doSelect(diff.getModifiedInstances()));
+            newDiff.setModifiedInstances(doSelect(diff.getModifiedInstances()));
         }
-
+        
         return new NamingChangeEvent(serviceName, groupName, clusters, currentIns, newDiff);
     }
-
+    
     private List<Instance> doSelect(List<Instance> instances) {
         NamingContext context = getNamingContext(instances);
-        return this.getSelector()
-                .select(context)
-                .getResult();
+        return this.getSelector().select(context).getResult();
     }
-
+    
     private NamingContext getNamingContext(final List<Instance> instances) {
         namingContext.setInstances(instances);
         return namingContext;
