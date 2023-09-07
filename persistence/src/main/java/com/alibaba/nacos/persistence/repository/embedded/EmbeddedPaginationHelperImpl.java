@@ -22,6 +22,7 @@ import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.RowMapper;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -57,8 +58,8 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
     }
     
     @Override
-    public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
-            final int pageNo, final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
+    public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, Object[] args, final int pageNo,
+            final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
@@ -85,7 +86,17 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
             return page;
         }
         
-        List<E> result = databaseOperate.queryMany(sqlFetchRows, args, rowMapper);
+        // fill the sql Page args
+        String fetchSql = sqlFetchRows;
+        if (!fetchSql.contains("OFFSET")) {
+            fetchSql += " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+            Object[] newArgs = Arrays.copyOf(args, args.length + 2);
+            newArgs[args.length] = (pageNo - 1) * pageSize;
+            newArgs[args.length + 1] = pageSize;
+            args = newArgs;
+        }
+        
+        List<E> result = databaseOperate.queryMany(fetchSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
