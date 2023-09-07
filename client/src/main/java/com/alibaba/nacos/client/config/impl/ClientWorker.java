@@ -122,11 +122,11 @@ public class ClientWorker implements Closeable {
     
     private final ConfigFilterChainManager configFilterChainManager;
     
-    private String uuid = UUID.randomUUID().toString();
+    private final String uuid = UUID.randomUUID().toString();
     
     private long timeout;
     
-    private ConfigRpcTransportClient agent;
+    private final ConfigRpcTransportClient agent;
     
     private int taskPenaltyTime;
     
@@ -568,8 +568,8 @@ public class ClientWorker implements Closeable {
         Map<String, ExecutorService> multiTaskExecutor = new HashMap<>();
         
         private final BlockingQueue<Object> listenExecutebell = new ArrayBlockingQueue<>(1);
-        
-        private Object bellItem = new Object();
+    
+        private final Object bellItem = new Object();
         
         private long lastAllSyncTime = System.currentTimeMillis();
         
@@ -596,9 +596,12 @@ public class ClientWorker implements Closeable {
             LOGGER.info("Remove rpc clients: {}", destroyClients);
             LOGGER.info("Shutdown executor {}", executor);
             executor.shutdown();
-            Map<String, CacheData> stringCacheDataMap = cacheMap.get();
-            for (Map.Entry<String, CacheData> entry : stringCacheDataMap.entrySet()) {
-                entry.getValue().setConsistentWithServer(false);
+            synchronized (cacheMap) {
+                Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
+                for (Map.Entry<String, CacheData> entry : copy.entrySet()) {
+                    entry.getValue().setConsistentWithServer(false);
+                }
+                cacheMap.set(copy);
             }
             if (subscriber != null) {
                 NotifyCenter.deregisterSubscriber(subscriber);
