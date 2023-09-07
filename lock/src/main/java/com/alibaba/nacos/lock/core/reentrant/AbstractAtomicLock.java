@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.lock.core.reentrant;
 
+import java.io.Serializable;
+
 /**
  * abstract atomic lock.
  *
@@ -23,7 +25,9 @@ package com.alibaba.nacos.lock.core.reentrant;
  * @description AtomicLock
  * @date 2023/7/10 14:50
  */
-public abstract class AbstractAtomicLock implements AtomicLockService {
+public abstract class AbstractAtomicLock implements AtomicLockService, Serializable {
+    
+    private static final long serialVersionUID = -3460985546856855524L;
     
     private final String key;
     

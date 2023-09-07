@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.lock.core;
 
+import com.alibaba.nacos.api.lock.common.LockConstants;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 
 /**
@@ -32,7 +33,7 @@ public class NLock extends LockInstance {
     public NLock() {
     }
     
-    public NLock(String key, Long expireTimestamp, String keyType) {
-        super(key, expireTimestamp, keyType);
+    public NLock(String key, Long expireTimestamp) {
+        super(key, expireTimestamp, LockConstants.NACOS_LOCK_TYPE);
     }
 }
