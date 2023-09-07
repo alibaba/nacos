@@ -38,12 +38,12 @@ public class LockInstance implements Serializable {
     
     private Map<String, ? extends Serializable> params;
     
-    private String keyType;
+    private String lockType;
     
-    public LockInstance(String key, Long expireTimestamp, String keyType) {
+    public LockInstance(String key, Long expireTimestamp, String lockType) {
         this.key = key;
         this.expireTimestamp = expireTimestamp;
-        this.keyType = keyType;
+        this.lockType = lockType;
     }
     
     public LockInstance() {
@@ -74,8 +74,9 @@ public class LockInstance implements Serializable {
     }
     
     /**
-     * Will call {@link LockService#remoteTryLock(LockInstance)} request grpc to get lock and do something.<br/>
-     * can be {@link Override} to do some client special logic.
+     * Will call {@link LockService#remoteTryLock(LockInstance)} request grpc to get lock and do something.<br/> can be
+     * {@link Override} to do some client special logic.
+     *
      * @param lockService {@link LockService}
      * @return Boolean {@link Boolean}
      * @throws NacosException NacosException
@@ -87,6 +88,7 @@ public class LockInstance implements Serializable {
     /**
      * Will call {@link LockService#remoteReleaseLock(LockInstance)} request grpc to release lock and do something.<br/>
      * can be {@link Override} to do some client special logic.
+     *
      * @param lockService {@link LockService}
      * @return Boolean {@link Boolean}
      * @throws NacosException NacosException
@@ -97,9 +99,14 @@ public class LockInstance implements Serializable {
     
     /**
      * spi get lock type.
+     *
      * @return type
      */
     public String getLockType() {
-        return keyType;
+        return lockType;
+    }
+    
+    public void setLockType(String lockType) {
+        this.lockType = lockType;
     }
 }

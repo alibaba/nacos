@@ -30,18 +30,23 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.lock.LockManager;
-import com.alibaba.nacos.lock.constant.PropertiesConstant;
 import com.alibaba.nacos.lock.constant.Constants;
+import com.alibaba.nacos.lock.constant.PropertiesConstant;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
+import com.alibaba.nacos.lock.persistence.NacosLockSnapshotOperation;
 import com.alibaba.nacos.lock.raft.request.MutexLockRequest;
 import com.alibaba.nacos.lock.service.LockOperationService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.protobuf.ByteString;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * lock operation and CPHandler.
@@ -52,7 +57,13 @@ import java.util.List;
 @Component
 public class LockOperationServiceImpl extends RequestProcessor4CP implements LockOperationService {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(LockOperationServiceImpl.class);
+    
     private final Serializer serializer = SerializeFactory.getDefault();
+    
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    
+    private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
     
     private final CPProtocol protocol;
     
@@ -74,6 +85,8 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     
     @Override
     public Response onApply(WriteRequest request) {
+        final Lock lock = readLock;
+        lock.lock();
         try {
             LockOperationEnum lockOperation = LockOperationEnum.valueOf(request.getOperation());
             Object data = null;
@@ -86,10 +99,14 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
             } else {
                 return Response.newBuilder().setSuccess(false).build();
             }
+            LOGGER.info("thread: {}, operator: {}, request: {}, success: {}", Thread.currentThread().getName(),
+                    lockOperation, serializer.deserialize(request.getData().toByteArray()), data);
             ByteString bytes = ByteString.copyFrom(serializer.serialize(data));
             return Response.newBuilder().setSuccess(true).setData(bytes).build();
         } catch (Exception e) {
             return Response.newBuilder().setSuccess(false).build();
+        } finally {
+            lock.unlock();
         }
     }
     
@@ -124,6 +141,11 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
         } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
+    }
+    
+    @Override
+    public List<SnapshotOperation> loadSnapshotOperate() {
+        return Collections.singletonList(new NacosLockSnapshotOperation(lockManager, lock.writeLock()));
     }
     
     @Override

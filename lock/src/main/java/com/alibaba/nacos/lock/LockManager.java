@@ -17,6 +17,9 @@
 package com.alibaba.nacos.lock;
 
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
+import com.alibaba.nacos.lock.core.reentrant.LockKey;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * lock manager.
@@ -29,9 +32,17 @@ public interface LockManager {
     
     /**
      * get mutex lock.
+     *
      * @param lockType lock type
-     * @param key key
+     * @param key      key
      * @return AbstractAtomicLock
      */
     AtomicLockService getMutexLock(String lockType, String key);
+    
+    /**
+     * show all atomicLock entity to snapshot save.
+     *
+     * @return Map
+     */
+    ConcurrentHashMap<LockKey, AtomicLockService> showLocks();
 }

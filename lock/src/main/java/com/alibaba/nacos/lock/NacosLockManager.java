@@ -19,13 +19,13 @@ package com.alibaba.nacos.lock;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
+import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
+import com.alibaba.nacos.lock.core.reentrant.LockKey;
 import com.alibaba.nacos.lock.factory.LockFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -38,9 +38,9 @@ import java.util.stream.Collectors;
 @Service
 public class NacosLockManager implements LockManager {
     
-    Map<String, LockFactory> factoryMap;
+    private Map<String, LockFactory> factoryMap;
     
-    Map<LockKey, AbstractAtomicLock> atomicLockMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<LockKey, AtomicLockService> atomicLockMap = new ConcurrentHashMap<>();
     
     public NacosLockManager() {
         Collection<LockFactory> factories = NacosServiceLoader.load(LockFactory.class);
@@ -49,7 +49,7 @@ public class NacosLockManager implements LockManager {
     }
     
     @Override
-    public AbstractAtomicLock getMutexLock(String lockType, String key) {
+    public AtomicLockService getMutexLock(String lockType, String key) {
         LockKey lockKey = new LockKey(lockType, key);
         if (!factoryMap.containsKey(lockType)) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR);
@@ -60,48 +60,9 @@ public class NacosLockManager implements LockManager {
         });
     }
     
-    public static class LockKey {
-        
-        public LockKey(String lockType, String key) {
-            this.lockType = lockType;
-            this.key = key;
-        }
-        
-        private String lockType;
-        
-        private String key;
-        
-        public String getLockType() {
-            return lockType;
-        }
-        
-        public void setLockType(String lockType) {
-            this.lockType = lockType;
-        }
-        
-        public String getKey() {
-            return key;
-        }
-        
-        public void setKey(String key) {
-            this.key = key;
-        }
-        
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            LockKey lockKey = (LockKey) o;
-            return Objects.equals(lockType, lockKey.lockType) && Objects.equals(key, lockKey.key);
-        }
-        
-        @Override
-        public int hashCode() {
-            return Objects.hash(lockType, key);
-        }
+    @Override
+    public ConcurrentHashMap<LockKey, AtomicLockService> showLocks() {
+        return atomicLockMap;
     }
+    
 }
