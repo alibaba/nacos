@@ -97,7 +97,11 @@ public class RpcClientFactory {
             while (iterator.hasNext()) {
                 Map.Entry<String, RpcClient> entry = iterator.next();
                 if (predicate.test(entry)) {
-                    destroyClient(entry.getKey());
+                    iterator.remove();
+                    RpcClient rpcClient = entry.getValue();
+                    if (rpcClient != null) {
+                        rpcClient.shutdown();
+                    }
                     successfullyDestroyedKeys.add(entry.getKey());
                 }
             }
