@@ -27,6 +27,7 @@ import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
+import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.constant.PropertiesConstant;
@@ -40,6 +41,7 @@ import com.google.protobuf.ByteString;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.List;
 
 /**
  * lock operation and CPHandler.

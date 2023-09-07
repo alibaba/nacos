@@ -74,23 +74,25 @@ public class LockInstance implements Serializable {
     }
     
     /**
-     * use lockService to get lock and do something.
-     * @param lockService lockService
-     * @return Boolean
+     * Will call {@link LockService#remoteTryLock(LockInstance)} request grpc to get lock and do something.<br/>
+     * can be {@link Override} to do some client special logic.
+     * @param lockService {@link LockService}
+     * @return Boolean {@link Boolean}
      * @throws NacosException NacosException
      */
     public Boolean lock(LockService lockService) throws NacosException {
-        return lockService.tryLock(this);
+        return lockService.remoteTryLock(this);
     }
     
     /**
-     * use lockService to unLock and do something.
-     * @param lockService lockService
-     * @return Boolean
+     * Will call {@link LockService#remoteReleaseLock(LockInstance)} request grpc to release lock and do something.<br/>
+     * can be {@link Override} to do some client special logic.
+     * @param lockService {@link LockService}
+     * @return Boolean {@link Boolean}
      * @throws NacosException NacosException
      */
     public Boolean unLock(LockService lockService) throws NacosException {
-        return lockService.releaseLock(this);
+        return lockService.remoteReleaseLock(this);
     }
     
     /**

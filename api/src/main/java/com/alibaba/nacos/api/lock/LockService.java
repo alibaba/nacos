@@ -22,7 +22,11 @@ import com.alibaba.nacos.api.lock.model.LockInstance;
 import java.util.Properties;
 
 /**
- * lock service.
+ * Nacos Lock Process.
+ *
+ * <p>lock => {@link LockService#lock(LockInstance)} -> {@link LockInstance#lock(LockService)} ->
+ * {@link  LockService#remoteTryLock(LockInstance)} <br/> unLock => {@link LockService#unLock(LockInstance)} ->
+ * {@link LockInstance#unLock(LockService)} -> {@link LockService#remoteReleaseLock(LockInstance)}
  *
  * @author 985492783@qq.com
  * @date 2023/8/24 19:49
@@ -30,7 +34,8 @@ import java.util.Properties;
 public interface LockService {
     
     /**
-     * lock method to instance.
+     * Real lock method expose to user to acquire the lock.<br/> It will call {@link LockInstance#lock(LockService)}
+     * <br/>
      *
      * @param instance instance
      * @return Boolean
@@ -39,7 +44,8 @@ public interface LockService {
     Boolean lock(LockInstance instance) throws NacosException;
     
     /**
-     * unlock method to instance.
+     * Real lock method expose to user to release the lock.<br/> It will call {@link LockInstance#unLock(LockService)}
+     * <br/>
      *
      * @param instance instance
      * @return Boolean
@@ -54,7 +60,7 @@ public interface LockService {
      * @return Boolean
      * @throws NacosException NacosException
      */
-    Boolean tryLock(LockInstance instance) throws NacosException;
+    Boolean remoteTryLock(LockInstance instance) throws NacosException;
     
     /**
      * use grpc request to release lock.
@@ -63,7 +69,7 @@ public interface LockService {
      * @return Boolean
      * @throws NacosException NacosException
      */
-    Boolean releaseLock(LockInstance instance) throws NacosException;
+    Boolean remoteReleaseLock(LockInstance instance) throws NacosException;
     
     /**
      * get properties.

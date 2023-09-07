@@ -60,12 +60,12 @@ public class NacosLockService implements LockService {
     }
     
     @Override
-    public Boolean tryLock(LockInstance instance) throws NacosException {
+    public Boolean remoteTryLock(LockInstance instance) throws NacosException {
         return lockGrpcClient.lock(instance);
     }
     
     @Override
-    public Boolean releaseLock(LockInstance instance) throws NacosException {
+    public Boolean remoteReleaseLock(LockInstance instance) throws NacosException {
         return lockGrpcClient.unLock(instance);
     }
     
