@@ -36,6 +36,10 @@ public class UpdateInstanceTraceEvent extends NamingTraceEvent {
     
     private final int instancePort;
     
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+    
     public String getClientIp() {
         return clientIp;
     }

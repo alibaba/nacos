@@ -30,6 +30,10 @@ public class UpdateServiceTraceEvent extends NamingTraceEvent {
     
     private final Map<String, String> metadata;
     
+    public Map<String, String> getMetadata() {
+        return metadata;
+    }
+    
     public UpdateServiceTraceEvent(long eventTime, String serviceNamespace, String serviceGroup, String serviceName,
             Map<String, String> metadata) {
         super("UPDATE_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
