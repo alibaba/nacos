@@ -23,6 +23,8 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tags;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -43,6 +45,8 @@ public class ConfigMetrics {
     private static final String DEFAULT_METER_NAME = "nacos.monitor";
     
     private static final String TIMER_METER_NAME = "nacos.client.config.timer";
+    
+    private static final String COMMON_METER_NAME = "nacos.client.config.common";
     
     private static final String COUNTER_METER_NAME = "nacos.client.config.counter";
     
@@ -67,6 +71,10 @@ public class ConfigMetrics {
             .gauge(DEFAULT_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "listenerConfigCount"),
                     new AtomicInteger(0));
     
+    private static final AtomicInteger SERVER_NUMBER_GAUGE = MetricsMonitor.getNacosMeterRegistry()
+            .gauge(COMMON_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "serverNumber"),
+                    new AtomicInteger(0));
+    
     /**
      * Set the value of <b>listenConfigCount</b> gauge.
      * <b>listenConfigCount</b> is to record the number of listening configs. As a matter of fact, this value reflects
@@ -77,6 +85,50 @@ public class ConfigMetrics {
     public static void setListenerConfigCountGauge(int count) {
         if (LISTENER_CONFIG_COUNT_GAUGE != null && isEnable()) {
             LISTENER_CONFIG_COUNT_GAUGE.set(count);
+        }
+    }
+    
+    /**
+     * Set the value of <b>serverNumber</b> gauge.
+     * <b>serverNumber</b> is to record the number of nacos servers.
+     *
+     * @param count the count of servers
+     */
+    public static void setServerNumberGauge(int count) {
+        if (SERVER_NUMBER_GAUGE != null && isEnable()) {
+            SERVER_NUMBER_GAUGE.set(count);
+        }
+    }
+    
+    /**
+     * Gauge the size of a collection. Only used when the reference to the collection is unchanged. It is best not to
+     * call this function in a multithreaded code block
+     *
+     * @param meterName  meter name, get the value in the public constant of this class
+     * @param tagName    tag name
+     * @param collection collection
+     * @param <T>        collection type
+     */
+    public static <T extends Collection<?>> void gaugeCollectionSize(String meterName, String tagName, T collection) {
+        if (isEnable()) {
+            MetricsMonitor.getNacosMeterRegistry()
+                    .gaugeCollectionSize(meterName, Tags.of("module", METRIC_MODULE_NAME, "name", tagName), collection);
+        }
+    }
+    
+    /**
+     * Gauge the size of a map. Only used when the reference to the map is <b>unchanged</b>. It is best not to call this
+     * function in a multithreaded code block
+     *
+     * @param meterName meter name, get the value in the public constant of this class
+     * @param tagName   tag name
+     * @param map       map
+     * @param <T>       map type
+     */
+    public static <T extends Map<?, ?>> void gaugeMapSize(String meterName, String tagName, T map) {
+        if (isEnable()) {
+            MetricsMonitor.getNacosMeterRegistry()
+                    .gaugeMapSize(meterName, Tags.of("module", METRIC_MODULE_NAME, "name", tagName), map);
         }
     }
     
@@ -243,6 +295,10 @@ public class ConfigMetrics {
     
     public static String getTimerMeterName() {
         return TIMER_METER_NAME;
+    }
+    
+    public static String getCommonMeterName() {
+        return COMMON_METER_NAME;
     }
     
     public static String getCounterMeterName() {

@@ -27,6 +27,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class ConfigMetricsTest {
@@ -57,6 +60,51 @@ public class ConfigMetricsTest {
             Gauge gauge = r.find(meterName).tags("module", moduleName, "name", "listenerConfigCount").gauge();
             Assert.assertNotNull(gauge);
             Assert.assertEquals(testCase, (int) gauge.value());
+        });
+    }
+    
+    @Test
+    public void testServerNumberGauge() {
+        int testCase = 8850;
+        ConfigMetrics.setServerNumberGauge(testCase);
+        String meterName = ConfigMetrics.getCommonMeterName();
+        
+        MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
+            Gauge gauge = r.find(meterName).tags("module", moduleName, "name", "serverNumber").gauge();
+            Assert.assertNotNull(gauge);
+            Assert.assertEquals(testCase, (int) gauge.value());
+        });
+    }
+    
+    @Test
+    public void testGaugeCollectionSize() {
+        ArrayList<Integer> testList = new ArrayList<>();
+        for (int i : new int[] {1, 2, 3, 4, 5}) {
+            testList.add(i);
+        }
+        String meterName = ConfigMetrics.getCommonMeterName();
+        ConfigMetrics.gaugeCollectionSize(meterName, "testCollectionTagName", testList);
+        
+        MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
+            Gauge gauge = r.find(meterName).tags("module", moduleName, "name", "testCollectionTagName").gauge();
+            Assert.assertNotNull(gauge);
+            Assert.assertEquals(testList.size(), (int) gauge.value());
+        });
+    }
+    
+    @Test
+    public void testGaugeMapSize() {
+        Map<String, String> testMap = new HashMap<>();
+        testMap.put("testKey1", "testValue1");
+        testMap.put("testKey2", "testValue2");
+        testMap.put("testKey3", "testValue3");
+        String meterName = ConfigMetrics.getCommonMeterName();
+        ConfigMetrics.gaugeMapSize(meterName, "testMapTagName", testMap);
+        
+        MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
+            Gauge gauge = r.find(meterName).tags("module", moduleName, "name", "testMapTagName").gauge();
+            Assert.assertNotNull(gauge);
+            Assert.assertEquals(testMap.size(), (int) gauge.value());
         });
     }
     

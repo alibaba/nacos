@@ -76,6 +76,19 @@ public class NamingMetricsTest {
     }
     
     @Test
+    public void testServerNumberGauge() {
+        int testCase = 8850;
+        NamingMetrics.setServerNumberGauge(testCase);
+        String meterName = NamingMetrics.getCommonMeterName();
+        
+        MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
+            Gauge gauge = r.find(meterName).tags("module", moduleName, "name", "serverNumber").gauge();
+            Assert.assertNotNull(gauge);
+            Assert.assertEquals(testCase, (int) gauge.value());
+        });
+    }
+    
+    @Test
     public void testGaugeCollectionSize() {
         ArrayList<Integer> testList = new ArrayList<>();
         for (int i : new int[] {1, 2, 3, 4, 5}) {

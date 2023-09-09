@@ -74,6 +74,10 @@ public class NamingMetrics {
             .gauge(CACHE_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "serviceInfoFailoverCacheSize"),
                     new AtomicInteger(0));
     
+    private static final AtomicInteger SERVER_NUMBER_GAUGE = MetricsMonitor.getNacosMeterRegistry()
+            .gauge(COMMON_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "serverNumber"),
+                    new AtomicInteger(0));
+    
     /**
      * Set the value of <b>serviceInfoMapSize</b> gauge. <b>serviceInfoMapSize</b> is to record the number of stored
      * service info.
@@ -95,6 +99,17 @@ public class NamingMetrics {
     public static void setServiceInfoFailoverCacheSizeGauge(int size) {
         if (SERVICE_INFO_FAILOVER_CACHE_SIZE_GAUGE != null && isEnable()) {
             SERVICE_INFO_FAILOVER_CACHE_SIZE_GAUGE.set(size);
+        }
+    }
+    
+    /**
+     * Set the value of <b>serverNumber</b> gauge. <b>serverNumber</b> is to record the number of Nacos server.
+     *
+     * @param size the size of server
+     */
+    public static void setServerNumberGauge(int size) {
+        if (SERVER_NUMBER_GAUGE != null && isEnable()) {
+            SERVER_NUMBER_GAUGE.set(size);
         }
     }
     

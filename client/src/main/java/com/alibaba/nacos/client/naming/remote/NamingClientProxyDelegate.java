@@ -71,8 +71,6 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
         this.serverListManager = new ServerListManager(properties, namespace);
-        NamingMetrics.gaugeCollectionSize(NamingMetrics.getCommonMeterName(), "serverNumber",
-                serverListManager.getServerList());
         this.serviceInfoHolder = serviceInfoHolder;
         NamingMetrics.gaugeMapSize(NamingMetrics.getCommonMeterName(), "serviceNumber",
                 serviceInfoHolder.getServiceInfoMap());
