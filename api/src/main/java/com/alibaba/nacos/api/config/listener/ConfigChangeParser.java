@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.config.listener;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
-
 import java.io.IOException;
 import java.util.Map;
 
@@ -27,7 +26,7 @@ import java.util.Map;
  * @author rushsky518
  */
 public interface ConfigChangeParser {
-    
+
     /**
      * Judge type.
      *
@@ -35,15 +34,16 @@ public interface ConfigChangeParser {
      * @return true if is responsible type, otherwise false
      */
     boolean isResponsibleFor(String type);
-    
+
     /**
      * Compare old and new data.
      *
      * @param oldContent old content
      * @param newContent new content
-     * @param type       data type
+     * @param type data type
      * @return key and change item map
      * @throws IOException io exception
      */
-    Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type) throws IOException;
+    Map<String, ConfigChangeItem> doParse(String oldContent, String newContent, String type)
+            throws IOException;
 }

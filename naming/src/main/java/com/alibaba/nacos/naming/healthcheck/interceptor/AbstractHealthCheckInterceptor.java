@@ -24,8 +24,9 @@ import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptor;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractHealthCheckInterceptor implements NacosNamingInterceptor<NacosHealthCheckTask> {
-    
+public abstract class AbstractHealthCheckInterceptor
+        implements NacosNamingInterceptor<NacosHealthCheckTask> {
+
     @Override
     public boolean isInterceptType(Class<?> type) {
         return NacosHealthCheckTask.class.isAssignableFrom(type);

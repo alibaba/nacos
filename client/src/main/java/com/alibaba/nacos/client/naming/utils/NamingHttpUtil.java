@@ -27,7 +27,7 @@ import com.alibaba.nacos.common.utils.VersionUtils;
  * @author xiweng.yy
  */
 public class NamingHttpUtil {
-    
+
     /**
      * Build header.
      *

@@ -22,12 +22,11 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Identity context builder for HTTP.
@@ -35,17 +34,17 @@ import java.util.TreeMap;
  * @author Nacos
  */
 public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpServletRequest> {
-    
+
     private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-    
+
     private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
-    
+
     private final AuthConfigs authConfigs;
-    
+
     public HttpIdentityContextBuilder(AuthConfigs authConfigs) {
         this.authConfigs = authConfigs;
     }
-    
+
     /**
      * get identity context from http.
      *
@@ -56,12 +55,14 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
     public IdentityContext build(HttpServletRequest request) {
         IdentityContext result = new IdentityContext();
         getRemoteIp(request, result);
-        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+        Optional<AuthPluginService> authPluginService =
+                AuthPluginManager.getInstance()
+                        .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         if (!authPluginService.isPresent()) {
             return result;
         }
-        // According to RFC2616, HTTP header and URI is case-insensitive, so use tree map with CASE_INSENSITIVE_ORDER
+        // According to RFC2616, HTTP header and URI is case-insensitive, so use tree map with
+        // CASE_INSENSITIVE_ORDER
         // to match the identity key and save the real key in map value.
         Map<String, String> identityNames = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         for (String each : authPluginService.get().identityNames()) {
@@ -71,9 +72,9 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
         getIdentityFromParameter(request, result, identityNames);
         return result;
     }
-    
-    private void getIdentityFromHeader(HttpServletRequest request, IdentityContext result,
-            Map<String, String> identityNames) {
+
+    private void getIdentityFromHeader(
+            HttpServletRequest request, IdentityContext result, Map<String, String> identityNames) {
         Enumeration<String> headerEnu = request.getHeaderNames();
         while (headerEnu.hasMoreElements()) {
             String paraName = headerEnu.nextElement();
@@ -82,9 +83,9 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
             }
         }
     }
-    
-    private void getIdentityFromParameter(HttpServletRequest request, IdentityContext result,
-            Map<String, String> identityNames) {
+
+    private void getIdentityFromParameter(
+            HttpServletRequest request, IdentityContext result, Map<String, String> identityNames) {
         Enumeration<String> paramEnu = request.getParameterNames();
         while (paramEnu.hasMoreElements()) {
             String paraName = paramEnu.nextElement();
@@ -93,7 +94,7 @@ public class HttpIdentityContextBuilder implements IdentityContextBuilder<HttpSe
             }
         }
     }
-    
+
     private void getRemoteIp(HttpServletRequest request, IdentityContext result) {
         String remoteIp = StringUtils.EMPTY;
         String xForwardedFor = request.getHeader(X_FORWARDED_FOR);

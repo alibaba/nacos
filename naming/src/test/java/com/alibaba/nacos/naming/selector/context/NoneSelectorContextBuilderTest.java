@@ -18,9 +18,6 @@
 package com.alibaba.nacos.naming.selector.context;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -31,9 +28,9 @@ import java.util.List;
  * @date 2021-08-05 19:44
  */
 public class NoneSelectorContextBuilderTest {
-    
+
     @Test
-    public void testBuild()  {
+    public void testBuild() {
         NoneSelectorContextBuilder<Instance> contextBuilder = new NoneSelectorContextBuilder<>();
         List<Instance> providers = Collections.emptyList();
         Assert.assertEquals(providers, contextBuilder.build("1.1.1.1", providers));

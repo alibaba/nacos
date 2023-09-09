@@ -16,39 +16,34 @@
 
 package com.alibaba.nacos.auth.parser.http;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import org.junit.Before;
-import org.junit.Test;
+import java.lang.reflect.Method;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import javax.servlet.http.HttpServletRequest;
-
-import java.lang.reflect.Method;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.eq;
-
 @RunWith(MockitoJUnitRunner.class)
 public class NamingHttpResourceParserTest {
-    
-    @Mock
-    private HttpServletRequest request;
-    
+
+    @Mock private HttpServletRequest request;
+
     private NamingHttpResourceParser resourceParser;
-    
+
     @Before
     public void setUp() throws Exception {
         resourceParser = new NamingHttpResourceParser();
     }
-    
+
     @Test
     @Secured()
     public void testParseWithFullContext() throws NoSuchMethodException {
@@ -62,7 +57,7 @@ public class NamingHttpResourceParserTest {
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutNamespace() throws NoSuchMethodException {
@@ -75,7 +70,7 @@ public class NamingHttpResourceParserTest {
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutGroup() throws NoSuchMethodException {
@@ -88,20 +83,21 @@ public class NamingHttpResourceParserTest {
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured()
     public void testParseWithGroupInService() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Mockito.when(request.getParameter(eq(CommonParams.NAMESPACE_ID))).thenReturn("testNs");
-        Mockito.when(request.getParameter(eq(CommonParams.SERVICE_NAME))).thenReturn("testG@@testS");
+        Mockito.when(request.getParameter(eq(CommonParams.SERVICE_NAME)))
+                .thenReturn("testG@@testS");
         Resource actual = resourceParser.parse(request, secured);
         assertEquals("testNs", actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutService() throws NoSuchMethodException {
@@ -114,7 +110,7 @@ public class NamingHttpResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutGroupAndService() throws NoSuchMethodException {
@@ -126,7 +122,7 @@ public class NamingHttpResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured(tags = {"testTag"})
     public void testParseWithTags() throws NoSuchMethodException {
@@ -141,7 +137,7 @@ public class NamingHttpResourceParserTest {
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
         assertTrue(actual.getProperties().containsKey("testTag"));
     }
-    
+
     private Secured getMethodSecure() throws NoSuchMethodException {
         StackTraceElement[] traces = new Exception().getStackTrace();
         StackTraceElement callerElement = traces[1];

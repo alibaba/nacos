@@ -19,54 +19,51 @@ package com.alibaba.nacos.naming.core.v2.client;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-
 import java.util.Collection;
 
 /**
  * Nacos naming client.
  *
- * <p>The abstract concept of the client stored by on the server of Nacos naming module. It is used to store which
- * services the client has published and subscribed.
+ * <p>The abstract concept of the client stored by on the server of Nacos naming module. It is used
+ * to store which services the client has published and subscribed.
  *
  * @author xiweng.yy
  */
 public interface Client {
-    
+
     /**
      * Get the unique id of current client.
      *
      * @return id of client
      */
     String getClientId();
-    
+
     /**
      * Whether is ephemeral of current client.
      *
      * @return true if client is ephemeral, otherwise false
      */
     boolean isEphemeral();
-    
-    /**
-     * Set the last time for updating current client as current time.
-     */
+
+    /** Set the last time for updating current client as current time. */
     void setLastUpdatedTime();
-    
+
     /**
      * Get the last time for updating current client.
      *
      * @return last time for updating
      */
     long getLastUpdatedTime();
-    
+
     /**
      * Add a new instance for service for current client.
      *
-     * @param service             publish service
+     * @param service publish service
      * @param instancePublishInfo instance
      * @return true if add successfully, otherwise false
      */
     boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo);
-    
+
     /**
      * Remove service instance from client.
      *
@@ -74,7 +71,7 @@ public interface Client {
      * @return instance info if exist, otherwise {@code null}
      */
     InstancePublishInfo removeServiceInstance(Service service);
-    
+
     /**
      * Get instance info of service from client.
      *
@@ -82,23 +79,23 @@ public interface Client {
      * @return instance info
      */
     InstancePublishInfo getInstancePublishInfo(Service service);
-    
+
     /**
      * Get all published service of current client.
      *
      * @return published services
      */
     Collection<Service> getAllPublishedService();
-    
+
     /**
      * Add a new subscriber for target service.
      *
-     * @param service    subscribe service
+     * @param service subscribe service
      * @param subscriber subscriber
      * @return true if add successfully, otherwise false
      */
     boolean addServiceSubscriber(Service service, Subscriber subscriber);
-    
+
     /**
      * Remove subscriber for service.
      *
@@ -106,7 +103,7 @@ public interface Client {
      * @return true if remove successfully, otherwise false
      */
     boolean removeServiceSubscriber(Service service);
-    
+
     /**
      * Get subscriber of service from client.
      *
@@ -114,21 +111,21 @@ public interface Client {
      * @return subscriber
      */
     Subscriber getSubscriber(Service service);
-    
+
     /**
      * Get all subscribe service of current client.
      *
      * @return subscribe services
      */
     Collection<Service> getAllSubscribeService();
-    
+
     /**
      * Generate sync data.
      *
      * @return sync data
      */
     ClientSyncData generateSyncData();
-    
+
     /**
      * Whether current client is expired.
      *
@@ -136,28 +133,28 @@ public interface Client {
      * @return true if client has expired, otherwise false
      */
     boolean isExpire(long currentTime);
-    
-    /**
-     * Release current client and release resources if neccessary.
-     */
+
+    /** Release current client and release resources if neccessary. */
     void release();
-    
+
     /**
      * Recalculate client revision and get its value.
+     *
      * @return recalculated revision value
      */
     long recalculateRevision();
-    
+
     /**
      * Get client revision.
+     *
      * @return current revision without recalculation
      */
     long getRevision();
-    
+
     /**
      * Set client revision.
+     *
      * @param revision revision of this client to update
      */
     void setRevision(long revision);
-    
 }

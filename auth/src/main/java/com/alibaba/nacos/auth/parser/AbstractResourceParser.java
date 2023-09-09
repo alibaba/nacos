@@ -19,7 +19,6 @@ package com.alibaba.nacos.auth.parser;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
-
 import java.util.Properties;
 
 /**
@@ -29,7 +28,7 @@ import java.util.Properties;
  * @since 2.1.0
  */
 public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
-    
+
     @Override
     public Resource parse(R request, Secured secured) {
         String namespaceId = getNamespaceId(request);
@@ -41,7 +40,7 @@ public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
         injectTagsToProperties(properties, secured);
         return new Resource(namespaceId, group, name, secured.signType(), properties);
     }
-    
+
     /**
      * Get namespaceId from request.
      *
@@ -49,7 +48,7 @@ public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
      * @return namespaceId
      */
     protected abstract String getNamespaceId(R request);
-    
+
     /**
      * Get group name from request.
      *
@@ -57,7 +56,7 @@ public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
      * @return group name
      */
     protected abstract String getGroup(R request);
-    
+
     /**
      * Get resource name from request.
      *
@@ -65,7 +64,7 @@ public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
      * @return resource name
      */
     protected abstract String getResourceName(R request);
-    
+
     /**
      * Get custom properties from request.
      *
@@ -73,12 +72,12 @@ public abstract class AbstractResourceParser<R> implements ResourceParser<R> {
      * @return custom properties
      */
     protected abstract Properties getProperties(R request);
-    
+
     /**
      * Inject tags defined in {@link Secured#tags()} into Resource properties, both key and value.
      *
      * @param properties properties in resource
-     * @param secured    secured
+     * @param secured secured
      */
     protected void injectTagsToProperties(Properties properties, Secured secured) {
         for (String each : secured.tags()) {

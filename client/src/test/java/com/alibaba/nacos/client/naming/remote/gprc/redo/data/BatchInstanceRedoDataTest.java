@@ -16,18 +16,16 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
 
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Test;
-
-import java.util.Collections;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import java.util.Collections;
+
 public class BatchInstanceRedoDataTest {
-    
+
     @Test
     @SuppressWarnings("all")
     public void testEquals() {
@@ -42,7 +40,7 @@ public class BatchInstanceRedoDataTest {
         assertFalse(redoData1.equals(redoData2));
         assertFalse(redoData1.equals(redoData2));
     }
-    
+
     @Test
     public void testHashCode() {
         BatchInstanceRedoData redoData1 = new BatchInstanceRedoData("a", "b");

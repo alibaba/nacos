@@ -20,56 +20,69 @@ import com.alibaba.nacos.common.trace.HealthCheckType;
 
 /**
  * Naming instance health state change trace event.
+ *
  * @author yanda
  */
 public class HealthStateChangeTraceEvent extends NamingTraceEvent {
-    
+
     private static final long serialVersionUID = 6966396191118694597L;
-    
+
     private String instanceIp;
-    
+
     private int instancePort;
-    
+
     private boolean isHealthy;
-    
+
     private HealthCheckType healthCheckType;
-    
-    private String  healthStateChangeReason;
-    
+
+    private String healthStateChangeReason;
+
     public String getInstanceIp() {
         return instanceIp;
     }
-    
+
     public int getInstancePort() {
         return instancePort;
     }
-    
+
     public String toInetAddr() {
         return instanceIp + ":" + instancePort;
     }
-    
+
     public boolean isHealthy() {
         return isHealthy;
     }
-    
+
     public HealthCheckType getHealthCheckType() {
         return healthCheckType;
     }
-    
+
     public String getHealthStateChangeReason() {
         return healthStateChangeReason;
     }
-    
-    public HealthStateChangeTraceEvent(long eventTime, String serviceNamespace, String serviceGroup,
-            String serviceName, String instanceIp, int instancePort, boolean isHealthy, String healthStateChangeReason) {
-        super("HEALTH_STATE_CHANGE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+
+    public HealthStateChangeTraceEvent(
+            long eventTime,
+            String serviceNamespace,
+            String serviceGroup,
+            String serviceName,
+            String instanceIp,
+            int instancePort,
+            boolean isHealthy,
+            String healthStateChangeReason) {
+        super(
+                "HEALTH_STATE_CHANGE_TRACE_EVENT",
+                eventTime,
+                serviceNamespace,
+                serviceGroup,
+                serviceName);
         this.instanceIp = instanceIp;
         this.instancePort = instancePort;
         this.isHealthy = isHealthy;
         this.healthCheckType = getHealthCheckTypeFromReason(healthStateChangeReason);
         this.healthStateChangeReason = healthStateChangeReason;
     }
-    
+
     public HealthCheckType getHealthCheckTypeFromReason(String reason) {
         if (reason.startsWith(HealthCheckType.HTTP_HEALTH_CHECK.getPrefix())) {
             return HealthCheckType.HTTP_HEALTH_CHECK;

@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.paramcheck;
 
-import org.junit.Test;
-
 import java.util.ArrayList;
 
 /**
@@ -26,10 +24,8 @@ import java.util.ArrayList;
  * @author zhuoguang
  */
 public class DefaultParamCheckerTest {
-    
-    /**
-     * Check param info list.
-     */
+
+    /** Check param info list. */
     @Test
     public void checkParamInfoList() {
         AbstractParamChecker paramChecker = new DefaultParamChecker();

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
-
 import java.util.Properties;
 
 /**
@@ -28,15 +27,17 @@ import java.util.Properties;
 public class RpcClientTlsConfig extends TlsConfig {
 
     /**
-     *  get tls config from properties.
-     * @param properties  Properties.
+     * get tls config from properties.
+     *
+     * @param properties Properties.
      * @return tls of config.
      */
     public static RpcClientTlsConfig properties(Properties properties) {
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_ENABLE)) {
-            tlsConfig.setEnableTls(Boolean.parseBoolean(
-                    properties.getProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE)));
+            tlsConfig.setEnableTls(
+                    Boolean.parseBoolean(
+                            properties.getProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE)));
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_PROVIDER)) {
@@ -44,8 +45,9 @@ public class RpcClientTlsConfig extends TlsConfig {
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_MUTUAL_AUTH)) {
-            tlsConfig.setMutualAuthEnable(Boolean.parseBoolean(
-                    properties.getProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH)));
+            tlsConfig.setMutualAuthEnable(
+                    Boolean.parseBoolean(
+                            properties.getProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH)));
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_PROTOCOLS)) {
@@ -57,23 +59,30 @@ public class RpcClientTlsConfig extends TlsConfig {
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH)) {
-            tlsConfig.setTrustCollectionCertFile(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH));
+            tlsConfig.setTrustCollectionCertFile(
+                    properties.getProperty(
+                            RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH));
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH)) {
-            tlsConfig.setCertChainFile(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH));
+            tlsConfig.setCertChainFile(
+                    properties.getProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH));
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_CERT_KEY)) {
-            tlsConfig.setCertPrivateKey(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY));
+            tlsConfig.setCertPrivateKey(
+                    properties.getProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY));
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL)) {
-            tlsConfig.setTrustAll(Boolean.parseBoolean(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL)));
+            tlsConfig.setTrustAll(
+                    Boolean.parseBoolean(
+                            properties.getProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL)));
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_TRUST_PWD)) {
-            tlsConfig.setCertPrivateKeyPassword(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_PWD));
+            tlsConfig.setCertPrivateKeyPassword(
+                    properties.getProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_PWD));
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_PROVIDER)) {
@@ -81,5 +90,4 @@ public class RpcClientTlsConfig extends TlsConfig {
         }
         return tlsConfig;
     }
-
 }

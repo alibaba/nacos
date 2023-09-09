@@ -16,19 +16,16 @@
 
 package com.alibaba.nacos.config.server.constant;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Map;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
-
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * config module state builder test.
@@ -37,35 +34,57 @@ import static org.junit.Assert.assertEquals;
  * @date 2023/4/7 23:34
  */
 public class ConfigModuleStateBuilderTest {
-    
+
     private ConfigurableEnvironment environment;
-    
+
     @Before
     public void setUp() {
-        environment = new MockEnvironment()
-                .withProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, PersistenceConstant.DERBY)
-                .withProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, "true");
+        environment =
+                new MockEnvironment()
+                        .withProperty(
+                                PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY,
+                                PersistenceConstant.DERBY)
+                        .withProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, "true");
         EnvUtil.setEnvironment(environment);
     }
-    
+
     @Test
     public void testBuild() {
         ModuleState actual = new ConfigModuleStateBuilder().build();
         Map<String, Object> states = actual.getStates();
-        assertEquals(PersistenceConstant.DERBY, states.get(Constants.DATASOURCE_PLATFORM_PROPERTY_STATE));
+        assertEquals(
+                PersistenceConstant.DERBY,
+                states.get(Constants.DATASOURCE_PLATFORM_PROPERTY_STATE));
         assertEquals(true, states.get(Constants.NACOS_PLUGIN_DATASOURCE_LOG_STATE));
-        assertEquals(PropertyUtil.getNotifyConnectTimeout(), states.get(PropertiesConstant.NOTIFY_CONNECT_TIMEOUT));
-        assertEquals(PropertyUtil.getNotifySocketTimeout(), states.get(PropertiesConstant.NOTIFY_SOCKET_TIMEOUT));
+        assertEquals(
+                PropertyUtil.getNotifyConnectTimeout(),
+                states.get(PropertiesConstant.NOTIFY_CONNECT_TIMEOUT));
+        assertEquals(
+                PropertyUtil.getNotifySocketTimeout(),
+                states.get(PropertiesConstant.NOTIFY_SOCKET_TIMEOUT));
         assertEquals(PropertyUtil.isHealthCheck(), states.get(PropertiesConstant.IS_HEALTH_CHECK));
-        assertEquals(PropertyUtil.getMaxHealthCheckFailCount(),
+        assertEquals(
+                PropertyUtil.getMaxHealthCheckFailCount(),
                 states.get(PropertiesConstant.MAX_HEALTH_CHECK_FAIL_COUNT));
         assertEquals(PropertyUtil.getMaxContent(), states.get(PropertiesConstant.MAX_CONTENT));
-        assertEquals(PropertyUtil.isManageCapacity(), states.get(PropertiesConstant.IS_MANAGE_CAPACITY));
-        assertEquals(PropertyUtil.isCapacityLimitCheck(), states.get(PropertiesConstant.IS_CAPACITY_LIMIT_CHECK));
-        assertEquals(PropertyUtil.getDefaultClusterQuota(), states.get(PropertiesConstant.DEFAULT_CLUSTER_QUOTA));
-        assertEquals(PropertyUtil.getDefaultGroupQuota(), states.get(PropertiesConstant.DEFAULT_GROUP_QUOTA));
-        assertEquals(PropertyUtil.getDefaultMaxSize(), states.get(PropertiesConstant.DEFAULT_MAX_SIZE));
-        assertEquals(PropertyUtil.getDefaultMaxAggrCount(), states.get(PropertiesConstant.DEFAULT_MAX_AGGR_COUNT));
-        assertEquals(PropertyUtil.getDefaultMaxAggrSize(), states.get(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE));
+        assertEquals(
+                PropertyUtil.isManageCapacity(), states.get(PropertiesConstant.IS_MANAGE_CAPACITY));
+        assertEquals(
+                PropertyUtil.isCapacityLimitCheck(),
+                states.get(PropertiesConstant.IS_CAPACITY_LIMIT_CHECK));
+        assertEquals(
+                PropertyUtil.getDefaultClusterQuota(),
+                states.get(PropertiesConstant.DEFAULT_CLUSTER_QUOTA));
+        assertEquals(
+                PropertyUtil.getDefaultGroupQuota(),
+                states.get(PropertiesConstant.DEFAULT_GROUP_QUOTA));
+        assertEquals(
+                PropertyUtil.getDefaultMaxSize(), states.get(PropertiesConstant.DEFAULT_MAX_SIZE));
+        assertEquals(
+                PropertyUtil.getDefaultMaxAggrCount(),
+                states.get(PropertiesConstant.DEFAULT_MAX_AGGR_COUNT));
+        assertEquals(
+                PropertyUtil.getDefaultMaxAggrSize(),
+                states.get(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE));
     }
 }

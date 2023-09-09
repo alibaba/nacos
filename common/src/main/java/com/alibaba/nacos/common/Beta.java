@@ -30,6 +30,4 @@ import java.lang.annotation.Target;
 @Documented
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.SOURCE)
-public @interface Beta {
-
-}
+public @interface Beta {}

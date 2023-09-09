@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.push;
 
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-
 import java.util.Collection;
 
 /**
@@ -27,7 +26,7 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public interface NamingSubscriberService {
-    
+
     /**
      * Get all push target subscribers for specified service.
      *
@@ -36,7 +35,7 @@ public interface NamingSubscriberService {
      * @return list of subscribers
      */
     Collection<Subscriber> getSubscribers(String namespaceId, String serviceName);
-    
+
     /**
      * Get all push target subscribers for specified service.
      *
@@ -44,7 +43,7 @@ public interface NamingSubscriberService {
      * @return list of subscribers
      */
     Collection<Subscriber> getSubscribers(Service service);
-    
+
     /**
      * Fuzzy get subscribers. Only support fuzzy serviceName.
      *
@@ -55,7 +54,7 @@ public interface NamingSubscriberService {
      * @return list of subscribers
      */
     Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName);
-    
+
     /**
      * Fuzzy get subscribers. Only support fuzzy serviceName.
      *

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.persistence.repository.embedded;
 
 import com.alibaba.nacos.persistence.repository.embedded.sql.ModifyRequest;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,15 +28,17 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class EmbeddedStorageContextHolder {
-    
-    private static final ThreadLocal<ArrayList<ModifyRequest>> SQL_CONTEXT = ThreadLocal.withInitial(ArrayList::new);
-    
-    private static final ThreadLocal<Map<String, String>> EXTEND_INFO_CONTEXT = ThreadLocal.withInitial(HashMap::new);
-    
+
+    private static final ThreadLocal<ArrayList<ModifyRequest>> SQL_CONTEXT =
+            ThreadLocal.withInitial(ArrayList::new);
+
+    private static final ThreadLocal<Map<String, String>> EXTEND_INFO_CONTEXT =
+            ThreadLocal.withInitial(HashMap::new);
+
     /**
      * Add sql context.
      *
-     * @param sql  sql
+     * @param sql sql
      * @param args argument list
      */
     public static void addSqlContext(String sql, Object... args) {
@@ -49,12 +50,12 @@ public class EmbeddedStorageContextHolder {
         requests.add(context);
         SQL_CONTEXT.set(requests);
     }
-    
+
     /**
      * Add sql context.
      *
-     * @param rollbackOnUpdateFail  roll back when update fail
-     * @param sql  sql
+     * @param rollbackOnUpdateFail roll back when update fail
+     * @param sql sql
      * @param args argument list
      */
     public static void addSqlContext(boolean rollbackOnUpdateFail, String sql, Object... args) {
@@ -67,11 +68,11 @@ public class EmbeddedStorageContextHolder {
         requests.add(context);
         SQL_CONTEXT.set(requests);
     }
-    
+
     /**
      * Put extend info.
      *
-     * @param key   key
+     * @param key key
      * @param value value
      */
     public static void putExtendInfo(String key, String value) {
@@ -79,7 +80,7 @@ public class EmbeddedStorageContextHolder {
         old.put(key, value);
         EXTEND_INFO_CONTEXT.set(old);
     }
-    
+
     /**
      * Put all extend info.
      *
@@ -90,7 +91,7 @@ public class EmbeddedStorageContextHolder {
         old.putAll(map);
         EXTEND_INFO_CONTEXT.set(old);
     }
-    
+
     /**
      * Determine if key is included.
      *
@@ -103,15 +104,15 @@ public class EmbeddedStorageContextHolder {
         EXTEND_INFO_CONTEXT.set(extendInfo);
         return exist;
     }
-    
+
     public static List<ModifyRequest> getCurrentSqlContext() {
         return SQL_CONTEXT.get();
     }
-    
+
     public static Map<String, String> getCurrentExtendInfo() {
         return EXTEND_INFO_CONTEXT.get();
     }
-    
+
     public static void cleanAllContext() {
         SQL_CONTEXT.remove();
         EXTEND_INFO_CONTEXT.remove();

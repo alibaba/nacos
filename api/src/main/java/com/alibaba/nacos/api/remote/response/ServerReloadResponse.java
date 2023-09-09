@@ -22,6 +22,4 @@ package com.alibaba.nacos.api.remote.response;
  * @author liuzunfei
  * @version $Id: ServerReloadResponse.java, v 0.1 2020年11月09日 4:37 PM liuzunfei Exp $
  */
-public class ServerReloadResponse extends Response {
-    
-}
+public class ServerReloadResponse extends Response {}

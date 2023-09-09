@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -33,25 +32,25 @@ import java.util.TreeMap;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Header {
-    
+
     public static final Header EMPTY = Header.newInstance();
-    
+
     private final Map<String, String> header;
-    
+
     private final Map<String, List<String>> originalResponseHeader;
-    
+
     private static final String DEFAULT_CHARSET = "UTF-8";
-    
+
     private static final String DEFAULT_ENCODING = "gzip";
-    
+
     private Header() {
         header = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         originalResponseHeader = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
         addParam(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         addParam(HttpHeaderConsts.ACCEPT_CHARSET, DEFAULT_CHARSET);
-        //addParam(HttpHeaderConsts.ACCEPT_ENCODING, DEFAULT_ENCODING);
+        // addParam(HttpHeaderConsts.ACCEPT_ENCODING, DEFAULT_ENCODING);
     }
-    
+
     public static Header newInstance() {
         return new Header();
     }
@@ -69,30 +68,30 @@ public class Header {
         }
         return this;
     }
-    
+
     public Header setContentType(String contentType) {
         if (contentType == null) {
             contentType = MediaType.APPLICATION_JSON;
         }
         return addParam(HttpHeaderConsts.CONTENT_TYPE, contentType);
     }
-    
+
     public Header build() {
         return this;
     }
-    
+
     public String getValue(String key) {
         return header.get(key);
     }
-    
+
     public Map<String, String> getHeader() {
         return header;
     }
-    
+
     public Iterator<Map.Entry<String, String>> iterator() {
         return header.entrySet().iterator();
     }
-    
+
     /**
      * Transfer to KV part list. The odd index is key and the even index is value.
      *
@@ -108,7 +107,7 @@ public class Header {
         }
         return list;
     }
-    
+
     /**
      * Add all KV list to header. The odd index is key and the even index is value.
      *
@@ -127,7 +126,7 @@ public class Header {
         }
         return this;
     }
-    
+
     /**
      * Add all parameters to header.
      *
@@ -140,7 +139,7 @@ public class Header {
             }
         }
     }
-    
+
     /**
      * set original format response header.
      *
@@ -155,7 +154,7 @@ public class Header {
             addParam(key, values.get(0));
         }
     }
-    
+
     /**
      * get original format response header.
      *
@@ -166,16 +165,19 @@ public class Header {
     public Map<String, List<String>> getOriginalResponseHeader() {
         return this.originalResponseHeader;
     }
-    
+
     public String getCharset() {
         String acceptCharset = getValue(HttpHeaderConsts.ACCEPT_CHARSET);
         if (acceptCharset == null) {
             String contentType = getValue(HttpHeaderConsts.CONTENT_TYPE);
-            acceptCharset = StringUtils.isNotBlank(contentType) ? analysisCharset(contentType) : Constants.ENCODE;
+            acceptCharset =
+                    StringUtils.isNotBlank(contentType)
+                            ? analysisCharset(contentType)
+                            : Constants.ENCODE;
         }
         return acceptCharset;
     }
-    
+
     private String analysisCharset(String contentType) {
         String[] values = contentType.split(";");
         String charset = Constants.ENCODE;
@@ -189,15 +191,14 @@ public class Header {
         }
         return charset;
     }
-    
+
     public void clear() {
         header.clear();
         originalResponseHeader.clear();
     }
-    
+
     @Override
     public String toString() {
         return "Header{" + "headerToMap=" + header + '}';
     }
 }
-

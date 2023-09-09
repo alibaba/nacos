@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.config.server.paramcheck;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
-import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * The type Config default http param extractor test.
@@ -30,17 +29,18 @@ import static org.junit.Assert.assertEquals;
  * @author zhuoguang
  */
 public class ConfigDefaultHttpParamExtractorTest {
-    
-    /**
-     * Extract param and check.
-     */
+
+    /** Extract param and check. */
     @Test
     public void extractParamAndCheck() {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/nacos/v1/cs/testst");
         request.setMethod(HttpMethod.PUT);
         HttpParamExtractorManager manager = HttpParamExtractorManager.getInstance();
-        AbstractHttpParamExtractor extractor = manager.getExtractor(request.getRequestURI(), request.getMethod(), "config");
-        assertEquals(ConfigDefaultHttpParamExtractor.class.getSimpleName(), extractor.getClass().getSimpleName());
+        AbstractHttpParamExtractor extractor =
+                manager.getExtractor(request.getRequestURI(), request.getMethod(), "config");
+        assertEquals(
+                ConfigDefaultHttpParamExtractor.class.getSimpleName(),
+                extractor.getClass().getSimpleName());
     }
 }

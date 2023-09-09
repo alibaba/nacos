@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.common.utils.DateFormatUtils;
-
 import java.sql.Timestamp;
 import java.util.Calendar;
 
@@ -27,13 +26,13 @@ import java.util.Calendar;
  * @author Nacos
  */
 public class TimeUtils {
-    
+
     private static final String YYYYMMMDDHHMMSS = "yyyy-MM-dd HH:mm:ss";
-    
+
     public static Timestamp getCurrentTime() {
         return new Timestamp(System.currentTimeMillis());
     }
-    
+
     public static String getCurrentTimeStr() {
         Calendar c = Calendar.getInstance();
         c.setTimeInMillis(System.currentTimeMillis());

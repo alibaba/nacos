@@ -18,22 +18,17 @@
 
 package com.alibaba.nacos.client.logging;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class AbstractNacosLoggingTest {
-    
+
     @Test
     public void testGetLocation() {
-        AbstractNacosLogging logging = new AbstractNacosLogging() {
-            @Override
-            public void loadConfiguration() {
-            
-            }
-        };
+        AbstractNacosLogging logging =
+                new AbstractNacosLogging() {
+                    @Override
+                    public void loadConfiguration() {}
+                };
         String defaultLocation = "aa";
         String actual = logging.getLocation(defaultLocation);
         Assert.assertEquals(defaultLocation, actual);
-        
     }
 }

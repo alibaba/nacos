@@ -29,245 +29,246 @@ import org.springframework.context.ConfigurableApplicationContext;
  * @author Nacos
  */
 public class PropertyUtil implements ApplicationContextInitializer<ConfigurableApplicationContext> {
-    
+
     private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
-    
+
     private static int notifyConnectTimeout = 100;
-    
+
     private static int notifySocketTimeout = 200;
-    
+
     private static int maxHealthCheckFailCount = 12;
-    
+
     private static boolean isHealthCheck = true;
-    
+
     private static int maxContent = 10 * 1024 * 1024;
-    
-    /**
-     * Whether to enable capacity management.
-     */
+
+    /** Whether to enable capacity management. */
     private static boolean isManageCapacity = true;
-    
+
     /**
-     * Whether to enable the limit check function of capacity management, including the upper limit of configuration
-     * number, configuration content size limit, etc.
+     * Whether to enable the limit check function of capacity management, including the upper limit
+     * of configuration number, configuration content size limit, etc.
      */
     private static boolean isCapacityLimitCheck = false;
-    
-    /**
-     * The default cluster capacity limit.
-     */
+
+    /** The default cluster capacity limit. */
     private static int defaultClusterQuota = 100000;
-    
-    /**
-     * the default capacity limit per Group.
-     */
+
+    /** the default capacity limit per Group. */
     private static int defaultGroupQuota = 200;
-    
-    /**
-     * The default capacity limit per Tenant.
-     */
+
+    /** The default capacity limit per Tenant. */
     private static int defaultTenantQuota = 200;
-    
-    /**
-     * The maximum size of the content in the configuration of a single, unit for bytes.
-     */
+
+    /** The maximum size of the content in the configuration of a single, unit for bytes. */
     private static int defaultMaxSize = 100 * 1024;
-    
-    /**
-     * The default Maximum number of aggregated data.
-     */
+
+    /** The default Maximum number of aggregated data. */
     private static int defaultMaxAggrCount = 10000;
-    
-    /**
-     * The maximum size of content in a single subconfiguration of aggregated data.
-     */
+
+    /** The maximum size of content in a single subconfiguration of aggregated data. */
     private static int defaultMaxAggrSize = 1024;
-    
-    /**
-     * Initialize the expansion percentage of capacity has reached the limit.
-     */
+
+    /** Initialize the expansion percentage of capacity has reached the limit. */
     private static int initialExpansionPercent = 100;
-    
-    /**
-     * Fixed capacity information table usage (usage) time interval, the unit is in seconds.
-     */
+
+    /** Fixed capacity information table usage (usage) time interval, the unit is in seconds. */
     private static int correctUsageDelay = 10 * 60;
-    
+
     public static int getNotifyConnectTimeout() {
         return notifyConnectTimeout;
     }
-    
+
     public static void setNotifyConnectTimeout(int notifyConnectTimeout) {
         PropertyUtil.notifyConnectTimeout = notifyConnectTimeout;
     }
-    
+
     public static int getNotifySocketTimeout() {
         return notifySocketTimeout;
     }
-    
+
     public static void setNotifySocketTimeout(int notifySocketTimeout) {
         PropertyUtil.notifySocketTimeout = notifySocketTimeout;
     }
-    
+
     public static int getMaxHealthCheckFailCount() {
         return maxHealthCheckFailCount;
     }
-    
+
     public static void setMaxHealthCheckFailCount(int maxHealthCheckFailCount) {
         PropertyUtil.maxHealthCheckFailCount = maxHealthCheckFailCount;
     }
-    
+
     public static boolean isHealthCheck() {
         return isHealthCheck;
     }
-    
+
     public static void setHealthCheck(boolean isHealthCheck) {
         PropertyUtil.isHealthCheck = isHealthCheck;
     }
-    
+
     public static int getMaxContent() {
         return maxContent;
     }
-    
+
     public static void setMaxContent(int maxContent) {
         PropertyUtil.maxContent = maxContent;
     }
-    
+
     public static boolean isManageCapacity() {
         return isManageCapacity;
     }
-    
+
     public static void setManageCapacity(boolean isManageCapacity) {
         PropertyUtil.isManageCapacity = isManageCapacity;
     }
-    
+
     public static int getDefaultClusterQuota() {
         return defaultClusterQuota;
     }
-    
+
     public static void setDefaultClusterQuota(int defaultClusterQuota) {
         PropertyUtil.defaultClusterQuota = defaultClusterQuota;
     }
-    
+
     public static boolean isCapacityLimitCheck() {
         return isCapacityLimitCheck;
     }
-    
+
     public static void setCapacityLimitCheck(boolean isCapacityLimitCheck) {
         PropertyUtil.isCapacityLimitCheck = isCapacityLimitCheck;
     }
-    
+
     public static int getDefaultGroupQuota() {
         return defaultGroupQuota;
     }
-    
+
     public static void setDefaultGroupQuota(int defaultGroupQuota) {
         PropertyUtil.defaultGroupQuota = defaultGroupQuota;
     }
-    
+
     public static int getDefaultTenantQuota() {
         return defaultTenantQuota;
     }
-    
+
     public static void setDefaultTenantQuota(int defaultTenantQuota) {
         PropertyUtil.defaultTenantQuota = defaultTenantQuota;
     }
-    
+
     public static int getInitialExpansionPercent() {
         return initialExpansionPercent;
     }
-    
+
     public static void setInitialExpansionPercent(int initialExpansionPercent) {
         PropertyUtil.initialExpansionPercent = initialExpansionPercent;
     }
-    
+
     public static int getDefaultMaxSize() {
         return defaultMaxSize;
     }
-    
+
     public static void setDefaultMaxSize(int defaultMaxSize) {
         PropertyUtil.defaultMaxSize = defaultMaxSize;
     }
-    
+
     public static int getDefaultMaxAggrCount() {
         return defaultMaxAggrCount;
     }
-    
+
     public static void setDefaultMaxAggrCount(int defaultMaxAggrCount) {
         PropertyUtil.defaultMaxAggrCount = defaultMaxAggrCount;
     }
-    
+
     public static int getDefaultMaxAggrSize() {
         return defaultMaxAggrSize;
     }
-    
+
     public static void setDefaultMaxAggrSize(int defaultMaxAggrSize) {
         PropertyUtil.defaultMaxAggrSize = defaultMaxAggrSize;
     }
-    
+
     public static int getCorrectUsageDelay() {
         return correctUsageDelay;
     }
-    
+
     public static void setCorrectUsageDelay(int correctUsageDelay) {
         PropertyUtil.correctUsageDelay = correctUsageDelay;
     }
-    
+
     public static boolean isStandaloneMode() {
         return EnvUtil.getStandaloneMode();
     }
-    
+
     // Determines whether to read the data directly
     // if use mysql, Reduce database read pressure
     // if use raft+derby, Reduce leader read pressure
-    
+
     public static boolean isDirectRead() {
         return EnvUtil.getStandaloneMode() && DatasourceConfiguration.isEmbeddedStorage();
     }
-    
+
     private void loadSetting() {
         try {
-            setNotifyConnectTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.NOTIFY_CONNECT_TIMEOUT,
-                    String.valueOf(notifyConnectTimeout))));
+            setNotifyConnectTimeout(
+                    Integer.parseInt(
+                            EnvUtil.getProperty(
+                                    PropertiesConstant.NOTIFY_CONNECT_TIMEOUT,
+                                    String.valueOf(notifyConnectTimeout))));
             LOGGER.info("notifyConnectTimeout:{}", notifyConnectTimeout);
-            setNotifySocketTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.NOTIFY_SOCKET_TIMEOUT,
-                    String.valueOf(notifySocketTimeout))));
+            setNotifySocketTimeout(
+                    Integer.parseInt(
+                            EnvUtil.getProperty(
+                                    PropertiesConstant.NOTIFY_SOCKET_TIMEOUT,
+                                    String.valueOf(notifySocketTimeout))));
             LOGGER.info("notifySocketTimeout:{}", notifySocketTimeout);
-            setHealthCheck(Boolean.parseBoolean(
-                    EnvUtil.getProperty(PropertiesConstant.IS_HEALTH_CHECK, String.valueOf(isHealthCheck))));
+            setHealthCheck(
+                    Boolean.parseBoolean(
+                            EnvUtil.getProperty(
+                                    PropertiesConstant.IS_HEALTH_CHECK,
+                                    String.valueOf(isHealthCheck))));
             LOGGER.info("isHealthCheck:{}", isHealthCheck);
-            setMaxHealthCheckFailCount(Integer.parseInt(
-                    EnvUtil.getProperty(PropertiesConstant.MAX_HEALTH_CHECK_FAIL_COUNT,
-                            String.valueOf(maxHealthCheckFailCount))));
+            setMaxHealthCheckFailCount(
+                    Integer.parseInt(
+                            EnvUtil.getProperty(
+                                    PropertiesConstant.MAX_HEALTH_CHECK_FAIL_COUNT,
+                                    String.valueOf(maxHealthCheckFailCount))));
             LOGGER.info("maxHealthCheckFailCount:{}", maxHealthCheckFailCount);
             setMaxContent(
-                    Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.MAX_CONTENT, String.valueOf(maxContent))));
+                    Integer.parseInt(
+                            EnvUtil.getProperty(
+                                    PropertiesConstant.MAX_CONTENT, String.valueOf(maxContent))));
             LOGGER.info("maxContent:{}", maxContent);
             // capacity management
             setManageCapacity(getBoolean(PropertiesConstant.IS_MANAGE_CAPACITY, isManageCapacity));
-            setCapacityLimitCheck(getBoolean(PropertiesConstant.IS_CAPACITY_LIMIT_CHECK, isCapacityLimitCheck));
-            setDefaultClusterQuota(getInt(PropertiesConstant.DEFAULT_CLUSTER_QUOTA, defaultClusterQuota));
+            setCapacityLimitCheck(
+                    getBoolean(PropertiesConstant.IS_CAPACITY_LIMIT_CHECK, isCapacityLimitCheck));
+            setDefaultClusterQuota(
+                    getInt(PropertiesConstant.DEFAULT_CLUSTER_QUOTA, defaultClusterQuota));
             setDefaultGroupQuota(getInt(PropertiesConstant.DEFAULT_GROUP_QUOTA, defaultGroupQuota));
-            setDefaultTenantQuota(getInt(PropertiesConstant.DEFAULT_TENANT_QUOTA, defaultTenantQuota));
+            setDefaultTenantQuota(
+                    getInt(PropertiesConstant.DEFAULT_TENANT_QUOTA, defaultTenantQuota));
             setDefaultMaxSize(getInt(PropertiesConstant.DEFAULT_MAX_SIZE, defaultMaxSize));
-            setDefaultMaxAggrCount(getInt(PropertiesConstant.DEFAULT_MAX_AGGR_COUNT, defaultMaxAggrCount));
-            setDefaultMaxAggrSize(getInt(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
+            setDefaultMaxAggrCount(
+                    getInt(PropertiesConstant.DEFAULT_MAX_AGGR_COUNT, defaultMaxAggrCount));
+            setDefaultMaxAggrSize(
+                    getInt(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
             setCorrectUsageDelay(getInt(PropertiesConstant.CORRECT_USAGE_DELAY, correctUsageDelay));
-            setInitialExpansionPercent(getInt(PropertiesConstant.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
+            setInitialExpansionPercent(
+                    getInt(PropertiesConstant.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
         } catch (Exception e) {
             LOGGER.error("read application.properties failed", e);
             throw e;
         }
     }
-    
+
     private boolean getBoolean(String key, boolean defaultValue) {
         return Boolean.parseBoolean(getString(key, String.valueOf(defaultValue)));
     }
-    
+
     private int getInt(String key, int defaultValue) {
         return Integer.parseInt(getString(key, String.valueOf(defaultValue)));
     }
-    
+
     private String getString(String key, String defaultValue) {
         String value = getProperty(key);
         if (value == null) {
@@ -276,15 +277,15 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         LOGGER.info("{}:{}", key, value);
         return value;
     }
-    
+
     public String getProperty(String key) {
         return EnvUtil.getProperty(key);
     }
-    
+
     public String getProperty(String key, String defaultValue) {
         return EnvUtil.getProperty(key, defaultValue);
     }
-    
+
     @Override
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
         loadSetting();

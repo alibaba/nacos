@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.core.ability;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
 public class ServerAbilityInitializerHolderTest {
-    
+
     @Test
     public void testGetInitializers() {
         assertEquals(1, ServerAbilityInitializerHolder.getInstance().getInitializers().size());

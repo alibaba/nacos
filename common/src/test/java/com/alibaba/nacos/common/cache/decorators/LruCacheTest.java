@@ -18,13 +18,11 @@ package com.alibaba.nacos.common.cache.decorators;
 
 import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.stream.IntStream;
 
 /**
  * lru test .
+ *
  * @author zzq
  * @date 2021/7/30
  */

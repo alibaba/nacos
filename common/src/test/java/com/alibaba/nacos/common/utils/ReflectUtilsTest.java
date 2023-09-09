@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,7 +58,5 @@ public class ReflectUtilsTest {
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         }
-
     }
-
 }

@@ -22,9 +22,6 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.naming.constants.RequestConstant;
 import com.alibaba.nacos.naming.core.HealthOperatorV2Impl;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -41,24 +38,22 @@ import org.springframework.mock.web.MockHttpServletRequest;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class HealthControllerTest {
-    
-    @InjectMocks
-    private HealthController healthController;
-    
-    @Mock
-    private HealthOperatorV2Impl healthOperatorV2;
-    
+
+    @InjectMocks private HealthController healthController;
+
+    @Mock private HealthOperatorV2Impl healthOperatorV2;
+
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
-    
+
     @Test
     public void testServer() {
         ResponseEntity responseEntity = healthController.server();
         Assert.assertEquals(200, responseEntity.getStatusCodeValue());
     }
-    
+
     @Test
     public void testUpdate() {
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
@@ -66,7 +61,7 @@ public class HealthControllerTest {
         servletRequest.addParameter(RequestConstant.IP_KEY, "1.1.1.1");
         servletRequest.addParameter(RequestConstant.PORT_KEY, "8848");
         servletRequest.addParameter(RequestConstant.HEALTHY_KEY, "true");
-        
+
         try {
             ResponseEntity responseEntity = healthController.update(servletRequest);
             Assert.assertEquals(200, responseEntity.getStatusCodeValue());
@@ -75,7 +70,7 @@ public class HealthControllerTest {
             Assert.fail(e.getMessage());
         }
     }
-    
+
     @Test
     public void testCheckers() {
         ResponseEntity responseEntity = healthController.checkers();

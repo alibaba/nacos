@@ -20,7 +20,6 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-
 import java.util.Optional;
 
 /**
@@ -29,17 +28,21 @@ import java.util.Optional;
  * @author xiweng.yy
  */
 public class ServiceEnableBeatCheckInterceptor extends AbstractBeatCheckInterceptor {
-    
+
     @Override
     public boolean intercept(InstanceBeatCheckTask object) {
-        NamingMetadataManager metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
-        Optional<ServiceMetadata> metadata = metadataManager.getServiceMetadata(object.getService());
-        if (metadata.isPresent() && metadata.get().getExtendData().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
-            return Boolean.parseBoolean(metadata.get().getExtendData().get(UtilsAndCommons.ENABLE_CLIENT_BEAT));
+        NamingMetadataManager metadataManager =
+                ApplicationUtils.getBean(NamingMetadataManager.class);
+        Optional<ServiceMetadata> metadata =
+                metadataManager.getServiceMetadata(object.getService());
+        if (metadata.isPresent()
+                && metadata.get().getExtendData().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
+            return Boolean.parseBoolean(
+                    metadata.get().getExtendData().get(UtilsAndCommons.ENABLE_CLIENT_BEAT));
         }
         return false;
     }
-    
+
     @Override
     public int order() {
         return Integer.MIN_VALUE;

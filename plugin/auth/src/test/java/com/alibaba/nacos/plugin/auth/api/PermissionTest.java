@@ -16,30 +16,27 @@
 
 package com.alibaba.nacos.plugin.auth.api;
 
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Properties;
-
 import static org.junit.Assert.assertEquals;
 
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import java.util.Properties;
+
 public class PermissionTest {
-    
+
     private Permission permission;
-    
+
     @Before
     public void setUp() throws Exception {
         permission = new Permission(Resource.EMPTY_RESOURCE, ActionTypes.WRITE.toString());
     }
-    
+
     @Test
     public void testToString() {
         assertEquals(
                 "Permission{resource='Resource{namespaceId='', group='', name='', type='', properties=null}', action='w'}",
                 permission.toString());
     }
-    
+
     @Test
     public void testSetResource() {
         Permission permission = new Permission();
@@ -52,7 +49,7 @@ public class PermissionTest {
         assertEquals("TEST", permission.getResource().getType());
         assertEquals(properties, permission.getResource().getProperties());
     }
-    
+
     @Test
     public void testSetAction() {
         Permission permission = new Permission();

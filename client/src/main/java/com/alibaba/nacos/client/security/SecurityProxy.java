@@ -17,13 +17,12 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
-import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
-
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,21 +35,21 @@ import java.util.Properties;
  * @since 1.2.0
  */
 public class SecurityProxy implements Closeable {
-    
+
     private ClientAuthPluginManager clientAuthPluginManager;
-    
+
     /**
-     * Construct from serverList, nacosRestTemplate, init client auth plugin.
-     * // TODO change server list to serverListManager after serverListManager refactor and unite.
+     * Construct from serverList, nacosRestTemplate, init client auth plugin. // TODO change server
+     * list to serverListManager after serverListManager refactor and unite.
      *
-     * @param serverList a server list that client request to.
-     * @Param nacosRestTemplate http request template.
+     * @param serverList a server list that client request to. @Param nacosRestTemplate http request
+     *     template.
      */
     public SecurityProxy(List<String> serverList, NacosRestTemplate nacosRestTemplate) {
         clientAuthPluginManager = new ClientAuthPluginManager();
         clientAuthPluginManager.init(serverList, nacosRestTemplate);
     }
-    
+
     /**
      * Login all available ClientAuthService instance.
      *
@@ -60,11 +59,12 @@ public class SecurityProxy implements Closeable {
         if (clientAuthPluginManager.getAuthServiceSpiImplSet().isEmpty()) {
             return;
         }
-        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+        for (ClientAuthService clientAuthService :
+                clientAuthPluginManager.getAuthServiceSpiImplSet()) {
             clientAuthService.login(properties);
         }
     }
-    
+
     /**
      * get the context of all nacosRestTemplate instance.
      *
@@ -72,15 +72,17 @@ public class SecurityProxy implements Closeable {
      */
     public Map<String, String> getIdentityContext(RequestResource resource) {
         Map<String, String> header = new HashMap<>(1);
-        for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
-            LoginIdentityContext loginIdentityContext = clientAuthService.getLoginIdentityContext(resource);
+        for (ClientAuthService clientAuthService :
+                clientAuthPluginManager.getAuthServiceSpiImplSet()) {
+            LoginIdentityContext loginIdentityContext =
+                    clientAuthService.getLoginIdentityContext(resource);
             for (String key : loginIdentityContext.getAllKey()) {
                 header.put(key, loginIdentityContext.getParameter(key));
             }
         }
         return header;
     }
-    
+
     @Override
     public void shutdown() throws NacosException {
         clientAuthPluginManager.shutdown();

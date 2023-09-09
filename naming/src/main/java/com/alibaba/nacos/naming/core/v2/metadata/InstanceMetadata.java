@@ -26,41 +26,37 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author xiweng.yy
  */
 public class InstanceMetadata implements Serializable {
-    
+
     private static final long serialVersionUID = -8477858617353459226L;
-    
-    /**
-     * instance weight.
-     */
+
+    /** instance weight. */
     private double weight = 1.0D;
-    
-    /**
-     * If instance is enabled to accept request.
-     */
+
+    /** If instance is enabled to accept request. */
     private boolean enabled = true;
-    
+
     private Map<String, Object> extendData = new ConcurrentHashMap<>(1);
-    
+
     public double getWeight() {
         return weight;
     }
-    
+
     public void setWeight(double weight) {
         this.weight = weight;
     }
-    
+
     public boolean isEnabled() {
         return enabled;
     }
-    
+
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-    
+
     public Map<String, Object> getExtendData() {
         return extendData;
     }
-    
+
     public void setExtendData(Map<String, Object> extendData) {
         this.extendData = extendData;
     }

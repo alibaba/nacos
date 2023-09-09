@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.controller.v2;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.Beta;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
@@ -27,17 +26,17 @@ import com.alibaba.nacos.core.model.request.LogUpdateRequest;
 import com.alibaba.nacos.core.model.vo.IdGeneratorVO;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Kernel modules operate and maintain HTTP interfaces v2.
@@ -48,25 +47,23 @@ import java.util.Map;
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/ops")
 public class CoreOpsV2Controller {
-    
+
     private final ProtocolManager protocolManager;
-    
+
     private final IdGeneratorManager idGeneratorManager;
-    
-    public CoreOpsV2Controller(ProtocolManager protocolManager, IdGeneratorManager idGeneratorManager) {
+
+    public CoreOpsV2Controller(
+            ProtocolManager protocolManager, IdGeneratorManager idGeneratorManager) {
         this.protocolManager = protocolManager;
         this.idGeneratorManager = idGeneratorManager;
     }
-    
+
     /**
      * Temporarily overpassed the raft operations interface.
-     * <p>
-     *      {
-     *           "groupId": "xxx",
-     *           "command": "transferLeader or doSnapshot or resetRaftCluster or removePeer"
-     *           "value": "ip:{raft_port}"
-     *      }
-     * </p>
+     *
+     * <p>{ "groupId": "xxx", "command": "transferLeader or doSnapshot or resetRaftCluster or
+     * removePeer" "value": "ip:{raft_port}" }
+     *
      * @param commands transferLeader or doSnapshot or resetRaftCluster or removePeer
      * @return {@link RestResult}
      */
@@ -75,7 +72,7 @@ public class CoreOpsV2Controller {
     public RestResult<String> raftOps(@RequestBody Map<String, String> commands) {
         return protocolManager.getCpProtocol().execute(commands);
     }
-    
+
     /**
      * Gets the current health of the ID generator.
      *
@@ -84,26 +81,28 @@ public class CoreOpsV2Controller {
     @GetMapping(value = "/ids")
     public RestResult<List<IdGeneratorVO>> ids() {
         List<IdGeneratorVO> result = new ArrayList<>();
-        idGeneratorManager.getGeneratorMap().forEach((resource, idGenerator) -> {
-            IdGeneratorVO vo = new IdGeneratorVO();
-            vo.setResource(resource);
-            
-            IdGeneratorVO.IdInfo info = new IdGeneratorVO.IdInfo();
-            info.setCurrentId(idGenerator.currentId());
-            info.setWorkerId(idGenerator.workerId());
-            vo.setInfo(info);
-            
-            result.add(vo);
-        });
-        
+        idGeneratorManager
+                .getGeneratorMap()
+                .forEach(
+                        (resource, idGenerator) -> {
+                            IdGeneratorVO vo = new IdGeneratorVO();
+                            vo.setResource(resource);
+
+                            IdGeneratorVO.IdInfo info = new IdGeneratorVO.IdInfo();
+                            info.setCurrentId(idGenerator.currentId());
+                            info.setWorkerId(idGenerator.workerId());
+                            vo.setInfo(info);
+
+                            result.add(vo);
+                        });
+
         return RestResultUtils.success(result);
     }
-    
+
     @PutMapping(value = "/log")
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
     public RestResult<Void> updateLog(@RequestBody LogUpdateRequest logUpdateRequest) {
         Loggers.setLogLevel(logUpdateRequest.getLogName(), logUpdateRequest.getLogLevel());
         return RestResultUtils.success();
     }
-    
 }

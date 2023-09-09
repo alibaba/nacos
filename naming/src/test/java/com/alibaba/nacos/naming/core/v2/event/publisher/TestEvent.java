@@ -19,16 +19,16 @@ package com.alibaba.nacos.naming.core.v2.event.publisher;
 import com.alibaba.nacos.common.notify.Event;
 
 class TestEvent extends Event {
-    
+
     private static final long serialVersionUID = 882465625511504010L;
-    
+
     static class TestEvent1 extends TestEvent {
-        
+
         private static final long serialVersionUID = 4188906203345433816L;
     }
-    
+
     static class TestEvent2 extends TestEvent {
-        
+
         private static final long serialVersionUID = -3956191439344777407L;
     }
 }

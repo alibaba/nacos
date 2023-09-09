@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.http.param;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -26,7 +24,7 @@ import static org.junit.Assert.assertEquals;
  * @author mai.jh
  */
 public class MediaTypeTest {
-    
+
     @Test
     public void testValueOf() {
         MediaType mediaType = MediaType.valueOf(MediaType.APPLICATION_FORM_URLENCODED);
@@ -36,10 +34,11 @@ public class MediaTypeTest {
         assertEquals(charset, mediaType.getCharset());
         assertEquals(MediaType.APPLICATION_FORM_URLENCODED, mediaType.toString());
     }
-    
+
     @Test
     public void testValueOf2() {
-        MediaType mediaType = MediaType.valueOf(MediaType.APPLICATION_FORM_URLENCODED, "ISO-8859-1");
+        MediaType mediaType =
+                MediaType.valueOf(MediaType.APPLICATION_FORM_URLENCODED, "ISO-8859-1");
         String type = "application/x-www-form-urlencoded";
         String charset = "ISO-8859-1";
         String excepted = "application/x-www-form-urlencoded;charset=ISO-8859-1";
@@ -47,7 +46,7 @@ public class MediaTypeTest {
         assertEquals(charset, mediaType.getCharset());
         assertEquals(excepted, mediaType.toString());
     }
-    
+
     @Test
     public void testValueOf3() {
         MediaType mediaType = MediaType.valueOf("application/x-www-form-urlencoded", "ISO-8859-1");
@@ -58,5 +57,4 @@ public class MediaTypeTest {
         assertEquals(charset, mediaType.getCharset());
         assertEquals(excepted, mediaType.toString());
     }
-    
 }

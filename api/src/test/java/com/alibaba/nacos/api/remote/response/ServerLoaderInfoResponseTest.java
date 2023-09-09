@@ -16,26 +16,24 @@
 
 package com.alibaba.nacos.api.remote.response;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class ServerLoaderInfoResponseTest {
-    
+
     ObjectMapper mapper = new ObjectMapper();
-    
+
     @Before
     public void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Test
     public void testSerialization() throws JsonProcessingException {
         ServerLoaderInfoResponse response = new ServerLoaderInfoResponse();
@@ -44,10 +42,11 @@ public class ServerLoaderInfoResponseTest {
         System.out.println(actual);
         assertTrue(actual.contains("\"loaderMetrics\":{\"test\":\"testValue\"}"));
     }
-    
+
     @Test
     public void testDeserialization() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"loaderMetrics\":{\"test\":\"testValue\"},\"success\":true}";
+        String json =
+                "{\"resultCode\":200,\"errorCode\":0,\"loaderMetrics\":{\"test\":\"testValue\"},\"success\":true}";
         ServerLoaderInfoResponse response = mapper.readValue(json, ServerLoaderInfoResponse.class);
         assertEquals(1, response.getLoaderMetrics().size());
         assertEquals("testValue", response.getMetricsValue("test"));

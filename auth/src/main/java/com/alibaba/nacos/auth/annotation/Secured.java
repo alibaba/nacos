@@ -21,7 +21,6 @@ import com.alibaba.nacos.auth.parser.ResourceParser;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -34,38 +33,38 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Secured {
-    
+
     /**
      * The action type of the request.
      *
      * @return action type, default READ
      */
     ActionTypes action() default ActionTypes.READ;
-    
+
     /**
      * The name of resource related to the request.
      *
      * @return resource name
      */
     String resource() default StringUtils.EMPTY;
-    
+
     /**
      * The module of resource related to the request.
      *
      * @return module name
      */
     String signType() default SignType.NAMING;
-    
+
     /**
      * Custom resource parser. Should have lower priority than resource() and typed parser.
      *
      * @return class type of resource parser
      */
     Class<? extends ResourceParser> parser() default DefaultResourceParser.class;
-    
+
     /**
-     * Specified tags for this secured, these tags will be injected into {@link com.alibaba.nacos.plugin.auth.api.Resource}
-     * as the keys and values of properties.
+     * Specified tags for this secured, these tags will be injected into {@link
+     * com.alibaba.nacos.plugin.auth.api.Resource} as the keys and values of properties.
      *
      * @return tags
      */

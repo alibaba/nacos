@@ -25,37 +25,37 @@ import java.util.concurrent.ConcurrentMap;
  * @author zongtanghu
  */
 public class ClientRecord {
-    
+
     private final String ip;
-    
+
     private volatile long lastTime;
-    
+
     private final ConcurrentMap<String, String> groupKey2md5Map;
-    
+
     private final ConcurrentMap<String, Long> groupKey2pollingTsMap;
-    
+
     public ClientRecord(final String clientIp) {
         this.ip = clientIp;
         this.groupKey2md5Map = new ConcurrentHashMap<>(20, 0.75f, 1);
         this.groupKey2pollingTsMap = new ConcurrentHashMap<>(20, 0.75f, 1);
     }
-    
+
     public String getIp() {
         return ip;
     }
-    
+
     public long getLastTime() {
         return lastTime;
     }
-    
+
     public void setLastTime(long lastTime) {
         this.lastTime = lastTime;
     }
-    
+
     public ConcurrentMap<String, String> getGroupKey2md5Map() {
         return groupKey2md5Map;
     }
-    
+
     public ConcurrentMap<String, Long> getGroupKey2pollingTsMap() {
         return groupKey2pollingTsMap;
     }

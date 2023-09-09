@@ -27,17 +27,14 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationServiceProxy;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 /**
  * {@link HealthOperatorV2Impl} unit tests.
@@ -47,19 +44,15 @@ import java.util.Optional;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class HealthOperatorV2ImplTest {
-    
-    @InjectMocks
-    private HealthOperatorV2Impl healthOperatorV2;
-    
-    @Mock
-    private NamingMetadataManager metadataManager;
-    
-    @Mock
-    private ClientManagerDelegate clientManager;
-    
-    @Mock
-    private ClientOperationServiceProxy clientOperationService;
-    
+
+    @InjectMocks private HealthOperatorV2Impl healthOperatorV2;
+
+    @Mock private NamingMetadataManager metadataManager;
+
+    @Mock private ClientManagerDelegate clientManager;
+
+    @Mock private ClientOperationServiceProxy clientOperationService;
+
     @Test
     public void testUpdateHealthStatusForPersistentInstance() {
         try {
@@ -72,20 +65,22 @@ public class HealthOperatorV2ImplTest {
             instance.setIp("1.1.1.1");
             instance.setPort(8080);
             Mockito.when(cluster.getHealthyCheckType()).thenReturn(HealthCheckType.NONE.name());
-            Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(metadata));
-            
+            Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+                    .thenReturn(Optional.of(metadata));
+
             ConnectionBasedClient client = Mockito.mock(ConnectionBasedClient.class);
             Mockito.when(clientManager.getClient(Mockito.anyString())).thenReturn(client);
-            
+
             InstancePublishInfo instancePublishInfo = new InstancePublishInfo();
             instancePublishInfo.setExtendDatum(new HashMap<>(2));
-            Mockito.when(client.getInstancePublishInfo(Mockito.any())).thenReturn(instancePublishInfo);
-            
-            healthOperatorV2.updateHealthStatusForPersistentInstance("A", "B", "C", "1.1.1.1", 8080, true);
+            Mockito.when(client.getInstancePublishInfo(Mockito.any()))
+                    .thenReturn(instancePublishInfo);
+
+            healthOperatorV2.updateHealthStatusForPersistentInstance(
+                    "A", "B", "C", "1.1.1.1", 8080, true);
         } catch (NacosException e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
         }
     }
-    
 }

@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.prometheus.conf;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-
 import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH;
 import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_PATH;
 import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
 /**
  * prometheus auth configuration, avoid spring security configuration override.
@@ -34,7 +33,7 @@ import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLE
 @Configuration
 @ConditionalOnMissingBean(value = WebSecurityConfigurerAdapter.class)
 public class PrometheusSecurityConfiguration extends WebSecurityConfigurerAdapter {
-    
+
     @Override
     public void configure(WebSecurity web) throws Exception {
         web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_PATH);

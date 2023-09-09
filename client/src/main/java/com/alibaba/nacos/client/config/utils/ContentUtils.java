@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import com.alibaba.nacos.api.common.Constants;
-
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
+
+import com.alibaba.nacos.api.common.Constants;
 
 /**
  * Content Util.
@@ -26,9 +26,9 @@ import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
  * @author Nacos
  */
 public class ContentUtils {
-    
+
     private static final int SHOW_CONTENT_SIZE = 100;
-    
+
     /**
      * Verify increment pub content.
      *
@@ -36,21 +36,22 @@ public class ContentUtils {
      * @throws IllegalArgumentException if content is not valid
      */
     public static void verifyIncrementPubContent(String content) {
-        
+
         if (content == null || content.length() == 0) {
             throw new IllegalArgumentException("publish/delete content can not be null");
         }
         for (int i = 0; i < content.length(); i++) {
             char c = content.charAt(i);
             if (c == '\r' || c == '\n') {
-                throw new IllegalArgumentException("publish/delete content can not contain return and linefeed");
+                throw new IllegalArgumentException(
+                        "publish/delete content can not contain return and linefeed");
             }
             if (c == Constants.WORD_SEPARATOR.charAt(0)) {
                 throw new IllegalArgumentException("publish/delete content can not contain(char)2");
             }
         }
     }
-    
+
     public static String getContentIdentity(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
         if (index == -1) {
@@ -58,7 +59,7 @@ public class ContentUtils {
         }
         return content.substring(0, index);
     }
-    
+
     public static String getContent(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
         if (index == -1) {
@@ -66,7 +67,7 @@ public class ContentUtils {
         }
         return content.substring(index + 1);
     }
-    
+
     /**
      * Truncate content.
      *

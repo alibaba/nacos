@@ -23,14 +23,16 @@ import com.alibaba.nacos.naming.interceptor.AbstractNamingInterceptorChain;
  *
  * @author xiweng.yy
  */
-public class InstanceBeatCheckTaskInterceptorChain extends AbstractNamingInterceptorChain<InstanceBeatCheckTask> {
-    
-    private static final InstanceBeatCheckTaskInterceptorChain INSTANCE = new InstanceBeatCheckTaskInterceptorChain();
-    
+public class InstanceBeatCheckTaskInterceptorChain
+        extends AbstractNamingInterceptorChain<InstanceBeatCheckTask> {
+
+    private static final InstanceBeatCheckTaskInterceptorChain INSTANCE =
+            new InstanceBeatCheckTaskInterceptorChain();
+
     private InstanceBeatCheckTaskInterceptorChain() {
         super(AbstractBeatCheckInterceptor.class);
     }
-    
+
     public static InstanceBeatCheckTaskInterceptorChain getInstance() {
         return INSTANCE;
     }

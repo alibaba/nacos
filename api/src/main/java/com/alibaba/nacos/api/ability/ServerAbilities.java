@@ -19,7 +19,6 @@ package com.alibaba.nacos.api.ability;
 import com.alibaba.nacos.api.config.ability.ServerConfigAbility;
 import com.alibaba.nacos.api.naming.ability.ServerNamingAbility;
 import com.alibaba.nacos.api.remote.ability.ServerRemoteAbility;
-
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -30,39 +29,39 @@ import java.util.Objects;
  * @version $Id: ServerAbilities.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
 public class ServerAbilities implements Serializable {
-    
+
     private static final long serialVersionUID = -2120543002911304171L;
-    
+
     private ServerRemoteAbility remoteAbility = new ServerRemoteAbility();
-    
+
     private ServerConfigAbility configAbility = new ServerConfigAbility();
-    
+
     private ServerNamingAbility namingAbility = new ServerNamingAbility();
-    
+
     public ServerRemoteAbility getRemoteAbility() {
         return remoteAbility;
     }
-    
+
     public void setRemoteAbility(ServerRemoteAbility remoteAbility) {
         this.remoteAbility = remoteAbility;
     }
-    
+
     public ServerConfigAbility getConfigAbility() {
         return configAbility;
     }
-    
+
     public void setConfigAbility(ServerConfigAbility configAbility) {
         this.configAbility = configAbility;
     }
-    
+
     public ServerNamingAbility getNamingAbility() {
         return namingAbility;
     }
-    
+
     public void setNamingAbility(ServerNamingAbility namingAbility) {
         this.namingAbility = namingAbility;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -72,10 +71,11 @@ public class ServerAbilities implements Serializable {
             return false;
         }
         ServerAbilities that = (ServerAbilities) o;
-        return Objects.equals(remoteAbility, that.remoteAbility) && Objects.equals(configAbility, that.configAbility)
+        return Objects.equals(remoteAbility, that.remoteAbility)
+                && Objects.equals(configAbility, that.configAbility)
                 && Objects.equals(namingAbility, that.namingAbility);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(remoteAbility, configAbility, namingAbility);

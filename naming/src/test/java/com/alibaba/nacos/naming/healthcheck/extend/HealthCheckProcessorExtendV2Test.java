@@ -16,31 +16,26 @@
 
 package com.alibaba.nacos.naming.healthcheck.extend;
 
+import static org.mockito.Mockito.verify;
+
 import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2;
 import com.alibaba.nacos.naming.healthcheck.v2.processor.MysqlHealthCheckProcessor;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.beans.factory.config.SingletonBeanRegistry;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
-
-import static org.mockito.Mockito.verify;
-
 @RunWith(MockitoJUnitRunner.class)
 public class HealthCheckProcessorExtendV2Test {
 
-    @Mock
-    private SingletonBeanRegistry registry;
+    @Mock private SingletonBeanRegistry registry;
 
-    @Mock
-    private MysqlHealthCheckProcessor mysqlProcessor;
+    @Mock private MysqlHealthCheckProcessor mysqlProcessor;
 
     private HealthCheckProcessorExtendV2 healthCheckProcessorExtendV2;
 
@@ -60,7 +55,10 @@ public class HealthCheckProcessorExtendV2Test {
         origin.add("HTTP");
         healthCheckProcessorExtendV2.addProcessor(origin);
 
-        verify(registry).registerSingleton(healthCheckProcessorExtendV2
-                .lowerFirstChar(mysqlProcessor.getClass().getSimpleName()), mysqlProcessor);
+        verify(registry)
+                .registerSingleton(
+                        healthCheckProcessorExtendV2.lowerFirstChar(
+                                mysqlProcessor.getClass().getSimpleName()),
+                        mysqlProcessor);
     }
 }

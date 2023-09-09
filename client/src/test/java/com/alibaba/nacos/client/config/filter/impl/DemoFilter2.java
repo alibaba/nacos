@@ -21,30 +21,28 @@ import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-
 import java.util.Properties;
 
 public class DemoFilter2 implements IConfigFilter {
-    
+
     private static final String DEFAULT_NAME = DemoFilter2.class.getName();
-    
+
     @Override
-    public void init(Properties properties) {
-    
-    }
-    
+    public void init(Properties properties) {}
+
     @Override
-    public void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
+    public void doFilter(
+            IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
             throws NacosException {
         request.putParameter("filter2", DEFAULT_NAME);
         filterChain.doFilter(request, response);
     }
-    
+
     @Override
     public int getOrder() {
         return 0;
     }
-    
+
     @Override
     public String getFilterName() {
         return DEFAULT_NAME;

@@ -28,38 +28,37 @@ import com.alibaba.nacos.core.utils.Loggers;
  * @author xiweng.yy
  */
 public abstract class AbstractDynamicConfig extends Subscriber<ServerConfigChangeEvent> {
-    
+
     private final String configName;
-    
+
     protected AbstractDynamicConfig(String configName) {
         this.configName = configName;
         NotifyCenter.registerSubscriber(this);
     }
-    
+
     @Override
     public void onEvent(ServerConfigChangeEvent event) {
         resetConfig();
     }
-    
+
     @Override
     public Class<? extends Event> subscribeType() {
         return ServerConfigChangeEvent.class;
     }
-    
+
     protected void resetConfig() {
         try {
             getConfigFromEnv();
             Loggers.CORE.info("Get {} config from env, {}", configName, printConfig());
         } catch (Exception e) {
-            Loggers.CORE.warn("Upgrade {} config from env failed, will use old value", configName, e);
+            Loggers.CORE.warn(
+                    "Upgrade {} config from env failed, will use old value", configName, e);
         }
     }
-    
-    /**
-     * Execute get config from env actually.
-     */
+
+    /** Execute get config from env actually. */
     protected abstract void getConfigFromEnv();
-    
+
     /**
      * Print config content.
      *

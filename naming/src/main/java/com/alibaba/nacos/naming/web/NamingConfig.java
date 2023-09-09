@@ -27,21 +27,21 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class NamingConfig {
-    
+
     private static final String UTL_PATTERNS = "/v1/ns/*";
-    
+
     private static final String UTL_PATTERNS_V2 = "/v2/ns/*";
-    
+
     private static final String DISTRO_FILTER = "distroFilter";
-    
+
     private static final String SERVICE_NAME_FILTER = "serviceNameFilter";
-    
+
     private static final String TRAFFIC_REVISE_FILTER = "trafficReviseFilter";
-    
+
     private static final String CLIENT_ATTRIBUTES_FILTER = "clientAttributes_filter";
-    
+
     private static final String NAMING_PARAM_CHECK_FILTER = "namingparamCheckFilter";
-    
+
     @Bean
     public FilterRegistrationBean<DistroFilter> distroFilterRegistration() {
         FilterRegistrationBean<DistroFilter> registration = new FilterRegistrationBean<>();
@@ -51,7 +51,7 @@ public class NamingConfig {
         registration.setOrder(7);
         return registration;
     }
-    
+
     @Bean
     public FilterRegistrationBean<ServiceNameFilter> serviceNameFilterRegistration() {
         FilterRegistrationBean<ServiceNameFilter> registration = new FilterRegistrationBean<>();
@@ -61,7 +61,7 @@ public class NamingConfig {
         registration.setOrder(5);
         return registration;
     }
-    
+
     @Bean
     public FilterRegistrationBean<TrafficReviseFilter> trafficReviseFilterRegistration() {
         FilterRegistrationBean<TrafficReviseFilter> registration = new FilterRegistrationBean<>();
@@ -71,20 +71,22 @@ public class NamingConfig {
         registration.setOrder(1);
         return registration;
     }
-    
+
     @Bean
     public FilterRegistrationBean<ClientAttributesFilter> clientAttributesFilterRegistration() {
-        FilterRegistrationBean<ClientAttributesFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<ClientAttributesFilter> registration =
+                new FilterRegistrationBean<>();
         registration.setFilter(clientAttributesFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
         registration.setName(CLIENT_ATTRIBUTES_FILTER);
         registration.setOrder(8);
         return registration;
     }
-    
+
     @Bean
     public FilterRegistrationBean<NamingParamCheckFilter> paramCheckFilterRegistration() {
-        FilterRegistrationBean<NamingParamCheckFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<NamingParamCheckFilter> registration =
+                new FilterRegistrationBean<>();
         registration.setFilter(namingParamCheckFilter());
         registration.addUrlPatterns(UTL_PATTERNS);
         registration.addUrlPatterns(UTL_PATTERNS_V2);
@@ -92,27 +94,27 @@ public class NamingConfig {
         registration.setOrder(10);
         return registration;
     }
-    
+
     @Bean
     public DistroFilter distroFilter() {
         return new DistroFilter();
     }
-    
+
     @Bean
     public TrafficReviseFilter trafficReviseFilter() {
         return new TrafficReviseFilter();
     }
-    
+
     @Bean
     public ServiceNameFilter serviceNameFilter() {
         return new ServiceNameFilter();
     }
-    
+
     @Bean
     public ClientAttributesFilter clientAttributesFilter() {
         return new ClientAttributesFilter();
     }
-    
+
     @Bean
     public NamingParamCheckFilter namingParamCheckFilter() {
         return new NamingParamCheckFilter();

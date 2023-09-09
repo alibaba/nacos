@@ -18,9 +18,8 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -28,9 +27,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.event.ContextRefreshedEvent;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * {@link RequestHandlerRegistry} unit test.
@@ -40,25 +36,23 @@ import java.util.Map;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class RequestHandlerRegistryTest {
-    
-    @InjectMocks
-    private RequestHandlerRegistry registry;
-    
-    @InjectMocks
-    private ContextRefreshedEvent contextRefreshedEvent;
-    
-    @Mock
-    private AnnotationConfigApplicationContext applicationContext;
-    
+
+    @InjectMocks private RequestHandlerRegistry registry;
+
+    @InjectMocks private ContextRefreshedEvent contextRefreshedEvent;
+
+    @Mock private AnnotationConfigApplicationContext applicationContext;
+
     @Before
     public void setUp() {
         Map<String, Object> handlerMap = new HashMap<>();
-        handlerMap.put(HealthCheckRequestHandler.class.getSimpleName(), new HealthCheckRequestHandler());
+        handlerMap.put(
+                HealthCheckRequestHandler.class.getSimpleName(), new HealthCheckRequestHandler());
         Mockito.when(applicationContext.getBeansOfType(Mockito.any())).thenReturn(handlerMap);
-        
+
         registry.onApplicationEvent(contextRefreshedEvent);
     }
-    
+
     @Test
     public void testGetByRequestType() {
         Assert.assertNotNull(registry.getByRequestType(HealthCheckRequest.class.getSimpleName()));

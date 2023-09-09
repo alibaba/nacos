@@ -25,8 +25,6 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.springframework.stereotype.Component;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +32,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.springframework.stereotype.Component;
 
 /**
  * Nacos naming metadata manager.
@@ -42,22 +41,22 @@ import java.util.concurrent.ConcurrentMap;
  */
 @Component
 public class NamingMetadataManager extends SmartSubscriber {
-    
+
     private final Set<ExpiredMetadataInfo> expiredMetadataInfos;
-    
+
     private ConcurrentMap<Service, ServiceMetadata> serviceMetadataMap;
-    
+
     private ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataMap;
-    
+
     private static final int INITIAL_CAPACITY = 1;
-    
+
     public NamingMetadataManager() {
         serviceMetadataMap = new ConcurrentHashMap<>(1 << 10);
         instanceMetadataMap = new ConcurrentHashMap<>(1 << 10);
         expiredMetadataInfos = new ConcurrentHashSet<>();
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
     }
-    
+
     /**
      * Whether contain service metadata for {@link Service}.
      *
@@ -67,18 +66,19 @@ public class NamingMetadataManager extends SmartSubscriber {
     public boolean containServiceMetadata(Service service) {
         return serviceMetadataMap.containsKey(service);
     }
-    
+
     /**
      * Whether instance metadata for instance of {@link Service}.
      *
-     * @param service    service
+     * @param service service
      * @param metadataId instance metadata id
      * @return true if contain instance metadata, otherwise false
      */
     public boolean containInstanceMetadata(Service service, String metadataId) {
-        return instanceMetadataMap.containsKey(service) && instanceMetadataMap.get(service).containsKey(metadataId);
+        return instanceMetadataMap.containsKey(service)
+                && instanceMetadataMap.get(service).containsKey(metadataId);
     }
-    
+
     /**
      * Get service metadata for {@link Service}, which is the original metadata object.
      *
@@ -90,49 +90,51 @@ public class NamingMetadataManager extends SmartSubscriber {
     public Optional<ServiceMetadata> getServiceMetadata(Service service) {
         return Optional.ofNullable(serviceMetadataMap.get(service));
     }
-    
+
     /**
      * Get instance metadata for instance of {@link Service}, which is the original metadata object.
      *
      * <p>This method should use only query, can't modify metadata.
      *
-     * @param service    service
+     * @param service service
      * @param metadataId instance metadata id
      * @return instance metadata
      */
     public Optional<InstanceMetadata> getInstanceMetadata(Service service, String metadataId) {
-        ConcurrentMap<String, InstanceMetadata> instanceMetadataMapForService = instanceMetadataMap.get(service);
+        ConcurrentMap<String, InstanceMetadata> instanceMetadataMapForService =
+                instanceMetadataMap.get(service);
         if (null == instanceMetadataMapForService) {
             return Optional.empty();
         }
         return Optional.ofNullable(instanceMetadataMapForService.get(metadataId));
     }
-    
+
     /**
      * Update service metadata.
      *
-     * @param service         service
+     * @param service service
      * @param serviceMetadata new service metadata
      */
     public void updateServiceMetadata(Service service, ServiceMetadata serviceMetadata) {
         service.incrementRevision();
         serviceMetadataMap.put(service, serviceMetadata);
     }
-    
+
     /**
      * Update instance metadata.
      *
-     * @param service          service
-     * @param metadataId       instance metadata id
+     * @param service service
+     * @param metadataId instance metadata id
      * @param instanceMetadata new instance metadata
      */
-    public void updateInstanceMetadata(Service service, String metadataId, InstanceMetadata instanceMetadata) {
+    public void updateInstanceMetadata(
+            Service service, String metadataId, InstanceMetadata instanceMetadata) {
         if (!instanceMetadataMap.containsKey(service)) {
             instanceMetadataMap.putIfAbsent(service, new ConcurrentHashMap<>(INITIAL_CAPACITY));
         }
         instanceMetadataMap.get(service).put(metadataId, instanceMetadata);
     }
-    
+
     /**
      * Remove service metadata.
      *
@@ -142,47 +144,50 @@ public class NamingMetadataManager extends SmartSubscriber {
         serviceMetadataMap.remove(service);
         expiredMetadataInfos.remove(ExpiredMetadataInfo.newExpiredServiceMetadata(service));
     }
-    
+
     /**
      * Remove instance metadata.
      *
-     * @param service    service
+     * @param service service
      * @param metadataId instance metadata id
      */
     public void removeInstanceMetadata(Service service, String metadataId) {
-        ConcurrentMap<String, InstanceMetadata> instanceMetadataMapForService = instanceMetadataMap.get(service);
+        ConcurrentMap<String, InstanceMetadata> instanceMetadataMapForService =
+                instanceMetadataMap.get(service);
         if (null != instanceMetadataMapForService) {
             instanceMetadataMapForService.remove(metadataId);
             if (instanceMetadataMapForService.isEmpty()) {
                 serviceMetadataMap.remove(service);
             }
         }
-        expiredMetadataInfos.remove(ExpiredMetadataInfo.newExpiredInstanceMetadata(service, metadataId));
+        expiredMetadataInfos.remove(
+                ExpiredMetadataInfo.newExpiredInstanceMetadata(service, metadataId));
     }
-    
+
     /**
      * Get service metadata snapshot.
      *
      * @return service metadata snapshot
      */
     public Map<Service, ServiceMetadata> getServiceMetadataSnapshot() {
-        ConcurrentMap<Service, ServiceMetadata> result = new ConcurrentHashMap<>(serviceMetadataMap.size());
+        ConcurrentMap<Service, ServiceMetadata> result =
+                new ConcurrentHashMap<>(serviceMetadataMap.size());
         result.putAll(serviceMetadataMap);
         return result;
     }
-    
+
     /**
      * Get instance metadata snapshot.
      *
      * @return service metadata snapshot
      */
     public Map<Service, ConcurrentMap<String, InstanceMetadata>> getInstanceMetadataSnapshot() {
-        ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> result = new ConcurrentHashMap<>(
-                instanceMetadataMap.size());
+        ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> result =
+                new ConcurrentHashMap<>(instanceMetadataMap.size());
         result.putAll(instanceMetadataMap);
         return result;
     }
-    
+
     /**
      * Load service metadata snapshot.
      *
@@ -198,22 +203,24 @@ public class NamingMetadataManager extends SmartSubscriber {
         serviceMetadataMap = snapshot;
         oldSnapshot.clear();
     }
-    
+
     /**
      * Load instance metadata snapshot.
      *
      * @param snapshot snapshot
      */
-    public void loadInstanceMetadataSnapshot(ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> snapshot) {
-        ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> oldSnapshot = instanceMetadataMap;
+    public void loadInstanceMetadataSnapshot(
+            ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> snapshot) {
+        ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> oldSnapshot =
+                instanceMetadataMap;
         instanceMetadataMap = snapshot;
         oldSnapshot.clear();
     }
-    
+
     public Set<ExpiredMetadataInfo> getExpiredMetadataInfos() {
         return expiredMetadataInfos;
     }
-    
+
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> result = new LinkedList<>();
@@ -222,7 +229,7 @@ public class NamingMetadataManager extends SmartSubscriber {
         result.add(ClientEvent.ClientDisconnectEvent.class);
         return result;
     }
-    
+
     @Override
     public void onEvent(Event event) {
         if (event instanceof MetadataEvent.InstanceMetadataEvent) {
@@ -233,32 +240,36 @@ public class NamingMetadataManager extends SmartSubscriber {
             handleClientDisconnectEvent((ClientEvent.ClientDisconnectEvent) event);
         }
     }
-    
+
     private void handleClientDisconnectEvent(ClientEvent.ClientDisconnectEvent event) {
         for (Service each : event.getClient().getAllPublishedService()) {
             String metadataId = event.getClient().getInstancePublishInfo(each).getMetadataId();
             if (containInstanceMetadata(each, metadataId)) {
-                updateExpiredInfo(true, ExpiredMetadataInfo.newExpiredInstanceMetadata(each, metadataId));
+                updateExpiredInfo(
+                        true, ExpiredMetadataInfo.newExpiredInstanceMetadata(each, metadataId));
             }
         }
     }
-    
+
     private void handleServiceMetadataEvent(MetadataEvent.ServiceMetadataEvent event) {
         Service service = event.getService();
         if (containServiceMetadata(service)) {
-            updateExpiredInfo(event.isExpired(), ExpiredMetadataInfo.newExpiredServiceMetadata(service));
+            updateExpiredInfo(
+                    event.isExpired(), ExpiredMetadataInfo.newExpiredServiceMetadata(service));
         }
     }
-    
+
     private void handleInstanceMetadataEvent(MetadataEvent.InstanceMetadataEvent event) {
         Service service = event.getService();
         String metadataId = event.getMetadataId();
         if (containInstanceMetadata(service, metadataId)) {
-            updateExpiredInfo(event.isExpired(),
-                    ExpiredMetadataInfo.newExpiredInstanceMetadata(event.getService(), event.getMetadataId()));
+            updateExpiredInfo(
+                    event.isExpired(),
+                    ExpiredMetadataInfo.newExpiredInstanceMetadata(
+                            event.getService(), event.getMetadataId()));
         }
     }
-    
+
     private void updateExpiredInfo(boolean expired, ExpiredMetadataInfo expiredMetadataInfo) {
         if (expired) {
             expiredMetadataInfos.add(expiredMetadataInfo);

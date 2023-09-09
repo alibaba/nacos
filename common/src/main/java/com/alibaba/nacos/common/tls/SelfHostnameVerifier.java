@@ -17,37 +17,36 @@
 package com.alibaba.nacos.common.tls;
 
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.util.concurrent.ConcurrentHashMap;
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
-import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A HostnameVerifier verify ipv4 and localhost.
  *
  * @author wangwei
  */
-
 public final class SelfHostnameVerifier implements HostnameVerifier {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SelfHostnameVerifier.class);
-    
+
     private final HostnameVerifier hv;
-    
+
     private static final ConcurrentHashMap<String, Boolean> HOSTS = new ConcurrentHashMap<>();
-    
-    private static final String[] LOCALHOST_HOSTNAME = new String[] {InternetAddressUtil.LOCAL_HOST,
-            InternetAddressUtil.localHostIP()};
-    
+
+    private static final String[] LOCALHOST_HOSTNAME =
+            new String[] {InternetAddressUtil.LOCAL_HOST, InternetAddressUtil.localHostIP()};
+
     public SelfHostnameVerifier(HostnameVerifier hv) {
         this.hv = hv;
     }
-    
+
     @Override
     public boolean verify(String hostname, SSLSession session) {
-        if (LOCALHOST_HOSTNAME[0].equalsIgnoreCase(hostname) || LOCALHOST_HOSTNAME[1].equals(hostname)) {
+        if (LOCALHOST_HOSTNAME[0].equalsIgnoreCase(hostname)
+                || LOCALHOST_HOSTNAME[1].equals(hostname)) {
             return true;
         }
         if (isIP(hostname)) {
@@ -55,7 +54,7 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
         }
         return hv.verify(hostname, session);
     }
-    
+
     private static boolean isIP(String host) {
         if (host == null || host.isEmpty()) {
             LOGGER.warn("host is empty, isIP = false");

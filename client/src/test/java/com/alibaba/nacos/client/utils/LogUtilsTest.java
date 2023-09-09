@@ -16,16 +16,13 @@
 
 package com.alibaba.nacos.client.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.slf4j.Logger;
 
 public class LogUtilsTest {
-    
+
     @Test
     public void testLogger() {
         Logger logger = LogUtils.logger(LogUtilsTest.class);
         Assert.assertNotNull(logger);
     }
-    
 }

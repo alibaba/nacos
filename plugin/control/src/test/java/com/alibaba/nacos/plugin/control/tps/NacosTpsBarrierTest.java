@@ -22,32 +22,27 @@ import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.concurrent.TimeUnit;
 
 public class NacosTpsBarrierTest {
-    
+
     RuleBarrierCreator before;
-    
+
     @Before
     public void setUp() {
         before = TpsBarrier.ruleBarrierCreator;
         TpsBarrier.ruleBarrierCreator = new LocalSimpleCountBarrierCreator();
     }
-    
+
     @After
     public void after() {
         TpsBarrier.ruleBarrierCreator = before;
     }
-    
+
     @Test
     public void testNormalPointPassAndDeny() {
         String testTpsBarrier = "test_barrier";
-        
+
         // max 5tps
         TpsControlRule tpsControlRule = new TpsControlRule();
         tpsControlRule.setPointName(testTpsBarrier);
@@ -56,21 +51,19 @@ public class NacosTpsBarrierTest {
         ruleDetail.setMonitorType(MonitorType.INTERCEPT.getType());
         ruleDetail.setPeriod(TimeUnit.SECONDS);
         tpsControlRule.setPointRule(ruleDetail);
-        
+
         TpsBarrier tpsBarrier = new NacosTpsBarrier(testTpsBarrier);
         tpsBarrier.applyRule(tpsControlRule);
-        
-        //test point keys
+
+        // test point keys
         long timeMillis = System.currentTimeMillis();
         TpsCheckRequest tpsCheckRequest = new TpsCheckRequest();
         tpsCheckRequest.setTimestamp(timeMillis);
-        
+
         // 5tps check pass
         for (int i = 0; i < 5; i++) {
             TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);
             Assert.assertTrue(tpsCheckResponse.isSuccess());
         }
-        
     }
-    
 }

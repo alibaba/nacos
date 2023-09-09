@@ -18,17 +18,16 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
-import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.auth.context.GrpcIdentityContextBuilder;
 import com.alibaba.nacos.auth.parser.grpc.AbstractGrpcResourceParser;
 import com.alibaba.nacos.auth.parser.grpc.ConfigGrpcResourceParser;
 import com.alibaba.nacos.auth.parser.grpc.NamingGrpcResourceParser;
 import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.common.utils.StringUtils;
-
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,23 +37,23 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class GrpcProtocolAuthService extends AbstractProtocolAuthService<Request> {
-    
+
     private final Map<String, AbstractGrpcResourceParser> resourceParserMap;
-    
+
     private final GrpcIdentityContextBuilder identityContextBuilder;
-    
+
     public GrpcProtocolAuthService(AuthConfigs authConfigs) {
         super(authConfigs);
         resourceParserMap = new HashMap<>(2);
         identityContextBuilder = new GrpcIdentityContextBuilder(authConfigs);
     }
-    
+
     @Override
     public void initialize() {
         resourceParserMap.put(SignType.NAMING, new NamingGrpcResourceParser());
         resourceParserMap.put(SignType.CONFIG, new ConfigGrpcResourceParser());
     }
-    
+
     @Override
     public Resource parseResource(Request request, Secured secured) {
         if (StringUtils.isNotBlank(secured.resource())) {
@@ -67,7 +66,7 @@ public class GrpcProtocolAuthService extends AbstractProtocolAuthService<Request
         }
         return resourceParserMap.get(type).parse(request, secured);
     }
-    
+
     @Override
     public IdentityContext parseIdentity(Request request) {
         return identityContextBuilder.build(request);

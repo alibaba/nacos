@@ -30,11 +30,10 @@ import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
 
 /**
  * Cluster controller.
@@ -44,13 +43,13 @@ import javax.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_CLUSTER_CONTEXT)
 public class ClusterController {
-    
+
     private final ClusterOperatorV2Impl clusterOperatorV2;
-    
+
     public ClusterController(ClusterOperatorV2Impl clusterOperatorV2) {
         this.clusterOperatorV2 = clusterOperatorV2;
     }
-    
+
     /**
      * Update cluster.
      *
@@ -61,24 +60,28 @@ public class ClusterController {
     @PutMapping
     @Secured(action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
-        final String namespaceId = WebUtils
-                .optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
+        final String namespaceId =
+                WebUtils.optional(
+                        request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
         final String clusterName = WebUtils.required(request, CommonParams.CLUSTER_NAME);
         final String serviceName = WebUtils.required(request, CommonParams.SERVICE_NAME);
         ClusterMetadata clusterMetadata = new ClusterMetadata();
-        clusterMetadata.setHealthyCheckPort(NumberUtils.toInt(WebUtils.required(request, "checkPort")));
+        clusterMetadata.setHealthyCheckPort(
+                NumberUtils.toInt(WebUtils.required(request, "checkPort")));
         clusterMetadata.setUseInstancePortForCheck(
                 ConvertUtils.toBoolean(WebUtils.required(request, "useInstancePort4Check")));
-        AbstractHealthChecker healthChecker = HealthCheckerFactory
-                .deserialize(WebUtils.required(request, "healthChecker"));
+        AbstractHealthChecker healthChecker =
+                HealthCheckerFactory.deserialize(WebUtils.required(request, "healthChecker"));
         clusterMetadata.setHealthChecker(healthChecker);
         clusterMetadata.setHealthyCheckType(healthChecker.getType());
         clusterMetadata.setExtendData(
-                UtilsAndCommons.parseMetadata(WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
-        judgeClusterOperator().updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
+                UtilsAndCommons.parseMetadata(
+                        WebUtils.optional(request, "metadata", StringUtils.EMPTY)));
+        judgeClusterOperator()
+                .updateClusterMetadata(namespaceId, serviceName, clusterName, clusterMetadata);
         return "ok";
     }
-    
+
     private ClusterOperator judgeClusterOperator() {
         return clusterOperatorV2;
     }

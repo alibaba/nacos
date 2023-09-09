@@ -17,10 +17,6 @@
 
 package com.alibaba.nacos.consistency.snapshot;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -32,9 +28,9 @@ import java.util.Properties;
  * @date 2021-07-27 18:46
  */
 public class ReaderTest {
-    
+
     private Reader reader;
-    
+
     @Before
     public void setUp() {
         Map<String, LocalFileMeta> map = new HashMap<>(2);
@@ -43,13 +39,13 @@ public class ReaderTest {
         map.put("a", new LocalFileMeta(properties));
         reader = new Reader("test", map);
     }
-    
+
     @Test
     public void test() {
         Assert.assertEquals("test", reader.getPath());
-        
+
         Assert.assertEquals(1, reader.listFiles().size());
-        
+
         Assert.assertEquals("v", reader.getFileMeta("a").getFileMeta().getProperty("k"));
     }
 }

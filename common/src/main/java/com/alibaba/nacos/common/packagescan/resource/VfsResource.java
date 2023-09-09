@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.common.packagescan.resource;
 
-import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.packagescan.util.NestedIoException;
-
+import com.alibaba.nacos.common.utils.AbstractAssert;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -26,12 +25,11 @@ import java.net.URI;
 import java.net.URL;
 
 /**
- * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
- * JBoss VFS based {@link Resource} implementation.
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications JBoss
+ * VFS based {@link Resource} implementation.
  *
- * <p>As of Spring 4.0, this class supports VFS 3.x on JBoss AS 6+
- * (package {@code org.jboss.vfs}) and is in particular compatible with
- * JBoss AS 7 and WildFly 8+.
+ * <p>As of Spring 4.0, this class supports VFS 3.x on JBoss AS 6+ (package {@code org.jboss.vfs})
+ * and is in particular compatible with JBoss AS 7 and WildFly 8+.
  *
  * @author Ales Justin
  * @author Juergen Hoeller
@@ -47,8 +45,8 @@ public class VfsResource extends AbstractResource {
     /**
      * Create a new {@code VfsResource} wrapping the given resource handle.
      *
-     * @param resource a {@code org.jboss.vfs.VirtualFile} instance
-     *                 (untyped in order to avoid a static dependency on the VFS API)
+     * @param resource a {@code org.jboss.vfs.VirtualFile} instance (untyped in order to avoid a
+     *     static dependency on the VFS API)
      */
     public VfsResource(Object resource) {
         AbstractAssert.notNull(resource, "VirtualFile must not be null");
@@ -128,13 +126,13 @@ public class VfsResource extends AbstractResource {
 
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof VfsResource
-                && this.resource.equals(((VfsResource) other).resource)));
+        return (this == other
+                || (other instanceof VfsResource
+                        && this.resource.equals(((VfsResource) other).resource)));
     }
 
     @Override
     public int hashCode() {
         return this.resource.hashCode();
     }
-
 }

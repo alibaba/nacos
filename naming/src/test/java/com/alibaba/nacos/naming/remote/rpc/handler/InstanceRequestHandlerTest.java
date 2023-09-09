@@ -23,8 +23,6 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -39,13 +37,11 @@ import org.mockito.junit.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class InstanceRequestHandlerTest {
-    
-    @InjectMocks
-    private InstanceRequestHandler instanceRequestHandler;
-    
-    @Mock
-    private EphemeralClientOperationServiceImpl clientOperationService;
-    
+
+    @InjectMocks private InstanceRequestHandler instanceRequestHandler;
+
+    @Mock private EphemeralClientOperationServiceImpl clientOperationService;
+
     @Test
     public void testHandle() throws NacosException {
         InstanceRequest instanceRequest = new InstanceRequest();
@@ -56,12 +52,14 @@ public class InstanceRequestHandlerTest {
         instanceRequest.setInstance(instance);
         RequestMeta requestMeta = new RequestMeta();
         instanceRequestHandler.handle(instanceRequest, requestMeta);
-        Mockito.verify(clientOperationService).registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
-        
+        Mockito.verify(clientOperationService)
+                .registerInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
+
         instanceRequest.setType(NamingRemoteConstants.DE_REGISTER_INSTANCE);
         instanceRequestHandler.handle(instanceRequest, requestMeta);
-        Mockito.verify(clientOperationService).deregisterInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
-        
+        Mockito.verify(clientOperationService)
+                .deregisterInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
+
         instanceRequest.setType("xxx");
         try {
             instanceRequestHandler.handle(instanceRequest, requestMeta);

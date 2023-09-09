@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
-
 import java.util.List;
 
 /**
@@ -27,14 +26,14 @@ import java.util.List;
  * @author zhuoguang
  */
 public interface ParamExtractor<T> {
-    
+
     /**
      * Gets target request list.
      *
      * @return the target request list
      */
     List<String> getTargetRequestList();
-    
+
     /**
      * Extract param.
      *

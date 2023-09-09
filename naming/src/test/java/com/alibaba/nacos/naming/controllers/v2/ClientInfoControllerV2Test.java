@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.naming.controllers.v2;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.naming.BaseTest;
@@ -25,9 +28,7 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Arrays;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -38,59 +39,55 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import java.util.Arrays;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
 @RunWith(MockitoJUnitRunner.class)
 public class ClientInfoControllerV2Test extends BaseTest {
-    
-    @InjectMocks
-    ClientInfoControllerV2 clientInfoControllerV2;
-    
-    @Mock
-    private ClientManager clientManager;
-    
-    @Mock
-    private ConnectionManager connectionManager;
-    
-    @Mock
-    private ClientServiceIndexesManager clientServiceIndexesManager;
-    
+
+    @InjectMocks ClientInfoControllerV2 clientInfoControllerV2;
+
+    @Mock private ClientManager clientManager;
+
+    @Mock private ConnectionManager connectionManager;
+
+    @Mock private ClientServiceIndexesManager clientServiceIndexesManager;
+
     private MockMvc mockmvc;
-    
+
     private IpPortBasedClient ipPortBasedClient;
-    
+
     private ConnectionBasedClient connectionBasedClient;
-    
+
     private static final String URL =
-            UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_CLIENT_CONTEXT;
-    
+            UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                    + UtilsAndCommons.NACOS_NAMING_CLIENT_CONTEXT;
+
     @Before
     public void before() {
-        when(clientManager.allClientId()).thenReturn(Arrays.asList("127.0.0.1:8080#test1", "test2#test2"));
+        when(clientManager.allClientId())
+                .thenReturn(Arrays.asList("127.0.0.1:8080#test1", "test2#test2"));
         when(clientManager.contains(anyString())).thenReturn(true);
         mockmvc = MockMvcBuilders.standaloneSetup(clientInfoControllerV2).build();
         ipPortBasedClient = new IpPortBasedClient("127.0.0.1:8080#test1", false);
         connectionBasedClient = new ConnectionBasedClient("test2", true, 1L);
     }
-    
+
     @Test
     public void testGetClientList() throws Exception {
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/list");
-        MockHttpServletResponse response = mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder =
+                MockMvcRequestBuilders.get(URL + "/list");
+        MockHttpServletResponse response =
+                mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
         Assert.assertEquals(200, response.getStatus());
         JsonNode jsonNode = JacksonUtils.toObj(response.getContentAsString()).get("data");
         Assert.assertEquals(2, jsonNode.size());
     }
-    
+
     @Test
     public void testGetClientDetail() throws Exception {
         when(clientManager.getClient("test1")).thenReturn(ipPortBasedClient);
-        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL)
-                .param("clientId", "test1");
-        MockHttpServletResponse response = mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder =
+                MockMvcRequestBuilders.get(URL).param("clientId", "test1");
+        MockHttpServletResponse response =
+                mockmvc.perform(mockHttpServletRequestBuilder).andReturn().getResponse();
         Assert.assertEquals(200, response.getStatus());
     }
 }

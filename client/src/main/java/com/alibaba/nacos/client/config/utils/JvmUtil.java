@@ -26,7 +26,7 @@ import org.slf4j.Logger;
  * @author Nacos
  */
 public class JvmUtil {
-    
+
     /**
      * whether is multi instance.
      *
@@ -35,19 +35,21 @@ public class JvmUtil {
     public static Boolean isMultiInstance() {
         return isMultiInstance;
     }
-    
+
     private static Boolean isMultiInstance = false;
-    
+
     private static final String TRUE = "true";
-    
+
     private static final Logger LOGGER = LogUtils.logger(JvmUtil.class);
-    
+
     private static final String IS_MULTI_INSTANCE_PROPERTY = "isMultiInstance";
-    
+
     private static final String DEFAULT_IS_MULTI_INSTANCE = "false";
-    
+
     static {
-        String multiDeploy = NacosClientProperties.PROTOTYPE.getProperty(IS_MULTI_INSTANCE_PROPERTY, DEFAULT_IS_MULTI_INSTANCE);
+        String multiDeploy =
+                NacosClientProperties.PROTOTYPE.getProperty(
+                        IS_MULTI_INSTANCE_PROPERTY, DEFAULT_IS_MULTI_INSTANCE);
         if (TRUE.equals(multiDeploy)) {
             isMultiInstance = true;
         }

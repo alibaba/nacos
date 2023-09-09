@@ -16,26 +16,26 @@
 
 package com.alibaba.nacos.common.spi;
 
-import org.junit.Test;
-
-import java.util.Collection;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
+import java.util.Collection;
+
 public class NacosServiceLoaderTest {
-    
+
     @Test
     public void testLoad() {
         Collection<SpiTestInterface> actual = NacosServiceLoader.load(SpiTestInterface.class);
         assertEquals(1, actual.size());
         assertEquals(SpiTestImpl.class, actual.iterator().next().getClass());
     }
-    
+
     @Test
     public void newServiceInstances() {
-        SpiTestInterface loadInstance = NacosServiceLoader.load(SpiTestInterface.class).iterator().next();
-        Collection<SpiTestInterface> actual = NacosServiceLoader.newServiceInstances(SpiTestInterface.class);
+        SpiTestInterface loadInstance =
+                NacosServiceLoader.load(SpiTestInterface.class).iterator().next();
+        Collection<SpiTestInterface> actual =
+                NacosServiceLoader.newServiceInstances(SpiTestInterface.class);
         assertEquals(1, actual.size());
         assertEquals(SpiTestImpl.class, actual.iterator().next().getClass());
         assertNotEquals(loadInstance, actual.iterator().next());

@@ -17,13 +17,10 @@
 package com.alibaba.nacos.api.remote.request;
 
 import com.alibaba.nacos.api.ability.ClientAbilities;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Collections;
 
 public class ConnectionSetupRequestTest extends BasicRequestTest {
-    
+
     @Test
     public void testSerialize() throws Exception {
         ConnectionSetupRequest request = new ConnectionSetupRequest();
@@ -41,13 +38,14 @@ public class ConnectionSetupRequestTest extends BasicRequestTest {
         Assert.assertTrue(json.contains("\"module\":\"internal\""));
         Assert.assertTrue(json.contains("\"requestId\":\"1\""));
     }
-    
+
     @Test
     public void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"clientVersion\":\"2.2.2\",\"abilities\":{\"remoteAbility\":"
-                + "{\"supportRemoteConnection\":false},\"configAbility\":{\"supportRemoteMetrics\":false},"
-                + "\"namingAbility\":{\"supportDeltaPush\":false,\"supportRemoteMetric\":false}},\"tenant\":\"testNamespaceId\","
-                + "\"labels\":{\"labelKey\":\"labelValue\"},\"module\":\"internal\"}";
+        String json =
+                "{\"headers\":{},\"requestId\":\"1\",\"clientVersion\":\"2.2.2\",\"abilities\":{\"remoteAbility\":"
+                        + "{\"supportRemoteConnection\":false},\"configAbility\":{\"supportRemoteMetrics\":false},"
+                        + "\"namingAbility\":{\"supportDeltaPush\":false,\"supportRemoteMetric\":false}},\"tenant\":\"testNamespaceId\","
+                        + "\"labels\":{\"labelKey\":\"labelValue\"},\"module\":\"internal\"}";
         ConnectionSetupRequest result = mapper.readValue(json, ConnectionSetupRequest.class);
         Assert.assertNotNull(result);
         Assert.assertEquals("2.2.2", result.getClientVersion());

@@ -16,6 +16,18 @@
 
 package com.alibaba.nacos.naming.consistency.ephemeral.distro.v2;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.consistency.DataOperation;
 import com.alibaba.nacos.core.distributed.distro.DistroProtocol;
@@ -33,58 +45,38 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Collections;
+import java.util.List;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.Collections;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @RunWith(MockitoJUnitRunner.class)
 public class DistroClientDataProcessorTest {
-    
+
     private static final String CLIENT_ID = "11111_1.1.1.1_3306";
-    
+
     private static final String MOCK_TARGET_SERVER = "2.2.2.2:8848";
-    
+
     private Client client;
-    
+
     private DistroData distroData;
-    
+
     private DistroKey distroKey;
-    
+
     private ClientSyncData clientSyncData;
-    
-    @Mock
-    private ClientManager clientManager;
-    
-    @Mock
-    private DistroProtocol distroProtocol;
-    
-    @Mock
-    private ConfigurableApplicationContext applicationContext;
-    
-    @Mock
-    private Serializer serializer;
-    
+
+    @Mock private ClientManager clientManager;
+
+    @Mock private DistroProtocol distroProtocol;
+
+    @Mock private ConfigurableApplicationContext applicationContext;
+
+    @Mock private Serializer serializer;
+
     private DistroClientDataProcessor distroClientDataProcessor;
-    
+
     @Before
     public void setUp() throws Exception {
         distroClientDataProcessor = new DistroClientDataProcessor(clientManager, distroProtocol);
@@ -102,7 +94,7 @@ public class DistroClientDataProcessorTest {
         clientSyncData = mockClientSyncData();
         when(serializer.deserialize(any(), eq(ClientSyncData.class))).thenReturn(clientSyncData);
     }
-    
+
     private ClientSyncData mockClientSyncData() {
         ClientSyncData result = new ClientSyncData();
         ClientAttributes clientAttributes = new ClientAttributes();
@@ -112,75 +104,82 @@ public class DistroClientDataProcessorTest {
         result.setNamespaces(Collections.singletonList("ns"));
         result.setGroupNames(Collections.singletonList("group"));
         result.setServiceNames(Collections.singletonList("service"));
-        result.setInstancePublishInfos(Collections.singletonList(new InstancePublishInfo("3.3.3.3", 1111)));
+        result.setInstancePublishInfos(
+                Collections.singletonList(new InstancePublishInfo("3.3.3.3", 1111)));
         return result;
     }
-    
+
     @After
     public void tearDown() throws Exception {
         NotifyCenter.deregisterSubscriber(distroClientDataProcessor);
     }
-    
+
     @Test
     public void testFinishInitial() {
         assertFalse(distroClientDataProcessor.isFinishInitial());
         distroClientDataProcessor.finishInitial();
         assertTrue(distroClientDataProcessor.isFinishInitial());
     }
-    
+
     @Test
     public void processType() {
         assertEquals(DistroClientDataProcessor.TYPE, distroClientDataProcessor.processType());
     }
-    
+
     @Test
     public void testOnEventForStandalone() {
         EnvUtil.setIsStandalone(true);
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        distroClientDataProcessor.onEvent(
+                new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
-    
+
     @Test
     public void testOnClientVerifyFailedEventWithoutClient() {
         when(clientManager.getClient(CLIENT_ID)).thenReturn(null);
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        distroClientDataProcessor.onEvent(
+                new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
-    
+
     @Test
     public void testOnClientVerifyFailedEventWithPersistentClient() {
         client = mock(Client.class);
         when(client.isEphemeral()).thenReturn(false);
         when(clientManager.getClient(CLIENT_ID)).thenReturn(client);
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        distroClientDataProcessor.onEvent(
+                new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
-    
+
     @Test
     public void testOnClientVerifyFailedEventWithoutResponsible() {
         when(clientManager.isResponsibleClient(client)).thenReturn(false);
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        distroClientDataProcessor.onEvent(
+                new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
-    
+
     @Test
     public void testOnClientVerifyFailedEventSuccess() {
-        distroClientDataProcessor.onEvent(new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
-        verify(distroProtocol).syncToTarget(any(), eq(DataOperation.ADD), eq(MOCK_TARGET_SERVER), eq(0L));
+        distroClientDataProcessor.onEvent(
+                new ClientEvent.ClientVerifyFailedEvent(CLIENT_ID, MOCK_TARGET_SERVER));
+        verify(distroProtocol)
+                .syncToTarget(any(), eq(DataOperation.ADD), eq(MOCK_TARGET_SERVER), eq(0L));
         verify(distroProtocol, never()).sync(any(), any());
     }
-    
+
     @Test
     public void testOnClientChangedEventWithoutClient() {
         distroClientDataProcessor.onEvent(new ClientEvent.ClientChangedEvent(null));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
-    
+
     @Test
     public void testOnClientChangedEventWithPersistentClient() {
         client = mock(Client.class);
@@ -189,7 +188,7 @@ public class DistroClientDataProcessorTest {
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
-    
+
     @Test
     public void testOnClientChangedEventWithoutResponsible() {
         when(clientManager.isResponsibleClient(client)).thenReturn(false);
@@ -197,28 +196,28 @@ public class DistroClientDataProcessorTest {
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol, never()).sync(any(), any());
     }
-    
+
     @Test
     public void testOnClientChangedEventSuccess() {
         distroClientDataProcessor.onEvent(new ClientEvent.ClientChangedEvent(client));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol).sync(any(), eq(DataOperation.CHANGE));
     }
-    
+
     @Test
     public void testOnClientDisconnectEventSuccess() {
         distroClientDataProcessor.onEvent(new ClientEvent.ClientDisconnectEvent(client, true));
         verify(distroProtocol, never()).syncToTarget(any(), any(), anyString(), anyLong());
         verify(distroProtocol).sync(any(), eq(DataOperation.DELETE));
     }
-    
+
     @Test
     public void testProcessDataForDeleteClient() {
         distroData.setType(DataOperation.DELETE);
         distroClientDataProcessor.processData(distroData);
         verify(clientManager).clientDisconnected(CLIENT_ID);
     }
-    
+
     @Test
     public void testProcessDataForChangeClient() {
         distroData.setType(DataOperation.CHANGE);
@@ -229,16 +228,17 @@ public class DistroClientDataProcessorTest {
         assertEquals(1L, client.getRevision());
         assertEquals(1, client.getAllPublishedService().size());
     }
-    
+
     @Test
     public void testProcessVerifyData() {
         DistroClientVerifyInfo verifyInfo = new DistroClientVerifyInfo(CLIENT_ID, 0L);
-        when(serializer.deserialize(any(), eq(DistroClientVerifyInfo.class))).thenReturn(verifyInfo);
+        when(serializer.deserialize(any(), eq(DistroClientVerifyInfo.class)))
+                .thenReturn(verifyInfo);
         assertFalse(distroClientDataProcessor.processVerifyData(distroData, MOCK_TARGET_SERVER));
         when(clientManager.verifyClient(verifyInfo)).thenReturn(true);
         assertTrue(distroClientDataProcessor.processVerifyData(distroData, MOCK_TARGET_SERVER));
     }
-    
+
     @Test
     public void testProcessSnapshot() {
         ClientSyncDatumSnapshot snapshot = new ClientSyncDatumSnapshot();
@@ -251,13 +251,13 @@ public class DistroClientDataProcessorTest {
         assertEquals(1L, client.getRevision());
         assertEquals(1, client.getAllPublishedService().size());
     }
-    
+
     @Test
     public void testGetDistroData() {
         DistroData actual = distroClientDataProcessor.getDistroData(distroKey);
         assertEquals(distroKey, actual.getDistroKey());
     }
-    
+
     @Test
     public void testGetDatumSnapshot() {
         when(clientManager.allClientId()).thenReturn(Collections.singletonList(CLIENT_ID));
@@ -265,7 +265,7 @@ public class DistroClientDataProcessorTest {
         assertEquals(DataOperation.SNAPSHOT.name(), actual.getDistroKey().getResourceKey());
         assertEquals(DistroClientDataProcessor.TYPE, actual.getDistroKey().getResourceType());
     }
-    
+
     @Test
     public void testGetVerifyData() {
         client.setRevision(10L);
@@ -274,6 +274,8 @@ public class DistroClientDataProcessorTest {
         assertEquals(1, list.size());
         assertEquals(DataOperation.VERIFY, list.iterator().next().getType());
         assertEquals(CLIENT_ID, list.iterator().next().getDistroKey().getResourceKey());
-        assertEquals(DistroClientDataProcessor.TYPE, list.iterator().next().getDistroKey().getResourceType());
+        assertEquals(
+                DistroClientDataProcessor.TYPE,
+                list.iterator().next().getDistroKey().getResourceType());
     }
 }

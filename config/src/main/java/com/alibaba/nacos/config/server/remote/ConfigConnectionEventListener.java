@@ -29,23 +29,23 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ConfigConnectionEventListener extends ClientConnectionEventListener {
-    
+
     final ConfigChangeListenContext configChangeListenContext;
-    
+
     public ConfigConnectionEventListener(ConfigChangeListenContext configChangeListenContext) {
         this.configChangeListenContext = configChangeListenContext;
     }
-    
+
     @Override
     public void clientConnected(Connection connect) {
-        //Do nothing.
+        // Do nothing.
     }
-    
+
     @Override
     public void clientDisConnected(Connection connect) {
         String connectionId = connect.getMetaInfo().getConnectionId();
-        Loggers.REMOTE_DIGEST.info("[{}]client disconnected,clear config listen context", connectionId);
+        Loggers.REMOTE_DIGEST.info(
+                "[{}]client disconnected,clear config listen context", connectionId);
         configChangeListenContext.clearContextForConnectionId(connectionId);
     }
-    
 }

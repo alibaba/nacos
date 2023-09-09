@@ -16,24 +16,21 @@
 
 package com.alibaba.nacos.api.naming.listener;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collections;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Collections;
+
 public class NamingEventTest {
-    
+
     private MockNamingEventListener eventListener;
-    
+
     @Before
     public void setUp() throws Exception {
         eventListener = new MockNamingEventListener();
     }
-    
+
     @Test
     public void testNamingEventWithSimpleConstructor() {
         NamingEvent event = new NamingEvent("serviceName", Collections.EMPTY_LIST);
@@ -47,10 +44,11 @@ public class NamingEventTest {
         assertNull(event.getClusters());
         assertNull(event.getInstances());
     }
-    
+
     @Test
     public void testNamingEventWithFullConstructor() {
-        NamingEvent event = new NamingEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST);
+        NamingEvent event =
+                new NamingEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST);
         assertEquals("serviceName", event.getServiceName());
         assertEquals("group", event.getGroupName());
         assertEquals("clusters", event.getClusters());
@@ -61,9 +59,9 @@ public class NamingEventTest {
         assertNull(event.getClusters());
         assertNull(event.getInstances());
     }
-    
+
     private static class MockNamingEventListener extends AbstractEventListener {
-        
+
         @Override
         public void onEvent(Event event) {
             assertNull(getExecutor());

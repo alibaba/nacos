@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.namespace.injector;
 
 import com.alibaba.nacos.core.namespace.model.Namespace;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,23 +26,24 @@ import java.util.Set;
  * @author xiweng.yy
  */
 public class NamespaceDetailInjectorHolder {
-    
-    private static final NamespaceDetailInjectorHolder INSTANCE = new NamespaceDetailInjectorHolder();
-    
+
+    private static final NamespaceDetailInjectorHolder INSTANCE =
+            new NamespaceDetailInjectorHolder();
+
     private final Set<AbstractNamespaceDetailInjector> namespaceDetailInjectors;
-    
+
     private NamespaceDetailInjectorHolder() {
         this.namespaceDetailInjectors = new HashSet<>();
     }
-    
+
     public static NamespaceDetailInjectorHolder getInstance() {
         return INSTANCE;
     }
-    
+
     public void registerInjector(AbstractNamespaceDetailInjector injector) {
         this.namespaceDetailInjectors.add(injector);
     }
-    
+
     /**
      * Inject detail from all injectors.
      *

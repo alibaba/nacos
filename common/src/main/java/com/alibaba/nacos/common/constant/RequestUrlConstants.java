@@ -22,8 +22,7 @@ package com.alibaba.nacos.common.constant;
  * @author chenhao26
  */
 public interface RequestUrlConstants {
-    
+
     String HTTP_PREFIX = "http://";
     String HTTPS_PREFIX = "https://";
-    
 }

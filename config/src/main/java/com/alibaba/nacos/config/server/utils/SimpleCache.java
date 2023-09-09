@@ -26,24 +26,22 @@ import java.util.concurrent.ConcurrentMap;
  * @author fengHan, jiuRen
  */
 public class SimpleCache<E> {
-    
+
     final ConcurrentMap<String, CacheEntry<E>> cache = new ConcurrentHashMap<>();
-    
+
     private static class CacheEntry<E> {
-        
+
         final long expireTime;
-        
+
         final E value;
-        
+
         public CacheEntry(E value, long expire) {
             this.expireTime = expire;
             this.value = value;
         }
     }
-    
-    /**
-     * Put data.
-     */
+
+    /** Put data. */
     public void put(String key, E e, long ttlMs) {
         if (key == null || e == null) {
             return;
@@ -51,10 +49,8 @@ public class SimpleCache<E> {
         CacheEntry<E> entry = new CacheEntry<>(e, System.currentTimeMillis() + ttlMs);
         cache.put(key, entry);
     }
-    
-    /**
-     * Get data.
-     */
+
+    /** Get data. */
     public E get(String key) {
         CacheEntry<E> entry = cache.get(key);
         if (entry != null && entry.expireTime > System.currentTimeMillis()) {

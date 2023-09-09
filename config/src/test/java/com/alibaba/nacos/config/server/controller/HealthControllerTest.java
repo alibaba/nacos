@@ -16,14 +16,16 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.HashMap;
+import java.util.Map;
+import javax.servlet.ServletContext;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -38,34 +40,23 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.servlet.ServletContext;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.mockito.Mockito.when;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 public class HealthControllerTest {
-    
-    @InjectMocks
-    HealthController healthController;
-    
-    @Mock
-    DataSourceService dataSourceService;
-    
+
+    @InjectMocks HealthController healthController;
+
+    @Mock DataSourceService dataSourceService;
+
     private MockMvc mockmvc;
-    
-    @Mock
-    private ServerMemberManager memberManager;
-    
-    @Mock
-    private ServletContext servletContext;
-    
-    @Mock
-    private MemberLookup memberLookup;
-    
+
+    @Mock private ServerMemberManager memberManager;
+
+    @Mock private ServletContext servletContext;
+
+    @Mock private MemberLookup memberLookup;
+
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -78,14 +69,15 @@ public class HealthControllerTest {
         ReflectionTestUtils.setField(healthController, "dataSourceService", dataSourceService);
         mockmvc = MockMvcBuilders.standaloneSetup(healthController).build();
     }
-    
+
     @Test
     public void testGetHealth() throws Exception {
-        
+
         when(dataSourceService.getHealth()).thenReturn("UP");
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.HEALTH_CONTROLLER_PATH);
-        String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
+        MockHttpServletRequestBuilder builder =
+                MockMvcRequestBuilders.get(Constants.HEALTH_CONTROLLER_PATH);
+        String actualValue =
+                mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         Assert.assertEquals("UP", actualValue);
-        
     }
 }

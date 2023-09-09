@@ -14,9 +14,10 @@
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
   -->
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <groupId>com.alibaba.nacos</groupId>
@@ -25,11 +26,9 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <modelVersion>4.0.0</modelVersion>
-
     <artifactId>nacos-distribution</artifactId>
-    <name>nacos-distribution ${project.version}</name>
     <packaging>pom</packaging>
+    <name>nacos-distribution ${project.version}</name>
 
     <dependencies>
         <dependency>
@@ -37,7 +36,7 @@
             <artifactId>nacos-console</artifactId>
         </dependency>
     </dependencies>
-    
+
     <profiles>
         <profile>
             <id>release-config</id>
@@ -48,6 +47,7 @@
                 </dependency>
             </dependencies>
             <build>
+                <finalName>acm</finalName>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -69,7 +69,6 @@
                         </executions>
                     </plugin>
                 </plugins>
-                <finalName>acm</finalName>
             </build>
         </profile>
         <profile>
@@ -81,6 +80,7 @@
                 </dependency>
             </dependencies>
             <build>
+                <finalName>ans</finalName>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -102,7 +102,6 @@
                         </executions>
                     </plugin>
                 </plugins>
-                <finalName>ans</finalName>
             </build>
         </profile>
         <profile>
@@ -121,10 +120,10 @@
                         <executions>
                             <execution>
                                 <id>make-assembly</id>
-                                <phase>install</phase>
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
+                                <phase>install</phase>
                             </execution>
                         </executions>
                     </plugin>
@@ -140,6 +139,7 @@
                 </dependency>
             </dependencies>
             <build>
+                <finalName>nacos-client</finalName>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -161,7 +161,6 @@
                         </executions>
                     </plugin>
                 </plugins>
-                <finalName>nacos-client</finalName>
             </build>
         </profile>
         <profile>
@@ -173,6 +172,7 @@
                 </dependency>
             </dependencies>
             <build>
+                <finalName>nacos-core</finalName>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -194,12 +194,12 @@
                         </executions>
                     </plugin>
                 </plugins>
-                <finalName>nacos-core</finalName>
             </build>
         </profile>
         <profile>
             <id>release-nacos</id>
             <build>
+                <finalName>nacos</finalName>
                 <plugins>
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
@@ -213,15 +213,14 @@
                         <executions>
                             <execution>
                                 <id>make-assembly</id>
-                                <phase>install</phase>
                                 <goals>
                                     <goal>single</goal>
                                 </goals>
+                                <phase>install</phase>
                             </execution>
                         </executions>
                     </plugin>
                 </plugins>
-                <finalName>nacos</finalName>
             </build>
         </profile>
     </profiles>

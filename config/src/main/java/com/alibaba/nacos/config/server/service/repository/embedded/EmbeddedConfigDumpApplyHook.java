@@ -25,11 +25,10 @@ import com.alibaba.nacos.config.server.service.dump.DumpConfigHandler;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.persistence.repository.embedded.hook.EmbeddedApplyHook;
-import org.springframework.stereotype.Component;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import org.springframework.stereotype.Component;
 
 /**
  * Embedded apply hook for config dump.
@@ -38,17 +37,17 @@ import java.util.Objects;
  */
 @Component
 public class EmbeddedConfigDumpApplyHook extends EmbeddedApplyHook {
-    
+
     public EmbeddedConfigDumpApplyHook() {
         NotifyCenter.registerToPublisher(ConfigDumpEvent.class, NotifyCenter.ringBufferSize);
         NotifyCenter.registerSubscriber(new DumpConfigHandler());
     }
-    
+
     @Override
     public void afterApply(WriteRequest log) {
         handleExtendInfo(log.getExtendInfoMap());
     }
-    
+
     private void handleExtendInfo(Map<String, String> extendInfo) {
         if (extendInfo.containsKey(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT)) {
             String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
@@ -60,8 +59,9 @@ public class EmbeddedConfigDumpApplyHook extends EmbeddedApplyHook {
         if (extendInfo.containsKey(Constants.EXTEND_INFOS_CONFIG_DUMP_EVENT)) {
             String jsonVal = extendInfo.get(Constants.EXTEND_INFO_CONFIG_DUMP_EVENT);
             if (StringUtils.isNotBlank(jsonVal)) {
-                List<ConfigDumpEvent> list = JacksonUtils.toObj(jsonVal, new GenericType<List<ConfigDumpEvent>>() {
-                }.getType());
+                List<ConfigDumpEvent> list =
+                        JacksonUtils.toObj(
+                                jsonVal, new GenericType<List<ConfigDumpEvent>>() {}.getType());
                 list.stream().filter(Objects::nonNull).forEach(NotifyCenter::publishEvent);
             }
         }

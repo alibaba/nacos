@@ -16,14 +16,12 @@
 
 package com.alibaba.nacos.api.config.ability;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
 public class ServerConfigAbilityTest {
-    
+
     @Test
     public void testEquals() {
         ServerConfigAbility ability = new ServerConfigAbility();

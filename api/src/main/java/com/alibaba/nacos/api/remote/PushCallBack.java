@@ -23,24 +23,21 @@ package com.alibaba.nacos.api.remote;
  * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
  */
 public interface PushCallBack {
-    
+
     /**
      * Push timeout mills.
      *
      * @return timeout milliseconds
      */
     long getTimeout();
-    
-    /**
-     * invoked on success.
-     */
+
+    /** invoked on success. */
     void onSuccess();
-    
+
     /**
      * invoked on fail.
      *
      * @param e exception throwed.
      */
     void onFail(Throwable e);
-    
 }

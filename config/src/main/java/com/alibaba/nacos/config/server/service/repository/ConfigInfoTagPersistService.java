@@ -24,7 +24,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-
 import java.util.List;
 
 /**
@@ -33,7 +32,7 @@ import java.util.List;
  * @author lixiaoshuang
  */
 public interface ConfigInfoTagPersistService {
-    
+
     /**
      * create Pagination utils.
      *
@@ -41,128 +40,142 @@ public interface ConfigInfoTagPersistService {
      * @return {@link PaginationHelper}
      */
     <E> PaginationHelper<E> createPaginationHelper();
-    
-    //------------------------------------------insert---------------------------------------------//
-    
-    
+
+    // ------------------------------------------insert---------------------------------------------//
+
     /**
      * get config info state.
      *
      * @param dataId dataId.
-     * @param group  group.
+     * @param group group.
      * @param tenant tenant.
-     * @param tag    tag.
+     * @param tag tag.
      * @return config info state.
      */
-    ConfigInfoStateWrapper findConfigInfo4TagState(final String dataId, final String group, final String tenant,
-            String tag);
-    
+    ConfigInfoStateWrapper findConfigInfo4TagState(
+            final String dataId, final String group, final String tenant, String tag);
+
     /**
      * Add tag configuration information and publish data change events.
      *
      * @param configInfo config info
-     * @param tag        tag
-     * @param srcIp      remote ip
-     * @param srcUser    user
+     * @param tag tag
+     * @param srcIp remote ip
+     * @param srcUser user
      * @return config operation result.
      */
-    ConfigOperateResult addConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser);
-    
+    ConfigOperateResult addConfigInfo4Tag(
+            ConfigInfo configInfo, String tag, String srcIp, String srcUser);
+
     /**
      * insert or update tag config.
      *
      * @param configInfo config info
-     * @param tag        tag
-     * @param srcIp      remote ip
-     * @param srcUser    user
+     * @param tag tag
+     * @param srcIp remote ip
+     * @param srcUser user
      * @return config operation result.
      */
-    ConfigOperateResult insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
+    ConfigOperateResult insertOrUpdateTag(
+            final ConfigInfo configInfo,
+            final String tag,
+            final String srcIp,
             final String srcUser);
-    
+
     /**
      * insert or update tag config cas.
      *
      * @param configInfo config info.
-     * @param tag        tag.
-     * @param srcIp      remote ip.
-     * @param srcUser    user.
+     * @param tag tag.
+     * @param srcIp remote ip.
+     * @param srcUser user.
      * @return config operation result.
      */
-    ConfigOperateResult insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
+    ConfigOperateResult insertOrUpdateTagCas(
+            final ConfigInfo configInfo,
+            final String tag,
+            final String srcIp,
             final String srcUser);
-    //------------------------------------------delete---------------------------------------------//
-    
+    // ------------------------------------------delete---------------------------------------------//
+
     /**
-     * Delete configuration; database atomic operation, minimum SQL action, no business encapsulation.
+     * Delete configuration; database atomic operation, minimum SQL action, no business
+     * encapsulation.
      *
-     * @param dataId  dataId
-     * @param group   group
-     * @param tenant  tenant
-     * @param tag     tag
-     * @param srcIp   remote ip
+     * @param dataId dataId
+     * @param group group
+     * @param tenant tenant
+     * @param tag tag
+     * @param srcIp remote ip
      * @param srcUser user
      */
-    void removeConfigInfoTag(final String dataId, final String group, final String tenant, final String tag,
-            final String srcIp, final String srcUser);
-    //------------------------------------------update---------------------------------------------//
-    
+    void removeConfigInfoTag(
+            final String dataId,
+            final String group,
+            final String tenant,
+            final String tag,
+            final String srcIp,
+            final String srcUser);
+    // ------------------------------------------update---------------------------------------------//
+
     /**
      * Update tag configuration information.
      *
      * @param configInfo config info
-     * @param tag        tag
-     * @param srcIp      remote ip
-     * @param srcUser    user
+     * @param tag tag
+     * @param srcIp remote ip
+     * @param srcUser user
      * @return config operation result.
      */
-    ConfigOperateResult updateConfigInfo4Tag(ConfigInfo configInfo, String tag, String srcIp, String srcUser);
-    
+    ConfigOperateResult updateConfigInfo4Tag(
+            ConfigInfo configInfo, String tag, String srcIp, String srcUser);
+
     /**
      * Update tag configuration information.
      *
      * @param configInfo config info
-     * @param tag        tag
-     * @param srcIp      remote ip
-     * @param srcUser    user
+     * @param tag tag
+     * @param srcIp remote ip
+     * @param srcUser user
      * @return success or not.
      */
-    ConfigOperateResult updateConfigInfo4TagCas(ConfigInfo configInfo, String tag, String srcIp, String srcUser);
-    //------------------------------------------select---------------------------------------------//
-    
+    ConfigOperateResult updateConfigInfo4TagCas(
+            ConfigInfo configInfo, String tag, String srcIp, String srcUser);
+    // ------------------------------------------select---------------------------------------------//
+
     /**
      * Query tag configuration information based on dataId and group.
      *
      * @param dataId data id
-     * @param group  group
+     * @param group group
      * @param tenant tenant
-     * @param tag    tag
+     * @param tag tag
      * @return {@link ConfigInfo4Tag}
      */
-    ConfigInfoTagWrapper findConfigInfo4Tag(final String dataId, final String group, final String tenant,
-            final String tag);
-    
+    ConfigInfoTagWrapper findConfigInfo4Tag(
+            final String dataId, final String group, final String tenant, final String tag);
+
     /**
      * Returns the number of beta configuration items.
      *
      * @return number of configuration items..
      */
     int configInfoTagCount();
-    
+
     /**
      * Query all tag config info for dump task.
      *
-     * @param pageNo   page numbser
+     * @param pageNo page numbser
      * @param pageSize page sizxe
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     Page<ConfigInfoTagWrapper> findAllConfigInfoTagForDumpAll(final int pageNo, final int pageSize);
-    
+
     /**
      * found all config tags.
      *
      * @param dataId dataId.
-     * @param group  group.
+     * @param group group.
      * @param tenant tenant.
      * @return
      */

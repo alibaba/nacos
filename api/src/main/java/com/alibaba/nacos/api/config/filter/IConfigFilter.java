@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.config.filter;
 
 import com.alibaba.nacos.api.exception.NacosException;
-
 import java.util.Properties;
 
 /**
@@ -29,37 +28,36 @@ import java.util.Properties;
  * @see AbstractConfigFilter
  */
 public interface IConfigFilter {
-    
+
     /**
      * Init.
      *
      * @param properties Filter Config
      */
     void init(Properties properties);
-    
+
     /**
      * do filter.
      *
-     * @param request     request
-     * @param response    response
+     * @param request request
+     * @param response response
      * @param filterChain filter Chain
      * @throws NacosException exception
      */
     void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
             throws NacosException;
-    
+
     /**
      * Get order.
      *
      * @return order number
      */
     int getOrder();
-    
+
     /**
      * Get filterName.
      *
      * @return filter name
      */
     String getFilterName();
-    
 }

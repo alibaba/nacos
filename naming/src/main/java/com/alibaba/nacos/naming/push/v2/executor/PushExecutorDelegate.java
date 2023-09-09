@@ -20,9 +20,8 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
-import org.springframework.stereotype.Component;
-
 import java.util.Optional;
+import org.springframework.stereotype.Component;
 
 /**
  * Delegate for push execute service.
@@ -32,34 +31,42 @@ import java.util.Optional;
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 @Component
 public class PushExecutorDelegate implements PushExecutor {
-    
+
     private final PushExecutorRpcImpl rpcPushExecuteService;
-    
+
     private final PushExecutorUdpImpl udpPushExecuteService;
-    
-    public PushExecutorDelegate(PushExecutorRpcImpl rpcPushExecuteService, PushExecutorUdpImpl udpPushExecuteService) {
+
+    public PushExecutorDelegate(
+            PushExecutorRpcImpl rpcPushExecuteService, PushExecutorUdpImpl udpPushExecuteService) {
         this.rpcPushExecuteService = rpcPushExecuteService;
         this.udpPushExecuteService = udpPushExecuteService;
     }
-    
+
     @Override
     public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
         getPushExecuteService(clientId, subscriber).doPush(clientId, subscriber, data);
     }
-    
+
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
+    public void doPushWithCallback(
+            String clientId,
+            Subscriber subscriber,
+            PushDataWrapper data,
             NamingPushCallback callBack) {
-        getPushExecuteService(clientId, subscriber).doPushWithCallback(clientId, subscriber, data, callBack);
+        getPushExecuteService(clientId, subscriber)
+                .doPushWithCallback(clientId, subscriber, data, callBack);
     }
-    
+
     private PushExecutor getPushExecuteService(String clientId, Subscriber subscriber) {
-        Optional<SpiPushExecutor> result = SpiImplPushExecutorHolder.getInstance()
-                .findPushExecutorSpiImpl(clientId, subscriber);
+        Optional<SpiPushExecutor> result =
+                SpiImplPushExecutorHolder.getInstance()
+                        .findPushExecutorSpiImpl(clientId, subscriber);
         if (result.isPresent()) {
             return result.get();
         }
         // use nacos default push executor
-        return clientId.contains(IpPortBasedClient.ID_DELIMITER) ? udpPushExecuteService : rpcPushExecuteService;
+        return clientId.contains(IpPortBasedClient.ID_DELIMITER)
+                ? udpPushExecuteService
+                : rpcPushExecuteService;
     }
 }

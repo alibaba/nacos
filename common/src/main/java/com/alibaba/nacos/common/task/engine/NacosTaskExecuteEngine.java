@@ -19,7 +19,6 @@ package com.alibaba.nacos.common.task.engine;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-
 import java.util.Collection;
 
 /**
@@ -28,67 +27,68 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public interface NacosTaskExecuteEngine<T extends NacosTask> extends Closeable {
-    
+
     /**
      * Get Task size in execute engine.
      *
      * @return size of task
      */
     int size();
-    
+
     /**
      * Whether the execute engine is empty.
      *
      * @return true if the execute engine has no task to do, otherwise false
      */
     boolean isEmpty();
-    
+
     /**
      * Add task processor {@link NacosTaskProcessor} for execute engine.
      *
-     * @param key           key of task
+     * @param key key of task
      * @param taskProcessor task processor
      */
     void addProcessor(Object key, NacosTaskProcessor taskProcessor);
-    
+
     /**
      * Remove task processor {@link NacosTaskProcessor} form execute engine for key.
      *
      * @param key key of task
      */
     void removeProcessor(Object key);
-    
+
     /**
      * Try to get {@link NacosTaskProcessor} by key, if non-exist, will return default processor.
      *
      * @param key key of task
-     * @return task processor for task key or default processor if task processor for task key non-exist
+     * @return task processor for task key or default processor if task processor for task key
+     *     non-exist
      */
     NacosTaskProcessor getProcessor(Object key);
-    
+
     /**
      * Get all processor key.
      *
      * @return collection of processors
      */
     Collection<Object> getAllProcessorKey();
-    
+
     /**
-     * Set default task processor. If do not find task processor by task key, use this default processor to process
-     * task.
+     * Set default task processor. If do not find task processor by task key, use this default
+     * processor to process task.
      *
      * @param defaultTaskProcessor default task processor
      */
     void setDefaultTaskProcessor(NacosTaskProcessor defaultTaskProcessor);
-    
+
     /**
      * Add task into execute pool.
      *
-     * @param key  key of task
+     * @param key key of task
      * @param task task
      */
     void addTask(Object key, T task);
-    
+
     /**
      * Remove task.
      *
@@ -96,7 +96,7 @@ public interface NacosTaskExecuteEngine<T extends NacosTask> extends Closeable {
      * @return nacos task
      */
     T removeTask(Object key);
-    
+
     /**
      * Get all task keys.
      *

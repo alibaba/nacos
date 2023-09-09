@@ -16,12 +16,11 @@
 
 package com.alibaba.nacos.sys.utils;
 
-import org.springframework.core.env.Environment;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Properties;
+import org.springframework.core.env.Environment;
 
 /**
  * Properties util.
@@ -29,34 +28,41 @@ import java.util.Properties;
  * @author xiweng.yy
  */
 public class PropertiesUtil {
-    
+
     public static Properties getPropertiesWithPrefix(Environment environment, String prefix)
-            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+                    IllegalAccessException {
         return handleSpringBinder(environment, prefix, Properties.class);
     }
-    
-    public static Map<String, Object> getPropertiesWithPrefixForMap(Environment environment, String prefix)
-            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+
+    public static Map<String, Object> getPropertiesWithPrefixForMap(
+            Environment environment, String prefix)
+            throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException,
+                    IllegalAccessException {
         return handleSpringBinder(environment, prefix, Map.class);
     }
-    
+
     /**
      * Handle spring binder to bind object.
      *
      * @param environment spring environment
-     * @param prefix      properties prefix
+     * @param prefix properties prefix
      * @param targetClass target class
-     * @param <T>         target class
+     * @param <T> target class
      * @return binder object
      */
     @SuppressWarnings("unchecked")
-    public static <T> T handleSpringBinder(Environment environment, String prefix, Class<T> targetClass)
-            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, ClassNotFoundException {
-        Class<?> binderClass = Class.forName("org.springframework.boot.context.properties.bind.Binder");
+    public static <T> T handleSpringBinder(
+            Environment environment, String prefix, Class<T> targetClass)
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException,
+                    ClassNotFoundException {
+        Class<?> binderClass =
+                Class.forName("org.springframework.boot.context.properties.bind.Binder");
         Method getMethod = binderClass.getDeclaredMethod("get", Environment.class);
         Method bindMethod = binderClass.getDeclaredMethod("bind", String.class, Class.class);
         Object binderObject = getMethod.invoke(null, environment);
-        String prefixParam = prefix.endsWith(".") ? prefix.substring(0, prefix.length() - 1) : prefix;
+        String prefixParam =
+                prefix.endsWith(".") ? prefix.substring(0, prefix.length() - 1) : prefix;
         Object bindResultObject = bindMethod.invoke(binderObject, prefixParam, targetClass);
         Method resultGetMethod = bindResultObject.getClass().getDeclaredMethod("get");
         return (T) resultGetMethod.invoke(bindResultObject);

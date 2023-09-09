@@ -22,42 +22,30 @@ package com.alibaba.nacos.plugin.config.constants;
  * @author liyunfei
  */
 public enum ConfigChangePointCutTypes {
-    
-    /**
-     * Publish or update config through http.
-     */
+
+    /** Publish or update config through http. */
     PUBLISH_BY_HTTP("publishOrUpdateByHttp"),
-    /**
-     * Publish config through rpc.
-     */
+    /** Publish config through rpc. */
     PUBLISH_BY_RPC("publishOrUpdateByRpc"),
-    /**
-     * Remove by id through http.
-     */
+    /** Remove by id through http. */
     REMOVE_BY_HTTP("removeSingleByHttp"),
-    /**
-     * Remove through rpc.
-     */
+    /** Remove through rpc. */
     REMOVE_BY_RPC("removeSingleByRpc"),
-    /**
-     * Import config file through http/console.
-     */
+    /** Import config file through http/console. */
     IMPORT_BY_HTTP("importFileByHttp"),
-    /**
-     * Remove by ids through http.
-     */
+    /** Remove by ids through http. */
     REMOVE_BATCH_HTTP("removeBatchByHttp");
-    
+
     private final String value;
-    
+
     ConfigChangePointCutTypes(String value) {
         this.value = value;
     }
-    
+
     public String value() {
         return value;
     }
-    
+
     public boolean equals(ConfigChangePointCutTypes configChangePointCutTypes) {
         return this.compareTo(configChangePointCutTypes) == 0;
     }

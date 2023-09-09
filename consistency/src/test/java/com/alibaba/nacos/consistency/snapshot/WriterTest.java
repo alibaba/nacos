@@ -17,10 +17,6 @@
 
 package com.alibaba.nacos.consistency.snapshot;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 /**
  * {@link Writer} unit test.
  *
@@ -28,26 +24,26 @@ import org.junit.Test;
  * @date 2021-07-28 18:50
  */
 public class WriterTest {
-    
+
     private Writer writer;
-    
+
     @Before
     public void setUp() {
         writer = new Writer("test");
     }
-    
+
     @Test
     public void test() {
         Assert.assertEquals("test", writer.getPath());
-    
+
         Assert.assertTrue(writer.addFile("a"));
-        
+
         Assert.assertTrue(writer.addFile("b", new LocalFileMeta()));
-        
+
         Assert.assertEquals(2, writer.listFiles().size());
-        
+
         Assert.assertTrue(writer.removeFile("a"));
-        
+
         Assert.assertEquals(1, writer.listFiles().size());
     }
 }

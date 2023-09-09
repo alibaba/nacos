@@ -21,7 +21,6 @@ import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,17 +28,14 @@ import java.util.List;
  * The config with tags mapper.
  *
  * @author hyx
- **/
-
+ */
 public interface ConfigTagsRelationMapper extends Mapper {
-    
+
     /**
-     * Get the count of config info.
-     * The default sql:
-     * SELECT count(*) FROM config_info WHERE ...
+     * Get the count of config info. The default sql: SELECT count(*) FROM config_info WHERE ...
      *
-     * @param context The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime,
-     *                endTime, content), the value is the key's value.
+     * @param context The map of params, the key is the parameter name(dataId, groupId, tenantId,
+     *     appName, startTime, endTime, content), the value is the key's value.
      * @return The sql of get config info.
      */
     default MapperResult findConfigInfo4PageCountRows(final MapperContext context) {
@@ -48,13 +44,14 @@ public interface ConfigTagsRelationMapper extends Mapper {
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-        
+
         List<Object> paramList = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE ");
-        final String sqlCount = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id";
-        
+        final String sqlCount =
+                "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id";
+
         where.append(" a.tenant_id=? ");
-        
+
         if (StringUtils.isNotBlank(dataId)) {
             where.append(" AND a.data_id=? ");
             paramList.add(dataId);
@@ -81,22 +78,20 @@ public interface ConfigTagsRelationMapper extends Mapper {
         where.append(") ");
         return new MapperResult(sqlCount + where, paramList);
     }
-    
+
     /**
-     * Find config info.
-     * The default sql:
-     * SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN
+     * Find config info. The default sql: SELECT
+     * a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info a LEFT JOIN
      * config_tags_relation b ON a.id=b.i ...
      *
      * @param context The keys and values are dataId and group.
      * @return The sql of finding config info.
      */
     MapperResult findConfigInfo4PageFetchRows(final MapperContext context);
-    
+
     /**
-     * Get the count of config information by config tags relation.
-     * The default sql:
-     * SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id
+     * Get the count of config information by config tags relation. The default sql: SELECT count(*)
+     * FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id
      *
      * @param context the keys and values are dataId and group.
      * @return The sql of getting the count of config information.
@@ -108,11 +103,12 @@ public interface ConfigTagsRelationMapper extends Mapper {
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-        
+
         List<Object> paramList = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE ");
-        final String sqlCount = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id ";
-        
+        final String sqlCount =
+                "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id ";
+
         where.append(" a.tenant_id LIKE ? ");
         paramList.add(tenantId);
         if (!StringUtils.isBlank(dataId)) {
@@ -131,7 +127,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
             where.append(" AND a.content LIKE ? ");
             paramList.add(content);
         }
-        
+
         where.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagArr.length; i++) {
             if (i != 0) {
@@ -143,18 +139,17 @@ public interface ConfigTagsRelationMapper extends Mapper {
         where.append(") ");
         return new MapperResult(sqlCount + where, paramList);
     }
-    
+
     /**
-     * Query config info.
-     * The default sql:
-     * SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content
-     * FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id
+     * Query config info. The default sql: SELECT
+     * a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info a LEFT JOIN
+     * config_tags_relation b ON a.id=b.id
      *
      * @param context the keys and values are dataId and group.
      * @return The sql of querying config info.
      */
     MapperResult findConfigInfoLike4PageFetchRows(final MapperContext context);
-    
+
     /**
      * 获取返回表名.
      *

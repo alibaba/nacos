@@ -27,23 +27,24 @@ import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
  * @author shiyiyue
  */
 public class NacosRuleParser implements RuleParser {
-    
+
     @Override
     public TpsControlRule parseTpsRule(String ruleContent) {
-        
-        return StringUtils.isBlank(ruleContent) ? new TpsControlRule()
+
+        return StringUtils.isBlank(ruleContent)
+                ? new TpsControlRule()
                 : JacksonUtils.toObj(ruleContent, TpsControlRule.class);
     }
-    
+
     @Override
     public ConnectionControlRule parseConnectionRule(String ruleContent) {
-        return StringUtils.isBlank(ruleContent) ? new ConnectionControlRule()
+        return StringUtils.isBlank(ruleContent)
+                ? new ConnectionControlRule()
                 : JacksonUtils.toObj(ruleContent, ConnectionControlRule.class);
     }
-    
+
     @Override
     public String getName() {
         return "nacos";
     }
-    
 }

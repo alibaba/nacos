@@ -32,19 +32,19 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface NacosValue {
-    
+
     /**
      * The actual value expression: e.g. "#{systemProperties.myProp}".
      *
      * @return value expression
      */
     String value();
-    
+
     /**
-     * It indicates that the currently bound property is auto-refreshed when Nacos configuration is changed.
+     * It indicates that the currently bound property is auto-refreshed when Nacos configuration is
+     * changed.
      *
      * @return default value is <code>false</code>
      */
     boolean autoRefreshed() default false;
-    
 }

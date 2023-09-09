@@ -16,12 +16,6 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
-
-import java.util.Objects;
-
 import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.CACHE_DATA;
 import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA;
 import static org.junit.Assert.assertEquals;
@@ -29,17 +23,25 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.Objects;
+
 public class ClientConfigMetricRequestTest extends BasedConfigRequestTest {
-    
+
     @Override
     @Test
     public void testSerialize() throws JsonProcessingException {
         ClientConfigMetricRequest clientMetrics = new ClientConfigMetricRequest();
         clientMetrics.putAllHeader(HEADERS);
-        clientMetrics.getMetricsKeys()
+        clientMetrics
+                .getMetricsKeys()
                 .add(ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, String.join("+", KEY)));
-        clientMetrics.getMetricsKeys()
-                .add(ClientConfigMetricRequest.MetricsKey.build(SNAPSHOT_DATA, String.join("+", KEY)));
+        clientMetrics
+                .getMetricsKeys()
+                .add(
+                        ClientConfigMetricRequest.MetricsKey.build(
+                                SNAPSHOT_DATA, String.join("+", KEY)));
         final String requestId = injectRequestUuId(clientMetrics);
         String json = mapper.writeValueAsString(clientMetrics);
         assertTrue(json.contains("\"type\":\"" + "cacheData" + "\""));
@@ -48,12 +50,13 @@ public class ClientConfigMetricRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"module\":\"" + Constants.Config.CONFIG_MODULE));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
     }
-    
+
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json =
-                "{\"headers\":{\"header1\":\"test_header1\"}," + "\"metricsKeys\":[{\"type\":\"cacheData\",\"key\":"
+                "{\"headers\":{\"header1\":\"test_header1\"},"
+                        + "\"metricsKeys\":[{\"type\":\"cacheData\",\"key\":"
                         + "\"test_data+group+test_tenant\"},{\"type\":\"snapshotData\","
                         + "\"key\":\"test_data+group+test_tenant\"}],\"module\":\"config\"}";
         ClientConfigMetricRequest actual = mapper.readValue(json, ClientConfigMetricRequest.class);
@@ -61,31 +64,35 @@ public class ClientConfigMetricRequestTest extends BasedConfigRequestTest {
         assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
         assertEquals(actual.getHeader(HEADER_KEY), HEADER_VALUE);
     }
-    
+
     @Test
     public void testMetricsKeysEquals() {
         String dataKey = String.join("+", KEY);
-        ClientConfigMetricRequest.MetricsKey key = ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, dataKey);
+        ClientConfigMetricRequest.MetricsKey key =
+                ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, dataKey);
         assertEquals(key, key);
         assertFalse(key.equals(null));
         assertFalse(key.equals(new ClientConfigMetricRequest()));
-        ClientConfigMetricRequest.MetricsKey newOne = ClientConfigMetricRequest.MetricsKey
-                .build(SNAPSHOT_DATA, dataKey);
+        ClientConfigMetricRequest.MetricsKey newOne =
+                ClientConfigMetricRequest.MetricsKey.build(SNAPSHOT_DATA, dataKey);
         assertNotEquals(key, newOne);
         newOne.setType(CACHE_DATA);
         assertEquals(key, newOne);
     }
-    
+
     @Test
     public void testMetricsHashCode() {
         String dataKey = String.join("+", KEY);
-        ClientConfigMetricRequest.MetricsKey key = ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, dataKey);
+        ClientConfigMetricRequest.MetricsKey key =
+                ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, dataKey);
         assertEquals(Objects.hash(CACHE_DATA, dataKey), key.hashCode());
     }
-    
+
     @Test
     public void testMetricsToString() {
-        ClientConfigMetricRequest.MetricsKey key = ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA,  String.join("+", KEY));
-        assertEquals("MetricsKey{type='cacheData', key='test_data+group+test_tenant'}", key.toString());
+        ClientConfigMetricRequest.MetricsKey key =
+                ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, String.join("+", KEY));
+        assertEquals(
+                "MetricsKey{type='cacheData', key='test_data+group+test_tenant'}", key.toString());
     }
 }

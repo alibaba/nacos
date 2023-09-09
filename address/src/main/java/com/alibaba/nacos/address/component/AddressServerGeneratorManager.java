@@ -21,11 +21,10 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.springframework.stereotype.Component;
 
 /**
  * will generator some result by the input parameter.
@@ -36,7 +35,7 @@ import java.util.List;
  */
 @Component
 public class AddressServerGeneratorManager {
-    
+
     /**
      * Generate product name.
      *
@@ -44,15 +43,15 @@ public class AddressServerGeneratorManager {
      * @return product
      */
     public String generateProductName(String name) {
-        
+
         if (StringUtils.isBlank(name) || AddressServerConstants.DEFAULT_PRODUCT.equals(name)) {
-            
+
             return AddressServerConstants.ALIWARE_NACOS_DEFAULT_PRODUCT_NAME;
         }
-        
+
         return String.format(AddressServerConstants.ALIWARE_NACOS_PRODUCT_DOM_TEMPLATE, name);
     }
-    
+
     /**
      * Note: if the parameter inputted is empty then will return the empty list.
      *
@@ -61,13 +60,15 @@ public class AddressServerGeneratorManager {
      * @param ipArray array of ips
      * @return instance list
      */
-    public List<Instance> generateInstancesByIps(String serviceName, String rawProductName, String clusterName,
-            String[] ipArray) {
-        if (StringUtils.isEmpty(serviceName) || StringUtils.isEmpty(clusterName) || ipArray == null
+    public List<Instance> generateInstancesByIps(
+            String serviceName, String rawProductName, String clusterName, String[] ipArray) {
+        if (StringUtils.isEmpty(serviceName)
+                || StringUtils.isEmpty(clusterName)
+                || ipArray == null
                 || ipArray.length == 0) {
             return Collections.emptyList();
         }
-        
+
         List<Instance> instanceList = new ArrayList<>(ipArray.length);
         for (String ip : ipArray) {
             String[] ipAndPort = generateIpAndPort(ip);
@@ -81,47 +82,54 @@ public class AddressServerGeneratorManager {
             instance.getMetadata().put("tenant", Constants.DEFAULT_NAMESPACE_ID);
             instanceList.add(instance);
         }
-        
+
         return instanceList;
     }
-    
+
     private String[] generateIpAndPort(String ip) {
         String[] result = InternetAddressUtil.splitIPPortStr(ip);
         if (result.length != InternetAddressUtil.SPLIT_IP_PORT_RESULT_LENGTH) {
-            return new String[] {result[0], String.valueOf(AddressServerConstants.DEFAULT_SERVER_PORT)};
+            return new String[] {
+                result[0], String.valueOf(AddressServerConstants.DEFAULT_SERVER_PORT)
+            };
         }
         return result;
     }
-    
+
     /**
      * Generate response ips.
      *
      * @param instanceList a instance set will generate string response to client.
      * @return the result of response to client
      */
-    public String generateResponseIps(List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList) {
-        
+    public String generateResponseIps(
+            List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList) {
+
         StringBuilder ips = new StringBuilder();
-        instanceList.forEach(instance -> {
-            ips.append(instance.getIp()).append(':').append(instance.getPort());
-            ips.append('\n');
-        });
-        
+        instanceList.forEach(
+                instance -> {
+                    ips.append(instance.getIp()).append(':').append(instance.getPort());
+                    ips.append('\n');
+                });
+
         return ips.toString();
     }
-    
+
     /**
      * Generate nacos service name.
      *
-     * @param rawServiceName the raw service name will not contains the {@link Constants#DEFAULT_GROUP}.
+     * @param rawServiceName the raw service name will not contains the {@link
+     *     Constants#DEFAULT_GROUP}.
      * @return the nacos service name
      */
     public String generateNacosServiceName(String rawServiceName) {
-        
+
         if (rawServiceName.contains(Constants.DEFAULT_GROUP)) {
             return rawServiceName;
         }
-        
-        return Constants.DEFAULT_GROUP + AddressServerConstants.GROUP_SERVICE_NAME_SEP + rawServiceName;
+
+        return Constants.DEFAULT_GROUP
+                + AddressServerConstants.GROUP_SERVICE_NAME_SEP
+                + rawServiceName;
     }
 }

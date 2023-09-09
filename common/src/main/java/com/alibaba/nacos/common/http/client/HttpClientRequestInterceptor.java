@@ -19,7 +19,6 @@ package com.alibaba.nacos.common.http.client;
 import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-
 import java.net.URI;
 
 /**
@@ -28,7 +27,7 @@ import java.net.URI;
  * @author mai.jh
  */
 public interface HttpClientRequestInterceptor {
-    
+
     /**
      * is intercept.
      *
@@ -38,7 +37,7 @@ public interface HttpClientRequestInterceptor {
      * @return boolean
      */
     boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity);
-    
+
     /**
      * if isIntercept method is true Intercept the given request, and return a response Otherwise,
      * the {@link HttpClientRequest} will be used for execution.

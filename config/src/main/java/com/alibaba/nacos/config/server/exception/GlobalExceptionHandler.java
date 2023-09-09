@@ -20,12 +20,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.persistence.monitor.DatasourceMetrics;
+import java.io.IOException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-
-import java.io.IOException;
 
 /**
  * Global exception handler.
@@ -34,10 +33,10 @@ import java.io.IOException;
  */
 @ControllerAdvice
 public class GlobalExceptionHandler {
-    
+
     /**
-     * For IllegalArgumentException, we are returning void with status code as 400, so our error-page will be used in
-     * this case.
+     * For IllegalArgumentException, we are returning void with status code as 400, so our
+     * error-page will be used in this case.
      *
      * @throws IllegalArgumentException IllegalArgumentException.
      */
@@ -46,7 +45,7 @@ public class GlobalExceptionHandler {
         MetricsMonitor.getIllegalArgumentException().increment();
         return ResponseEntity.status(400).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-    
+
     /**
      * For NacosException.
      *
@@ -57,14 +56,15 @@ public class GlobalExceptionHandler {
         MetricsMonitor.getNacosException().increment();
         return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-    
+
     /**
      * For DataAccessException.
      *
      * @throws DataAccessException DataAccessException.
      */
     @ExceptionHandler(DataAccessException.class)
-    public ResponseEntity<String> handleDataAccessException(DataAccessException ex) throws DataAccessException {
+    public ResponseEntity<String> handleDataAccessException(DataAccessException ex)
+            throws DataAccessException {
         DatasourceMetrics.getDbException().increment();
         return ResponseEntity.status(500).body(ExceptionUtil.getAllExceptionMsg(ex));
     }

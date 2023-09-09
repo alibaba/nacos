@@ -25,15 +25,10 @@ import org.slf4j.LoggerFactory;
  * @author Nacos
  */
 public class TraceLogUtil {
-    
-    /**
-     * Record requests for each interface of the Server.
-     */
+
+    /** Record requests for each interface of the Server. */
     public static Logger requestLog = LoggerFactory.getLogger("com.alibaba.nacos.config.request");
-    
-    /**
-     * Record polling request records for each client.
-     */
+
+    /** Record polling request records for each client. */
     public static Logger pollingLog = LoggerFactory.getLogger("com.alibaba.nacos.config.polling");
-    
 }

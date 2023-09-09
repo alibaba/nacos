@@ -18,13 +18,12 @@ package com.alibaba.nacos.plugin.auth.spi.server;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Load Plugins.
@@ -33,22 +32,21 @@ import java.util.Optional;
  * @author xiweng.yy
  */
 public class AuthPluginManager {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthPluginManager.class);
-    
+
     private static final AuthPluginManager INSTANCE = new AuthPluginManager();
-    
-    /**
-     * The relationship of context type and {@link AuthPluginService}.
-     */
+
+    /** The relationship of context type and {@link AuthPluginService}. */
     private final Map<String, AuthPluginService> authServiceMap = new HashMap<>();
-    
+
     private AuthPluginManager() {
         initAuthServices();
     }
-    
+
     private void initAuthServices() {
-        Collection<AuthPluginService> authPluginServices = NacosServiceLoader.load(AuthPluginService.class);
+        Collection<AuthPluginService> authPluginServices =
+                NacosServiceLoader.load(AuthPluginService.class);
         for (AuthPluginService each : authPluginServices) {
             if (StringUtils.isEmpty(each.getAuthServiceName())) {
                 LOGGER.warn(
@@ -57,15 +55,17 @@ public class AuthPluginManager {
                 continue;
             }
             authServiceMap.put(each.getAuthServiceName(), each);
-            LOGGER.info("[AuthPluginManager] Load AuthPluginService({}) AuthServiceName({}) successfully.",
-                    each.getClass(), each.getAuthServiceName());
+            LOGGER.info(
+                    "[AuthPluginManager] Load AuthPluginService({}) AuthServiceName({}) successfully.",
+                    each.getClass(),
+                    each.getAuthServiceName());
         }
     }
-    
+
     public static AuthPluginManager getInstance() {
         return INSTANCE;
     }
-    
+
     /**
      * get AuthPluginService instance which AuthPluginService.getType() is type.
      *
@@ -75,5 +75,4 @@ public class AuthPluginManager {
     public Optional<AuthPluginService> findAuthServiceSpiImpl(String authServiceName) {
         return Optional.ofNullable(authServiceMap.get(authServiceName));
     }
-    
 }

@@ -24,9 +24,7 @@ import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
  * @author xiweng.yy
  */
 public interface NacosGrpcProtocolNegotiator extends InternalProtocolNegotiator.ProtocolNegotiator {
-    
-    /**
-     * Reload this negotiator, such as config, tls context and so on if necessary.
-     */
+
+    /** Reload this negotiator, such as config, tls context and so on if necessary. */
     void reloadNegotiator();
 }

@@ -16,17 +16,15 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ProtocolTest {
-    
+
     @Test
     public void testGetVersionNumber() {
-        
+
         Assert.assertEquals(-1, Protocol.getVersionNumber(null));
         Assert.assertEquals(0, Protocol.getVersionNumber(""));
         Assert.assertEquals(120, Protocol.getVersionNumber("1.2.0"));

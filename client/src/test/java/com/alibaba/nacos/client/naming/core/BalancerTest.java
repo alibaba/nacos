@@ -18,25 +18,20 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.rules.ExpectedException;
 
 public class BalancerTest {
-    
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
-    
+
+    @Rule public final ExpectedException thrown = ExpectedException.none();
+
     @Test
     public void testGetHostByRandomWeightNull() {
         Assert.assertNull(Balancer.getHostByRandomWeight(null));
         Assert.assertNull(Balancer.getHostByRandomWeight(new ArrayList<>()));
     }
-    
+
     @Test
     public void testGetHostByRandomWeight() {
         List<Instance> list = new ArrayList<>();
@@ -45,7 +40,7 @@ public class BalancerTest {
         final Instance actual = Balancer.getHostByRandomWeight(list);
         Assert.assertEquals(instance1, actual);
     }
-    
+
     @Test
     public void testSelectHost() {
         List<Instance> hosts = new ArrayList<>();
@@ -53,17 +48,17 @@ public class BalancerTest {
         hosts.add(instance1);
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setHosts(hosts);
-        
+
         final Instance actual = Balancer.RandomByWeight.selectHost(serviceInfo);
         Assert.assertEquals(instance1, actual);
     }
-    
+
     @Test
     public void testSelectHostEmpty() {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("no host to srv for serviceInfo: null");
         ServiceInfo serviceInfo = new ServiceInfo();
-        
+
         Balancer.RandomByWeight.selectHost(serviceInfo);
     }
 }

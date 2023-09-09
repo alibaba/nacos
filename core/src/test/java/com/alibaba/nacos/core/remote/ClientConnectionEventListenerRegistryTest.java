@@ -17,14 +17,11 @@
 
 package com.alibaba.nacos.core.remote;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.Objects;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.Objects;
 
 /**
  * {@link ClientConnectionEventListenerRegistry} uint test.
@@ -34,35 +31,33 @@ import java.util.Objects;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ClientConnectionEventListenerRegistryTest {
-    
-    @InjectMocks
-    private ClientConnectionEventListenerRegistry registry;
-    
-    @Mock
-    private Connection connection;
-    
+
+    @InjectMocks private ClientConnectionEventListenerRegistry registry;
+
+    @Mock private Connection connection;
+
     @Test
     public void testRegistryMethods() {
         try {
             registry.registerClientConnectionEventListener(new MockClientConnectionEventListener());
-            
+
             registry.notifyClientConnected(connection);
-            
+
             registry.notifyClientDisConnected(connection);
-            
+
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
         }
     }
-    
+
     class MockClientConnectionEventListener extends ClientConnectionEventListener {
-        
+
         @Override
         public void clientConnected(Connection connect) {
             Assert.assertTrue(Objects.nonNull(connect));
         }
-        
+
         @Override
         public void clientDisConnected(Connection connect) {
             Assert.assertTrue(Objects.nonNull(connect));

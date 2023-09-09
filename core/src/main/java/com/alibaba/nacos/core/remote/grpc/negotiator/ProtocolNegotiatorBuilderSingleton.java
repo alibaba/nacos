@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator;
 
+import static com.alibaba.nacos.core.remote.grpc.negotiator.tls.DefaultTlsProtocolNegotiatorBuilder.TYPE_DEFAULT_TLS;
+
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.core.remote.grpc.negotiator.tls.DefaultTlsProtocolNegotiatorBuilder;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static com.alibaba.nacos.core.remote.grpc.negotiator.tls.DefaultTlsProtocolNegotiatorBuilder.TYPE_DEFAULT_TLS;
 
 /**
  * Protocol Negotiator Builder Singleton.
@@ -32,49 +31,58 @@ import static com.alibaba.nacos.core.remote.grpc.negotiator.tls.DefaultTlsProtoc
  * @author xiweng.yy
  */
 public class ProtocolNegotiatorBuilderSingleton implements ProtocolNegotiatorBuilder {
-    
-    private static final String TYPE_PROPERTY_KEY = "nacos.remote.server.rpc.protocol.negotiator.type";
-    
-    private static final ProtocolNegotiatorBuilderSingleton SINGLETON = new ProtocolNegotiatorBuilderSingleton();
-    
+
+    private static final String TYPE_PROPERTY_KEY =
+            "nacos.remote.server.rpc.protocol.negotiator.type";
+
+    private static final ProtocolNegotiatorBuilderSingleton SINGLETON =
+            new ProtocolNegotiatorBuilderSingleton();
+
     private final Map<String, ProtocolNegotiatorBuilder> builderMap;
-    
+
     private String actualType;
-    
+
     private ProtocolNegotiatorBuilderSingleton() {
         actualType = EnvUtil.getProperty(TYPE_PROPERTY_KEY, TYPE_DEFAULT_TLS);
         builderMap = new ConcurrentHashMap<>();
         loadAllBuilders();
     }
-    
+
     private void loadAllBuilders() {
         try {
-            for (ProtocolNegotiatorBuilder each : NacosServiceLoader.load(ProtocolNegotiatorBuilder.class)) {
+            for (ProtocolNegotiatorBuilder each :
+                    NacosServiceLoader.load(ProtocolNegotiatorBuilder.class)) {
                 builderMap.put(each.type(), each);
-                Loggers.REMOTE.info("Load ProtocolNegotiatorBuilder {} for type {}", each.getClass().getCanonicalName(),
+                Loggers.REMOTE.info(
+                        "Load ProtocolNegotiatorBuilder {} for type {}",
+                        each.getClass().getCanonicalName(),
                         each.type());
             }
         } catch (Exception e) {
-            Loggers.REMOTE.warn("Load ProtocolNegotiatorBuilder failed, use default ProtocolNegotiatorBuilder", e);
+            Loggers.REMOTE.warn(
+                    "Load ProtocolNegotiatorBuilder failed, use default ProtocolNegotiatorBuilder",
+                    e);
             builderMap.put(TYPE_DEFAULT_TLS, new DefaultTlsProtocolNegotiatorBuilder());
             actualType = TYPE_DEFAULT_TLS;
         }
     }
-    
+
     public static ProtocolNegotiatorBuilderSingleton getSingleton() {
         return SINGLETON;
     }
-    
+
     @Override
     public NacosGrpcProtocolNegotiator build() {
         ProtocolNegotiatorBuilder actualBuilder = builderMap.get(actualType);
         if (null == actualBuilder) {
-            Loggers.REMOTE.warn("Not found ProtocolNegotiatorBuilder for type {}, will use default", actualType);
+            Loggers.REMOTE.warn(
+                    "Not found ProtocolNegotiatorBuilder for type {}, will use default",
+                    actualType);
             return builderMap.get(TYPE_DEFAULT_TLS).build();
         }
         return actualBuilder.build();
     }
-    
+
     @Override
     public String type() {
         return actualType;

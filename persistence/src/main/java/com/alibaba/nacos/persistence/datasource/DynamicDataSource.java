@@ -24,11 +24,11 @@ import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
  * @author Nacos
  */
 public class DynamicDataSource {
-    
+
     private DataSourceService localDataSourceService = null;
-    
+
     private DataSourceService basicDataSourceService = null;
-    
+
     private static final DynamicDataSource INSTANCE = new DynamicDataSource();
 
     private DynamicDataSource() {}
@@ -36,13 +36,13 @@ public class DynamicDataSource {
     public static DynamicDataSource getInstance() {
         return INSTANCE;
     }
-    
+
     public synchronized DataSourceService getDataSource() {
         try {
-            
+
             // Embedded storage is used by default in stand-alone mode
             // In cluster mode, external databases are used by default
-            
+
             if (DatasourceConfiguration.isEmbeddedStorage()) {
                 if (localDataSourceService == null) {
                     localDataSourceService = new LocalDataSourceServiceImpl();
@@ -60,5 +60,4 @@ public class DynamicDataSource {
             throw new RuntimeException(e);
         }
     }
-    
 }

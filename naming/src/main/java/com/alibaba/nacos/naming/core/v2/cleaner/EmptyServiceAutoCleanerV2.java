@@ -25,12 +25,11 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
+import org.springframework.stereotype.Component;
 
 /**
  * Empty service auto cleaner for v2.x.
@@ -39,44 +38,51 @@ import java.util.stream.Stream;
  */
 @Component
 public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
-    
+
     private static final String EMPTY_SERVICE = "emptyService";
-    
+
     private final ClientServiceIndexesManager clientServiceIndexesManager;
-    
+
     private final ServiceStorage serviceStorage;
-    
-    public EmptyServiceAutoCleanerV2(ClientServiceIndexesManager clientServiceIndexesManager,
+
+    public EmptyServiceAutoCleanerV2(
+            ClientServiceIndexesManager clientServiceIndexesManager,
             ServiceStorage serviceStorage) {
         this.clientServiceIndexesManager = clientServiceIndexesManager;
         this.serviceStorage = serviceStorage;
-        GlobalExecutor.scheduleExpiredClientCleaner(this, TimeUnit.SECONDS.toMillis(30),
-                GlobalConfig.getEmptyServiceCleanInterval(), TimeUnit.MILLISECONDS);
-        
+        GlobalExecutor.scheduleExpiredClientCleaner(
+                this,
+                TimeUnit.SECONDS.toMillis(30),
+                GlobalConfig.getEmptyServiceCleanInterval(),
+                TimeUnit.MILLISECONDS);
     }
-    
+
     @Override
     public String getType() {
         return EMPTY_SERVICE;
     }
-    
+
     @Override
     public void doClean() {
         ServiceManager serviceManager = ServiceManager.getInstance();
         // Parallel flow opening threshold
         int parallelSize = 100;
-        
+
         for (String each : serviceManager.getAllNamespaces()) {
             Set<Service> services = serviceManager.getSingletons(each);
-            Stream<Service> stream = services.size() > parallelSize ? services.parallelStream() : services.stream();
+            Stream<Service> stream =
+                    services.size() > parallelSize ? services.parallelStream() : services.stream();
             stream.forEach(this::cleanEmptyService);
         }
     }
-    
+
     private void cleanEmptyService(Service service) {
-        Collection<String> registeredService = clientServiceIndexesManager.getAllClientsRegisteredService(service);
+        Collection<String> registeredService =
+                clientServiceIndexesManager.getAllClientsRegisteredService(service);
         if (registeredService.isEmpty() && isTimeExpired(service)) {
-            Loggers.SRV_LOG.warn("namespace : {}, [{}] services are automatically cleaned", service.getNamespace(),
+            Loggers.SRV_LOG.warn(
+                    "namespace : {}, [{}] services are automatically cleaned",
+                    service.getNamespace(),
                     service.getGroupedServiceName());
             clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
             ServiceManager.getInstance().removeSingleton(service);
@@ -84,9 +90,10 @@ public class EmptyServiceAutoCleanerV2 extends AbstractNamingCleaner {
             NotifyCenter.publishEvent(new MetadataEvent.ServiceMetadataEvent(service, true));
         }
     }
-    
+
     private boolean isTimeExpired(Service service) {
         long currentTimeMillis = System.currentTimeMillis();
-        return currentTimeMillis - service.getLastUpdatedTime() >= GlobalConfig.getEmptyServiceExpiredTime();
+        return currentTimeMillis - service.getLastUpdatedTime()
+                >= GlobalConfig.getEmptyServiceExpiredTime();
     }
 }

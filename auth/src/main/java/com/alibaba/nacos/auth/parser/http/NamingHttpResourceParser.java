@@ -20,9 +20,8 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Properties;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Naming Http resource parser.
@@ -30,16 +29,16 @@ import java.util.Properties;
  * @author xiweng.yy
  */
 public class NamingHttpResourceParser extends AbstractHttpResourceParser {
-    
+
     @Override
     protected String getNamespaceId(HttpServletRequest request) {
-        return NamespaceUtil.processNamespaceParameter(request.getParameter(CommonParams.NAMESPACE_ID));
-        
+        return NamespaceUtil.processNamespaceParameter(
+                request.getParameter(CommonParams.NAMESPACE_ID));
     }
-    
+
     /**
-     * Group name from http request might be in service name with format ${group}@@${service}. So if group name is blank
-     * or {@code null}, should try to get group name from service.
+     * Group name from http request might be in service name with format ${group}@@${service}. So if
+     * group name is blank or {@code null}, should try to get group name from service.
      *
      * @param request http request
      * @return group
@@ -53,14 +52,15 @@ public class NamingHttpResourceParser extends AbstractHttpResourceParser {
         }
         return StringUtils.isBlank(groupName) ? StringUtils.EMPTY : groupName;
     }
-    
+
     @Override
     protected String getResourceName(HttpServletRequest request) {
         // See comment in #getGroup
-        String serviceName = NamingUtils.getServiceName(request.getParameter(CommonParams.SERVICE_NAME));
+        String serviceName =
+                NamingUtils.getServiceName(request.getParameter(CommonParams.SERVICE_NAME));
         return StringUtils.isBlank(serviceName) ? StringUtils.EMPTY : serviceName;
     }
-    
+
     @Override
     protected Properties getProperties(HttpServletRequest request) {
         return new Properties();

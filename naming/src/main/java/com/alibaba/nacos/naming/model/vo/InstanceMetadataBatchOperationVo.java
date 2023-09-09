@@ -21,26 +21,26 @@ import java.util.List;
 
 /**
  * InstanceUpdateVo.
+ *
  * @author dongyafei
  * @date 2022/9/7
  */
 public class InstanceMetadataBatchOperationVo implements Serializable {
-    
+
     private static final long serialVersionUID = -5793871911227035729L;
-    
+
     private List<String> updated;
-    
-    public InstanceMetadataBatchOperationVo() {
-    }
-    
+
+    public InstanceMetadataBatchOperationVo() {}
+
     public InstanceMetadataBatchOperationVo(List<String> updated) {
         this.updated = updated;
     }
-    
+
     public List<String> getUpdated() {
         return updated;
     }
-    
+
     public void setUpdated(List<String> updated) {
         this.updated = updated;
     }

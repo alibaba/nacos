@@ -27,19 +27,19 @@ import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
  * @author xiweng.yy
  */
 public class PersistentIpPortClientFactory implements ClientFactory<IpPortBasedClient> {
-    
+
     @Override
     public String getType() {
         return ClientConstants.PERSISTENT_IP_PORT;
     }
-    
+
     @Override
     public IpPortBasedClient newClient(String clientId, ClientAttributes attributes) {
         IpPortBasedClient ipPortBasedClient = new IpPortBasedClient(clientId, false);
         ipPortBasedClient.setAttributes(attributes);
         return ipPortBasedClient;
     }
-    
+
     @Override
     public IpPortBasedClient newSyncedClient(String clientId, ClientAttributes attributes) {
         IpPortBasedClient ipPortBasedClient = new IpPortBasedClient(clientId, false);

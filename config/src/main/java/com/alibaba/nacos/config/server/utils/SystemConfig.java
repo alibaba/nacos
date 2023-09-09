@@ -18,12 +18,11 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * System config.
@@ -31,11 +30,11 @@ import java.util.Enumeration;
  * @author Nacos
  */
 public class SystemConfig {
-    
+
     public static final String LOCAL_IP = getHostAddress();
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemConfig.class);
-    
+
     private static String getHostAddress() {
         String address = System.getProperty("nacos.server.ip");
         if (StringUtils.isNotEmpty(address)) {
@@ -52,7 +51,7 @@ public class SystemConfig {
                     InetAddress ip = ads.nextElement();
                     // Compatible group does not regulate 11 network segments
                     if (!ip.isLoopbackAddress() && ip.getHostAddress().indexOf(":") == -1
-                        /* && ip.isSiteLocalAddress() */) {
+                    /* && ip.isSiteLocalAddress() */ ) {
                         return ip.getHostAddress();
                     }
                 }
@@ -62,5 +61,4 @@ public class SystemConfig {
         }
         return address;
     }
-    
 }

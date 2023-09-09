@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,14 +28,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="mailto:liuyixiao0821@gmail.com">liuyixiao</a>
  */
 public class TopnCounterMetricsContainerTest {
-    
+
     private TopnCounterMetricsContainer topnCounterMetricsContainer;
-    
+
     @Before
     public void setUp() {
         topnCounterMetricsContainer = new TopnCounterMetricsContainer();
     }
-    
+
     @Test
     public void testPut() {
         topnCounterMetricsContainer.put("test");
@@ -47,14 +43,14 @@ public class TopnCounterMetricsContainerTest {
         topnCounterMetricsContainer.put("test1", 1);
         Assert.assertEquals(1, topnCounterMetricsContainer.get("test1"));
     }
-    
+
     @Test
     public void testIncrement() {
         topnCounterMetricsContainer.put("test", 0);
         topnCounterMetricsContainer.increment("test");
         Assert.assertEquals(1, topnCounterMetricsContainer.get("test"));
     }
-    
+
     @Test
     public void testRemove() {
         topnCounterMetricsContainer.put("test");
@@ -62,7 +58,7 @@ public class TopnCounterMetricsContainerTest {
         topnCounterMetricsContainer.remove("test");
         Assert.assertEquals(-1, topnCounterMetricsContainer.get("test"));
     }
-    
+
     @Test
     public void testRemoveAll() {
         topnCounterMetricsContainer.put("test");
@@ -73,7 +69,7 @@ public class TopnCounterMetricsContainerTest {
         Assert.assertEquals(-1, topnCounterMetricsContainer.get("test1"));
         Assert.assertEquals(-1, topnCounterMetricsContainer.get("test2"));
     }
-    
+
     @Test
     public void testGetTopNCounterAndRemoveAll() {
         final int N = 10;

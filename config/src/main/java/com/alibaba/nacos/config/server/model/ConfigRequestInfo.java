@@ -21,52 +21,52 @@ import java.util.Objects;
 
 /**
  * ConfigRequestInfo.
+ *
  * @author dongyafei
  * @date 2022/8/11
  */
 public class ConfigRequestInfo implements Serializable {
-    
+
     private static final long serialVersionUID = 326726654448860273L;
-    
+
     private String srcIp;
-    
+
     private String requestIpApp;
-    
+
     private String betaIps;
-    
+
     public ConfigRequestInfo(String srcIp, String requestIpApp, String betaIps) {
         this.srcIp = srcIp;
         this.requestIpApp = requestIpApp;
         this.betaIps = betaIps;
     }
-    
-    public ConfigRequestInfo() {
-    }
-    
+
+    public ConfigRequestInfo() {}
+
     public String getSrcIp() {
         return srcIp;
     }
-    
+
     public void setSrcIp(String srcIp) {
         this.srcIp = srcIp;
     }
-    
+
     public String getRequestIpApp() {
         return requestIpApp;
     }
-    
+
     public void setRequestIpApp(String requestIpApp) {
         this.requestIpApp = requestIpApp;
     }
-    
+
     public String getBetaIps() {
         return betaIps;
     }
-    
+
     public void setBetaIps(String betaIps) {
         this.betaIps = betaIps;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -76,18 +76,28 @@ public class ConfigRequestInfo implements Serializable {
             return false;
         }
         ConfigRequestInfo that = (ConfigRequestInfo) o;
-        return Objects.equals(srcIp, that.srcIp) && Objects.equals(requestIpApp, that.requestIpApp) && Objects
-                .equals(betaIps, that.betaIps);
+        return Objects.equals(srcIp, that.srcIp)
+                && Objects.equals(requestIpApp, that.requestIpApp)
+                && Objects.equals(betaIps, that.betaIps);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(srcIp, requestIpApp, betaIps);
     }
-    
+
     @Override
     public String toString() {
-        return "ConfigRequestInfoVo{" + "srcIp='" + srcIp + '\'' + ", requestIpApp='" + requestIpApp + '\''
-                + ", betaIps='" + betaIps + '\'' + '}';
+        return "ConfigRequestInfoVo{"
+                + "srcIp='"
+                + srcIp
+                + '\''
+                + ", requestIpApp='"
+                + requestIpApp
+                + '\''
+                + ", betaIps='"
+                + betaIps
+                + '\''
+                + '}';
     }
 }

@@ -19,39 +19,35 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.Properties;
 import org.mockito.Mockito;
 
-import java.util.Properties;
-
 public class ServerHttpAgentTest {
-    
+
     @Test
     public void testConstruct() throws NacosException {
         ServerListManager server = new ServerListManager();
         final ServerHttpAgent serverHttpAgent1 = new ServerHttpAgent(server);
         Assert.assertNotNull(serverHttpAgent1);
-        
+
         final ServerHttpAgent serverHttpAgent2 = new ServerHttpAgent(server, new Properties());
         Assert.assertNotNull(serverHttpAgent2);
-        
+
         final Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "1.1.1.1");
         final ServerHttpAgent serverHttpAgent3 = new ServerHttpAgent(properties);
         Assert.assertNotNull(serverHttpAgent3);
-        
     }
-    
+
     @Test
     public void testGetterAndSetter() throws NacosException {
         ServerListManager server = new ServerListManager("aaa", "namespace1");
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, new Properties());
-        
+
         final String appname = ServerHttpAgent.getAppname();
-        //set by AppNameUtils, init in ParamUtils static block
+        // set by AppNameUtils, init in ParamUtils static block
         Assert.assertEquals("unknown", appname);
-        
+
         final String encode = serverHttpAgent.getEncode();
         final String namespace = serverHttpAgent.getNamespace();
         final String tenant = serverHttpAgent.getTenant();
@@ -60,24 +56,22 @@ public class ServerHttpAgentTest {
         Assert.assertEquals("namespace1", namespace);
         Assert.assertEquals("namespace1", tenant);
         Assert.assertEquals("custom-aaa_8080_nacos_serverlist_namespace1", name);
-        
     }
-    
+
     @Test
     public void testLifCycle() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "aaa");
         ServerListManager server = Mockito.mock(ServerListManager.class);
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, properties);
-        
+
         serverHttpAgent.start();
         Mockito.verify(server).start();
-        
+
         try {
             serverHttpAgent.shutdown();
         } catch (NullPointerException e) {
             Assert.fail();
         }
     }
-    
 }

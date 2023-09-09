@@ -25,21 +25,18 @@ import com.alibaba.nacos.common.utils.NumberUtils;
  * @version $Id: RemoteUtils.java, v 0.1 2020年11月12日 8:54 PM liuzunfei Exp $
  */
 public class RemoteUtils {
-    
+
     public static final float LOADER_FACTOR = 0.1f;
-    
-    /**
-     * Default remote execute times for CPU count of task processors.
-     */
+
+    /** Default remote execute times for CPU count of task processors. */
     private static final int REMOTE_EXECUTOR_TIMES_OF_PROCESSORS = 1 << 4;
-    
-    /**
-     * Default remote execute queue size: 16384.
-     */
+
+    /** Default remote execute queue size: 16384. */
     private static final int REMOTE_EXECUTOR_QUEUE_SIZE = 1 << 14;
-    
+
     /**
-     * get remote executors thread times of processors,default is 64. see the usage of this method for detail.
+     * get remote executors thread times of processors,default is 64. see the usage of this method
+     * for detail.
      *
      * @return times of processors.
      */
@@ -52,7 +49,7 @@ public class RemoteUtils {
             return REMOTE_EXECUTOR_TIMES_OF_PROCESSORS;
         }
     }
-    
+
     public static int getRemoteExecutorQueueSize() {
         String queueSizeString = System.getProperty("remote.executor.queue.size");
         if (NumberUtils.isDigits(queueSizeString)) {

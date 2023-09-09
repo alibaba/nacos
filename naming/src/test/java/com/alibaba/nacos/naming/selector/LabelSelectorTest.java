@@ -19,9 +19,6 @@ package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.selector.Selector;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * {@link LabelSelector} unit test.
@@ -30,20 +27,23 @@ import org.junit.Test;
  * @date 2021-07-16 17:41
  */
 public class LabelSelectorTest {
-    
+
     private SelectorManager selectorManager;
-    
+
     @Before
     public void setUp() {
         selectorManager = new SelectorManager();
         selectorManager.init();
     }
-    
+
     @Test
     public void testParseSelector() throws NacosException {
-        Selector selector = selectorManager.parseSelector("label", "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
+        Selector selector =
+                selectorManager.parseSelector(
+                        "label",
+                        "CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
         Assert.assertTrue(selector instanceof LabelSelector);
-    
+
         LabelSelector labelSelector = (LabelSelector) selector;
         Assert.assertEquals(2, labelSelector.getLabels().size());
         Assert.assertTrue(labelSelector.getLabels().contains("A"));

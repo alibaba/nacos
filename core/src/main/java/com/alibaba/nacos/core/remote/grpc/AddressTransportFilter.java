@@ -16,19 +16,18 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import static com.alibaba.nacos.core.remote.grpc.GrpcServerConstants.ATTR_TRANS_KEY_CONN_ID;
+import static com.alibaba.nacos.core.remote.grpc.GrpcServerConstants.ATTR_TRANS_KEY_LOCAL_PORT;
+import static com.alibaba.nacos.core.remote.grpc.GrpcServerConstants.ATTR_TRANS_KEY_REMOTE_IP;
+import static com.alibaba.nacos.core.remote.grpc.GrpcServerConstants.ATTR_TRANS_KEY_REMOTE_PORT;
+
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.Attributes;
 import io.grpc.Grpc;
 import io.grpc.ServerTransportFilter;
-
 import java.net.InetSocketAddress;
-
-import static com.alibaba.nacos.core.remote.grpc.GrpcServerConstants.ATTR_TRANS_KEY_CONN_ID;
-import static com.alibaba.nacos.core.remote.grpc.GrpcServerConstants.ATTR_TRANS_KEY_LOCAL_PORT;
-import static com.alibaba.nacos.core.remote.grpc.GrpcServerConstants.ATTR_TRANS_KEY_REMOTE_IP;
-import static com.alibaba.nacos.core.remote.grpc.GrpcServerConstants.ATTR_TRANS_KEY_REMOTE_PORT;
 
 /**
  * AddressTransportFilter process remote address, local address and connection id attributes.
@@ -37,32 +36,37 @@ import static com.alibaba.nacos.core.remote.grpc.GrpcServerConstants.ATTR_TRANS_
  * @date 2023/1/5 15:45
  */
 public class AddressTransportFilter extends ServerTransportFilter {
-    
+
     private final ConnectionManager connectionManager;
-    
+
     public AddressTransportFilter(ConnectionManager connectionManager) {
         this.connectionManager = connectionManager;
     }
-    
+
     @Override
     public Attributes transportReady(Attributes transportAttrs) {
-        InetSocketAddress remoteAddress = (InetSocketAddress) transportAttrs
-                .get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
-        InetSocketAddress localAddress = (InetSocketAddress) transportAttrs
-                .get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
+        InetSocketAddress remoteAddress =
+                (InetSocketAddress) transportAttrs.get(Grpc.TRANSPORT_ATTR_REMOTE_ADDR);
+        InetSocketAddress localAddress =
+                (InetSocketAddress) transportAttrs.get(Grpc.TRANSPORT_ATTR_LOCAL_ADDR);
         int remotePort = remoteAddress.getPort();
         int localPort = localAddress.getPort();
         String remoteIp = remoteAddress.getAddress().getHostAddress();
-        Attributes attrWrapper = transportAttrs.toBuilder()
-                .set(ATTR_TRANS_KEY_CONN_ID, System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort)
-                .set(ATTR_TRANS_KEY_REMOTE_IP, remoteIp).set(ATTR_TRANS_KEY_REMOTE_PORT, remotePort)
-                .set(ATTR_TRANS_KEY_LOCAL_PORT, localPort).build();
+        Attributes attrWrapper =
+                transportAttrs
+                        .toBuilder()
+                        .set(
+                                ATTR_TRANS_KEY_CONN_ID,
+                                System.currentTimeMillis() + "_" + remoteIp + "_" + remotePort)
+                        .set(ATTR_TRANS_KEY_REMOTE_IP, remoteIp)
+                        .set(ATTR_TRANS_KEY_REMOTE_PORT, remotePort)
+                        .set(ATTR_TRANS_KEY_LOCAL_PORT, localPort)
+                        .build();
         String connectionId = attrWrapper.get(ATTR_TRANS_KEY_CONN_ID);
         Loggers.REMOTE_DIGEST.info("Connection transportReady,connectionId = {} ", connectionId);
         return attrWrapper;
-        
     }
-    
+
     @Override
     public void transportTerminated(Attributes transportAttrs) {
         String connectionId = null;
@@ -72,8 +76,8 @@ public class AddressTransportFilter extends ServerTransportFilter {
             // Ignore
         }
         if (StringUtils.isNotBlank(connectionId)) {
-            Loggers.REMOTE_DIGEST
-                    .info("Connection transportTerminated,connectionId = {} ", connectionId);
+            Loggers.REMOTE_DIGEST.info(
+                    "Connection transportTerminated,connectionId = {} ", connectionId);
             connectionManager.unregister(connectionId);
         }
     }

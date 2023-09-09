@@ -26,15 +26,15 @@ import com.alibaba.nacos.api.remote.Payload;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Response implements Payload {
-    
+
     int resultCode = ResponseCode.SUCCESS.getCode();
-    
+
     int errorCode;
-    
+
     String message;
-    
+
     String requestId;
-    
+
     /**
      * Getter method for property <tt>requestId</tt>.
      *
@@ -43,7 +43,7 @@ public abstract class Response implements Payload {
     public String getRequestId() {
         return requestId;
     }
-    
+
     /**
      * Setter method for property <tt>requestId</tt>.
      *
@@ -52,16 +52,16 @@ public abstract class Response implements Payload {
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
-    
+
     /**
-     * Check Response  is Successed.
+     * Check Response is Successed.
      *
      * @return success or not.
      */
     public boolean isSuccess() {
         return this.resultCode == ResponseCode.SUCCESS.getCode();
     }
-    
+
     /**
      * Getter method for property <tt>resultCode</tt>.
      *
@@ -70,7 +70,7 @@ public abstract class Response implements Payload {
     public int getResultCode() {
         return resultCode;
     }
-    
+
     /**
      * Setter method for property <tt>resultCode</tt>.
      *
@@ -79,7 +79,7 @@ public abstract class Response implements Payload {
     public void setResultCode(int resultCode) {
         this.resultCode = resultCode;
     }
-    
+
     /**
      * Getter method for property <tt>message</tt>.
      *
@@ -88,7 +88,7 @@ public abstract class Response implements Payload {
     public String getMessage() {
         return message;
     }
-    
+
     /**
      * Setter method for property <tt>message</tt>.
      *
@@ -97,7 +97,7 @@ public abstract class Response implements Payload {
     public void setMessage(String message) {
         this.message = message;
     }
-    
+
     /**
      * Getter method for property <tt>errorCode</tt>.
      *
@@ -106,7 +106,7 @@ public abstract class Response implements Payload {
     public int getErrorCode() {
         return errorCode;
     }
-    
+
     /**
      * Setter method for property <tt>errorCode</tt>.
      *
@@ -115,16 +115,26 @@ public abstract class Response implements Payload {
     public void setErrorCode(int errorCode) {
         this.errorCode = errorCode;
     }
-    
+
     public void setErrorInfo(int errorCode, String errorMsg) {
         this.resultCode = ResponseCode.FAIL.getCode();
         this.errorCode = errorCode;
         this.message = errorMsg;
     }
-    
+
     @Override
     public String toString() {
-        return "Response{" + "resultCode=" + resultCode + ", errorCode=" + errorCode + ", message='" + message + '\''
-                + ", requestId='" + requestId + '\'' + '}';
+        return "Response{"
+                + "resultCode="
+                + resultCode
+                + ", errorCode="
+                + errorCode
+                + ", message='"
+                + message
+                + '\''
+                + ", requestId='"
+                + requestId
+                + '\''
+                + '}';
     }
 }

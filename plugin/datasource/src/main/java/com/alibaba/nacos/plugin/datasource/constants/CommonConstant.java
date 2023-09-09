@@ -22,6 +22,6 @@ package com.alibaba.nacos.plugin.datasource.constants;
  * @author xiweng.yy
  */
 public class CommonConstant {
-    
+
     public static final String NACOS_PLUGIN_DATASOURCE_LOG = "nacos.plugin.datasource.log.enabled";
 }

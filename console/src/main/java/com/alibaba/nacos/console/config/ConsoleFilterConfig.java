@@ -28,10 +28,11 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class ConsoleFilterConfig {
-    
+
     @Bean
     public FilterRegistrationBean<ConsoleParamCheckFilter> consoleParamCheckFilterRegistration() {
-        FilterRegistrationBean<ConsoleParamCheckFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<ConsoleParamCheckFilter> registration =
+                new FilterRegistrationBean<>();
         registration.setFilter(consoleParamCheckFilter());
         registration.addUrlPatterns("/v1/console/*");
         registration.addUrlPatterns("/v2/console/*");
@@ -39,7 +40,7 @@ public class ConsoleFilterConfig {
         registration.setOrder(8);
         return registration;
     }
-    
+
     @Bean
     public ConsoleParamCheckFilter consoleParamCheckFilter() {
         return new ConsoleParamCheckFilter();

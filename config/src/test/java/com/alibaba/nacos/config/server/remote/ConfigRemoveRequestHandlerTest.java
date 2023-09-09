@@ -24,9 +24,6 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -37,16 +34,15 @@ public class ConfigRemoveRequestHandlerTest {
 
     private ConfigRemoveRequestHandler configRemoveRequestHandler;
 
-    @Mock
-    private ConfigInfoPersistService configInfoPersistService;
-    
-    @Mock
-    private ConfigInfoTagPersistService configInfoTagPersistService;
+    @Mock private ConfigInfoPersistService configInfoPersistService;
+
+    @Mock private ConfigInfoTagPersistService configInfoTagPersistService;
 
     @Before
     public void setUp() throws Exception {
-        configRemoveRequestHandler = new ConfigRemoveRequestHandler(configInfoPersistService,
-                configInfoTagPersistService);
+        configRemoveRequestHandler =
+                new ConfigRemoveRequestHandler(
+                        configInfoPersistService, configInfoTagPersistService);
         Mockito.mockStatic(ConfigTraceService.class);
     }
 
@@ -60,11 +56,12 @@ public class ConfigRemoveRequestHandlerTest {
         RequestMeta meta = new RequestMeta();
         meta.setClientIp("1.1.1.1");
         try {
-            ConfigRemoveResponse configRemoveResponse = configRemoveRequestHandler.handle(configRemoveRequest, meta);
-            Assert.assertEquals(ResponseCode.SUCCESS.getCode(), configRemoveResponse.getResultCode());
+            ConfigRemoveResponse configRemoveResponse =
+                    configRemoveRequestHandler.handle(configRemoveRequest, meta);
+            Assert.assertEquals(
+                    ResponseCode.SUCCESS.getCode(), configRemoveResponse.getResultCode());
         } catch (NacosException e) {
             e.printStackTrace();
         }
     }
-
 }

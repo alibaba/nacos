@@ -24,20 +24,26 @@ import com.alibaba.nacos.api.exception.NacosException;
  * @author xiweng.yy
  */
 public interface HealthOperator {
-    
+
     /**
      * Manually update healthy status for persistent instance.
      *
      * <p>Only {@code HealthCheckType.NONE} can be manually update status.
      *
-     * @param namespace       namespace of service
+     * @param namespace namespace of service
      * @param fullServiceName full service name like `groupName@@serviceName`
-     * @param clusterName     cluster of instance
-     * @param ip              ip of instance
-     * @param port            port of instance
-     * @param healthy         health status of instance
+     * @param clusterName cluster of instance
+     * @param ip ip of instance
+     * @param port port of instance
+     * @param healthy health status of instance
      * @throws NacosException any exception during updating
      */
-    void updateHealthStatusForPersistentInstance(String namespace, String fullServiceName, String clusterName,
-            String ip, int port, boolean healthy) throws NacosException;
+    void updateHealthStatusForPersistentInstance(
+            String namespace,
+            String fullServiceName,
+            String clusterName,
+            String ip,
+            int port,
+            boolean healthy)
+            throws NacosException;
 }

@@ -22,7 +22,6 @@ import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftOps;
 import com.alipay.sofa.jraft.CliService;
 import com.alipay.sofa.jraft.Node;
-
 import java.util.Map;
 import java.util.Objects;
 
@@ -33,17 +32,17 @@ import java.util.Objects;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftMaintainService {
-    
+
     private final JRaftServer raftServer;
-    
+
     public JRaftMaintainService(JRaftServer raftServer) {
         this.raftServer = raftServer;
     }
-    
+
     public RestResult<String> execute(String[] args) {
         return RestResultUtils.failed("not support yet");
     }
-    
+
     /**
      * Execute relevant commands.
      *
@@ -68,8 +67,9 @@ public class JRaftMaintainService {
         }
         return RestResultUtils.success();
     }
-    
-    private RestResult<String> single(CliService cliService, String groupId, Node node, Map<String, String> args) {
+
+    private RestResult<String> single(
+            CliService cliService, String groupId, Node node, Map<String, String> args) {
         try {
             if (node == null) {
                 return RestResultUtils.failed("not this raft group : " + groupId);
@@ -84,5 +84,4 @@ public class JRaftMaintainService {
             return RestResultUtils.failed(ex.getMessage());
         }
     }
-    
 }

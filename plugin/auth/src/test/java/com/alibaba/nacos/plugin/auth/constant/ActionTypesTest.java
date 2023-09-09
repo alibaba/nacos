@@ -16,18 +16,16 @@
 
 package com.alibaba.nacos.plugin.auth.constant;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
 public class ActionTypesTest {
-    
+
     @Test
     public void testToStringForRead() {
         ActionTypes actual = ActionTypes.valueOf("READ");
         assertEquals("r", actual.toString());
     }
-    
+
     @Test
     public void testToStringForWrite() {
         ActionTypes actual = ActionTypes.valueOf("WRITE");

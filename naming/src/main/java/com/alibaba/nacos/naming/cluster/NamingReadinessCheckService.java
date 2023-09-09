@@ -28,13 +28,13 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class NamingReadinessCheckService extends AbstractModuleHealthChecker {
-    
+
     private final ServerStatusManager serverStatusManager;
-    
+
     public NamingReadinessCheckService(ServerStatusManager serverStatusManager) {
         this.serverStatusManager = serverStatusManager;
     }
-    
+
     @Override
     public boolean readiness() {
         try {
@@ -44,7 +44,7 @@ public class NamingReadinessCheckService extends AbstractModuleHealthChecker {
         }
         return false;
     }
-    
+
     @Override
     public String getModuleName() {
         return Constants.Naming.NAMING_MODULE;

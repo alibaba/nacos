@@ -19,27 +19,22 @@ package com.alibaba.nacos.api.config.remote.response;
 import com.alibaba.nacos.api.config.remote.request.BasedConfigRequestTest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.util.UUID;
 
 public abstract class BasedConfigResponseTest extends BasedConfigRequestTest {
-    
+
     protected String requestId;
-    
+
     @Override
-    public void testSerialize() throws JsonProcessingException {
-    
-    }
-    
+    public void testSerialize() throws JsonProcessingException {}
+
     @Override
-    public void testDeserialize() throws JsonProcessingException {
-    
-    }
-    
+    public void testDeserialize() throws JsonProcessingException {}
+
     public abstract void testSerializeSuccessResponse() throws JsonProcessingException;
-    
+
     public abstract void testSerializeFailResponse() throws JsonProcessingException;
-    
+
     protected String injectResponseUuId(Response response) {
         String uuid = UUID.randomUUID().toString();
         response.setRequestId(uuid);

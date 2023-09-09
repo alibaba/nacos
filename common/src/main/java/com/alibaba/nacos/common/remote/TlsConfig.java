@@ -22,55 +22,37 @@ package com.alibaba.nacos.common.remote;
  * @author githubcheng2978
  */
 public class TlsConfig {
-    /**
-     * ssl provider,default OPENSSL,JDK,OPENSSL_REFCNT.
-     */
+    /** ssl provider,default OPENSSL,JDK,OPENSSL_REFCNT. */
     private String sslProvider = "";
 
-    /**
-     * enable tls.
-     */
+    /** enable tls. */
     private Boolean enableTls = false;
 
     /**
-     * tls version: TLSv1.1,TLSv1.2,TLSv1.3
-     * if want to support multi protocol, use comma  seperated. like TLSv1.1,TLSv1.2,TLSv1.3
+     * tls version: TLSv1.1,TLSv1.2,TLSv1.3 if want to support multi protocol, use comma seperated.
+     * like TLSv1.1,TLSv1.2,TLSv1.3
      */
     private String protocols;
 
-    /**
-     * cipherList,  same of usage protocols.
-     */
+    /** cipherList, same of usage protocols. */
     private String ciphers;
 
-    /**
-     * private key.
-     */
+    /** private key. */
     private String certPrivateKey;
 
-    /**
-     * certificate file.
-     */
+    /** certificate file. */
     private String certChainFile;
 
-    /**
-     * read certPrivateKey file when need password.
-     */
+    /** read certPrivateKey file when need password. */
     private String certPrivateKeyPassword;
 
-    /**
-     * mutualAuth,if true,need provider certPrivateKey and certChainFile.
-     */
+    /** mutualAuth,if true,need provider certPrivateKey and certChainFile. */
     private Boolean mutualAuthEnable = false;
 
-    /**
-     * ignore certificate valid.
-     */
+    /** ignore certificate valid. */
     private Boolean trustAll = false;
 
-    /**
-     * collection of trust certificate file.
-     */
+    /** collection of trust certificate file. */
     private String trustCollectionCertFile;
 
     public Boolean getEnableTls() {
@@ -152,5 +134,4 @@ public class TlsConfig {
     public void setSslProvider(String sslProvider) {
         this.sslProvider = sslProvider;
     }
-
 }

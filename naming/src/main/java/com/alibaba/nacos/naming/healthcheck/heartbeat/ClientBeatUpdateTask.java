@@ -27,13 +27,13 @@ import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
  * @author xiweng.yy
  */
 public class ClientBeatUpdateTask extends AbstractExecuteTask {
-    
+
     private final IpPortBasedClient client;
-    
+
     public ClientBeatUpdateTask(IpPortBasedClient client) {
         this.client = client;
     }
-    
+
     @Override
     public void run() {
         long currentTime = System.currentTimeMillis();

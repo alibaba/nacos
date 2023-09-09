@@ -22,20 +22,22 @@ import java.util.MissingFormatArgumentException;
 
 /**
  * default converters.
+ *
  * @author onewe
  */
 public class CompositeConverter {
-    
+
     private final Map<Class<?>, AbstractPropertyConverter<?>> converterRegistry = new HashMap<>();
-    
+
     public CompositeConverter() {
         converterRegistry.put(Boolean.class, new BooleanConverter());
         converterRegistry.put(Integer.class, new IntegerConverter());
         converterRegistry.put(Long.class, new LongConverter());
     }
-    
+
     /**
      * convert property to target type.
+     *
      * @param property the property gets from environments
      * @param targetClass target class object
      * @param <T> target type
@@ -44,9 +46,10 @@ public class CompositeConverter {
     public <T> T convert(String property, Class<T> targetClass) {
         final AbstractPropertyConverter<?> converter = converterRegistry.get(targetClass);
         if (converter == null) {
-            throw new MissingFormatArgumentException("converter not found, can't convert from String to " + targetClass.getCanonicalName());
+            throw new MissingFormatArgumentException(
+                    "converter not found, can't convert from String to "
+                            + targetClass.getCanonicalName());
         }
         return (T) converter.convert(property);
     }
-    
 }

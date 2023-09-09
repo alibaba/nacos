@@ -22,142 +22,140 @@ package com.alibaba.nacos.config.server.model.app;
  * @author Nacos
  */
 public class MonitorInfo {
-    
-    /**
-     * Total memory can use.
-     */
+
+    /** Total memory can use. */
     private long totalMemory;
-    
-    /**
-     * Free memory.
-     */
+
+    /** Free memory. */
     private long freeMemory;
-    
-    /**
-     * Max memory can use.
-     */
+
+    /** Max memory can use. */
     private volatile long maxMemory;
-    
-    /**
-     * Cpu ratio.
-     */
+
+    /** Cpu ratio. */
     private double cpuRatio;
-    
-    /**
-     * System load.
-     */
+
+    /** System load. */
     private double load;
-    
-    /**
-     * Young gc time counter.
-     */
+
+    /** Young gc time counter. */
     private int ygc;
-    
-    /**
-     * Young gc time.
-     */
+
+    /** Young gc time. */
     private double ygct;
-    
-    /**
-     * Full gc time counter.
-     */
+
+    /** Full gc time counter. */
     private int fgc;
-    
-    /**
-     * Full gc time.
-     */
+
+    /** Full gc time. */
     private double fgct;
-    
-    /**
-     * Gc time.
-     */
+
+    /** Gc time. */
     private double gct;
-    
+
     public long getFreeMemory() {
         return freeMemory;
     }
-    
+
     public void setFreeMemory(long freeMemory) {
         this.freeMemory = freeMemory;
     }
-    
+
     public long getMaxMemory() {
         return maxMemory;
     }
-    
+
     public void setMaxMemory(long maxMemory) {
         this.maxMemory = maxMemory;
     }
-    
+
     public long getTotalMemory() {
         return totalMemory;
     }
-    
+
     public void setTotalMemory(long totalMemory) {
         this.totalMemory = totalMemory;
     }
-    
+
     public double getCpuRatio() {
         return cpuRatio;
     }
-    
+
     public void setCpuRatio(int cpuRatio) {
         this.cpuRatio = cpuRatio;
     }
-    
+
     public double getLoad() {
         return load;
     }
-    
+
     public void setLoad(int load) {
         this.load = load;
     }
-    
+
     public int getYgc() {
         return ygc;
     }
-    
+
     public void setYgc(int ygc) {
         this.ygc = ygc;
     }
-    
+
     public double getYgct() {
         return ygct;
     }
-    
+
     public void setYgct(int ygct) {
         this.ygct = ygct;
     }
-    
+
     public int getFgc() {
         return fgc;
     }
-    
+
     public void setFgc(int fgc) {
         this.fgc = fgc;
     }
-    
+
     public double getFgct() {
         return fgct;
     }
-    
+
     public void setFgct(int fgct) {
         this.fgct = fgct;
     }
-    
+
     public double getGct() {
         return gct;
     }
-    
+
     public void setGct(int gct) {
         this.gct = gct;
     }
-    
+
     @Override
     public String toString() {
-        return "MonitorInfo{" + "totalMemory=" + totalMemory + ", freeMemory=" + freeMemory + ", maxMemory=" + maxMemory
-                + ", cpuRatio=" + cpuRatio + ", load=" + load + ", ygc=" + ygc + ", ygct=" + ygct + ", fgc=" + fgc
-                + ", fgct=" + fgct + ", gct=" + gct + '}';
+        return "MonitorInfo{"
+                + "totalMemory="
+                + totalMemory
+                + ", freeMemory="
+                + freeMemory
+                + ", maxMemory="
+                + maxMemory
+                + ", cpuRatio="
+                + cpuRatio
+                + ", load="
+                + load
+                + ", ygc="
+                + ygc
+                + ", ygct="
+                + ygct
+                + ", fgc="
+                + fgc
+                + ", fgct="
+                + fgct
+                + ", gct="
+                + gct
+                + '}';
     }
 }
-

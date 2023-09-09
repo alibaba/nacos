@@ -16,14 +16,12 @@
 
 package com.alibaba.nacos.api.config;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ConfigTypeTest {
-    
+
     @Test
     public void isValidType() {
         assertTrue(ConfigType.isValidType("xml"));
@@ -36,7 +34,7 @@ public class ConfigTypeTest {
         assertFalse(ConfigType.isValidType(""));
         assertFalse(ConfigType.isValidType("yml"));
     }
-    
+
     @Test
     public void testGetDefaultType() {
         assertEquals("text", ConfigType.getDefaultType().getType());

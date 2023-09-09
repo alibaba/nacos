@@ -17,9 +17,6 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProtocolMetaDataTest {
-    
+
     @Test
     public void testProtocolMetaData() throws Exception {
         Map<String, Map<String, Object>> map = new HashMap<>();
@@ -36,40 +33,41 @@ public class ProtocolMetaDataTest {
         data.put("test-1", new Date());
         data.put("test_2", new Date());
         map.put("global", data);
-        
+
         ProtocolMetaData metaData = new ProtocolMetaData();
-        
+
         metaData.load(map);
-        
+
         String json = JacksonUtils.toJson(metaData);
         AtomicInteger count = new AtomicInteger(0);
-        
+
         CountDownLatch latch = new CountDownLatch(2);
-        
-        metaData.subscribe("global", "test-1", o -> {
-            ProtocolMetaData.ValueItem item = (ProtocolMetaData.ValueItem) o;
-            System.out.println(item.getData());
-            count.incrementAndGet();
-            latch.countDown();
-        });
-        
+
+        metaData.subscribe(
+                "global",
+                "test-1",
+                o -> {
+                    ProtocolMetaData.ValueItem item = (ProtocolMetaData.ValueItem) o;
+                    System.out.println(item.getData());
+                    count.incrementAndGet();
+                    latch.countDown();
+                });
+
         System.out.println(json);
-        
+
         map = new HashMap<>();
         data = new HashMap<>();
         data.put("test-1", new Date());
         data.put("test_2", new Date());
         map.put("global", data);
-        
+
         metaData.load(map);
-        
+
         json = JacksonUtils.toJson(metaData);
         System.out.println(json);
-        
+
         latch.await(10_000L, TimeUnit.MILLISECONDS);
-        
+
         Assert.assertEquals(2, count.get());
-        
     }
-    
 }

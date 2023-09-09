@@ -27,60 +27,59 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import junit.framework.TestCase;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DistroClientComponentRegistryTest extends TestCase {
-    
+
     private DistroClientComponentRegistry distroClientComponentRegistry;
-    
-    @Mock
-    private ServerMemberManager serverMemberManager;
-    
-    @Mock
-    private DistroProtocol distroProtocol;
-    
-    @Mock
-    private DistroTaskEngineHolder taskEngineHolder;
-    
-    @Mock
-    private ClientManagerDelegate clientManager;
-    
-    @Mock
-    private ClusterRpcClientProxy clusterRpcClientProxy;
-    
+
+    @Mock private ServerMemberManager serverMemberManager;
+
+    @Mock private DistroProtocol distroProtocol;
+
+    @Mock private DistroTaskEngineHolder taskEngineHolder;
+
+    @Mock private ClientManagerDelegate clientManager;
+
+    @Mock private ClusterRpcClientProxy clusterRpcClientProxy;
+
     private DistroComponentHolder componentHolder;
-    
+
     @Before
     public void setUp() throws Exception {
         componentHolder = new DistroComponentHolder();
-        
-        distroClientComponentRegistry = new DistroClientComponentRegistry(serverMemberManager, distroProtocol,
-                componentHolder, taskEngineHolder, clientManager, clusterRpcClientProxy);
+
+        distroClientComponentRegistry =
+                new DistroClientComponentRegistry(
+                        serverMemberManager,
+                        distroProtocol,
+                        componentHolder,
+                        taskEngineHolder,
+                        clientManager,
+                        clusterRpcClientProxy);
     }
-    
+
     @Test
     public void testDoRegister() {
         distroClientComponentRegistry.doRegister();
-        
-        DistroDataStorage dataStorage = componentHolder.findDataStorage(DistroClientDataProcessor.TYPE);
+
+        DistroDataStorage dataStorage =
+                componentHolder.findDataStorage(DistroClientDataProcessor.TYPE);
         Assert.assertNotNull(dataStorage);
-        
-        DistroDataProcessor dataProcessor = componentHolder.findDataProcessor(DistroClientDataProcessor.TYPE);
+
+        DistroDataProcessor dataProcessor =
+                componentHolder.findDataProcessor(DistroClientDataProcessor.TYPE);
         Assert.assertNotNull(dataProcessor);
-        
-        DistroFailedTaskHandler failedTaskHandler = componentHolder
-                .findFailedTaskHandler(DistroClientDataProcessor.TYPE);
+
+        DistroFailedTaskHandler failedTaskHandler =
+                componentHolder.findFailedTaskHandler(DistroClientDataProcessor.TYPE);
         Assert.assertNotNull(failedTaskHandler);
-        
-        DistroTransportAgent transportAgent = componentHolder.findTransportAgent(DistroClientDataProcessor.TYPE);
+
+        DistroTransportAgent transportAgent =
+                componentHolder.findTransportAgent(DistroClientDataProcessor.TYPE);
         Assert.assertNotNull(transportAgent);
-        
     }
-    
 }

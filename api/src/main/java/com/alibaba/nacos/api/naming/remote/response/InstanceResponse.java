@@ -24,20 +24,19 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @author xiweng.yy
  */
 public class InstanceResponse extends Response {
-    
+
     private String type;
-    
-    public InstanceResponse() {
-    }
-    
+
+    public InstanceResponse() {}
+
     public InstanceResponse(String type) {
         this.type = type;
     }
-    
+
     public void setType(String type) {
         this.type = type;
     }
-    
+
     public String getType() {
         return type;
     }

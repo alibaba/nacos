@@ -30,24 +30,26 @@ import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
  * @author shiyiyue
  */
 public class NacosConnectionControlManager extends ConnectionControlManager {
-    
+
     @Override
     public String getName() {
         return "nacos";
     }
-    
+
     public NacosConnectionControlManager() {
         super();
     }
-    
+
     @Override
     public void applyConnectionLimitRule(ConnectionControlRule connectionControlRule) {
         super.connectionControlRule = connectionControlRule;
-        Loggers.CONTROL.info("Connection control rule updated to ->" + (this.connectionControlRule == null ? null
-                : JacksonUtils.toJson(this.connectionControlRule)));
-        
+        Loggers.CONTROL.info(
+                "Connection control rule updated to ->"
+                        + (this.connectionControlRule == null
+                                ? null
+                                : JacksonUtils.toJson(this.connectionControlRule)));
     }
-    
+
     @Override
     public ConnectionCheckResponse check(ConnectionCheckRequest connectionCheckRequest) {
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
@@ -55,5 +57,4 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
         connectionCheckResponse.setCode(ConnectionCheckCode.CHECK_SKIP);
         return connectionCheckResponse;
     }
-    
 }

@@ -25,55 +25,55 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
  * @author xiweng.yy
  */
 public class MetadataEvent extends Event {
-    
+
     private static final long serialVersionUID = -5842659852664110805L;
-    
+
     private final Service service;
-    
+
     /**
      * Mark this metadata whether is expired.
      *
-     * <p>If value is {@code true}, means that the original object (service or instance) has been removed, so the
-     * metadata has been expired, need be delete.
+     * <p>If value is {@code true}, means that the original object (service or instance) has been
+     * removed, so the metadata has been expired, need be delete.
      *
-     * <p>If value is {code false}, means that the original object (service or instance) is registered, The metadata
-     * should stop to delete.
+     * <p>If value is {code false}, means that the original object (service or instance) is
+     * registered, The metadata should stop to delete.
      */
     private final boolean expired;
-    
+
     public MetadataEvent(Service service, boolean expired) {
         this.service = service;
         this.expired = expired;
     }
-    
+
     public Service getService() {
         return service;
     }
-    
+
     public boolean isExpired() {
         return expired;
     }
-    
+
     public static class ServiceMetadataEvent extends MetadataEvent {
-        
+
         private static final long serialVersionUID = -2888112042649967804L;
-        
+
         public ServiceMetadataEvent(Service service, boolean expired) {
             super(service, expired);
         }
     }
-    
+
     public static class InstanceMetadataEvent extends MetadataEvent {
-        
+
         private static final long serialVersionUID = 5781016126117637520L;
-        
+
         private final String metadataId;
-        
+
         public InstanceMetadataEvent(Service service, String metadataId, boolean expired) {
             super(service, expired);
             this.metadataId = metadataId;
         }
-        
+
         public String getMetadataId() {
             return metadataId;
         }

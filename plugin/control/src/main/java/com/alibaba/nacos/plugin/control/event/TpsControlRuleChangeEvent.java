@@ -25,28 +25,28 @@ import com.alibaba.nacos.common.notify.Event;
  * @version $Id: TpsControlPoint.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
  */
 public class TpsControlRuleChangeEvent extends Event {
-    
+
     private String pointName;
-    
+
     private boolean external;
-    
+
     public TpsControlRuleChangeEvent(String pointName, boolean external) {
         this.pointName = pointName;
         this.external = external;
     }
-    
+
     public String getPointName() {
         return pointName;
     }
-    
+
     public void setPointName(String pointName) {
         this.pointName = pointName;
     }
-    
+
     public boolean isExternal() {
         return external;
     }
-    
+
     public void setExternal(boolean external) {
         this.external = external;
     }

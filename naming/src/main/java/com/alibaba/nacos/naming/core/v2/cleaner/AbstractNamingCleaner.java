@@ -25,7 +25,7 @@ import com.alibaba.nacos.naming.misc.Loggers;
  * @author xiweng.yy
  */
 public abstract class AbstractNamingCleaner extends AbstractExecuteTask implements NamingCleaner {
-    
+
     @Override
     public void run() {
         try {

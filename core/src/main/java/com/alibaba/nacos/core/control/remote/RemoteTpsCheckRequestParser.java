@@ -29,27 +29,27 @@ import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RemoteTpsCheckRequestParser {
-    
+
     public RemoteTpsCheckRequestParser() {
         RemoteTpsCheckRequestParserRegistry.register(this);
     }
-    
+
     /**
      * parse tps check request.
      *
      * @param request request.
-     * @param meta    meta.
+     * @param meta meta.
      * @return
      */
     public abstract TpsCheckRequest parse(Request request, RequestMeta meta);
-    
+
     /**
      * get point name.
      *
      * @return
      */
     public abstract String getPointName();
-    
+
     /**
      * get name.
      *

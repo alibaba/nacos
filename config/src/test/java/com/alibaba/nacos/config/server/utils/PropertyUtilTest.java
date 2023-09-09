@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import static org.mockito.ArgumentMatchers.eq;
+
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -26,34 +26,32 @@ import org.mockito.Mockito;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.mockito.ArgumentMatchers.eq;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 public class PropertyUtilTest {
-    
-    @Mock
-    private ConfigurableEnvironment configurableEnvironment;
-    
+
+    @Mock private ConfigurableEnvironment configurableEnvironment;
+
     @Test
     public void testGetPropertyV1() {
         MockedStatic<EnvUtil> envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        
+
         EnvUtil.setEnvironment(configurableEnvironment);
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("test"))).thenReturn("test");
         Assert.assertEquals("test", new PropertyUtil().getProperty("test"));
-        
+
         envUtilMockedStatic.close();
     }
-    
+
     @Test
     public void testGetPropertyV2() {
         MockedStatic<EnvUtil> envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        
+
         EnvUtil.setEnvironment(configurableEnvironment);
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("test"), eq("default"))).thenReturn("default");
+        envUtilMockedStatic
+                .when(() -> EnvUtil.getProperty(eq("test"), eq("default")))
+                .thenReturn("default");
         Assert.assertEquals("default", new PropertyUtil().getProperty("test", "default"));
-    
+
         envUtilMockedStatic.close();
     }
-    
 }

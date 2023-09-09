@@ -16,16 +16,15 @@
 
 package com.alibaba.nacos.persistence.repository;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * Manager RowMapper {@link RowMapper} for database object mapping.
@@ -33,40 +32,43 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class RowMapperManager {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RowMapperManager.class);
-    
+
     public static final MapRowMapper MAP_ROW_MAPPER = new MapRowMapper();
-    
+
     public static Map<String, RowMapper> mapperMap = new HashMap<>(16);
-    
+
     static {
         // MAP_ROW_MAPPER
         mapperMap.put(MAP_ROW_MAPPER.getClass().getCanonicalName(), MAP_ROW_MAPPER);
     }
-    
+
     public static <D> RowMapper<D> getRowMapper(String classFullName) {
         return (RowMapper<D>) mapperMap.get(classFullName);
     }
-    
+
     /**
      * Register custom row mapper to manager.
      *
      * @param classFullName full class name of row mapper handled.
-     * @param rowMapper     row mapper
-     * @param <D>           class of row mapper handled
+     * @param rowMapper row mapper
+     * @param <D> class of row mapper handled
      */
-    public static synchronized <D> void registerRowMapper(String classFullName, RowMapper<D> rowMapper) {
+    public static synchronized <D> void registerRowMapper(
+            String classFullName, RowMapper<D> rowMapper) {
         if (mapperMap.containsKey(classFullName)) {
-            LOGGER.warn("row mapper {} conflicts, {} will be replaced by {}", classFullName,
+            LOGGER.warn(
+                    "row mapper {} conflicts, {} will be replaced by {}",
+                    classFullName,
                     mapperMap.get(classFullName).getClass().getCanonicalName(),
                     rowMapper.getClass().getCanonicalName());
         }
         mapperMap.put(classFullName, rowMapper);
     }
-    
+
     public static final class MapRowMapper implements RowMapper<Map<String, Object>> {
-        
+
         @Override
         public Map<String, Object> mapRow(ResultSet resultSet, int rowNum) throws SQLException {
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -78,5 +80,4 @@ public final class RowMapperManager {
             return map;
         }
     }
-    
 }

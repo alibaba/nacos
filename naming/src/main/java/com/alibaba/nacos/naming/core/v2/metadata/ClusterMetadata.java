@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.core.v2.metadata;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.impl.Tcp;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,58 +28,56 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author xiweng.yy
  */
 public class ClusterMetadata implements Serializable {
-    
+
     private static final long serialVersionUID = -80030989533083615L;
-    
+
     private int healthyCheckPort = 80;
-    
+
     private String healthyCheckType = Tcp.TYPE;
-    
+
     private AbstractHealthChecker healthChecker = new Tcp();
-    
-    /**
-     * Whether or not use instance port to do health check.
-     */
+
+    /** Whether or not use instance port to do health check. */
     private boolean useInstancePortForCheck = true;
-    
+
     private Map<String, String> extendData = new ConcurrentHashMap<>(1);
-    
+
     public int getHealthyCheckPort() {
         return healthyCheckPort;
     }
-    
+
     public void setHealthyCheckPort(int healthyCheckPort) {
         this.healthyCheckPort = healthyCheckPort;
     }
-    
+
     public String getHealthyCheckType() {
         return healthyCheckType;
     }
-    
+
     public void setHealthyCheckType(String healthyCheckType) {
         this.healthyCheckType = healthyCheckType;
     }
-    
+
     public AbstractHealthChecker getHealthChecker() {
         return healthChecker;
     }
-    
+
     public void setHealthChecker(AbstractHealthChecker healthChecker) {
         this.healthChecker = healthChecker;
     }
-    
+
     public boolean isUseInstancePortForCheck() {
         return useInstancePortForCheck;
     }
-    
+
     public void setUseInstancePortForCheck(boolean useInstancePortForCheck) {
         this.useInstancePortForCheck = useInstancePortForCheck;
     }
-    
+
     public Map<String, String> getExtendData() {
         return extendData;
     }
-    
+
     public void setExtendData(Map<String, String> extendData) {
         this.extendData = extendData;
     }

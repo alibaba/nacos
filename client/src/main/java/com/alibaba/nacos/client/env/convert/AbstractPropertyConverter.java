@@ -17,12 +17,12 @@
 package com.alibaba.nacos.client.env.convert;
 
 abstract class AbstractPropertyConverter<T> {
-    
+
     /**
      * convert property to target object.
+     *
      * @param property the property gets from environments
      * @return target object
      */
     abstract T convert(String property);
-    
 }

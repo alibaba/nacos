@@ -20,10 +20,9 @@ package com.alibaba.nacos.plugin.datasource.constants;
  * The data source name.
  *
  * @author hyx
- **/
-
+ */
 public class DataSourceConstant {
     public static final String MYSQL = "mysql";
-    
+
     public static final String DERBY = "derby";
 }

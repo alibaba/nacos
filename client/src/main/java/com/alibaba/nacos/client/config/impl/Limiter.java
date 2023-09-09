@@ -21,9 +21,8 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.RateLimiter;
-import org.slf4j.Logger;
-
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
 
 /**
  * Limiter.
@@ -31,33 +30,36 @@ import java.util.concurrent.TimeUnit;
  * @author Nacos
  */
 public class Limiter {
-    
+
     private static final Logger LOGGER = LogUtils.logger(Limiter.class);
-    
+
     private static final int CAPACITY_SIZE = 1000;
-    
+
     private static final int LIMIT_TIME = 1000;
-    
-    private static final Cache<String, RateLimiter> CACHE = CacheBuilder.newBuilder().initialCapacity(CAPACITY_SIZE)
-            .expireAfterAccess(1, TimeUnit.MINUTES).build();
-    
+
+    private static final Cache<String, RateLimiter> CACHE =
+            CacheBuilder.newBuilder()
+                    .initialCapacity(CAPACITY_SIZE)
+                    .expireAfterAccess(1, TimeUnit.MINUTES)
+                    .build();
+
     private static final String LIMIT_TIME_PROPERTY = "limitTime";
-    
-    /**
-     * qps 5.
-     */
+
+    /** qps 5. */
     private static double limit = 5;
-    
+
     static {
         try {
-            String limitTimeStr = NacosClientProperties.PROTOTYPE.getProperty(LIMIT_TIME_PROPERTY, String.valueOf(limit));
+            String limitTimeStr =
+                    NacosClientProperties.PROTOTYPE.getProperty(
+                            LIMIT_TIME_PROPERTY, String.valueOf(limit));
             limit = Double.parseDouble(limitTimeStr);
             LOGGER.info("limitTime:{}", limit);
         } catch (Exception e) {
             LOGGER.error("init limitTime fail", e);
         }
     }
-    
+
     /**
      * Judge whether access key is limited.
      *
@@ -77,5 +79,4 @@ public class Limiter {
         }
         return false;
     }
-    
 }

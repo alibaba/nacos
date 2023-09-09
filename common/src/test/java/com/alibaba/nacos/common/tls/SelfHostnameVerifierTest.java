@@ -16,16 +16,6 @@
 
 package com.alibaba.nacos.common.tls;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -33,22 +23,26 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
 @RunWith(MockitoJUnitRunner.class)
 public class SelfHostnameVerifierTest {
-    @Mock
-    HostnameVerifier hostnameVerifier;
-    
-    @Mock
-    SSLSession sslSession;
-    
+    @Mock HostnameVerifier hostnameVerifier;
+
+    @Mock SSLSession sslSession;
+
     SelfHostnameVerifier selfHostnameVerifier;
-    
+
     @Before
     public void setUp() {
         selfHostnameVerifier = new SelfHostnameVerifier(hostnameVerifier);
         doReturn(false).when(hostnameVerifier).verify(anyString(), eq(sslSession));
     }
-    
+
     @Test
     public void testVerify() {
         Assert.assertTrue(selfHostnameVerifier.verify("localhost", sslSession));
@@ -56,7 +50,7 @@ public class SelfHostnameVerifierTest {
         Assert.assertTrue(selfHostnameVerifier.verify("10.10.10.10", sslSession));
         // hit cache
         Assert.assertTrue(selfHostnameVerifier.verify("10.10.10.10", sslSession));
-        
+
         Assert.assertFalse(selfHostnameVerifier.verify("", sslSession));
         Assert.assertFalse(selfHostnameVerifier.verify(null, sslSession));
         verify(hostnameVerifier, times(2)).verify(any(), eq(sslSession));

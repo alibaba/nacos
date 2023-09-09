@@ -25,13 +25,13 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class ClientSyncDatumSnapshot {
-    
+
     private List<ClientSyncData> clientSyncDataList = new LinkedList<>();
-    
+
     public List<ClientSyncData> getClientSyncDataList() {
         return clientSyncDataList;
     }
-    
+
     public void setClientSyncDataList(List<ClientSyncData> clientSyncDataList) {
         this.clientSyncDataList = clientSyncDataList;
     }

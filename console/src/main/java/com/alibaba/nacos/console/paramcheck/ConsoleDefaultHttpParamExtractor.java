@@ -19,10 +19,9 @@ package com.alibaba.nacos.console.paramcheck;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Console default http param extractor.
@@ -30,12 +29,12 @@ import java.util.List;
  * @author zhuoguang
  */
 public class ConsoleDefaultHttpParamExtractor extends AbstractHttpParamExtractor {
-    
+
     @Override
     public void init() {
         addDefaultTargetRequest("console");
     }
-    
+
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
         ParamInfo paramInfo = new ParamInfo();
@@ -45,7 +44,7 @@ public class ConsoleDefaultHttpParamExtractor extends AbstractHttpParamExtractor
         paramInfos.add(paramInfo);
         return paramInfos;
     }
-    
+
     private String getAliasNamespaceId(HttpServletRequest request) {
         String namespaceId = request.getParameter("namespaceId");
         if (StringUtils.isBlank(namespaceId)) {
@@ -53,7 +52,7 @@ public class ConsoleDefaultHttpParamExtractor extends AbstractHttpParamExtractor
         }
         return namespaceId;
     }
-    
+
     private String getAliasNamespaceShowName(HttpServletRequest request) {
         String namespaceShowName = request.getParameter("namespaceName");
         return namespaceShowName;

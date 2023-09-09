@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.client.utils;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -27,7 +25,7 @@ import static org.junit.Assert.assertEquals;
  * @date 2020/11/26 3:13 PM
  */
 public class ContextPathUtilTest {
-    
+
     @Test
     public void testNormalizeContextPath() {
         assertEquals("/nacos", ContextPathUtil.normalizeContextPath("/nacos"));

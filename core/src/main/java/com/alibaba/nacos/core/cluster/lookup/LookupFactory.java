@@ -20,9 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.MemberLookup;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.core.utils.Loggers;
-
+import com.alibaba.nacos.sys.env.EnvUtil;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Objects;
@@ -33,14 +32,14 @@ import java.util.Objects;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class LookupFactory {
-    
+
     private static final String LOOKUP_MODE_TYPE = "nacos.core.member.lookup.type";
-    
+
     @SuppressWarnings("checkstyle:StaticVariableName")
     private static MemberLookup LOOK_UP = null;
-    
+
     private static LookupType currentLookupType = null;
-    
+
     /**
      * Create the target addressing pattern.
      *
@@ -48,7 +47,8 @@ public final class LookupFactory {
      * @return {@link MemberLookup}
      * @throws NacosException NacosException
      */
-    public static MemberLookup createLookUp(ServerMemberManager memberManager) throws NacosException {
+    public static MemberLookup createLookUp(ServerMemberManager memberManager)
+            throws NacosException {
         if (!EnvUtil.getStandaloneMode()) {
             String lookupType = EnvUtil.getProperty(LOOKUP_MODE_TYPE);
             LookupType type = chooseLookup(lookupType);
@@ -58,27 +58,32 @@ public final class LookupFactory {
             LOOK_UP = new StandaloneMemberLookup();
         }
         LOOK_UP.injectMemberManager(memberManager);
-        Loggers.CLUSTER.info("Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
+        Loggers.CLUSTER.info(
+                "Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
         return LOOK_UP;
     }
-    
+
     /**
      * Switch to target addressing mode.
      *
-     * @param name          target member-lookup name
+     * @param name target member-lookup name
      * @param memberManager {@link ServerMemberManager}
      * @return {@link MemberLookup}
      * @throws NacosException {@link NacosException}
      */
-    public static MemberLookup switchLookup(String name, ServerMemberManager memberManager) throws NacosException {
+    public static MemberLookup switchLookup(String name, ServerMemberManager memberManager)
+            throws NacosException {
         LookupType lookupType = LookupType.sourceOf(name);
-        
+
         if (Objects.isNull(lookupType)) {
             throw new IllegalArgumentException(
-                    "The addressing mode exists : " + name + ", just support : [" + Arrays.toString(LookupType.values())
+                    "The addressing mode exists : "
+                            + name
+                            + ", just support : ["
+                            + Arrays.toString(LookupType.values())
                             + "]");
         }
-        
+
         if (Objects.equals(currentLookupType, lookupType)) {
             return LOOK_UP;
         }
@@ -89,10 +94,11 @@ public final class LookupFactory {
         }
         LOOK_UP = newLookup;
         LOOK_UP.injectMemberManager(memberManager);
-        Loggers.CLUSTER.info("Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
+        Loggers.CLUSTER.info(
+                "Current addressing mode selection : {}", LOOK_UP.getClass().getSimpleName());
         return LOOK_UP;
     }
-    
+
     private static MemberLookup find(LookupType type) {
         if (LookupType.FILE_CONFIG.equals(type)) {
             LOOK_UP = new FileConfigMemberLookup();
@@ -105,7 +111,7 @@ public final class LookupFactory {
         // unpossible to run here
         throw new IllegalArgumentException();
     }
-    
+
     private static LookupType chooseLookup(String lookupType) {
         if (StringUtils.isNotBlank(lookupType)) {
             LookupType type = LookupType.sourceOf(lookupType);
@@ -119,36 +125,32 @@ public final class LookupFactory {
         }
         return LookupType.ADDRESS_SERVER;
     }
-    
+
     public static MemberLookup getLookUp() {
         return LOOK_UP;
     }
-    
+
     public static void destroy() throws NacosException {
         Objects.requireNonNull(LOOK_UP).destroy();
     }
-    
+
     public enum LookupType {
-        
-        /**
-         * File addressing mode.
-         */
+
+        /** File addressing mode. */
         FILE_CONFIG(1, "file"),
-        
-        /**
-         * Address server addressing mode.
-         */
+
+        /** Address server addressing mode. */
         ADDRESS_SERVER(2, "address-server");
-        
+
         private final int code;
-        
+
         private final String name;
-        
+
         LookupType(int code, String name) {
             this.code = code;
             this.name = name;
         }
-        
+
         /**
          * find one {@link LookupType} by name, if not found, return null.
          *
@@ -163,19 +165,18 @@ public final class LookupFactory {
             }
             return null;
         }
-        
+
         public int getCode() {
             return code;
         }
-        
+
         public String getName() {
             return name;
         }
-        
+
         @Override
         public String toString() {
             return name;
         }
     }
-    
 }

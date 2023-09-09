@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.pathencoder.impl;
 
 import com.alibaba.nacos.common.pathencoder.PathEncoder;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -29,9 +28,7 @@ import java.util.regex.Pattern;
  */
 public class WindowsEncoder implements PathEncoder {
 
-    /**
-     * 不应该含有 / : ? " < > | \.
-     */
+    /** 不应该含有 / : ? " < > | \. */
     private static final String PATTERN_EXP = "[^/:*?\"<>|\\\\]+";
 
     private static final Map<String, String> REG_MAPPING = new HashMap<>();

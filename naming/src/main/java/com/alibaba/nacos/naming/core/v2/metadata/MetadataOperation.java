@@ -24,58 +24,59 @@ import java.io.Serializable;
  * @author xiweng.yy
  */
 public class MetadataOperation<T> implements Serializable {
-    
+
     private static final long serialVersionUID = -111405695252896706L;
-    
+
     private String namespace;
-    
+
     private String group;
-    
+
     private String serviceName;
-    
+
     /**
-     * If the metadata is cluster or instance, the tag should be added with the identity of cluster or instance.
+     * If the metadata is cluster or instance, the tag should be added with the identity of cluster
+     * or instance.
      */
     private String tag;
-    
+
     private T metadata;
-    
+
     public String getNamespace() {
         return namespace;
     }
-    
+
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-    
+
     public String getGroup() {
         return group;
     }
-    
+
     public void setGroup(String group) {
         this.group = group;
     }
-    
+
     public String getServiceName() {
         return serviceName;
     }
-    
+
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
-    
+
     public String getTag() {
         return tag;
     }
-    
+
     public void setTag(String tag) {
         this.tag = tag;
     }
-    
+
     public T getMetadata() {
         return metadata;
     }
-    
+
     public void setMetadata(T metadata) {
         this.metadata = metadata;
     }

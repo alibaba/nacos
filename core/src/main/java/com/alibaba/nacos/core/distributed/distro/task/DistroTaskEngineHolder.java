@@ -31,28 +31,31 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DistroTaskEngineHolder implements DisposableBean {
-    
-    private final DistroDelayTaskExecuteEngine delayTaskExecuteEngine = new DistroDelayTaskExecuteEngine();
-    
-    private final DistroExecuteTaskExecuteEngine executeWorkersManager = new DistroExecuteTaskExecuteEngine();
-    
+
+    private final DistroDelayTaskExecuteEngine delayTaskExecuteEngine =
+            new DistroDelayTaskExecuteEngine();
+
+    private final DistroExecuteTaskExecuteEngine executeWorkersManager =
+            new DistroExecuteTaskExecuteEngine();
+
     public DistroTaskEngineHolder(DistroComponentHolder distroComponentHolder) {
-        DistroDelayTaskProcessor defaultDelayTaskProcessor = new DistroDelayTaskProcessor(this, distroComponentHolder);
+        DistroDelayTaskProcessor defaultDelayTaskProcessor =
+                new DistroDelayTaskProcessor(this, distroComponentHolder);
         delayTaskExecuteEngine.setDefaultTaskProcessor(defaultDelayTaskProcessor);
     }
-    
+
     public DistroDelayTaskExecuteEngine getDelayTaskExecuteEngine() {
         return delayTaskExecuteEngine;
     }
-    
+
     public DistroExecuteTaskExecuteEngine getExecuteWorkersManager() {
         return executeWorkersManager;
     }
-    
+
     public void registerNacosTaskProcessor(Object key, NacosTaskProcessor nacosTaskProcessor) {
         this.delayTaskExecuteEngine.addProcessor(key, nacosTaskProcessor);
     }
-    
+
     @Override
     public void destroy() throws Exception {
         this.delayTaskExecuteEngine.shutdown();

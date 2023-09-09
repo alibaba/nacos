@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.naming.ability;
 
-import com.alibaba.nacos.api.ability.ServerAbilities;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.ability.ServerAbilities;
+
 public class NamingAbilityInitializerTest {
-    
+
     @Test
     public void testInitialize() {
         NamingAbilityInitializer initializer = new NamingAbilityInitializer();

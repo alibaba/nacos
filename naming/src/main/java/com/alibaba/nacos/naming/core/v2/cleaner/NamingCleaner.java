@@ -22,16 +22,14 @@ package com.alibaba.nacos.naming.core.v2.cleaner;
  * @author xiweng.yy
  */
 public interface NamingCleaner {
-    
+
     /**
      * The type which be cleaned.
      *
      * @return cleaned type
      */
     String getType();
-    
-    /**
-     * Do clean operation.
-     */
+
+    /** Do clean operation. */
     void doClean();
 }

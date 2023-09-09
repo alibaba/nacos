@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.config.server.monitor;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
+
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
 
 /**
  * NotifyTaskQueueMonitorTask.
@@ -27,13 +27,13 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.MEMORY_LOG;
  * @author zongtanghu
  */
 public class ThreadTaskQueueMonitorTask implements Runnable {
-    
+
     private final AsyncNotifyService notifySingleService;
-    
+
     ThreadTaskQueueMonitorTask(AsyncNotifyService notifySingleService) {
         this.notifySingleService = notifySingleService;
     }
-    
+
     @Override
     public void run() {
         int size = ConfigExecutor.asyncNotifyQueueSize();

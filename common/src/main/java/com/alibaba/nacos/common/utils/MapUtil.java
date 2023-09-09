@@ -17,13 +17,12 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.common.NotThreadSafe;
-
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Predicate;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 /**
  * Map utils.
@@ -31,10 +30,9 @@ import java.util.function.BiFunction;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class MapUtil {
-    
-    private MapUtil() {
-    }
-    
+
+    private MapUtil() {}
+
     /**
      * Null-safe check if the specified Dictionary is empty.
      *
@@ -46,7 +44,7 @@ public class MapUtil {
     public static boolean isEmpty(Map map) {
         return (map == null || map.isEmpty());
     }
-    
+
     /**
      * Null-safe check if the specified Dictionary is empty.
      *
@@ -58,7 +56,7 @@ public class MapUtil {
     public static boolean isEmpty(Dictionary coll) {
         return (coll == null || coll.isEmpty());
     }
-    
+
     /**
      * Null-safe check if the specified Dictionary is not empty.
      *
@@ -70,7 +68,7 @@ public class MapUtil {
     public static boolean isNotEmpty(Map map) {
         return !isEmpty(map);
     }
-    
+
     /**
      * Null-safe check if the specified Dictionary is not empty.
      *
@@ -82,13 +80,13 @@ public class MapUtil {
     public static boolean isNotEmpty(Dictionary coll) {
         return !isEmpty(coll);
     }
-    
+
     /**
      * Put into map if value is not null.
      *
      * @param target target map
-     * @param key    key
-     * @param value  value
+     * @param key key
+     * @param value value
      */
     public static void putIfValNoNull(Map target, Object key, Object value) {
         Objects.requireNonNull(key, "key");
@@ -96,13 +94,13 @@ public class MapUtil {
             target.put(key, value);
         }
     }
-    
+
     /**
      * Put into map if value is not empty.
      *
      * @param target target map
-     * @param key    key
-     * @param value  value
+     * @param key key
+     * @param value value
      */
     public static void putIfValNoEmpty(Map target, Object key, Object value) {
         Objects.requireNonNull(key, "key");
@@ -130,39 +128,38 @@ public class MapUtil {
             }
         }
     }
-    
+
     /**
      * ComputeIfAbsent lazy load.
      *
-     * @param target          target Map data.
-     * @param key             map key.
+     * @param target target Map data.
+     * @param key map key.
      * @param mappingFunction function which is need to be executed.
-     * @param param1          function's parameter value1.
-     * @param param2          function's parameter value1.
+     * @param param1 function's parameter value1.
+     * @param param2 function's parameter value1.
      * @return
      */
     @NotThreadSafe
-    public static <K, C, V, T> V computeIfAbsent(Map<K, V> target, K key, BiFunction<C, T, V> mappingFunction, C param1,
-            T param2) {
-        
+    public static <K, C, V, T> V computeIfAbsent(
+            Map<K, V> target, K key, BiFunction<C, T, V> mappingFunction, C param1, T param2) {
+
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(key, "key");
         Objects.requireNonNull(mappingFunction, "mappingFunction");
         Objects.requireNonNull(param1, "param1");
         Objects.requireNonNull(param2, "param2");
-        
+
         return target.computeIfAbsent(key, (keyInner) -> mappingFunction.apply(param1, param2));
-        
     }
-    
+
     /**
      * remove value, Thread safety depends on whether the Map is a thread-safe Map.
      *
-     * @param map         map
-     * @param key         key
+     * @param map map
+     * @param key key
      * @param removeJudge judge this key can be remove
-     * @param <K>         key type
-     * @param <V>         value type
+     * @param <K> key type
+     * @param <V> value type
      * @return value
      */
     public static <K, V> V removeKey(Map<K, V> map, K key, Predicate<V> removeJudge) {

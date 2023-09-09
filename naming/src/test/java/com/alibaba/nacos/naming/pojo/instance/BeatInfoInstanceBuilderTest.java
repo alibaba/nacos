@@ -16,39 +16,34 @@
 
 package com.alibaba.nacos.naming.pojo.instance;
 
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import com.alibaba.nacos.naming.healthcheck.RsInfo;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.naming.healthcheck.RsInfo;
+import java.util.HashMap;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
 @RunWith(MockitoJUnitRunner.class)
 public class BeatInfoInstanceBuilderTest {
-    
-    @Mock
-    private HttpServletRequest request;
-    
+
+    @Mock private HttpServletRequest request;
+
     private RsInfo beatInfo;
-    
+
     private BeatInfoInstanceBuilder builder;
-    
+
     @BeforeClass
     public static void setUpBeforeClass() {
         NacosServiceLoader.load(InstanceExtensionHandler.class);
     }
-    
+
     @Before
     public void setUp() throws Exception {
         builder = BeatInfoInstanceBuilder.newBuilder();
@@ -61,7 +56,7 @@ public class BeatInfoInstanceBuilderTest {
         beatInfo.setWeight(10);
         beatInfo.setMetadata(new HashMap<>());
     }
-    
+
     @Test
     public void testBuild() {
         Instance actual = builder.setServiceName("g@@s").setBeatInfo(beatInfo).build();

@@ -20,14 +20,14 @@ import com.alibaba.nacos.common.notify.Event;
 
 public class TraceTestEvent extends Event {
     private static final long serialVersionUID = 8568231862586636388L;
-    
+
     static class TraceTestEvent1 extends TraceTestEvent {
-        
+
         private static final long serialVersionUID = 4188906203345433816L;
     }
-    
+
     static class TraceTestEvent2 extends TraceTestEvent {
-        
+
         private static final long serialVersionUID = -7358195336881398548L;
     }
 }

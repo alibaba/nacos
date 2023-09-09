@@ -26,9 +26,9 @@ import com.alibaba.nacos.api.remote.request.Request;
  * @author xiweng.yy
  */
 public abstract class AbstractClusterRequest extends Request {
-    
+
     private static final String CLUSTER = "cluster";
-    
+
     @Override
     public String getModule() {
         return CLUSTER;

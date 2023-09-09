@@ -25,17 +25,17 @@ import java.util.Set;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Observable {
-    
+
     private transient boolean changed = false;
-    
+
     private transient Set<Observer> obs = new ConcurrentHashSet<>();
-    
+
     private volatile int observerCnt = 0;
-    
+
     /**
-     * Adds an observer to the set of observers for this object, provided that it is not the same as some observer
-     * already in the set. The order in which notifications will be delivered to multiple observers is not specified.
-     * See the class comment.
+     * Adds an observer to the set of observers for this object, provided that it is not the same as
+     * some observer already in the set. The order in which notifications will be delivered to
+     * multiple observers is not specified. See the class comment.
      *
      * @param o an observer to be added.
      * @throws NullPointerException if the parameter o is null.
@@ -46,10 +46,10 @@ public class Observable {
         observerCnt++;
         o.update(this);
     }
-    
+
     /**
-     * Deletes an observer from the set of observers of this object. Passing {@code null} to this method will have no
-     * effect.
+     * Deletes an observer from the set of observers of this object. Passing {@code null} to this
+     * method will have no effect.
      *
      * @param o the observer to be deleted.
      */
@@ -57,12 +57,14 @@ public class Observable {
         obs.remove(o);
         observerCnt--;
     }
-    
+
     /**
-     * If this object has changed, as indicated by the {@code hasChanged} method, then notify all of its observers and
-     * then call the {@code clearChanged} method to indicate that this object has no longer changed.
+     * If this object has changed, as indicated by the {@code hasChanged} method, then notify all of
+     * its observers and then call the {@code clearChanged} method to indicate that this object has
+     * no longer changed.
      *
-     * <p>Each observer has its {@code update} method called with one argument: this observable object.
+     * <p>Each observer has its {@code update} method called with one argument: this observable
+     * object.
      */
     public void notifyObservers() {
         synchronized (this) {
@@ -87,26 +89,24 @@ public class Observable {
             observer.update(this);
         }
     }
-    
-    /**
-     * Clears the observer list so that this object no longer has any observers.
-     */
+
+    /** Clears the observer list so that this object no longer has any observers. */
     public void deleteObservers() {
         obs.clear();
     }
-    
+
     /**
-     * Marks this {@code Observable} object as having been changed; the {@code hasChanged} method will now return {@code
-     * true}.
+     * Marks this {@code Observable} object as having been changed; the {@code hasChanged} method
+     * will now return {@code true}.
      */
     protected synchronized void setChanged() {
         changed = true;
     }
-    
+
     /**
-     * Indicates that this object has no longer changed, or that it has already notified all of its observers of its
-     * most recent change, so that the {@code hasChanged} method will now return {@code false}. This method is called
-     * automatically by the {@code notifyObservers} methods.
+     * Indicates that this object has no longer changed, or that it has already notified all of its
+     * observers of its most recent change, so that the {@code hasChanged} method will now return
+     * {@code false}. This method is called automatically by the {@code notifyObservers} methods.
      *
      * @see java.util.Observable#notifyObservers()
      * @see java.util.Observable#notifyObservers(java.lang.Object)
@@ -114,17 +114,17 @@ public class Observable {
     protected synchronized void clearChanged() {
         changed = false;
     }
-    
+
     /**
      * Tests if this object has changed.
      *
-     * @return {@code true} if and only if the {@code setChanged} method has been called more recently than the {@code
-     * clearChanged} method on this object; {@code false} otherwise.
+     * @return {@code true} if and only if the {@code setChanged} method has been called more
+     *     recently than the {@code clearChanged} method on this object; {@code false} otherwise.
      */
     public synchronized boolean hasChanged() {
         return changed;
     }
-    
+
     /**
      * Returns the number of observers of this {@code Observable} object.
      *

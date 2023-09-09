@@ -24,10 +24,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Naming instance beat http param extractor.
@@ -35,22 +34,29 @@ import java.util.List;
  * @author zhuoguang
  */
 public class NamingInstanceBeatHttpParamExtractor extends AbstractHttpParamExtractor {
-    
+
     @Override
     public void init() {
-        addTargetRequest(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/beat",
+        addTargetRequest(
+                UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
+                        + "/beat",
                 HttpMethod.PUT);
-        addTargetRequest(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
-                + "/beat", HttpMethod.PUT);
+        addTargetRequest(
+                UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
+                        + "/beat",
+                HttpMethod.PUT);
     }
-    
+
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
         ParamInfo paramInfo = new ParamInfo();
         String serviceName = request.getParameter("serviceName");
         String groupName = request.getParameter("groupName");
         String groupServiceName = serviceName;
-        if (StringUtils.isNotBlank(groupServiceName) && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+        if (StringUtils.isNotBlank(groupServiceName)
+                && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
             String[] splits = groupServiceName.split(Constants.SERVICE_INFO_SPLITER, 2);
             groupName = splits[0];
             serviceName = splits[1];

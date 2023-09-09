@@ -18,11 +18,12 @@ package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
@@ -30,13 +31,6 @@ import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.boot.env.OriginTrackedMapPropertySource;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.ConfigurableEnvironment;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -45,6 +39,11 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.boot.env.OriginTrackedMapPropertySource;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
  * init environment config.
@@ -53,66 +52,64 @@ import java.util.concurrent.TimeUnit;
  * @since 0.5.0
  */
 public class StartingApplicationListener implements NacosApplicationListener {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(StartingApplicationListener.class);
-    
+
     private static final String MODE_PROPERTY_KEY_STAND_MODE = "nacos.mode";
-    
+
     private static final String MODE_PROPERTY_KEY_FUNCTION_MODE = "nacos.function.mode";
-    
+
     private static final String LOCAL_IP_PROPERTY_KEY = "nacos.local.ip";
-    
+
     private static final String NACOS_APPLICATION_CONF = "nacos_application_conf";
-    
+
     private static final String NACOS_MODE_STAND_ALONE = "stand alone";
-    
+
     private static final String NACOS_MODE_CLUSTER = "cluster";
-    
+
     private static final String DEFAULT_FUNCTION_MODE = "All";
-    
+
     private static final String DEFAULT_DATABASE = "mysql";
-    
-    /**
-     * May be removed with the upgrade of springboot version.
-     */
+
+    /** May be removed with the upgrade of springboot version. */
     public static final String DATASOURCE_PLATFORM_PROPERTY_OLD = "spring.datasource.platform";
-    
+
     private static final String DATASOURCE_PLATFORM_PROPERTY = "spring.sql.init.platform";
-    
+
     private static final String DERBY_DATABASE = "derby";
-    
+
     private static final String DEFAULT_DATASOURCE_PLATFORM = "";
-    
+
     private static final String DATASOURCE_MODE_EXTERNAL = "external";
-    
+
     private static final String DATASOURCE_MODE_EMBEDDED = "embedded";
-    
+
     private static final Map<String, Object> SOURCES = new ConcurrentHashMap<>();
-    
+
     private ScheduledExecutorService scheduledExecutorService;
-    
+
     private volatile boolean starting;
-    
+
     @Override
     public void starting() {
         starting = true;
     }
-    
+
     @Override
     public void environmentPrepared(ConfigurableEnvironment environment) {
         makeWorkDir();
-        
+
         injectEnvironment(environment);
-        
+
         loadPreProperties(environment);
-        
+
         initSystemProperty();
     }
-    
+
     @Override
     public void contextPrepared(ConfigurableApplicationContext context) {
         logClusterConf();
-        
+
         logStarting();
     }
 
@@ -124,69 +121,74 @@ public class StartingApplicationListener implements NacosApplicationListener {
     @Override
     public void started(ConfigurableApplicationContext context) {
         starting = false;
-        
+
         closeExecutor();
-        
+
         ApplicationUtils.setStarted(true);
         judgeStorageMode(context.getEnvironment());
     }
-    
+
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
         starting = false;
-        
+
         makeWorkDir();
-        
+
         LOGGER.error("Startup errors : ", exception);
         ThreadPoolManager.shutdown();
         WatchFileCenter.shutdown();
         NotifyCenter.shutdown();
-        
+
         closeExecutor();
-        
+
         context.close();
-        
-        LOGGER.error("Nacos failed to start, please see {} for more details.",
+
+        LOGGER.error(
+                "Nacos failed to start, please see {} for more details.",
                 Paths.get(EnvUtil.getNacosHome(), "logs/nacos.log"));
     }
-    
+
     private void injectEnvironment(ConfigurableEnvironment environment) {
         EnvUtil.setEnvironment(environment);
     }
-    
+
     private void loadPreProperties(ConfigurableEnvironment environment) {
         try {
             SOURCES.putAll(EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource()));
-            environment.getPropertySources()
+            environment
+                    .getPropertySources()
                     .addLast(new OriginTrackedMapPropertySource(NACOS_APPLICATION_CONF, SOURCES));
             registerWatcher();
         } catch (Exception e) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
     }
-    
+
     private void registerWatcher() throws NacosException {
-        
-        WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), new FileWatcher() {
-            @Override
-            public void onChange(FileChangeEvent event) {
-                try {
-                    Map<String, ?> tmp = EnvUtil.loadProperties(EnvUtil.getApplicationConfFileResource());
-                    SOURCES.putAll(tmp);
-                    NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
-                } catch (IOException ignore) {
-                    LOGGER.warn("Failed to monitor file ", ignore);
-                }
-            }
-            
-            @Override
-            public boolean interest(String context) {
-                return StringUtils.contains(context, "application.properties");
-            }
-        });
-        
+
+        WatchFileCenter.registerWatcher(
+                EnvUtil.getConfPath(),
+                new FileWatcher() {
+                    @Override
+                    public void onChange(FileChangeEvent event) {
+                        try {
+                            Map<String, ?> tmp =
+                                    EnvUtil.loadProperties(
+                                            EnvUtil.getApplicationConfFileResource());
+                            SOURCES.putAll(tmp);
+                            NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
+                        } catch (IOException ignore) {
+                            LOGGER.warn("Failed to monitor file ", ignore);
+                        }
+                    }
+
+                    @Override
+                    public boolean interest(String context) {
+                        return StringUtils.contains(context, "application.properties");
+                    }
+                });
     }
-    
+
     private void initSystemProperty() {
         if (EnvUtil.getStandaloneMode()) {
             System.setProperty(MODE_PROPERTY_KEY_STAND_MODE, NACOS_MODE_STAND_ALONE);
@@ -200,10 +202,10 @@ public class StartingApplicationListener implements NacosApplicationListener {
         } else if (EnvUtil.FUNCTION_MODE_NAMING.equals(EnvUtil.getFunctionMode())) {
             System.setProperty(MODE_PROPERTY_KEY_FUNCTION_MODE, EnvUtil.FUNCTION_MODE_NAMING);
         }
-        
+
         System.setProperty(LOCAL_IP_PROPERTY_KEY, InetUtils.getSelfIP());
     }
-    
+
     private void logClusterConf() {
         if (!EnvUtil.getStandaloneMode()) {
             try {
@@ -214,13 +216,13 @@ public class StartingApplicationListener implements NacosApplicationListener {
             }
         }
     }
-    
+
     private void closeExecutor() {
         if (scheduledExecutorService != null) {
             scheduledExecutorService.shutdownNow();
         }
     }
-    
+
     private void makeWorkDir() {
         String[] dirNames = new String[] {"logs", "conf", "data"};
         for (String dirName : dirNames) {
@@ -232,47 +234,56 @@ public class StartingApplicationListener implements NacosApplicationListener {
             }
         }
     }
-    
+
     private void logStarting() {
         if (!EnvUtil.getStandaloneMode()) {
-            
-            scheduledExecutorService = ExecutorFactory.newSingleScheduledExecutorService(
-                    new NameThreadFactory("com.alibaba.nacos.core.nacos-starting"));
-            
-            scheduledExecutorService.scheduleWithFixedDelay(() -> {
-                if (starting) {
-                    LOGGER.info("Nacos is starting...");
-                }
-            }, 1, 1, TimeUnit.SECONDS);
+
+            scheduledExecutorService =
+                    ExecutorFactory.newSingleScheduledExecutorService(
+                            new NameThreadFactory("com.alibaba.nacos.core.nacos-starting"));
+
+            scheduledExecutorService.scheduleWithFixedDelay(
+                    () -> {
+                        if (starting) {
+                            LOGGER.info("Nacos is starting...");
+                        }
+                    },
+                    1,
+                    1,
+                    TimeUnit.SECONDS);
         }
     }
-    
+
     private void judgeStorageMode(ConfigurableEnvironment env) {
-        
+
         // External data sources are used by default in cluster mode
         String platform = this.getDatasourcePlatform(env);
         boolean useExternalStorage =
-                !DEFAULT_DATASOURCE_PLATFORM.equalsIgnoreCase(platform) && !DERBY_DATABASE.equalsIgnoreCase(platform);
-        
+                !DEFAULT_DATASOURCE_PLATFORM.equalsIgnoreCase(platform)
+                        && !DERBY_DATABASE.equalsIgnoreCase(platform);
+
         // must initialize after setUseExternalDB
         // This value is true in stand-alone mode and false in cluster mode
-        // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on
+        // If this value is set to true in cluster mode, nacos's distributed storage engine is
+        // turned on
         // default value is depend on ${nacos.standalone}
-        
+
         if (!useExternalStorage) {
-            boolean embeddedStorage = EnvUtil.getStandaloneMode() || Boolean.getBoolean("embeddedStorage");
+            boolean embeddedStorage =
+                    EnvUtil.getStandaloneMode() || Boolean.getBoolean("embeddedStorage");
             // If the embedded data source storage is not turned on, it is automatically
             // upgraded to the external data source storage, as before
             if (!embeddedStorage) {
                 useExternalStorage = true;
             }
         }
-        
-        LOGGER.info("Nacos started successfully in {} mode. use {} storage",
+
+        LOGGER.info(
+                "Nacos started successfully in {} mode. use {} storage",
                 System.getProperty(MODE_PROPERTY_KEY_STAND_MODE),
                 useExternalStorage ? DATASOURCE_MODE_EXTERNAL : DATASOURCE_MODE_EMBEDDED);
     }
-    
+
     /**
      * get datasource platform.
      *
@@ -280,9 +291,11 @@ public class StartingApplicationListener implements NacosApplicationListener {
      * @return
      */
     private String getDatasourcePlatform(ConfigurableEnvironment env) {
-        String platform = env.getProperty(DATASOURCE_PLATFORM_PROPERTY, DEFAULT_DATASOURCE_PLATFORM);
+        String platform =
+                env.getProperty(DATASOURCE_PLATFORM_PROPERTY, DEFAULT_DATASOURCE_PLATFORM);
         if (StringUtils.isBlank(platform)) {
-            platform = env.getProperty(DATASOURCE_PLATFORM_PROPERTY_OLD, DEFAULT_DATASOURCE_PLATFORM);
+            platform =
+                    env.getProperty(DATASOURCE_PLATFORM_PROPERTY_OLD, DEFAULT_DATASOURCE_PLATFORM);
         }
         return platform;
     }

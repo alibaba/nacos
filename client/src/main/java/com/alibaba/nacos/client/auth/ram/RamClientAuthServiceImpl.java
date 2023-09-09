@@ -28,12 +28,11 @@ import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Client Auth service implementation for aliyun RAM.
@@ -41,20 +40,20 @@ import java.util.Properties;
  * @author xiweng.yy
  */
 public class RamClientAuthServiceImpl extends AbstractClientAuthService {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(RamClientAuthServiceImpl.class);
-    
+
     private final RamContext ramContext;
-    
+
     private final Map<String, AbstractResourceInjector> resourceInjectors;
-    
+
     public RamClientAuthServiceImpl() {
         ramContext = new RamContext();
         resourceInjectors = new HashMap<>();
         resourceInjectors.put(SignType.NAMING, new NamingResourceInjector());
         resourceInjectors.put(SignType.CONFIG, new ConfigResourceInjector());
     }
-    
+
     @Override
     public Boolean login(Properties properties) {
         if (ramContext.validate()) {
@@ -65,7 +64,7 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
         loadSecretKey(properties);
         return true;
     }
-    
+
     private void loadRoleName(Properties properties) {
         String ramRoleName = properties.getProperty(PropertyKeyConst.RAM_ROLE_NAME);
         if (!StringUtils.isBlank(ramRoleName)) {
@@ -73,17 +72,17 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
             ramContext.setRamRoleName(ramRoleName);
         }
     }
-    
+
     private void loadAccessKey(Properties properties) {
         String accessKey = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
         ramContext.setAccessKey(StringUtils.isBlank(accessKey) ? SpasAdapter.getAk() : accessKey);
     }
-    
+
     private void loadSecretKey(Properties properties) {
         String secretKey = properties.getProperty(PropertyKeyConst.SECRET_KEY);
         ramContext.setSecretKey(StringUtils.isBlank(secretKey) ? SpasAdapter.getSk() : secretKey);
     }
-    
+
     @Override
     public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
         LoginIdentityContext result = new LoginIdentityContext();
@@ -93,15 +92,16 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
         resourceInjectors.get(resource.getType()).doInject(resource, ramContext, result);
         return result;
     }
-    
+
     private boolean notFountInjector(String type) {
         if (!resourceInjectors.containsKey(type)) {
-            LOGGER.warn("Injector for type {} not found, will use default ram identity context.", type);
+            LOGGER.warn(
+                    "Injector for type {} not found, will use default ram identity context.", type);
             return true;
         }
         return false;
     }
-    
+
     @Override
     public void shutdown() throws NacosException {
         SpasAdapter.freeCredentialInstance();

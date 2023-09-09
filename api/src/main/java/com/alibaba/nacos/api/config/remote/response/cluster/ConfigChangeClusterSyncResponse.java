@@ -24,6 +24,4 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @author liuzunfei
  * @version $Id: ConfigChangeClusterSyncResponse.java, v 0.1 2020年08月11日 4:32 PM liuzunfei Exp $
  */
-public class ConfigChangeClusterSyncResponse extends Response {
-    
-}
+public class ConfigChangeClusterSyncResponse extends Response {}

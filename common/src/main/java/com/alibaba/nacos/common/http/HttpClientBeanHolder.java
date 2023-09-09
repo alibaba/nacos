@@ -20,36 +20,37 @@ import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Create a rest template to ensure that each custom client config and rest template are in one-to-one correspondence.
+ * Create a rest template to ensure that each custom client config and rest template are in
+ * one-to-one correspondence.
  *
  * @author mai.jh
  */
 public final class HttpClientBeanHolder {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(HttpClientBeanHolder.class);
-    
+
     private static final Map<String, NacosRestTemplate> SINGLETON_REST = new HashMap<>(10);
-    
-    private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST = new HashMap<>(10);
-    
+
+    private static final Map<String, NacosAsyncRestTemplate> SINGLETON_ASYNC_REST =
+            new HashMap<>(10);
+
     private static final AtomicBoolean ALREADY_SHUTDOWN = new AtomicBoolean(false);
-    
+
     static {
         ThreadUtils.addShutdownHook(HttpClientBeanHolder::shutdown);
     }
-    
+
     public static NacosRestTemplate getNacosRestTemplate(Logger logger) {
         return getNacosRestTemplate(new DefaultHttpClientFactory(logger));
     }
-    
+
     public static NacosRestTemplate getNacosRestTemplate(HttpClientFactory httpClientFactory) {
         if (httpClientFactory == null) {
             throw new NullPointerException("httpClientFactory is null");
@@ -68,12 +69,13 @@ public final class HttpClientBeanHolder {
         }
         return nacosRestTemplate;
     }
-    
+
     public static NacosAsyncRestTemplate getNacosAsyncRestTemplate(Logger logger) {
         return getNacosAsyncRestTemplate(new DefaultHttpClientFactory(logger));
     }
-    
-    public static NacosAsyncRestTemplate getNacosAsyncRestTemplate(HttpClientFactory httpClientFactory) {
+
+    public static NacosAsyncRestTemplate getNacosAsyncRestTemplate(
+            HttpClientFactory httpClientFactory) {
         if (httpClientFactory == null) {
             throw new NullPointerException("httpClientFactory is null");
         }
@@ -91,26 +93,25 @@ public final class HttpClientBeanHolder {
         }
         return nacosAsyncRestTemplate;
     }
-    
-    /**
-     * Shutdown common http client.
-     */
+
+    /** Shutdown common http client. */
     private static void shutdown() {
         if (!ALREADY_SHUTDOWN.compareAndSet(false, true)) {
             return;
         }
         LOGGER.warn("[HttpClientBeanHolder] Start destroying common HttpClient");
-        
+
         try {
             shutdown(DefaultHttpClientFactory.class.getName());
         } catch (Exception ex) {
-            LOGGER.error("An exception occurred when the common HTTP client was closed : {}",
+            LOGGER.error(
+                    "An exception occurred when the common HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
         }
-        
+
         LOGGER.warn("[HttpClientBeanHolder] Destruction of the end");
     }
-    
+
     /**
      * Shutdown http client holder and close remove template.
      *
@@ -121,7 +122,7 @@ public final class HttpClientBeanHolder {
         shutdownNacostSyncRest(className);
         shutdownNacosAsyncRest(className);
     }
-    
+
     /**
      * Shutdown sync http client holder and remove template.
      *
@@ -135,7 +136,7 @@ public final class HttpClientBeanHolder {
             SINGLETON_REST.remove(className);
         }
     }
-    
+
     /**
      * Shutdown async http client holder and remove template.
      *

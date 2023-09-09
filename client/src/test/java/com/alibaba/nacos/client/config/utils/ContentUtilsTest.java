@@ -18,26 +18,21 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-
-import java.util.Arrays;
-
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
 
+import java.util.Arrays;
+import org.junit.rules.ExpectedException;
+
 public class ContentUtilsTest {
-    
-    @Rule
-    public ExpectedException exceptionRule = ExpectedException.none();
-    
+
+    @Rule public ExpectedException exceptionRule = ExpectedException.none();
+
     @Test
     public void testVerifyIncrementPubContent() {
         String content = "aabbb";
         ContentUtils.verifyIncrementPubContent(content);
     }
-    
+
     @Test
     public void testVerifyIncrementPubContentFail1() {
         exceptionRule.expect(IllegalArgumentException.class);
@@ -45,7 +40,7 @@ public class ContentUtilsTest {
         String content = null;
         ContentUtils.verifyIncrementPubContent(content);
     }
-    
+
     @Test
     public void testVerifyIncrementPubContentFail2() {
         exceptionRule.expect(IllegalArgumentException.class);
@@ -53,7 +48,7 @@ public class ContentUtilsTest {
         String content = "aa\rbbb";
         ContentUtils.verifyIncrementPubContent(content);
     }
-    
+
     @Test
     public void testVerifyIncrementPubContentFail3() {
         exceptionRule.expect(IllegalArgumentException.class);
@@ -61,7 +56,7 @@ public class ContentUtilsTest {
         String content = "";
         ContentUtils.verifyIncrementPubContent(content);
     }
-    
+
     @Test
     public void testVerifyIncrementPubContentFail4() {
         exceptionRule.expect(IllegalArgumentException.class);
@@ -69,40 +64,40 @@ public class ContentUtilsTest {
         String content = "aa" + WORD_SEPARATOR + "bbb";
         ContentUtils.verifyIncrementPubContent(content);
     }
-    
+
     @Test
     public void testGetContentIdentity() {
         String content = "aa" + WORD_SEPARATOR + "bbb";
         String content1 = ContentUtils.getContentIdentity(content);
         Assert.assertEquals("aa", content1);
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testGetContentIdentityFail() {
         String content = "aabbb";
         ContentUtils.getContentIdentity(content);
     }
-    
+
     @Test
     public void testGetContent() {
         String content = "aa" + WORD_SEPARATOR + "bbb";
         String content1 = ContentUtils.getContent(content);
         Assert.assertEquals("bbb", content1);
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testGetContentFail() {
         String content = "aabbb";
         ContentUtils.getContent(content);
     }
-    
+
     @Test
     public void testTruncateContent() {
         String content = "aa";
         String actual = ContentUtils.truncateContent(content);
         Assert.assertEquals(content, actual);
     }
-    
+
     @Test
     public void testTruncateLongContent() {
         char[] arr = new char[101];
@@ -111,7 +106,7 @@ public class ContentUtilsTest {
         String actual = ContentUtils.truncateContent(content);
         Assert.assertEquals(content.substring(0, 100) + "...", actual);
     }
-    
+
     @Test
     public void testTruncateContentNull() {
         String actual = ContentUtils.truncateContent(null);

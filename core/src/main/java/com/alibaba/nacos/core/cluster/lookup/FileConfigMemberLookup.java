@@ -17,16 +17,15 @@
 package com.alibaba.nacos.core.cluster.lookup;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberUtil;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
-import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -37,54 +36,57 @@ import java.util.List;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class FileConfigMemberLookup extends AbstractMemberLookup {
-    
+
     private static final String DEFAULT_SEARCH_SEQ = "cluster.conf";
-    
-    private FileWatcher watcher = new FileWatcher() {
-        @Override
-        public void onChange(FileChangeEvent event) {
-            readClusterConfFromDisk();
-        }
-        
-        @Override
-        public boolean interest(String context) {
-            return StringUtils.contains(context, DEFAULT_SEARCH_SEQ);
-        }
-    };
-    
+
+    private FileWatcher watcher =
+            new FileWatcher() {
+                @Override
+                public void onChange(FileChangeEvent event) {
+                    readClusterConfFromDisk();
+                }
+
+                @Override
+                public boolean interest(String context) {
+                    return StringUtils.contains(context, DEFAULT_SEARCH_SEQ);
+                }
+            };
+
     @Override
     public void doStart() throws NacosException {
         readClusterConfFromDisk();
-        
+
         // Use the inotify mechanism to monitor file changes and automatically
         // trigger the reading of cluster.conf
         try {
             WatchFileCenter.registerWatcher(EnvUtil.getConfPath(), watcher);
         } catch (Throwable e) {
-            Loggers.CLUSTER.error("An exception occurred in the launch file monitor : {}", e.getMessage());
+            Loggers.CLUSTER.error(
+                    "An exception occurred in the launch file monitor : {}", e.getMessage());
         }
     }
-    
+
     @Override
     public boolean useAddressServer() {
         return false;
     }
-    
+
     @Override
     protected void doDestroy() throws NacosException {
         WatchFileCenter.deregisterWatcher(EnvUtil.getConfPath(), watcher);
     }
-    
+
     private void readClusterConfFromDisk() {
         Collection<Member> tmpMembers = new ArrayList<>();
         try {
             List<String> tmp = EnvUtil.readClusterConf();
             tmpMembers = MemberUtil.readServerConf(tmp);
         } catch (Throwable e) {
-            Loggers.CLUSTER
-                    .error("nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}", e.getMessage());
+            Loggers.CLUSTER.error(
+                    "nacos-XXXX [serverlist] failed to get serverlist from disk!, error : {}",
+                    e.getMessage());
         }
-        
+
         afterLookup(tmpMembers);
     }
 }

@@ -30,40 +30,40 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class SpringValueConfigsInitializer implements ControlConfigsInitializer {
-    
+
     @Value("${nacos.plugin.control.tps.barrier.creator:nacos}")
     private String tpsBarrierCreator = "nacos";
-    
+
     @Value("${nacos.plugin.control.tps.barrier.rule.creator:nacos}")
     private String tpsRuleBarrierCreator = "nacos";
-    
+
     @Value("${nacos.plugin.control.connection.runtime.ejector:nacos}")
     private String connectionRuntimeEjector = "nacos";
-    
+
     @Value("${nacos.plugin.control.connection.manager:nacos}")
     private String connectionManager = "nacos";
-    
+
     @Value("${nacos.plugin.control.tps.manager:nacos}")
     private String tpsManager = "nacos";
-    
+
     @Value("${nacos.plugin.control.rule.external.storage:}")
     private String ruleExternalStorage = "";
-    
+
     @Value("${nacos.plugin.control.rule.parser:nacos}")
     private String ruleParser = "nacos";
-    
+
     @Value("${nacos.plugin.control.rule.local.basedir:}")
     private String localRuleStorageBaseDir = "";
-    
+
     @Override
     public void initialize(ControlConfigs controlConfigs) {
         controlConfigs.setTpsManager(tpsManager);
         controlConfigs.setTpsBarrierCreator(tpsBarrierCreator);
         controlConfigs.setTpsRuleBarrierCreator(tpsRuleBarrierCreator);
-        
+
         controlConfigs.setConnectionRuntimeEjector(connectionRuntimeEjector);
         controlConfigs.setConnectionManager(connectionManager);
-        
+
         controlConfigs.setRuleParser(ruleParser);
         if (StringUtils.isNotBlank(localRuleStorageBaseDir)) {
             controlConfigs.setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
@@ -71,6 +71,5 @@ public class SpringValueConfigsInitializer implements ControlConfigsInitializer 
             controlConfigs.setLocalRuleStorageBaseDir(EnvUtil.getNacosHome());
         }
         controlConfigs.setRuleExternalStorage(ruleExternalStorage);
-        
     }
 }

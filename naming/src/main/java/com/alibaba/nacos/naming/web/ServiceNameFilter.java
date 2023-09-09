@@ -22,7 +22,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.OverrideParameterRequestWrapper;
-
+import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -30,27 +30,26 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 /**
  * Service name filter. This class is created for adapting 1.x. client and old openAPI.
- * <p>
- * Because the old version will auto combined group and serviceName in old {@link DistroFilter}. So client and openAPI
- * can ignore group name.
- * </p>
+ *
+ * <p>Because the old version will auto combined group and serviceName in old {@link DistroFilter}.
+ * So client and openAPI can ignore group name.
  *
  * @author xiweng.yy
  */
 public class ServiceNameFilter implements Filter {
-    
+
     @Override
-    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
+    public void doFilter(
+            ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain)
             throws IOException, ServletException {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
         try {
             String serviceName = request.getParameter(CommonParams.SERVICE_NAME);
-            
+
             if (StringUtils.isNotBlank(serviceName)) {
                 serviceName = serviceName.trim();
             }
@@ -58,25 +57,29 @@ public class ServiceNameFilter implements Filter {
             if (StringUtils.isBlank(groupName)) {
                 groupName = Constants.DEFAULT_GROUP;
             }
-            
+
             // use groupName@@serviceName as new service name:
             String groupedServiceName = serviceName;
-            if (StringUtils.isNotBlank(serviceName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+            if (StringUtils.isNotBlank(serviceName)
+                    && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
                 groupedServiceName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
             }
             if (StringUtils.isNotBlank(groupedServiceName)) {
                 try {
                     NamingUtils.checkServiceNameFormat(groupedServiceName);
                 } catch (IllegalArgumentException e) {
-                    resp.sendError(HttpServletResponse.SC_BAD_REQUEST,
+                    resp.sendError(
+                            HttpServletResponse.SC_BAD_REQUEST,
                             "Service name filter error," + ExceptionUtil.getAllExceptionMsg(e));
                 }
             }
-            OverrideParameterRequestWrapper requestWrapper = OverrideParameterRequestWrapper.buildRequest(request);
+            OverrideParameterRequestWrapper requestWrapper =
+                    OverrideParameterRequestWrapper.buildRequest(request);
             requestWrapper.addParameter(CommonParams.SERVICE_NAME, groupedServiceName);
             filterChain.doFilter(requestWrapper, servletResponse);
         } catch (Exception e) {
-            resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+            resp.sendError(
+                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "Service name filter error," + ExceptionUtil.getAllExceptionMsg(e));
         }
     }

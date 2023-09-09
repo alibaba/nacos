@@ -16,16 +16,14 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import org.junit.Test;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-
 public class AggrWhitelistTest {
-    
+
     @Test
     public void testIsAggrDataId() {
         List<String> list = new ArrayList<String>();
@@ -33,7 +31,7 @@ public class AggrWhitelistTest {
         list.add("NS_NACOS_SUBSCRIPTION_TOPIC_*");
         list.add("com.taobao.tae.AppListOnGrid-*");
         AggrWhitelist.compile(list);
-        
+
         assertFalse(AggrWhitelist.isAggrDataId("com.abc"));
         assertFalse(AggrWhitelist.isAggrDataId("com.taobao.jiuren"));
         assertFalse(AggrWhitelist.isAggrDataId("com.taobao.jiurenABC"));

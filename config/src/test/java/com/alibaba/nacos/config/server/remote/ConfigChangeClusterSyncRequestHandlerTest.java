@@ -22,31 +22,29 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
+import java.io.IOException;
 import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.io.IOException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigChangeClusterSyncRequestHandlerTest extends TestCase {
 
     private ConfigChangeClusterSyncRequestHandler configChangeClusterSyncRequestHandler;
 
-    @Mock
-    private DumpService dumpService;
+    @Mock private DumpService dumpService;
 
     @Before
     public void setUp() throws IOException {
-        configChangeClusterSyncRequestHandler = new ConfigChangeClusterSyncRequestHandler(dumpService);
+        configChangeClusterSyncRequestHandler =
+                new ConfigChangeClusterSyncRequestHandler(dumpService);
     }
 
     @Test
     public void testHandle() throws NacosException {
-        ConfigChangeClusterSyncRequest configChangeSyncRequest = new ConfigChangeClusterSyncRequest();
+        ConfigChangeClusterSyncRequest configChangeSyncRequest =
+                new ConfigChangeClusterSyncRequest();
         configChangeSyncRequest.setRequestId("");
         configChangeSyncRequest.setDataId("dataId");
         configChangeSyncRequest.setTag("tag");
@@ -54,7 +52,9 @@ public class ConfigChangeClusterSyncRequestHandlerTest extends TestCase {
         configChangeSyncRequest.setBeta(false);
         RequestMeta meta = new RequestMeta();
         meta.setClientIp("1.1.1.1");
-        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse = configChangeClusterSyncRequestHandler.handle(configChangeSyncRequest, meta);
-        assertEquals(configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
+        ConfigChangeClusterSyncResponse configChangeClusterSyncResponse =
+                configChangeClusterSyncRequestHandler.handle(configChangeSyncRequest, meta);
+        assertEquals(
+                configChangeClusterSyncResponse.getResultCode(), ResponseCode.SUCCESS.getCode());
     }
 }

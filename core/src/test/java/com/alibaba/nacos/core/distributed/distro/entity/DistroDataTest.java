@@ -18,28 +18,26 @@ package com.alibaba.nacos.core.distributed.distro.entity;
 
 import com.alibaba.nacos.consistency.DataOperation;
 import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.Test;
 
 public class DistroDataTest extends TestCase {
-    
+
     private DistroData distroData;
-    
+
     private DistroKey distroKey;
-    
+
     private final String type = "com.alibaba.nacos.naming.iplist.";
-    
+
     private int contentSize = 10;
-    
+
     private final byte[] content = new byte[contentSize];
-    
+
     @Before
     public void setUp() {
         distroKey = new DistroKey("checksum", type);
         distroData = new DistroData(distroKey, content);
         distroData.setType(DataOperation.VERIFY);
     }
-    
+
     @Test
     public void testGetters() {
         assertEquals(distroKey, distroData.getDistroKey());

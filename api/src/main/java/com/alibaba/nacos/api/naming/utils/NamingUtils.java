@@ -16,20 +16,19 @@
 
 package com.alibaba.nacos.api.naming.utils;
 
+import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
+import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN_STRING;
+
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
-
-import static com.alibaba.nacos.api.common.Constants.CLUSTER_NAME_PATTERN_STRING;
-import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN_STRING;
 
 /**
  * NamingUtils.
@@ -38,27 +37,32 @@ import static com.alibaba.nacos.api.common.Constants.NUMBER_PATTERN_STRING;
  * @since 1.0.0
  */
 public class NamingUtils {
-    
-    private static final Pattern CLUSTER_NAME_PATTERN = Pattern.compile(CLUSTER_NAME_PATTERN_STRING);
-    
+
+    private static final Pattern CLUSTER_NAME_PATTERN =
+            Pattern.compile(CLUSTER_NAME_PATTERN_STRING);
+
     private static final Pattern NUMBER_PATTERN = Pattern.compile(NUMBER_PATTERN_STRING);
-    
+
     /**
      * Returns a combined string with serviceName and groupName. serviceName can not be nil.
      *
-     * <p>In most cases, serviceName can not be nil. In other cases, for search or anything, See {@link
-     * com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedNameOptional(String, String)}
+     * <p>In most cases, serviceName can not be nil. In other cases, for search or anything, See
+     * {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedNameOptional(String, String)}
      *
      * <p>etc:
-     * <p>serviceName | groupName | result</p>
-     * <p>serviceA    | groupA    | groupA@@serviceA</p>
-     * <p>nil         | groupA    | threw IllegalArgumentException</p>
+     *
+     * <p>serviceName | groupName | result
+     *
+     * <p>serviceA | groupA | groupA@@serviceA
+     *
+     * <p>nil | groupA | threw IllegalArgumentException
      *
      * @return 'groupName@@serviceName'
      */
     public static String getGroupedName(final String serviceName, final String groupName) {
         if (StringUtils.isBlank(serviceName)) {
-            throw new IllegalArgumentException("Param 'serviceName' is illegal, serviceName is blank");
+            throw new IllegalArgumentException(
+                    "Param 'serviceName' is illegal, serviceName is blank");
         }
         if (StringUtils.isBlank(groupName)) {
             throw new IllegalArgumentException("Param 'groupName' is illegal, groupName is blank");
@@ -66,7 +70,7 @@ public class NamingUtils {
         final String resultGroupedName = groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
         return resultGroupedName.intern();
     }
-    
+
     public static String getServiceName(final String serviceNameWithGroup) {
         if (StringUtils.isBlank(serviceNameWithGroup)) {
             return StringUtils.EMPTY;
@@ -76,7 +80,7 @@ public class NamingUtils {
         }
         return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[1];
     }
-    
+
     public static String getGroupName(final String serviceNameWithGroup) {
         if (StringUtils.isBlank(serviceNameWithGroup)) {
             return StringUtils.EMPTY;
@@ -86,9 +90,10 @@ public class NamingUtils {
         }
         return serviceNameWithGroup.split(Constants.SERVICE_INFO_SPLITER)[0];
     }
-    
+
     /**
      * check combineServiceName format. the serviceName can't be blank.
+     *
      * <pre>
      * serviceName = "@@";                 the length = 0; illegal
      * serviceName = "group@@";            the length = 1; illegal
@@ -105,29 +110,34 @@ public class NamingUtils {
                     "Param 'serviceName' is illegal, it should be format as 'groupName@@serviceName'");
         }
         if (split[0].isEmpty()) {
-            throw new IllegalArgumentException("Param 'serviceName' is illegal, groupName can't be empty");
+            throw new IllegalArgumentException(
+                    "Param 'serviceName' is illegal, groupName can't be empty");
         }
     }
-    
+
     /**
      * Returns a combined string with serviceName and groupName. Such as 'groupName@@serviceName'
-     * <p>This method works similar with {@link com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName} But not
-     * verify any parameters.
      *
-     * </p> etc:
-     * <p>serviceName | groupName | result</p>
-     * <p>serviceA    | groupA    | groupA@@serviceA</p>
-     * <p>nil         | groupA    | groupA@@</p>
-     * <p>nil         | nil       | @@</p>
+     * <p>This method works similar with {@link
+     * com.alibaba.nacos.api.naming.utils.NamingUtils#getGroupedName} But not verify any parameters.
+     * etc:
+     *
+     * <p>serviceName | groupName | result
+     *
+     * <p>serviceA | groupA | groupA@@serviceA
+     *
+     * <p>nil | groupA | groupA@@
+     *
+     * <p>nil | nil | @@
      *
      * @return 'groupName@@serviceName'
      */
     public static String getGroupedNameOptional(final String serviceName, final String groupName) {
         return groupName + Constants.SERVICE_INFO_SPLITER + serviceName;
     }
-    
+
     /**
-     * <p>Check instance param about keep alive.</p>
+     * Check instance param about keep alive.
      *
      * <pre>
      * heart beat timeout must > heart beat interval
@@ -140,30 +150,42 @@ public class NamingUtils {
     public static void checkInstanceIsLegal(Instance instance) throws NacosException {
         if (instance.getInstanceHeartBeatTimeOut() < instance.getInstanceHeartBeatInterval()
                 || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
+            throw new NacosApiException(
+                    NacosException.INVALID_PARAM,
+                    ErrorCode.INSTANCE_ERROR,
                     "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.");
         }
-        if (!StringUtils.isEmpty(instance.getClusterName()) && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName()).matches()) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
-                    String.format("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
+        if (!StringUtils.isEmpty(instance.getClusterName())
+                && !CLUSTER_NAME_PATTERN.matcher(instance.getClusterName()).matches()) {
+            throw new NacosApiException(
+                    NacosException.INVALID_PARAM,
+                    ErrorCode.INSTANCE_ERROR,
+                    String.format(
+                            "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: %s)",
                             instance.getClusterName()));
         }
     }
-    
+
     /**
      * check batch register is Ephemeral.
+     *
      * @param instance instance
      * @throws NacosException NacosException
      */
     public static void checkInstanceIsEphemeral(Instance instance) throws NacosException {
         if (!instance.isEphemeral()) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
-                    String.format("Batch registration does not allow persistent instance registration , Instance：%s", instance));
+            throw new NacosApiException(
+                    NacosException.INVALID_PARAM,
+                    ErrorCode.INSTANCE_ERROR,
+                    String.format(
+                            "Batch registration does not allow persistent instance registration , Instance：%s",
+                            instance));
         }
     }
-    
+
     /**
      * Batch verify the validity of instances.
+     *
      * @param instances List of instances to be registered
      * @throws NacosException Nacos
      */
@@ -174,7 +196,7 @@ public class NamingUtils {
             checkInstanceIsLegal(instance);
         }
     }
-    
+
     /**
      * Check string is a number or not.
      *

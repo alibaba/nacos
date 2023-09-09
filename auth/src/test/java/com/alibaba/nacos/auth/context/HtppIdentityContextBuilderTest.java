@@ -16,51 +16,44 @@
 
 package com.alibaba.nacos.auth.context;
 
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
-import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.plugin.auth.constant.Constants;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.Enumeration;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.when;
 
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import java.util.Enumeration;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
 @RunWith(MockitoJUnitRunner.class)
 public class HtppIdentityContextBuilderTest {
-    
+
     private static final String TEST_PLUGIN = "test";
-    
+
     private static final String IDENTITY_TEST_KEY = "identity-test-key";
-    
+
     private static final String IDENTITY_TEST_VALUE = "identity-test-value";
-    
-    @Mock
-    private AuthConfigs authConfigs;
-    
-    @Mock
-    private HttpServletRequest request;
-    
-    @Mock
-    private Enumeration<String> headerNames;
-    
-    @Mock
-    private Enumeration<String> parameterNames;
-    
+
+    @Mock private AuthConfigs authConfigs;
+
+    @Mock private HttpServletRequest request;
+
+    @Mock private Enumeration<String> headerNames;
+
+    @Mock private Enumeration<String> parameterNames;
+
     private HttpIdentityContextBuilder identityContextBuilder;
-    
+
     @Before
     public void setUp() throws Exception {
         identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(TEST_PLUGIN);
     }
-    
+
     @Test
     public void testBuildWithoutPlugin() {
         mockHeader(true);
@@ -69,7 +62,7 @@ public class HtppIdentityContextBuilderTest {
         IdentityContext actual = identityContextBuilder.build(request);
         assertNull(actual.getParameter(IDENTITY_TEST_KEY));
     }
-    
+
     @Test
     public void testBuildWithHeader() {
         mockHeader(true);
@@ -78,7 +71,7 @@ public class HtppIdentityContextBuilderTest {
         assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
         assertEquals("1.1.1.1", actual.getParameter(Constants.Identity.REMOTE_IP));
     }
-    
+
     @Test
     public void testBuildWithParameter() {
         mockHeader(false);
@@ -86,7 +79,7 @@ public class HtppIdentityContextBuilderTest {
         IdentityContext actual = identityContextBuilder.build(request);
         assertEquals(IDENTITY_TEST_VALUE, actual.getParameter(IDENTITY_TEST_KEY));
     }
-    
+
     private void mockHeader(boolean contained) {
         when(request.getHeaderNames()).thenReturn(headerNames);
         if (contained) {
@@ -96,7 +89,7 @@ public class HtppIdentityContextBuilderTest {
             when(request.getHeader(Constants.Identity.X_REAL_IP)).thenReturn("1.1.1.1");
         }
     }
-    
+
     private void mockParameter(boolean contained) {
         when(request.getParameterNames()).thenReturn(parameterNames);
         if (contained) {

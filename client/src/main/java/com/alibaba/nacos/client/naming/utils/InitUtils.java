@@ -39,49 +39,69 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author deshao
  */
 public class InitUtils {
-    
+
     private static final String DEFAULT_END_POINT_PORT = "8080";
-    
+
     /**
-     * Add a difference to the name naming. This method simply initializes the namespace for Naming. Config
-     * initialization is not the same, so it cannot be reused directly.
+     * Add a difference to the name naming. This method simply initializes the namespace for Naming.
+     * Config initialization is not the same, so it cannot be reused directly.
      *
      * @param properties properties
      * @return namespace
      */
     public static String initNamespaceForNaming(NacosClientProperties properties) {
         String tmpNamespace = null;
-        
-        String isUseCloudNamespaceParsing = properties.getProperty(PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
-                properties.getProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
-                        String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
-        
+
+        String isUseCloudNamespaceParsing =
+                properties.getProperty(
+                        PropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                        properties.getProperty(
+                                SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING,
+                                String.valueOf(Constants.DEFAULT_USE_CLOUD_NAMESPACE_PARSING)));
+
         if (Boolean.parseBoolean(isUseCloudNamespaceParsing)) {
-            
+
             tmpNamespace = TenantUtil.getUserTenantForAns();
-            LogUtils.NAMING_LOGGER.info("initializer namespace from ans.namespace attribute : {}", tmpNamespace);
-            
-            tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
-                String namespace = properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_NAMESPACE);
-                LogUtils.NAMING_LOGGER.info("initializer namespace from ALIBABA_ALIWARE_NAMESPACE attribute :" + namespace);
-                return namespace;
-            });
+            LogUtils.NAMING_LOGGER.info(
+                    "initializer namespace from ans.namespace attribute : {}", tmpNamespace);
+
+            tmpNamespace =
+                    TemplateUtils.stringEmptyAndThenExecute(
+                            tmpNamespace,
+                            () -> {
+                                String namespace =
+                                        properties.getProperty(
+                                                PropertyKeyConst.SystemEnv
+                                                        .ALIBABA_ALIWARE_NAMESPACE);
+                                LogUtils.NAMING_LOGGER.info(
+                                        "initializer namespace from ALIBABA_ALIWARE_NAMESPACE attribute :"
+                                                + namespace);
+                                return namespace;
+                            });
         }
-        
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> {
-            String namespace = properties.getPropertyFrom(SourceType.JVM, PropertyKeyConst.NAMESPACE);
-            LogUtils.NAMING_LOGGER.info("initializer namespace from namespace attribute :" + namespace);
-            return namespace;
-        });
-    
+
+        tmpNamespace =
+                TemplateUtils.stringEmptyAndThenExecute(
+                        tmpNamespace,
+                        () -> {
+                            String namespace =
+                                    properties.getPropertyFrom(
+                                            SourceType.JVM, PropertyKeyConst.NAMESPACE);
+                            LogUtils.NAMING_LOGGER.info(
+                                    "initializer namespace from namespace attribute :" + namespace);
+                            return namespace;
+                        });
+
         if (StringUtils.isEmpty(tmpNamespace)) {
             tmpNamespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         }
-        
-        tmpNamespace = TemplateUtils.stringEmptyAndThenExecute(tmpNamespace, () -> UtilAndComs.DEFAULT_NAMESPACE_ID);
+
+        tmpNamespace =
+                TemplateUtils.stringEmptyAndThenExecute(
+                        tmpNamespace, () -> UtilAndComs.DEFAULT_NAMESPACE_ID);
         return tmpNamespace;
     }
-    
+
     /**
      * Init web root context.
      *
@@ -90,13 +110,15 @@ public class InitUtils {
      */
     public static void initWebRootContext(NacosClientProperties properties) {
         final String webContext = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
-        TemplateUtils.stringNotEmptyAndThenExecute(webContext, () -> {
-            UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
-            UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
-            UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
-        });
+        TemplateUtils.stringNotEmptyAndThenExecute(
+                webContext,
+                () -> {
+                    UtilAndComs.webContext = ContextPathUtil.normalizeContextPath(webContext);
+                    UtilAndComs.nacosUrlBase = UtilAndComs.webContext + "/v1/ns";
+                    UtilAndComs.nacosUrlInstance = UtilAndComs.nacosUrlBase + "/instance";
+                });
     }
-    
+
     /**
      * Init end point.
      *
@@ -108,46 +130,52 @@ public class InitUtils {
             return "";
         }
         // Whether to enable domain name resolution rules
-        String isUseEndpointRuleParsing = properties.getProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                properties.getProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
-                        String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
-        
+        String isUseEndpointRuleParsing =
+                properties.getProperty(
+                        PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                        properties.getProperty(
+                                SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE,
+                                String.valueOf(ParamUtil.USE_ENDPOINT_PARSING_RULE_DEFAULT_VALUE)));
+
         boolean isUseEndpointParsingRule = Boolean.parseBoolean(isUseEndpointRuleParsing);
         String endpointUrl;
         if (isUseEndpointParsingRule) {
             // Get the set domain name information
-            endpointUrl = ParamUtil.parsingEndpointRule(properties.getProperty(PropertyKeyConst.ENDPOINT));
+            endpointUrl =
+                    ParamUtil.parsingEndpointRule(
+                            properties.getProperty(PropertyKeyConst.ENDPOINT));
             if (StringUtils.isBlank(endpointUrl)) {
                 return "";
             }
         } else {
             endpointUrl = properties.getProperty(PropertyKeyConst.ENDPOINT);
         }
-        
+
         if (StringUtils.isBlank(endpointUrl)) {
             return "";
         }
-        
-        String endpointPort = TemplateUtils
-                .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
+
+        String endpointPort =
+                TemplateUtils.stringEmptyAndThenExecute(
+                        properties.getProperty(
+                                PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
                         () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
-        
-        endpointPort = TemplateUtils.stringEmptyAndThenExecute(endpointPort, () -> DEFAULT_END_POINT_PORT);
-        
+
+        endpointPort =
+                TemplateUtils.stringEmptyAndThenExecute(endpointPort, () -> DEFAULT_END_POINT_PORT);
+
         return endpointUrl + ":" + endpointPort;
     }
-    
+
     /**
      * Register subType for serialization.
      *
-     * <p>
-     * Now these subType implementation class has registered in static code. But there are some problem for classloader.
-     * The implementation class will be loaded when they are used, which will make deserialize before register.
-     * </p>
+     * <p>Now these subType implementation class has registered in static code. But there are some
+     * problem for classloader. The implementation class will be loaded when they are used, which
+     * will make deserialize before register.
      *
-     * <p>
-     * 子类实现类中的静态代码串中已经向Jackson进行了注册，但是由于classloader的原因，只有当 该子类被使用的时候，才会加载该类。这可能会导致Jackson先进性反序列化，再注册子类，从而导致 反序列化失败。
-     * </p>
+     * <p>子类实现类中的静态代码串中已经向Jackson进行了注册，但是由于classloader的原因，只有当
+     * 该子类被使用的时候，才会加载该类。这可能会导致Jackson先进性反序列化，再注册子类，从而导致 反序列化失败。
      */
     public static void initSerialization() {
         // TODO register in implementation class or remove subType

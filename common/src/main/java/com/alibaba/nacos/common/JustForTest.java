@@ -21,6 +21,4 @@ package com.alibaba.nacos.common;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public @interface JustForTest {
-
-}
+public @interface JustForTest {}

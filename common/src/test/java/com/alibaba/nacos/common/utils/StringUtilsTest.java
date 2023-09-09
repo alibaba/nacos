@@ -16,25 +16,23 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
  * String utils.
+ *
  * @author zzq
  */
 public class StringUtilsTest {
-    
+
     @Test
     public void testNewStringForUtf8() {
         String abc = "abc";
         byte[] abcByte = abc.getBytes();
         Assert.assertEquals(abc, StringUtils.newStringForUtf8(abcByte));
     }
-    
+
     @Test
     public void isBlank() {
         Assert.assertTrue(StringUtils.isBlank(null));
@@ -43,7 +41,7 @@ public class StringUtilsTest {
         Assert.assertFalse(StringUtils.isBlank("bob"));
         Assert.assertFalse(StringUtils.isBlank("  bob  "));
     }
-    
+
     @Test
     public void testIsNotBlank() {
         Assert.assertFalse(StringUtils.isNotBlank(null));
@@ -52,7 +50,7 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.isNotBlank("bob"));
         Assert.assertTrue(StringUtils.isNotBlank("  bob  "));
     }
-    
+
     @Test
     public void testIsNotEmpty() {
         Assert.assertFalse(StringUtils.isNotEmpty(null));
@@ -61,7 +59,7 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.isNotEmpty("bob"));
         Assert.assertTrue(StringUtils.isNotEmpty("  bob  "));
     }
-    
+
     @Test
     public void testIsEmpty() {
         Assert.assertTrue(StringUtils.isEmpty(null));
@@ -70,7 +68,7 @@ public class StringUtilsTest {
         Assert.assertFalse(StringUtils.isEmpty("bob"));
         Assert.assertFalse(StringUtils.isEmpty("  bob  "));
     }
-    
+
     @Test
     public void testDefaultIfEmpty() {
         Assert.assertEquals("NULL", StringUtils.defaultIfEmpty(null, "NULL"));
@@ -79,7 +77,7 @@ public class StringUtilsTest {
         Assert.assertEquals("bat", StringUtils.defaultIfEmpty("bat", "NULL"));
         Assert.assertEquals(null, StringUtils.defaultIfEmpty("", null));
     }
-    
+
     @Test
     public void testEquals() {
         Assert.assertTrue(StringUtils.equals(null, null));
@@ -88,7 +86,7 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.equals("abc", "abc"));
         Assert.assertFalse(StringUtils.equals("abc", "ABC"));
     }
-    
+
     @Test
     public void trim() {
         Assert.assertNull(StringUtils.trim(null));
@@ -97,7 +95,7 @@ public class StringUtilsTest {
         Assert.assertEquals("abc", StringUtils.trim("abc"));
         Assert.assertEquals("abc", StringUtils.trim("    abc    "));
     }
-    
+
     @Test
     public void testSubstringBetween() {
         Assert.assertNull(StringUtils.substringBetween(null, "a", "b"));
@@ -105,15 +103,18 @@ public class StringUtilsTest {
         Assert.assertNull(StringUtils.substringBetween("a", "b", null));
         Assert.assertNull(StringUtils.substringBetween(StringUtils.EMPTY, StringUtils.EMPTY, "]"));
         Assert.assertNull(StringUtils.substringBetween(StringUtils.EMPTY, "[", "]"));
-        Assert.assertEquals(StringUtils.EMPTY,
+        Assert.assertEquals(
+                StringUtils.EMPTY,
                 StringUtils.substringBetween("yabcz", StringUtils.EMPTY, StringUtils.EMPTY));
-        Assert.assertEquals(StringUtils.EMPTY,
-                StringUtils.substringBetween(StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY));
+        Assert.assertEquals(
+                StringUtils.EMPTY,
+                StringUtils.substringBetween(
+                        StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY));
         Assert.assertEquals("b", StringUtils.substringBetween("wx[b]yz", "[", "]"));
         Assert.assertEquals("abc", StringUtils.substringBetween("yabcz", "y", "z"));
         Assert.assertEquals("abc", StringUtils.substringBetween("yabczyabcz", "y", "z"));
     }
-    
+
     @Test
     public void testJoin() {
         ArrayList<Object> objects = new ArrayList<>();
@@ -124,12 +125,12 @@ public class StringUtilsTest {
         Assert.assertEquals("a;b;c", StringUtils.join(Arrays.asList("a", "b", "c"), ";"));
         Assert.assertEquals("abc", StringUtils.join(Arrays.asList("a", "b", "c"), null));
     }
-    
+
     @Test
     public void escapeJavaScript() {
-        //TODO
+        // TODO
     }
-    
+
     @Test
     public void testContainsIgnoreCase() {
         Assert.assertFalse(StringUtils.containsIgnoreCase(null, "1"));
@@ -141,7 +142,7 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.containsIgnoreCase("abc", "A"));
         Assert.assertFalse(StringUtils.containsIgnoreCase("abc", "Z"));
     }
-    
+
     @Test
     public void testContains() {
         Assert.assertFalse(StringUtils.contains(null, "1"));
@@ -153,7 +154,7 @@ public class StringUtilsTest {
         Assert.assertFalse(StringUtils.contains("abc", "A"));
         Assert.assertFalse(StringUtils.contains("abc", "Z"));
     }
-    
+
     @Test
     public void testIsNoneBlank() {
         Assert.assertFalse(StringUtils.isNoneBlank(null));
@@ -165,7 +166,7 @@ public class StringUtilsTest {
         Assert.assertFalse(StringUtils.isNoneBlank(" ", "bar"));
         Assert.assertTrue(StringUtils.isNoneBlank("foo", "bar"));
     }
-    
+
     @Test
     public void isAnyBlank() {
         Assert.assertTrue(StringUtils.isAnyBlank(null));
@@ -177,7 +178,7 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.isAnyBlank(" ", "bar"));
         Assert.assertFalse(StringUtils.isAnyBlank("foo", "bar"));
     }
-    
+
     @Test
     public void testStartsWith() {
         Assert.assertTrue(StringUtils.startsWith(null, null));
@@ -186,7 +187,7 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.startsWith("abcdef", "abc"));
         Assert.assertFalse(StringUtils.startsWith("ABCDEF", "abc"));
     }
-    
+
     @Test
     public void testStartsWithIgnoreCase() {
         Assert.assertTrue(StringUtils.startsWithIgnoreCase(null, null));
@@ -195,7 +196,7 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.startsWithIgnoreCase("abcdef", "abc"));
         Assert.assertTrue(StringUtils.startsWithIgnoreCase("ABCDEF", "abc"));
     }
-    
+
     @Test
     public void testDeleteWhitespace() {
         Assert.assertNull(StringUtils.deleteWhitespace(null));
@@ -203,7 +204,7 @@ public class StringUtilsTest {
         Assert.assertEquals("abc", StringUtils.deleteWhitespace("abc"));
         Assert.assertEquals("abc", StringUtils.deleteWhitespace("   ab  c  "));
     }
-    
+
     @Test
     public void testEqualsIgnoreCase() {
         Assert.assertTrue(StringUtils.equalsIgnoreCase(null, null));
@@ -212,13 +213,16 @@ public class StringUtilsTest {
         Assert.assertTrue(StringUtils.equalsIgnoreCase("abc", "abc"));
         Assert.assertTrue(StringUtils.equalsIgnoreCase("abc", "ABC"));
     }
-    
+
     @Test
     public void testSplit() {
         Assert.assertNull(StringUtils.split(null, ","));
         Assert.assertArrayEquals(new String[0], StringUtils.split("", ","));
-        Assert.assertArrayEquals(new String[]{"ab", "cd", "ef"}, StringUtils.split("ab cd ef", null));
-        Assert.assertArrayEquals(new String[]{"ab", "cd", "ef"}, StringUtils.split("ab   cd ef", null));
-        Assert.assertArrayEquals(new String[]{"ab", "cd", "ef"}, StringUtils.split("ab:cd:ef", ":"));
+        Assert.assertArrayEquals(
+                new String[] {"ab", "cd", "ef"}, StringUtils.split("ab cd ef", null));
+        Assert.assertArrayEquals(
+                new String[] {"ab", "cd", "ef"}, StringUtils.split("ab   cd ef", null));
+        Assert.assertArrayEquals(
+                new String[] {"ab", "cd", "ef"}, StringUtils.split("ab:cd:ef", ":"));
     }
 }

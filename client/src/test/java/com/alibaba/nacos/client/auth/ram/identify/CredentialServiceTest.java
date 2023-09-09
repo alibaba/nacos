@@ -18,46 +18,43 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
-import junit.framework.TestCase;
-import org.junit.Assert;
-import org.junit.Test;
-
-import java.lang.reflect.Field;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import java.lang.reflect.Field;
+import junit.framework.TestCase;
+
 public class CredentialServiceTest extends TestCase {
-    
+
     @Test
     public void testGetInstance() {
         CredentialService credentialService1 = CredentialService.getInstance();
         CredentialService credentialService2 = CredentialService.getInstance();
         Assert.assertEquals(credentialService1, credentialService2);
     }
-    
+
     @Test
     public void testGetInstance2() {
         CredentialService credentialService1 = CredentialService.getInstance("app");
         CredentialService credentialService2 = CredentialService.getInstance("app");
         Assert.assertEquals(credentialService1, credentialService2);
     }
-    
+
     @Test
     public void testFreeInstance() {
         CredentialService credentialService1 = CredentialService.getInstance();
         CredentialService credentialService2 = CredentialService.freeInstance();
         Assert.assertEquals(credentialService1, credentialService2);
     }
-    
+
     @Test
     public void testFreeInstance2() {
         CredentialService credentialService1 = CredentialService.getInstance();
         CredentialService credentialService2 = CredentialService.freeInstance();
         Assert.assertEquals(credentialService1, credentialService2);
     }
-    
+
     @Test
     public void testFree() throws NoSuchFieldException, IllegalAccessException {
         CredentialService credentialService1 = CredentialService.getInstance();
@@ -65,29 +62,29 @@ public class CredentialServiceTest extends TestCase {
         Field watcherField = CredentialService.class.getDeclaredField("watcher");
         watcherField.setAccessible(true);
         watcherField.set(credentialService1, mockWatcher);
-        //when
+        // when
         credentialService1.free();
-        //then
+        // then
         verify(mockWatcher, times(1)).stop();
     }
-    
+
     @Test
     public void testGetCredential() {
         CredentialService credentialService1 = CredentialService.getInstance();
         Credentials credential = credentialService1.getCredential();
         Assert.assertNotNull(credential);
     }
-    
+
     @Test
     public void testSetCredential() {
         CredentialService credentialService1 = CredentialService.getInstance();
         Credentials credential = new Credentials();
-        //when
+        // when
         credentialService1.setCredential(credential);
-        //then
+        // then
         Assert.assertEquals(credential, credentialService1.getCredential());
     }
-    
+
     @Test
     public void testSetStaticCredential() throws NoSuchFieldException, IllegalAccessException {
         CredentialService credentialService1 = CredentialService.getInstance();
@@ -96,24 +93,24 @@ public class CredentialServiceTest extends TestCase {
         watcherField.setAccessible(true);
         watcherField.set(credentialService1, mockWatcher);
         Credentials credential = new Credentials();
-        //when
+        // when
         credentialService1.setStaticCredential(credential);
-        //then
+        // then
         Assert.assertEquals(credential, credentialService1.getCredential());
         verify(mockWatcher, times(1)).stop();
     }
-    
+
     @Test
-    public void testRegisterCredentialListener() throws NoSuchFieldException, IllegalAccessException {
+    public void testRegisterCredentialListener()
+            throws NoSuchFieldException, IllegalAccessException {
         CredentialService credentialService1 = CredentialService.getInstance();
         Field listenerField = CredentialService.class.getDeclaredField("listener");
         listenerField.setAccessible(true);
         CredentialListener expect = mock(CredentialListener.class);
-        //when
+        // when
         credentialService1.registerCredentialListener(expect);
-        //then
+        // then
         CredentialListener actual = (CredentialListener) listenerField.get(credentialService1);
         Assert.assertEquals(expect, actual);
-        
     }
 }

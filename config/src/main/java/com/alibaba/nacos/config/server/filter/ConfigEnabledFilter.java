@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.config.server.filter;
 
+import static com.alibaba.nacos.sys.env.EnvUtil.FUNCTION_MODE_CONFIG;
+
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.Config;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.filter.NacosPackageExcludeFilter;
-
 import java.util.Set;
-
-import static com.alibaba.nacos.sys.env.EnvUtil.FUNCTION_MODE_CONFIG;
 
 /**
  * Config module enabled filter by spring packages scan.
@@ -31,16 +30,17 @@ import static com.alibaba.nacos.sys.env.EnvUtil.FUNCTION_MODE_CONFIG;
  * @author xiweng.yy
  */
 public class ConfigEnabledFilter implements NacosPackageExcludeFilter {
-    
+
     @Override
     public String getResponsiblePackagePrefix() {
         return Config.class.getPackage().getName();
     }
-    
+
     @Override
     public boolean isExcluded(String className, Set<String> annotationNames) {
         String functionMode = EnvUtil.getFunctionMode();
-        // When not specified config mode or specified all mode, the config module not start and load.
+        // When not specified config mode or specified all mode, the config module not start and
+        // load.
         if (StringUtils.isEmpty(functionMode)) {
             return false;
         }

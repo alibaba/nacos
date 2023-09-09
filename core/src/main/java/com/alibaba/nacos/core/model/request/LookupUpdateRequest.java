@@ -22,13 +22,13 @@ package com.alibaba.nacos.core.model.request;
  * @author wuzhiguo
  */
 public class LookupUpdateRequest {
-    
+
     private String type;
-    
+
     public String getType() {
         return type;
     }
-    
+
     public void setType(String type) {
         this.type = type;
     }

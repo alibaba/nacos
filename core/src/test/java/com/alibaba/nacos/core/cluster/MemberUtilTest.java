@@ -16,18 +16,15 @@
 
 package com.alibaba.nacos.core.cluster;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.mock.env.MockEnvironment;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -37,32 +34,29 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
 
 @RunWith(MockitoJUnitRunner.class)
 public class MemberUtilTest {
-    
+
     private static final String IP = "1.1.1.1";
-    
+
     private static final int PORT = 8848;
-    
-    @Mock
-    private ServerMemberManager memberManager;
-    
+
+    @Mock private ServerMemberManager memberManager;
+
     private ConfigurableEnvironment environment;
-    
+
     private Member originalMember;
-    
+
     private Set<String> mockMemberAddressInfos;
-    
+
     private String nacosHome;
-    
+
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
@@ -74,16 +68,16 @@ public class MemberUtilTest {
         mockMemberAddressInfos = new HashSet<>();
         when(memberManager.getMemberAddressInfos()).thenReturn(mockMemberAddressInfos);
     }
-    
+
     private Member buildMember() {
         return Member.builder().ip(IP).port(PORT).state(NodeState.UP).build();
     }
-    
+
     @After
     public void tearDown() throws NacosException {
         EnvUtil.setNacosHomePath(nacosHome);
     }
-    
+
     @Test
     public void testCopy() {
         Member expected = Member.builder().build();
@@ -100,7 +94,7 @@ public class MemberUtilTest {
         assertEquals("test", originalMember.getExtendVal(MemberMetaDataConstants.VERSION));
         assertTrue(originalMember.getAbilities().getRemoteAbility().isSupportRemoteConnection());
     }
-    
+
     @Test
     public void testSingleParseWithPort() {
         Member actual = MemberUtil.singleParse(IP + ":2222");
@@ -112,7 +106,7 @@ public class MemberUtilTest {
         assertEquals("1222", actual.getExtendVal(MemberMetaDataConstants.RAFT_PORT));
         assertFalse(actual.getAbilities().getRemoteAbility().isSupportRemoteConnection());
     }
-    
+
     @Test
     public void testSingleParseWithoutPort() {
         Member actual = MemberUtil.singleParse(IP);
@@ -124,7 +118,7 @@ public class MemberUtilTest {
         assertEquals("7848", actual.getExtendVal(MemberMetaDataConstants.RAFT_PORT));
         assertFalse(actual.getAbilities().getRemoteAbility().isSupportRemoteConnection());
     }
-    
+
     @Test
     public void testIsSupportedLongCon() {
         assertFalse(MemberUtil.isSupportedLongCon(originalMember));
@@ -135,7 +129,7 @@ public class MemberUtilTest {
         originalMember.setAbilities(null);
         assertFalse(MemberUtil.isSupportedLongCon(originalMember));
     }
-    
+
     @Test
     public void testMultiParse() {
         Collection<String> address = new HashSet<>();
@@ -144,14 +138,15 @@ public class MemberUtilTest {
         Collection<Member> actual = MemberUtil.multiParse(address);
         assertEquals(2, actual.size());
     }
-    
+
     @Test
     public void testSyncToFile() throws IOException {
         File file = new File(EnvUtil.getClusterConfFilePath());
         file.getParentFile().mkdirs();
         assertTrue(file.createNewFile());
         MemberUtil.syncToFile(Collections.singleton(originalMember));
-        try (BufferedReader reader = new BufferedReader(new FileReader(EnvUtil.getClusterConfFilePath()))) {
+        try (BufferedReader reader =
+                new BufferedReader(new FileReader(EnvUtil.getClusterConfFilePath()))) {
             String line = "";
             while ((line = reader.readLine()) != null) {
                 if (!line.startsWith("#")) {
@@ -164,7 +159,7 @@ public class MemberUtilTest {
             file.delete();
         }
     }
-    
+
     @Test
     public void testReadServerConf() {
         Collection<String> address = new HashSet<>();
@@ -173,7 +168,7 @@ public class MemberUtilTest {
         Collection<Member> actual = MemberUtil.readServerConf(address);
         assertEquals(2, actual.size());
     }
-    
+
     @Test
     public void testSelectTargetMembers() {
         Collection<Member> input = new HashSet<>();
@@ -181,78 +176,79 @@ public class MemberUtilTest {
         Member member = buildMember();
         member.setIp("2.2.2.2");
         input.add(member);
-        Set<Member> actual = MemberUtil.selectTargetMembers(input, member1 -> member1.getIp().equals(IP));
+        Set<Member> actual =
+                MemberUtil.selectTargetMembers(input, member1 -> member1.getIp().equals(IP));
         assertEquals(1, actual.size());
     }
-    
+
     @Test
     public void testIsBasicInfoChangedNoChangeWithoutExtendInfo() {
         Member newMember = buildMember();
         assertFalse(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
-    
+
     @Test
     public void testIsBasicInfoChangedNoChangeWithExtendInfo() {
         Member newMember = buildMember();
         newMember.setExtendVal("test", "test");
         assertFalse(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
-    
+
     @Test
     public void testIsBasicInfoChangedForIp() {
         Member newMember = buildMember();
         newMember.setIp("1.1.1.2");
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
-    
+
     @Test
     public void testIsBasicInfoChangedForPort() {
         Member newMember = buildMember();
         newMember.setPort(PORT + 1);
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
-    
+
     @Test
     public void testIsBasicInfoChangedForAddress() {
         Member newMember = buildMember();
         newMember.setAddress("test");
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
-    
+
     @Test
     public void testIsBasicInfoChangedForStatus() {
         Member newMember = buildMember();
         newMember.setState(NodeState.DOWN);
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
-    
+
     @Test
     public void testIsBasicInfoChangedForMoreBasicExtendInfo() {
         Member newMember = buildMember();
         newMember.setExtendVal(MemberMetaDataConstants.VERSION, "TEST");
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
-    
+
     @Test
     public void testIsBasicInfoChangedForChangedBasicExtendInfo() {
         Member newMember = buildMember();
         newMember.setExtendVal(MemberMetaDataConstants.WEIGHT, "100");
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
-    
+
     @Test
     public void testIsBasicInfoChangedForChangedAbilities() {
         Member newMember = buildMember();
         newMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
-    
+
     @Test
     public void testIsBasicInfoChangedForChangedNull() {
         Member newMember = buildMember();
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, null));
     }
-    
+
     @Test
     public void testMemberOnFailWhenReachMaxFailAccessCnt() {
         final Member remote = buildMember();
@@ -269,19 +265,22 @@ public class MemberUtilTest {
         Assert.assertEquals(NodeState.DOWN, remote.getState());
         verify(memberManager).notifyMemberChange(remote);
     }
-    
+
     @Test
     public void testMemberOnFailWhenConnectRefused() {
         final Member remote = buildMember();
         mockMemberAddressInfos.add(remote.getAddress());
         remote.setFailAccessCnt(1);
-        MemberUtil.onFail(memberManager, remote, new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
+        MemberUtil.onFail(
+                memberManager,
+                remote,
+                new ConnectException(MemberUtil.TARGET_MEMBER_CONNECT_REFUSE_ERRMSG));
         Assert.assertEquals(2, remote.getFailAccessCnt());
         Assert.assertEquals(NodeState.DOWN, remote.getState());
         Assert.assertTrue(mockMemberAddressInfos.isEmpty());
         verify(memberManager).notifyMemberChange(remote);
     }
-    
+
     @SuppressWarnings("checkstyle:AbbreviationAsWordInName")
     @Test
     public void testMemberOnFailWhenMemberAlreadyNOUP() {
@@ -291,7 +290,7 @@ public class MemberUtilTest {
         MemberUtil.onFail(memberManager, remote);
         verify(memberManager, never()).notifyMemberChange(remote);
     }
-    
+
     @Test
     public void testMemberOnSuccessFromDown() {
         final Member remote = buildMember();
@@ -302,7 +301,7 @@ public class MemberUtilTest {
         assertEquals(0, remote.getFailAccessCnt());
         verify(memberManager).notifyMemberChange(remote);
     }
-    
+
     @Test
     public void testMemberOnSuccessWhenMemberAlreadyUP() {
         final Member remote = buildMember();
@@ -310,7 +309,7 @@ public class MemberUtilTest {
         MemberUtil.onSuccess(memberManager, remote);
         verify(memberManager, never()).notifyMemberChange(remote);
     }
-    
+
     @Test
     public void testMemberOnSuccessWhenMemberNotUpdated() {
         final Member remote = buildMember();
@@ -320,7 +319,7 @@ public class MemberUtilTest {
         assertTrue(mockMemberAddressInfos.contains(remote.getAddress()));
         verify(memberManager, never()).notifyMemberChange(remote);
     }
-    
+
     @Test
     public void testMemberOnSuccessWhenMemberUpdatedAbilities() {
         final Member remote = buildMember();
@@ -331,7 +330,7 @@ public class MemberUtilTest {
         assertTrue(mockMemberAddressInfos.contains(remote.getAddress()));
         verify(memberManager).notifyMemberChange(remote);
     }
-    
+
     @Test
     public void testMemberOnSuccessWhenMemberUpdatedExtendInfo() {
         final Member remote = buildMember();

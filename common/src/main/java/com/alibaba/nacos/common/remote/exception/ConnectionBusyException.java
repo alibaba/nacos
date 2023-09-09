@@ -23,13 +23,13 @@ package com.alibaba.nacos.common.remote.exception;
  * @version $Id: ConnectionBusyException.java, v 0.1 2020年11月30日 7:28 PM liuzunfei Exp $
  */
 public class ConnectionBusyException extends RemoteException {
-    
+
     private static final int CONNECTION_BUSY = 601;
-    
+
     public ConnectionBusyException(String msg) {
         super(CONNECTION_BUSY, msg);
     }
-    
+
     public ConnectionBusyException(Throwable throwable) {
         super(CONNECTION_BUSY, throwable);
     }

@@ -21,50 +21,46 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.utils.StringUtils;
 
-/** Exception for open API. <BR/>
- * errCode          ->  HTTP status code        inherited from {@link NacosException} <BR/>
- * errMsg           ->  detail error message    inherited from {@link NacosException} <BR/>
- * detailErrCode    ->  error code for api v2.0 <BR/>
- * errAbstract      ->  abstract error message for api v2.0
+/**
+ * Exception for open API. <br>
+ * errCode -> HTTP status code inherited from {@link NacosException} <br>
+ * errMsg -> detail error message inherited from {@link NacosException} <br>
+ * detailErrCode -> error code for api v2.0 <br>
+ * errAbstract -> abstract error message for api v2.0
+ *
  * @author dongyafei
  * @date 2022/7/22
  */
 public class NacosApiException extends NacosException {
-    
-    /**
-     * serialVersionUID.
-     */
+
+    /** serialVersionUID. */
     private static final long serialVersionUID = 2245627968556056573L;
-    
-    /**
-     * error code for api v2.0.
-     */
+
+    /** error code for api v2.0. */
     private int detailErrCode;
-    
-    /**
-     * abstract error description for api v2.0.
-     */
+
+    /** abstract error description for api v2.0. */
     private String errAbstract;
-    
-    public NacosApiException() {
-    }
-    
-    public NacosApiException(int statusCode, ErrorCode errorCode, Throwable throwable, String message) {
+
+    public NacosApiException() {}
+
+    public NacosApiException(
+            int statusCode, ErrorCode errorCode, Throwable throwable, String message) {
         super(statusCode, message, throwable);
         this.detailErrCode = errorCode.getCode();
         this.errAbstract = errorCode.getMsg();
     }
-    
+
     public NacosApiException(int statusCode, ErrorCode errorCode, String message) {
         super(statusCode, message);
         this.detailErrCode = errorCode.getCode();
         this.errAbstract = errorCode.getMsg();
     }
-    
+
     public int getDetailErrCode() {
         return detailErrCode;
     }
-    
+
     public String getErrAbstract() {
         if (!StringUtils.isBlank(this.errAbstract)) {
             return this.errAbstract;

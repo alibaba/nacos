@@ -23,14 +23,14 @@ package com.alibaba.nacos.plugin.control.ruleactivator;
  * @date 2022-10-26 11:43:00
  */
 public interface RuleStorage {
-    
+
     /**
      * get storage name.
      *
      * @return
      */
     String getName();
-    
+
     /**
      * save connection rule to storage.
      *
@@ -38,23 +38,23 @@ public interface RuleStorage {
      * @throws Exception exception.
      */
     void saveConnectionRule(String ruleContent) throws Exception;
-    
+
     /**
      * get connection rule.
      *
      * @return
      */
     String getConnectionRule();
-    
+
     /**
      * save tps rule.
      *
-     * @param pointName   point name.
+     * @param pointName point name.
      * @param ruleContent rule content.
      * @throws Exception exception.
      */
     void saveTpsRule(String pointName, String ruleContent) throws Exception;
-    
+
     /**
      * get tps rule.
      *
@@ -62,5 +62,4 @@ public interface RuleStorage {
      * @return
      */
     String getTpsRule(String pointName);
-    
 }

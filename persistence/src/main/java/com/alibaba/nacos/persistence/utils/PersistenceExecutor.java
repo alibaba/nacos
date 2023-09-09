@@ -18,7 +18,6 @@ package com.alibaba.nacos.persistence.utils;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
@@ -30,27 +29,32 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 public class PersistenceExecutor {
-    
-    private static final ScheduledExecutorService TIMER_EXECUTOR = ExecutorFactory.Managed
-            .newScheduledExecutorService(PersistenceExecutor.class.getCanonicalName(), 2,
+
+    private static final ScheduledExecutorService TIMER_EXECUTOR =
+            ExecutorFactory.Managed.newScheduledExecutorService(
+                    PersistenceExecutor.class.getCanonicalName(),
+                    2,
                     new NameThreadFactory("com.alibaba.nacos.persistence.timer"));
-    
-    private static final Executor DUMP_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(PersistenceExecutor.class.getCanonicalName(),
+
+    private static final Executor DUMP_EXECUTOR =
+            ExecutorFactory.Managed.newSingleExecutorService(
+                    PersistenceExecutor.class.getCanonicalName(),
                     new NameThreadFactory("com.alibaba.nacos.persistence.embedded.dump"));
-    
-    private static final ExecutorService EMBEDDED_SNAPSHOT_EXECUTOR = ExecutorFactory.Managed
-            .newSingleExecutorService(PersistenceExecutor.class.getCanonicalName(),
+
+    private static final ExecutorService EMBEDDED_SNAPSHOT_EXECUTOR =
+            ExecutorFactory.Managed.newSingleExecutorService(
+                    PersistenceExecutor.class.getCanonicalName(),
                     new NameThreadFactory("com.alibaba.nacos.persistence.embedded.snapshot"));
-    
-    public static void scheduleTask(Runnable command, long initialDelay, long delay, TimeUnit unit) {
+
+    public static void scheduleTask(
+            Runnable command, long initialDelay, long delay, TimeUnit unit) {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
-    
+
     public static void executeEmbeddedDump(Runnable runnable) {
         DUMP_EXECUTOR.execute(runnable);
     }
-    
+
     public static void executeSnapshot(Runnable runnable) {
         EMBEDDED_SNAPSHOT_EXECUTOR.execute(runnable);
     }

@@ -23,12 +23,8 @@ package com.alibaba.nacos.api.cmdb.pojo;
  * @since 0.7.0
  */
 public enum PreservedEntityTypes {
-    /**
-     * Ip.
-     */
+    /** Ip. */
     ip,
-    /**
-     * Service.
-     */
+    /** Service. */
     service
 }

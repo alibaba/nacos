@@ -23,29 +23,35 @@ package com.alibaba.nacos.plugin.control.tps.rule;
  * @version $Id: TpsControlPoint.java, v 0.1 2021年01月09日 12:38 PM liuzunfei Exp $
  */
 public class TpsControlRule {
-    
+
     private String pointName;
-    
+
     private RuleDetail pointRule;
-    
+
     public String getPointName() {
         return pointName;
     }
-    
+
     public void setPointName(String pointName) {
         this.pointName = pointName;
     }
-    
+
     public RuleDetail getPointRule() {
         return pointRule;
     }
-    
+
     public void setPointRule(RuleDetail pointRule) {
         this.pointRule = pointRule;
     }
-    
+
     @Override
     public String toString() {
-        return "TpsControlRule{" + "pointName='" + pointName + '\'' + ", pointRule=" + pointRule + "}'";
+        return "TpsControlRule{"
+                + "pointName='"
+                + pointName
+                + '\''
+                + ", pointRule="
+                + pointRule
+                + "}'";
     }
 }

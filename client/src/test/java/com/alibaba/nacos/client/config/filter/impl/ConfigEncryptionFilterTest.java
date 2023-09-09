@@ -18,9 +18,6 @@ package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -33,44 +30,41 @@ import org.mockito.junit.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigEncryptionFilterTest {
-    
+
     private ConfigEncryptionFilter configEncryptionFilter;
-    
-    @Mock
-    private ConfigRequest configRequest;
-    
-    @Mock
-    private ConfigResponse configResponse;
-    
-    @Mock
-    private IConfigFilterChain iConfigFilterChain;
-    
+
+    @Mock private ConfigRequest configRequest;
+
+    @Mock private ConfigResponse configResponse;
+
+    @Mock private IConfigFilterChain iConfigFilterChain;
+
     @Before
     public void setUp() throws Exception {
         configEncryptionFilter = new ConfigEncryptionFilter();
-        
+
         Mockito.when(configRequest.getDataId()).thenReturn("cipher-aes-test");
         Mockito.when(configRequest.getContent()).thenReturn("nacos");
-        
+
         Mockito.when(configResponse.getDataId()).thenReturn("test-dataid");
         Mockito.when(configResponse.getContent()).thenReturn("nacos");
         Mockito.when(configResponse.getEncryptedDataKey()).thenReturn("1234567890");
     }
-    
+
     @Test
     public void testDoFilter() throws NacosException {
         configEncryptionFilter.doFilter(configRequest, null, iConfigFilterChain);
-        
+
         Mockito.verify(configRequest).getDataId();
         Mockito.verify(configRequest).getContent();
-        
+
         configEncryptionFilter.doFilter(null, configResponse, iConfigFilterChain);
-        
+
         Mockito.verify(configResponse).getDataId();
         Mockito.verify(configResponse).getContent();
         Mockito.verify(configResponse).getEncryptedDataKey();
     }
-    
+
     @Test
     public void testGetOrder() {
         int order = configEncryptionFilter.getOrder();

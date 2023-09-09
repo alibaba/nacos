@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.interceptor;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
@@ -29,15 +28,15 @@ import java.util.List;
  */
 public abstract class AbstractNamingInterceptorChain<T extends Interceptable>
         implements NacosNamingInterceptorChain<T> {
-    
+
     private final List<NacosNamingInterceptor<T>> interceptors;
-    
+
     protected AbstractNamingInterceptorChain(Class<? extends NacosNamingInterceptor<T>> clazz) {
         this.interceptors = new LinkedList<>();
         interceptors.addAll(NacosServiceLoader.load(clazz));
         interceptors.sort(Comparator.comparingInt(NacosNamingInterceptor::order));
     }
-    
+
     /**
      * Get all interceptors.
      *
@@ -46,13 +45,13 @@ public abstract class AbstractNamingInterceptorChain<T extends Interceptable>
     protected List<NacosNamingInterceptor<T>> getInterceptors() {
         return interceptors;
     }
-    
+
     @Override
     public void addInterceptor(NacosNamingInterceptor<T> interceptor) {
         interceptors.add(interceptor);
         interceptors.sort(Comparator.comparingInt(NacosNamingInterceptor::order));
     }
-    
+
     @Override
     public void doInterceptor(T object) {
         for (NacosNamingInterceptor<T> each : interceptors) {

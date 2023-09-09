@@ -27,13 +27,13 @@ import org.slf4j.LoggerFactory;
  * @since 1.2.0
  */
 public class Loggers {
-    
+
     private static final String AUTH_LOG_NAME = "auth";
-    
+
     public static final Logger AUTH = LoggerFactory.getLogger("com.alibaba.nacos.auth");
-    
+
     public static void setLogLevel(String logName, String level) {
-    
+
         if (AUTH_LOG_NAME.equals(logName)) {
             ((ch.qos.logback.classic.Logger) AUTH).setLevel(Level.valueOf(level));
         }

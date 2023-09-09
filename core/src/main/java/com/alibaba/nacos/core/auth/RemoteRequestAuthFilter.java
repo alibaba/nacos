@@ -31,9 +31,8 @@ import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import org.springframework.stereotype.Component;
-
 import java.lang.reflect.Method;
+import org.springframework.stereotype.Component;
 
 /**
  * request auth filter for remote.
@@ -43,29 +42,31 @@ import java.lang.reflect.Method;
  */
 @Component
 public class RemoteRequestAuthFilter extends AbstractRequestFilter {
-    
+
     private final AuthConfigs authConfigs;
-    
+
     private final GrpcProtocolAuthService protocolAuthService;
-    
+
     public RemoteRequestAuthFilter(AuthConfigs authConfigs) {
         this.authConfigs = authConfigs;
         this.protocolAuthService = new GrpcProtocolAuthService(authConfigs);
         this.protocolAuthService.initialize();
     }
-    
+
     @Override
-    public Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
-        
+    public Response filter(Request request, RequestMeta meta, Class handlerClazz)
+            throws NacosException {
+
         try {
-            
+
             Method method = getHandleMethod(handlerClazz);
             if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
-                
+
                 if (Loggers.AUTH.isDebugEnabled()) {
-                    Loggers.AUTH.debug("auth start, request: {}", request.getClass().getSimpleName());
+                    Loggers.AUTH.debug(
+                            "auth start, request: {}", request.getClass().getSimpleName());
                 }
-                
+
                 Secured secured = method.getAnnotation(Secured.class);
                 if (!protocolAuthService.enableAuth(secured)) {
                     return null;
@@ -80,7 +81,9 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                     throw new AccessException("Validate Identity failed.");
                 }
                 String action = secured.action().toString();
-                result = protocolAuthService.validateAuthority(identityContext, new Permission(resource, action));
+                result =
+                        protocolAuthService.validateAuthority(
+                                identityContext, new Permission(resource, action));
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Authority failed.");
@@ -88,7 +91,9 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
             }
         } catch (AccessException e) {
             if (Loggers.AUTH.isDebugEnabled()) {
-                Loggers.AUTH.debug("access denied, request: {}, reason: {}", request.getClass().getSimpleName(),
+                Loggers.AUTH.debug(
+                        "access denied, request: {}, reason: {}",
+                        request.getClass().getSimpleName(),
                         e.getErrMsg());
             }
             Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);
@@ -96,11 +101,12 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
             return defaultResponseInstance;
         } catch (Exception e) {
             Response defaultResponseInstance = getDefaultResponseInstance(handlerClazz);
-            
-            defaultResponseInstance.setErrorInfo(NacosException.SERVER_ERROR, ExceptionUtil.getAllExceptionMsg(e));
+
+            defaultResponseInstance.setErrorInfo(
+                    NacosException.SERVER_ERROR, ExceptionUtil.getAllExceptionMsg(e));
             return defaultResponseInstance;
         }
-        
+
         return null;
     }
 }

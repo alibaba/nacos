@@ -25,29 +25,29 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class ModuleState {
-    
+
     private final String moduleName;
-    
+
     private final Map<String, Object> states;
-    
+
     public ModuleState(String moduleName) {
         this.moduleName = moduleName;
         this.states = new HashMap<>();
     }
-    
+
     public String getModuleName() {
         return moduleName;
     }
-    
+
     public ModuleState newState(String stateName, Object stateValue) {
         this.states.put(stateName, stateValue);
         return this;
     }
-    
+
     public Map<String, Object> getStates() {
         return states;
     }
-    
+
     @SuppressWarnings("all")
     public <T> T getState(String stateName, T defaultValue) {
         return (T) states.getOrDefault(stateName, defaultValue);

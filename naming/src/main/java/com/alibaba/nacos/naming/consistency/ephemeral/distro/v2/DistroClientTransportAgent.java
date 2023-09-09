@@ -38,7 +38,6 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.monitor.NamingTpsMonitor;
-
 import java.util.concurrent.Executor;
 
 /**
@@ -47,22 +46,22 @@ import java.util.concurrent.Executor;
  * @author xiweng.yy
  */
 public class DistroClientTransportAgent implements DistroTransportAgent {
-    
+
     private final ClusterRpcClientProxy clusterRpcClientProxy;
-    
+
     private final ServerMemberManager memberManager;
-    
-    public DistroClientTransportAgent(ClusterRpcClientProxy clusterRpcClientProxy,
-            ServerMemberManager serverMemberManager) {
+
+    public DistroClientTransportAgent(
+            ClusterRpcClientProxy clusterRpcClientProxy, ServerMemberManager serverMemberManager) {
         this.clusterRpcClientProxy = clusterRpcClientProxy;
         this.memberManager = serverMemberManager;
     }
-    
+
     @Override
     public boolean supportCallbackTransport() {
         return true;
     }
-    
+
     @Override
     public boolean syncData(DistroData data, String targetServer) {
         if (isNoExistTarget(targetServer)) {
@@ -71,20 +70,22 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         DistroDataRequest request = new DistroDataRequest(data, data.getType());
         Member member = memberManager.find(targetServer);
         if (checkTargetServerStatusUnhealthy(member)) {
-            Loggers.DISTRO
-                    .warn("[DISTRO] Cancel distro sync caused by target server {} unhealthy, key: {}", targetServer,
-                            data.getDistroKey());
+            Loggers.DISTRO.warn(
+                    "[DISTRO] Cancel distro sync caused by target server {} unhealthy, key: {}",
+                    targetServer,
+                    data.getDistroKey());
             return false;
         }
         try {
             Response response = clusterRpcClientProxy.sendRequest(member, request);
             return checkResponse(response);
         } catch (NacosException e) {
-            Loggers.DISTRO.error("[DISTRO-FAILED] Sync distro data failed! key: {}", data.getDistroKey(), e);
+            Loggers.DISTRO.error(
+                    "[DISTRO-FAILED] Sync distro data failed! key: {}", data.getDistroKey(), e);
         }
         return false;
     }
-    
+
     @Override
     public void syncData(DistroData data, String targetServer, DistroCallback callback) {
         if (isNoExistTarget(targetServer)) {
@@ -94,19 +95,21 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         DistroDataRequest request = new DistroDataRequest(data, data.getType());
         Member member = memberManager.find(targetServer);
         if (checkTargetServerStatusUnhealthy(member)) {
-            Loggers.DISTRO
-                    .warn("[DISTRO] Cancel distro sync caused by target server {} unhealthy, key: {}", targetServer,
-                            data.getDistroKey());
+            Loggers.DISTRO.warn(
+                    "[DISTRO] Cancel distro sync caused by target server {} unhealthy, key: {}",
+                    targetServer,
+                    data.getDistroKey());
             callback.onFailed(null);
             return;
         }
         try {
-            clusterRpcClientProxy.asyncRequest(member, request, new DistroRpcCallbackWrapper(callback, member));
+            clusterRpcClientProxy.asyncRequest(
+                    member, request, new DistroRpcCallbackWrapper(callback, member));
         } catch (NacosException nacosException) {
             callback.onFailed(nacosException);
         }
     }
-    
+
     @Override
     public boolean syncVerifyData(DistroData verifyData, String targetServer) {
         if (isNoExistTarget(targetServer)) {
@@ -117,22 +120,27 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         DistroDataRequest request = new DistroDataRequest(verifyData, DataOperation.VERIFY);
         Member member = memberManager.find(targetServer);
         if (checkTargetServerStatusUnhealthy(member)) {
-            Loggers.DISTRO
-                    .warn("[DISTRO] Cancel distro verify caused by target server {} unhealthy, key: {}", targetServer,
-                            verifyData.getDistroKey());
+            Loggers.DISTRO.warn(
+                    "[DISTRO] Cancel distro verify caused by target server {} unhealthy, key: {}",
+                    targetServer,
+                    verifyData.getDistroKey());
             return false;
         }
         try {
             Response response = clusterRpcClientProxy.sendRequest(member, request);
             return checkResponse(response);
         } catch (NacosException e) {
-            Loggers.DISTRO.error("[DISTRO-FAILED] Verify distro data failed! key: {} ", verifyData.getDistroKey(), e);
+            Loggers.DISTRO.error(
+                    "[DISTRO-FAILED] Verify distro data failed! key: {} ",
+                    verifyData.getDistroKey(),
+                    e);
         }
         return false;
     }
-    
+
     @Override
-    public void syncVerifyData(DistroData verifyData, String targetServer, DistroCallback callback) {
+    public void syncVerifyData(
+            DistroData verifyData, String targetServer, DistroCallback callback) {
         if (isNoExistTarget(targetServer)) {
             callback.onSuccess();
             return;
@@ -140,27 +148,34 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
         DistroDataRequest request = new DistroDataRequest(verifyData, DataOperation.VERIFY);
         Member member = memberManager.find(targetServer);
         if (checkTargetServerStatusUnhealthy(member)) {
-            Loggers.DISTRO
-                    .warn("[DISTRO] Cancel distro verify caused by target server {} unhealthy, key: {}", targetServer,
-                            verifyData.getDistroKey());
+            Loggers.DISTRO.warn(
+                    "[DISTRO] Cancel distro verify caused by target server {} unhealthy, key: {}",
+                    targetServer,
+                    verifyData.getDistroKey());
             callback.onFailed(null);
             return;
         }
         try {
-            DistroVerifyCallbackWrapper wrapper = new DistroVerifyCallbackWrapper(targetServer,
-                    verifyData.getDistroKey().getResourceKey(), callback, member);
+            DistroVerifyCallbackWrapper wrapper =
+                    new DistroVerifyCallbackWrapper(
+                            targetServer,
+                            verifyData.getDistroKey().getResourceKey(),
+                            callback,
+                            member);
             clusterRpcClientProxy.asyncRequest(member, request, wrapper);
         } catch (NacosException nacosException) {
             callback.onFailed(nacosException);
         }
     }
-    
+
     @Override
     public DistroData getData(DistroKey key, String targetServer) {
         Member member = memberManager.find(targetServer);
         if (checkTargetServerStatusUnhealthy(member)) {
             throw new DistroException(
-                    String.format("[DISTRO] Cancel get snapshot caused by target server %s unhealthy", targetServer));
+                    String.format(
+                            "[DISTRO] Cancel get snapshot caused by target server %s unhealthy",
+                            targetServer));
         }
         DistroDataRequest request = new DistroDataRequest();
         DistroData distroData = new DistroData();
@@ -174,71 +189,78 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
                 return ((DistroDataResponse) response).getDistroData();
             } else {
                 throw new DistroException(
-                        String.format("[DISTRO-FAILED] Get data request to %s failed, code: %d, message: %s",
+                        String.format(
+                                "[DISTRO-FAILED] Get data request to %s failed, code: %d, message: %s",
                                 targetServer, response.getErrorCode(), response.getMessage()));
             }
         } catch (NacosException e) {
             throw new DistroException("[DISTRO-FAILED] Get distro data failed! ", e);
         }
     }
-    
+
     @Override
     public DistroData getDatumSnapshot(String targetServer) {
         Member member = memberManager.find(targetServer);
         if (checkTargetServerStatusUnhealthy(member)) {
             throw new DistroException(
-                    String.format("[DISTRO] Cancel get snapshot caused by target server %s unhealthy", targetServer));
+                    String.format(
+                            "[DISTRO] Cancel get snapshot caused by target server %s unhealthy",
+                            targetServer));
         }
         DistroDataRequest request = new DistroDataRequest();
         request.setDataOperation(DataOperation.SNAPSHOT);
         try {
-            Response response = clusterRpcClientProxy
-                    .sendRequest(member, request, DistroConfig.getInstance().getLoadDataTimeoutMillis());
+            Response response =
+                    clusterRpcClientProxy.sendRequest(
+                            member, request, DistroConfig.getInstance().getLoadDataTimeoutMillis());
             if (checkResponse(response)) {
                 return ((DistroDataResponse) response).getDistroData();
             } else {
                 throw new DistroException(
-                        String.format("[DISTRO-FAILED] Get snapshot request to %s failed, code: %d, message: %s",
+                        String.format(
+                                "[DISTRO-FAILED] Get snapshot request to %s failed, code: %d, message: %s",
                                 targetServer, response.getErrorCode(), response.getMessage()));
             }
         } catch (NacosException e) {
             throw new DistroException("[DISTRO-FAILED] Get distro snapshot failed! ", e);
         }
     }
-    
+
     private boolean isNoExistTarget(String target) {
         return !memberManager.hasMember(target);
     }
-    
+
     private boolean checkTargetServerStatusUnhealthy(Member member) {
-        return null == member || !NodeState.UP.equals(member.getState()) || !clusterRpcClientProxy.isRunning(member);
+        return null == member
+                || !NodeState.UP.equals(member.getState())
+                || !clusterRpcClientProxy.isRunning(member);
     }
-    
+
     private boolean checkResponse(Response response) {
         return ResponseCode.SUCCESS.getCode() == response.getResultCode();
     }
-    
+
     private class DistroRpcCallbackWrapper implements RequestCallBack<Response> {
-        
+
         private final DistroCallback distroCallback;
-        
+
         private final Member member;
-        
+
         public DistroRpcCallbackWrapper(DistroCallback distroCallback, Member member) {
             this.distroCallback = distroCallback;
             this.member = member;
         }
-        
+
         @Override
         public Executor getExecutor() {
             return GlobalExecutor.getCallbackExecutor();
         }
-        
+
         @Override
         public long getTimeout() {
             return DistroConfig.getInstance().getSyncTimeoutMillis();
         }
-        
+
         @Override
         public void onResponse(Response response) {
             if (checkResponse(response)) {
@@ -249,54 +271,61 @@ public class DistroClientTransportAgent implements DistroTransportAgent {
                 distroCallback.onFailed(null);
             }
         }
-        
+
         @Override
         public void onException(Throwable e) {
             distroCallback.onFailed(e);
         }
     }
-    
+
     private class DistroVerifyCallbackWrapper implements RequestCallBack<Response> {
-        
+
         private final String targetServer;
-        
+
         private final String clientId;
-        
+
         private final DistroCallback distroCallback;
-        
+
         private final Member member;
-        
-        private DistroVerifyCallbackWrapper(String targetServer, String clientId, DistroCallback distroCallback,
+
+        private DistroVerifyCallbackWrapper(
+                String targetServer,
+                String clientId,
+                DistroCallback distroCallback,
                 Member member) {
             this.targetServer = targetServer;
             this.clientId = clientId;
             this.distroCallback = distroCallback;
             this.member = member;
         }
-        
+
         @Override
         public Executor getExecutor() {
             return GlobalExecutor.getCallbackExecutor();
         }
-        
+
         @Override
         public long getTimeout() {
             return DistroConfig.getInstance().getVerifyTimeoutMillis();
         }
-        
+
         @Override
         public void onResponse(Response response) {
             if (checkResponse(response)) {
                 NamingTpsMonitor.distroVerifySuccess(member.getAddress(), member.getIp());
                 distroCallback.onSuccess();
             } else {
-                Loggers.DISTRO.info("Target {} verify client {} failed, sync new client", targetServer, clientId);
-                NotifyCenter.publishEvent(new ClientEvent.ClientVerifyFailedEvent(clientId, targetServer));
+                Loggers.DISTRO.info(
+                        "Target {} verify client {} failed, sync new client",
+                        targetServer,
+                        clientId);
+                NotifyCenter.publishEvent(
+                        new ClientEvent.ClientVerifyFailedEvent(clientId, targetServer));
                 NamingTpsMonitor.distroVerifyFail(member.getAddress(), member.getIp());
                 distroCallback.onFailed(null);
             }
         }
-        
+
         @Override
         public void onException(Throwable e) {
             distroCallback.onFailed(e);

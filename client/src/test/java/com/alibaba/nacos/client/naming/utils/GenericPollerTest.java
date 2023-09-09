@@ -16,13 +16,10 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Arrays;
 
 public class GenericPollerTest {
-    
+
     @Test
     public void testNext() {
         String item1 = "item1";
@@ -32,7 +29,7 @@ public class GenericPollerTest {
         Assert.assertEquals(item2, poller.next());
         Assert.assertEquals(item1, poller.next());
     }
-    
+
     @Test
     public void testRefresh() {
         String item1 = "item1";

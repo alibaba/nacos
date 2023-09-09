@@ -25,111 +25,116 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author Nacos
  */
 public class StsConfig {
-    
-    private static final String RAM_SECURITY_CREDENTIALS_URL = "http://100.100.100.200/latest/meta-data/ram/security-credentials/";
-    
+
+    private static final String RAM_SECURITY_CREDENTIALS_URL =
+            "http://100.100.100.200/latest/meta-data/ram/security-credentials/";
+
     private String ramRoleName;
-    
+
     /**
-     * The STS temporary certificate will be refreshed when the validity period of
-     * the temporary certificate is left (allow the local time to be at most slower than the STS service time).
+     * The STS temporary certificate will be refreshed when the validity period of the temporary
+     * certificate is left (allow the local time to be at most slower than the STS service time).
      */
     private int timeToRefreshInMillisecond = 3 * 60 * 1000;
-    
-    /**
-     * Metadata interface for obtaining STS temporary credentials (including role name).
-     */
+
+    /** Metadata interface for obtaining STS temporary credentials (including role name). */
     private String securityCredentialsUrl;
-    
-    /**
-     * Set the STS temporary certificate and no longer obtain it through the metadata interface.
-     */
+
+    /** Set the STS temporary certificate and no longer obtain it through the metadata interface. */
     private String securityCredentials;
-    
-    /**
-     * Whether to cache.
-     */
+
+    /** Whether to cache. */
     private boolean cacheSecurityCredentials = true;
-    
+
     private static class Singleton {
-        
+
         private static final StsConfig INSTANCE = new StsConfig();
     }
-    
+
     private StsConfig() {
-        String ramRoleName = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY);
+        String ramRoleName =
+                NacosClientProperties.PROTOTYPE.getProperty(
+                        IdentifyConstants.RAM_ROLE_NAME_PROPERTY);
         if (!StringUtils.isBlank(ramRoleName)) {
             setRamRoleName(ramRoleName);
         }
-        
-        String timeToRefreshInMillisecond = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.REFRESH_TIME_PROPERTY);
+
+        String timeToRefreshInMillisecond =
+                NacosClientProperties.PROTOTYPE.getProperty(
+                        IdentifyConstants.REFRESH_TIME_PROPERTY);
         if (!StringUtils.isBlank(timeToRefreshInMillisecond)) {
             setTimeToRefreshInMillisecond(Integer.parseInt(timeToRefreshInMillisecond));
         }
-        
-        String securityCredentials = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.SECURITY_PROPERTY);
+
+        String securityCredentials =
+                NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.SECURITY_PROPERTY);
         if (!StringUtils.isBlank(securityCredentials)) {
             setSecurityCredentials(securityCredentials);
         }
-        
-        String securityCredentialsUrl = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.SECURITY_URL_PROPERTY);
+
+        String securityCredentialsUrl =
+                NacosClientProperties.PROTOTYPE.getProperty(
+                        IdentifyConstants.SECURITY_URL_PROPERTY);
         if (!StringUtils.isBlank(securityCredentialsUrl)) {
             setSecurityCredentialsUrl(securityCredentialsUrl);
         }
-        
-        String cacheSecurityCredentials = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.SECURITY_CACHE_PROPERTY);
+
+        String cacheSecurityCredentials =
+                NacosClientProperties.PROTOTYPE.getProperty(
+                        IdentifyConstants.SECURITY_CACHE_PROPERTY);
         if (!StringUtils.isBlank(cacheSecurityCredentials)) {
             setCacheSecurityCredentials(Boolean.parseBoolean(cacheSecurityCredentials));
         }
     }
-    
+
     public static StsConfig getInstance() {
         return Singleton.INSTANCE;
     }
-    
+
     public String getRamRoleName() {
         return ramRoleName;
     }
-    
+
     public void setRamRoleName(String ramRoleName) {
         this.ramRoleName = ramRoleName;
     }
-    
+
     public int getTimeToRefreshInMillisecond() {
         return timeToRefreshInMillisecond;
     }
-    
+
     public void setTimeToRefreshInMillisecond(int timeToRefreshInMillisecond) {
         this.timeToRefreshInMillisecond = timeToRefreshInMillisecond;
     }
-    
+
     public String getSecurityCredentialsUrl() {
         if (securityCredentialsUrl == null && ramRoleName != null) {
             return RAM_SECURITY_CREDENTIALS_URL + ramRoleName;
         }
         return securityCredentialsUrl;
     }
-    
+
     public void setSecurityCredentialsUrl(String securityCredentialsUrl) {
         this.securityCredentialsUrl = securityCredentialsUrl;
     }
-    
+
     public String getSecurityCredentials() {
         return securityCredentials;
     }
-    
+
     public void setSecurityCredentials(String securityCredentials) {
         this.securityCredentials = securityCredentials;
     }
-    
+
     public boolean isStsOn() {
-        return StringUtils.isNotEmpty(getSecurityCredentials()) || StringUtils.isNotEmpty(getSecurityCredentialsUrl());
+        return StringUtils.isNotEmpty(getSecurityCredentials())
+                || StringUtils.isNotEmpty(getSecurityCredentialsUrl());
     }
-    
+
     public boolean isCacheSecurityCredentials() {
         return cacheSecurityCredentials;
     }
-    
+
     public void setCacheSecurityCredentials(boolean cacheSecurityCredentials) {
         this.cacheSecurityCredentials = cacheSecurityCredentials;
     }

@@ -27,7 +27,7 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
  * @since 1.2.0
  */
 public class DefaultResourceParser implements ResourceParser<Object> {
-    
+
     @Override
     public Resource parse(Object request, Secured secured) {
         return Resource.EMPTY_RESOURCE;

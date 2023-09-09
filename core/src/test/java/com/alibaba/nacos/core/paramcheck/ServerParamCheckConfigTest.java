@@ -16,39 +16,38 @@
 
 package com.alibaba.nacos.core.paramcheck;
 
-import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Test;
-import org.springframework.mock.env.MockEnvironment;
-
-import java.lang.reflect.Constructor;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+import com.alibaba.nacos.sys.env.EnvUtil;
+import java.lang.reflect.Constructor;
+import org.springframework.mock.env.MockEnvironment;
+
 public class ServerParamCheckConfigTest {
-    
+
     @Test
     public void getConfigFromEnv() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         environment.setProperty("nacos.core.param.check.enabled", String.valueOf(false));
         environment.setProperty("nacos.core.param.check.checker", "default");
-        
-        Constructor<ServerParamCheckConfig> declaredConstructor = ServerParamCheckConfig.class.getDeclaredConstructor();
+
+        Constructor<ServerParamCheckConfig> declaredConstructor =
+                ServerParamCheckConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         ServerParamCheckConfig paramCheckConfig = declaredConstructor.newInstance();
-        
+
         assertFalse(paramCheckConfig.isParamCheckEnabled());
         assertEquals(paramCheckConfig.getActiveParamChecker(), "default");
     }
-    
+
     @Test
     public void setParamCheckEnabled() {
         ServerParamCheckConfig paramCheckConfig = ServerParamCheckConfig.getInstance();
         paramCheckConfig.setParamCheckEnabled(false);
         assertFalse(paramCheckConfig.isParamCheckEnabled());
     }
-    
+
     @Test
     public void setActiveParamChecker() {
         ServerParamCheckConfig paramCheckConfig = ServerParamCheckConfig.getInstance();

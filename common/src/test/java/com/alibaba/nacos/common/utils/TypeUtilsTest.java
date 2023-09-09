@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 import java.util.Map;
@@ -29,14 +26,16 @@ import java.util.Map;
  * @author zzq
  */
 public class TypeUtilsTest {
-    
+
     @Test
     public void parameterize() {
         ParameterizedType stringComparableType = TypeUtils.parameterize(List.class, String.class);
         Assert.assertEquals("java.util.List<java.lang.String>", stringComparableType.toString());
-        
-        ParameterizedType stringIntegerComparableType = TypeUtils.parameterize(Map.class, String.class, Integer.class);
-        Assert.assertEquals("java.util.Map<java.lang.String, java.lang.Integer>",
+
+        ParameterizedType stringIntegerComparableType =
+                TypeUtils.parameterize(Map.class, String.class, Integer.class);
+        Assert.assertEquals(
+                "java.util.Map<java.lang.String, java.lang.Integer>",
                 stringIntegerComparableType.toString());
     }
 }

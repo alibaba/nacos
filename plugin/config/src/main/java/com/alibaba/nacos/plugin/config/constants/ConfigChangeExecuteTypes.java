@@ -22,15 +22,11 @@ package com.alibaba.nacos.plugin.config.constants;
  * @author liyunfei
  */
 public enum ConfigChangeExecuteTypes {
-    /**
-     * Execute before pointcut.
-     */
+    /** Execute before pointcut. */
     EXECUTE_BEFORE_TYPE,
-    /**
-     * Execute after pointcut.
-     */
+    /** Execute after pointcut. */
     EXECUTE_AFTER_TYPE;
-    
+
     public boolean equals(ConfigChangeExecuteTypes configChangeExecuteTypes) {
         return this.compareTo(configChangeExecuteTypes) == 0;
     }

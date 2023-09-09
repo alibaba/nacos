@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.trace.spi;
 
 import com.alibaba.nacos.common.trace.event.TraceEvent;
-
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -27,28 +26,29 @@ import java.util.concurrent.Executor;
  * @author xiweng.yy
  */
 public interface NacosTraceSubscriber {
-    
+
     /**
-     * Get the plugin name, if the same name has loaded by nacos, the older one will be replaced by new one.
+     * Get the plugin name, if the same name has loaded by nacos, the older one will be replaced by
+     * new one.
      *
      * @return plugin name
      */
     String getName();
-    
+
     /**
      * Event callback.
      *
      * @param event {@link TraceEvent}
      */
     void onEvent(TraceEvent event);
-    
+
     /**
      * Returns which trace events are this subscriber interested in.
      *
      * @return The interested event types.
      */
     List<Class<? extends TraceEvent>> subscribeTypes();
-    
+
     /**
      * It is up to the listener to determine whether the callback is asynchronous or synchronous.
      *

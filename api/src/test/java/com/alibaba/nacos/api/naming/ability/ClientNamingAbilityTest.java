@@ -16,13 +16,11 @@
 
 package com.alibaba.nacos.api.naming.ability;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class ClientNamingAbilityTest {
-    
+
     @Test
     public void testGetAndSet() {
         ClientNamingAbility ability = new ClientNamingAbility();

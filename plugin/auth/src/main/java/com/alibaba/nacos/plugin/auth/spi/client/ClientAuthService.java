@@ -16,11 +16,10 @@
 
 package com.alibaba.nacos.plugin.auth.spi.client;
 
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
-
 import java.util.List;
 import java.util.Properties;
 
@@ -30,7 +29,7 @@ import java.util.Properties;
  * @author wuyfee
  */
 public interface ClientAuthService extends Closeable {
-    
+
     /**
      * login(request) to service and get response.
      *
@@ -38,28 +37,27 @@ public interface ClientAuthService extends Closeable {
      * @return boolean whether login success.
      */
     Boolean login(Properties properties);
-    
+
     /**
      * set login serverList.
      *
      * @param serverList login server list;
      */
     void setServerList(List<String> serverList);
-    
+
     /**
      * http request template.
      *
      * @param nacosRestTemplate nacos http request template.
      */
     void setNacosRestTemplate(NacosRestTemplate nacosRestTemplate);
-    
+
     /**
      * get login identity context.
      *
-     * @param resource resource for this request, some of plugin implementation will use this resource to generate their
-     *                 identity context. If no need to use can ignore it.
+     * @param resource resource for this request, some of plugin implementation will use this
+     *     resource to generate their identity context. If no need to use can ignore it.
      * @return LoginIdentityContext this plugin loginIdentityContext.
      */
     LoginIdentityContext getLoginIdentityContext(RequestResource resource);
-    
 }

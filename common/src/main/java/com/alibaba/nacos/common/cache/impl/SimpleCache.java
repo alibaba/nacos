@@ -17,34 +17,34 @@
 package com.alibaba.nacos.common.cache.impl;
 
 import com.alibaba.nacos.common.cache.Cache;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 /**
  * Simple implementation of {@code Cache}.
+ *
  * @author zzq
  * @date 2021/7/30
  */
 public class SimpleCache<K, V> implements Cache<K, V> {
-    
+
     private Map<K, V> cache;
-    
+
     public SimpleCache(int size) {
         cache = new HashMap<>(size);
     }
-    
+
     @Override
     public void put(K key, V val) {
         cache.put(key, val);
     }
-    
+
     @Override
     public V get(K key) {
         return cache.get(key);
     }
-    
+
     @Override
     public V get(K key, Callable<? extends V> call) throws Exception {
         if (cache.containsKey(key)) {
@@ -55,17 +55,17 @@ public class SimpleCache<K, V> implements Cache<K, V> {
             return v2;
         }
     }
-    
+
     @Override
     public V remove(K key) {
         return cache.remove(key);
     }
-    
+
     @Override
     public void clear() {
         cache.clear();
     }
-    
+
     @Override
     public int getSize() {
         return cache.size();

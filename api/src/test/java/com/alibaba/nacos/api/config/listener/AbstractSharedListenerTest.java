@@ -16,26 +16,23 @@
 
 package com.alibaba.nacos.api.config.listener;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
 public class AbstractSharedListenerTest {
-    
+
     private static final String CONFIG_CONTENT = "test";
-    
+
     private static Map<String, String> receivedMap;
-    
+
     @Before
     public void setUp() {
         receivedMap = new HashMap<>();
     }
-    
+
     @Test
     public void testFillContext() {
         assertEquals(0, receivedMap.size());
@@ -50,15 +47,15 @@ public class AbstractSharedListenerTest {
         assertEquals("ggg", receivedMap.get("group"));
         assertEquals("aaa", receivedMap.get("dataId"));
     }
-    
+
     @Test
     public void getExecutor() {
         // Default listener executor is null.
         assertNull(new MockShardListener().getExecutor());
     }
-    
+
     private static class MockShardListener extends AbstractSharedListener {
-        
+
         @Override
         public void innerReceive(String dataId, String group, String configInfo) {
             assertEquals(CONFIG_CONTENT, configInfo);

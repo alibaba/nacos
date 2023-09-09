@@ -25,30 +25,28 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
  * @author xiweng.yy
  */
 public class ServiceEvent extends Event {
-    
+
     private static final long serialVersionUID = -9173247502346692418L;
-    
+
     private final Service service;
-    
+
     public ServiceEvent(Service service) {
         this.service = service;
     }
-    
+
     public Service getService() {
         return service;
     }
-    
-    /**
-     * Service data changed event.
-     */
+
+    /** Service data changed event. */
     public static class ServiceChangedEvent extends ServiceEvent {
-        
+
         private static final long serialVersionUID = 2123694271992630822L;
-        
+
         public ServiceChangedEvent(Service service) {
             this(service, false);
         }
-        
+
         public ServiceChangedEvent(Service service, boolean incrementRevision) {
             super(service);
             service.renewUpdateTime();
@@ -57,24 +55,21 @@ public class ServiceEvent extends Event {
             }
         }
     }
-    
-    /**
-     * Service is subscribed by one client event.
-     */
+
+    /** Service is subscribed by one client event. */
     public static class ServiceSubscribedEvent extends ServiceEvent {
-        
+
         private static final long serialVersionUID = -2645441445867337345L;
-    
+
         private final String clientId;
-        
+
         public ServiceSubscribedEvent(Service service, String clientId) {
             super(service);
             this.clientId = clientId;
         }
-    
+
         public String getClientId() {
             return clientId;
         }
     }
-    
 }

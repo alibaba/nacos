@@ -24,15 +24,15 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author Nacos
  */
 public class AccumulateStatCount {
-    
+
     final AtomicLong total = new AtomicLong(0);
-    
+
     long lastStatValue = 0;
-    
+
     public long increase() {
         return total.incrementAndGet();
     }
-    
+
     /**
      * accumulate stat.
      *

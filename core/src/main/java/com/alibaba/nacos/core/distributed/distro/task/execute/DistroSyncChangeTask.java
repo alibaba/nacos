@@ -29,18 +29,18 @@ import com.alibaba.nacos.core.utils.Loggers;
  * @author xiweng.yy
  */
 public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
-    
+
     private static final DataOperation OPERATION = DataOperation.CHANGE;
-    
+
     public DistroSyncChangeTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
         super(distroKey, distroComponentHolder);
     }
-    
+
     @Override
     protected DataOperation getDataOperation() {
         return OPERATION;
     }
-    
+
     @Override
     protected boolean doExecute() {
         String type = getDistroKey().getResourceType();
@@ -49,10 +49,11 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
             Loggers.DISTRO.warn("[DISTRO] {} with null data to sync, skip", toString());
             return true;
         }
-        return getDistroComponentHolder().findTransportAgent(type)
+        return getDistroComponentHolder()
+                .findTransportAgent(type)
                 .syncData(distroData, getDistroKey().getTargetServer());
     }
-    
+
     @Override
     protected void doExecuteWithCallback(DistroCallback callback) {
         String type = getDistroKey().getResourceType();
@@ -61,17 +62,19 @@ public class DistroSyncChangeTask extends AbstractDistroExecuteTask {
             Loggers.DISTRO.warn("[DISTRO] {} with null data to sync, skip", toString());
             return;
         }
-        getDistroComponentHolder().findTransportAgent(type)
+        getDistroComponentHolder()
+                .findTransportAgent(type)
                 .syncData(distroData, getDistroKey().getTargetServer(), callback);
     }
-    
+
     @Override
     public String toString() {
         return "DistroSyncChangeTask for " + getDistroKey().toString();
     }
-    
+
     private DistroData getDistroData(String type) {
-        DistroData result = getDistroComponentHolder().findDataStorage(type).getDistroData(getDistroKey());
+        DistroData result =
+                getDistroComponentHolder().findDataStorage(type).getDistroData(getDistroKey());
         if (null != result) {
             result.setType(OPERATION);
         }

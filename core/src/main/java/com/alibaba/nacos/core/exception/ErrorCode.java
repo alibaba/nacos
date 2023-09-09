@@ -22,84 +22,58 @@ package com.alibaba.nacos.core.exception;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public enum ErrorCode {
-    
-    /**
-     * unknow error.
-     */
+
+    /** unknow error. */
     UnKnowError(40001),
-    
+
     // kv error
-    
-    /**
-     * KVStorage write error.
-     */
+
+    /** KVStorage write error. */
     KVStorageWriteError(40100),
-    
-    /**
-     * KVStorage read error.
-     */
+
+    /** KVStorage read error. */
     KVStorageReadError(40101),
-    
-    /**
-     * KVStorage delete error.
-     */
+
+    /** KVStorage delete error. */
     KVStorageDeleteError(40102),
-    
-    /**
-     * KVStorage snapshot save error.
-     */
+
+    /** KVStorage snapshot save error. */
     KVStorageSnapshotSaveError(40103),
-    
-    /**
-     * KVStorage snapshot load error.
-     */
+
+    /** KVStorage snapshot load error. */
     KVStorageSnapshotLoadError(40104),
-    
-    /**
-     * KVStorage reset error.
-     */
+
+    /** KVStorage reset error. */
     KVStorageResetError(40105),
-    
-    /**
-     * KVStorage create error.
-     */
+
+    /** KVStorage create error. */
     KVStorageCreateError(40106),
-    
-    /**
-     * KVStorage write error.
-     */
+
+    /** KVStorage write error. */
     KVStorageBatchWriteError(40107),
-    
+
     // disk error
-    
-    /**
-     * mkdir error.
-     */
+
+    /** mkdir error. */
     IOMakeDirError(40201),
-    
-    /**
-     * copy directory has error.
-     */
+
+    /** copy directory has error. */
     IOCopyDirError(40202),
-    
+
     // consistency protocol error
-    
-    /**
-     * protocol write error.
-     */
+
+    /** protocol write error. */
     ProtoSubmitError(40301),
-    
-    /**
-     * protocol read error.
-     */
+
+    /** protocol read error. */
     ProtoReadError(40302);
-    
+
     private final int code;
-    
+
     ErrorCode(int code) {
         this.code = code;
     }
-    
+
     public int getCode() {
         return code;
     }

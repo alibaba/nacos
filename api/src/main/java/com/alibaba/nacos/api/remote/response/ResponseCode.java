@@ -23,26 +23,22 @@ package com.alibaba.nacos.api.remote.response;
  * @version $Id: ResponseCode.java, v 0.1 2020年07月14日 2:04 PM liuzunfei Exp $
  */
 public enum ResponseCode {
-    
-    /**
-     * Request success.
-     */
+
+    /** Request success. */
     SUCCESS(200, "Response ok"),
-    
-    /**
-     * Request failed.
-     */
+
+    /** Request failed. */
     FAIL(500, "Response fail");
-    
+
     int code;
-    
+
     String desc;
-    
+
     ResponseCode(int code, String desc) {
         this.code = code;
         this.desc = desc;
     }
-    
+
     /**
      * Getter method for property <tt>code</tt>.
      *
@@ -51,7 +47,7 @@ public enum ResponseCode {
     public int getCode() {
         return code;
     }
-    
+
     /**
      * Getter method for property <tt>desc</tt>.
      *

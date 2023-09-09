@@ -18,11 +18,8 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+public class JvmUtilTest {
 
-public class JvmUtilTest  {
-    
     @Test
     public void testIsMultiInstance() {
         Boolean multiInstance = JvmUtil.isMultiInstance();

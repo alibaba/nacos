@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -33,11 +32,11 @@ import java.util.ServiceLoader;
  * @author Nacos
  */
 public class ConfigFilterChainManager implements IConfigFilterChain {
-    
+
     private final List<IConfigFilter> filters = new ArrayList<>();
 
     private final Properties initProperty;
-    
+
     public ConfigFilterChainManager(Properties properties) {
         this.initProperty = properties;
         ServiceLoader<IConfigFilter> configFilters = ServiceLoader.load(IConfigFilter.class);
@@ -45,7 +44,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
             addFilter(configFilter);
         }
     }
-    
+
     /**
      * Add filter.
      *
@@ -69,30 +68,31 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
                 break;
             }
         }
-        
+
         if (i == this.filters.size()) {
             this.filters.add(i, filter);
         }
         return this;
     }
-    
+
     @Override
     public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
         new VirtualFilterChain(this.filters).doFilter(request, response);
     }
-    
+
     private static class VirtualFilterChain implements IConfigFilterChain {
-        
+
         private final List<? extends IConfigFilter> additionalFilters;
-        
+
         private int currentPosition = 0;
-        
+
         public VirtualFilterChain(List<? extends IConfigFilter> additionalFilters) {
             this.additionalFilters = additionalFilters;
         }
-        
+
         @Override
-        public void doFilter(final IConfigRequest request, final IConfigResponse response) throws NacosException {
+        public void doFilter(final IConfigRequest request, final IConfigResponse response)
+                throws NacosException {
             if (this.currentPosition != this.additionalFilters.size()) {
                 this.currentPosition++;
                 IConfigFilter nextFilter = this.additionalFilters.get(this.currentPosition - 1);
@@ -100,5 +100,4 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
             }
         }
     }
-    
 }

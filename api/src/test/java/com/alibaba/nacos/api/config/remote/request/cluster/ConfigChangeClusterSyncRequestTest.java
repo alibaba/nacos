@@ -16,21 +16,19 @@
 
 package com.alibaba.nacos.api.config.remote.request.cluster;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.api.config.remote.request.BasedConfigRequestTest;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.config.remote.request.BasedConfigRequestTest;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
-    
+
     ConfigChangeClusterSyncRequest configChangeClusterSyncRequest;
-    
+
     String requestId;
-    
+
     @Before
     public void before() {
         configChangeClusterSyncRequest = new ConfigChangeClusterSyncRequest();
@@ -43,7 +41,7 @@ public class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
         configChangeClusterSyncRequest.putAllHeader(HEADERS);
         requestId = injectRequestUuId(configChangeClusterSyncRequest);
     }
-    
+
     @Override
     @Test
     public void testSerialize() throws JsonProcessingException {
@@ -57,16 +55,17 @@ public class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"beta\":" + Boolean.TRUE));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
         assertTrue(json.contains("\"lastModified\":" + 0));
-        
     }
-    
+
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{\"header1\":\"test_header1\"},\"requestId\":\"ece89111-3c42-4055-aca4-c95e16ec564b\",\"dataId\":\"test_data\","
-                + "\"group\":\"group\",\"tenant\":\"test_tenant\","
-                + "\"tag\":\"tag\",\"lastModified\":0,\"beta\":true,\"module\":\"config\"}";
-        ConfigChangeClusterSyncRequest actual = mapper.readValue(json, ConfigChangeClusterSyncRequest.class);
+        String json =
+                "{\"headers\":{\"header1\":\"test_header1\"},\"requestId\":\"ece89111-3c42-4055-aca4-c95e16ec564b\",\"dataId\":\"test_data\","
+                        + "\"group\":\"group\",\"tenant\":\"test_tenant\","
+                        + "\"tag\":\"tag\",\"lastModified\":0,\"beta\":true,\"module\":\"config\"}";
+        ConfigChangeClusterSyncRequest actual =
+                mapper.readValue(json, ConfigChangeClusterSyncRequest.class);
         assertEquals(actual.getDataId(), DATA_ID);
         assertEquals(actual.getGroup(), GROUP);
         assertEquals(actual.getTenant(), TENANT);

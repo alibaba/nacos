@@ -26,7 +26,7 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
  * @version $Id: UnKnowResponse.java, v 0.1 2020年07月16日 9:47 PM liuzunfei Exp $
  */
 public class ErrorResponse extends Response {
-    
+
     /**
      * build an error response.
      *
@@ -39,7 +39,7 @@ public class ErrorResponse extends Response {
         response.setErrorInfo(errorCode, msg);
         return response;
     }
-    
+
     /**
      * build an error response.
      *
@@ -59,5 +59,4 @@ public class ErrorResponse extends Response {
         response.setErrorInfo(errorCode, exception.getMessage());
         return response;
     }
-    
 }

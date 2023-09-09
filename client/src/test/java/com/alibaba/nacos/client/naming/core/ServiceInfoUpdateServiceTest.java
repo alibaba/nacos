@@ -22,14 +22,12 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
-import org.junit.Test;
-import org.mockito.Mockito;
-
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
+import org.mockito.Mockito;
 
 public class ServiceInfoUpdateServiceTest {
-    
+
     @Test
     public void testScheduleUpdateIfAbsent() throws InterruptedException, NacosException {
         String serviceName = "aa";
@@ -43,21 +41,23 @@ public class ServiceInfoUpdateServiceTest {
         info.setCacheMillis(10000L);
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         NamingClientProxy proxy = Mockito.mock(NamingClientProxy.class);
-        Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, false)).thenReturn(info);
-        
+        Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, false))
+                .thenReturn(info);
+
         InstancesChangeNotifier notifyer = Mockito.mock(InstancesChangeNotifier.class);
         Properties prop = new Properties();
-        
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(prop);
         nacosClientProperties.setProperty("namingAsyncQuerySubscribeService", "true");
-        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties,
-                holder, proxy, notifyer);
-        
+        final ServiceInfoUpdateService serviceInfoUpdateService =
+                new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifyer);
+
         serviceInfoUpdateService.scheduleUpdateIfAbsent("aa", "bb", "cc");
         TimeUnit.MILLISECONDS.sleep(1500);
         Mockito.verify(proxy).queryInstancesOfService(serviceName, group, clusters, false);
     }
-    
+
     @Test
     public void testStopUpdateIfContain() throws NacosException {
         String serviceName = "aa";
@@ -69,17 +69,19 @@ public class ServiceInfoUpdateServiceTest {
         info.setClusters(clusters);
         info.setLastRefTime(System.currentTimeMillis());
         NamingClientProxy proxy = Mockito.mock(NamingClientProxy.class);
-        Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, false)).thenReturn(info);
-        
+        Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, false))
+                .thenReturn(info);
+
         InstancesChangeNotifier notifyer = Mockito.mock(InstancesChangeNotifier.class);
         Properties prop = new Properties();
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
-        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties,
-                holder, proxy, notifyer);
+
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(prop);
+        final ServiceInfoUpdateService serviceInfoUpdateService =
+                new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifyer);
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, group, clusters);
-        
+
         serviceInfoUpdateService.stopUpdateIfContain(serviceName, group, clusters);
         serviceInfoUpdateService.shutdown();
     }

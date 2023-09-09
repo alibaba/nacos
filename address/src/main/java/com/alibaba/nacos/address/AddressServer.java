@@ -27,9 +27,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  */
 @SpringBootApplication(scanBasePackages = "com.alibaba.nacos")
 public class AddressServer {
-    
+
     public static void main(String[] args) {
-        
+
         SpringApplication.run(AddressServer.class, args);
     }
 }

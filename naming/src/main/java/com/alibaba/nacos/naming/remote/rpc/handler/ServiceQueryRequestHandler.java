@@ -37,20 +37,23 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
-    
+public class ServiceQueryRequestHandler
+        extends RequestHandler<ServiceQueryRequest, QueryServiceResponse> {
+
     private final ServiceStorage serviceStorage;
-    
+
     private final NamingMetadataManager metadataManager;
-    
-    public ServiceQueryRequestHandler(ServiceStorage serviceStorage, NamingMetadataManager metadataManager) {
+
+    public ServiceQueryRequestHandler(
+            ServiceStorage serviceStorage, NamingMetadataManager metadataManager) {
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
     }
-    
+
     @Override
     @Secured(action = ActionTypes.READ)
-    public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta) throws NacosException {
+    public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta)
+            throws NacosException {
         String namespaceId = request.getNamespace();
         String groupName = request.getGroupName();
         String serviceName = request.getServiceName();
@@ -59,8 +62,9 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
         boolean healthyOnly = request.isHealthyOnly();
         ServiceInfo result = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
-        result = ServiceUtil.selectInstancesWithHealthyProtection(result, serviceMetadata, cluster, healthyOnly, true,
-                meta.getClientIp());
+        result =
+                ServiceUtil.selectInstancesWithHealthyProtection(
+                        result, serviceMetadata, cluster, healthyOnly, true, meta.getClientIp());
         return QueryServiceResponse.buildSuccessResponse(result);
     }
 }

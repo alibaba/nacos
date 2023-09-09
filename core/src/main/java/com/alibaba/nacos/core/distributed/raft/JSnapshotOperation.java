@@ -31,15 +31,15 @@ import com.google.protobuf.ZeroByteStringHelper;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 interface JSnapshotOperation {
-    
+
     /**
      * do snapshot save operation.
      *
      * @param writer {@link SnapshotWriter}
-     * @param done   {@link Closure}
+     * @param done {@link Closure}
      */
     void onSnapshotSave(SnapshotWriter writer, Closure done);
-    
+
     /**
      * do snapshot load operation.
      *
@@ -47,14 +47,14 @@ interface JSnapshotOperation {
      * @return operation label
      */
     boolean onSnapshotLoad(SnapshotReader reader);
-    
+
     /**
      * return actually snapshot executor.
      *
      * @return name
      */
     String info();
-    
+
     /**
      * Metadata information for snapshot files.
      *
@@ -62,9 +62,12 @@ interface JSnapshotOperation {
      * @return {@link LocalFileMetaOutter.LocalFileMeta}
      * @throws Exception Exception
      */
-    default LocalFileMetaOutter.LocalFileMeta buildMetadata(final LocalFileMeta metadata) throws Exception {
-        return metadata == null ? null : LocalFileMetaOutter.LocalFileMeta.newBuilder()
-                .setUserMeta(ZeroByteStringHelper.wrap(JacksonUtils.toJsonBytes(metadata))).build();
+    default LocalFileMetaOutter.LocalFileMeta buildMetadata(final LocalFileMeta metadata)
+            throws Exception {
+        return metadata == null
+                ? null
+                : LocalFileMetaOutter.LocalFileMeta.newBuilder()
+                        .setUserMeta(ZeroByteStringHelper.wrap(JacksonUtils.toJsonBytes(metadata)))
+                        .build();
     }
-    
 }

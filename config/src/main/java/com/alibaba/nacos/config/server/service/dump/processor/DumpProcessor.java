@@ -31,7 +31,6 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-
 import java.util.Objects;
 
 /**
@@ -41,22 +40,22 @@ import java.util.Objects;
  * @date 2020/7/5 12:19 PM
  */
 public class DumpProcessor implements NacosTaskProcessor {
-    
+
     final DumpService dumpService;
-    
+
     final ConfigInfoPersistService configInfoPersistService;
-    
+
     final ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
+
     final ConfigInfoTagPersistService configInfoTagPersistService;
-    
+
     public DumpProcessor(DumpService dumpService) {
         this.dumpService = dumpService;
         this.configInfoPersistService = dumpService.getConfigInfoPersistService();
         this.configInfoBetaPersistService = dumpService.getConfigInfoBetaPersistService();
         this.configInfoTagPersistService = dumpService.getConfigInfoTagPersistService();
     }
-    
+
     @Override
     public boolean process(NacosTask task) {
         DumpTask dumpTask = (DumpTask) task;
@@ -69,8 +68,15 @@ public class DumpProcessor implements NacosTaskProcessor {
         boolean isBeta = dumpTask.isBeta();
         String tag = dumpTask.getTag();
         boolean isBatch = dumpTask.isBatch();
-        ConfigDumpEvent.ConfigDumpEventBuilder build = ConfigDumpEvent.builder().namespaceId(tenant).dataId(dataId)
-                .group(group).isBatch(isBatch).isBeta(isBeta).tag(tag).handleIp(handleIp);
+        ConfigDumpEvent.ConfigDumpEventBuilder build =
+                ConfigDumpEvent.builder()
+                        .namespaceId(tenant)
+                        .dataId(dataId)
+                        .group(group)
+                        .isBatch(isBatch)
+                        .isBeta(isBeta)
+                        .tag(tag)
+                        .handleIp(handleIp);
         String type = "formal";
         if (isBeta) {
             type = "beta";
@@ -78,10 +84,11 @@ public class DumpProcessor implements NacosTaskProcessor {
             type = "tag-" + tag;
         }
         LogUtil.DUMP_LOG.info("[dump] process {} task. groupKey={}", type, dumpTask.getGroupKey());
-    
+
         if (isBeta) {
             // if publish beta, then dump config, update beta cache
-            ConfigInfoBetaWrapper cf = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
+            ConfigInfoBetaWrapper cf =
+                    configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
             build.remove(Objects.isNull(cf));
             build.betaIps(Objects.isNull(cf) ? null : cf.getBetaIps());
             build.content(Objects.isNull(cf) ? null : cf.getContent());
@@ -90,9 +97,10 @@ public class DumpProcessor implements NacosTaskProcessor {
             build.lastModifiedTs(Objects.isNull(cf) ? lastModifiedOut : cf.getLastModified());
             return DumpConfigHandler.configDump(build.build());
         }
-    
+
         if (StringUtils.isNotBlank(tag)) {
-            ConfigInfoTagWrapper cf = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
+            ConfigInfoTagWrapper cf =
+                    configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
             build.remove(Objects.isNull(cf));
             build.content(Objects.isNull(cf) ? null : cf.getContent());
             build.type(Objects.isNull(cf) ? null : cf.getType());
@@ -100,7 +108,7 @@ public class DumpProcessor implements NacosTaskProcessor {
             build.lastModifiedTs(Objects.isNull(cf) ? lastModifiedOut : cf.getLastModified());
             return DumpConfigHandler.configDump(build.build());
         }
-    
+
         ConfigInfoWrapper cf = configInfoPersistService.findConfigInfo(dataId, group, tenant);
         build.remove(Objects.isNull(cf));
         build.content(Objects.isNull(cf) ? null : cf.getContent());
@@ -108,6 +116,5 @@ public class DumpProcessor implements NacosTaskProcessor {
         build.encryptedDataKey(Objects.isNull(cf) ? null : cf.getEncryptedDataKey());
         build.lastModifiedTs(Objects.isNull(cf) ? lastModifiedOut : cf.getLastModified());
         return DumpConfigHandler.configDump(build.build());
-    
     }
 }

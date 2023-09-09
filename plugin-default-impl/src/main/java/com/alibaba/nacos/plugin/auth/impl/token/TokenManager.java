@@ -26,7 +26,7 @@ import org.springframework.security.core.Authentication;
  * @author majorhe
  */
 public interface TokenManager {
-    
+
     /**
      * Create token.
      *
@@ -35,7 +35,7 @@ public interface TokenManager {
      * @throws AccessException access exception
      */
     String createToken(Authentication authentication) throws AccessException;
-    
+
     /**
      * Create token.
      *
@@ -44,7 +44,7 @@ public interface TokenManager {
      * @throws AccessException access exception
      */
     String createToken(String userName) throws AccessException;
-    
+
     /**
      * Get auth Info.
      *
@@ -53,7 +53,7 @@ public interface TokenManager {
      * @throws AccessException access exception
      */
     Authentication getAuthentication(String token) throws AccessException;
-    
+
     /**
      * validate token.
      *
@@ -61,7 +61,7 @@ public interface TokenManager {
      * @throws AccessException access exception
      */
     void validateToken(String token) throws AccessException;
-    
+
     /**
      * parse token.
      *
@@ -70,15 +70,15 @@ public interface TokenManager {
      * @throws AccessException access exception
      */
     NacosUser parseToken(String token) throws AccessException;
-    
+
     /**
      * validate token.
      *
-     * @return  token validity in seconds
+     * @return token validity in seconds
      * @throws AccessException access exception
      */
     long getTokenValidityInSeconds() throws AccessException;
-    
+
     /**
      * validate token.
      *
@@ -87,5 +87,4 @@ public interface TokenManager {
      * @throws AccessException access exception
      */
     long getTokenTtlInSeconds(String token) throws AccessException;
-    
 }

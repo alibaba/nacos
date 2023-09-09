@@ -22,18 +22,18 @@ package com.alibaba.nacos.core.cluster.health;
  * @author xiweng.yy
  */
 public abstract class AbstractModuleHealthChecker {
-    
+
     protected AbstractModuleHealthChecker() {
         ModuleHealthCheckerHolder.getInstance().registerChecker(this);
     }
-    
+
     /**
      * Check readiness.
      *
      * @return {@code true} if readiness, otherwise {@code false}
      */
     public abstract boolean readiness();
-    
+
     /**
      * Module name.
      *

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.push.v2.hook;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-
 import java.util.Collection;
 
 /**
@@ -26,24 +25,24 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public class PushResultHookHolder implements PushResultHook {
-    
+
     private static final PushResultHookHolder INSTANCE = new PushResultHookHolder();
-    
+
     private final Collection<PushResultHook> hooks;
-    
+
     private PushResultHookHolder() {
         hooks = NacosServiceLoader.load(PushResultHook.class);
     }
-    
+
     public static PushResultHookHolder getInstance() {
         return INSTANCE;
     }
-    
+
     @Override
     public void pushSuccess(PushResult result) {
         hooks.forEach(each -> each.pushSuccess(result));
     }
-    
+
     @Override
     public void pushFailed(PushResult result) {
         hooks.forEach(each -> each.pushFailed(result));

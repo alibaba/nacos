@@ -26,82 +26,61 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @date 2019/7/1 10:21
  */
 public enum FileTypeEnum {
-    
-    /**
-     * Yaml file.
-     */
+
+    /** Yaml file. */
     YML("yaml", MediaType.TEXT_PLAIN),
-    
-    /**
-     * Yaml file.
-     */
+
+    /** Yaml file. */
     YAML("yaml", MediaType.TEXT_PLAIN),
-    
-    /**
-     * Text file.
-     */
+
+    /** Text file. */
     TXT("text", MediaType.TEXT_PLAIN),
-    
-    /**
-     * Text file.
-     */
+
+    /** Text file. */
     TEXT("text", MediaType.TEXT_PLAIN),
-    
-    /**
-     * Json file.
-     */
+
+    /** Json file. */
     JSON("json", MediaType.APPLICATION_JSON),
-    
-    /**
-     * Xml file.
-     */
+
+    /** Xml file. */
     XML("xml", MediaType.APPLICATION_XML),
-    
-    /**
-     * Html file.
-     */
+
+    /** Html file. */
     HTM("html", MediaType.TEXT_HTML),
-    
-    /**
-     * Html file.
-     */
+
+    /** Html file. */
     HTML("html", MediaType.TEXT_HTML),
-    
-    /**
-     * Properties file.
-     */
+
+    /** Properties file. */
     PROPERTIES("properties", MediaType.TEXT_PLAIN);
-    
-    /**
-     * File type corresponding to file extension.
-     */
+
+    /** File type corresponding to file extension. */
     private String fileType;
-    
-    /**
-     * Http Content type corresponding to file extension.
-     */
+
+    /** Http Content type corresponding to file extension. */
     private String contentType;
-    
+
     FileTypeEnum(String fileType) {
         this.fileType = fileType;
         this.contentType = MediaType.TEXT_PLAIN;
     }
-    
+
     FileTypeEnum(String fileType, String contentType) {
         this.fileType = fileType;
         this.contentType = contentType;
     }
-    
+
     public String getFileType() {
         return this.fileType;
     }
-    
+
     public String getContentType() {
         return contentType;
     }
-    
+
     /**
-     * Get the corresponding FileTypeEnum by file extension or fileType. If not found FileTypeEnum.TEXT is returned
+     * Get the corresponding FileTypeEnum by file extension or fileType. If not found
+     * FileTypeEnum.TEXT is returned
      *
      * @param extOrFileType file extension or fileType
      * @return
@@ -117,6 +96,6 @@ public enum FileTypeEnum {
         }
         return FileTypeEnum.TEXT;
     }
-    
+
     private static final FileTypeEnum[] VALUES = FileTypeEnum.values();
 }

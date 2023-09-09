@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.cluster.health;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,23 +26,23 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class ModuleHealthCheckerHolder {
-    
+
     private static final ModuleHealthCheckerHolder INSTANCE = new ModuleHealthCheckerHolder();
-    
+
     private final List<AbstractModuleHealthChecker> moduleHealthCheckers;
-    
+
     private ModuleHealthCheckerHolder() {
         this.moduleHealthCheckers = new LinkedList<>();
     }
-    
+
     public static ModuleHealthCheckerHolder getInstance() {
         return INSTANCE;
     }
-    
+
     public void registerChecker(AbstractModuleHealthChecker checker) {
         this.moduleHealthCheckers.add(checker);
     }
-    
+
     /**
      * Do check readiness for modules.
      *

@@ -20,37 +20,34 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
-
 import java.io.PrintWriter;
 import java.io.Serializable;
 
 /**
- * ConfigInfoBase.
- * And can't add field, to compatible with old interface(If adding a field, then it will occur compatibility problems).
+ * ConfigInfoBase. And can't add field, to compatible with old interface(If adding a field, then it
+ * will occur compatibility problems).
  *
  * @author Nacos
  */
 public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> {
-    
+
     static final long serialVersionUID = 265316491795790798L;
-    
+
     @JsonSerialize(using = ToStringSerializer.class)
     private long id;
-    
+
     private String dataId;
-    
+
     private String group;
-    
+
     private String content;
-    
+
     private String md5;
-    
+
     private String encryptedDataKey;
-    
-    public ConfigInfoBase() {
-    
-    }
-    
+
+    public ConfigInfoBase() {}
+
     public ConfigInfoBase(String dataId, String group, String content) {
         this.dataId = dataId;
         this.group = group;
@@ -59,59 +56,59 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
             this.md5 = MD5Utils.md5Hex(this.content, Constants.ENCODE);
         }
     }
-    
+
     public long getId() {
         return id;
     }
-    
+
     public void setId(long id) {
         this.id = id;
     }
-    
+
     public String getDataId() {
         return dataId;
     }
-    
+
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-    
+
     public String getGroup() {
         return group;
     }
-    
+
     public void setGroup(String group) {
         this.group = group;
     }
-    
+
     public String getContent() {
         return content;
     }
-    
+
     public void setContent(String content) {
         this.content = content;
     }
-    
+
     public String getMd5() {
         return md5;
     }
-    
+
     public void setMd5(String md5) {
         this.md5 = md5;
     }
-    
+
     public void dump(PrintWriter writer) {
         writer.write(this.content);
     }
-    
+
     public String getEncryptedDataKey() {
         return encryptedDataKey;
     }
-    
+
     public void setEncryptedDataKey(String encryptedDataKey) {
         this.encryptedDataKey = encryptedDataKey;
     }
-    
+
     @Override
     public int compareTo(ConfigInfoBase o) {
         if (o == null) {
@@ -133,7 +130,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
                 }
             }
         }
-        
+
         if (this.group == null) {
             if (o.getGroup() == null) {
                 return 0;
@@ -150,7 +147,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
                 }
             }
         }
-        
+
         if (this.content == null) {
             if (o.getContent() == null) {
                 return 0;
@@ -169,7 +166,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         }
         return 0;
     }
-    
+
     @Override
     public int hashCode() {
         final int prime = 31;
@@ -180,7 +177,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         result = prime * result + ((md5 == null) ? 0 : md5.hashCode());
         return result;
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -223,10 +220,24 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         }
         return true;
     }
-    
+
     @Override
     public String toString() {
-        return "ConfigInfoBase{" + "id=" + id + ", dataId='" + dataId + '\'' + ", group='" + group + '\''
-                + ", content='" + content + '\'' + ", md5='" + md5 + '\'' + '}';
+        return "ConfigInfoBase{"
+                + "id="
+                + id
+                + ", dataId='"
+                + dataId
+                + '\''
+                + ", group='"
+                + group
+                + '\''
+                + ", content='"
+                + content
+                + '\''
+                + ", md5='"
+                + md5
+                + '\''
+                + '}';
     }
 }

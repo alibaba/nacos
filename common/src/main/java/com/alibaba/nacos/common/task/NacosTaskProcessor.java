@@ -22,11 +22,11 @@ package com.alibaba.nacos.common.task;
  * @author Nacos
  */
 public interface NacosTaskProcessor {
-    
+
     /**
      * Process task.
      *
-     * @param task     task.
+     * @param task task.
      * @return process task result.
      */
     boolean process(NacosTask task);

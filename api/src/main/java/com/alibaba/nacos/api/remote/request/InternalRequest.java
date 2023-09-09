@@ -26,7 +26,7 @@ import static com.alibaba.nacos.api.common.Constants.Remote.INTERNAL_MODULE;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class InternalRequest extends Request {
-    
+
     @Override
     public String getModule() {
         return INTERNAL_MODULE;

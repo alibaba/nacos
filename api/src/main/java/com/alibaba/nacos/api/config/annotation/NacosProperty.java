@@ -23,8 +23,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * An annotation for Nacos Property name of  Nacos Configuration to bind a field from annotated {@link
- * NacosConfigurationProperties} Properties Object.
+ * An annotation for Nacos Property name of Nacos Configuration to bind a field from annotated
+ * {@link NacosConfigurationProperties} Properties Object.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @see NacosConfigurationProperties
@@ -35,12 +35,11 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface NacosProperty {
-    
+
     /**
      * The property name of Nacos Configuration to bind a field.
      *
      * @return property name
      */
     String value();
-    
 }

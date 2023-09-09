@@ -25,70 +25,84 @@ import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import java.io.IOException;
+import java.net.URI;
+import java.util.Map;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.impl.client.CloseableHttpClient;
 
-import java.io.IOException;
-import java.net.URI;
-import java.util.Map;
-
 /**
- * {@link HttpClientRequest} implementation that uses apache http client to execute streaming requests.
+ * {@link HttpClientRequest} implementation that uses apache http client to execute streaming
+ * requests.
  *
  * @author mai.jh
  */
 @SuppressWarnings({"unchecked", "resource"})
 public class DefaultHttpClientRequest implements HttpClientRequest {
-    
+
     private final CloseableHttpClient client;
-    
+
     private final RequestConfig defaultConfig;
-    
+
     public DefaultHttpClientRequest(CloseableHttpClient client, RequestConfig defaultConfig) {
         this.client = client;
         this.defaultConfig = defaultConfig;
     }
-    
+
     @Override
-    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
-            throws Exception {
+    public HttpClientResponse execute(
+            URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) throws Exception {
         HttpRequestBase request = build(uri, httpMethod, requestHttpEntity, defaultConfig);
         CloseableHttpResponse response = client.execute(request);
         return new DefaultClientHttpResponse(response);
     }
-    
-    static HttpRequestBase build(URI uri, String method, RequestHttpEntity requestHttpEntity, RequestConfig defaultConfig) throws Exception {
+
+    static HttpRequestBase build(
+            URI uri,
+            String method,
+            RequestHttpEntity requestHttpEntity,
+            RequestConfig defaultConfig)
+            throws Exception {
         final Header headers = requestHttpEntity.getHeaders();
         final BaseHttpMethod httpMethod = BaseHttpMethod.sourceOf(method);
         final HttpRequestBase httpRequestBase = httpMethod.init(uri.toString());
         HttpUtils.initRequestHeader(httpRequestBase, headers);
-        if (MediaType.APPLICATION_FORM_URLENCODED.equals(headers.getValue(HttpHeaderConsts.CONTENT_TYPE))
+        if (MediaType.APPLICATION_FORM_URLENCODED.equals(
+                        headers.getValue(HttpHeaderConsts.CONTENT_TYPE))
                 && requestHttpEntity.getBody() instanceof Map) {
-            HttpUtils.initRequestFromEntity(httpRequestBase, (Map<String, String>) requestHttpEntity.getBody(), headers.getCharset());
+            HttpUtils.initRequestFromEntity(
+                    httpRequestBase,
+                    (Map<String, String>) requestHttpEntity.getBody(),
+                    headers.getCharset());
         } else {
             HttpUtils.initRequestEntity(httpRequestBase, requestHttpEntity.getBody(), headers);
         }
         mergeDefaultConfig(httpRequestBase, requestHttpEntity.getHttpClientConfig(), defaultConfig);
         return httpRequestBase;
     }
-    
+
     /**
      * Merge the HTTP config created by default with the HTTP config specified in the request.
      *
-     * @param requestBase      requestBase
+     * @param requestBase requestBase
      * @param httpClientConfig http config
      */
-    private static void mergeDefaultConfig(HttpRequestBase requestBase, HttpClientConfig httpClientConfig, RequestConfig defaultConfig) {
+    private static void mergeDefaultConfig(
+            HttpRequestBase requestBase,
+            HttpClientConfig httpClientConfig,
+            RequestConfig defaultConfig) {
         if (httpClientConfig == null) {
             return;
         }
-        requestBase.setConfig(RequestConfig.copy(defaultConfig)
-                .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
-                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis()).build());
+        requestBase.setConfig(
+                RequestConfig.copy(defaultConfig)
+                        .setConnectTimeout(httpClientConfig.getConTimeOutMillis())
+                        .setSocketTimeout(httpClientConfig.getReadTimeOutMillis())
+                        .build());
     }
-    
+
     @Override
     public void close() throws IOException {
         client.close();

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
-
 import java.lang.reflect.Constructor;
 import java.util.Properties;
 
@@ -28,7 +27,7 @@ import java.util.Properties;
  * @since 1.0.1
  */
 public class NamingMaintainFactory {
-    
+
     /**
      * create a new maintain service.
      *
@@ -36,16 +35,18 @@ public class NamingMaintainFactory {
      * @return new maintain service
      * @throws NacosException nacos exception
      */
-    public static NamingMaintainService createMaintainService(String serverList) throws NacosException {
+    public static NamingMaintainService createMaintainService(String serverList)
+            throws NacosException {
         try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
+            Class<?> driverImplClass =
+                    Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
             Constructor constructor = driverImplClass.getConstructor(String.class);
             return (NamingMaintainService) constructor.newInstance(serverList);
         } catch (Throwable e) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
         }
     }
-    
+
     /**
      * create a new maintain service.
      *
@@ -53,14 +54,15 @@ public class NamingMaintainFactory {
      * @return new maintain service
      * @throws NacosException nacos exception
      */
-    public static NamingMaintainService createMaintainService(Properties properties) throws NacosException {
+    public static NamingMaintainService createMaintainService(Properties properties)
+            throws NacosException {
         try {
-            Class<?> driverImplClass = Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
+            Class<?> driverImplClass =
+                    Class.forName("com.alibaba.nacos.client.naming.NacosNamingMaintainService");
             Constructor constructor = driverImplClass.getConstructor(Properties.class);
             return (NamingMaintainService) constructor.newInstance(properties);
         } catch (Throwable e) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, e);
         }
     }
-    
 }

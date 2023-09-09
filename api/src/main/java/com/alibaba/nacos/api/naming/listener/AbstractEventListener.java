@@ -25,7 +25,7 @@ import java.util.concurrent.Executor;
  * @since 1.4.1
  */
 public abstract class AbstractEventListener implements EventListener {
-    
+
     /**
      * Get executor for execute this receive.
      *
@@ -34,5 +34,4 @@ public abstract class AbstractEventListener implements EventListener {
     public Executor getExecutor() {
         return null;
     }
-    
 }

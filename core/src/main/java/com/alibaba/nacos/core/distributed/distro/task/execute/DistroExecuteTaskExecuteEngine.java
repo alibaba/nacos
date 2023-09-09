@@ -25,7 +25,7 @@ import com.alibaba.nacos.core.utils.Loggers;
  * @author xiweng.yy
  */
 public class DistroExecuteTaskExecuteEngine extends NacosExecuteTaskExecuteEngine {
-    
+
     public DistroExecuteTaskExecuteEngine() {
         super(DistroExecuteTaskExecuteEngine.class.getSimpleName(), Loggers.DISTRO);
     }

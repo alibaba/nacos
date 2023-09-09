@@ -18,43 +18,56 @@ package com.alibaba.nacos.common.trace.event.naming;
 
 /**
  * Naming register instance trace event.
+ *
  * @author yanda
  */
 public class RegisterInstanceTraceEvent extends NamingTraceEvent {
-    
+
     private static final long serialVersionUID = -8283438151444483864L;
-    
+
     private final String clientIp;
-    
+
     private final boolean rpc;
-    
+
     private String instanceIp;
-    
+
     private int instancePort;
-    
+
     public String getClientIp() {
         return clientIp;
     }
-    
+
     public boolean isRpc() {
         return rpc;
     }
-    
+
     public String getInstanceIp() {
         return instanceIp;
     }
-    
+
     public int getInstancePort() {
         return instancePort;
     }
-    
+
     public String toInetAddr() {
         return instanceIp + ":" + instancePort;
     }
-    
-    public RegisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc, String serviceNamespace,
-            String serviceGroup, String serviceName, String instanceIp, int instancePort) {
-        super("REGISTER_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+
+    public RegisterInstanceTraceEvent(
+            long eventTime,
+            String clientIp,
+            boolean rpc,
+            String serviceNamespace,
+            String serviceGroup,
+            String serviceName,
+            String instanceIp,
+            int instancePort) {
+        super(
+                "REGISTER_INSTANCE_TRACE_EVENT",
+                eventTime,
+                serviceNamespace,
+                serviceGroup,
+                serviceName);
         this.clientIp = clientIp;
         this.rpc = rpc;
         this.instanceIp = instanceIp;

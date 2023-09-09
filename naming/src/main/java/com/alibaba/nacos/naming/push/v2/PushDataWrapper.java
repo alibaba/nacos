@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.push.v2;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -29,31 +28,31 @@ import java.util.Optional;
  * @author xiweng.yy
  */
 public class PushDataWrapper {
-    
+
     private final ServiceMetadata serviceMetadata;
-    
+
     private final ServiceInfo originalData;
-    
+
     private final Map<String, Object> processedDatum;
-    
+
     public PushDataWrapper(ServiceMetadata serviceMetadata, ServiceInfo originalData) {
         this.serviceMetadata = serviceMetadata;
         this.originalData = originalData;
         processedDatum = new HashMap<>(1);
     }
-    
+
     public ServiceInfo getOriginalData() {
         return originalData;
     }
-    
+
     public ServiceMetadata getServiceMetadata() {
         return serviceMetadata;
     }
-    
+
     public <T> Optional<T> getProcessedPushData(String key) {
         return Optional.ofNullable((T) processedDatum.get(key));
     }
-    
+
     public void addProcessedPushData(String key, Object processedData) {
         processedDatum.put(key, processedData);
     }

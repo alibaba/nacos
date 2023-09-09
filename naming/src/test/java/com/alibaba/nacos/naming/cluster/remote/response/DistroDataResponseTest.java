@@ -18,14 +18,13 @@
 
 package com.alibaba.nacos.naming.cluster.remote.response;
 
-import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
+import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
+
 public class DistroDataResponseTest {
-    
+
     @Test
     public void test() {
         DistroDataResponse distroDataResponse = new DistroDataResponse();
@@ -33,5 +32,4 @@ public class DistroDataResponseTest {
         distroDataResponse.setDistroData(distroData);
         assertEquals(distroData, distroDataResponse.getDistroData());
     }
-    
 }

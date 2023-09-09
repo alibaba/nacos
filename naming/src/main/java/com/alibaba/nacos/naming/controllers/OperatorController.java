@@ -35,14 +35,13 @@ import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import java.util.Collection;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.Collection;
 
 /**
  * Operation for operators.
@@ -50,22 +49,27 @@ import java.util.Collection;
  * @author nkorange
  */
 @RestController
-@RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
-        UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
+@RequestMapping({
+    UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
+    UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"
+})
 public class OperatorController {
-    
+
     private final SwitchManager switchManager;
-    
+
     private final ServerStatusManager serverStatusManager;
-    
+
     private final SwitchDomain switchDomain;
-    
+
     private final DistroMapper distroMapper;
-    
+
     private final ClientManager clientManager;
-    
-    public OperatorController(SwitchManager switchManager, ServerStatusManager serverStatusManager,
-            SwitchDomain switchDomain, DistroMapper distroMapper,
+
+    public OperatorController(
+            SwitchManager switchManager,
+            ServerStatusManager serverStatusManager,
+            SwitchDomain switchDomain,
+            DistroMapper distroMapper,
             ClientManager clientManager) {
         this.switchManager = switchManager;
         this.serverStatusManager = serverStatusManager;
@@ -73,16 +77,17 @@ public class OperatorController {
         this.distroMapper = distroMapper;
         this.clientManager = clientManager;
     }
-    
+
     /**
      * Get push metric status.
      *
      * @param detail whether return detail information
-     * @param reset  whether reset metric information after return information
+     * @param reset whether reset metric information after return information
      * @return push metric status
      */
     @RequestMapping("/push/state")
-    public ObjectNode pushState(@RequestParam(required = false) boolean detail,
+    public ObjectNode pushState(
+            @RequestParam(required = false) boolean detail,
             @RequestParam(required = false) boolean reset) {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         int failedPushCount = MetricsMonitor.getFailedPushMonitor().get();
@@ -106,7 +111,7 @@ public class OperatorController {
         result.put("reset", reset);
         return result;
     }
-    
+
     /**
      * Get switch information.
      *
@@ -117,7 +122,7 @@ public class OperatorController {
     public SwitchDomain switches(HttpServletRequest request) {
         return switchDomain;
     }
-    
+
     /**
      * Update switch information.
      *
@@ -129,14 +134,17 @@ public class OperatorController {
      */
     @Secured(resource = "naming/switches", action = ActionTypes.WRITE)
     @PutMapping("/switches")
-    public String updateSwitch(@RequestParam(required = false) boolean debug, @RequestParam String entry,
-            @RequestParam String value) throws Exception {
-        
+    public String updateSwitch(
+            @RequestParam(required = false) boolean debug,
+            @RequestParam String entry,
+            @RequestParam String value)
+            throws Exception {
+
         switchManager.update(entry, value, debug);
-        
+
         return "ok";
     }
-    
+
     /**
      * Get metrics information.
      *
@@ -187,15 +195,16 @@ public class OperatorController {
         result.put("mem", EnvUtil.getMem());
         return result;
     }
-    
+
     @GetMapping("/distro/client")
-    public ObjectNode getResponsibleServer4Client(@RequestParam String ip, @RequestParam String port) {
+    public ObjectNode getResponsibleServer4Client(
+            @RequestParam String ip, @RequestParam String port) {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         String tag = ip + InternetAddressUtil.IP_PORT_SPLITER + port;
         result.put("responsibleServer", distroMapper.mapSrv(tag));
         return result;
     }
-    
+
     @PutMapping("/log")
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         Loggers.setLogLevel(logName, logLevel);

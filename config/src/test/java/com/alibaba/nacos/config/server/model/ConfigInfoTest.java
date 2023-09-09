@@ -20,12 +20,10 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Test;
 import org.springframework.core.env.StandardEnvironment;
 
 public class ConfigInfoTest {
-    
+
     @Test
     public void testPrecisionIssue() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -36,7 +34,5 @@ public class ConfigInfoTest {
         String json = JacksonUtils.toJson(configInfo);
         ConfigInfo actual = JacksonUtils.toObj(json, ConfigInfo.class);
         Assert.assertEquals(expected, actual.getId());
-        
     }
-    
 }

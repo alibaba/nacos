@@ -16,116 +16,110 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConfigExecutorTest {
-    
+
     @Test
     public void testScheduleConfigTask() throws InterruptedException {
-        
+
         AtomicInteger atomicInteger = new AtomicInteger();
-        
+
         Runnable runnable = atomicInteger::incrementAndGet;
-        
+
         ConfigExecutor.scheduleConfigTask(runnable, 0, 10, TimeUnit.MILLISECONDS);
-        
+
         TimeUnit.MILLISECONDS.sleep(10);
-        
+
         Assert.assertTrue(atomicInteger.get() >= 1);
-        
     }
-    
+
     @Test
     public void testScheduleCorrectUsageTask() throws InterruptedException {
-        
+
         AtomicInteger atomicInteger = new AtomicInteger();
-        
+
         Runnable runnable = atomicInteger::incrementAndGet;
-        
+
         ConfigExecutor.scheduleCorrectUsageTask(runnable, 0, 10, TimeUnit.MILLISECONDS);
-        
+
         TimeUnit.MILLISECONDS.sleep(10);
-        
+
         Assert.assertTrue(atomicInteger.get() >= 1);
-        
     }
-    
+
     @Test
     public void testExecuteAsyncNotify() throws InterruptedException {
-        
+
         AtomicInteger atomicInteger = new AtomicInteger();
-        
+
         Runnable runnable = atomicInteger::incrementAndGet;
-        
+
         ConfigExecutor.executeAsyncNotify(runnable);
-        
+
         TimeUnit.MILLISECONDS.sleep(20);
-        
+
         Assert.assertEquals(1, atomicInteger.get());
-        
     }
-    
+
     @Test
     public void testScheduleAsyncNotify() throws InterruptedException {
-        
+
         AtomicInteger atomicInteger = new AtomicInteger();
-        
+
         Runnable runnable = atomicInteger::incrementAndGet;
-        
+
         ConfigExecutor.scheduleAsyncNotify(runnable, 20, TimeUnit.MILLISECONDS);
-        
+
         Assert.assertEquals(0, atomicInteger.get());
-        
+
         TimeUnit.MILLISECONDS.sleep(40);
-        
+
         Assert.assertEquals(1, atomicInteger.get());
     }
-    
+
     @Test
     public void testScheduleLongPollingV1() throws InterruptedException {
-        
+
         AtomicInteger atomicInteger = new AtomicInteger();
-        
+
         Runnable runnable = atomicInteger::incrementAndGet;
-        
+
         ConfigExecutor.scheduleLongPolling(runnable, 0, 10, TimeUnit.MILLISECONDS);
-        
+
         TimeUnit.MILLISECONDS.sleep(10);
-        
+
         Assert.assertTrue(atomicInteger.get() >= 1);
     }
-    
+
     @Test
     public void testScheduleLongPollingV2() throws InterruptedException {
-        
+
         AtomicInteger atomicInteger = new AtomicInteger();
-        
+
         Runnable runnable = atomicInteger::incrementAndGet;
-        
+
         ConfigExecutor.scheduleLongPolling(runnable, 20, TimeUnit.MILLISECONDS);
-        
+
         Assert.assertEquals(0, atomicInteger.get());
-        
+
         TimeUnit.MILLISECONDS.sleep(40);
-        
+
         Assert.assertEquals(1, atomicInteger.get());
     }
-    
+
     @Test
     public void testExecuteLongPolling() throws InterruptedException {
-        
+
         AtomicInteger atomicInteger = new AtomicInteger();
-        
+
         Runnable runnable = atomicInteger::incrementAndGet;
-        
+
         ConfigExecutor.executeLongPolling(runnable);
-        
+
         TimeUnit.MILLISECONDS.sleep(20);
-        
+
         Assert.assertEquals(1, atomicInteger.get());
     }
 }

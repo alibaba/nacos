@@ -24,27 +24,27 @@ import com.alibaba.nacos.common.notify.Event;
  * @author xiweng.yy
  */
 public class RemotingHeartBeatEvent extends Event {
-    
+
     private final String connectionId;
-    
+
     private final String clientIp;
-    
+
     private final String clientVersion;
-    
+
     public RemotingHeartBeatEvent(String connectionId, String clientIp, String clientVersion) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.clientVersion = clientVersion;
     }
-    
+
     public String getConnectionId() {
         return connectionId;
     }
-    
+
     public String getClientIp() {
         return clientIp;
     }
-    
+
     public String getClientVersion() {
         return clientVersion;
     }

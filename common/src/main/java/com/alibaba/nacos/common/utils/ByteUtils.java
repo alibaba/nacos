@@ -25,11 +25,10 @@ import java.nio.charset.StandardCharsets;
  */
 public final class ByteUtils {
 
-    private ByteUtils() {
-    }
-    
+    private ByteUtils() {}
+
     public static final byte[] EMPTY = new byte[0];
-    
+
     /**
      * String to byte array.
      *
@@ -42,7 +41,7 @@ public final class ByteUtils {
         }
         return input.getBytes(StandardCharsets.UTF_8);
     }
-    
+
     /**
      * Object to byte array.
      *
@@ -55,7 +54,7 @@ public final class ByteUtils {
         }
         return toBytes(String.valueOf(obj));
     }
-    
+
     /**
      * Byte array to string.
      *
@@ -68,13 +67,12 @@ public final class ByteUtils {
         }
         return new String(bytes, StandardCharsets.UTF_8);
     }
-    
+
     public static boolean isEmpty(byte[] data) {
         return data == null || data.length == 0;
     }
-    
+
     public static boolean isNotEmpty(byte[] data) {
         return !isEmpty(data);
     }
-    
 }

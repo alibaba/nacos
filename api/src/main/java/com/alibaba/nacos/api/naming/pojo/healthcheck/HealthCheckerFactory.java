@@ -23,7 +23,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
-
 import java.io.IOException;
 
 /**
@@ -32,13 +31,13 @@ import java.io.IOException;
  * @author yangyi
  */
 public class HealthCheckerFactory {
-    
+
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    
+
     static {
         MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
     }
-    
+
     /**
      * Register new sub type of health checker to factory for serialize and deserialize.
      *
@@ -47,18 +46,18 @@ public class HealthCheckerFactory {
     public static void registerSubType(AbstractHealthChecker extendHealthChecker) {
         registerSubType(extendHealthChecker.getClass(), extendHealthChecker.getType());
     }
-    
+
     /**
      * Register new sub type of health checker to factory for serialize and deserialize.
      *
      * @param extendHealthCheckerClass extend health checker
-     * @param typeName                 typeName of health checker
+     * @param typeName typeName of health checker
      */
-    public static void registerSubType(Class<? extends AbstractHealthChecker> extendHealthCheckerClass,
-            String typeName) {
+    public static void registerSubType(
+            Class<? extends AbstractHealthChecker> extendHealthCheckerClass, String typeName) {
         MAPPER.registerSubtypes(new NamedType(extendHealthCheckerClass, typeName));
     }
-    
+
     /**
      * Create default {@link None} health checker.
      *
@@ -67,7 +66,7 @@ public class HealthCheckerFactory {
     public static None createNoneHealthChecker() {
         return new None();
     }
-    
+
     /**
      * Deserialize and create a instance of health checker.
      *
@@ -81,7 +80,7 @@ public class HealthCheckerFactory {
             throw new NacosDeserializationException(AbstractHealthChecker.class, e);
         }
     }
-    
+
     /**
      * Serialize a instance of health checker to json.
      *

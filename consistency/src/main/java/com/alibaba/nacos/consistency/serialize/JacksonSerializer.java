@@ -19,7 +19,6 @@ package com.alibaba.nacos.consistency.serialize;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.Serializer;
-
 import java.lang.reflect.Type;
 
 /**
@@ -28,14 +27,15 @@ import java.lang.reflect.Type;
  * @author xiweng.yy
  */
 public class JacksonSerializer implements Serializer {
-    
+
     private static final String NAME = "JSON";
-    
+
     @Override
     public <T> T deserialize(byte[] data) {
-        throw new UnsupportedOperationException("Jackson serializer can't support deserialize json without type");
+        throw new UnsupportedOperationException(
+                "Jackson serializer can't support deserialize json without type");
     }
-    
+
     @Override
     public <T> T deserialize(byte[] data, Class<T> cls) {
         if (ByteUtils.isEmpty(data)) {
@@ -43,7 +43,7 @@ public class JacksonSerializer implements Serializer {
         }
         return JacksonUtils.toObj(data, cls);
     }
-    
+
     @Override
     public <T> T deserialize(byte[] data, Type type) {
         if (ByteUtils.isEmpty(data)) {
@@ -51,12 +51,12 @@ public class JacksonSerializer implements Serializer {
         }
         return JacksonUtils.toObj(data, type);
     }
-    
+
     @Override
     public <T> byte[] serialize(T obj) {
         return JacksonUtils.toJsonBytes(obj);
     }
-    
+
     @Override
     public String name() {
         return NAME;

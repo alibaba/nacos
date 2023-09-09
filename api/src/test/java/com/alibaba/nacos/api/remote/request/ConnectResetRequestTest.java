@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class ConnectResetRequestTest extends BasicRequestTest {
-    
+
     @Test
     public void testSerialize() throws Exception {
         ConnectResetRequest request = new ConnectResetRequest();
@@ -34,10 +31,11 @@ public class ConnectResetRequestTest extends BasicRequestTest {
         Assert.assertTrue(json.contains("\"module\":\"internal\""));
         Assert.assertTrue(json.contains("\"requestId\":\"1\""));
     }
-    
+
     @Test
     public void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"serverIp\":\"127.0.0.1\",\"serverPort\":\"8888\",\"module\":\"internal\"}";
+        String json =
+                "{\"headers\":{},\"requestId\":\"1\",\"serverIp\":\"127.0.0.1\",\"serverPort\":\"8888\",\"module\":\"internal\"}";
         ConnectResetRequest result = mapper.readValue(json, ConnectResetRequest.class);
         Assert.assertNotNull(result);
         Assert.assertEquals("127.0.0.1", result.getServerIp());

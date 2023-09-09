@@ -18,45 +18,53 @@ package com.alibaba.nacos.common.trace.event.naming;
 
 /**
  * Naming push service trace event.
+ *
  * @author yanda
  */
 public class PushServiceTraceEvent extends NamingTraceEvent {
-    
+
     private static final long serialVersionUID = 787915741281241877L;
-    
+
     private final String clientIp;
-    
+
     private final int instanceSize;
-    
+
     private final long pushCostTimeForNetWork;
-    
+
     private final long pushCostTimeForAll;
-    
+
     private final long serviceLevelAgreementTime;
-    
+
     public String getClientIp() {
         return clientIp;
     }
-    
+
     public int getInstanceSize() {
         return instanceSize;
     }
-    
+
     public long getPushCostTimeForNetWork() {
         return pushCostTimeForNetWork;
     }
-    
+
     public long getPushCostTimeForAll() {
         return pushCostTimeForAll;
     }
-    
+
     public long getServiceLevelAgreementTime() {
         return serviceLevelAgreementTime;
     }
-    
-    public PushServiceTraceEvent(long eventTime, long pushCostTimeForNetWork, long pushCostTimeForAll,
-            long serviceLevelAgreementTime, String clientIp, String serviceNamespace,
-            String serviceGroup, String serviceName, int instanceSize) {
+
+    public PushServiceTraceEvent(
+            long eventTime,
+            long pushCostTimeForNetWork,
+            long pushCostTimeForAll,
+            long serviceLevelAgreementTime,
+            String clientIp,
+            String serviceNamespace,
+            String serviceGroup,
+            String serviceName,
+            int instanceSize) {
         super("PUSH_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
         this.clientIp = clientIp;
         this.instanceSize = instanceSize;

@@ -22,10 +22,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -36,54 +32,54 @@ import java.util.List;
  * @date 2021-07-14 18:58
  */
 public class SelectorManagerTest {
-    
+
     private SelectorManager selectorManager;
-    
+
     @Before
     public void setUp() {
         selectorManager = new SelectorManager();
         selectorManager.init();
     }
-    
+
     @Test
     public void testGetAllSelectorTypes() {
         List<String> selectorTypes = selectorManager.getAllSelectorTypes();
         Assert.assertTrue(selectorTypes.contains("mock"));
     }
-    
+
     @Test
     public void testParseSelector() throws NacosException {
         Selector selector = selectorManager.parseSelector("mock", "key=value");
         Assert.assertTrue(selector instanceof MockSelector);
-        
+
         Assert.assertEquals("mock", selector.getType());
     }
-    
+
     @Test
     public void testSelect() throws NacosException {
         Selector selector = selectorManager.parseSelector("mock", "key=value");
         Instance instance = new Instance();
         instance.setIp("2.2.2.2");
         List<Instance> providers = Collections.singletonList(instance);
-        
+
         List<Instance> instances0 = selectorManager.select(selector, "1.1.1.1", providers);
         Assert.assertEquals(1, instances0.size());
         Assert.assertEquals("2.2.2.2", instances0.get(0).getIp());
-    
+
         // test json serial for Selector
         Serializer serializer0 = SerializeFactory.getSerializer("JSON");
         byte[] bytes = serializer0.serialize(selector);
         Selector jsonSelector = serializer0.deserialize(bytes, Selector.class);
-        
+
         List<Instance> instances1 = selectorManager.select(jsonSelector, "1.1.1.1", providers);
         Assert.assertEquals(1, instances1.size());
         Assert.assertEquals("2.2.2.2", instances1.get(0).getIp());
-        
+
         // test hessian serial for Selector
         Serializer serializer1 = SerializeFactory.getDefault();
         byte[] bytes1 = serializer1.serialize(selector);
         Selector hessianSelector = serializer1.deserialize(bytes1);
-    
+
         List<Instance> instances2 = selectorManager.select(hessianSelector, "1.1.1.1", providers);
         Assert.assertEquals(1, instances2.size());
         Assert.assertEquals("2.2.2.2", instances2.get(0).getIp());

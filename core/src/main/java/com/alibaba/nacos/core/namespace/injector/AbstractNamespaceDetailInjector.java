@@ -24,11 +24,11 @@ import com.alibaba.nacos.core.namespace.model.Namespace;
  * @author xiweng.yy
  */
 public abstract class AbstractNamespaceDetailInjector {
-    
+
     protected AbstractNamespaceDetailInjector() {
         NamespaceDetailInjectorHolder.getInstance().registerInjector(this);
     }
-    
+
     /**
      * Inject namespace detail, like config count, service count.
      *

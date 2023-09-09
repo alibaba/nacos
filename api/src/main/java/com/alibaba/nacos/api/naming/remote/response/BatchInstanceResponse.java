@@ -22,11 +22,11 @@ package com.alibaba.nacos.api.naming.remote.response;
  * @author <a href="mailto:chenhao26@xiaomi.com">chenhao26</a>
  */
 public class BatchInstanceResponse extends InstanceResponse {
-    
+
     public BatchInstanceResponse() {
         super();
     }
-    
+
     public BatchInstanceResponse(String type) {
         super(type);
     }

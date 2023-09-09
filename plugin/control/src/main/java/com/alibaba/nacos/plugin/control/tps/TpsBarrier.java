@@ -23,7 +23,6 @@ import com.alibaba.nacos.plugin.control.tps.nacos.LocalSimpleCountBarrierCreator
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
-
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 
@@ -34,21 +33,22 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class TpsBarrier {
-    
+
     protected String pointName;
-    
+
     protected RuleBarrier pointBarrier;
-    
+
     public TpsBarrier(String pointName) {
         this.pointName = pointName;
         pointBarrier = ruleBarrierCreator.createRuleBarrier(pointName, pointName, TimeUnit.SECONDS);
     }
-    
+
     protected static RuleBarrierCreator ruleBarrierCreator;
-    
+
     static {
         String tpsBarrierCreator = ControlConfigs.getInstance().getTpsBarrierCreator();
-        Collection<RuleBarrierCreator> loadedCreators = NacosServiceLoader.load(RuleBarrierCreator.class);
+        Collection<RuleBarrierCreator> loadedCreators =
+                NacosServiceLoader.load(RuleBarrierCreator.class);
         for (RuleBarrierCreator barrierCreator : loadedCreators) {
             if (tpsBarrierCreator.equalsIgnoreCase(barrierCreator.name())) {
                 Loggers.CONTROL.info("Found tps rule creator of name : {}", tpsBarrierCreator);
@@ -56,19 +56,19 @@ public abstract class TpsBarrier {
                 break;
             }
         }
-        
+
         if (ruleBarrierCreator == null) {
-            Loggers.CONTROL.warn("Fail to found tps rule creator of name : {},use  default local simple creator",
+            Loggers.CONTROL.warn(
+                    "Fail to found tps rule creator of name : {},use  default local simple creator",
                     tpsBarrierCreator);
             ruleBarrierCreator = LocalSimpleCountBarrierCreator.getInstance();
         }
-        
     }
-    
+
     public static void setRuleBarrierCreator(RuleBarrierCreator ruleBarrierCreatorInstance) {
         ruleBarrierCreator = ruleBarrierCreatorInstance;
     }
-    
+
     /**
      * apply tps.
      *
@@ -76,15 +76,15 @@ public abstract class TpsBarrier {
      * @return check current tps is allowed.
      */
     public abstract TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest);
-    
+
     public RuleBarrier getPointBarrier() {
         return pointBarrier;
     }
-    
+
     public String getPointName() {
         return pointName;
     }
-    
+
     /**
      * apply rule.
      *

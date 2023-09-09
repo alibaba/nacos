@@ -16,20 +16,17 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class UrlAnalysisUtilsTest {
-    
+
     @Test
     public void testGetContentIdentity() {
-        
+
         String url = "http://127.0.0.1:8080/test?paramA=A&paramB=B";
         Assert.assertEquals("http://127.0.0.1:8080", UrlAnalysisUtils.getContentIdentity(url));
-        
+
         String url2 = "127.0.0.1:8080/test?paramA=A&paramB=B";
         Assert.assertEquals("127.0.0.1:8080", UrlAnalysisUtils.getContentIdentity(url2));
-    
+
         String url3 = "";
         Assert.assertNull(UrlAnalysisUtils.getContentIdentity(url3));
     }

@@ -26,16 +26,15 @@ import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
 
 /**
  * JDK http client request implement.
@@ -43,15 +42,15 @@ import java.util.Map;
  * @author mai.jh
  */
 public class JdkHttpClientRequest implements HttpClientRequest {
-    
+
     private static final String CONTENT_LENGTH = "Content-Length";
-    
+
     private HttpClientConfig httpClientConfig;
-    
+
     public JdkHttpClientRequest(HttpClientConfig httpClientConfig) {
         this.httpClientConfig = httpClientConfig;
     }
-    
+
     /**
      * Use specified {@link SSLContext}.
      *
@@ -63,7 +62,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         }
     }
-    
+
     /**
      * Replace the default HostnameVerifier.
      *
@@ -75,14 +74,14 @@ public class JdkHttpClientRequest implements HttpClientRequest {
             HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
         }
     }
-    
+
     @Override
-    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
-            throws Exception {
+    public HttpClientResponse execute(
+            URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) throws Exception {
         final Object body = requestHttpEntity.getBody();
         final Header headers = requestHttpEntity.getHeaders();
         replaceDefaultConfig(requestHttpEntity.getHttpClientConfig());
-        
+
         HttpURLConnection conn = (HttpURLConnection) uri.toURL().openConnection();
         Map<String, String> headerMap = headers.getHeader();
         if (headerMap != null && headerMap.size() > 0) {
@@ -90,7 +89,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
                 conn.setRequestProperty(entry.getKey(), entry.getValue());
             }
         }
-        
+
         conn.setConnectTimeout(this.httpClientConfig.getConTimeOutMillis());
         conn.setReadTimeout(this.httpClientConfig.getReadTimeOutMillis());
         conn.setRequestMethod(httpMethod);
@@ -114,7 +113,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
         conn.connect();
         return new JdkHttpClientResponse(conn);
     }
-    
+
     /**
      * Replace the HTTP config created by default with the HTTP config specified in the request.
      *
@@ -126,9 +125,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
         }
         this.httpClientConfig = replaceConfig;
     }
-    
+
     @Override
-    public void close() throws IOException {
-    
-    }
+    public void close() throws IOException {}
 }

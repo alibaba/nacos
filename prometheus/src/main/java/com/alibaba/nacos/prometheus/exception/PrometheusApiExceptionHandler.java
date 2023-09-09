@@ -32,18 +32,17 @@ import org.springframework.web.bind.annotation.ResponseBody;
  * @author karsonto
  * @date 2023/02/01
  */
-
 @Order(-1)
 @ControllerAdvice(basePackages = {"com.alibaba.nacos.prometheus.controller"})
 @ResponseBody
 public class PrometheusApiExceptionHandler {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusApiExceptionHandler.class);
-    
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(PrometheusApiExceptionHandler.class);
+
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<Result<String>> handleNacosException(NacosException e) {
         LOGGER.error("got exception. {}", e.getErrMsg());
         return ResponseEntity.internalServerError().body(Result.failure(e.getErrMsg()));
     }
-    
 }

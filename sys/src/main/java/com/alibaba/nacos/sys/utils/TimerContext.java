@@ -17,24 +17,24 @@
 package com.alibaba.nacos.sys.utils;
 
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import org.slf4j.Logger;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import org.slf4j.Logger;
 
 /**
- * Simple task time calculation，Currently only the task time statistics task that supports synchronizing code blocks is
- * supported.
+ * Simple task time calculation，Currently only the task time statistics task that supports
+ * synchronizing code blocks is supported.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class TimerContext {
-    
-    private static final ThreadLocal<Map<String, Long>> TIME_RECORD = ThreadLocal.withInitial(() -> new HashMap<>(2));
-    
+
+    private static final ThreadLocal<Map<String, Long>> TIME_RECORD =
+            ThreadLocal.withInitial(() -> new HashMap<>(2));
+
     /**
      * Record context start time.
      *
@@ -43,17 +43,17 @@ public class TimerContext {
     public static void start(final String name) {
         TIME_RECORD.get().put(name, System.currentTimeMillis());
     }
-    
+
     public static void end(final String name, final Logger logger) {
         end(name, logger, LoggerUtils.DEBUG);
     }
-    
+
     /**
      * End the task and print based on the log level.
      *
-     * @param name   context name
+     * @param name context name
      * @param logger logger
-     * @param level  logger level
+     * @param level logger level
      */
     public static void end(final String name, final Logger logger, final String level) {
         Map<String, Long> record = TIME_RECORD.get();
@@ -78,16 +78,17 @@ public class TimerContext {
                 LoggerUtils.printIfWarnEnabled(logger, "{} cost time : {} ms", name, contextTime);
                 break;
             default:
-                LoggerUtils.printIfErrorEnabled(logger, "level not found , {} cost time : {} ms", name, contextTime);
+                LoggerUtils.printIfErrorEnabled(
+                        logger, "level not found , {} cost time : {} ms", name, contextTime);
                 break;
         }
     }
-    
+
     /**
      * Execution with time-consuming calculations for {@link Runnable}.
      *
-     * @param job    runnable
-     * @param name   job name
+     * @param job runnable
+     * @param name job name
      * @param logger logger
      */
     public static void run(final Runnable job, final String name, final Logger logger) {
@@ -98,12 +99,12 @@ public class TimerContext {
             end(name, logger);
         }
     }
-    
+
     /**
      * Execution with time-consuming calculations for {@link Supplier}.
      *
-     * @param job    Supplier
-     * @param name   job name
+     * @param job Supplier
+     * @param name job name
      * @param logger logger
      */
     public static <V> V run(final Supplier<V> job, final String name, final Logger logger) {
@@ -114,16 +115,17 @@ public class TimerContext {
             end(name, logger);
         }
     }
-    
+
     /**
      * Execution with time-consuming calculations for {@link Function}.
      *
-     * @param job    Function
-     * @param args   args
-     * @param name   job name
+     * @param job Function
+     * @param args args
+     * @param name job name
      * @param logger logger
      */
-    public static <T, R> R run(final Function<T, R> job, T args, final String name, final Logger logger) {
+    public static <T, R> R run(
+            final Function<T, R> job, T args, final String name, final Logger logger) {
         start(name);
         try {
             return job.apply(args);
@@ -131,16 +133,17 @@ public class TimerContext {
             end(name, logger);
         }
     }
-    
+
     /**
      * Execution with time-consuming calculations for {@link Consumer}.
      *
-     * @param job    Consumer
-     * @param args   args
-     * @param name   job name
+     * @param job Consumer
+     * @param args args
+     * @param name job name
      * @param logger logger
      */
-    public static <T> void run(final Consumer<T> job, T args, final String name, final Logger logger) {
+    public static <T> void run(
+            final Consumer<T> job, T args, final String name, final Logger logger) {
         start(name);
         try {
             job.accept(args);
@@ -148,5 +151,4 @@ public class TimerContext {
             end(name, logger);
         }
     }
-    
 }

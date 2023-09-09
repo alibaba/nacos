@@ -21,7 +21,6 @@ import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-
 import java.util.Optional;
 
 /**
@@ -30,15 +29,15 @@ import java.util.Optional;
  * @author xiweng.yy
  */
 public class AuthModuleStateBuilder implements ModuleStateBuilder {
-    
+
     public static final String AUTH_MODULE = "auth";
-    
+
     public static final String AUTH_ENABLED = "auth_enabled";
-    
+
     public static final String LOGIN_PAGE_ENABLED = "login_page_enabled";
-    
+
     public static final String AUTH_SYSTEM_TYPE = "auth_system_type";
-    
+
     @Override
     public ModuleState build() {
         ModuleState result = new ModuleState(AUTH_MODULE);
@@ -48,10 +47,11 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
         result.newState(AUTH_SYSTEM_TYPE, authConfigs.getNacosAuthSystemType());
         return result;
     }
-    
+
     private Boolean isLoginPageEnabled(AuthConfigs authConfigs) {
-        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+        Optional<AuthPluginService> authPluginService =
+                AuthPluginManager.getInstance()
+                        .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         return authPluginService.map(AuthPluginService::isLoginEnabled).orElse(false);
     }
 }

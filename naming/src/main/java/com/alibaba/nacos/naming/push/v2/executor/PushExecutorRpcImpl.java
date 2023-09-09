@@ -33,31 +33,38 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class PushExecutorRpcImpl implements PushExecutor {
-    
+
     private final RpcPushService pushService;
-    
+
     public PushExecutorRpcImpl(RpcPushService pushService) {
         this.pushService = pushService;
     }
-    
+
     @Override
     public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
-        pushService.pushWithoutAck(clientId,
-                NotifySubscriberRequest.buildNotifySubscriberRequest(getServiceInfo(data, subscriber)));
+        pushService.pushWithoutAck(
+                clientId,
+                NotifySubscriberRequest.buildNotifySubscriberRequest(
+                        getServiceInfo(data, subscriber)));
     }
-    
+
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
+    public void doPushWithCallback(
+            String clientId,
+            Subscriber subscriber,
+            PushDataWrapper data,
             NamingPushCallback callBack) {
         ServiceInfo actualServiceInfo = getServiceInfo(data, subscriber);
         callBack.setActualServiceInfo(actualServiceInfo);
-        pushService.pushWithCallback(clientId, NotifySubscriberRequest.buildNotifySubscriberRequest(actualServiceInfo),
-                callBack, GlobalExecutor.getCallbackExecutor());
+        pushService.pushWithCallback(
+                clientId,
+                NotifySubscriberRequest.buildNotifySubscriberRequest(actualServiceInfo),
+                callBack,
+                GlobalExecutor.getCallbackExecutor());
     }
-    
+
     private ServiceInfo getServiceInfo(PushDataWrapper data, Subscriber subscriber) {
-        return ServiceUtil
-                .selectInstancesWithHealthyProtection(data.getOriginalData(), data.getServiceMetadata(), false, true,
-                        subscriber);
+        return ServiceUtil.selectInstancesWithHealthyProtection(
+                data.getOriginalData(), data.getServiceMetadata(), false, true, subscriber);
     }
 }

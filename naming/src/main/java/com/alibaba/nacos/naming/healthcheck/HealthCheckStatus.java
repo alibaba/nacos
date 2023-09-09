@@ -26,14 +26,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author nacos
  */
 public class HealthCheckStatus implements Serializable {
-    
+
     private static final long serialVersionUID = -5791320072773064978L;
-    
+
     public AtomicBoolean isBeingChecked = new AtomicBoolean(false);
-    
+
     public AtomicInteger checkFailCount = new AtomicInteger(0);
-    
+
     public AtomicInteger checkOkCount = new AtomicInteger(0);
-    
+
     public long checkRt = -1L;
 }

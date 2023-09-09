@@ -20,12 +20,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import org.springframework.beans.factory.annotation.Autowired;
-
-import javax.annotation.PostConstruct;
 import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import javax.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * interceptor fo request.
@@ -34,29 +33,28 @@ import java.lang.reflect.Type;
  * @version $Id: AbstractRequestFilter.java, v 0.1 2020年09月14日 11:46 AM liuzunfei Exp $
  */
 public abstract class AbstractRequestFilter {
-    
-    @Autowired
-    private RequestFilters requestFilters;
-    
-    public AbstractRequestFilter() {
-    }
-    
+
+    @Autowired private RequestFilters requestFilters;
+
+    public AbstractRequestFilter() {}
+
     @PostConstruct
     public void init() {
         requestFilters.registerFilter(this);
     }
-    
+
     protected Class getResponseClazz(Class handlerClazz) throws NacosException {
-        ParameterizedType parameterizedType = (ParameterizedType) handlerClazz.getGenericSuperclass();
+        ParameterizedType parameterizedType =
+                (ParameterizedType) handlerClazz.getGenericSuperclass();
         try {
             Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
             return Class.forName(actualTypeArguments[1].getTypeName());
-            
+
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
     }
-    
+
     protected Method getHandleMethod(Class handlerClazz) throws NacosException {
         try {
             Method method = handlerClazz.getMethod("handle", Request.class, RequestMeta.class);
@@ -65,26 +63,28 @@ public abstract class AbstractRequestFilter {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
     }
-    
+
     protected <T> Response getDefaultResponseInstance(Class handlerClazz) throws NacosException {
-        ParameterizedType parameterizedType = (ParameterizedType) handlerClazz.getGenericSuperclass();
+        ParameterizedType parameterizedType =
+                (ParameterizedType) handlerClazz.getGenericSuperclass();
         try {
             Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
             return (Response) Class.forName(actualTypeArguments[1].getTypeName()).newInstance();
-            
+
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
     }
-    
+
     /**
      * filter request.
      *
-     * @param request      request.
-     * @param meta         request meta.
+     * @param request request.
+     * @param meta request meta.
      * @param handlerClazz request handler clazz.
      * @return response
      * @throws NacosException NacosException.
      */
-    protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException;
+    protected abstract Response filter(Request request, RequestMeta meta, Class handlerClazz)
+            throws NacosException;
 }

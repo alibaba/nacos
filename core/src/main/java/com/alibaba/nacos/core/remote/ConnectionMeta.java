@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.remote.RemoteConstants;
+import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 
+import com.alibaba.nacos.api.remote.RemoteConstants;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 
 /**
  * ConnectionMetaInfo.
@@ -31,74 +30,60 @@ import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
  * @version $Id: ConnectionMetaInfo.java, v 0.1 2020年07月13日 7:28 PM liuzunfei Exp $
  */
 public class ConnectionMeta {
-    
-    /**
-     * ConnectionType.
-     */
+
+    /** ConnectionType. */
     String connectType;
-    
-    /**
-     * Client IP Address.
-     */
+
+    /** Client IP Address. */
     String clientIp;
-    
-    /**
-     * Remote IP Address.
-     */
+
+    /** Remote IP Address. */
     String remoteIp;
-    
-    /**
-     * Remote IP Port.
-     */
+
+    /** Remote IP Port. */
     int remotePort;
-    
-    /**
-     * Local Ip Port.
-     */
+
+    /** Local Ip Port. */
     int localPort;
-    
-    /**
-     * Client version.
-     */
+
+    /** Client version. */
     String version;
-    
-    /**
-     * Identify Unique connectionId.
-     */
+
+    /** Identify Unique connectionId. */
     String connectionId;
-    
-    /**
-     * create time.
-     */
+
+    /** create time. */
     Date createTime;
-    
-    /**
-     * lastActiveTime.
-     */
+
+    /** lastActiveTime. */
     long lastActiveTime;
-    
-    /**
-     * String appName.
-     */
+
+    /** String appName. */
     String appName;
-    
-    /**
-     * tenant.
-     */
+
+    /** tenant. */
     String tenant;
-    
+
     protected Map<String, String> labels = new HashMap<>();
-    
+
     public String getLabel(String labelKey) {
         return labels.get(labelKey);
     }
-    
+
     public String getTag() {
         return labels.get(VIPSERVER_TAG);
     }
-    
-    public ConnectionMeta(String connectionId, String clientIp, String remoteIp, int remotePort, int localPort,
-            String connectType, String version, String appName, Map<String, String> labels) {
+
+    public ConnectionMeta(
+            String connectionId,
+            String clientIp,
+            String remoteIp,
+            int remotePort,
+            int localPort,
+            String connectType,
+            String version,
+            String appName,
+            Map<String, String> labels) {
         this.connectionId = connectionId;
         this.clientIp = clientIp;
         this.connectType = connectType;
@@ -111,7 +96,7 @@ public class ConnectionMeta {
         this.lastActiveTime = System.currentTimeMillis();
         this.labels.putAll(labels);
     }
-    
+
     /**
      * check if this connection is sdk source.
      *
@@ -121,7 +106,7 @@ public class ConnectionMeta {
         String source = labels.get(RemoteConstants.LABEL_SOURCE);
         return RemoteConstants.LABEL_SOURCE_SDK.equalsIgnoreCase(source);
     }
-    
+
     /**
      * check if this connection is sdk source.
      *
@@ -131,7 +116,7 @@ public class ConnectionMeta {
         String source = labels.get(RemoteConstants.LABEL_SOURCE);
         return RemoteConstants.LABEL_SOURCE_CLUSTER.equalsIgnoreCase(source);
     }
-    
+
     /**
      * Getter method for property <tt>labels</tt>.
      *
@@ -140,7 +125,7 @@ public class ConnectionMeta {
     public Map<String, String> getLabels() {
         return labels;
     }
-    
+
     /**
      * Setter method for property <tt>labels</tt>.
      *
@@ -149,7 +134,7 @@ public class ConnectionMeta {
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
     }
-    
+
     /**
      * Getter method for property <tt>clientIp</tt>.
      *
@@ -158,7 +143,7 @@ public class ConnectionMeta {
     public String getClientIp() {
         return clientIp;
     }
-    
+
     /**
      * Setter method for property <tt>clientIp</tt>.
      *
@@ -167,7 +152,7 @@ public class ConnectionMeta {
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
     }
-    
+
     /**
      * Getter method for property <tt>connectionId</tt>.
      *
@@ -176,7 +161,7 @@ public class ConnectionMeta {
     public String getConnectionId() {
         return connectionId;
     }
-    
+
     /**
      * Setter method for property <tt>connectionId</tt>.
      *
@@ -185,7 +170,7 @@ public class ConnectionMeta {
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }
-    
+
     /**
      * Getter method for property <tt>createTime</tt>.
      *
@@ -194,7 +179,7 @@ public class ConnectionMeta {
     public Date getCreateTime() {
         return createTime;
     }
-    
+
     /**
      * Setter method for property <tt>createTime</tt>.
      *
@@ -203,7 +188,7 @@ public class ConnectionMeta {
     public void setCreateTime(Date createTime) {
         this.createTime = createTime;
     }
-    
+
     /**
      * Getter method for property <tt>lastActiveTime</tt>.
      *
@@ -212,7 +197,7 @@ public class ConnectionMeta {
     public long getLastActiveTime() {
         return lastActiveTime;
     }
-    
+
     /**
      * Setter method for property <tt>lastActiveTime</tt>.
      *
@@ -221,7 +206,7 @@ public class ConnectionMeta {
     public void setLastActiveTime(long lastActiveTime) {
         this.lastActiveTime = lastActiveTime;
     }
-    
+
     /**
      * Getter method for property <tt>connectType</tt>.
      *
@@ -230,7 +215,7 @@ public class ConnectionMeta {
     public String getConnectType() {
         return connectType;
     }
-    
+
     /**
      * Setter method for property <tt>connectType</tt>.
      *
@@ -239,7 +224,7 @@ public class ConnectionMeta {
     public void setConnectType(String connectType) {
         this.connectType = connectType;
     }
-    
+
     /**
      * Getter method for property <tt>version</tt>.
      *
@@ -248,7 +233,7 @@ public class ConnectionMeta {
     public String getVersion() {
         return version;
     }
-    
+
     /**
      * Setter method for property <tt>version</tt>.
      *
@@ -257,7 +242,7 @@ public class ConnectionMeta {
     public void setVersion(String version) {
         this.version = version;
     }
-    
+
     /**
      * Getter method for property <tt>localPort</tt>.
      *
@@ -266,7 +251,7 @@ public class ConnectionMeta {
     public int getLocalPort() {
         return localPort;
     }
-    
+
     /**
      * Setter method for property <tt>localPort</tt>.
      *
@@ -275,29 +260,57 @@ public class ConnectionMeta {
     public void setLocalPort(int localPort) {
         this.localPort = localPort;
     }
-    
+
     public String getAppName() {
         return appName;
     }
-    
+
     public void setAppName(String appName) {
         this.appName = appName;
     }
-    
+
     public String getTenant() {
         return tenant;
     }
-    
+
     public void setTenant(String tenant) {
         this.tenant = tenant;
     }
-    
+
     @Override
     public String toString() {
-        return "ConnectionMeta{" + "connectType='" + connectType + '\'' + ", clientIp='" + clientIp + '\''
-                + ", remoteIp='" + remoteIp + '\'' + ", remotePort=" + remotePort + ", localPort=" + localPort
-                + ", version='" + version + '\'' + ", connectionId='" + connectionId + '\'' + ", createTime="
-                + createTime + ", lastActiveTime=" + lastActiveTime + ", appName='" + appName + '\'' + ", tenant='"
-                + tenant + '\'' + ", labels=" + labels + '}';
+        return "ConnectionMeta{"
+                + "connectType='"
+                + connectType
+                + '\''
+                + ", clientIp='"
+                + clientIp
+                + '\''
+                + ", remoteIp='"
+                + remoteIp
+                + '\''
+                + ", remotePort="
+                + remotePort
+                + ", localPort="
+                + localPort
+                + ", version='"
+                + version
+                + '\''
+                + ", connectionId='"
+                + connectionId
+                + '\''
+                + ", createTime="
+                + createTime
+                + ", lastActiveTime="
+                + lastActiveTime
+                + ", appName='"
+                + appName
+                + '\''
+                + ", tenant='"
+                + tenant
+                + '\''
+                + ", labels="
+                + labels
+                + '}';
     }
 }

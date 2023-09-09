@@ -25,7 +25,7 @@ import com.alibaba.nacos.core.ability.ServerAbilityInitializer;
  * @author xiweng.yy
  */
 public class NamingAbilityInitializer implements ServerAbilityInitializer {
-    
+
     @Override
     public void initialize(ServerAbilities abilities) {
         abilities.getNamingAbility().setSupportJraft(true);

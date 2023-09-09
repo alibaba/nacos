@@ -23,16 +23,14 @@ package com.alibaba.nacos.common.remote;
  * @version $Id: ConnectionType.java, v 0.1 2020年07月13日 7:15 PM liuzunfei Exp $
  */
 public enum ConnectionType {
-    
-    /**
-     * gRPC connection.
-     */
+
+    /** gRPC connection. */
     GRPC("GRPC", "Grpc Connection");
-    
+
     String type;
-    
+
     String name;
-    
+
     public static ConnectionType getByType(String type) {
         ConnectionType[] values = ConnectionType.values();
         for (ConnectionType connectionType : values) {
@@ -42,12 +40,12 @@ public enum ConnectionType {
         }
         return null;
     }
-    
+
     ConnectionType(String type, String name) {
         this.type = type;
         this.name = name;
     }
-    
+
     /**
      * Getter method for property <tt>type</tt>.
      *
@@ -56,7 +54,7 @@ public enum ConnectionType {
     public String getType() {
         return type;
     }
-    
+
     /**
      * Setter method for property <tt>type</tt>.
      *
@@ -65,7 +63,7 @@ public enum ConnectionType {
     public void setType(String type) {
         this.type = type;
     }
-    
+
     /**
      * Getter method for property <tt>name</tt>.
      *
@@ -74,7 +72,7 @@ public enum ConnectionType {
     public String getName() {
         return name;
     }
-    
+
     /**
      * Setter method for property <tt>name</tt>.
      *

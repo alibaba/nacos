@@ -24,9 +24,15 @@ import com.alibaba.nacos.common.notify.SlowEvent;
  * @author shiyiyue
  */
 public class ChangeNotifyBlockEvent extends SlowEvent {
-    
-    public ChangeNotifyBlockEvent(String listener, String dataId, String group, String tenant, long startTime,
-            long currentTime, String blockStack) {
+
+    public ChangeNotifyBlockEvent(
+            String listener,
+            String dataId,
+            String group,
+            String tenant,
+            long startTime,
+            long currentTime,
+            String blockStack) {
         this.listener = listener;
         this.dataId = dataId;
         this.group = group;
@@ -35,73 +41,91 @@ public class ChangeNotifyBlockEvent extends SlowEvent {
         this.currentTime = currentTime;
         this.blockStack = blockStack;
     }
-    
+
     private String listener;
-    
+
     private String dataId;
-    
+
     private String group;
-    
+
     private String tenant;
-    
+
     private long startTime;
-    
+
     private long currentTime;
-    
+
     private String blockStack;
-    
+
     public String getDataId() {
         return dataId;
     }
-    
+
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-    
+
     public String getGroup() {
         return group;
     }
-    
+
     public void setGroup(String group) {
         this.group = group;
     }
-    
+
     public String getTenant() {
         return tenant;
     }
-    
+
     public void setTenant(String tenant) {
         this.tenant = tenant;
     }
-    
+
     public long getStartTime() {
         return startTime;
     }
-    
+
     public void setStartTime(long startTime) {
         this.startTime = startTime;
     }
-    
+
     public long getCurrentTime() {
         return currentTime;
     }
-    
+
     public void setCurrentTime(long currentTime) {
         this.currentTime = currentTime;
     }
-    
+
     public String getBlockStack() {
         return blockStack;
     }
-    
+
     public void setBlockStack(String blockStack) {
         this.blockStack = blockStack;
     }
-    
+
     @Override
     public String toString() {
-        return "ChangeNotifyBlockEvent{" + "listener='" + listener + '\'' + ", dataId='" + dataId + '\'' + ", group='"
-                + group + '\'' + ", tenant='" + tenant + '\'' + ", startTime=" + startTime + ", currentTime="
-                + currentTime + ", blockStack='" + blockStack + '\'' + '}';
+        return "ChangeNotifyBlockEvent{"
+                + "listener='"
+                + listener
+                + '\''
+                + ", dataId='"
+                + dataId
+                + '\''
+                + ", group='"
+                + group
+                + '\''
+                + ", tenant='"
+                + tenant
+                + '\''
+                + ", startTime="
+                + startTime
+                + ", currentTime="
+                + currentTime
+                + ", blockStack='"
+                + blockStack
+                + '\''
+                + '}';
     }
 }

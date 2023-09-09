@@ -29,116 +29,126 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerTransportFilter;
 import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
-import org.springframework.stereotype.Service;
-
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
+import org.springframework.stereotype.Service;
 
 /**
- * Grpc implementation as  a rpc server.
+ * Grpc implementation as a rpc server.
  *
  * @author liuzunfei
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
 @Service
 public class GrpcSdkServer extends BaseGrpcServer {
-    
+
     private NacosGrpcProtocolNegotiator protocolNegotiator;
-    
+
     @Override
     public int rpcPortOffset() {
         return Constants.SDK_GRPC_PORT_DEFAULT_OFFSET;
     }
-    
+
     @Override
     public ThreadPoolExecutor getRpcExecutor() {
         return GlobalExecutor.sdkRpcExecutor;
     }
-    
+
     @Override
     protected long getKeepAliveTime() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_KEEP_ALIVE_TIME_PROPERTY, Long.class);
+        Long property =
+                EnvUtil.getProperty(
+                        GrpcServerConstants.GrpcConfig.SDK_KEEP_ALIVE_TIME_PROPERTY, Long.class);
         if (property != null) {
             return property;
         }
         return super.getKeepAliveTime();
     }
-    
+
     @Override
     protected long getKeepAliveTimeout() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_KEEP_ALIVE_TIMEOUT_PROPERTY, Long.class);
+        Long property =
+                EnvUtil.getProperty(
+                        GrpcServerConstants.GrpcConfig.SDK_KEEP_ALIVE_TIMEOUT_PROPERTY, Long.class);
         if (property != null) {
             return property;
         }
-        
+
         return super.getKeepAliveTimeout();
     }
-    
+
     @Override
     protected int getMaxInboundMessageSize() {
-        Integer property = EnvUtil
-                .getProperty(GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY, Integer.class);
+        Integer property =
+                EnvUtil.getProperty(
+                        GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY,
+                        Integer.class);
         if (property != null) {
             return property;
         }
-        
+
         int size = super.getMaxInboundMessageSize();
-        
+
         if (Loggers.REMOTE.isWarnEnabled()) {
-            Loggers.REMOTE.warn("Recommended use '{}' property instead '{}', now property value is {}",
+            Loggers.REMOTE.warn(
+                    "Recommended use '{}' property instead '{}', now property value is {}",
                     GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY,
-                    GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY, size);
+                    GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY,
+                    size);
         }
-        
+
         return size;
     }
-    
+
     @Override
     protected long getPermitKeepAliveTime() {
-        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_PERMIT_KEEP_ALIVE_TIME, Long.class);
+        Long property =
+                EnvUtil.getProperty(
+                        GrpcServerConstants.GrpcConfig.SDK_PERMIT_KEEP_ALIVE_TIME, Long.class);
         if (property != null) {
             return property;
         }
         return super.getPermitKeepAliveTime();
     }
-    
+
     @Override
     protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
         protocolNegotiator = ProtocolNegotiatorBuilderSingleton.getSingleton().build();
         return Optional.ofNullable(protocolNegotiator);
     }
-    
+
     @Override
     protected List<ServerInterceptor> getSeverInterceptors() {
         List<ServerInterceptor> result = new LinkedList<>();
         result.addAll(super.getSeverInterceptors());
-        result.addAll(NacosGrpcServerInterceptorServiceLoader
-                .loadServerInterceptors(NacosGrpcServerInterceptor.SDK_INTERCEPTOR));
+        result.addAll(
+                NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors(
+                        NacosGrpcServerInterceptor.SDK_INTERCEPTOR));
         return result;
     }
-    
+
     @Override
     protected List<ServerTransportFilter> getServerTransportFilters() {
         List<ServerTransportFilter> result = new LinkedList<>();
         result.addAll(super.getServerTransportFilters());
-        result.addAll(NacosGrpcServerTransportFilterServiceLoader
-                .loadServerTransportFilters(NacosGrpcServerTransportFilter.SDK_FILTER));
+        result.addAll(
+                NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters(
+                        NacosGrpcServerTransportFilter.SDK_FILTER));
         return result;
     }
-    
-    /**
-     * reload ssl context.
-     */
+
+    /** reload ssl context. */
     public void reloadProtocolNegotiator() {
         if (protocolNegotiator != null) {
             try {
                 protocolNegotiator.reloadNegotiator();
             } catch (Throwable throwable) {
-                Loggers.REMOTE
-                        .info("Nacos {} Rpc server reload negotiator fail at port {}.", this.getClass().getSimpleName(),
-                                getServicePort());
+                Loggers.REMOTE.info(
+                        "Nacos {} Rpc server reload negotiator fail at port {}.",
+                        this.getClass().getSimpleName(),
+                        getServicePort());
                 throw throwable;
             }
         }

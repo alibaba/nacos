@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
-
 import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ServiceListRequestTest extends BasedNamingRequestTest {
-    
+
     @Test
     public void testSerialize() throws JsonProcessingException {
         ServiceListRequest request = new ServiceListRequest(NAMESPACE, GROUP, 1, 10);
@@ -37,11 +36,12 @@ public class ServiceListRequestTest extends BasedNamingRequestTest {
         assertTrue(json.contains("\"pageNo\":1"));
         assertTrue(json.contains("\"pageSize\":10"));
     }
-    
+
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"\",\"groupName\":\"group\","
-                + "\"pageNo\":1,\"pageSize\":10,\"selector\":\"label\",\"module\":\"naming\"}";
+        String json =
+                "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"\",\"groupName\":\"group\","
+                        + "\"pageNo\":1,\"pageSize\":10,\"selector\":\"label\",\"module\":\"naming\"}";
         ServiceListRequest actual = mapper.readValue(json, ServiceListRequest.class);
         assertEquals(GROUP, actual.getGroupName());
         assertEquals(NAMESPACE, actual.getNamespace());

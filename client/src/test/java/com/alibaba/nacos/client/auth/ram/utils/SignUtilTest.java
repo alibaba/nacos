@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.client.auth.ram.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class SignUtilTest {
-    
+
     @Test
     public void testSign() throws Exception {
         String actual = SignUtil.sign("aaa", "b");

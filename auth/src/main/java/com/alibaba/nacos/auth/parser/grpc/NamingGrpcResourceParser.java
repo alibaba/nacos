@@ -29,33 +29,38 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author xiweng.yy
  */
 public class NamingGrpcResourceParser extends AbstractGrpcResourceParser {
-    
+
     @Override
     protected String getNamespaceId(Request request) {
         if (request instanceof AbstractNamingRequest) {
             return ((AbstractNamingRequest) request).getNamespace();
         }
-        return (String) ReflectUtils.getFieldValue(request, PropertyKeyConst.NAMESPACE, StringUtils.EMPTY);
+        return (String)
+                ReflectUtils.getFieldValue(request, PropertyKeyConst.NAMESPACE, StringUtils.EMPTY);
     }
-    
+
     @Override
     protected String getGroup(Request request) {
         String groupName;
         if (request instanceof AbstractNamingRequest) {
             groupName = ((AbstractNamingRequest) request).getGroupName();
         } else {
-            groupName = (String) ReflectUtils.getFieldValue(request, CommonParams.GROUP_NAME, StringUtils.EMPTY);
+            groupName =
+                    (String)
+                            ReflectUtils.getFieldValue(
+                                    request, CommonParams.GROUP_NAME, StringUtils.EMPTY);
         }
         return StringUtils.isBlank(groupName) ? StringUtils.EMPTY : groupName;
     }
-    
+
     @Override
     protected String getResourceName(Request request) {
         String serviceName;
         if (request instanceof AbstractNamingRequest) {
             serviceName = ((AbstractNamingRequest) request).getServiceName();
         } else {
-            serviceName = (String) ReflectUtils.getFieldValue(request, CommonParams.SERVICE_NAME, "");
+            serviceName =
+                    (String) ReflectUtils.getFieldValue(request, CommonParams.SERVICE_NAME, "");
         }
         return StringUtils.isBlank(serviceName) ? StringUtils.EMPTY : serviceName;
     }

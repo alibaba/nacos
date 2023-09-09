@@ -27,43 +27,38 @@ import java.io.Serializable;
  * @since 1.2.0
  */
 public class Permission implements Serializable {
-    
+
     private static final long serialVersionUID = -3583076254743606551L;
-    
-    /**
-     * An unique key of resource.
-     */
+
+    /** An unique key of resource. */
     private Resource resource;
-    
-    /**
-     * Action on resource, refer to class ActionTypes.
-     */
+
+    /** Action on resource, refer to class ActionTypes. */
     private String action;
-    
-    public Permission() {
-    }
-    
+
+    public Permission() {}
+
     public Permission(Resource resource, String action) {
         this.resource = resource;
         this.action = action;
     }
-    
+
     public Resource getResource() {
         return resource;
     }
-    
+
     public void setResource(Resource resource) {
         this.resource = resource;
     }
-    
+
     public String getAction() {
         return action;
     }
-    
+
     public void setAction(String action) {
         this.action = action;
     }
-    
+
     @Override
     public String toString() {
         return "Permission{" + "resource='" + resource + '\'' + ", action='" + action + '\'' + '}';

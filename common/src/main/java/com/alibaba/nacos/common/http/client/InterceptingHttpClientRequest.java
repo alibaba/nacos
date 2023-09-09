@@ -19,7 +19,6 @@ package com.alibaba.nacos.common.http.client;
 import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-
 import java.io.IOException;
 import java.net.URI;
 import java.util.Iterator;
@@ -30,20 +29,21 @@ import java.util.Iterator;
  * @author mai.jh
  */
 public class InterceptingHttpClientRequest implements HttpClientRequest {
-    
+
     private final HttpClientRequest httpClientRequest;
-    
+
     private final Iterator<HttpClientRequestInterceptor> interceptors;
-    
-    public InterceptingHttpClientRequest(HttpClientRequest httpClientRequest,
+
+    public InterceptingHttpClientRequest(
+            HttpClientRequest httpClientRequest,
             Iterator<HttpClientRequestInterceptor> interceptors) {
         this.httpClientRequest = httpClientRequest;
         this.interceptors = interceptors;
     }
-    
+
     @Override
-    public HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
-            throws Exception {
+    public HttpClientResponse execute(
+            URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) throws Exception {
         while (interceptors.hasNext()) {
             HttpClientRequestInterceptor nextInterceptor = interceptors.next();
             if (nextInterceptor.isIntercept(uri, httpMethod, requestHttpEntity)) {
@@ -52,7 +52,7 @@ public class InterceptingHttpClientRequest implements HttpClientRequest {
         }
         return httpClientRequest.execute(uri, httpMethod, requestHttpEntity);
     }
-    
+
     @Override
     public void close() throws IOException {
         httpClientRequest.close();

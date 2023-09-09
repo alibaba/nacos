@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.JsonTypeInfo.Id;
-
 import java.io.Serializable;
 
 /**
@@ -33,25 +32,26 @@ import java.io.Serializable;
  * @author nkorange
  */
 @JsonTypeInfo(use = Id.NAME, property = "type", defaultImpl = None.class)
-@JsonSubTypes({@JsonSubTypes.Type(name = Http.TYPE, value = Http.class),
-        @JsonSubTypes.Type(name = Mysql.TYPE, value = Mysql.class),
-        @JsonSubTypes.Type(name = Tcp.TYPE, value = Tcp.class),
-        @JsonSubTypes.Type(name = None.TYPE, value = None.class)})
+@JsonSubTypes({
+    @JsonSubTypes.Type(name = Http.TYPE, value = Http.class),
+    @JsonSubTypes.Type(name = Mysql.TYPE, value = Mysql.class),
+    @JsonSubTypes.Type(name = Tcp.TYPE, value = Tcp.class),
+    @JsonSubTypes.Type(name = None.TYPE, value = None.class)
+})
 public abstract class AbstractHealthChecker implements Cloneable, Serializable {
-    
+
     private static final long serialVersionUID = 3848305577423336421L;
-    
-    @JsonIgnore
-    protected final String type;
-    
+
+    @JsonIgnore protected final String type;
+
     protected AbstractHealthChecker(String type) {
         this.type = type;
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     /**
      * Clone all fields of this instance to another one.
      *
@@ -60,20 +60,18 @@ public abstract class AbstractHealthChecker implements Cloneable, Serializable {
      */
     @Override
     public abstract AbstractHealthChecker clone() throws CloneNotSupportedException;
-    
-    /**
-     * Default implementation of Health checker.
-     */
+
+    /** Default implementation of Health checker. */
     public static class None extends AbstractHealthChecker {
-        
+
         public static final String TYPE = "NONE";
-    
+
         private static final long serialVersionUID = -760631831097384737L;
-    
+
         public None() {
             super(TYPE);
         }
-        
+
         @Override
         public AbstractHealthChecker clone() throws CloneNotSupportedException {
             return new None();

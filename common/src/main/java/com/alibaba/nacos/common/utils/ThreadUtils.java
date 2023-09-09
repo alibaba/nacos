@@ -16,12 +16,11 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.slf4j.Logger;
-
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
 
 /**
  * Thread utils.
@@ -30,11 +29,10 @@ import java.util.concurrent.TimeUnit;
  */
 public final class ThreadUtils {
 
-    private ThreadUtils() {
-    }
-    
+    private ThreadUtils() {}
+
     private static final int THREAD_MULTIPLER = 2;
-    
+
     /**
      * Wait.
      *
@@ -47,7 +45,7 @@ public final class ThreadUtils {
             Thread.interrupted();
         }
     }
-    
+
     /**
      * Sleep.
      *
@@ -60,12 +58,12 @@ public final class ThreadUtils {
             Thread.currentThread().interrupt();
         }
     }
-    
+
     public static void countDown(CountDownLatch latch) {
         Objects.requireNonNull(latch, "latch");
         latch.countDown();
     }
-    
+
     /**
      * Await count down latch.
      *
@@ -78,13 +76,13 @@ public final class ThreadUtils {
             Thread.currentThread().interrupt();
         }
     }
-    
+
     /**
      * Await count down latch with timeout.
      *
      * @param latch count down latch
-     * @param time  timeout time
-     * @param unit  time unit
+     * @param time timeout time
+     * @param unit time unit
      */
     public static void latchAwait(CountDownLatch latch, long time, TimeUnit unit) {
         try {
@@ -93,16 +91,17 @@ public final class ThreadUtils {
             Thread.currentThread().interrupt();
         }
     }
-    
+
     /**
-     * Through the number of cores, calculate the appropriate number of threads; 1.5-2 times the number of CPU cores.
+     * Through the number of cores, calculate the appropriate number of threads; 1.5-2 times the
+     * number of CPU cores.
      *
      * @return thread count
      */
     public static int getSuitableThreadCount() {
         return getSuitableThreadCount(THREAD_MULTIPLER);
     }
-    
+
     /**
      * Through the number of cores, calculate the appropriate number of threads.
      *
@@ -117,16 +116,16 @@ public final class ThreadUtils {
         }
         return workerCount;
     }
-    
+
     public static void shutdownThreadPool(ExecutorService executor) {
         shutdownThreadPool(executor, null);
     }
-    
+
     /**
      * Shutdown thread pool.
      *
      * @param executor thread pool
-     * @param logger   logger
+     * @param logger logger
      */
     public static void shutdownThreadPool(ExecutorService executor, Logger logger) {
         executor.shutdown();
@@ -148,9 +147,8 @@ public final class ThreadUtils {
         }
         executor.shutdownNow();
     }
-    
+
     public static void addShutdownHook(Runnable runnable) {
         Runtime.getRuntime().addShutdownHook(new Thread(runnable));
     }
-    
 }

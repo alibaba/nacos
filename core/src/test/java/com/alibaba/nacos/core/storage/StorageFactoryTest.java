@@ -19,8 +19,6 @@ package com.alibaba.nacos.core.storage;
 import com.alibaba.nacos.core.storage.kv.FileKvStorage;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.storage.kv.MemoryKvStorage;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * {@link StorageFactory} unit tests.
@@ -29,7 +27,7 @@ import org.junit.Test;
  * @date 2021-06-10 17:55
  */
 public class StorageFactoryTest {
-    
+
     @Test
     public void testCreateKvStorage() {
         try {
@@ -39,7 +37,7 @@ public class StorageFactoryTest {
             e.printStackTrace();
             Assert.fail();
         }
-    
+
         try {
             KvStorage kvStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, "", "/");
             Assert.assertTrue(kvStorage instanceof FileKvStorage);
@@ -47,7 +45,7 @@ public class StorageFactoryTest {
             e.printStackTrace();
             Assert.fail();
         }
-    
+
         try {
             StorageFactory.createKvStorage(KvStorage.KvType.RocksDB, "", "/");
         } catch (Exception e) {

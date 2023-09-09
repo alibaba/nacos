@@ -19,16 +19,13 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.common.Constants;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class EnvUtilTest {
-    
+
     @Test
     public void testSetSelfEnv() {
         Map<String, List<String>> headers = new HashMap<>();

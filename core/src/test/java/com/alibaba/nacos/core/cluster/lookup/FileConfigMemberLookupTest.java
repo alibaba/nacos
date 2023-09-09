@@ -20,16 +20,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Collections;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
-
-import java.util.Collections;
 
 /**
  * {@link FileConfigMemberLookup} unit test.
@@ -39,12 +34,11 @@ import java.util.Collections;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class FileConfigMemberLookupTest {
-    
+
     private FileConfigMemberLookup fileConfigMemberLookup;
-    
-    @Mock
-    private ServerMemberManager memberManager;
-    
+
+    @Mock private ServerMemberManager memberManager;
+
     @Before
     public void setUp() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
@@ -52,12 +46,12 @@ public class FileConfigMemberLookupTest {
         fileConfigMemberLookup.injectMemberManager(memberManager);
         fileConfigMemberLookup.start();
     }
-    
+
     @After
     public void tearDown() throws NacosException {
         fileConfigMemberLookup.destroy();
     }
-    
+
     @Test
     public void testAfterLookup() {
         try {
@@ -67,7 +61,7 @@ public class FileConfigMemberLookupTest {
             Assert.fail(e.getMessage());
         }
     }
-    
+
     @Test
     public void testUseAddressServer() {
         Assert.assertFalse(fileConfigMemberLookup.useAddressServer());

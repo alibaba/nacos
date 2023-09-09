@@ -19,10 +19,6 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.NamingSubscriberServiceAggregationImpl;
 import com.alibaba.nacos.naming.push.NamingSubscriberServiceLocalImpl;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -32,6 +28,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * Subscribe manager.
@@ -42,13 +41,11 @@ import java.util.stream.Collectors;
  */
 @Service
 public class SubscribeManager {
-    
-    @Autowired
-    private NamingSubscriberServiceLocalImpl localService;
-    
-    @Autowired
-    private NamingSubscriberServiceAggregationImpl aggregationService;
-    
+
+    @Autowired private NamingSubscriberServiceLocalImpl localService;
+
+    @Autowired private NamingSubscriberServiceAggregationImpl aggregationService;
+
     /**
      * Get subscribers.
      *
@@ -57,16 +54,21 @@ public class SubscribeManager {
      * @param aggregation aggregation
      * @return list of subscriber
      */
-    public List<Subscriber> getSubscribers(String serviceName, String namespaceId, boolean aggregation) {
+    public List<Subscriber> getSubscribers(
+            String serviceName, String namespaceId, boolean aggregation) {
         if (aggregation) {
-            Collection<Subscriber> result = aggregationService.getFuzzySubscribers(namespaceId, serviceName);
-            return CollectionUtils.isNotEmpty(result) ? result.stream().filter(distinctByKey(Subscriber::toString))
-                    .collect(Collectors.toList()) : Collections.EMPTY_LIST;
+            Collection<Subscriber> result =
+                    aggregationService.getFuzzySubscribers(namespaceId, serviceName);
+            return CollectionUtils.isNotEmpty(result)
+                    ? result.stream()
+                            .filter(distinctByKey(Subscriber::toString))
+                            .collect(Collectors.toList())
+                    : Collections.EMPTY_LIST;
         } else {
             return new LinkedList<>(localService.getFuzzySubscribers(namespaceId, serviceName));
         }
     }
-    
+
     public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
         Map<Object, Boolean> seen = new ConcurrentHashMap<>(128);
         return object -> seen.putIfAbsent(keyExtractor.apply(object), Boolean.TRUE) == null;

@@ -29,17 +29,18 @@ import com.alibaba.nacos.core.distributed.distro.task.delay.DistroDelayTask;
  * @author xiweng.yy
  */
 public class DistroClientTaskFailedHandler implements DistroFailedTaskHandler {
-    
+
     private final DistroTaskEngineHolder distroTaskEngineHolder;
-    
+
     public DistroClientTaskFailedHandler(DistroTaskEngineHolder distroTaskEngineHolder) {
         this.distroTaskEngineHolder = distroTaskEngineHolder;
     }
-    
+
     @Override
     public void retry(DistroKey distroKey, DataOperation action) {
-        DistroDelayTask retryTask = new DistroDelayTask(distroKey, action,
-                DistroConfig.getInstance().getSyncRetryDelayMillis());
+        DistroDelayTask retryTask =
+                new DistroDelayTask(
+                        distroKey, action, DistroConfig.getInstance().getSyncRetryDelayMillis());
         distroTaskEngineHolder.getDelayTaskExecuteEngine().addTask(distroKey, retryTask);
     }
 }

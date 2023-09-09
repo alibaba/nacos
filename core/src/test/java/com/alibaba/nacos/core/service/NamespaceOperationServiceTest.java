@@ -16,23 +16,6 @@
 
 package com.alibaba.nacos.core.service;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.api.NacosApiException;
-import com.alibaba.nacos.core.namespace.injector.AbstractNamespaceDetailInjector;
-import com.alibaba.nacos.core.namespace.model.Namespace;
-import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
-import com.alibaba.nacos.core.namespace.model.TenantInfo;
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.Collections;
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -40,6 +23,19 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.api.NacosApiException;
+import com.alibaba.nacos.core.namespace.injector.AbstractNamespaceDetailInjector;
+import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.core.namespace.model.NamespaceTypeEnum;
+import com.alibaba.nacos.core.namespace.model.TenantInfo;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import java.util.Collections;
+import java.util.List;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 /**
  * NamespaceOperationServiceTest.
@@ -49,45 +45,45 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class NamespaceOperationServiceTest {
-    
+
     private NamespaceOperationService namespaceOperationService;
-    
+
     private MockNamespaceInjector injector;
-    
-    @Mock
-    private NamespacePersistService namespacePersistService;
-    
+
+    @Mock private NamespacePersistService namespacePersistService;
+
     private static final String TEST_NAMESPACE_ID = "testId";
-    
+
     private static final String TEST_NAMESPACE_NAME = "testName";
-    
+
     private static final String TEST_NAMESPACE_DESC = "testDesc";
-    
+
     private static final String DEFAULT_NAMESPACE = "public";
-    
+
     private static final int DEFAULT_QUOTA = 200;
-    
+
     private static final String DEFAULT_KP = "1";
-    
+
     @Before
     public void setUp() throws Exception {
         injector = new MockNamespaceInjector();
         namespaceOperationService = new NamespaceOperationService(namespacePersistService);
     }
-    
+
     @After
     public void tearDown() {
         injector.doInjector = false;
     }
-    
+
     @Test
     public void testGetNamespaceList() {
         TenantInfo tenantInfo = new TenantInfo();
         tenantInfo.setTenantId(TEST_NAMESPACE_ID);
         tenantInfo.setTenantName(TEST_NAMESPACE_NAME);
         tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
-        when(namespacePersistService.findTenantByKp(DEFAULT_KP)).thenReturn(Collections.singletonList(tenantInfo));
-        
+        when(namespacePersistService.findTenantByKp(DEFAULT_KP))
+                .thenReturn(Collections.singletonList(tenantInfo));
+
         List<Namespace> list = namespaceOperationService.getNamespaceList();
         assertEquals(2, list.size());
         Namespace namespaceA = list.get(0);
@@ -95,61 +91,76 @@ public class NamespaceOperationServiceTest {
         assertEquals(DEFAULT_NAMESPACE, namespaceA.getNamespaceShowName());
         assertEquals(DEFAULT_QUOTA, namespaceA.getQuota());
         assertEquals(1, namespaceA.getConfigCount());
-        
+
         Namespace namespaceB = list.get(1);
         assertEquals(TEST_NAMESPACE_ID, namespaceB.getNamespace());
         assertEquals(TEST_NAMESPACE_NAME, namespaceB.getNamespaceShowName());
         assertEquals(1, namespaceB.getConfigCount());
     }
-    
+
     @Test(expected = NacosApiException.class)
     public void testGetNamespace() throws NacosException {
-        
+
         TenantInfo tenantInfo = new TenantInfo();
         tenantInfo.setTenantId(TEST_NAMESPACE_ID);
         tenantInfo.setTenantName(TEST_NAMESPACE_NAME);
         tenantInfo.setTenantDesc(TEST_NAMESPACE_DESC);
-        when(namespacePersistService.findTenantByKp(DEFAULT_KP, TEST_NAMESPACE_ID)).thenReturn(tenantInfo);
-        when(namespacePersistService.findTenantByKp(DEFAULT_KP, "test_not_exist_id")).thenReturn(null);
-        Namespace namespaceAllInfo = new Namespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC,
-                DEFAULT_QUOTA, 1, NamespaceTypeEnum.GLOBAL.getType());
+        when(namespacePersistService.findTenantByKp(DEFAULT_KP, TEST_NAMESPACE_ID))
+                .thenReturn(tenantInfo);
+        when(namespacePersistService.findTenantByKp(DEFAULT_KP, "test_not_exist_id"))
+                .thenReturn(null);
+        Namespace namespaceAllInfo =
+                new Namespace(
+                        TEST_NAMESPACE_ID,
+                        TEST_NAMESPACE_NAME,
+                        TEST_NAMESPACE_DESC,
+                        DEFAULT_QUOTA,
+                        1,
+                        NamespaceTypeEnum.GLOBAL.getType());
         Namespace namespace = namespaceOperationService.getNamespace(TEST_NAMESPACE_ID);
         assertEquals(namespaceAllInfo.getNamespace(), namespace.getNamespace());
         assertEquals(namespaceAllInfo.getNamespaceShowName(), namespace.getNamespaceShowName());
         assertEquals(namespaceAllInfo.getNamespaceDesc(), namespace.getNamespaceDesc());
         assertEquals(namespaceAllInfo.getQuota(), namespace.getQuota());
         assertEquals(namespaceAllInfo.getConfigCount(), namespace.getConfigCount());
-        
+
         namespaceOperationService.getNamespace("test_not_exist_id");
-        
     }
-    
+
     @Test
     public void testCreateNamespace() throws NacosException {
         when(namespacePersistService.tenantInfoCountByTenantId(anyString())).thenReturn(0);
-        namespaceOperationService.createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
+        namespaceOperationService.createNamespace(
+                TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
         verify(namespacePersistService)
-                .insertTenantInfoAtomic(eq(DEFAULT_KP), eq(TEST_NAMESPACE_ID), eq(TEST_NAMESPACE_NAME),
-                        eq(TEST_NAMESPACE_DESC), any(), anyLong());
+                .insertTenantInfoAtomic(
+                        eq(DEFAULT_KP),
+                        eq(TEST_NAMESPACE_ID),
+                        eq(TEST_NAMESPACE_NAME),
+                        eq(TEST_NAMESPACE_DESC),
+                        any(),
+                        anyLong());
     }
-    
+
     @Test
     public void testEditNamespace() {
-        namespaceOperationService.editNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
+        namespaceOperationService.editNamespace(
+                TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
         verify(namespacePersistService)
-                .updateTenantNameAtomic(DEFAULT_KP, TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
+                .updateTenantNameAtomic(
+                        DEFAULT_KP, TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
     }
-    
+
     @Test
     public void testRemoveNamespace() {
         namespaceOperationService.removeNamespace(TEST_NAMESPACE_ID);
         verify(namespacePersistService).removeTenantInfoAtomic(DEFAULT_KP, TEST_NAMESPACE_ID);
     }
-    
+
     private static class MockNamespaceInjector extends AbstractNamespaceDetailInjector {
-        
+
         private boolean doInjector = true;
-        
+
         @Override
         public void injectDetail(Namespace namespace) {
             if (doInjector) {

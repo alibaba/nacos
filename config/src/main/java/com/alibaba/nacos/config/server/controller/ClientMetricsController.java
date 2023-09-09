@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.CACHE_DATA;
+import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA;
+
 import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -38,21 +41,17 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.CACHE_DATA;
-import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest.MetricsKey.SNAPSHOT_DATA;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * ClientMetricsController.
@@ -62,16 +61,17 @@ import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequ
 @RestController
 @RequestMapping(Constants.METRICS_CONTROLLER_PATH)
 public class ClientMetricsController {
-    
+
     private final ServerMemberManager serverMemberManager;
-    
+
     private final ConnectionManager connectionManager;
-    
-    public ClientMetricsController(ServerMemberManager serverMemberManager, ConnectionManager connectionManager) {
+
+    public ClientMetricsController(
+            ServerMemberManager serverMemberManager, ConnectionManager connectionManager) {
         this.serverMemberManager = serverMemberManager;
         this.connectionManager = connectionManager;
     }
-    
+
     /**
      * get client metric.
      *
@@ -79,65 +79,91 @@ public class ClientMetricsController {
      * @return ResponseEntity
      */
     @GetMapping("/cluster")
-    @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ResponseEntity metric(@RequestParam("ip") String ip,
+    @Secured(
+            resource = Constants.METRICS_CONTROLLER_PATH,
+            action = ActionTypes.READ,
+            signType = SignType.CONFIG)
+    public ResponseEntity metric(
+            @RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "tenant", required = false) String tenant) {
-        Loggers.CORE.info("Get cluster config metrics received, ip={},dataId={},group={},tenant={}", ip, dataId, group,
+        Loggers.CORE.info(
+                "Get cluster config metrics received, ip={},dataId={},group={},tenant={}",
+                ip,
+                dataId,
+                group,
                 tenant);
         Map<String, Object> responseMap = new HashMap<>(3);
         Collection<Member> members = serverMemberManager.allMembers();
-        final NacosAsyncRestTemplate nacosAsyncRestTemplate = HttpClientBeanHolder
-                .getNacosAsyncRestTemplate(Loggers.CLUSTER);
+        final NacosAsyncRestTemplate nacosAsyncRestTemplate =
+                HttpClientBeanHolder.getNacosAsyncRestTemplate(Loggers.CLUSTER);
         CountDownLatch latch = new CountDownLatch(members.size());
         for (Member member : members) {
-            String url = HttpUtils
-                    .buildUrl(false, member.getAddress(), EnvUtil.getContextPath(), Constants.METRICS_CONTROLLER_PATH,
+            String url =
+                    HttpUtils.buildUrl(
+                            false,
+                            member.getAddress(),
+                            EnvUtil.getContextPath(),
+                            Constants.METRICS_CONTROLLER_PATH,
                             "current");
-            Query query = Query.newInstance().addParam("ip", ip).addParam("dataId", dataId).addParam("group", group)
-                    .addParam("tenant", tenant);
-            nacosAsyncRestTemplate.get(url, Header.EMPTY, query, new GenericType<Map>() {
-            }.getType(), new Callback<Map>() {
-                
-                @Override
-                public void onReceive(RestResult<Map> result) {
-                    if (result.ok()) {
-                        responseMap.putAll(result.getData());
-                    }
-                    latch.countDown();
-                }
-                
-                @Override
-                public void onError(Throwable throwable) {
-                    Loggers.CORE
-                            .error("Get config metrics error from member address={}, ip={},dataId={},group={},tenant={},error={}",
-                                    member.getAddress(), ip, dataId, group, tenant, throwable);
-                    latch.countDown();
-                }
-                
-                @Override
-                public void onCancel() {
-                    latch.countDown();
-                }
-            });
+            Query query =
+                    Query.newInstance()
+                            .addParam("ip", ip)
+                            .addParam("dataId", dataId)
+                            .addParam("group", group)
+                            .addParam("tenant", tenant);
+            nacosAsyncRestTemplate.get(
+                    url,
+                    Header.EMPTY,
+                    query,
+                    new GenericType<Map>() {}.getType(),
+                    new Callback<Map>() {
+
+                        @Override
+                        public void onReceive(RestResult<Map> result) {
+                            if (result.ok()) {
+                                responseMap.putAll(result.getData());
+                            }
+                            latch.countDown();
+                        }
+
+                        @Override
+                        public void onError(Throwable throwable) {
+                            Loggers.CORE.error(
+                                    "Get config metrics error from member address={}, ip={},dataId={},group={},tenant={},error={}",
+                                    member.getAddress(),
+                                    ip,
+                                    dataId,
+                                    group,
+                                    tenant,
+                                    throwable);
+                            latch.countDown();
+                        }
+
+                        @Override
+                        public void onCancel() {
+                            latch.countDown();
+                        }
+                    });
         }
         try {
             latch.await(3L, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        
+
         return ResponseEntity.ok().body(responseMap);
     }
-    
-    
-    /**
-     * Get client config listener lists of subscriber in local machine.
-     */
+
+    /** Get client config listener lists of subscriber in local machine. */
     @GetMapping("/current")
-    @Secured(resource = Constants.METRICS_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
-    public Map<String, Object> getClientMetrics(@RequestParam("ip") String ip,
+    @Secured(
+            resource = Constants.METRICS_CONTROLLER_PATH,
+            action = ActionTypes.READ,
+            signType = SignType.CONFIG)
+    public Map<String, Object> getClientMetrics(
+            @RequestParam("ip") String ip,
             @RequestParam(value = "dataId", required = false) String dataId,
             @RequestParam(value = "group", required = false) String group,
             @RequestParam(value = "tenant", required = false) String tenant) {
@@ -147,22 +173,32 @@ public class ClientMetricsController {
             try {
                 ClientConfigMetricRequest clientMetrics = new ClientConfigMetricRequest();
                 if (StringUtils.isNotBlank(dataId)) {
-                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
-                            .build(CACHE_DATA, GroupKey2.getKey(dataId, group, tenant)));
-                    clientMetrics.getMetricsKeys().add(ClientConfigMetricRequest.MetricsKey
-                            .build(SNAPSHOT_DATA, GroupKey2.getKey(dataId, group, tenant)));
+                    clientMetrics
+                            .getMetricsKeys()
+                            .add(
+                                    ClientConfigMetricRequest.MetricsKey.build(
+                                            CACHE_DATA, GroupKey2.getKey(dataId, group, tenant)));
+                    clientMetrics
+                            .getMetricsKeys()
+                            .add(
+                                    ClientConfigMetricRequest.MetricsKey.build(
+                                            SNAPSHOT_DATA,
+                                            GroupKey2.getKey(dataId, group, tenant)));
                 }
-                
-                ClientConfigMetricResponse request1 = (ClientConfigMetricResponse) connectionByIp
-                        .request(clientMetrics, 1000L);
+
+                ClientConfigMetricResponse request1 =
+                        (ClientConfigMetricResponse) connectionByIp.request(clientMetrics, 1000L);
                 metrics.putAll(request1.getMetrics());
             } catch (Exception e) {
-                Loggers.CORE.error("Get config metrics error from client ip={},dataId={},group={},tenant={},error={}", ip, dataId,
-                        group, tenant, e);
+                Loggers.CORE.error(
+                        "Get config metrics error from client ip={},dataId={},group={},tenant={},error={}",
+                        ip,
+                        dataId,
+                        group,
+                        tenant,
+                        e);
             }
         }
         return metrics;
-        
     }
-    
 }

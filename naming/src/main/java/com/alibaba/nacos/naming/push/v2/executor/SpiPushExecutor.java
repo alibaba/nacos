@@ -24,11 +24,11 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
  * @author xiweng.yy
  */
 public interface SpiPushExecutor extends PushExecutor {
-    
+
     /**
      * Whether SPI push executor is interest this push.
      *
-     * @param clientId   client id of push
+     * @param clientId client id of push
      * @param subscriber subscribe info
      * @return {@code true} if this SPI push executor should execute, otherwise false.
      */

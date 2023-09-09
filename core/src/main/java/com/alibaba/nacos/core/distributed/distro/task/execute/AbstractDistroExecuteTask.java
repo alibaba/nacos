@@ -33,24 +33,25 @@ import com.alibaba.nacos.core.utils.Loggers;
  * @author xiweng.yy
  */
 public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
-    
+
     private final DistroKey distroKey;
-    
+
     private final DistroComponentHolder distroComponentHolder;
-    
-    protected AbstractDistroExecuteTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
+
+    protected AbstractDistroExecuteTask(
+            DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
         this.distroKey = distroKey;
         this.distroComponentHolder = distroComponentHolder;
     }
-    
+
     protected DistroKey getDistroKey() {
         return distroKey;
     }
-    
+
     protected DistroComponentHolder getDistroComponentHolder() {
         return distroComponentHolder;
     }
-    
+
     @Override
     public void run() {
         String type = getDistroKey().getResourceType();
@@ -66,7 +67,7 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
             executeDistroTask();
         }
     }
-    
+
     private void executeDistroTask() {
         try {
             boolean result = doExecute();
@@ -79,58 +80,62 @@ public abstract class AbstractDistroExecuteTask extends AbstractExecuteTask {
             handleFailedTask();
         }
     }
-    
+
     /**
      * Get {@link DataOperation} for current task.
      *
      * @return data operation
      */
     protected abstract DataOperation getDataOperation();
-    
+
     /**
      * Do execute for different sub class.
      *
      * @return result of execute
      */
     protected abstract boolean doExecute();
-    
+
     /**
      * Do execute with callback for different sub class.
      *
      * @param callback callback
      */
     protected abstract void doExecuteWithCallback(DistroCallback callback);
-    
-    /**
-     * Handle failed task.
-     */
+
+    /** Handle failed task. */
     protected void handleFailedTask() {
         String type = getDistroKey().getResourceType();
-        DistroFailedTaskHandler failedTaskHandler = distroComponentHolder.findFailedTaskHandler(type);
+        DistroFailedTaskHandler failedTaskHandler =
+                distroComponentHolder.findFailedTaskHandler(type);
         if (null == failedTaskHandler) {
             Loggers.DISTRO.warn("[DISTRO] Can't find failed task for type {}, so discarded", type);
             return;
         }
         failedTaskHandler.retry(getDistroKey(), getDataOperation());
     }
-    
+
     private class DistroExecuteCallback implements DistroCallback {
-        
+
         @Override
         public void onSuccess() {
-            DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
+            DistroRecord distroRecord =
+                    DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
             distroRecord.syncSuccess();
             Loggers.DISTRO.info("[DISTRO-END] {} result: true", getDistroKey().toString());
         }
-        
+
         @Override
         public void onFailed(Throwable throwable) {
-            DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
+            DistroRecord distroRecord =
+                    DistroRecordsHolder.getInstance().getRecord(getDistroKey().getResourceType());
             distroRecord.syncFail();
             if (null == throwable) {
                 Loggers.DISTRO.info("[DISTRO-END] {} result: false", getDistroKey().toString());
             } else {
-                Loggers.DISTRO.warn("[DISTRO] Sync data change failed. key: {}", getDistroKey().toString(), throwable);
+                Loggers.DISTRO.warn(
+                        "[DISTRO] Sync data change failed. key: {}",
+                        getDistroKey().toString(),
+                        throwable);
             }
             handleFailedTask();
         }

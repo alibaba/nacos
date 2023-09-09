@@ -21,13 +21,12 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckExtendProvider;
 import com.alibaba.nacos.naming.healthcheck.extend.HealthCheckProcessorExtendV2;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * Delegate of health check v2.x.
@@ -36,21 +35,26 @@ import java.util.stream.Collectors;
  */
 @Component("healthCheckDelegateV2")
 public class HealthCheckProcessorV2Delegate implements HealthCheckProcessorV2 {
-    
+
     private final Map<String, HealthCheckProcessorV2> healthCheckProcessorMap = new HashMap<>();
-    
-    public HealthCheckProcessorV2Delegate(HealthCheckExtendProvider provider,
+
+    public HealthCheckProcessorV2Delegate(
+            HealthCheckExtendProvider provider,
             HealthCheckProcessorExtendV2 healthCheckProcessorExtend) {
         provider.setHealthCheckProcessorExtend(healthCheckProcessorExtend);
         provider.init();
     }
-    
+
     @Autowired
     public void addProcessor(Collection<HealthCheckProcessorV2> processors) {
-        healthCheckProcessorMap.putAll(processors.stream().filter(processor -> processor.getType() != null)
-                .collect(Collectors.toMap(HealthCheckProcessorV2::getType, processor -> processor)));
+        healthCheckProcessorMap.putAll(
+                processors.stream()
+                        .filter(processor -> processor.getType() != null)
+                        .collect(
+                                Collectors.toMap(
+                                        HealthCheckProcessorV2::getType, processor -> processor)));
     }
-    
+
     @Override
     public void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata) {
         String type = metadata.getHealthyCheckType();
@@ -60,7 +64,7 @@ public class HealthCheckProcessorV2Delegate implements HealthCheckProcessorV2 {
         }
         processor.process(task, service, metadata);
     }
-    
+
     @Override
     public String getType() {
         return null;

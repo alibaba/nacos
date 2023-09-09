@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.auth.api;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.io.Serializable;
 import java.util.Properties;
 
@@ -29,53 +28,73 @@ import java.util.Properties;
  * @since 1.2.0
  */
 public class Resource implements Serializable {
-    
+
     private static final long serialVersionUID = 925971662931204553L;
-    
-    public static final Resource EMPTY_RESOURCE = new Resource(StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY,
-            StringUtils.EMPTY, null);
-    
+
+    public static final Resource EMPTY_RESOURCE =
+            new Resource(
+                    StringUtils.EMPTY,
+                    StringUtils.EMPTY,
+                    StringUtils.EMPTY,
+                    StringUtils.EMPTY,
+                    null);
+
     private final String namespaceId;
-    
+
     private final String group;
-    
+
     private final String name;
-    
+
     private final String type;
-    
+
     private final Properties properties;
-    
-    public Resource(String namespaceId, String group, String name, String type, Properties properties) {
+
+    public Resource(
+            String namespaceId, String group, String name, String type, Properties properties) {
         this.namespaceId = namespaceId;
         this.group = group;
         this.name = name;
         this.type = type;
         this.properties = properties;
     }
-    
+
     public String getNamespaceId() {
         return namespaceId;
     }
-    
+
     public String getGroup() {
         return group;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     public Properties getProperties() {
         return properties;
     }
-    
+
     @Override
     public String toString() {
-        return "Resource{" + "namespaceId='" + namespaceId + '\'' + ", group='" + group + '\'' + ", name='" + name
-                + '\'' + ", type='" + type + '\'' + ", properties=" + properties + '}';
+        return "Resource{"
+                + "namespaceId='"
+                + namespaceId
+                + '\''
+                + ", group='"
+                + group
+                + '\''
+                + ", name='"
+                + name
+                + '\''
+                + ", type='"
+                + type
+                + '\''
+                + ", properties="
+                + properties
+                + '}';
     }
 }

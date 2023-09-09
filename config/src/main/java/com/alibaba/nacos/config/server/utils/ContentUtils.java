@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.config.server.constant.Constants;
-
 import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
+
+import com.alibaba.nacos.config.server.constant.Constants;
 
 /**
  * Content utils.
@@ -26,7 +26,7 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
  * @author Nacos
  */
 public class ContentUtils {
-    
+
     /**
      * verify the pub config content.
      *
@@ -34,19 +34,22 @@ public class ContentUtils {
      */
     public static void verifyIncrementPubContent(String content) {
         if (content == null || content.length() == 0) {
-            throw new IllegalArgumentException("The content for publishing or deleting cannot be null!");
+            throw new IllegalArgumentException(
+                    "The content for publishing or deleting cannot be null!");
         }
         for (int i = 0; i < content.length(); i++) {
             char c = content.charAt(i);
             if (c == '\r' || c == '\n') {
-                throw new IllegalArgumentException("The content for publishing or deleting cannot contain enter and next line symbol!");
+                throw new IllegalArgumentException(
+                        "The content for publishing or deleting cannot contain enter and next line symbol!");
             }
             if (c == Constants.WORD_SEPARATOR.charAt(0)) {
-                throw new IllegalArgumentException("The content for publishing or deleting cannot contain (char)2!");
+                throw new IllegalArgumentException(
+                        "The content for publishing or deleting cannot contain (char)2!");
             }
         }
     }
-    
+
     public static String getContentIdentity(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
         if (index == -1) {
@@ -54,7 +57,7 @@ public class ContentUtils {
         }
         return content.substring(0, index);
     }
-    
+
     public static String getContent(String content) {
         int index = content.indexOf(WORD_SEPARATOR);
         if (index == -1) {
@@ -62,7 +65,7 @@ public class ContentUtils {
         }
         return content.substring(index + 1);
     }
-    
+
     /**
      * Truncate the content.
      *
@@ -78,6 +81,6 @@ public class ContentUtils {
             return content.substring(0, 100) + "...";
         }
     }
-    
+
     private static final int LIMIT_CONTENT_SIZE = 100;
 }

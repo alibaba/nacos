@@ -18,20 +18,17 @@
 
 package com.alibaba.nacos.client.logging;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.lang.reflect.Field;
 import org.mockito.Mockito;
 
-import java.lang.reflect.Field;
-
 public class NacosLoggingTest {
-    
+
     @Test
     public void testGetInstance() {
         NacosLogging instance = NacosLogging.getInstance();
         Assert.assertNotNull(instance);
     }
-    
+
     @Test
     public void testLoadConfiguration() throws NoSuchFieldException, IllegalAccessException {
         NacosLogging instance = NacosLogging.getInstance();

@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import java.util.Collection;
 
 /**
@@ -29,27 +28,28 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public interface ServiceOperator {
-    
+
     /**
      * Create new service.
      *
      * @param namespaceId namespace id of service
      * @param serviceName grouped service name format like 'groupName@@serviceName'
-     * @param metadata    new metadata of service
+     * @param metadata new metadata of service
      * @throws NacosException nacos exception during creating
      */
-    void create(String namespaceId, String serviceName, ServiceMetadata metadata) throws NacosException;
-    
+    void create(String namespaceId, String serviceName, ServiceMetadata metadata)
+            throws NacosException;
+
     /**
-     * Update service information. Due to service basic information can't be changed, so update should only update the
-     * metadata of service.
+     * Update service information. Due to service basic information can't be changed, so update
+     * should only update the metadata of service.
      *
-     * @param service  service need to be updated.
+     * @param service service need to be updated.
      * @param metadata new metadata of service.
      * @throws NacosException nacos exception during update
      */
     void update(Service service, ServiceMetadata metadata) throws NacosException;
-    
+
     /**
      * Delete service.
      *
@@ -58,7 +58,7 @@ public interface ServiceOperator {
      * @throws NacosException nacos exception during delete
      */
     void delete(String namespaceId, String serviceName) throws NacosException;
-    
+
     /**
      * Query service detail.
      *
@@ -68,30 +68,31 @@ public interface ServiceOperator {
      * @throws NacosException nacos exception during query
      */
     ObjectNode queryService(String namespaceId, String serviceName) throws NacosException;
-    
+
     /**
      * Page list service name.
      *
      * @param namespaceId namespace id of services
-     * @param groupName   group name of services
-     * @param selector    selector
+     * @param groupName group name of services
+     * @param selector selector
      * @return services name list
      * @throws NacosException nacos exception during query
      */
-    Collection<String> listService(String namespaceId, String groupName, String selector) throws NacosException;
-    
+    Collection<String> listService(String namespaceId, String groupName, String selector)
+            throws NacosException;
+
     /**
      * list All service namespace.
      *
      * @return all namespace
      */
     Collection<String> listAllNamespace();
-    
+
     /**
      * Search service name in namespace according to expr.
      *
      * @param namespaceId namespace id
-     * @param expr        search expr
+     * @param expr search expr
      * @return service name collection of match expr
      * @throws NacosException nacos exception during query
      */

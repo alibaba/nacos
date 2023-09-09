@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.prometheus.filter;
 
+import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_PATH;
+
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -27,8 +29,6 @@ import org.springframework.security.web.authentication.AnonymousAuthenticationFi
 import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
-import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_PATH;
-
 /**
  * prometheus auth configuration.
  *
@@ -36,28 +36,30 @@ import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLE
  */
 @Configuration
 public class PrometheusAuthFilter {
-    
+
     @Bean
     public FilterRegistrationBean<BasicAuthenticationFilter> basicAuthenticationFilter(
             AuthenticationManager authenticationManager) {
-        FilterRegistrationBean<BasicAuthenticationFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<BasicAuthenticationFilter> registration =
+                new FilterRegistrationBean<>();
         registration.setFilter(new BasicAuthenticationFilter(authenticationManager));
         registration.addUrlPatterns(PROMETHEUS_CONTROLLER_PATH);
         registration.setName("prometheusBasicAuthenticationFilter");
         registration.setOrder(2);
         return registration;
     }
-    
+
     @Bean
     public FilterRegistrationBean<AnonymousAuthenticationFilter> anonymousAuthenticationFilter() {
-        FilterRegistrationBean<AnonymousAuthenticationFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<AnonymousAuthenticationFilter> registration =
+                new FilterRegistrationBean<>();
         registration.setFilter(new AnonymousAuthenticationFilter("annony"));
         registration.addUrlPatterns(PROMETHEUS_CONTROLLER_PATH);
         registration.setName("prometheusAnonymousAuthenticationFilter");
         registration.setOrder(3);
         return registration;
     }
-    
+
     @Bean
     public FilterRegistrationBean<AuthorizationFilter> authorizationFilter() {
         FilterRegistrationBean<AuthorizationFilter> registration = new FilterRegistrationBean<>();
@@ -67,10 +69,11 @@ public class PrometheusAuthFilter {
         registration.setOrder(4);
         return registration;
     }
-    
+
     @Bean
     public FilterRegistrationBean<ExceptionTranslationFilter> exceptionTranslationFilter() {
-        FilterRegistrationBean<ExceptionTranslationFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<ExceptionTranslationFilter> registration =
+                new FilterRegistrationBean<>();
         registration.setFilter(new ExceptionTranslationFilter(new Http403ForbiddenEntryPoint()));
         registration.addUrlPatterns(PROMETHEUS_CONTROLLER_PATH);
         registration.setName("prometheusExceptionTranslationFilter");

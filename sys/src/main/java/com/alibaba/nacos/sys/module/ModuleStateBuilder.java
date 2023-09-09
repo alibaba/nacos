@@ -22,14 +22,14 @@ package com.alibaba.nacos.sys.module;
  * @author xiweng.yy
  */
 public interface ModuleStateBuilder {
-    
+
     /**
      * Build module state.
      *
      * @return ModuleState
      */
     ModuleState build();
-    
+
     /**
      * Whether module is ignored, default return false.
      *

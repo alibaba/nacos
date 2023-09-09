@@ -16,18 +16,15 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class AccumulateStatCountTest {
-    
+
     @Test
     public void testIncrease() {
         AccumulateStatCount accumulateStatCount = new AccumulateStatCount();
         long result = accumulateStatCount.increase();
         Assert.assertEquals(1, result);
     }
-    
+
     @Test
     public void testStat() {
         AccumulateStatCount accumulateStatCount = new AccumulateStatCount();

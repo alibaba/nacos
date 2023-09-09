@@ -17,22 +17,20 @@
 package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.utils.AbstractAssert;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 
 /**
- * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
- * {@link Resource} implementation for a given byte array.
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications {@link
+ * Resource} implementation for a given byte array.
  *
  * <p>Creates a {@link ByteArrayInputStream} for the given byte array.
  *
- * <p>Useful for loading content from any given byte array,
- * without having to resort to a single-use {@link InputStreamResource}.
- * Particularly useful for creating mail attachments from local content,
- * where JavaMail needs to be able to read the stream multiple times.
+ * <p>Useful for loading content from any given byte array, without having to resort to a single-use
+ * {@link InputStreamResource}. Particularly useful for creating mail attachments from local
+ * content, where JavaMail needs to be able to read the stream multiple times.
  *
  * @author Juergen Hoeller
  * @author Sam Brannen
@@ -58,7 +56,7 @@ public class ByteArrayResource extends AbstractResource {
     /**
      * Create a new {@code ByteArrayResource} with a description.
      *
-     * @param byteArray   the byte array to wrap
+     * @param byteArray the byte array to wrap
      * @param description where the byte array comes from
      */
     public ByteArrayResource(byte[] byteArray, String description) {
@@ -67,32 +65,25 @@ public class ByteArrayResource extends AbstractResource {
         this.description = (description != null ? description : "");
     }
 
-    /**
-     * Return the underlying byte array.
-     */
+    /** Return the underlying byte array. */
     public final byte[] getByteArray() {
         return this.byteArray;
     }
 
-    /**
-     * This implementation always returns {@code true}.
-     */
+    /** This implementation always returns {@code true}. */
     @Override
     public boolean exists() {
         return true;
     }
 
-    /**
-     * This implementation returns the length of the underlying byte array.
-     */
+    /** This implementation returns the length of the underlying byte array. */
     @Override
     public long contentLength() {
         return this.byteArray.length;
     }
 
     /**
-     * This implementation returns a ByteArrayInputStream for the
-     * underlying byte array.
+     * This implementation returns a ByteArrayInputStream for the underlying byte array.
      *
      * @see ByteArrayInputStream
      */
@@ -102,14 +93,13 @@ public class ByteArrayResource extends AbstractResource {
     }
 
     /**
-     * This implementation returns a description that includes the passed-in
-     * {@code description}, if any.
+     * This implementation returns a description that includes the passed-in {@code description}, if
+     * any.
      */
     @Override
     public String getDescription() {
         return "Byte array resource [" + this.description + "]";
     }
-
 
     /**
      * This implementation compares the underlying byte array.
@@ -118,17 +108,14 @@ public class ByteArrayResource extends AbstractResource {
      */
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof ByteArrayResource
-                && Arrays.equals(((ByteArrayResource) other).byteArray, this.byteArray)));
+        return (this == other
+                || (other instanceof ByteArrayResource
+                        && Arrays.equals(((ByteArrayResource) other).byteArray, this.byteArray)));
     }
 
-    /**
-     * This implementation returns the hash code based on the
-     * underlying byte array.
-     */
+    /** This implementation returns the hash code based on the underlying byte array. */
     @Override
     public int hashCode() {
         return Arrays.hashCode(this.byteArray);
     }
-
 }

@@ -20,12 +20,11 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.client.auth.ram.identify.CredentialService;
 import com.alibaba.nacos.common.codec.Base64;
 import com.alibaba.nacos.common.utils.StringUtils;
-
+import java.util.HashMap;
+import java.util.Map;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * adapt spas interface.
@@ -33,17 +32,17 @@ import java.util.Map;
  * @author Nacos
  */
 public class SpasAdapter {
-    
+
     private static final String TIMESTAMP_HEADER = "Timestamp";
-    
+
     private static final String SIGNATURE_HEADER = "Spas-Signature";
-    
+
     private static final String GROUP_KEY = "group";
-    
+
     public static final String TENANT_KEY = "tenant";
-    
+
     private static final String SHA_ENCRYPT = "HmacSHA1";
-    
+
     public static Map<String, String> getSignHeaders(String resource, String secretKey) {
         Map<String, String> header = new HashMap<>(2);
         String timeStamp = String.valueOf(System.currentTimeMillis());
@@ -59,12 +58,13 @@ public class SpasAdapter {
         }
         return header;
     }
-    
-    public static Map<String, String> getSignHeaders(String groupKey, String tenant, String secretKey) {
+
+    public static Map<String, String> getSignHeaders(
+            String groupKey, String tenant, String secretKey) {
         if (StringUtils.isBlank(groupKey) && StringUtils.isBlank(tenant)) {
             return null;
         }
-        
+
         String resource = "";
         if (StringUtils.isNotBlank(groupKey) && StringUtils.isNotBlank(tenant)) {
             resource = tenant + "+" + groupKey;
@@ -75,12 +75,13 @@ public class SpasAdapter {
         }
         return getSignHeaders(resource, secretKey);
     }
-    
-    public static Map<String, String> getSignHeaders(Map<String, String> paramValues, String secretKey) {
+
+    public static Map<String, String> getSignHeaders(
+            Map<String, String> paramValues, String secretKey) {
         if (null == paramValues) {
             return null;
         }
-        
+
         String resource = "";
         if (paramValues.containsKey(TENANT_KEY) && paramValues.containsKey(GROUP_KEY)) {
             resource = paramValues.get(TENANT_KEY) + "+" + paramValues.get(GROUP_KEY);
@@ -91,30 +92,31 @@ public class SpasAdapter {
         }
         return getSignHeaders(resource, secretKey);
     }
-    
+
     public static String getSk() {
         return CredentialService.getInstance().getCredential().getSecretKey();
     }
-    
+
     public static String getAk() {
         return CredentialService.getInstance().getCredential().getAccessKey();
     }
-    
+
     public static void freeCredentialInstance() {
         CredentialService.freeInstance();
     }
-    
+
     /**
      * Sign with hmac SHA1 encrtpt.
      *
      * @param encryptText encrypt text
-     * @param encryptKey  encrypt key
+     * @param encryptKey encrypt key
      * @return base64 string
      */
     public static String signWithHmacSha1Encrypt(String encryptText, String encryptKey) {
         try {
             byte[] data = encryptKey.getBytes(Constants.ENCODE);
-            // Construct a key according to the given byte array, and the second parameter specifies the name of a key algorithm
+            // Construct a key according to the given byte array, and the second parameter specifies
+            // the name of a key algorithm
             SecretKey secretKey = new SecretKeySpec(data, SHA_ENCRYPT);
             // Generate a Mac object specifying Mac algorithm
             Mac mac = Mac.getInstance(SHA_ENCRYPT);

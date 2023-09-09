@@ -16,19 +16,18 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import javax.annotation.PostConstruct;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 
 /**
  * External dump service.
@@ -39,28 +38,37 @@ import javax.annotation.PostConstruct;
 @Component
 @DependsOn({"rpcConfigChangeNotifier"})
 public class ExternalDumpService extends DumpService {
-    
+
     /**
-     * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
-     * initialized ahead of time.
+     * Here you inject the dependent objects constructively, ensuring that some of the dependent
+     * functionality is initialized ahead of time.
      *
      * @param memberManager {@link ServerMemberManager}
      */
-    public ExternalDumpService(ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService, HistoryConfigInfoPersistService historyConfigInfoPersistService,
+    public ExternalDumpService(
+            ConfigInfoPersistService configInfoPersistService,
+            NamespacePersistService namespacePersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoAggrPersistService configInfoAggrPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager) {
-        super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, memberManager);
+            ConfigInfoTagPersistService configInfoTagPersistService,
+            ServerMemberManager memberManager) {
+        super(
+                configInfoPersistService,
+                namespacePersistService,
+                historyConfigInfoPersistService,
+                configInfoAggrPersistService,
+                configInfoBetaPersistService,
+                configInfoTagPersistService,
+                memberManager);
     }
-    
+
     @PostConstruct
     @Override
     protected void init() throws Throwable {
         dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
     }
-    
+
     @Override
     protected boolean canExecute() {
         return memberManager.isFirstIp();

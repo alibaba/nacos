@@ -17,7 +17,6 @@
 package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-
 import java.util.List;
 import java.util.Objects;
 
@@ -27,17 +26,17 @@ import java.util.Objects;
  * @author <a href="mailto:chenhao26@xiaomi.com">chenhao26</a>
  */
 public class BatchInstanceRedoData extends InstanceRedoData {
-    
+
     List<Instance> instances;
-    
+
     public List<Instance> getInstances() {
         return instances;
     }
-    
+
     public void setInstances(List<Instance> instances) {
         this.instances = instances;
     }
-    
+
     protected BatchInstanceRedoData(String serviceName, String groupName) {
         super(serviceName, groupName);
     }
@@ -46,16 +45,17 @@ public class BatchInstanceRedoData extends InstanceRedoData {
      * build BatchInstanceRedoData.
      *
      * @param serviceName service name
-     * @param groupName   group name
-     * @param instances   instances
+     * @param groupName group name
+     * @param instances instances
      * @return build BatchInstanceRedoData
      */
-    public static BatchInstanceRedoData build(String serviceName, String groupName, List<Instance> instances) {
+    public static BatchInstanceRedoData build(
+            String serviceName, String groupName, List<Instance> instances) {
         BatchInstanceRedoData result = new BatchInstanceRedoData(serviceName, groupName);
         result.setInstances(instances);
         return result;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -70,7 +70,7 @@ public class BatchInstanceRedoData extends InstanceRedoData {
         BatchInstanceRedoData redoData = (BatchInstanceRedoData) o;
         return Objects.equals(instances, redoData.instances);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), instances);

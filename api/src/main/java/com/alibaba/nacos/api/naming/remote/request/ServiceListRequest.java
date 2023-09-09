@@ -22,42 +22,41 @@ package com.alibaba.nacos.api.naming.remote.request;
  * @author xiweng.yy
  */
 public class ServiceListRequest extends AbstractNamingRequest {
-    
+
     private int pageNo;
-    
+
     private int pageSize;
-    
+
     private String selector;
-    
-    public ServiceListRequest() {
-    }
-    
+
+    public ServiceListRequest() {}
+
     public ServiceListRequest(String namespace, String groupName, int pageNo, int pageSize) {
         super(namespace, "", groupName);
         this.pageNo = pageNo;
         this.pageSize = pageSize;
     }
-    
+
     public int getPageNo() {
         return pageNo;
     }
-    
+
     public void setPageNo(int pageNo) {
         this.pageNo = pageNo;
     }
-    
+
     public int getPageSize() {
         return pageSize;
     }
-    
+
     public void setPageSize(int pageSize) {
         this.pageSize = pageSize;
     }
-    
+
     public String getSelector() {
         return selector;
     }
-    
+
     public void setSelector(String selector) {
         this.selector = selector;
     }

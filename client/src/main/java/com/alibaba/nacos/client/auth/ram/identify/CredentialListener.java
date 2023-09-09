@@ -22,9 +22,7 @@ package com.alibaba.nacos.client.auth.ram.identify;
  * @author Nacos
  */
 public interface CredentialListener {
-    
-    /**
-     * update Credential.
-     */
+
+    /** update Credential. */
     void onUpdateCredential();
 }

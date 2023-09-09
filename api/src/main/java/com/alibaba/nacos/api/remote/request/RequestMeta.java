@@ -26,13 +26,13 @@ import java.util.Map;
  * @version $Id: RequestMeta.java, v 0.1 2020年07月14日 10:32 AM liuzunfei Exp $
  */
 public class RequestMeta {
-    
+
     private String connectionId = "";
-    
+
     private String clientIp = "";
-    
+
     private String clientVersion = "";
-    
+
     private Map<String, String> labels = new HashMap<>();
 
     /**
@@ -43,7 +43,7 @@ public class RequestMeta {
     public String getClientVersion() {
         return clientVersion;
     }
-    
+
     /**
      * Setter method for property <tt>clientVersion</tt>.
      *
@@ -52,7 +52,7 @@ public class RequestMeta {
     public void setClientVersion(String clientVersion) {
         this.clientVersion = clientVersion;
     }
-    
+
     /**
      * Getter method for property <tt>labels</tt>.
      *
@@ -61,7 +61,7 @@ public class RequestMeta {
     public Map<String, String> getLabels() {
         return labels;
     }
-    
+
     /**
      * Setter method for property <tt>labels</tt>.
      *
@@ -70,7 +70,7 @@ public class RequestMeta {
     public void setLabels(Map<String, String> labels) {
         this.labels = labels;
     }
-    
+
     /**
      * Getter method for property <tt>connectionId</tt>.
      *
@@ -79,7 +79,7 @@ public class RequestMeta {
     public String getConnectionId() {
         return connectionId;
     }
-    
+
     /**
      * Setter method for property <tt>connectionId</tt>.
      *
@@ -88,7 +88,7 @@ public class RequestMeta {
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }
-    
+
     /**
      * Getter method for property <tt>clientIp</tt>.
      *
@@ -97,7 +97,7 @@ public class RequestMeta {
     public String getClientIp() {
         return clientIp;
     }
-    
+
     /**
      * Setter method for property <tt>clientIp</tt>.
      *
@@ -106,10 +106,21 @@ public class RequestMeta {
     public void setClientIp(String clientIp) {
         this.clientIp = clientIp;
     }
-    
+
     @Override
     public String toString() {
-        return "RequestMeta{" + "connectionId='" + connectionId + '\'' + ", clientIp='" + clientIp + '\''
-                + ", clientVersion='" + clientVersion + '\'' + ", labels=" + labels + '}';
+        return "RequestMeta{"
+                + "connectionId='"
+                + connectionId
+                + '\''
+                + ", clientIp='"
+                + clientIp
+                + '\''
+                + ", clientVersion='"
+                + clientVersion
+                + '\''
+                + ", labels="
+                + labels
+                + '}';
     }
 }

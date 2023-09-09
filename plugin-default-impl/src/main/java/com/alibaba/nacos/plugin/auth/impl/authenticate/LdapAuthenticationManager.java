@@ -38,32 +38,36 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
  * @date 2023/1/17 13:25
  */
 public class LdapAuthenticationManager extends AbstractAuthenticationManager {
-    
+
     private final String filterPrefix;
-    
+
     private final boolean caseSensitive;
-    
+
     private final LdapTemplate ldapTemplate;
-    
-    public LdapAuthenticationManager(LdapTemplate ldapTemplate, NacosUserDetailsServiceImpl userDetailsService,
-            TokenManagerDelegate jwtTokenManager, NacosRoleServiceImpl roleService, String filterPrefix,
+
+    public LdapAuthenticationManager(
+            LdapTemplate ldapTemplate,
+            NacosUserDetailsServiceImpl userDetailsService,
+            TokenManagerDelegate jwtTokenManager,
+            NacosRoleServiceImpl roleService,
+            String filterPrefix,
             boolean caseSensitive) {
         super(userDetailsService, jwtTokenManager, roleService);
         this.ldapTemplate = ldapTemplate;
         this.filterPrefix = filterPrefix;
         this.caseSensitive = caseSensitive;
     }
-    
+
     @Override
     public NacosUser authenticate(String username, String rawPassword) throws AccessException {
         if (StringUtils.isBlank(username)) {
             throw new AccessException("user not found!");
         }
-        
+
         if (!caseSensitive) {
             username = username.toLowerCase();
         }
-        
+
         try {
             return super.authenticate(username, rawPassword);
         } catch (AccessException | UsernameNotFoundException ignored) {
@@ -71,16 +75,18 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
                 Loggers.AUTH.warn("try login with LDAP, user: {}", username);
             }
         }
-        
+
         UserDetails userDetails;
         try {
             if (!ldapLogin(username, rawPassword)) {
                 throw new AccessException("LDAP login failed.");
             }
-            userDetails = userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
+            userDetails =
+                    userDetailsService.loadUserByUsername(AuthConstants.LDAP_PREFIX + username);
         } catch (UsernameNotFoundException exception) {
             String ldapUsername = AuthConstants.LDAP_PREFIX + username;
-            userDetailsService.createUser(ldapUsername, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
+            userDetailsService.createUser(
+                    ldapUsername, AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
             User user = new User();
             user.setUsername(ldapUsername);
             user.setPassword(AuthConstants.LDAP_DEFAULT_ENCODED_PASSWORD);
@@ -89,11 +95,13 @@ public class LdapAuthenticationManager extends AbstractAuthenticationManager {
             Loggers.AUTH.error("[LDAP-LOGIN] failed", e);
             throw new AccessException("user not found");
         }
-        
-        return new NacosUser(userDetails.getUsername(), jwtTokenManager.createToken(userDetails.getUsername()));
+
+        return new NacosUser(
+                userDetails.getUsername(), jwtTokenManager.createToken(userDetails.getUsername()));
     }
-    
+
     private boolean ldapLogin(String username, String password) {
-        return ldapTemplate.authenticate("", new EqualsFilter(filterPrefix, username).toString(), password);
+        return ldapTemplate.authenticate(
+                "", new EqualsFilter(filterPrefix, username).toString(), password);
     }
 }

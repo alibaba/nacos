@@ -23,9 +23,8 @@ package com.alibaba.nacos.core.distributed.raft.utils;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class JRaftLogOperation {
-    
+
     public static final String MODIFY_OPERATION = "modify";
-    
+
     public static final String READ_OPERATION = "read";
-    
 }

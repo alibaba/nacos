@@ -18,11 +18,11 @@ package com.alibaba.nacos.api.remote.request;
 
 /**
  * get server node loader info.
+ *
  * @author liuzunfei
  * @version $Id: ServerLoaderInfoRequest.java, v 0.1 2020年09月03日 2:45 PM liuzunfei Exp $
  */
 public class ServerLoaderInfoRequest extends InternalRequest {
-    
-    public ServerLoaderInfoRequest() {
-    }
+
+    public ServerLoaderInfoRequest() {}
 }

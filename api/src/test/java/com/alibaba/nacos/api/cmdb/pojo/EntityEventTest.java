@@ -16,26 +16,24 @@
 
 package com.alibaba.nacos.api.cmdb.pojo;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class EntityEventTest {
-    
+
     ObjectMapper mapper = new ObjectMapper();
-    
+
     @Before
     public void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Test
     public void testSerialization() throws JsonProcessingException {
         EntityEvent entity = new EntityEvent();
@@ -48,10 +46,11 @@ public class EntityEventTest {
         assertTrue(actual.contains("\"entityType\":\"CMDB\""));
         assertTrue(actual.contains("\"type\":\"ENTITY_ADD_OR_UPDATE\""));
     }
-    
+
     @Test
     public void testDeserialization() throws JsonProcessingException {
-        String json = "{\"type\":\"ENTITY_REMOVE\",\"entityName\":\"test-entity\",\"entityType\":\"CMDB\"}";
+        String json =
+                "{\"type\":\"ENTITY_REMOVE\",\"entityName\":\"test-entity\",\"entityType\":\"CMDB\"}";
         EntityEvent entity = mapper.readValue(json, EntityEvent.class);
         assertEquals("test-entity", entity.getEntityName());
         assertEquals("CMDB", entity.getEntityType());

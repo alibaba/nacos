@@ -23,13 +23,13 @@ package com.alibaba.nacos.api.remote.request;
  * @version $Id: PushAckRequest.java, v 0.1 2020年07月29日 8:25 PM liuzunfei Exp $
  */
 public class PushAckRequest extends InternalRequest {
-    
+
     private String requestId;
-    
+
     private boolean success;
-    
+
     private Exception exception;
-    
+
     /**
      * build push ack request.
      *
@@ -42,7 +42,7 @@ public class PushAckRequest extends InternalRequest {
         request.success = success;
         return request;
     }
-    
+
     /**
      * Getter method for property <tt>requestId</tt>.
      *
@@ -52,7 +52,7 @@ public class PushAckRequest extends InternalRequest {
     public String getRequestId() {
         return requestId;
     }
-    
+
     /**
      * Setter method for property <tt>requestId</tt>.
      *
@@ -62,7 +62,7 @@ public class PushAckRequest extends InternalRequest {
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
-    
+
     /**
      * Getter method for property <tt>success</tt>.
      *
@@ -71,7 +71,7 @@ public class PushAckRequest extends InternalRequest {
     public boolean isSuccess() {
         return success;
     }
-    
+
     /**
      * Setter method for property <tt>success</tt>.
      *
@@ -80,7 +80,7 @@ public class PushAckRequest extends InternalRequest {
     public void setSuccess(boolean success) {
         this.success = success;
     }
-    
+
     /**
      * Setter method for property <tt>exception</tt>.
      *
@@ -89,7 +89,7 @@ public class PushAckRequest extends InternalRequest {
     public void setException(Exception exception) {
         this.exception = exception;
     }
-    
+
     /**
      * Getter method for property <tt>exception</tt>.
      *

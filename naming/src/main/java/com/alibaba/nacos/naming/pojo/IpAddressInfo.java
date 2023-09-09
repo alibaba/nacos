@@ -30,29 +30,29 @@ public class IpAddressInfo implements Serializable {
     private static final long serialVersionUID = 6961930421629345179L;
 
     private boolean valid;
-    
+
     private Map<String, String> metadata;
-    
+
     private Integer port;
-    
+
     private String ip;
-    
+
     private Double weight;
-    
+
     private boolean enabled;
-    
+
     public boolean isEnabled() {
         return enabled;
     }
-    
+
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-    
+
     public boolean isValid() {
         return valid;
     }
-    
+
     /**
      * Setter method for property <tt>valid </tt>.
      *
@@ -61,11 +61,11 @@ public class IpAddressInfo implements Serializable {
     public void setValid(boolean valid) {
         this.valid = valid;
     }
-    
+
     public Map<String, String> getMetadata() {
         return metadata;
     }
-    
+
     /**
      * Setter method for property <tt>metadata </tt>.
      *
@@ -74,11 +74,11 @@ public class IpAddressInfo implements Serializable {
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
-    
+
     public Integer getPort() {
         return port;
     }
-    
+
     /**
      * Setter method for property <tt>port </tt>.
      *
@@ -87,11 +87,11 @@ public class IpAddressInfo implements Serializable {
     public void setPort(Integer port) {
         this.port = port;
     }
-    
+
     public String getIp() {
         return ip;
     }
-    
+
     /**
      * Setter method for property <tt>ip </tt>.
      *
@@ -100,11 +100,11 @@ public class IpAddressInfo implements Serializable {
     public void setIp(String ip) {
         this.ip = ip;
     }
-    
+
     public Double getWeight() {
         return weight;
     }
-    
+
     /**
      * Setter method for property <tt>weight </tt>.
      *

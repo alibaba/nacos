@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.distributed.raft;
 
 import com.alibaba.nacos.common.notify.SlowEvent;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -28,109 +27,118 @@ import java.util.List;
  */
 @SuppressWarnings("all")
 public class RaftEvent extends SlowEvent {
-    
+
     private static final long serialVersionUID = -4304258594602886451L;
-    
+
     private String groupId;
-    
+
     private String leader = null;
-    
+
     private Long term = null;
-    
+
     private String errMsg = "";
-    
+
     private List<String> raftClusterInfo = Collections.emptyList();
-    
+
     public static RaftEventBuilder builder() {
         return new RaftEventBuilder();
     }
-    
+
     public String getGroupId() {
         return groupId;
     }
-    
+
     public void setGroupId(String groupId) {
         this.groupId = groupId;
     }
-    
+
     public String getLeader() {
         return leader;
     }
-    
+
     public void setLeader(String leader) {
         this.leader = leader;
     }
-    
+
     public Long getTerm() {
         return term;
     }
-    
+
     public void setTerm(Long term) {
         this.term = term;
     }
-    
+
     public List<String> getRaftClusterInfo() {
         return raftClusterInfo;
     }
-    
+
     public void setRaftClusterInfo(List<String> raftClusterInfo) {
         this.raftClusterInfo = raftClusterInfo;
     }
-    
+
     public String getErrMsg() {
         return errMsg;
     }
-    
+
     public void setErrMsg(String errMsg) {
         this.errMsg = errMsg;
     }
-    
+
     @Override
     public String toString() {
-        return "RaftEvent{" + "groupId='" + groupId + '\'' + ", leader='" + leader + '\'' + ", term=" + term
-                + ", raftClusterInfo=" + raftClusterInfo + '}';
+        return "RaftEvent{"
+                + "groupId='"
+                + groupId
+                + '\''
+                + ", leader='"
+                + leader
+                + '\''
+                + ", term="
+                + term
+                + ", raftClusterInfo="
+                + raftClusterInfo
+                + '}';
     }
-    
+
     public static final class RaftEventBuilder {
-        
+
         private String groupId;
-        
+
         private String leader;
-        
+
         private Long term = null;
-        
+
         private List<String> raftClusterInfo = Collections.emptyList();
-        
+
         private String errMsg = "";
-        
-        private RaftEventBuilder() {
-        }
-        
+
+        private RaftEventBuilder() {}
+
         public RaftEventBuilder groupId(String groupId) {
             this.groupId = groupId;
             return this;
         }
-        
+
         public RaftEventBuilder leader(String leader) {
             this.leader = leader;
             return this;
         }
-        
+
         public RaftEventBuilder term(long term) {
             this.term = term;
             return this;
         }
-        
+
         public RaftEventBuilder raftClusterInfo(List<String> raftClusterInfo) {
             this.raftClusterInfo = raftClusterInfo;
             return this;
         }
-    
+
         public RaftEventBuilder errMsg(String errMsg) {
             this.errMsg = errMsg;
             return this;
         }
-        
+
         public RaftEvent build() {
             RaftEvent raftEvent = new RaftEvent();
             raftEvent.setGroupId(groupId);

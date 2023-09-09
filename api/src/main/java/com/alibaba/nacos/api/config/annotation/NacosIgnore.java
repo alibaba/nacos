@@ -23,7 +23,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * An annotation for ignore field from annotated {@link NacosConfigurationProperties} Properties Object.
+ * An annotation for ignore field from annotated {@link NacosConfigurationProperties} Properties
+ * Object.
  *
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @see NacosConfigurationProperties
@@ -33,6 +34,4 @@ import java.lang.annotation.Target;
 @Target({ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface NacosIgnore {
-
-}
+public @interface NacosIgnore {}

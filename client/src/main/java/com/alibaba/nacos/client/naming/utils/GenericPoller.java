@@ -26,20 +26,20 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author nkorange
  */
 public class GenericPoller<T> implements Poller<T> {
-    
+
     private final AtomicInteger index = new AtomicInteger(0);
-    
+
     private List<T> items = new ArrayList<>();
-    
+
     public GenericPoller(List<T> items) {
         this.items = items;
     }
-    
+
     @Override
     public T next() {
         return items.get(Math.abs(index.getAndIncrement() % items.size()));
     }
-    
+
     @Override
     public Poller<T> refresh(List<T> items) {
         return new GenericPoller<>(items);

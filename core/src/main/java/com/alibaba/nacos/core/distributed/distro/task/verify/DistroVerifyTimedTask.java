@@ -24,7 +24,6 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.task.execute.DistroExecuteTaskExecuteEngine;
 import com.alibaba.nacos.core.utils.Loggers;
-
 import java.util.List;
 
 /**
@@ -33,20 +32,22 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class DistroVerifyTimedTask implements Runnable {
-    
+
     private final ServerMemberManager serverMemberManager;
-    
+
     private final DistroComponentHolder distroComponentHolder;
-    
+
     private final DistroExecuteTaskExecuteEngine executeTaskExecuteEngine;
-    
-    public DistroVerifyTimedTask(ServerMemberManager serverMemberManager, DistroComponentHolder distroComponentHolder,
+
+    public DistroVerifyTimedTask(
+            ServerMemberManager serverMemberManager,
+            DistroComponentHolder distroComponentHolder,
             DistroExecuteTaskExecuteEngine executeTaskExecuteEngine) {
         this.serverMemberManager = serverMemberManager;
         this.distroComponentHolder = distroComponentHolder;
         this.executeTaskExecuteEngine = executeTaskExecuteEngine;
     }
-    
+
     @Override
     public void run() {
         try {
@@ -61,11 +62,12 @@ public class DistroVerifyTimedTask implements Runnable {
             Loggers.DISTRO.error("[DISTRO-FAILED] verify task failed.", e);
         }
     }
-    
+
     private void verifyForDataStorage(String type, List<Member> targetServer) {
         DistroDataStorage dataStorage = distroComponentHolder.findDataStorage(type);
         if (!dataStorage.isFinishInitial()) {
-            Loggers.DISTRO.warn("data storage {} has not finished initial step, do not send verify data",
+            Loggers.DISTRO.warn(
+                    "data storage {} has not finished initial step, do not send verify data",
                     dataStorage.getClass().getSimpleName());
             return;
         }
@@ -78,7 +80,8 @@ public class DistroVerifyTimedTask implements Runnable {
             if (null == agent) {
                 continue;
             }
-            executeTaskExecuteEngine.addTask(member.getAddress() + type,
+            executeTaskExecuteEngine.addTask(
+                    member.getAddress() + type,
                     new DistroVerifyExecuteTask(agent, verifyData, member.getAddress(), type));
         }
     }

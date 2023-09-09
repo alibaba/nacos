@@ -30,11 +30,11 @@ import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
  * @author shiyiyue
  */
 public class NacosTpsBarrier extends TpsBarrier {
-    
+
     public NacosTpsBarrier(String pointName) {
         super(pointName);
     }
-    
+
     /**
      * apply tps.
      *
@@ -42,14 +42,14 @@ public class NacosTpsBarrier extends TpsBarrier {
      * @return check current tps is allowed.
      */
     public TpsCheckResponse applyTps(TpsCheckRequest tpsCheckRequest) {
-        
+
         BarrierCheckRequest pointCheckRequest = new BarrierCheckRequest();
         pointCheckRequest.setCount(tpsCheckRequest.getCount());
         pointCheckRequest.setPointName(super.getPointName());
         pointCheckRequest.setTimestamp(tpsCheckRequest.getTimestamp());
         return super.getPointBarrier().applyTps(pointCheckRequest);
     }
-    
+
     /**
      * apply rule.
      *
@@ -57,24 +57,28 @@ public class NacosTpsBarrier extends TpsBarrier {
      */
     public synchronized void applyRule(TpsControlRule newControlRule) {
         Loggers.CONTROL.info("Apply tps control rule start,pointName=[{}]  ", this.getPointName());
-        
-        //1.reset all monitor point for null.
+
+        // 1.reset all monitor point for null.
         if (newControlRule == null || newControlRule.getPointRule() == null) {
-            Loggers.CONTROL.info("Clear all tps control rule ,pointName=[{}]  ", this.getPointName());
+            Loggers.CONTROL.info(
+                    "Clear all tps control rule ,pointName=[{}]  ", this.getPointName());
             super.getPointBarrier().clearLimitRule();
             return;
         }
-        
-        //2.check point rule.
+
+        // 2.check point rule.
         RuleDetail newPointRule = newControlRule.getPointRule();
-        
-        Loggers.CONTROL.info("Update  point  control rule ,pointName=[{}],original maxTps={}, new maxTps={}"
-                        + ",original monitorType={}, original monitorType={}, ", this.getPointName(),
-                this.pointBarrier.getMaxCount(), newPointRule.getMaxCount(), this.pointBarrier.getMonitorType(),
+
+        Loggers.CONTROL.info(
+                "Update  point  control rule ,pointName=[{}],original maxTps={}, new maxTps={}"
+                        + ",original monitorType={}, original monitorType={}, ",
+                this.getPointName(),
+                this.pointBarrier.getMaxCount(),
+                newPointRule.getMaxCount(),
+                this.pointBarrier.getMonitorType(),
                 newPointRule.getMonitorType());
         this.pointBarrier.applyRuleDetail(newPointRule);
-        
+
         Loggers.CONTROL.info("Apply tps control rule end,pointName=[{}]  ", this.getPointName());
-        
     }
 }

@@ -21,9 +21,8 @@ import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthSystemTypes;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import org.springframework.beans.factory.ObjectProvider;
-
 import javax.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.ObjectProvider;
 
 /**
  * Authentication Proxy.
@@ -32,55 +31,57 @@ import javax.servlet.http.HttpServletRequest;
  * @date 2023/1/12 23:31
  */
 public class AuthenticationManagerDelegator implements IAuthenticationManager {
-    
+
     private ObjectProvider<DefaultAuthenticationManager> defaultAuthenticationManager;
-    
+
     private ObjectProvider<LdapAuthenticationManager> ldapAuthenticationManager;
-    
+
     private AuthConfigs authConfigs;
-    
-    public AuthenticationManagerDelegator(ObjectProvider<DefaultAuthenticationManager> nacosAuthManager,
-                                          ObjectProvider<LdapAuthenticationManager> ldapAuthenticationProvider, AuthConfigs authConfigs) {
+
+    public AuthenticationManagerDelegator(
+            ObjectProvider<DefaultAuthenticationManager> nacosAuthManager,
+            ObjectProvider<LdapAuthenticationManager> ldapAuthenticationProvider,
+            AuthConfigs authConfigs) {
         this.defaultAuthenticationManager = nacosAuthManager;
         this.ldapAuthenticationManager = ldapAuthenticationProvider;
         this.authConfigs = authConfigs;
     }
-    
+
     @Override
     public NacosUser authenticate(String username, String password) throws AccessException {
         return getManager().authenticate(username, password);
     }
-    
+
     @Override
     public NacosUser authenticate(String jwtToken) throws AccessException {
         return getManager().authenticate(jwtToken);
     }
-    
+
     @Override
     public NacosUser authenticate(HttpServletRequest httpServletRequest) throws AccessException {
         return getManager().authenticate(httpServletRequest);
     }
-    
+
     @Override
     public void authorize(Permission permission, NacosUser nacosUser) throws AccessException {
         getManager().authorize(permission, nacosUser);
     }
-    
+
     @Override
     public boolean hasGlobalAdminRole(String username) {
         return getManager().hasGlobalAdminRole(username);
     }
-    
+
     @Override
     public boolean hasGlobalAdminRole(NacosUser nacosUser) {
         return getManager().hasGlobalAdminRole(nacosUser);
     }
-    
+
     private IAuthenticationManager getManager() {
         if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             return ldapAuthenticationManager.getIfAvailable();
         }
-        
+
         return defaultAuthenticationManager.getIfAvailable();
     }
 }

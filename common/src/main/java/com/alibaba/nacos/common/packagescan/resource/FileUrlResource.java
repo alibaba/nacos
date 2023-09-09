@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -30,15 +29,15 @@ import java.nio.file.StandardOpenOption;
 
 /**
  * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
- * Subclass of {@link UrlResource} which assumes file resolution, to the degree
- * of implementing the {@link WritableResource} interface for it. This resource
- * variant also caches resolved {@link File} handles from {@link #getFile()}.
+ * Subclass of {@link UrlResource} which assumes file resolution, to the degree of implementing the
+ * {@link WritableResource} interface for it. This resource variant also caches resolved {@link
+ * File} handles from {@link #getFile()}.
  *
- * <p>This is the class resolved by {@link DefaultResourceLoader} for a "file:..."
- * URL location, allowing a downcast to {@link WritableResource} for it.
+ * <p>This is the class resolved by {@link DefaultResourceLoader} for a "file:..." URL location,
+ * allowing a downcast to {@link WritableResource} for it.
  *
- * <p>Alternatively, for direct construction from a {@link File} handle
- * or NIO {@link java.nio.file.Path}, consider using {@link FileSystemResource}.
+ * <p>Alternatively, for direct construction from a {@link File} handle or NIO {@link
+ * java.nio.file.Path}, consider using {@link FileSystemResource}.
  *
  * @author Juergen Hoeller
  * @since 5.0.2
@@ -50,8 +49,8 @@ public class FileUrlResource extends UrlResource implements WritableResource {
     /**
      * Create a new {@code FileUrlResource} based on the given URL object.
      *
-     * <p>Note that this does not enforce "file" as URL protocol. If a protocol
-     * is known to be resolvable to a file, it is acceptable for this purpose.
+     * <p>Note that this does not enforce "file" as URL protocol. If a protocol is known to be
+     * resolvable to a file, it is acceptable for this purpose.
      *
      * @param url a URL
      * @see ResourceUtils#isFileUrl(URL)
@@ -62,8 +61,8 @@ public class FileUrlResource extends UrlResource implements WritableResource {
     }
 
     /**
-     * Create a new {@code FileUrlResource} based on the given file location,
-     * using the URL protocol "file".
+     * Create a new {@code FileUrlResource} based on the given file location, using the URL protocol
+     * "file".
      *
      * <p>The given parts will automatically get encoded if necessary.
      *
@@ -111,5 +110,4 @@ public class FileUrlResource extends UrlResource implements WritableResource {
     public Resource createRelative(String relativePath) throws MalformedURLException {
         return new FileUrlResource(createRelativeUrl(relativePath));
     }
-
 }

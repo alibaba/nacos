@@ -16,31 +16,27 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.LinkedList;
+import java.util.List;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.LinkedList;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.when;
-
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class MetricsMonitorTest {
-    
-    @Mock
-    private ConfigurableApplicationContext context;
-    
+
+    @Mock private ConfigurableApplicationContext context;
+
     @Before
     public void setUp() {
         ApplicationUtils.injectContext(context);
@@ -48,23 +44,23 @@ public class MetricsMonitorTest {
         // add simple meterRegistry.
         NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY)
                 .add(new SimpleMeterRegistry());
-        
+
         MetricsMonitor.resetPush();
         MetricsMonitor.getIpCountMonitor().set(0);
     }
-    
+
     @Test
     public void testGetTotalPush() {
         assertEquals(0, MetricsMonitor.getTotalPushMonitor().get());
         assertEquals(1, MetricsMonitor.getTotalPushMonitor().incrementAndGet());
     }
-    
+
     @Test
     public void testGetFailedPush() {
         assertEquals(0, MetricsMonitor.getFailedPushMonitor().get());
         assertEquals(1, MetricsMonitor.getFailedPushMonitor().incrementAndGet());
     }
-    
+
     @Test
     public void testIncrementIpCountWithBatchRegister() {
         BatchInstancePublishInfo test = new BatchInstancePublishInfo();
@@ -74,7 +70,7 @@ public class MetricsMonitorTest {
         assertEquals(0, MetricsMonitor.getIpCountMonitor().get());
         MetricsMonitor.incrementIpCountWithBatchRegister(null, test);
         assertEquals(1, MetricsMonitor.getIpCountMonitor().get());
-        
+
         BatchInstancePublishInfo newTest = new BatchInstancePublishInfo();
         List<InstancePublishInfo> newInstances = new LinkedList<>();
         newInstances.add(new InstancePublishInfo());
@@ -85,7 +81,7 @@ public class MetricsMonitorTest {
         MetricsMonitor.incrementIpCountWithBatchRegister(newTest, test);
         assertEquals(1, MetricsMonitor.getIpCountMonitor().get());
     }
-    
+
     @Test
     public void testIncrementIpCountWithBatchRegisterAfterNormalRegister() {
         // mock normal register

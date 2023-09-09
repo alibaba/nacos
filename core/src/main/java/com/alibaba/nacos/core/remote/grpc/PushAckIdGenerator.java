@@ -25,19 +25,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version $Id: PushAckIdGenerator.java, v 0.1 2020年07月20日 5:49 PM liuzunfei Exp $
  */
 public class PushAckIdGenerator {
-    
+
     private static AtomicLong id = new AtomicLong(0L);
-    
+
     private static final int ID_PREV_REGEN_OFFSET = 1000;
-    
-    /**
-     * get server push id.
-     */
+
+    /** get server push id. */
     public static long getNextId() {
         if (id.longValue() > Long.MAX_VALUE - ID_PREV_REGEN_OFFSET) {
             id.getAndSet(0L);
         }
         return id.incrementAndGet();
     }
-    
 }

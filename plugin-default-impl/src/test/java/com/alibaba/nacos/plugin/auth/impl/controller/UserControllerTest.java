@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.plugin.auth.impl.controller;
 
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
@@ -25,45 +29,33 @@ import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Before;
-import org.junit.Test;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.lang.reflect.Field;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
-
 @RunWith(MockitoJUnitRunner.class)
 public class UserControllerTest {
-    
-    @Mock
-    private HttpServletRequest request;
-    
-    @Mock
-    private HttpServletResponse response;
-    
-    @Mock
-    private AuthConfigs authConfigs;
-    
-    @Mock
-    private IAuthenticationManager authenticationManager;
-    
-    @Mock
-    private TokenManagerDelegate tokenManagerDelegate;
-    
+
+    @Mock private HttpServletRequest request;
+
+    @Mock private HttpServletResponse response;
+
+    @Mock private AuthConfigs authConfigs;
+
+    @Mock private IAuthenticationManager authenticationManager;
+
+    @Mock private TokenManagerDelegate tokenManagerDelegate;
+
     private UserController userController;
-    
+
     private NacosUser user;
-    
+
     @Before
     public void setUp() throws Exception {
         userController = new UserController();
@@ -73,18 +65,22 @@ public class UserControllerTest {
         user.setToken("1234567890");
         injectObject("authConfigs", authConfigs);
         injectObject("iAuthenticationManager", authenticationManager);
-        
+
         MockEnvironment mockEnvironment = new MockEnvironment();
-        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Base64.getEncoder().encodeToString(
-                "SecretKey0123$567890$234567890123456789012345678901234567890123456789".getBytes(
-                        StandardCharsets.UTF_8)));
-        mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,
+        mockEnvironment.setProperty(
+                AuthConstants.TOKEN_SECRET_KEY,
+                Base64.getEncoder()
+                        .encodeToString(
+                                "SecretKey0123$567890$234567890123456789012345678901234567890123456789"
+                                        .getBytes(StandardCharsets.UTF_8)));
+        mockEnvironment.setProperty(
+                AuthConstants.TOKEN_EXPIRE_SECONDS,
                 AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
-        
+
         EnvUtil.setEnvironment(mockEnvironment);
         injectObject("jwtTokenManager", tokenManagerDelegate);
     }
-    
+
     @Test
     public void testLoginWithAuthedUser() throws AccessException {
         when(authenticationManager.authenticate(request)).thenReturn(user);
@@ -98,8 +94,9 @@ public class UserControllerTest {
         assertTrue(actualString.contains("\"tokenTtl\":18000"));
         assertTrue(actualString.contains("\"globalAdmin\":true"));
     }
-    
-    private void injectObject(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
+
+    private void injectObject(String fieldName, Object value)
+            throws NoSuchFieldException, IllegalAccessException {
         Field field = UserController.class.getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(userController, value);

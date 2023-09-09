@@ -16,5 +16,4 @@
 
 package com.alibaba.nacos.common.spi;
 
-public class SpiTestImpl implements SpiTestInterface {
-}
+public class SpiTestImpl implements SpiTestInterface {}

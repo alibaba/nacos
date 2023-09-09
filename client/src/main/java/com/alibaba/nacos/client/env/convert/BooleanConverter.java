@@ -17,28 +17,27 @@
 package com.alibaba.nacos.client.env.convert;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.util.HashSet;
 import java.util.Set;
 
 class BooleanConverter extends AbstractPropertyConverter<Boolean> {
-    
+
     private static final Set<String> TRUE_VALUES = new HashSet<>(8);
-    
+
     private static final Set<String> FALSE_VALUES = new HashSet<>(8);
-    
+
     static {
         TRUE_VALUES.add("true");
         TRUE_VALUES.add("on");
         TRUE_VALUES.add("yes");
         TRUE_VALUES.add("1");
-        
+
         FALSE_VALUES.add("false");
         FALSE_VALUES.add("off");
         FALSE_VALUES.add("no");
         FALSE_VALUES.add("0");
     }
-    
+
     @Override
     Boolean convert(String property) {
         if (StringUtils.isEmpty(property)) {

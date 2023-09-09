@@ -53,7 +53,6 @@ import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.naming.web.ClientAttributesFilter;
-
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -67,25 +66,29 @@ import java.util.Optional;
  */
 @org.springframework.stereotype.Service
 public class InstanceOperatorClientImpl implements InstanceOperator {
-    
+
     private final ClientManager clientManager;
-    
+
     private final ClientOperationService clientOperationService;
-    
+
     private final ServiceStorage serviceStorage;
-    
+
     private final NamingMetadataOperateService metadataOperateService;
-    
+
     private final NamingMetadataManager metadataManager;
-    
+
     private final SwitchDomain switchDomain;
-    
+
     private final UdpPushService pushService;
-    
-    public InstanceOperatorClientImpl(ClientManagerDelegate clientManager,
-            ClientOperationServiceProxy clientOperationService, ServiceStorage serviceStorage,
-            NamingMetadataOperateService metadataOperateService, NamingMetadataManager metadataManager,
-            SwitchDomain switchDomain, UdpPushService pushService) {
+
+    public InstanceOperatorClientImpl(
+            ClientManagerDelegate clientManager,
+            ClientOperationServiceProxy clientOperationService,
+            ServiceStorage serviceStorage,
+            NamingMetadataOperateService metadataOperateService,
+            NamingMetadataManager metadataManager,
+            SwitchDomain switchDomain,
+            UdpPushService pushService) {
         this.clientManager = clientManager;
         this.clientOperationService = clientOperationService;
         this.serviceStorage = serviceStorage;
@@ -94,21 +97,20 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         this.switchDomain = switchDomain;
         this.pushService = pushService;
     }
-    
-    /**
-     * This method creates {@code IpPortBasedClient} if it doesn't exist.
-     */
+
+    /** This method creates {@code IpPortBasedClient} if it doesn't exist. */
     @Override
-    public void registerInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+    public void registerInstance(String namespaceId, String serviceName, Instance instance)
+            throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
-        
+
         boolean ephemeral = instance.isEphemeral();
         String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
         createIpPortClientIfAbsent(clientId);
         Service service = getService(namespaceId, serviceName, ephemeral);
         clientOperationService.registerInstance(service, instance, clientId);
     }
-    
+
     @Override
     public void removeInstance(String namespaceId, String serviceName, Instance instance) {
         boolean ephemeral = instance.isEphemeral();
@@ -120,21 +122,25 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         Service service = getService(namespaceId, serviceName, ephemeral);
         clientOperationService.deregisterInstance(service, instance, clientId);
     }
-    
+
     @Override
-    public void updateInstance(String namespaceId, String serviceName, Instance instance) throws NacosException {
+    public void updateInstance(String namespaceId, String serviceName, Instance instance)
+            throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
-        
+
         Service service = getService(namespaceId, serviceName, instance.isEphemeral());
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
+            throw new NacosApiException(
+                    NacosException.INVALID_PARAM,
+                    ErrorCode.INSTANCE_ERROR,
                     "service not found, namespace: " + namespaceId + ", service: " + service);
         }
-        String metadataId = InstancePublishInfo
-                .genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
+        String metadataId =
+                InstancePublishInfo.genMetadataId(
+                        instance.getIp(), instance.getPort(), instance.getClusterName());
         metadataOperateService.updateInstanceMetadata(service, metadataId, buildMetadata(instance));
     }
-    
+
     private InstanceMetadata buildMetadata(Instance instance) {
         InstanceMetadata result = new InstanceMetadata();
         result.setEnabled(instance.isEnabled());
@@ -142,21 +148,30 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         result.getExtendData().putAll(instance.getMetadata());
         return result;
     }
-    
+
     @Override
-    public void patchInstance(String namespaceId, String serviceName, InstancePatchObject patchObject)
+    public void patchInstance(
+            String namespaceId, String serviceName, InstancePatchObject patchObject)
             throws NacosException {
         Service service = getService(namespaceId, serviceName, true);
-        Instance instance = getInstance(namespaceId, serviceName, patchObject.getCluster(), patchObject.getIp(),
-                patchObject.getPort());
-        String metadataId = InstancePublishInfo
-                .genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
-        Optional<InstanceMetadata> instanceMetadata = metadataManager.getInstanceMetadata(service, metadataId);
-        InstanceMetadata newMetadata = instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
+        Instance instance =
+                getInstance(
+                        namespaceId,
+                        serviceName,
+                        patchObject.getCluster(),
+                        patchObject.getIp(),
+                        patchObject.getPort());
+        String metadataId =
+                InstancePublishInfo.genMetadataId(
+                        instance.getIp(), instance.getPort(), instance.getClusterName());
+        Optional<InstanceMetadata> instanceMetadata =
+                metadataManager.getInstanceMetadata(service, metadataId);
+        InstanceMetadata newMetadata =
+                instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
         mergeMetadata(newMetadata, patchObject);
         metadataOperateService.updateInstanceMetadata(service, metadataId, newMetadata);
     }
-    
+
     private InstanceMetadata cloneMetadata(InstanceMetadata instanceMetadata) {
         InstanceMetadata result = new InstanceMetadata();
         result.setExtendData(new HashMap<>(instanceMetadata.getExtendData()));
@@ -164,7 +179,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         result.setEnabled(instanceMetadata.isEnabled());
         return result;
     }
-    
+
     private void mergeMetadata(InstanceMetadata newMetadata, InstancePatchObject patchObject) {
         if (null != patchObject.getMetadata()) {
             newMetadata.setExtendData(new HashMap<>(patchObject.getMetadata()));
@@ -176,9 +191,13 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             newMetadata.setWeight(patchObject.getWeight());
         }
     }
-    
+
     @Override
-    public ServiceInfo listInstance(String namespaceId, String serviceName, Subscriber subscriber, String cluster,
+    public ServiceInfo listInstance(
+            String namespaceId,
+            String serviceName,
+            Subscriber subscriber,
+            String cluster,
             boolean healthOnly) {
         Service service = getService(namespaceId, serviceName, true);
         // For adapt 1.X subscribe logic
@@ -189,39 +208,64 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
-        ServiceInfo result = ServiceUtil
-                .selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, healthOnly, true, subscriber.getIp());
+        ServiceInfo result =
+                ServiceUtil.selectInstancesWithHealthyProtection(
+                        serviceInfo,
+                        serviceMetadata,
+                        cluster,
+                        healthOnly,
+                        true,
+                        subscriber.getIp());
         // adapt for v1.x sdk
         result.setName(NamingUtils.getGroupedName(result.getName(), result.getGroupName()));
         return result;
     }
-    
+
     @Override
-    public Instance getInstance(String namespaceId, String serviceName, String cluster, String ip, int port)
+    public Instance getInstance(
+            String namespaceId, String serviceName, String cluster, String ip, int port)
             throws NacosException {
         Service service = getService(namespaceId, serviceName, true);
         return getInstance0(service, cluster, ip, port);
     }
-    
-    private Instance getInstance0(Service service, String cluster, String ip, int port) throws NacosException {
+
+    private Instance getInstance0(Service service, String cluster, String ip, int port)
+            throws NacosException {
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         if (serviceInfo.getHosts().isEmpty()) {
-            throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND,
-                    "no ips found for cluster " + cluster + " in service " + service.getGroupedServiceName());
+            throw new NacosApiException(
+                    NacosException.NOT_FOUND,
+                    ErrorCode.RESOURCE_NOT_FOUND,
+                    "no ips found for cluster "
+                            + cluster
+                            + " in service "
+                            + service.getGroupedServiceName());
         }
         for (Instance each : serviceInfo.getHosts()) {
-            if (cluster.equals(each.getClusterName()) && ip.equals(each.getIp()) && port == each.getPort()) {
+            if (cluster.equals(each.getClusterName())
+                    && ip.equals(each.getIp())
+                    && port == each.getPort()) {
                 return each;
             }
         }
-        throw new NacosApiException(NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, "no matched ip found!");
+        throw new NacosApiException(
+                NacosException.NOT_FOUND, ErrorCode.RESOURCE_NOT_FOUND, "no matched ip found!");
     }
-    
+
     @Override
-    public int handleBeat(String namespaceId, String serviceName, String ip, int port, String cluster,
-            RsInfo clientBeat, BeatInfoInstanceBuilder builder) throws NacosException {
+    public int handleBeat(
+            String namespaceId,
+            String serviceName,
+            String ip,
+            int port,
+            String cluster,
+            RsInfo clientBeat,
+            BeatInfoInstanceBuilder builder)
+            throws NacosException {
         Service service = getService(namespaceId, serviceName, true);
-        String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
+        String clientId =
+                IpPortBasedClient.getClientId(
+                        ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
         IpPortBasedClient client = (IpPortBasedClient) clientManager.getClient(clientId);
         if (null == client || !client.getAllPublishedService().contains(service)) {
             if (null == clientBeat) {
@@ -232,7 +276,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             client = (IpPortBasedClient) clientManager.getClient(clientId);
         }
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.SERVER_ERROR,
+            throw new NacosException(
+                    NacosException.SERVER_ERROR,
                     "service not found: " + serviceName + "@" + namespaceId);
         }
         if (null == clientBeat) {
@@ -242,78 +287,125 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             clientBeat.setCluster(cluster);
             clientBeat.setServiceName(serviceName);
         }
-        ClientBeatProcessorV2 beatProcessor = new ClientBeatProcessorV2(namespaceId, clientBeat, client);
+        ClientBeatProcessorV2 beatProcessor =
+                new ClientBeatProcessorV2(namespaceId, clientBeat, client);
         HealthCheckReactor.scheduleNow(beatProcessor);
         client.setLastUpdatedTime();
         return NamingResponseCode.OK;
     }
-    
+
     @Override
-    public long getHeartBeatInterval(String namespaceId, String serviceName, String ip, int port, String cluster) {
+    public long getHeartBeatInterval(
+            String namespaceId, String serviceName, String ip, int port, String cluster) {
         Service service = getService(namespaceId, serviceName, true);
         String metadataId = InstancePublishInfo.genMetadataId(ip, port, cluster);
-        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(service, metadataId);
-        if (metadata.isPresent() && metadata.get().getExtendData()
-                .containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
-            return ConvertUtils.toLong(metadata.get().getExtendData().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));
+        Optional<InstanceMetadata> metadata =
+                metadataManager.getInstanceMetadata(service, metadataId);
+        if (metadata.isPresent()
+                && metadata.get()
+                        .getExtendData()
+                        .containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
+            return ConvertUtils.toLong(
+                    metadata.get().getExtendData().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));
         }
-        String clientId = IpPortBasedClient.getClientId(ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
+        String clientId =
+                IpPortBasedClient.getClientId(
+                        ip + InternetAddressUtil.IP_PORT_SPLITER + port, true);
         Client client = clientManager.getClient(clientId);
-        InstancePublishInfo instance = null != client ? client.getInstancePublishInfo(service) : null;
-        if (null != instance && instance.getExtendDatum().containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
-            return ConvertUtils.toLong(instance.getExtendDatum().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));
+        InstancePublishInfo instance =
+                null != client ? client.getInstancePublishInfo(service) : null;
+        if (null != instance
+                && instance.getExtendDatum()
+                        .containsKey(PreservedMetadataKeys.HEART_BEAT_INTERVAL)) {
+            return ConvertUtils.toLong(
+                    instance.getExtendDatum().get(PreservedMetadataKeys.HEART_BEAT_INTERVAL));
         }
         return switchDomain.getClientBeatInterval();
     }
-    
+
     @Override
-    public List<? extends Instance> listAllInstances(String namespaceId, String serviceName) throws NacosException {
+    public List<? extends Instance> listAllInstances(String namespaceId, String serviceName)
+            throws NacosException {
         Service service = getService(namespaceId, serviceName, true);
         return serviceStorage.getData(service).getHosts();
     }
-    
+
     @Override
-    public List<String> batchUpdateMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
-            Map<String, String> metadata) throws NacosException {
-        boolean isEphemeral = !UtilsAndCommons.PERSIST.equals(instanceOperationInfo.getConsistencyType());
+    public List<String> batchUpdateMetadata(
+            String namespaceId,
+            InstanceOperationInfo instanceOperationInfo,
+            Map<String, String> metadata)
+            throws NacosException {
+        boolean isEphemeral =
+                !UtilsAndCommons.PERSIST.equals(instanceOperationInfo.getConsistencyType());
         String serviceName = instanceOperationInfo.getServiceName();
         Service service = getService(namespaceId, serviceName, isEphemeral);
         List<String> result = new LinkedList<>();
         List<Instance> needUpdateInstance = findBatchUpdateInstance(instanceOperationInfo, service);
         for (Instance each : needUpdateInstance) {
-            String metadataId = InstancePublishInfo.genMetadataId(each.getIp(), each.getPort(), each.getClusterName());
-            Optional<InstanceMetadata> instanceMetadata = metadataManager.getInstanceMetadata(service, metadataId);
-            InstanceMetadata newMetadata = instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
+            String metadataId =
+                    InstancePublishInfo.genMetadataId(
+                            each.getIp(), each.getPort(), each.getClusterName());
+            Optional<InstanceMetadata> instanceMetadata =
+                    metadataManager.getInstanceMetadata(service, metadataId);
+            InstanceMetadata newMetadata =
+                    instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
             newMetadata.getExtendData().putAll(metadata);
             metadataOperateService.updateInstanceMetadata(service, metadataId, newMetadata);
-            result.add(each.toInetAddr() + ":" + UtilsAndCommons.LOCALHOST_SITE + ":" + each.getClusterName() + ":" + (
-                    each.isEphemeral() ? UtilsAndCommons.EPHEMERAL : UtilsAndCommons.PERSIST));
+            result.add(
+                    each.toInetAddr()
+                            + ":"
+                            + UtilsAndCommons.LOCALHOST_SITE
+                            + ":"
+                            + each.getClusterName()
+                            + ":"
+                            + (each.isEphemeral()
+                                    ? UtilsAndCommons.EPHEMERAL
+                                    : UtilsAndCommons.PERSIST));
         }
         return result;
     }
-    
+
     @Override
-    public List<String> batchDeleteMetadata(String namespaceId, InstanceOperationInfo instanceOperationInfo,
-            Map<String, String> metadata) throws NacosException {
-        boolean isEphemeral = !UtilsAndCommons.PERSIST.equals(instanceOperationInfo.getConsistencyType());
+    public List<String> batchDeleteMetadata(
+            String namespaceId,
+            InstanceOperationInfo instanceOperationInfo,
+            Map<String, String> metadata)
+            throws NacosException {
+        boolean isEphemeral =
+                !UtilsAndCommons.PERSIST.equals(instanceOperationInfo.getConsistencyType());
         String serviceName = instanceOperationInfo.getServiceName();
         Service service = getService(namespaceId, serviceName, isEphemeral);
         List<String> result = new LinkedList<>();
         List<Instance> needUpdateInstance = findBatchUpdateInstance(instanceOperationInfo, service);
         for (Instance each : needUpdateInstance) {
-            String metadataId = InstancePublishInfo.genMetadataId(each.getIp(), each.getPort(), each.getClusterName());
-            Optional<InstanceMetadata> instanceMetadata = metadataManager.getInstanceMetadata(service, metadataId);
-            InstanceMetadata newMetadata = instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
+            String metadataId =
+                    InstancePublishInfo.genMetadataId(
+                            each.getIp(), each.getPort(), each.getClusterName());
+            Optional<InstanceMetadata> instanceMetadata =
+                    metadataManager.getInstanceMetadata(service, metadataId);
+            InstanceMetadata newMetadata =
+                    instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
             metadata.keySet().forEach(key -> newMetadata.getExtendData().remove(key));
             metadataOperateService.updateInstanceMetadata(service, metadataId, newMetadata);
-            result.add(each.toInetAddr() + ":" + UtilsAndCommons.LOCALHOST_SITE + ":" + each.getClusterName() + ":" + (
-                    each.isEphemeral() ? UtilsAndCommons.EPHEMERAL : UtilsAndCommons.PERSIST));
+            result.add(
+                    each.toInetAddr()
+                            + ":"
+                            + UtilsAndCommons.LOCALHOST_SITE
+                            + ":"
+                            + each.getClusterName()
+                            + ":"
+                            + (each.isEphemeral()
+                                    ? UtilsAndCommons.EPHEMERAL
+                                    : UtilsAndCommons.PERSIST));
         }
         return result;
     }
-    
-    private List<Instance> findBatchUpdateInstance(InstanceOperationInfo instanceOperationInfo, Service service) {
-        if (null == instanceOperationInfo.getInstances() || instanceOperationInfo.getInstances().isEmpty()) {
+
+    private List<Instance> findBatchUpdateInstance(
+            InstanceOperationInfo instanceOperationInfo, Service service) {
+        if (null == instanceOperationInfo.getInstances()
+                || instanceOperationInfo.getInstances().isEmpty()) {
             return serviceStorage.getData(service).getHosts();
         }
         List<Instance> result = new LinkedList<>();
@@ -326,7 +418,7 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         }
         return result;
     }
-    
+
     private void createIpPortClientIfAbsent(String clientId) {
         if (!clientManager.contains(clientId)) {
             ClientAttributes clientAttributes;
@@ -338,11 +430,10 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             clientManager.clientConnected(clientId, clientAttributes);
         }
     }
-    
+
     private Service getService(String namespaceId, String serviceName, boolean ephemeral) {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameNoGrouped = NamingUtils.getServiceName(serviceName);
         return Service.newService(namespaceId, groupName, serviceNameNoGrouped, ephemeral);
     }
-    
 }

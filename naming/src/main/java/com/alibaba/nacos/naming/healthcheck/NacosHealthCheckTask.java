@@ -24,16 +24,14 @@ import com.alibaba.nacos.naming.interceptor.Interceptable;
  * @author xiweng.yy
  */
 public interface NacosHealthCheckTask extends Interceptable, Runnable {
-    
+
     /**
      * Get task id.
      *
      * @return task id.
      */
     String getTaskId();
-    
-    /**
-     * Do health check.
-     */
+
+    /** Do health check. */
     void doHealthCheck();
 }

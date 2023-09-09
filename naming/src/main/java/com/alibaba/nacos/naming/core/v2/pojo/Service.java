@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.core.v2.pojo;
 
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
-
 import java.io.Serializable;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
@@ -28,21 +27,21 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author xiweng.yy
  */
 public class Service implements Serializable {
-    
+
     private static final long serialVersionUID = -990509089519499344L;
-    
+
     private final String namespace;
-    
+
     private final String group;
-    
+
     private final String name;
-    
+
     private final boolean ephemeral;
-    
+
     private final AtomicLong revision;
-    
+
     private long lastUpdatedTime;
-    
+
     private Service(String namespace, String group, String name, boolean ephemeral) {
         this.namespace = namespace;
         this.group = group;
@@ -51,51 +50,52 @@ public class Service implements Serializable {
         revision = new AtomicLong();
         lastUpdatedTime = System.currentTimeMillis();
     }
-    
+
     public static Service newService(String namespace, String group, String name) {
         return newService(namespace, group, name, true);
     }
-    
-    public static Service newService(String namespace, String group, String name, boolean ephemeral) {
+
+    public static Service newService(
+            String namespace, String group, String name, boolean ephemeral) {
         return new Service(namespace, group, name, ephemeral);
     }
-    
+
     public String getNamespace() {
         return namespace;
     }
-    
+
     public String getGroup() {
         return group;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public boolean isEphemeral() {
         return ephemeral;
     }
-    
+
     public long getRevision() {
         return revision.get();
     }
-    
+
     public long getLastUpdatedTime() {
         return lastUpdatedTime;
     }
-    
+
     public void renewUpdateTime() {
         lastUpdatedTime = System.currentTimeMillis();
     }
-    
+
     public void incrementRevision() {
         revision.incrementAndGet();
     }
-    
+
     public String getGroupedServiceName() {
         return NamingUtils.getGroupedName(name, group);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -105,17 +105,32 @@ public class Service implements Serializable {
             return false;
         }
         Service service = (Service) o;
-        return namespace.equals(service.namespace) && group.equals(service.group) && name.equals(service.name);
+        return namespace.equals(service.namespace)
+                && group.equals(service.group)
+                && name.equals(service.name);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(namespace, group, name);
     }
-    
+
     @Override
     public String toString() {
-        return "Service{" + "namespace='" + namespace + '\'' + ", group='" + group + '\'' + ", name='" + name + '\''
-                + ", ephemeral=" + ephemeral + ", revision=" + revision + '}';
+        return "Service{"
+                + "namespace='"
+                + namespace
+                + '\''
+                + ", group='"
+                + group
+                + '\''
+                + ", name='"
+                + name
+                + '\''
+                + ", ephemeral="
+                + ephemeral
+                + ", revision="
+                + revision
+                + '}';
     }
 }

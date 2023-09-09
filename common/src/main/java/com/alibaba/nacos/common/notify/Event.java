@@ -27,13 +27,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 @SuppressWarnings({"PMD.AbstractClassShouldStartWithAbstractNamingRule"})
 public abstract class Event implements Serializable {
-    
+
     private static final long serialVersionUID = -3731383194964997493L;
-    
+
     private static final AtomicLong SEQUENCE = new AtomicLong(0);
-    
+
     private final long sequence = SEQUENCE.getAndIncrement();
-    
+
     /**
      * Event sequence number, which can be used to handle the sequence of events.
      *
@@ -42,7 +42,7 @@ public abstract class Event implements Serializable {
     public long sequence() {
         return sequence;
     }
-    
+
     /**
      * Event scope.
      *
@@ -51,10 +51,10 @@ public abstract class Event implements Serializable {
     public String scope() {
         return null;
     }
-    
+
     /**
-     * Whether is plugin event. If so, the event can be dropped when no publish and subscriber without any hint. Default
-     * false
+     * Whether is plugin event. If so, the event can be dropped when no publish and subscriber
+     * without any hint. Default false
      *
      * @return {@code true} if is plugin event, otherwise {@code false}
      */
@@ -62,4 +62,3 @@ public abstract class Event implements Serializable {
         return false;
     }
 }
-

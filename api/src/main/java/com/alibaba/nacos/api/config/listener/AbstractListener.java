@@ -25,13 +25,10 @@ import java.util.concurrent.Executor;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class AbstractListener implements Listener {
-    
-    /**
-     * Use default executor.
-     */
+
+    /** Use default executor. */
     @Override
     public Executor getExecutor() {
         return null;
     }
-    
 }

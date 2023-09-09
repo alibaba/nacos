@@ -24,8 +24,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
  * The mysql implementation of TenantInfoMapper.
  *
  * @author hyx
- **/
-
+ */
 public class TenantInfoMapperByMySql extends AbstractMapper implements TenantInfoMapper {
 
     @Override

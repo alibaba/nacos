@@ -34,7 +34,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-
 import java.util.Optional;
 
 /**
@@ -45,7 +44,7 @@ import java.util.Optional;
  * @author xiweng.yy
  */
 public class ExpiredInstanceChecker implements InstanceBeatChecker {
-    
+
     @Override
     public void doCheck(Client client, Service service, HealthCheckInstancePublishInfo instance) {
         boolean expireInstance = ApplicationUtils.getBean(GlobalConfig.class).isExpireInstance();
@@ -53,33 +52,51 @@ public class ExpiredInstanceChecker implements InstanceBeatChecker {
             deleteIp(client, service, instance);
         }
     }
-    
+
     private boolean isExpireInstance(Service service, HealthCheckInstancePublishInfo instance) {
         long deleteTimeout = getTimeout(service, instance);
         return System.currentTimeMillis() - instance.getLastHeartBeatTime() > deleteTimeout;
     }
-    
+
     private long getTimeout(Service service, InstancePublishInfo instance) {
         Optional<Object> timeout = getTimeoutFromMetadata(service, instance);
         if (!timeout.isPresent()) {
-            timeout = Optional.ofNullable(instance.getExtendDatum().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
+            timeout =
+                    Optional.ofNullable(
+                            instance.getExtendDatum().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
         }
         return timeout.map(ConvertUtils::toLong).orElse(Constants.DEFAULT_IP_DELETE_TIMEOUT);
     }
-    
+
     private Optional<Object> getTimeoutFromMetadata(Service service, InstancePublishInfo instance) {
-        Optional<InstanceMetadata> instanceMetadata = ApplicationUtils.getBean(NamingMetadataManager.class)
-                .getInstanceMetadata(service, instance.getMetadataId());
-        return instanceMetadata.map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
+        Optional<InstanceMetadata> instanceMetadata =
+                ApplicationUtils.getBean(NamingMetadataManager.class)
+                        .getInstanceMetadata(service, instance.getMetadataId());
+        return instanceMetadata.map(
+                metadata -> metadata.getExtendData().get(PreservedMetadataKeys.IP_DELETE_TIMEOUT));
     }
-    
+
     private void deleteIp(Client client, Service service, InstancePublishInfo instance) {
-        Loggers.SRV_LOG.info("[AUTO-DELETE-IP] service: {}, ip: {}", service.toString(), JacksonUtils.toJson(instance));
+        Loggers.SRV_LOG.info(
+                "[AUTO-DELETE-IP] service: {}, ip: {}",
+                service.toString(),
+                JacksonUtils.toJson(instance));
         client.removeServiceInstance(service);
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(service, client.getClientId()));
-        NotifyCenter.publishEvent(new MetadataEvent.InstanceMetadataEvent(service, instance.getMetadataId(), true));
-        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
-                false, DeregisterInstanceReason.HEARTBEAT_EXPIRE, service.getNamespace(), service.getGroup(),
-                service.getName(), instance.getIp(), instance.getPort()));
+        NotifyCenter.publishEvent(
+                new ClientOperationEvent.ClientDeregisterServiceEvent(
+                        service, client.getClientId()));
+        NotifyCenter.publishEvent(
+                new MetadataEvent.InstanceMetadataEvent(service, instance.getMetadataId(), true));
+        NotifyCenter.publishEvent(
+                new DeregisterInstanceTraceEvent(
+                        System.currentTimeMillis(),
+                        "",
+                        false,
+                        DeregisterInstanceReason.HEARTBEAT_EXPIRE,
+                        service.getNamespace(),
+                        service.getGroup(),
+                        service.getName(),
+                        instance.getIp(),
+                        instance.getPort()));
     }
 }

@@ -22,7 +22,6 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-
 import java.util.Optional;
 
 /**
@@ -32,24 +31,29 @@ import java.util.Optional;
  */
 @org.springframework.stereotype.Service
 public class ClusterOperatorV2Impl implements ClusterOperator {
-    
+
     private final NamingMetadataOperateService metadataOperateService;
-    
+
     public ClusterOperatorV2Impl(NamingMetadataOperateService metadataOperateService) {
         this.metadataOperateService = metadataOperateService;
     }
-    
+
     @Override
-    public void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
-            ClusterMetadata clusterMetadata) throws NacosException {
+    public void updateClusterMetadata(
+            String namespaceId,
+            String serviceName,
+            String clusterName,
+            ClusterMetadata clusterMetadata)
+            throws NacosException {
         String groupName = NamingUtils.getGroupName(serviceName);
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
-        Optional<Service> service = ServiceManager.getInstance()
-                .getSingletonIfExist(namespaceId, groupName, serviceNameWithoutGroup);
+        Optional<Service> service =
+                ServiceManager.getInstance()
+                        .getSingletonIfExist(namespaceId, groupName, serviceNameWithoutGroup);
         if (!service.isPresent()) {
-            throw new NacosException(NacosException.INVALID_PARAM, "service not found:" + serviceName);
+            throw new NacosException(
+                    NacosException.INVALID_PARAM, "service not found:" + serviceName);
         }
         metadataOperateService.addClusterMetadata(service.get(), clusterName, clusterMetadata);
     }
-    
 }

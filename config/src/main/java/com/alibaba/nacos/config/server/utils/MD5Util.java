@@ -16,13 +16,13 @@
 
 package com.alibaba.nacos.config.server.utils;
 
+import static com.alibaba.nacos.config.server.constant.Constants.LINE_SEPARATOR;
+import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
+
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.core.utils.StringPool;
-import com.alibaba.nacos.common.utils.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,9 +34,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.alibaba.nacos.config.server.constant.Constants.LINE_SEPARATOR;
-import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 /**
  * MD5 util.
@@ -45,11 +44,11 @@ import static com.alibaba.nacos.config.server.constant.Constants.WORD_SEPARATOR;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class MD5Util {
-    
-    /**
-     * Compare Md5.
-     */
-    public static List<String> compareMd5(HttpServletRequest request, HttpServletResponse response,
+
+    /** Compare Md5. */
+    public static List<String> compareMd5(
+            HttpServletRequest request,
+            HttpServletResponse response,
             Map<String, String> clientMd5Map) {
         List<String> changedGroupKeys = new ArrayList<>();
         String tag = request.getHeader("Vipserver-Tag");
@@ -64,10 +63,8 @@ public class MD5Util {
         }
         return changedGroupKeys;
     }
-    
-    /**
-     * Compare old Md5.
-     */
+
+    /** Compare old Md5. */
     public static String compareMd5OldResult(List<String> changedGroupKeys) {
         StringBuilder sb = new StringBuilder();
         for (String groupKey : changedGroupKeys) {
@@ -79,17 +76,15 @@ public class MD5Util {
         }
         return sb.toString();
     }
-    
-    /**
-     * Join and encode changedGroupKeys string.
-     */
+
+    /** Join and encode changedGroupKeys string. */
     public static String compareMd5ResultString(List<String> changedGroupKeys) throws IOException {
         if (null == changedGroupKeys) {
             return "";
         }
-        
+
         StringBuilder sb = new StringBuilder();
-        
+
         for (String groupKey : changedGroupKeys) {
             String[] dataIdGroupId = GroupKey2.parseKey(groupKey);
             sb.append(dataIdGroupId[0]);
@@ -104,22 +99,23 @@ public class MD5Util {
             }
             sb.append(LINE_SEPARATOR);
         }
-        
-        // To encode WORD_SEPARATOR and LINE_SEPARATOR invisible characters, encoded value is %02 and %01
+
+        // To encode WORD_SEPARATOR and LINE_SEPARATOR invisible characters, encoded value is %02
+        // and %01
         return URLEncoder.encode(sb.toString(), "UTF-8");
     }
-    
+
     /**
-     * Parse the transport protocol, which has two formats (W for field delimiter, L for each data delimiter) old: D w G
-     * w MD5 l new: D w G w MD5 w T l.
+     * Parse the transport protocol, which has two formats (W for field delimiter, L for each data
+     * delimiter) old: D w G w MD5 l new: D w G w MD5 w T l.
      *
      * @param configKeysString protocol
      * @return protocol message
      */
     public static Map<String, String> getClientMd5Map(String configKeysString) {
-        
+
         Map<String, String> md5Map = new HashMap<>(5);
-        
+
         if (null == configKeysString || "".equals(configKeysString)) {
             return md5Map;
         }
@@ -140,8 +136,9 @@ public class MD5Util {
                     endValue = configKeysString.substring(start, i);
                 }
                 start = i + 1;
-                
-                // If it is the old message, the last digit is MD5. The post-multi-tenant message is tenant
+
+                // If it is the old message, the last digit is MD5. The post-multi-tenant message is
+                // tenant
                 if (tmpList.size() == 2) {
                     String groupKey = GroupKey2.getKey(tmpList.get(0), tmpList.get(1));
                     groupKey = StringPool.get(groupKey);
@@ -152,7 +149,7 @@ public class MD5Util {
                     md5Map.put(groupKey, tmpList.get(2));
                 }
                 tmpList.clear();
-                
+
                 // Protect malformed messages
                 if (md5Map.size() > 10000) {
                     throw new IllegalArgumentException("invalid protocol, too much listener");
@@ -161,24 +158,21 @@ public class MD5Util {
         }
         return md5Map;
     }
-    
+
     public static String toString(InputStream input, String encoding) throws IOException {
-        return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
+        return (null == encoding)
+                ? toString(new InputStreamReader(input, Constants.ENCODE))
                 : toString(new InputStreamReader(input, encoding));
     }
-    
-    /**
-     * Reader to String.
-     */
+
+    /** Reader to String. */
     public static String toString(Reader reader) throws IOException {
         CharArrayWriter sw = new CharArrayWriter();
         copy(reader, sw);
         return sw.toString();
     }
-    
-    /**
-     * Copy data to buffer.
-     */
+
+    /** Copy data to buffer. */
     public static long copy(Reader input, Writer output) throws IOException {
         char[] buffer = new char[1024];
         long count = 0;
@@ -188,10 +182,8 @@ public class MD5Util {
         }
         return count;
     }
-    
-    static final char WORD_SEPARATOR_CHAR = (char) 2;
-    
-    static final char LINE_SEPARATOR_CHAR = (char) 1;
-    
-}
 
+    static final char WORD_SEPARATOR_CHAR = (char) 2;
+
+    static final char LINE_SEPARATOR_CHAR = (char) 1;
+}

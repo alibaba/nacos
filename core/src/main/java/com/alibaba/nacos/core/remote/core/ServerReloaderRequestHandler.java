@@ -25,11 +25,10 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.RemoteUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * server reload request handler.
@@ -38,16 +37,20 @@ import java.util.Map;
  * @version $Id: ServerReloaderRequestHandler.java, v 0.1 2020年11月09日 4:38 PM liuzunfei Exp $
  */
 @Component
-public class ServerReloaderRequestHandler extends RequestHandler<ServerReloadRequest, ServerReloadResponse> {
-    
-    @Autowired
-    private ConnectionManager connectionManager;
-    
+public class ServerReloaderRequestHandler
+        extends RequestHandler<ServerReloadRequest, ServerReloadResponse> {
+
+    @Autowired private ConnectionManager connectionManager;
+
     @Override
-    public ServerReloadResponse handle(ServerReloadRequest request, RequestMeta meta) throws NacosException {
+    public ServerReloadResponse handle(ServerReloadRequest request, RequestMeta meta)
+            throws NacosException {
         ServerReloadResponse response = new ServerReloadResponse();
-        Loggers.REMOTE.info("server reload request receive,reload count={},redirectServer={},requestIp={}",
-                request.getReloadCount(), request.getReloadServer(), meta.getClientIp());
+        Loggers.REMOTE.info(
+                "server reload request receive,reload count={},redirectServer={},requestIp={}",
+                request.getReloadCount(),
+                request.getReloadServer(),
+                meta.getClientIp());
         int reloadCount = request.getReloadCount();
         Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);

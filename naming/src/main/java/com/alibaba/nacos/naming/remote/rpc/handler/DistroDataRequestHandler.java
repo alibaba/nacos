@@ -35,16 +35,18 @@ import org.springframework.stereotype.Component;
  * @author xiweng.yy
  */
 @Component
-public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, DistroDataResponse> {
-    
+public class DistroDataRequestHandler
+        extends RequestHandler<DistroDataRequest, DistroDataResponse> {
+
     private final DistroProtocol distroProtocol;
-    
+
     public DistroDataRequestHandler(DistroProtocol distroProtocol) {
         this.distroProtocol = distroProtocol;
     }
-    
+
     @Override
-    public DistroDataResponse handle(DistroDataRequest request, RequestMeta meta) throws NacosException {
+    public DistroDataResponse handle(DistroDataRequest request, RequestMeta meta)
+            throws NacosException {
         try {
             switch (request.getDataOperation()) {
                 case VERIFY:
@@ -68,22 +70,23 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
             return result;
         }
     }
-    
+
     private DistroDataResponse handleVerify(DistroData distroData, RequestMeta meta) {
         DistroDataResponse result = new DistroDataResponse();
         if (!distroProtocol.onVerify(distroData, meta.getClientIp())) {
-            result.setErrorInfo(ResponseCode.FAIL.getCode(), "[DISTRO-FAILED] distro data verify failed");
+            result.setErrorInfo(
+                    ResponseCode.FAIL.getCode(), "[DISTRO-FAILED] distro data verify failed");
         }
         return result;
     }
-    
+
     private DistroDataResponse handleSnapshot() {
         DistroDataResponse result = new DistroDataResponse();
         DistroData distroData = distroProtocol.onSnapshot(DistroClientDataProcessor.TYPE);
         result.setDistroData(distroData);
         return result;
     }
-    
+
     private DistroDataResponse handleSyncData(DistroData distroData) {
         DistroDataResponse result = new DistroDataResponse();
         if (!distroProtocol.onReceive(distroData)) {
@@ -92,7 +95,7 @@ public class DistroDataRequestHandler extends RequestHandler<DistroDataRequest, 
         }
         return result;
     }
-    
+
     private DistroDataResponse handleQueryData(DistroData distroData) {
         DistroDataResponse result = new DistroDataResponse();
         DistroKey distroKey = distroData.getDistroKey();

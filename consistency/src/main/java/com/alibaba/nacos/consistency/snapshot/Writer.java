@@ -26,19 +26,19 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Writer {
-    
+
     private final Map<String, LocalFileMeta> files = new HashMap<>();
-    
+
     private String path;
-    
+
     public Writer(String path) {
         this.path = path;
     }
-    
+
     public String getPath() {
         return path;
     }
-    
+
     /**
      * Adds a snapshot file without metadata.
      *
@@ -49,7 +49,7 @@ public class Writer {
         files.put(fileName, new LocalFileMeta().append("file-name", fileName));
         return true;
     }
-    
+
     /**
      * Adds a snapshot file with metadata.
      *
@@ -60,7 +60,7 @@ public class Writer {
         files.put(fileName, meta);
         return true;
     }
-    
+
     /**
      * Remove a snapshot file.
      *
@@ -71,9 +71,8 @@ public class Writer {
         files.remove(fileName);
         return true;
     }
-    
+
     public Map<String, LocalFileMeta> listFiles() {
         return Collections.unmodifiableMap(files);
     }
-    
 }

@@ -23,17 +23,17 @@ package com.alibaba.nacos.common.remote.exception;
  * @version $Id: ConnectionAlreadyClosedException.java, v 0.1 2020年07月22日 7:28 PM liuzunfei Exp $
  */
 public class ConnectionAlreadyClosedException extends RemoteException {
-    
+
     private static final int CONNECTION_ALREADY_CLOSED = 600;
-    
+
     public ConnectionAlreadyClosedException(String msg) {
         super(CONNECTION_ALREADY_CLOSED);
     }
-    
+
     public ConnectionAlreadyClosedException() {
         super(CONNECTION_ALREADY_CLOSED);
     }
-    
+
     public ConnectionAlreadyClosedException(Throwable throwable) {
         super(CONNECTION_ALREADY_CLOSED, throwable);
     }

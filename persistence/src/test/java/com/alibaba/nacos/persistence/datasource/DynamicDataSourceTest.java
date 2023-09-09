@@ -17,9 +17,6 @@
 package com.alibaba.nacos.persistence.datasource;
 
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -28,30 +25,26 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DynamicDataSourceTest {
-    
-    @InjectMocks
-    private DynamicDataSource dataSource;
-    
-    @Mock
-    private LocalDataSourceServiceImpl localDataSourceService;
-    
-    @Mock
-    private ExternalDataSourceServiceImpl basicDataSourceService;
-    
+
+    @InjectMocks private DynamicDataSource dataSource;
+
+    @Mock private LocalDataSourceServiceImpl localDataSourceService;
+
+    @Mock private ExternalDataSourceServiceImpl basicDataSourceService;
+
     @Before
     public void setUp() {
         dataSource = DynamicDataSource.getInstance();
         ReflectionTestUtils.setField(dataSource, "localDataSourceService", localDataSourceService);
         ReflectionTestUtils.setField(dataSource, "basicDataSourceService", basicDataSourceService);
     }
-    
+
     @Test
     public void testGetDataSource() {
         DatasourceConfiguration.setEmbeddedStorage(true);
         Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
-        
+
         DatasourceConfiguration.setEmbeddedStorage(false);
         Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
-    
 }

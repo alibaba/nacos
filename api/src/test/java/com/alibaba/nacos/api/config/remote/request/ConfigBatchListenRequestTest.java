@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
-    
+
     @Override
     @Test
     public void testSerialize() throws JsonProcessingException {
@@ -34,30 +33,33 @@ public class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
         final String requestId = injectRequestUuId(configBatchListenRequest);
         String json = mapper.writeValueAsString(configBatchListenRequest);
         assertTrue(json.contains("\"listen\":" + "true"));
-        assertTrue(json.contains(
-                "\"configListenContexts\":[{\"group\":\"group\",\"md5\":\"test_MD5\",\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}]"));
+        assertTrue(
+                json.contains(
+                        "\"configListenContexts\":[{\"group\":\"group\",\"md5\":\"test_MD5\",\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}]"));
         assertTrue(json.contains("\"module\":\"" + Constants.Config.CONFIG_MODULE));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
     }
-    
+
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{\"header1\":\"test_header1\"},\"listen\":true,"
-                + "\"configListenContexts\":[{\"group\":\"group\",\"md5\":\"test_MD5\","
-                + "\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}],\"module\":\"config\"}";
+        String json =
+                "{\"headers\":{\"header1\":\"test_header1\"},\"listen\":true,"
+                        + "\"configListenContexts\":[{\"group\":\"group\",\"md5\":\"test_MD5\","
+                        + "\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}],\"module\":\"config\"}";
         ConfigBatchListenRequest actual = mapper.readValue(json, ConfigBatchListenRequest.class);
         assertEquals(actual.isListen(), true);
         assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
         assertEquals(actual.getHeader(HEADER_KEY), HEADER_VALUE);
         assertEquals(actual.getConfigListenContexts().size(), 1);
     }
-    
+
     @Test
     public void testConfigListenContextToString() {
         ConfigBatchListenRequest configBatchListenRequest = new ConfigBatchListenRequest();
         configBatchListenRequest.addConfigListenContext(GROUP, DATA_ID, TENANT, MD5);
-        assertEquals("ConfigListenContext{group='group', md5='test_MD5', dataId='test_data', tenant='test_tenant'}",
+        assertEquals(
+                "ConfigListenContext{group='group', md5='test_MD5', dataId='test_data', tenant='test_tenant'}",
                 configBatchListenRequest.getConfigListenContexts().get(0).toString());
     }
 }

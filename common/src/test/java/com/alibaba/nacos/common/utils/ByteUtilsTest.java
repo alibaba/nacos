@@ -17,37 +17,30 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.common.utils.to.User;
-import org.junit.Assert;
-import org.junit.Test;
 
-/**
- *  ByteUtils Test.
- * @ClassName: ByteUtilsTest
- * @Author: ChenHao26
- * @Date: 2022/8/22 10:58
- */
+/** ByteUtils Test. @ClassName: ByteUtilsTest @Author: ChenHao26 @Date: 2022/8/22 10:58 */
 public class ByteUtilsTest {
-    
+
     @Test
     public void objectToByte() {
         User user = new User(1, "google");
         byte[] bytes = ByteUtils.toBytes(user);
         Assert.assertNotNull(bytes);
     }
-    
+
     @Test
     public void stringToByte() {
         byte[] bytes = ByteUtils.toBytes("google");
         Assert.assertNotNull(bytes);
     }
-    
+
     @Test
     public void toStringTest() {
         byte[] bytes = ByteUtils.toBytes("google");
         String str = ByteUtils.toString(bytes);
         Assert.assertEquals(str, "google");
     }
-    
+
     @Test
     public void isEmpty() {
         byte[] bytes = ByteUtils.toBytes("");
@@ -57,7 +50,7 @@ public class ByteUtilsTest {
         byte[] byte3 = null;
         Assert.assertTrue(ByteUtils.isEmpty(byte3));
     }
-    
+
     @Test
     public void isNotEmpty() {
         byte[] bytes = ByteUtils.toBytes("google");
@@ -66,4 +59,3 @@ public class ByteUtilsTest {
         Assert.assertFalse(ByteUtils.isNotEmpty(bytes2));
     }
 }
-

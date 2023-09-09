@@ -25,18 +25,18 @@ package com.alibaba.nacos.plugin.control.tps;
 public enum MonitorType {
     // monitor mode.
     MONITOR("monitor", "only monitor ,not reject  request."),
-    //intercept mode.
+    // intercept mode.
     INTERCEPT("intercept", "reject  request if tps over limit");
-    
+
     String type;
-    
+
     String desc;
-    
+
     MonitorType(String type, String desc) {
         this.type = type;
         this.desc = desc;
     }
-    
+
     public String getType() {
         return type;
     }

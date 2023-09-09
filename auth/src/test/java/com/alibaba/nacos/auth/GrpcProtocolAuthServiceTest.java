@@ -16,43 +16,39 @@
 
 package com.alibaba.nacos.auth;
 
-import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
-import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
-import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
-import com.alibaba.nacos.plugin.auth.api.Permission;
-import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.plugin.auth.constant.SignType;
-import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.auth.mock.MockAuthPluginService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.lang.reflect.Method;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
+import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
+import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.mock.MockAuthPluginService;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
+import com.alibaba.nacos.plugin.auth.exception.AccessException;
+import java.lang.reflect.Method;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
 @RunWith(MockitoJUnitRunner.class)
 public class GrpcProtocolAuthServiceTest {
-    
-    @Mock
-    private AuthConfigs authConfigs;
-    
+
+    @Mock private AuthConfigs authConfigs;
+
     private ConfigPublishRequest configRequest;
-    
+
     private AbstractNamingRequest namingRequest;
-    
+
     private GrpcProtocolAuthService protocolAuthService;
-    
+
     @Before
     public void setUp() throws Exception {
         protocolAuthService = new GrpcProtocolAuthService(authConfigs);
@@ -60,22 +56,21 @@ public class GrpcProtocolAuthServiceTest {
         mockConfigRequest();
         mockNamingRequest();
     }
-    
+
     private void mockConfigRequest() {
         configRequest = new ConfigPublishRequest();
         configRequest.setTenant("testCNs");
         configRequest.setGroup("testCG");
         configRequest.setDataId("testD");
     }
-    
+
     private void mockNamingRequest() {
-        namingRequest = new AbstractNamingRequest() {
-        };
+        namingRequest = new AbstractNamingRequest() {};
         namingRequest.setNamespace("testNNs");
         namingRequest.setGroupName("testNG");
         namingRequest.setServiceName("testS");
     }
-    
+
     @Test
     @Secured(resource = "testResource")
     public void testParseResourceWithSpecifiedResource() throws NoSuchMethodException {
@@ -87,7 +82,7 @@ public class GrpcProtocolAuthServiceTest {
         assertNull(actual.getGroup());
         assertNull(actual.getProperties());
     }
-    
+
     @Test
     @Secured(signType = "non-exist")
     public void testParseResourceWithNonExistType() throws NoSuchMethodException {
@@ -95,7 +90,7 @@ public class GrpcProtocolAuthServiceTest {
         Resource actual = protocolAuthService.parseResource(namingRequest, secured);
         assertEquals(Resource.EMPTY_RESOURCE, actual);
     }
-    
+
     @Test
     @Secured()
     public void testParseResourceWithNamingType() throws NoSuchMethodException {
@@ -107,7 +102,7 @@ public class GrpcProtocolAuthServiceTest {
         assertEquals("testNG", actual.getGroup());
         assertNotNull(actual.getProperties());
     }
-    
+
     @Test
     @Secured(signType = SignType.CONFIG)
     public void testParseResourceWithConfigType() throws NoSuchMethodException {
@@ -119,39 +114,43 @@ public class GrpcProtocolAuthServiceTest {
         assertEquals("testCG", actual.getGroup());
         assertNotNull(actual.getProperties());
     }
-    
+
     @Test
     public void testParseIdentity() {
         IdentityContext actual = protocolAuthService.parseIdentity(namingRequest);
         assertNotNull(actual);
     }
-    
+
     @Test
     public void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
         assertTrue(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
-    
+
     @Test
     public void testValidateIdentityWithPlugin() throws AccessException {
-        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        Mockito.when(authConfigs.getNacosAuthSystemType())
+                .thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
         assertFalse(protocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
-    
+
     @Test
     public void testValidateAuthorityWithoutPlugin() throws AccessException {
-        assertTrue(protocolAuthService
-                .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
+        assertTrue(
+                protocolAuthService.validateAuthority(
+                        new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
     }
-    
+
     @Test
     public void testValidateAuthorityWithPlugin() throws AccessException {
-        Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
-        assertFalse(protocolAuthService
-                .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
+        Mockito.when(authConfigs.getNacosAuthSystemType())
+                .thenReturn(MockAuthPluginService.TEST_PLUGIN);
+        assertFalse(
+                protocolAuthService.validateAuthority(
+                        new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
     }
-    
+
     private Secured getMethodSecure(String methodName) throws NoSuchMethodException {
         Method method = GrpcProtocolAuthServiceTest.class.getMethod(methodName);
         return method.getAnnotation(Secured.class);

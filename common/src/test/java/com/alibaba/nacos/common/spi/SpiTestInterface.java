@@ -16,6 +16,4 @@
 
 package com.alibaba.nacos.common.spi;
 
-public interface SpiTestInterface {
-    
-}
+public interface SpiTestInterface {}

@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.misc.Loggers;
-
 import java.util.Collection;
 import java.util.HashMap;
 
@@ -30,27 +29,29 @@ import java.util.HashMap;
  * @author xiweng.yy
  */
 public class ClientFactoryHolder {
-    
+
     private static final ClientFactoryHolder INSTANCE = new ClientFactoryHolder();
-    
+
     private final HashMap<String, ClientFactory> clientFactories;
-    
+
     private ClientFactoryHolder() {
         clientFactories = new HashMap<>(4);
         Collection<ClientFactory> clientFactories = NacosServiceLoader.load(ClientFactory.class);
         for (ClientFactory each : clientFactories) {
             if (this.clientFactories.containsKey(each.getType())) {
-                Loggers.SRV_LOG.warn("Client type {} found multiple factory, use {} default", each.getType(),
+                Loggers.SRV_LOG.warn(
+                        "Client type {} found multiple factory, use {} default",
+                        each.getType(),
                         each.getClass().getCanonicalName());
             }
             this.clientFactories.put(each.getType(), each);
         }
     }
-    
+
     public static ClientFactoryHolder getInstance() {
         return INSTANCE;
     }
-    
+
     /**
      * Find target type {@link ClientFactory}.
      *

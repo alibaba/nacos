@@ -25,34 +25,35 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.xml.sax.Attributes;
 
 /**
- * support logback read properties from NacosClientProperties. just like springProperty.
- * for example:
- * <nacosClientProperty scope="context" name="logPath" source="system.log.path" defaultValue="/root" />
+ * support logback read properties from NacosClientProperties. just like springProperty. for
+ * example: <nacosClientProperty scope="context" name="logPath" source="system.log.path"
+ * defaultValue="/root" />
+ *
  * @author onewe
  */
 class NacosClientPropertyAction extends Action {
-    
+
     private static final String DEFAULT_VALUE_ATTRIBUTE = "defaultValue";
-    
+
     private static final String SOURCE_ATTRIBUTE = "source";
-    
+
     @Override
-    public void begin(InterpretationContext ic, String elementName, Attributes attributes) throws ActionException {
+    public void begin(InterpretationContext ic, String elementName, Attributes attributes)
+            throws ActionException {
         String name = attributes.getValue(NAME_ATTRIBUTE);
         String source = attributes.getValue(SOURCE_ATTRIBUTE);
         ActionUtil.Scope scope = ActionUtil.stringToScope(attributes.getValue(SCOPE_ATTRIBUTE));
         String defaultValue = attributes.getValue(DEFAULT_VALUE_ATTRIBUTE);
         if (OptionHelper.isEmpty(name)) {
-            addError("The \"name\" and \"source\"  attributes of <nacosClientProperty> must be set");
+            addError(
+                    "The \"name\" and \"source\"  attributes of <nacosClientProperty> must be set");
         }
         ActionUtil.setProperty(ic, name, getValue(source, defaultValue), scope);
     }
-    
+
     @Override
-    public void end(InterpretationContext ic, String name) throws ActionException {
-    
-    }
-    
+    public void end(InterpretationContext ic, String name) throws ActionException {}
+
     private String getValue(String source, String defaultValue) {
         return NacosClientProperties.PROTOTYPE.getProperty(source, defaultValue);
     }

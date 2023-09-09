@@ -17,8 +17,6 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class ClassUtilsTest {
     @Test
@@ -26,26 +24,26 @@ public class ClassUtilsTest {
         Class<?> clazz = ClassUtils.findClassByName("java.lang.Integer");
         Assert.assertEquals("java.lang.Integer", clazz.getName());
     }
-    
+
     @Test(expected = NacosRuntimeException.class)
     public void testFindClassByName2() {
         ClassUtils.findClassByName("not.exist.Class");
     }
-    
+
     @Test
     public void testGetName() {
         final String name = "java.lang.Integer";
         Integer val = 1;
         Assert.assertEquals(name, ClassUtils.getName(val));
         Assert.assertEquals(name, ClassUtils.getName(Integer.class));
-        
+
         Assert.assertEquals(name, ClassUtils.getCanonicalName(val));
         Assert.assertEquals(name, ClassUtils.getCanonicalName(Integer.class));
-        
+
         Assert.assertEquals("Integer", ClassUtils.getSimpleName(val));
         Assert.assertEquals("Integer", ClassUtils.getSimpleName(Integer.class));
     }
-    
+
     @Test
     public void testIsAssignableFrom() {
         Assert.assertTrue(ClassUtils.isAssignableFrom(Object.class, Integer.class));

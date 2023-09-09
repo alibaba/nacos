@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.distributed.raft.utils;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.exception.ConsistencyException;
 import com.alipay.sofa.jraft.Status;
-
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 
@@ -29,27 +28,27 @@ import java.util.concurrent.CompletableFuture;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class FailoverClosureImpl implements FailoverClosure {
-    
+
     private final CompletableFuture<Response> future;
-    
+
     private volatile Response data;
-    
+
     private volatile Throwable throwable;
-    
+
     public FailoverClosureImpl(final CompletableFuture<Response> future) {
         this.future = future;
     }
-    
+
     @Override
     public void setResponse(Response data) {
         this.data = data;
     }
-    
+
     @Override
     public void setThrowable(Throwable throwable) {
         this.throwable = throwable;
     }
-    
+
     @Override
     public void run(Status status) {
         if (status.isOk()) {
@@ -57,8 +56,9 @@ public class FailoverClosureImpl implements FailoverClosure {
             return;
         }
         final Throwable throwable = this.throwable;
-        future.completeExceptionally(Objects.nonNull(throwable) ? new ConsistencyException(throwable.getMessage())
-                : new ConsistencyException("operation failure"));
+        future.completeExceptionally(
+                Objects.nonNull(throwable)
+                        ? new ConsistencyException(throwable.getMessage())
+                        : new ConsistencyException("operation failure"));
     }
-    
 }

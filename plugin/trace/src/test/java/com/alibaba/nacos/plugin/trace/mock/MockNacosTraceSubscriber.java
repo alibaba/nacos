@@ -18,20 +18,18 @@ package com.alibaba.nacos.plugin.trace.mock;
 
 import com.alibaba.nacos.common.trace.event.TraceEvent;
 import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
-
 import java.util.List;
 
 public class MockNacosTraceSubscriber implements NacosTraceSubscriber {
-    
+
     @Override
     public String getName() {
         return "trace-plugin-mock";
     }
-    
+
     @Override
-    public void onEvent(TraceEvent event) {
-    }
-    
+    public void onEvent(TraceEvent event) {}
+
     @Override
     public List<Class<? extends TraceEvent>> subscribeTypes() {
         return null;

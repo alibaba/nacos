@@ -21,51 +21,49 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public abstract class BasedConfigRequestTest {
-    
+
     protected static ObjectMapper mapper;
-    
+
     protected static final String DATA_ID = "test_data";
-    
+
     protected static final String GROUP = "group";
-    
+
     protected static final String TENANT = "test_tenant";
-    
+
     protected static final String MD5 = "test_MD5";
-    
+
     protected static final String TAG = "tag";
-    
+
     protected static final String[] KEY = new String[] {DATA_ID, GROUP, TENANT};
-    
+
     protected static final Map<String, String> HEADERS = new HashMap<>();
-    
+
     protected static final String HEADER_KEY = "header1";
-    
+
     protected static final String HEADER_VALUE = "test_header1";
-    
+
     protected static final String CONTENT = "content";
-    
+
     static {
         HEADERS.put(HEADER_KEY, HEADER_VALUE);
     }
-    
+
     @BeforeClass
     public static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     public abstract void testSerialize() throws JsonProcessingException;
-    
+
     public abstract void testDeserialize() throws JsonProcessingException;
-    
+
     protected String injectRequestUuId(Request request) {
         String uuid = UUID.randomUUID().toString();
         request.setRequestId(uuid);

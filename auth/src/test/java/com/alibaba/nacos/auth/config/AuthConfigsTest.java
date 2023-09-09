@@ -16,30 +16,28 @@
 
 package com.alibaba.nacos.auth.config;
 
-import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.mock.env.MockEnvironment;
-
 import static org.junit.Assert.assertEquals;
 
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.springframework.mock.env.MockEnvironment;
+
 public class AuthConfigsTest {
-    
+
     private static final boolean TEST_AUTH_ENABLED = true;
-    
+
     private static final boolean TEST_CACHING_ENABLED = false;
-    
+
     private static final String TEST_SERVER_IDENTITY_KEY = "testKey";
-    
+
     private static final String TEST_SERVER_IDENTITY_VALUE = "testValue";
-    
+
     private static final boolean TEST_ENABLE_UA_WHITE = true;
-    
+
     private AuthConfigs authConfigs;
-    
+
     private MockEnvironment environment;
-    
+
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
@@ -47,15 +45,18 @@ public class AuthConfigsTest {
         environment.setProperty("nacos.core.auth.plugin.test.key", "test");
         authConfigs = new AuthConfigs();
     }
-    
+
     @Test
     public void testUpgradeFromEvent() {
         environment.setProperty("nacos.core.auth.enabled", String.valueOf(TEST_AUTH_ENABLED));
-        environment.setProperty("nacos.core.auth.caching.enabled", String.valueOf(TEST_CACHING_ENABLED));
+        environment.setProperty(
+                "nacos.core.auth.caching.enabled", String.valueOf(TEST_CACHING_ENABLED));
         environment.setProperty("nacos.core.auth.server.identity.key", TEST_SERVER_IDENTITY_KEY);
-        environment.setProperty("nacos.core.auth.server.identity.value", TEST_SERVER_IDENTITY_VALUE);
-        environment.setProperty("nacos.core.auth.enable.userAgentAuthWhite", String.valueOf(TEST_ENABLE_UA_WHITE));
-        
+        environment.setProperty(
+                "nacos.core.auth.server.identity.value", TEST_SERVER_IDENTITY_VALUE);
+        environment.setProperty(
+                "nacos.core.auth.enable.userAgentAuthWhite", String.valueOf(TEST_ENABLE_UA_WHITE));
+
         authConfigs.onEvent(ServerConfigChangeEvent.newEvent());
         assertEquals(TEST_AUTH_ENABLED, authConfigs.isAuthEnabled());
         assertEquals(TEST_CACHING_ENABLED, authConfigs.isCachingEnabled());

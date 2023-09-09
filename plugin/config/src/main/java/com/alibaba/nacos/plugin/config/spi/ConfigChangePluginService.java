@@ -32,10 +32,11 @@ public interface ConfigChangePluginService {
     /**
      * execute config change plugin service.
      *
-     * @param configChangeRequest  ConfigChangeRequest
+     * @param configChangeRequest ConfigChangeRequest
      * @param configChangeResponse ConfigChangeResponse
      */
-    void execute(ConfigChangeRequest configChangeRequest, ConfigChangeResponse configChangeResponse);
+    void execute(
+            ConfigChangeRequest configChangeRequest, ConfigChangeResponse configChangeResponse);
 
     /**
      * execute type {@link ConfigChangeExecuteTypes}.
@@ -44,17 +45,17 @@ public interface ConfigChangePluginService {
      */
     ConfigChangeExecuteTypes executeType();
 
-
     /**
-     * what kind of plugin service,such as webhook,whiteList and other,need keep a way with the constants config of you
-     * enum in {@link ConfigChangeConstants}.
+     * what kind of plugin service,such as webhook,whiteList and other,need keep a way with the
+     * constants config of you enum in {@link ConfigChangeConstants}.
      *
      * @return service type
      */
     String getServiceType();
 
     /**
-     * when pointcut the same method,according to order to load plugin service. order is lower,prior is higher.
+     * when pointcut the same method,according to order to load plugin service. order is lower,prior
+     * is higher.
      *
      * @return order
      */
@@ -63,12 +64,9 @@ public interface ConfigChangePluginService {
     /**
      * the ConfigChangeTypes {@link ConfigChangePointCutTypes} of need to pointcut.
      *
-     * <p>
-     * ConfigChangeTypes mean the relevant pointcut method.
-     * </p>
+     * <p>ConfigChangeTypes mean the relevant pointcut method.
      *
      * @return array of pointcut the methods
      */
     ConfigChangePointCutTypes[] pointcutMethodNames();
-
 }

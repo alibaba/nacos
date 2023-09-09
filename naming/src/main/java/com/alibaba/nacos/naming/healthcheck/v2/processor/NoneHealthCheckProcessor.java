@@ -24,18 +24,17 @@ import org.springframework.stereotype.Component;
 
 /**
  * none health check processor,it will do not anything.
+ *
  * @author onewe
  */
 @Component("noneHealthCheckProcessorV2")
 public class NoneHealthCheckProcessor implements HealthCheckProcessorV2 {
-    
+
     public static final String TYPE = HealthCheckType.NONE.name();
-    
+
     @Override
-    public void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata) {
-    
-    }
-    
+    public void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata) {}
+
     @Override
     public String getType() {
         return TYPE;

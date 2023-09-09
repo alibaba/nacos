@@ -17,9 +17,6 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.Constants;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -29,6 +26,8 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ZipUtils for import and export.
@@ -37,72 +36,70 @@ import java.util.zip.ZipOutputStream;
  * @date 2019/5/14 16:59
  */
 public class ZipUtils {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ZipUtils.class);
-    
+
     public static class ZipItem {
-        
+
         private String itemName;
-        
+
         private String itemData;
-        
+
         public ZipItem(String itemName, String itemData) {
             this.itemName = itemName;
             this.itemData = itemData;
         }
-        
+
         public String getItemName() {
             return itemName;
         }
-        
+
         public void setItemName(String itemName) {
             this.itemName = itemName;
         }
-        
+
         public String getItemData() {
             return itemData;
         }
-        
+
         public void setItemData(String itemData) {
             this.itemData = itemData;
         }
     }
-    
+
     public static class UnZipResult {
-        
+
         private List<ZipItem> zipItemList;
-        
+
         private ZipItem metaDataItem;
-        
+
         public UnZipResult(List<ZipItem> zipItemList, ZipItem metaDataItem) {
             this.zipItemList = zipItemList;
             this.metaDataItem = metaDataItem;
         }
-        
+
         public List<ZipItem> getZipItemList() {
             return zipItemList;
         }
-        
+
         public void setZipItemList(List<ZipItem> zipItemList) {
             this.zipItemList = zipItemList;
         }
-        
+
         public ZipItem getMetaDataItem() {
             return metaDataItem;
         }
-        
+
         public void setMetaDataItem(ZipItem metaDataItem) {
             this.metaDataItem = metaDataItem;
         }
     }
-    
-    /**
-     * zip method.
-     */
+
+    /** zip method. */
     public static byte[] zip(List<ZipItem> source) {
         byte[] result = null;
-        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream(); ZipOutputStream zipOut = new ZipOutputStream(
-                byteOut)) {
+        try (ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+                ZipOutputStream zipOut = new ZipOutputStream(byteOut)) {
             for (ZipItem item : source) {
                 zipOut.putNextEntry(new ZipEntry(item.getItemName()));
                 zipOut.write(item.getItemData().getBytes(StandardCharsets.UTF_8));
@@ -115,10 +112,8 @@ public class ZipUtils {
         }
         return result;
     }
-    
-    /**
-     * unzip method.
-     */
+
+    /** unzip method. */
     public static UnZipResult unzip(byte[] source) {
         List<ZipItem> itemList = new ArrayList<>();
         ZipItem metaDataItem = null;
@@ -135,11 +130,13 @@ public class ZipUtils {
                         out.write(buffer, 0, offset);
                     }
                     String entryName = entry.getName();
-                    if (metaDataItem == null && Constants.CONFIG_EXPORT_METADATA.equals(entryName)) {
+                    if (metaDataItem == null
+                            && Constants.CONFIG_EXPORT_METADATA.equals(entryName)) {
                         metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
                         continue;
                     }
-                    if (metaDataItem == null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(entryName)) {
+                    if (metaDataItem == null
+                            && Constants.CONFIG_EXPORT_METADATA_NEW.equals(entryName)) {
                         metaDataItem = new ZipItem(entryName, out.toString("UTF-8"));
                         continue;
                     }
@@ -153,5 +150,4 @@ public class ZipUtils {
         }
         return new UnZipResult(itemList, metaDataItem);
     }
-    
 }

@@ -26,16 +26,15 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  * @author xiweng.yy
  */
 public class QueryServiceResponse extends Response {
-    
+
     private ServiceInfo serviceInfo;
-    
-    public QueryServiceResponse() {
-    }
-    
+
+    public QueryServiceResponse() {}
+
     private QueryServiceResponse(ServiceInfo serviceInfo) {
         this.serviceInfo = serviceInfo;
     }
-    
+
     /**
      * Build Success response.
      *
@@ -45,7 +44,7 @@ public class QueryServiceResponse extends Response {
     public static QueryServiceResponse buildSuccessResponse(ServiceInfo serviceInfo) {
         return new QueryServiceResponse(serviceInfo);
     }
-    
+
     /**
      * Build fail response.
      *
@@ -58,11 +57,11 @@ public class QueryServiceResponse extends Response {
         queryServiceResponse.setMessage(message);
         return queryServiceResponse;
     }
-    
+
     public ServiceInfo getServiceInfo() {
         return serviceInfo;
     }
-    
+
     public void setServiceInfo(ServiceInfo serviceInfo) {
         this.serviceInfo = serviceInfo;
     }

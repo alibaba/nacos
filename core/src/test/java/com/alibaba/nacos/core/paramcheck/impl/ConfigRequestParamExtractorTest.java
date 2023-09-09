@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.paramcheck.impl;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
@@ -23,21 +25,17 @@ import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 import com.alibaba.nacos.core.paramcheck.RpcParamExtractorManager;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class ConfigRequestParamExtractorTest {
-    
+
     private static AbstractConfigRequest req1;
-    
+
     private static AbstractConfigRequest req2;
-    
+
     private static AbstractConfigRequest req3;
-    
+
     private static AbstractConfigRequest req4;
-    
+
     @BeforeClass
     public static void initAbstractConfigRequest() {
         req1 = new ConfigPublishRequest();
@@ -45,27 +43,37 @@ public class ConfigRequestParamExtractorTest {
         req3 = new ConfigRemoveRequest();
         req4 = new ConfigChangeClusterSyncRequest();
     }
-    
-    /**
-     * Test extract param and check.
-     */
+
+    /** Test extract param and check. */
     @Test
     public void testExtractParamAndCheck() throws Exception {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
-        AbstractRpcParamExtractor extractor1 = paramExtractorManager.getExtractor(req1.getClass().getSimpleName());
-        assertEquals(extractor1.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
+        AbstractRpcParamExtractor extractor1 =
+                paramExtractorManager.getExtractor(req1.getClass().getSimpleName());
+        assertEquals(
+                extractor1.getClass().getSimpleName(),
+                ConfigRequestParamExtractor.class.getSimpleName());
         extractor1.extractParam(req1);
-        
-        AbstractRpcParamExtractor extractor2 = paramExtractorManager.getExtractor(req2.getClass().getSimpleName());
-        assertEquals(extractor2.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
+
+        AbstractRpcParamExtractor extractor2 =
+                paramExtractorManager.getExtractor(req2.getClass().getSimpleName());
+        assertEquals(
+                extractor2.getClass().getSimpleName(),
+                ConfigRequestParamExtractor.class.getSimpleName());
         extractor2.extractParam(req2);
-        
-        AbstractRpcParamExtractor extractor3 = paramExtractorManager.getExtractor(req3.getClass().getSimpleName());
-        assertEquals(extractor3.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
+
+        AbstractRpcParamExtractor extractor3 =
+                paramExtractorManager.getExtractor(req3.getClass().getSimpleName());
+        assertEquals(
+                extractor3.getClass().getSimpleName(),
+                ConfigRequestParamExtractor.class.getSimpleName());
         extractor3.extractParam(req3);
-        
-        AbstractRpcParamExtractor extractor4 = paramExtractorManager.getExtractor(req4.getClass().getSimpleName());
-        assertEquals(extractor4.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
+
+        AbstractRpcParamExtractor extractor4 =
+                paramExtractorManager.getExtractor(req4.getClass().getSimpleName());
+        assertEquals(
+                extractor4.getClass().getSimpleName(),
+                ConfigRequestParamExtractor.class.getSimpleName());
         extractor4.extractParam(req4);
     }
 }

@@ -25,7 +25,7 @@ import com.alibaba.nacos.common.log.NacosLogbackProperties;
  * @author hujun
  */
 public class NacosClientLogbackProperties implements NacosLogbackProperties {
-    
+
     @Override
     public String getValue(String source, String defaultValue) {
         return NacosClientProperties.PROTOTYPE.getProperty(source, defaultValue);

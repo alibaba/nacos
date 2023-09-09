@@ -23,13 +23,13 @@ package com.alibaba.nacos.api.remote;
  * @version $Id: PushCallBack.java, v 0.1 2020年07月20日 1:13 PM liuzunfei Exp $
  */
 public abstract class AbstractPushCallBack implements PushCallBack {
-    
+
     private long timeout;
-    
+
     public AbstractPushCallBack(long timeout) {
         this.timeout = timeout;
     }
-    
+
     @Override
     public long getTimeout() {
         return timeout;

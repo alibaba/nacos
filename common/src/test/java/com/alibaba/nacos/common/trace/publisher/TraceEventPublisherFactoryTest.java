@@ -16,22 +16,18 @@
 
 package com.alibaba.nacos.common.trace.publisher;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-
 public class TraceEventPublisherFactoryTest {
     private Map<String, EventPublisher> originalEventPublisherMap;
-    
+
     @Before
     public void setUp() throws Exception {
         originalEventPublisherMap = new HashMap<>(NotifyCenter.getPublisherMap());
@@ -42,21 +38,26 @@ public class TraceEventPublisherFactoryTest {
         Map map = (Map) field.get(TraceEventPublisherFactory.getInstance());
         map.clear();
     }
-    
+
     @After
     public void tearDown() throws Exception {
         NotifyCenter.getPublisherMap().clear();
         NotifyCenter.getPublisherMap().putAll(originalEventPublisherMap);
         originalEventPublisherMap = null;
     }
-    
+
     @Test
     public void testApply() {
-        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent1.class, Byte.SIZE);
-        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent2.class, Byte.SIZE);
+        TraceEventPublisherFactory.getInstance()
+                .apply(TraceTestEvent.TraceTestEvent1.class, Byte.SIZE);
+        TraceEventPublisherFactory.getInstance()
+                .apply(TraceTestEvent.TraceTestEvent2.class, Byte.SIZE);
         TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.class, Byte.SIZE);
-        String expectedStatus = "Trace event publisher statues:\n"
-                + "\tPublisher TraceEvent                    : shutdown=false, queue=      0/8      \n";
-        assertThat(TraceEventPublisherFactory.getInstance().getAllPublisherStatues(), is(expectedStatus));
+        String expectedStatus =
+                "Trace event publisher statues:\n"
+                        + "\tPublisher TraceEvent                    : shutdown=false, queue=      0/8      \n";
+        assertThat(
+                TraceEventPublisherFactory.getInstance().getAllPublisherStatues(),
+                is(expectedStatus));
     }
 }

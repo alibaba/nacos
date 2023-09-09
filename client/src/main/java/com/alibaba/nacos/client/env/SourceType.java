@@ -18,19 +18,14 @@ package com.alibaba.nacos.client.env;
 
 /**
  * properties source type enum.
+ *
  * @author onewe
  */
 public enum SourceType {
-    /**
-     * get value from properties.
-     */
+    /** get value from properties. */
     PROPERTIES,
-    /**
-     * get value from jvm args.
-     */
+    /** get value from jvm args. */
     JVM,
-    /**
-     * get value from system environment.
-     */
+    /** get value from system environment. */
     ENV
 }

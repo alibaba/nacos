@@ -26,39 +26,40 @@ import org.slf4j.LoggerFactory;
  * @author Nacos
  */
 public class LogUtil {
-    
-    /**
-     * Default log.
-     */
-    public static final Logger DEFAULT_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.startLog");
-    
-    /**
-     * Fatal error log, require alarm.
-     */
-    public static final Logger FATAL_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.fatal");
-    
-    /**
-     * Http client log.
-     */
-    public static final Logger PULL_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.pullLog");
-    
-    public static final Logger PULL_CHECK_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.pullCheckLog");
-    
-    /**
-     * Dump log.
-     */
-    public static final Logger DUMP_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.dumpLog");
-    
-    public static final Logger MEMORY_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.monitorLog");
-    
-    public static final Logger CLIENT_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.clientLog");
-    
-    public static final Logger TRACE_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.traceLog");
-    
-    public static final Logger NOTIFY_LOG = LoggerFactory.getLogger("com.alibaba.nacos.config.notifyLog");
-    
+
+    /** Default log. */
+    public static final Logger DEFAULT_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.config.startLog");
+
+    /** Fatal error log, require alarm. */
+    public static final Logger FATAL_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.config.fatal");
+
+    /** Http client log. */
+    public static final Logger PULL_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.config.pullLog");
+
+    public static final Logger PULL_CHECK_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.config.pullCheckLog");
+
+    /** Dump log. */
+    public static final Logger DUMP_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.config.dumpLog");
+
+    public static final Logger MEMORY_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.config.monitorLog");
+
+    public static final Logger CLIENT_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.config.clientLog");
+
+    public static final Logger TRACE_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.config.traceLog");
+
+    public static final Logger NOTIFY_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.config.notifyLog");
+
     public static void setLogLevel(String logName, String level) {
-        
+
         switch (logName) {
             case "config-server":
                 ((ch.qos.logback.classic.Logger) DEFAULT_LOG).setLevel(Level.valueOf(level));
@@ -90,7 +91,5 @@ public class LogUtil {
             default:
                 break;
         }
-        
     }
-    
 }

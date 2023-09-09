@@ -22,7 +22,7 @@ package com.alibaba.nacos.client.auth.ram.identify;
  * @author Nacos
  */
 public interface SpasCredentialLoader {
-    
+
     /**
      * get Credential.
      *

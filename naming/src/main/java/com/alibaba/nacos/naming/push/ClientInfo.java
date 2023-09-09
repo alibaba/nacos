@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.push;
 
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.codehaus.jackson.Version;
 import org.codehaus.jackson.util.VersionUtil;
 
@@ -27,11 +27,11 @@ import org.codehaus.jackson.util.VersionUtil;
  * @author nacos
  */
 public class ClientInfo {
-    
+
     public Version version;
-    
+
     public ClientType type;
-    
+
     public ClientInfo(String userAgent) {
         String versionStr = StringUtils.isEmpty(userAgent) ? StringUtils.EMPTY : userAgent;
         this.type = ClientType.getType(versionStr);
@@ -40,7 +40,7 @@ public class ClientInfo {
         }
         this.version = parseVersion(versionStr);
     }
-    
+
     private Version parseVersion(String versionStr) {
         if (StringUtils.isBlank(versionStr) || ClientType.UNKNOWN.equals(this.type)) {
             return Version.unknownVersion();
@@ -51,59 +51,39 @@ public class ClientInfo {
         }
         return VersionUtil.parseVersion(versionStr.substring(versionStartIndex + 2));
     }
-    
+
     public enum ClientType {
-        /**
-         * Go client type.
-         */
+        /** Go client type. */
         GO(ClientTypeDescription.GO_CLIENT),
-        /**
-         * Java client type.
-         */
+        /** Java client type. */
         JAVA(ClientTypeDescription.JAVA_CLIENT),
-        /**
-         * C client type.
-         */
+        /** C client type. */
         C(ClientTypeDescription.C_CLIENT),
-        /**
-         * CSharp client type.
-         */
+        /** CSharp client type. */
         CSHARP(ClientTypeDescription.CSHARP_CLIENT),
-        /**
-         * php client type.
-         */
+        /** php client type. */
         PHP(ClientTypeDescription.PHP_CLIENT),
-        /**
-         * dns-f client type.
-         */
+        /** dns-f client type. */
         DNS(ClientTypeDescription.DNSF_CLIENT),
-        /**
-         * nginx client type.
-         */
+        /** nginx client type. */
         TENGINE(ClientTypeDescription.NGINX_CLIENT),
-        /**
-         * sdk client type.
-         */
+        /** sdk client type. */
         JAVA_SDK(ClientTypeDescription.SDK_CLIENT),
-        /**
-         * Server notify each other.
-         */
+        /** Server notify each other. */
         NACOS_SERVER(UtilsAndCommons.NACOS_SERVER_HEADER),
-        /**
-         * Unknown client type.
-         */
+        /** Unknown client type. */
         UNKNOWN(UtilsAndCommons.UNKNOWN_SITE);
-        
+
         private final String clientTypeDescription;
-        
+
         ClientType(String clientTypeDescription) {
             this.clientTypeDescription = clientTypeDescription;
         }
-        
+
         public String getClientTypeDescription() {
             return clientTypeDescription;
         }
-        
+
         public static ClientType getType(String userAgent) {
             for (ClientType each : ClientType.values()) {
                 if (userAgent.startsWith(each.getClientTypeDescription())) {
@@ -113,26 +93,25 @@ public class ClientInfo {
             return UNKNOWN;
         }
     }
-    
+
     public static class ClientTypeDescription {
-        
+
         public static final String JAVA_CLIENT = "Nacos-Java-Client";
-        
+
         public static final String DNSF_CLIENT = "Nacos-DNS";
-        
+
         public static final String C_CLIENT = "Nacos-C-Client";
-        
+
         public static final String SDK_CLIENT = "Nacos-SDK-Java";
-        
+
         public static final String NGINX_CLIENT = "unit-nginx";
-        
+
         public static final String CPP_CLIENT = "vip-client4cpp";
-        
+
         public static final String GO_CLIENT = "Nacos-Go-Client";
-        
+
         public static final String PHP_CLIENT = "Nacos-Php-Client";
-        
+
         public static final String CSHARP_CLIENT = "Nacos-CSharp-Client";
     }
-    
 }

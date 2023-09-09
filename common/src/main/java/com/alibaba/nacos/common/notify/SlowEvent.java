@@ -24,7 +24,7 @@ package com.alibaba.nacos.common.notify;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class SlowEvent extends Event {
-    
+
     @Override
     public long sequence() {
         return 0;

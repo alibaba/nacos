@@ -28,7 +28,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @SpringBootApplication(scanBasePackages = {"com.alibaba.nacos"})
 public class PrometheusApp {
-    
+
     public static void main(String[] args) {
         SpringApplication.run(PrometheusApp.class, args);
     }

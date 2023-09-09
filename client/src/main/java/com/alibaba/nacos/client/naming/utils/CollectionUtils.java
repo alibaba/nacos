@@ -42,22 +42,17 @@ import java.util.Map;
  * @since Commons Collections 1.0
  */
 public class CollectionUtils {
-    
-    /**
-     * Constant to avoid repeated object creation.
-     */
+
+    /** Constant to avoid repeated object creation. */
     private static final Integer INTEGER_ONE = 1;
-    
+
+    /** <code>CollectionUtils</code> should not normally be instantiated. */
+    public CollectionUtils() {}
+
     /**
-     * <code>CollectionUtils</code> should not normally be instantiated.
-     */
-    public CollectionUtils() {
-    }
-    
-    /**
-     * Returns a new {@link Collection} containing <tt><i>a</i> - <i>b</i></tt>. The cardinality of each element
-     * <i>e</i> in the returned {@link Collection} will be the cardinality of <i>e</i> in <i>a</i> minus the
-     * cardinality of <i>e</i> in <i>b</i>, or zero, whichever is greater.
+     * Returns a new {@link Collection} containing <tt><i>a</i> - <i>b</i></tt>. The cardinality of
+     * each element <i>e</i> in the returned {@link Collection} will be the cardinality of <i>e</i>
+     * in <i>a</i> minus the cardinality of <i>e</i> in <i>b</i>, or zero, whichever is greater.
      *
      * @param a the collection to subtract from, must not be null
      * @param b the collection to subtract, must not be null
@@ -71,10 +66,11 @@ public class CollectionUtils {
         }
         return list;
     }
-    
+
     /**
-     * Returns a {@link Map} mapping each unique element in the given {@link Collection} to an {@link Integer}
-     * representing the number of occurrences of that element in the {@link Collection}.
+     * Returns a {@link Map} mapping each unique element in the given {@link Collection} to an
+     * {@link Integer} representing the number of occurrences of that element in the {@link
+     * Collection}.
      *
      * <p>Only those elements present in the collection will appear as keys in the map.
      *
@@ -94,17 +90,18 @@ public class CollectionUtils {
         }
         return count;
     }
-    
+
     /**
-     * Returns <tt>true</tt> iff the given {@link Collection}s contain exactly the same elements with exactly the same
-     * cardinalities.
+     * Returns <tt>true</tt> iff the given {@link Collection}s contain exactly the same elements
+     * with exactly the same cardinalities.
      *
-     * <p>That is, iff the cardinality of <i>e</i> in <i>a</i> is equal to the cardinality of <i>e</i> in <i>b</i>, for
-     * each element <i>e</i> in <i>a</i> or <i>b</i>.
+     * <p>That is, iff the cardinality of <i>e</i> in <i>a</i> is equal to the cardinality of
+     * <i>e</i> in <i>b</i>, for each element <i>e</i> in <i>a</i> or <i>b</i>.
      *
      * @param a the first collection, must not be null
      * @param b the second collection, must not be null
-     * @return <code>true</code> iff the collections contain the same elements with the same cardinalities.
+     * @return <code>true</code> iff the collections contain the same elements with the same
+     *     cardinalities.
      */
     public static boolean isEqualCollection(final Collection a, final Collection b) {
         if (a.size() != b.size()) {
@@ -126,9 +123,9 @@ public class CollectionUtils {
             }
         }
     }
-    
-    //-----------------------------------------------------------------------
-    
+
+    // -----------------------------------------------------------------------
+
     /**
      * Null-safe check if the specified collection is empty.
      *
@@ -141,7 +138,7 @@ public class CollectionUtils {
     public static boolean isEmpty(Collection coll) {
         return (coll == null || coll.isEmpty());
     }
-    
+
     private static int getFreq(final Object obj, final Map freqMap) {
         Integer count = (Integer) freqMap.get(obj);
         if (count != null) {

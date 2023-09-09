@@ -16,12 +16,8 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
-
 public class StsConfigTest {
-    
+
     @After
     public void after() {
         StsConfig.getInstance().setRamRoleName(null);
@@ -30,29 +26,27 @@ public class StsConfigTest {
         StsConfig.getInstance().setSecurityCredentials(null);
         StsConfig.getInstance().setSecurityCredentialsUrl(null);
     }
-    
+
     @Test
     public void testGetInstance() {
         StsConfig instance1 = StsConfig.getInstance();
         StsConfig instance2 = StsConfig.getInstance();
         Assert.assertEquals(instance1, instance2);
-        
     }
-    
+
     @Test
     public void testGetRamRoleName() {
         StsConfig.getInstance().setRamRoleName("test");
         Assert.assertEquals("test", StsConfig.getInstance().getRamRoleName());
-        
     }
-    
+
     @Test
     public void testGetTimeToRefreshInMillisecond() {
         Assert.assertEquals(3 * 60 * 1000, StsConfig.getInstance().getTimeToRefreshInMillisecond());
         StsConfig.getInstance().setTimeToRefreshInMillisecond(3000);
         Assert.assertEquals(3000, StsConfig.getInstance().getTimeToRefreshInMillisecond());
     }
-    
+
     @Test
     public void testGetSecurityCredentialsUrl() {
         Assert.assertNull(StsConfig.getInstance().getSecurityCredentialsUrl());
@@ -60,7 +54,7 @@ public class StsConfigTest {
         StsConfig.getInstance().setSecurityCredentialsUrl(expect);
         Assert.assertEquals(expect, StsConfig.getInstance().getSecurityCredentialsUrl());
     }
-    
+
     @Test
     public void testGetSecurityCredentials() {
         Assert.assertNull(StsConfig.getInstance().getSecurityCredentials());
@@ -68,25 +62,24 @@ public class StsConfigTest {
         StsConfig.getInstance().setSecurityCredentials(expect);
         Assert.assertEquals(expect, StsConfig.getInstance().getSecurityCredentials());
     }
-    
+
     @Test
     public void testIsCacheSecurityCredentials() {
         Assert.assertTrue(StsConfig.getInstance().isCacheSecurityCredentials());
         StsConfig.getInstance().setCacheSecurityCredentials(false);
         Assert.assertFalse(StsConfig.getInstance().isCacheSecurityCredentials());
     }
-    
+
     @Test
     public void testIsOnFalse() {
         boolean stsOn = StsConfig.getInstance().isStsOn();
         Assert.assertFalse(stsOn);
     }
-    
+
     @Test
     public void testIsOnTrue() {
         StsConfig.getInstance().setSecurityCredentials("abc");
         boolean stsOn = StsConfig.getInstance().isStsOn();
         Assert.assertTrue(stsOn);
     }
-    
 }

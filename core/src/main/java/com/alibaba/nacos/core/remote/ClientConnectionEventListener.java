@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.core.remote;
 
-import org.springframework.beans.factory.annotation.Autowired;
-
 import javax.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * ClientConnectionEventListener.
@@ -28,20 +27,18 @@ import javax.annotation.PostConstruct;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ClientConnectionEventListener {
-    
-    /**
-     * listener name.
-     */
+
+    /** listener name. */
     private String name;
-    
+
     @Autowired
     protected ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
-    
+
     @PostConstruct
     public void init() {
         clientConnectionEventListenerRegistry.registerClientConnectionEventListener(this);
     }
-    
+
     /**
      * Getter method for property <tt>name</tt>.
      *
@@ -50,7 +47,7 @@ public abstract class ClientConnectionEventListener {
     public String getName() {
         return name;
     }
-    
+
     /**
      * Setter method for property <tt>name</tt>.
      *
@@ -59,19 +56,18 @@ public abstract class ClientConnectionEventListener {
     public void setName(String name) {
         this.name = name;
     }
-    
+
     /**
      * notified when a client connected.
      *
      * @param connect connect.
      */
     public abstract void clientConnected(Connection connect);
-    
+
     /**
      * notified when a client disconnected.
      *
      * @param connect connect.
      */
     public abstract void clientDisConnected(Connection connect);
-    
 }

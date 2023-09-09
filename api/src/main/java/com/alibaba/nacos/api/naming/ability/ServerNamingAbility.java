@@ -26,22 +26,20 @@ import java.util.Objects;
  * @version $Id: ServerNamingAbility.java, v 0.1 2021年01月24日 00:09 AM liuzunfei Exp $
  */
 public class ServerNamingAbility implements Serializable {
-    
+
     private static final long serialVersionUID = 8308895444341445512L;
-    
-    /**
-     * Nacos server can use SOFA-Jraft to handle persist service and metadata.
-     */
+
+    /** Nacos server can use SOFA-Jraft to handle persist service and metadata. */
     private boolean supportJraft;
-    
+
     public boolean isSupportJraft() {
         return supportJraft;
     }
-    
+
     public void setSupportJraft(boolean supportJraft) {
         this.supportJraft = supportJraft;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -53,7 +51,7 @@ public class ServerNamingAbility implements Serializable {
         ServerNamingAbility that = (ServerNamingAbility) o;
         return supportJraft == that.supportJraft;
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(supportJraft);

@@ -25,6 +25,4 @@ import com.alibaba.nacos.common.notify.Event;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @JustForTest
-public class RaftDbErrorRecoverEvent extends Event {
-
-}
+public class RaftDbErrorRecoverEvent extends Event {}

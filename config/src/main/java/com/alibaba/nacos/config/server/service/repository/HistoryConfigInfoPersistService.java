@@ -21,7 +21,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,7 @@ import java.util.Map;
  * @author lixiaoshuang
  */
 public interface HistoryConfigInfoPersistService {
-    
+
     /**
      * create Pagination utils.
      *
@@ -40,7 +39,7 @@ public interface HistoryConfigInfoPersistService {
      * @return {@link PaginationHelper}
      */
     <E> PaginationHelper<E> createPaginationHelper();
-    
+
     /**
      * Convert delete config.
      *
@@ -48,23 +47,29 @@ public interface HistoryConfigInfoPersistService {
      * @return {@link ConfigInfo} list
      */
     List<ConfigInfoWrapper> convertDeletedConfig(List<Map<String, Object>> list);
-    
-    //------------------------------------------insert---------------------------------------------//
-    
+
+    // ------------------------------------------insert---------------------------------------------//
+
     /**
-     * Update change records; database atomic operations, minimal sql actions, no business encapsulation.
+     * Update change records; database atomic operations, minimal sql actions, no business
+     * encapsulation.
      *
-     * @param id         id
+     * @param id id
      * @param configInfo config info
-     * @param srcIp      ip
-     * @param srcUser    user
-     * @param time       time
-     * @param ops        ops type
+     * @param srcIp ip
+     * @param srcUser user
+     * @param time time
+     * @param ops ops type
      */
-    void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser, final Timestamp time,
+    void insertConfigHistoryAtomic(
+            long id,
+            ConfigInfo configInfo,
+            String srcIp,
+            String srcUser,
+            final Timestamp time,
             String ops);
-    //------------------------------------------delete---------------------------------------------//
-    
+    // ------------------------------------------delete---------------------------------------------//
+
     /**
      * Delete data before startTime.
      *
@@ -72,31 +77,33 @@ public interface HistoryConfigInfoPersistService {
      * @param limitSize limit size
      */
     void removeConfigHistory(final Timestamp startTime, final int limitSize);
-    //------------------------------------------update---------------------------------------------//
-    //------------------------------------------select---------------------------------------------//
-    
+    // ------------------------------------------update---------------------------------------------//
+    // ------------------------------------------select---------------------------------------------//
+
     /**
      * Query deleted config.
      *
      * @param startTime start time
-     * @param startId   last max id
-     * @param size      page size
+     * @param startId last max id
+     * @param size page size
      * @return {@link ConfigInfo} list
      */
-    List<ConfigInfoWrapper> findDeletedConfig(final Timestamp startTime, final long startId, int size);
-    
+    List<ConfigInfoWrapper> findDeletedConfig(
+            final Timestamp startTime, final long startId, int size);
+
     /**
      * List configuration history change record.
      *
-     * @param dataId   data Id
-     * @param group    group
-     * @param tenant   tenant
-     * @param pageNo   no
+     * @param dataId data Id
+     * @param group group
+     * @param tenant tenant
+     * @param pageNo no
      * @param pageSize size
      * @return {@link Page} with {@link ConfigHistoryInfo} generation
      */
-    Page<ConfigHistoryInfo> findConfigHistory(String dataId, String group, String tenant, int pageNo, int pageSize);
-    
+    Page<ConfigHistoryInfo> findConfigHistory(
+            String dataId, String group, String tenant, int pageNo, int pageSize);
+
     /**
      * Get history config detail.
      *
@@ -104,7 +111,7 @@ public interface HistoryConfigInfoPersistService {
      * @return {@link ConfigHistoryInfo}
      */
     ConfigHistoryInfo detailConfigHistory(Long nid);
-    
+
     /**
      * Get previous config detail.
      *
@@ -112,7 +119,7 @@ public interface HistoryConfigInfoPersistService {
      * @return {@link ConfigHistoryInfo}
      */
     ConfigHistoryInfo detailPreviousConfigHistory(Long id);
-    
+
     /**
      * Get the number of configurations before the specified time.
      *

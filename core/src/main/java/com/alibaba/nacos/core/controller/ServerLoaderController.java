@@ -36,15 +36,6 @@ import com.alibaba.nacos.core.remote.core.ServerReloaderRequestHandler;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.RemoteUtils;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -55,6 +46,14 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * controller to control server loader.
@@ -65,33 +64,36 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/loader")
 public class ServerLoaderController {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerLoaderController.class);
-    
+
     private static final String X_REAL_IP = "X-Real-IP";
-    
+
     private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-    
+
     private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
-    
+
     private static final String SUCCESS_RESULT = "Ok";
-    
+
     private static final String FAIL_RESULT = "Fail";
-    
+
     private static final String SDK_CONNECTION_COUNT_METRIC = "sdkConCount";
-    
+
     private final ConnectionManager connectionManager;
-    
+
     private final ServerMemberManager serverMemberManager;
-    
+
     private final ClusterRpcClientProxy clusterRpcClientProxy;
-    
+
     private final ServerReloaderRequestHandler serverReloaderRequestHandler;
-    
+
     private final ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
-    
-    public ServerLoaderController(ConnectionManager connectionManager, ServerMemberManager serverMemberManager,
-            ClusterRpcClientProxy clusterRpcClientProxy, ServerReloaderRequestHandler serverReloaderRequestHandler,
+
+    public ServerLoaderController(
+            ConnectionManager connectionManager,
+            ServerMemberManager serverMemberManager,
+            ClusterRpcClientProxy clusterRpcClientProxy,
+            ServerReloaderRequestHandler serverReloaderRequestHandler,
             ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler) {
         this.connectionManager = connectionManager;
         this.serverMemberManager = serverMemberManager;
@@ -99,7 +101,7 @@ public class ServerLoaderController {
         this.serverReloaderRequestHandler = serverReloaderRequestHandler;
         this.serverLoaderInfoRequestHandler = serverLoaderInfoRequestHandler;
     }
-    
+
     /**
      * Get current clients.
      *
@@ -111,7 +113,7 @@ public class ServerLoaderController {
         Map<String, Connection> stringConnectionMap = connectionManager.currentClients();
         return ResponseEntity.ok().body(stringConnectionMap);
     }
-    
+
     /**
      * Rebalance the number of sdk connections on the current server.
      *
@@ -119,12 +121,13 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadCurrent")
-    public ResponseEntity<String> reloadCount(@RequestParam Integer count,
+    public ResponseEntity<String> reloadCount(
+            @RequestParam Integer count,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         connectionManager.loadCount(count, redirectAddress);
         return ResponseEntity.ok().body("success");
     }
-    
+
     /**
      * According to the total number of sdk connections of all nodes in the nacos cluster,
      * intelligently balance the number of sdk connections of each node in the nacos cluster.
@@ -133,24 +136,28 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/smartReloadCluster")
-    public ResponseEntity<String> smartReload(HttpServletRequest request,
+    public ResponseEntity<String> smartReload(
+            HttpServletRequest request,
             @RequestParam(value = "loaderFactor", required = false) String loaderFactorStr,
             @RequestParam(value = "force", required = false) String force) {
-        
+
         LOGGER.info("Smart reload request receive,requestIp={}", getRemoteIp(request));
-        
+
         Map<String, Object> serverLoadMetrics = getServerLoadMetrics();
         Object avgString = serverLoadMetrics.get("avg");
-        List<ServerLoaderMetrics> details = (List<ServerLoaderMetrics>) serverLoadMetrics.get("detail");
+        List<ServerLoaderMetrics> details =
+                (List<ServerLoaderMetrics>) serverLoadMetrics.get("detail");
         int avg = Integer.parseInt(avgString.toString());
         float loaderFactor =
-                StringUtils.isBlank(loaderFactorStr) ? RemoteUtils.LOADER_FACTOR : Float.parseFloat(loaderFactorStr);
+                StringUtils.isBlank(loaderFactorStr)
+                        ? RemoteUtils.LOADER_FACTOR
+                        : Float.parseFloat(loaderFactorStr);
         int overLimitCount = (int) (avg * (1 + loaderFactor));
         int lowLimitCount = (int) (avg * (1 - loaderFactor));
-        
+
         List<ServerLoaderMetrics> overLimitServer = new ArrayList<>();
         List<ServerLoaderMetrics> lowLimitServer = new ArrayList<>();
-        
+
         for (ServerLoaderMetrics metrics : details) {
             int sdkCount = Integer.parseInt(metrics.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
             if (sdkCount > overLimitCount) {
@@ -160,35 +167,43 @@ public class ServerLoaderController {
                 lowLimitServer.add(metrics);
             }
         }
-        
+
         // desc by sdkConCount
-        overLimitServer.sort((o1, o2) -> {
-            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
-            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
-            return sdkCount1.compareTo(sdkCount2) * -1;
-        });
-        
+        overLimitServer.sort(
+                (o1, o2) -> {
+                    Integer sdkCount1 =
+                            Integer.valueOf(o1.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
+                    Integer sdkCount2 =
+                            Integer.valueOf(o2.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
+                    return sdkCount1.compareTo(sdkCount2) * -1;
+                });
+
         LOGGER.info("Over load limit server list ={}", overLimitServer);
-        
-        //asc by sdkConCount
-        lowLimitServer.sort((o1, o2) -> {
-            Integer sdkCount1 = Integer.valueOf(o1.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
-            Integer sdkCount2 = Integer.valueOf(o2.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
-            return sdkCount1.compareTo(sdkCount2);
-        });
-        
+
+        // asc by sdkConCount
+        lowLimitServer.sort(
+                (o1, o2) -> {
+                    Integer sdkCount1 =
+                            Integer.valueOf(o1.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
+                    Integer sdkCount2 =
+                            Integer.valueOf(o2.getMetric().get(SDK_CONNECTION_COUNT_METRIC));
+                    return sdkCount1.compareTo(sdkCount2);
+                });
+
         LOGGER.info("Low load limit server list ={}", lowLimitServer);
         AtomicBoolean result = new AtomicBoolean(true);
-        
+
         for (int i = 0; i < overLimitServer.size() & i < lowLimitServer.size(); i++) {
             ServerReloadRequest serverLoaderInfoRequest = new ServerReloadRequest();
             serverLoaderInfoRequest.setReloadCount(overLimitCount);
             serverLoaderInfoRequest.setReloadServer(lowLimitServer.get(i).address);
             Member member = serverMemberManager.find(overLimitServer.get(i).address);
-            
-            LOGGER.info("Reload task submit ,fromServer ={},toServer={}, ", overLimitServer.get(i).address,
+
+            LOGGER.info(
+                    "Reload task submit ,fromServer ={},toServer={}, ",
+                    overLimitServer.get(i).address,
                     lowLimitServer.get(i).address);
-            
+
             if (serverMemberManager.getSelf().equals(member)) {
                 try {
                     serverReloaderRequestHandler.handle(serverLoaderInfoRequest, new RequestMeta());
@@ -197,45 +212,50 @@ public class ServerLoaderController {
                     result.set(false);
                 }
             } else {
-                
+
                 try {
-                    clusterRpcClientProxy.asyncRequest(member, serverLoaderInfoRequest, new RequestCallBack() {
-                        @Override
-                        public Executor getExecutor() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public long getTimeout() {
-                            return 100L;
-                        }
-                        
-                        @Override
-                        public void onResponse(Response response) {
-                            if (response == null || !response.isSuccess()) {
-                                LOGGER.error("Fail to loader member={},response={}", member.getAddress(), response);
-                                result.set(false);
-                                
-                            }
-                        }
-                        
-                        @Override
-                        public void onException(Throwable e) {
-                            LOGGER.error("Fail to loader member={}", member.getAddress(), e);
-                            result.set(false);
-                        }
-                    });
+                    clusterRpcClientProxy.asyncRequest(
+                            member,
+                            serverLoaderInfoRequest,
+                            new RequestCallBack() {
+                                @Override
+                                public Executor getExecutor() {
+                                    return null;
+                                }
+
+                                @Override
+                                public long getTimeout() {
+                                    return 100L;
+                                }
+
+                                @Override
+                                public void onResponse(Response response) {
+                                    if (response == null || !response.isSuccess()) {
+                                        LOGGER.error(
+                                                "Fail to loader member={},response={}",
+                                                member.getAddress(),
+                                                response);
+                                        result.set(false);
+                                    }
+                                }
+
+                                @Override
+                                public void onException(Throwable e) {
+                                    LOGGER.error(
+                                            "Fail to loader member={}", member.getAddress(), e);
+                                    result.set(false);
+                                }
+                            });
                 } catch (NacosException e) {
                     LOGGER.error("Fail to loader member={}", member.getAddress(), e);
                     result.set(false);
                 }
             }
         }
-        
+
         return ResponseEntity.ok().body(result.get() ? SUCCESS_RESULT : FAIL_RESULT);
     }
-    
-    
+
     /**
      * Send a ConnectResetRequest to this connection according to the sdk connection ID.
      *
@@ -243,12 +263,13 @@ public class ServerLoaderController {
      */
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.WRITE)
     @GetMapping("/reloadClient")
-    public ResponseEntity<String> reloadSingle(@RequestParam String connectionId,
+    public ResponseEntity<String> reloadSingle(
+            @RequestParam String connectionId,
             @RequestParam(value = "redirectAddress", required = false) String redirectAddress) {
         connectionManager.loadSingle(connectionId, redirectAddress);
         return ResponseEntity.ok().body("success");
     }
-    
+
     /**
      * Get current clients.
      *
@@ -257,52 +278,58 @@ public class ServerLoaderController {
     @Secured(resource = Commons.NACOS_CORE_CONTEXT_V2 + "/loader", action = ActionTypes.READ)
     @GetMapping("/cluster")
     public ResponseEntity<Map<String, Object>> loaderMetrics() {
-        
+
         Map<String, Object> serverLoadMetrics = getServerLoadMetrics();
-        
+
         return ResponseEntity.ok().body(serverLoadMetrics);
     }
-    
+
     private Map<String, Object> getServerLoadMetrics() {
-        
+
         List<ServerLoaderMetrics> responseList = new LinkedList<>();
-        
+
         // default include self.
         int memberSize = serverMemberManager.allMembersWithoutSelf().size();
         CountDownLatch countDownLatch = new CountDownLatch(memberSize);
         for (Member member : serverMemberManager.allMembersWithoutSelf()) {
             if (MemberUtil.isSupportedLongCon(member)) {
                 ServerLoaderInfoRequest serverLoaderInfoRequest = new ServerLoaderInfoRequest();
-                
+
                 try {
-                    clusterRpcClientProxy.asyncRequest(member, serverLoaderInfoRequest, new RequestCallBack() {
-                        @Override
-                        public Executor getExecutor() {
-                            return null;
-                        }
-                        
-                        @Override
-                        public long getTimeout() {
-                            return 200L;
-                        }
-                        
-                        @Override
-                        public void onResponse(Response response) {
-                            if (response instanceof ServerLoaderInfoResponse) {
-                                ServerLoaderMetrics metrics = new ServerLoaderMetrics();
-                                metrics.setAddress(member.getAddress());
-                                metrics.setMetric(((ServerLoaderInfoResponse) response).getLoaderMetrics());
-                                responseList.add(metrics);
-                            }
-                            countDownLatch.countDown();
-                        }
-                        
-                        @Override
-                        public void onException(Throwable e) {
-                            LOGGER.error("Get metrics fail,member={}", member.getAddress(), e);
-                            countDownLatch.countDown();
-                        }
-                    });
+                    clusterRpcClientProxy.asyncRequest(
+                            member,
+                            serverLoaderInfoRequest,
+                            new RequestCallBack() {
+                                @Override
+                                public Executor getExecutor() {
+                                    return null;
+                                }
+
+                                @Override
+                                public long getTimeout() {
+                                    return 200L;
+                                }
+
+                                @Override
+                                public void onResponse(Response response) {
+                                    if (response instanceof ServerLoaderInfoResponse) {
+                                        ServerLoaderMetrics metrics = new ServerLoaderMetrics();
+                                        metrics.setAddress(member.getAddress());
+                                        metrics.setMetric(
+                                                ((ServerLoaderInfoResponse) response)
+                                                        .getLoaderMetrics());
+                                        responseList.add(metrics);
+                                    }
+                                    countDownLatch.countDown();
+                                }
+
+                                @Override
+                                public void onException(Throwable e) {
+                                    LOGGER.error(
+                                            "Get metrics fail,member={}", member.getAddress(), e);
+                                    countDownLatch.countDown();
+                                }
+                            });
                 } catch (NacosException e) {
                     LOGGER.error("Get metrics fail,member={}", member.getAddress(), e);
                     countDownLatch.countDown();
@@ -311,10 +338,11 @@ public class ServerLoaderController {
                 countDownLatch.countDown();
             }
         }
-        
+
         try {
-            ServerLoaderInfoResponse handle = serverLoaderInfoRequestHandler
-                    .handle(new ServerLoaderInfoRequest(), new RequestMeta());
+            ServerLoaderInfoResponse handle =
+                    serverLoaderInfoRequestHandler.handle(
+                            new ServerLoaderInfoRequest(), new RequestMeta());
             ServerLoaderMetrics metrics = new ServerLoaderMetrics();
             metrics.setAddress(serverMemberManager.getSelf().getAddress());
             metrics.setMetric(handle.getLoaderMetrics());
@@ -322,7 +350,7 @@ public class ServerLoaderController {
         } catch (NacosException e) {
             LOGGER.error("Get self metrics fail", e);
         }
-        
+
         try {
             countDownLatch.await(1000, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -331,10 +359,10 @@ public class ServerLoaderController {
         int max = 0;
         int min = -1;
         int total = 0;
-        
+
         for (ServerLoaderMetrics serverLoaderMetrics : responseList) {
             String sdkConCountStr = serverLoaderMetrics.getMetric().get("sdkConCount");
-            
+
             if (StringUtils.isNotBlank(sdkConCountStr)) {
                 int sdkConCount = Integer.parseInt(sdkConCountStr);
                 if (max == 0 || max < sdkConCount) {
@@ -351,22 +379,22 @@ public class ServerLoaderController {
         responseMap.put("detail", responseList);
         responseMap.put("memberCount", serverMemberManager.allMembers().size());
         responseMap.put("metricsCount", responseList.size());
-        responseMap.put("completed", responseList.size() == serverMemberManager.allMembers().size());
+        responseMap.put(
+                "completed", responseList.size() == serverMemberManager.allMembers().size());
         responseMap.put("max", max);
         responseMap.put("min", min);
         responseMap.put("avg", total / responseList.size());
         responseMap.put("threshold", total / responseList.size() * 1.1);
         responseMap.put("total", total);
         return responseMap;
-        
     }
-    
+
     class ServerLoaderMetrics {
-        
+
         String address;
-        
+
         Map<String, String> metric = new HashMap<>();
-        
+
         /**
          * Getter method for property <tt>address</tt>.
          *
@@ -375,7 +403,7 @@ public class ServerLoaderController {
         public String getAddress() {
             return address;
         }
-        
+
         /**
          * Setter method for property <tt>address</tt>.
          *
@@ -384,7 +412,7 @@ public class ServerLoaderController {
         public void setAddress(String address) {
             this.address = address;
         }
-        
+
         /**
          * Getter method for property <tt>metric</tt>.
          *
@@ -393,7 +421,7 @@ public class ServerLoaderController {
         public Map<String, String> getMetric() {
             return metric;
         }
-        
+
         /**
          * Setter method for property <tt>metric</tt>.
          *
@@ -403,7 +431,7 @@ public class ServerLoaderController {
             this.metric = metric;
         }
     }
-    
+
     private static String getRemoteIp(HttpServletRequest request) {
         String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
         if (!StringUtils.isBlank(xForwardedFor)) {

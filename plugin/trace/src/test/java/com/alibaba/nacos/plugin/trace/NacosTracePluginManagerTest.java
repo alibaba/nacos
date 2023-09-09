@@ -16,28 +16,26 @@
 
 package com.alibaba.nacos.plugin.trace;
 
-import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 
+import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
+
 public class NacosTracePluginManagerTest {
-    
+
     @BeforeClass
     public static void setUp() {
         NacosTracePluginManager.getInstance();
     }
-    
+
     @Test
     public void testGetAllTraceSubscribers() {
         assertFalse(NacosTracePluginManager.getInstance().getAllTraceSubscribers().isEmpty());
         assertContainsTestPlugin();
     }
-    
+
     private void assertContainsTestPlugin() {
-        for (NacosTraceSubscriber each : NacosTracePluginManager.getInstance().getAllTraceSubscribers()) {
+        for (NacosTraceSubscriber each :
+                NacosTracePluginManager.getInstance().getAllTraceSubscribers()) {
             if ("trace-plugin-mock".equals(each.getName())) {
                 return;
             }

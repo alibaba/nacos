@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.core.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 /**
@@ -27,15 +25,16 @@ import org.springframework.mock.web.MockHttpServletRequest;
  * @date 2021-06-10 14:11
  */
 public class OverrideParameterRequestWrapperTest {
-    
+
     @Test
     public void testOverrideParameterRequestWrapper() {
         MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
         httpServletRequest.addParameter("test1", "value1");
-        OverrideParameterRequestWrapper wrapper = OverrideParameterRequestWrapper.buildRequest(httpServletRequest);
+        OverrideParameterRequestWrapper wrapper =
+                OverrideParameterRequestWrapper.buildRequest(httpServletRequest);
         String value1 = wrapper.getParameter("test1");
         Assert.assertEquals("value1", value1);
-        
+
         wrapper.addParameter("test2", "value2");
         Assert.assertEquals("value2", wrapper.getParameter("test2"));
     }

@@ -21,17 +21,15 @@ import com.alibaba.nacos.common.notify.Event;
 /**
  * Server configuration changed event.
  *
- * <p>
- * When nacos server configuration file (default nacos/conf/application.properties) changed, The event should be notify
- * to all subscriber.
- * </p>
+ * <p>When nacos server configuration file (default nacos/conf/application.properties) changed, The
+ * event should be notify to all subscriber.
  *
  * @author xiweng.yy
  */
 public class ServerConfigChangeEvent extends Event {
-    
+
     private static final long serialVersionUID = 289992068985663172L;
-    
+
     public static ServerConfigChangeEvent newEvent() {
         return new ServerConfigChangeEvent();
     }

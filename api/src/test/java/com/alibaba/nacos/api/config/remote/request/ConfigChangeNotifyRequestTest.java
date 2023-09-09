@@ -16,27 +16,25 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ConfigChangeNotifyRequestTest extends BasedConfigRequestTest {
-    
+
     ConfigChangeNotifyRequest configChangeNotifyRequest;
-    
+
     String requestId;
-    
+
     @Before
     public void before() {
         configChangeNotifyRequest = ConfigChangeNotifyRequest.build(DATA_ID, GROUP, TENANT);
         configChangeNotifyRequest.putAllHeader(HEADERS);
         requestId = injectRequestUuId(configChangeNotifyRequest);
     }
-    
+
     @Override
     @Test
     public void testSerialize() throws JsonProcessingException {
@@ -47,12 +45,13 @@ public class ConfigChangeNotifyRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"tenant\":\"" + TENANT));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
     }
-    
+
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{\"header1\":\"test_header1\"},\"dataId\":\"test_data\",\"group\":"
-                + "\"group\",\"tenant\":\"test_tenant\",\"module\":\"config\"}";
+        String json =
+                "{\"headers\":{\"header1\":\"test_header1\"},\"dataId\":\"test_data\",\"group\":"
+                        + "\"group\",\"tenant\":\"test_tenant\",\"module\":\"config\"}";
         ConfigChangeNotifyRequest actual = mapper.readValue(json, ConfigChangeNotifyRequest.class);
         assertEquals(actual.getDataId(), DATA_ID);
         assertEquals(actual.getGroup(), GROUP);

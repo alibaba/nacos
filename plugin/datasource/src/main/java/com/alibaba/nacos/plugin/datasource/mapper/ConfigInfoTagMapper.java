@@ -26,15 +26,13 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * The config tag info mapper.
  *
  * @author hyx
- **/
-
+ */
 public interface ConfigInfoTagMapper extends Mapper {
-    
+
     /**
-     * Update tag configuration information.
-     * The default sql:
-     * UPDATE config_info_tag SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE
-     * data_id=? AND group_id=? AND tenant_id=? AND tag_id=? AND (md5=? or md5 is null or md5='')
+     * Update tag configuration information. The default sql: UPDATE config_info_tag SET content=?,
+     * md5 = ?, src_ip=?,src_user=?,gmt_modified=?,app_name=? WHERE data_id=? AND group_id=? AND
+     * tenant_id=? AND tag_id=? AND (md5=? or md5 is null or md5='')
      *
      * @param context sql paramMap
      * @return The sql of updating tag configuration information.
@@ -46,7 +44,7 @@ public interface ConfigInfoTagMapper extends Mapper {
         Object srcUser = context.getUpdateParameter(FieldConstant.SRC_USER);
         Object gmtModified = context.getUpdateParameter(FieldConstant.GMT_MODIFIED);
         Object appName = context.getUpdateParameter(FieldConstant.APP_NAME);
-        
+
         Object dataId = context.getWhereParameter(FieldConstant.DATA_ID);
         Object groupId = context.getWhereParameter(FieldConstant.GROUP_ID);
         Object tenantId = context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -55,23 +53,33 @@ public interface ConfigInfoTagMapper extends Mapper {
         String sql =
                 "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND tag_id = ? AND (md5 = ? OR md5 IS NULL OR md5 = '')";
-        return new MapperResult(sql,
-                CollectionUtils.list(content, md5, srcIp, srcUser, gmtModified, appName, dataId, groupId, tenantId,
-                        tagId, oldMd5));
+        return new MapperResult(
+                sql,
+                CollectionUtils.list(
+                        content,
+                        md5,
+                        srcIp,
+                        srcUser,
+                        gmtModified,
+                        appName,
+                        dataId,
+                        groupId,
+                        tenantId,
+                        tagId,
+                        oldMd5));
     }
-    
+
     /**
-     * Query all tag config info for dump task.
-     * The default sql:
-     * SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified
-     * FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT startRow,pageSize ) g,
-     * config_info_tag t  WHERE g.id = t.id
+     * Query all tag config info for dump task. The default sql: SELECT
+     * t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified FROM ( SELECT id
+     * FROM config_info_tag ORDER BY id LIMIT startRow,pageSize ) g, config_info_tag t WHERE g.id =
+     * t.id
      *
      * @param context The start index.
      * @return The sql of querying all tag config info for dump task.
      */
     MapperResult findAllConfigInfoTagForDumpAllFetchRows(MapperContext context);
-    
+
     /**
      * 获取返回表名.
      *

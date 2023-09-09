@@ -18,17 +18,18 @@ package com.alibaba.nacos.common.cache.builder;
 
 /**
  * Cache item's own attributes.
+ *
  * @author zzq
  * @date 2021/7/30
  */
 public class CacheItemProperties {
-    
+
     private long expireNanos;
-    
+
     public long getExpireNanos() {
         return expireNanos;
     }
-    
+
     public void setExpireNanos(long expireNanos) {
         this.expireNanos = expireNanos;
     }

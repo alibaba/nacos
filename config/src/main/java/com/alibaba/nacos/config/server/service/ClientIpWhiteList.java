@@ -16,16 +16,15 @@
 
 package com.alibaba.nacos.config.server.service;
 
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.config.server.model.AclInfo;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.stereotype.Service;
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.AclInfo;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import org.springframework.stereotype.Service;
 
 /**
  * Client ip whitelist.
@@ -35,13 +34,14 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 @Service
 public class ClientIpWhiteList {
 
-    public static final String CLIENT_IP_WHITELIST_METADATA = "com.alibaba.nacos.metadata.clientIpWhitelist";
+    public static final String CLIENT_IP_WHITELIST_METADATA =
+            "com.alibaba.nacos.metadata.clientIpWhitelist";
 
-    private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST = new AtomicReference<>(
-            new ArrayList<>());
+    private static final AtomicReference<List<String>> CLIENT_IP_WHITELIST =
+            new AtomicReference<>(new ArrayList<>());
 
     private static Boolean isOpen = false;
-    
+
     /**
      * Judge whether specified client ip includes in the whitelist.
      *
@@ -53,13 +53,13 @@ public class ClientIpWhiteList {
             throw new IllegalArgumentException("clientIp is empty");
         }
         clientIp = clientIp.trim();
-        
+
         if (CLIENT_IP_WHITELIST.get().contains(clientIp)) {
             return true;
         }
         return false;
     }
-    
+
     /**
      * Whether start client ip whitelist.
      *
@@ -68,7 +68,7 @@ public class ClientIpWhiteList {
     public static boolean isEnableWhitelist() {
         return isOpen;
     }
-    
+
     /**
      * Load white lists based content parameter value.
      *

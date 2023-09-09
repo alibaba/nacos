@@ -33,12 +33,11 @@ import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import org.springframework.stereotype.Component;
 
 /**
  * The manager of {@code ConnectionBasedClient}.
@@ -46,89 +45,99 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 @Component("connectionBasedClientManager")
-public class ConnectionBasedClientManager extends ClientConnectionEventListener implements ClientManager {
-    
+public class ConnectionBasedClientManager extends ClientConnectionEventListener
+        implements ClientManager {
+
     private final ConcurrentMap<String, ConnectionBasedClient> clients = new ConcurrentHashMap<>();
-    
+
     public ConnectionBasedClientManager() {
-        GlobalExecutor
-                .scheduleExpiredClientCleaner(new ExpiredClientCleaner(this), 0, Constants.DEFAULT_HEART_BEAT_INTERVAL,
-                        TimeUnit.MILLISECONDS);
+        GlobalExecutor.scheduleExpiredClientCleaner(
+                new ExpiredClientCleaner(this),
+                0,
+                Constants.DEFAULT_HEART_BEAT_INTERVAL,
+                TimeUnit.MILLISECONDS);
     }
-    
+
     @Override
     public void clientConnected(Connection connect) {
-        if (!RemoteConstants.LABEL_MODULE_NAMING.equals(connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
+        if (!RemoteConstants.LABEL_MODULE_NAMING.equals(
+                connect.getMetaInfo().getLabel(RemoteConstants.LABEL_MODULE))) {
             return;
         }
         ClientAttributes attributes = new ClientAttributes();
-        attributes.addClientAttribute(ClientConstants.CONNECTION_TYPE, connect.getMetaInfo().getConnectType());
+        attributes.addClientAttribute(
+                ClientConstants.CONNECTION_TYPE, connect.getMetaInfo().getConnectType());
         attributes.addClientAttribute(ClientConstants.CONNECTION_METADATA, connect.getMetaInfo());
         clientConnected(connect.getMetaInfo().getConnectionId(), attributes);
     }
-    
+
     @Override
     public boolean clientConnected(String clientId, ClientAttributes attributes) {
         String type = attributes.getClientAttribute(ClientConstants.CONNECTION_TYPE);
         ClientFactory clientFactory = ClientFactoryHolder.getInstance().findClientFactory(type);
         return clientConnected(clientFactory.newClient(clientId, attributes));
     }
-    
+
     @Override
     public boolean clientConnected(final Client client) {
-        clients.computeIfAbsent(client.getClientId(), s -> {
-            Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
-            return (ConnectionBasedClient) client;
-        });
+        clients.computeIfAbsent(
+                client.getClientId(),
+                s -> {
+                    Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
+                    return (ConnectionBasedClient) client;
+                });
         return true;
     }
-    
+
     @Override
     public boolean syncClientConnected(String clientId, ClientAttributes attributes) {
         String type = attributes.getClientAttribute(ClientConstants.CONNECTION_TYPE);
         ClientFactory clientFactory = ClientFactoryHolder.getInstance().findClientFactory(type);
         return clientConnected(clientFactory.newSyncedClient(clientId, attributes));
     }
-    
+
     @Override
     public void clientDisConnected(Connection connect) {
         clientDisconnected(connect.getMetaInfo().getConnectionId());
     }
-    
+
     @Override
     public boolean clientDisconnected(String clientId) {
-        Loggers.SRV_LOG.info("Client connection {} disconnect, remove instances and subscribers", clientId);
+        Loggers.SRV_LOG.info(
+                "Client connection {} disconnect, remove instances and subscribers", clientId);
         ConnectionBasedClient client = clients.remove(clientId);
         if (null == client) {
             return true;
         }
         client.release();
         boolean isResponsible = isResponsibleClient(client);
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
+        NotifyCenter.publishEvent(
+                new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
         NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsible));
         return true;
     }
-    
+
     @Override
     public Client getClient(String clientId) {
         return clients.get(clientId);
     }
-    
+
     @Override
     public boolean contains(String clientId) {
         return clients.containsKey(clientId);
     }
-    
+
     @Override
     public Collection<String> allClientId() {
         return clients.keySet();
     }
-    
+
     @Override
     public boolean isResponsibleClient(Client client) {
-        return (client instanceof ConnectionBasedClient) && ((ConnectionBasedClient) client).isNative();
+        return (client instanceof ConnectionBasedClient)
+                && ((ConnectionBasedClient) client).isNative();
     }
-    
+
     @Override
     public boolean verifyClient(DistroClientVerifyInfo verifyData) {
         ConnectionBasedClient client = clients.get(verifyData.getClientId());
@@ -138,26 +147,30 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
                 client.setLastRenewTime();
                 return true;
             } else {
-                Loggers.DISTRO.info("[DISTRO-VERIFY-FAILED] ConnectionBasedClient[{}] revision local={}, remote={}",
-                        client.getClientId(), client.getRevision(), verifyData.getRevision());
+                Loggers.DISTRO.info(
+                        "[DISTRO-VERIFY-FAILED] ConnectionBasedClient[{}] revision local={}, remote={}",
+                        client.getClientId(),
+                        client.getRevision(),
+                        verifyData.getRevision());
             }
         }
         return false;
     }
-    
+
     private static class ExpiredClientCleaner implements Runnable {
-        
+
         private final ConnectionBasedClientManager clientManager;
-        
+
         public ExpiredClientCleaner(ConnectionBasedClientManager clientManager) {
             this.clientManager = clientManager;
         }
-        
+
         @Override
         public void run() {
             long currentTime = System.currentTimeMillis();
             for (String each : clientManager.allClientId()) {
-                ConnectionBasedClient client = (ConnectionBasedClient) clientManager.getClient(each);
+                ConnectionBasedClient client =
+                        (ConnectionBasedClient) clientManager.getClient(each);
                 if (null != client && client.isExpire(currentTime)) {
                     clientManager.clientDisconnected(each);
                 }

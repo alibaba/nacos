@@ -41,7 +41,6 @@ import com.alipay.sofa.jraft.rpc.RpcServer;
 import com.alipay.sofa.jraft.rpc.impl.GrpcRaftRpcFactory;
 import com.alipay.sofa.jraft.rpc.impl.MarshallerRegistry;
 import com.alipay.sofa.jraft.util.RpcFactoryHelper;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.Collection;
@@ -58,37 +57,48 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings("all")
 public class JRaftUtils {
-    
+
     public static RpcServer initRpcServer(JRaftServer server, PeerId peerId) {
         GrpcRaftRpcFactory raftRpcFactory = (GrpcRaftRpcFactory) RpcFactoryHelper.rpcFactory();
         raftRpcFactory.registerProtobufSerializer(Log.class.getName(), Log.getDefaultInstance());
-        raftRpcFactory.registerProtobufSerializer(GetRequest.class.getName(), GetRequest.getDefaultInstance());
-        raftRpcFactory.registerProtobufSerializer(WriteRequest.class.getName(), WriteRequest.getDefaultInstance());
-        raftRpcFactory.registerProtobufSerializer(ReadRequest.class.getName(), ReadRequest.getDefaultInstance());
-        raftRpcFactory.registerProtobufSerializer(Response.class.getName(), Response.getDefaultInstance());
-        
+        raftRpcFactory.registerProtobufSerializer(
+                GetRequest.class.getName(), GetRequest.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(
+                WriteRequest.class.getName(), WriteRequest.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(
+                ReadRequest.class.getName(), ReadRequest.getDefaultInstance());
+        raftRpcFactory.registerProtobufSerializer(
+                Response.class.getName(), Response.getDefaultInstance());
+
         MarshallerRegistry registry = raftRpcFactory.getMarshallerRegistry();
         registry.registerResponseInstance(Log.class.getName(), Response.getDefaultInstance());
-        registry.registerResponseInstance(GetRequest.class.getName(), Response.getDefaultInstance());
-        
-        registry.registerResponseInstance(WriteRequest.class.getName(), Response.getDefaultInstance());
-        registry.registerResponseInstance(ReadRequest.class.getName(), Response.getDefaultInstance());
-        
+        registry.registerResponseInstance(
+                GetRequest.class.getName(), Response.getDefaultInstance());
+
+        registry.registerResponseInstance(
+                WriteRequest.class.getName(), Response.getDefaultInstance());
+        registry.registerResponseInstance(
+                ReadRequest.class.getName(), Response.getDefaultInstance());
+
         final RpcServer rpcServer = raftRpcFactory.createRpcServer(peerId.getEndpoint());
-        RaftRpcServerFactory.addRaftRequestProcessors(rpcServer, RaftExecutor.getRaftCoreExecutor(),
+        RaftRpcServerFactory.addRaftRequestProcessors(
+                rpcServer,
+                RaftExecutor.getRaftCoreExecutor(),
                 RaftExecutor.getRaftCliServiceExecutor());
-        
-        rpcServer.registerProcessor(new NacosWriteRequestProcessor(server, SerializeFactory.getDefault()));
-        rpcServer.registerProcessor(new NacosReadRequestProcessor(server, SerializeFactory.getDefault()));
-        
+
+        rpcServer.registerProcessor(
+                new NacosWriteRequestProcessor(server, SerializeFactory.getDefault()));
+        rpcServer.registerProcessor(
+                new NacosReadRequestProcessor(server, SerializeFactory.getDefault()));
+
         return rpcServer;
     }
-    
+
     public static final void initDirectory(String parentPath, String groupName, NodeOptions copy) {
         final String logUri = Paths.get(parentPath, groupName, "log").toString();
         final String snapshotUri = Paths.get(parentPath, groupName, "snapshot").toString();
         final String metaDataUri = Paths.get(parentPath, groupName, "meta-data").toString();
-        
+
         // Initialize the raft file storage path for different services
         try {
             DiskUtils.forceMkdir(new File(logUri));
@@ -98,17 +108,23 @@ public class JRaftUtils {
             Loggers.RAFT.error("Init Raft-File dir have some error, cause: ", e);
             throw new RuntimeException(e);
         }
-        
+
         copy.setLogUri(logUri);
         copy.setRaftMetaUri(metaDataUri);
         copy.setSnapshotUri(snapshotUri);
     }
-    
+
     public static List<String> toStrings(List<PeerId> peerIds) {
-        return peerIds.stream().map(peerId -> peerId.getEndpoint().toString()).collect(Collectors.toList());
+        return peerIds.stream()
+                .map(peerId -> peerId.getEndpoint().toString())
+                .collect(Collectors.toList());
     }
-    
-    public static void joinCluster(CliService cliService, Collection<String> members, Configuration conf, String group,
+
+    public static void joinCluster(
+            CliService cliService,
+            Collection<String> members,
+            Configuration conf,
+            String group,
             PeerId self) {
         ServerMemberManager memberManager = ApplicationUtils.getBean(ServerMemberManager.class);
         if (!memberManager.isFirstIp()) {
@@ -127,12 +143,12 @@ public class JRaftUtils {
             Iterator<PeerId> iterator = peerIds.iterator();
             while (iterator.hasNext()) {
                 final PeerId peerId = iterator.next();
-                
+
                 if (conf.contains(peerId)) {
                     iterator.remove();
                     continue;
                 }
-                
+
                 Status status = cliService.addPeer(group, conf, peerId);
                 if (status.isOk()) {
                     iterator.remove();
@@ -141,5 +157,4 @@ public class JRaftUtils {
             ThreadUtils.sleep(1000L);
         }
     }
-    
 }

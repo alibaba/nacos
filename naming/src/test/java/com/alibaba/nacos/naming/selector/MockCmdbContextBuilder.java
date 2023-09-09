@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.context.CmdbContext;
 import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,8 +32,9 @@ import java.util.stream.Collectors;
  * @author chenglu
  * @date 2021-07-14 19:22
  */
-public class MockCmdbContextBuilder implements SelectorContextBuilder<CmdbContext, String, List<Instance>> {
-    
+public class MockCmdbContextBuilder
+        implements SelectorContextBuilder<CmdbContext, String, List<Instance>> {
+
     @Override
     public CmdbContext build(String consumerIp, List<Instance> provider) {
         CmdbContext.CmdbInstance<Instance> con = new CmdbContext.CmdbInstance<>();
@@ -43,27 +43,29 @@ public class MockCmdbContextBuilder implements SelectorContextBuilder<CmdbContex
         con.setInstance(instance);
         CmdbContext cmdbContext = new CmdbContext();
         cmdbContext.setConsumer(con);
-        
-        List<CmdbContext.CmdbInstance> providers = provider
-                .stream()
-                .map(p -> {
-                    Entity entity = new Entity();
-                    entity.setType("mockType");
-                    entity.setName("mockName");
-                    Map<String, String> labels = new HashMap<>();
-                    labels.put("key", "value");
-                    entity.setLabels(labels);
-                    
-                    CmdbContext.CmdbInstance<Instance> pro = new CmdbContext.CmdbInstance<>();
-                    pro.setInstance(p);
-                    pro.setEntity(entity);
-                    return pro;
-                })
-                .collect(Collectors.toList());
+
+        List<CmdbContext.CmdbInstance> providers =
+                provider.stream()
+                        .map(
+                                p -> {
+                                    Entity entity = new Entity();
+                                    entity.setType("mockType");
+                                    entity.setName("mockName");
+                                    Map<String, String> labels = new HashMap<>();
+                                    labels.put("key", "value");
+                                    entity.setLabels(labels);
+
+                                    CmdbContext.CmdbInstance<Instance> pro =
+                                            new CmdbContext.CmdbInstance<>();
+                                    pro.setInstance(p);
+                                    pro.setEntity(entity);
+                                    return pro;
+                                })
+                        .collect(Collectors.toList());
         cmdbContext.setProviders(providers);
         return cmdbContext;
     }
-    
+
     @Override
     public String getContextType() {
         return "MOCK_CMDB";

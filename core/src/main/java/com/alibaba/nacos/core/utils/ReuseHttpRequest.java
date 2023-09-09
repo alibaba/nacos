@@ -16,12 +16,12 @@
 
 package com.alibaba.nacos.core.utils;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * ReuseHttpRequest.
@@ -29,7 +29,7 @@ import java.util.Set;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface ReuseHttpRequest extends HttpServletRequest {
-    
+
     /**
      * get request body.
      *
@@ -37,7 +37,7 @@ public interface ReuseHttpRequest extends HttpServletRequest {
      * @throws Exception exception
      */
     Object getBody() throws Exception;
-    
+
     /**
      * Remove duplicate values from the array.
      *

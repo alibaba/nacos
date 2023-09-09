@@ -26,9 +26,9 @@ import com.alibaba.nacos.core.utils.Loggers;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Task implements Runnable {
-    
+
     protected volatile boolean shutdown = false;
-    
+
     @Override
     public void run() {
         if (shutdown) {
@@ -44,21 +44,14 @@ public abstract class Task implements Runnable {
             }
         }
     }
-    
-    /**
-     * Task executive.
-     */
+
+    /** Task executive. */
     protected abstract void executeBody();
-    
-    /**
-     * after executeBody should do.
-     */
-    protected void after() {
-    
-    }
-    
+
+    /** after executeBody should do. */
+    protected void after() {}
+
     public void shutdown() {
         shutdown = true;
     }
-    
 }

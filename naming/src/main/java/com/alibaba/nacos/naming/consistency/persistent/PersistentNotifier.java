@@ -24,41 +24,42 @@ import com.alibaba.nacos.naming.consistency.RecordListener;
 import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
- * persistent notifier, It is responsible for notifying interested listeners of all write changes to the data.
+ * persistent notifier, It is responsible for notifying interested listeners of all write changes to
+ * the data.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
-    
-    private final Map<String, ConcurrentHashSet<RecordListener>> listenerMap = new ConcurrentHashMap<>(32);
-    
+
+    private final Map<String, ConcurrentHashSet<RecordListener>> listenerMap =
+            new ConcurrentHashMap<>(32);
+
     private final Function<String, Record> find;
-    
+
     public PersistentNotifier(Function<String, Record> find) {
         this.find = find;
     }
-    
+
     /**
      * register listener with key.
      *
-     * @param key      key
+     * @param key key
      * @param listener {@link RecordListener}
      */
     public void registerListener(final String key, final RecordListener listener) {
         listenerMap.computeIfAbsent(key, s -> new ConcurrentHashSet<>());
         listenerMap.get(key).add(listener);
     }
-    
+
     /**
      * deregister listener by key.
      *
-     * @param key      key
+     * @param key key
      * @param listener {@link RecordListener}
      */
     public void deregisterListener(final String key, final RecordListener listener) {
@@ -67,7 +68,7 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
         }
         listenerMap.get(key).remove(listener);
     }
-    
+
     /**
      * deregister all listener by key.
      *
@@ -76,25 +77,26 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
     public void deregisterAllListener(final String key) {
         listenerMap.remove(key);
     }
-    
+
     public Map<String, ConcurrentHashSet<RecordListener>> getListeners() {
         return listenerMap;
     }
-    
+
     /**
      * notify value to listener with {@link DataOperation} and key.
      *
-     * @param key    key
+     * @param key key
      * @param action {@link DataOperation}
-     * @param value  value
-     * @param <T>    type
+     * @param value value
+     * @param <T> type
      */
-    public <T extends Record> void notify(final String key, final DataOperation action, final T value) {
-        
+    public <T extends Record> void notify(
+            final String key, final DataOperation action, final T value) {
+
         if (!listenerMap.containsKey(key)) {
             return;
         }
-        
+
         for (RecordListener listener : listenerMap.get(key)) {
             try {
                 if (action == DataOperation.CHANGE) {
@@ -105,16 +107,17 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
                     listener.onDelete(key);
                 }
             } catch (Throwable e) {
-                Loggers.RAFT.error("[NACOS-RAFT] error while notifying listener of key: {}", key, e);
+                Loggers.RAFT.error(
+                        "[NACOS-RAFT] error while notifying listener of key: {}", key, e);
             }
         }
     }
-    
+
     @Override
     public void onEvent(ValueChangeEvent event) {
         notify(event.getKey(), event.getAction(), find.apply(event.getKey()));
     }
-    
+
     @Override
     public Class<? extends Event> subscribeType() {
         return ValueChangeEvent.class;

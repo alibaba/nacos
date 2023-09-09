@@ -22,17 +22,17 @@ package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
  * @author xiweng.yy
  */
 public class SubscriberRedoData extends RedoData<String> {
-    
+
     private SubscriberRedoData(String serviceName, String groupName) {
         super(serviceName, groupName);
     }
-    
+
     /**
      * Build a new {@code RedoData} for subscribers.
      *
      * @param serviceName service name for redo data
-     * @param groupName   group name for redo data
-     * @param clusters    clusters for redo data
+     * @param groupName group name for redo data
+     * @param clusters clusters for redo data
      * @return new {@code RedoData} for subscribers
      */
     public static SubscriberRedoData build(String serviceName, String groupName, String clusters) {

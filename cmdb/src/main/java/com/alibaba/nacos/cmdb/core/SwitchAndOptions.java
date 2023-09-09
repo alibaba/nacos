@@ -27,31 +27,31 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class SwitchAndOptions {
-    
+
     @Value("${nacos.cmdb.dumpTaskInterval:3600}")
     private int dumpTaskInterval;
-    
+
     @Value("${nacos.cmdb.eventTaskInterval:10}")
     private int eventTaskInterval;
-    
+
     @Value("${nacos.cmdb.labelTaskInterval:300}")
     private int labelTaskInterval;
-    
+
     @Value("${nacos.cmdb.loadDataAtStart:false}")
     private boolean loadDataAtStart;
-    
+
     public int getDumpTaskInterval() {
         return dumpTaskInterval;
     }
-    
+
     public int getEventTaskInterval() {
         return eventTaskInterval;
     }
-    
+
     public int getLabelTaskInterval() {
         return labelTaskInterval;
     }
-    
+
     public boolean isLoadDataAtStart() {
         return loadDataAtStart;
     }

@@ -16,14 +16,12 @@
 
 package com.alibaba.nacos.common.remote.client;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.assertEquals;
-
 public class RpcConstantsTest {
-    
+
     @Test
     public void testGetRpcParams() {
         Class clazz = RpcConstants.class;
@@ -31,8 +29,8 @@ public class RpcConstantsTest {
         int i = 0;
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
-            if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    RpcConstants.RpcConfigLabel.class)) {
+            if (declaredField.getType().equals(String.class)
+                    && null != declaredField.getAnnotation(RpcConstants.RpcConfigLabel.class)) {
                 i++;
             }
         }

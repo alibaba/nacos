@@ -18,31 +18,29 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import org.junit.Assert;
-import org.junit.Test;
-
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 
 public class NamingPushRequestHandlerTest {
-    
+
     @Test
     public void testRequestReply() {
-        //given
+        // given
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingPushRequestHandler handler = new NamingPushRequestHandler(holder);
         ServiceInfo info = new ServiceInfo("name", "cluster1");
         Request req = NotifySubscriberRequest.buildNotifySubscriberRequest(info);
-        //when
+        // when
         Response response = handler.requestReply(req);
-        //then
+        // then
         Assert.assertTrue(response instanceof NotifySubscriberResponse);
         verify(holder, times(1)).processServiceInfo(info);
     }

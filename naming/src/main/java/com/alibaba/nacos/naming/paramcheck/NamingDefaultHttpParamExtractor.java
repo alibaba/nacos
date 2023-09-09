@@ -22,10 +22,9 @@ import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Naming default http param extractor.
@@ -33,12 +32,12 @@ import java.util.List;
  * @author zhuoguang
  */
 public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor {
-    
+
     @Override
     public void init() {
         addDefaultTargetRequest("naming");
     }
-    
+
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException {
         ParamInfo paramInfo = new ParamInfo();
@@ -49,7 +48,8 @@ public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         String serviceName = getAliasServiceName(request);
         String groupName = getAliasGroupName(request);
         String groupServiceName = serviceName;
-        if (StringUtils.isNotBlank(groupServiceName) && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+        if (StringUtils.isNotBlank(groupServiceName)
+                && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
             String[] splits = groupServiceName.split(Constants.SERVICE_INFO_SPLITER, 2);
             groupName = splits[0];
             serviceName = splits[1];
@@ -61,17 +61,17 @@ public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         paramInfos.add(paramInfo);
         return paramInfos;
     }
-    
+
     private String getAliasNamespaceId(HttpServletRequest request) {
         String namespaceid = request.getParameter("namespaceId");
         return namespaceid;
     }
-    
+
     private String getAliasIp(HttpServletRequest request) {
         String ip = request.getParameter("ip");
         return ip;
     }
-    
+
     private String getAliasPort(HttpServletRequest request) {
         String port = request.getParameter("port");
         if (StringUtils.isBlank(port)) {
@@ -79,7 +79,7 @@ public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         }
         return port;
     }
-    
+
     private String getAliasServiceName(HttpServletRequest request) {
         String serviceName = request.getParameter("serviceName");
         if (StringUtils.isBlank(serviceName)) {
@@ -87,7 +87,7 @@ public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         }
         return serviceName;
     }
-    
+
     private String getAliasGroupName(HttpServletRequest request) {
         String groupName = request.getParameter("groupName");
         if (StringUtils.isBlank(groupName)) {
@@ -95,7 +95,7 @@ public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         }
         return groupName;
     }
-    
+
     private String getAliasClusterName(HttpServletRequest request) {
         String clusterName = request.getParameter("clusterName");
         if (StringUtils.isBlank(clusterName)) {

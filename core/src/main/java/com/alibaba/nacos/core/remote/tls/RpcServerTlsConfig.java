@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
-
 import java.lang.reflect.InvocationTargetException;
 
 /**
@@ -30,21 +29,25 @@ import java.lang.reflect.InvocationTargetException;
  * @author githubcheng2978.
  */
 public class RpcServerTlsConfig extends TlsConfig {
-    
+
     public static final String PREFIX = "nacos.remote.server.rpc.tls";
-    
+
     private static RpcServerTlsConfig instance;
-    
+
     private String sslContextRefresher = "";
-    
+
     private Boolean compatibility = true;
-    
+
     public static synchronized RpcServerTlsConfig getInstance() {
         if (null == instance) {
             try {
-                instance = PropertiesUtil
-                        .handleSpringBinder(EnvUtil.getEnvironment(), PREFIX, RpcServerTlsConfig.class);
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
+                instance =
+                        PropertiesUtil.handleSpringBinder(
+                                EnvUtil.getEnvironment(), PREFIX, RpcServerTlsConfig.class);
+            } catch (NoSuchMethodException
+                    | IllegalAccessException
+                    | InvocationTargetException
+                    | ClassNotFoundException e) {
                 Loggers.REMOTE.warn("TLS config bind failed, use default value", e);
                 instance = new RpcServerTlsConfig();
             }
@@ -52,19 +55,19 @@ public class RpcServerTlsConfig extends TlsConfig {
         Loggers.REMOTE.info("Nacos Rpc server tls config:{}", JacksonUtils.toJson(instance));
         return instance;
     }
-    
+
     public Boolean getCompatibility() {
         return compatibility;
     }
-    
+
     public void setCompatibility(Boolean compatibility) {
         this.compatibility = compatibility;
     }
-    
+
     public String getSslContextRefresher() {
         return sslContextRefresher;
     }
-    
+
     public void setSslContextRefresher(String sslContextRefresher) {
         this.sslContextRefresher = sslContextRefresher;
     }

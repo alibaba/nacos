@@ -28,57 +28,58 @@ import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.ClassUtils;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.springframework.beans.factory.DisposableBean;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PreDestroy;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
+import javax.annotation.PreDestroy;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.stereotype.Component;
 
 /**
- * Conformance protocol management, responsible for managing the lifecycle of conformance protocols in Nacos.
+ * Conformance protocol management, responsible for managing the lifecycle of conformance protocols
+ * in Nacos.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
 @Component(value = "ProtocolManager")
 public class ProtocolManager extends MemberChangeListener implements DisposableBean {
-    
+
     private CPProtocol cpProtocol;
-    
+
     private APProtocol apProtocol;
-    
+
     private final ServerMemberManager memberManager;
-    
+
     private boolean apInit = false;
-    
+
     private boolean cpInit = false;
-    
+
     private Set<Member> oldMembers;
-    
+
     public ProtocolManager(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
         NotifyCenter.registerSubscriber(this);
     }
-    
+
     public static Set<String> toAPMembersInfo(Collection<Member> members) {
         Set<String> nodes = new HashSet<>();
         members.forEach(member -> nodes.add(member.getAddress()));
         return nodes;
     }
-    
+
     public static Set<String> toCPMembersInfo(Collection<Member> members) {
         Set<String> nodes = new HashSet<>();
-        members.forEach(member -> {
-            final String ip = member.getIp();
-            final int raftPort = MemberUtil.calculateRaftPort(member);
-            nodes.add(ip + ":" + raftPort);
-        });
+        members.forEach(
+                member -> {
+                    final String ip = member.getIp();
+                    final int raftPort = MemberUtil.calculateRaftPort(member);
+                    nodes.add(ip + ":" + raftPort);
+                });
         return nodes;
     }
-    
+
     public CPProtocol getCpProtocol() {
         synchronized (this) {
             if (!cpInit) {
@@ -88,7 +89,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
         }
         return cpProtocol;
     }
-    
+
     public APProtocol getApProtocol() {
         synchronized (this) {
             if (!apInit) {
@@ -98,7 +99,7 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
         }
         return apProtocol;
     }
-    
+
     @PreDestroy
     @Override
     public void destroy() {
@@ -109,41 +110,50 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
             cpProtocol.shutdown();
         }
     }
-    
+
     private void initAPProtocol() {
-        ApplicationUtils.getBeanIfExist(APProtocol.class, protocol -> {
-            Class configType = ClassUtils.resolveGenericType(protocol.getClass());
-            Config config = (Config) ApplicationUtils.getBean(configType);
-            injectMembers4AP(config);
-            protocol.init(config);
-            ProtocolManager.this.apProtocol = protocol;
-        });
+        ApplicationUtils.getBeanIfExist(
+                APProtocol.class,
+                protocol -> {
+                    Class configType = ClassUtils.resolveGenericType(protocol.getClass());
+                    Config config = (Config) ApplicationUtils.getBean(configType);
+                    injectMembers4AP(config);
+                    protocol.init(config);
+                    ProtocolManager.this.apProtocol = protocol;
+                });
     }
-    
+
     private void initCPProtocol() {
-        ApplicationUtils.getBeanIfExist(CPProtocol.class, protocol -> {
-            Class configType = ClassUtils.resolveGenericType(protocol.getClass());
-            Config config = (Config) ApplicationUtils.getBean(configType);
-            injectMembers4CP(config);
-            protocol.init(config);
-            ProtocolManager.this.cpProtocol = protocol;
-        });
+        ApplicationUtils.getBeanIfExist(
+                CPProtocol.class,
+                protocol -> {
+                    Class configType = ClassUtils.resolveGenericType(protocol.getClass());
+                    Config config = (Config) ApplicationUtils.getBean(configType);
+                    injectMembers4CP(config);
+                    protocol.init(config);
+                    ProtocolManager.this.cpProtocol = protocol;
+                });
     }
-    
+
     private void injectMembers4CP(Config config) {
         final Member selfMember = memberManager.getSelf();
-        final String self = selfMember.getIp() + ":" + Integer
-                .parseInt(String.valueOf(selfMember.getExtendVal(MemberMetaDataConstants.RAFT_PORT)));
+        final String self =
+                selfMember.getIp()
+                        + ":"
+                        + Integer.parseInt(
+                                String.valueOf(
+                                        selfMember.getExtendVal(
+                                                MemberMetaDataConstants.RAFT_PORT)));
         Set<String> others = toCPMembersInfo(memberManager.allMembers());
         config.setMembers(self, others);
     }
-    
+
     private void injectMembers4AP(Config config) {
         final String self = memberManager.getSelf().getAddress();
         Set<String> others = toAPMembersInfo(memberManager.allMembers());
         config.setMembers(self, others);
     }
-    
+
     @Override
     public void onEvent(MembersChangeEvent event) {
         // Here, the sequence of node change events is very important. For example,
@@ -155,10 +165,12 @@ public class ProtocolManager extends MemberChangeListener implements DisposableB
         // to avoid multiple tasks simultaneously carrying out the consistency layer of
         // node changes operation
         if (Objects.nonNull(apProtocol)) {
-            ProtocolExecutor.apMemberChange(() -> apProtocol.memberChange(toAPMembersInfo(event.getMembers())));
+            ProtocolExecutor.apMemberChange(
+                    () -> apProtocol.memberChange(toAPMembersInfo(event.getMembers())));
         }
         if (Objects.nonNull(cpProtocol)) {
-            ProtocolExecutor.cpMemberChange(() -> cpProtocol.memberChange(toCPMembersInfo(event.getMembers())));
+            ProtocolExecutor.cpMemberChange(
+                    () -> cpProtocol.memberChange(toCPMembersInfo(event.getMembers())));
         }
     }
 }

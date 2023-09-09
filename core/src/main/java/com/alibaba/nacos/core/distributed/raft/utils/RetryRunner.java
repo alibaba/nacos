@@ -23,10 +23,7 @@ package com.alibaba.nacos.core.distributed.raft.utils;
  */
 @FunctionalInterface
 public interface RetryRunner {
-    
-    /**
-     * Tasks that require retry.
-     */
+
+    /** Tasks that require retry. */
     void run();
-    
 }

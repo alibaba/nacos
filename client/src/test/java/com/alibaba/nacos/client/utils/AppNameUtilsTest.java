@@ -18,15 +18,11 @@
 
 package com.alibaba.nacos.client.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class AppNameUtilsTest {
-    
+
     @Test
     public void testGetAppName() {
         String appName = AppNameUtils.getAppName();
         Assert.assertEquals("unknown", appName);
     }
-    
 }

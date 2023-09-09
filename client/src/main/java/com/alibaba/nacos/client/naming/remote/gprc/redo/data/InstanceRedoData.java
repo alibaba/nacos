@@ -24,17 +24,17 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
  * @author xiweng.yy
  */
 public class InstanceRedoData extends RedoData<Instance> {
-    
+
     protected InstanceRedoData(String serviceName, String groupName) {
         super(serviceName, groupName);
     }
-    
+
     /**
      * Build a new {@code RedoData} for register service instance.
      *
      * @param serviceName service name for redo data
-     * @param groupName   group name for redo data
-     * @param instance    instance for redo data
+     * @param groupName group name for redo data
+     * @param instance instance for redo data
      * @return new {@code RedoData} for register service instance
      */
     public static InstanceRedoData build(String serviceName, String groupName, Instance instance) {

@@ -22,9 +22,9 @@ package com.alibaba.nacos.core.distributed.raft.exception;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DuplicateRaftGroupException extends RuntimeException {
-    
+
     private static final long serialVersionUID = -6276695537457486790L;
-    
+
     public DuplicateRaftGroupException(String group) {
         super("The Raft Group [" + group + "] is already used");
     }

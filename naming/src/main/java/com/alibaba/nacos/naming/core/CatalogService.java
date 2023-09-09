@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-
 import java.util.List;
 
 /**
@@ -27,68 +26,79 @@ import java.util.List;
  * @author xiweng.yy
  */
 public interface CatalogService {
-    
+
     /**
      * Get service detail information.
      *
      * @param namespaceId namespace id of service
-     * @param groupName   group name of service
+     * @param groupName group name of service
      * @param serviceName service name
      * @return detail information of service
      * @throws NacosException exception in query
      */
-    Object getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException;
-    
+    Object getServiceDetail(String namespaceId, String groupName, String serviceName)
+            throws NacosException;
+
     /**
      * List all instances of specified services.
      *
      * @param namespaceId namespace id of service
-     * @param groupName   group name of service
+     * @param groupName group name of service
      * @param serviceName service name
      * @param clusterName cluster name of instances
      * @return instances list
      * @throws NacosException exception in query
      */
-    List<? extends Instance> listInstances(String namespaceId, String groupName, String serviceName, String clusterName)
+    List<? extends Instance> listInstances(
+            String namespaceId, String groupName, String serviceName, String clusterName)
             throws NacosException;
-    
+
     /**
      * List all instances of specified services.
      *
      * @param namespaceId namespace id of service
-     * @param groupName   group name of service
+     * @param groupName group name of service
      * @param serviceName service name
      * @return instances list
      */
-    List<? extends Instance> listAllInstances(String namespaceId, String groupName, String serviceName);
-    
+    List<? extends Instance> listAllInstances(
+            String namespaceId, String groupName, String serviceName);
+
     /**
      * List service by page.
      *
-     * @param namespaceId        namespace id of service
-     * @param groupName          group name of service
-     * @param serviceName        service name
-     * @param pageNo             page number
-     * @param pageSize           page size
-     * @param instancePattern    contained instances pattern
+     * @param namespaceId namespace id of service
+     * @param groupName group name of service
+     * @param serviceName service name
+     * @param pageNo page number
+     * @param pageSize page size
+     * @param instancePattern contained instances pattern
      * @param ignoreEmptyService whether ignore empty service
      * @return service list
      * @throws NacosException exception in query
      */
-    Object pageListService(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
-            String instancePattern, boolean ignoreEmptyService) throws NacosException;
-    
+    Object pageListService(
+            String namespaceId,
+            String groupName,
+            String serviceName,
+            int pageNo,
+            int pageSize,
+            String instancePattern,
+            boolean ignoreEmptyService)
+            throws NacosException;
+
     /**
      * List service with cluster and instances by page.
      *
      * @param namespaceId namespace id of service
-     * @param groupName   group name of service
+     * @param groupName group name of service
      * @param serviceName service name
-     * @param pageNo      page number
-     * @param pageSize    page size
+     * @param pageNo page number
+     * @param pageSize page size
      * @return service list
      * @throws NacosException exception in query
      */
-    Object pageListServiceDetail(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize)
+    Object pageListServiceDetail(
+            String namespaceId, String groupName, String serviceName, int pageNo, int pageSize)
             throws NacosException;
 }

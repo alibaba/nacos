@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.config.utils;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.util.List;
 
 /**
@@ -28,23 +27,24 @@ import java.util.List;
  * @author Nacos
  */
 public class ParamUtils {
-    
+
     private static final char[] VALID_CHARS = new char[] {'_', '-', '.', ':'};
-    
+
     private static final String CONTENT_INVALID_MSG = "content invalid";
-    
+
     private static final String DATAID_INVALID_MSG = "dataId invalid";
-    
+
     private static final String TENANT_INVALID_MSG = "tenant invalid";
-    
+
     private static final String BETAIPS_INVALID_MSG = "betaIps invalid";
-    
+
     private static final String GROUP_INVALID_MSG = "group invalid";
-    
+
     private static final String DATUMID_INVALID_MSG = "datumId invalid";
-    
+
     /**
-     * Check the whitelist method, the legal parameters can only contain letters, numbers, and characters in validChars, and cannot be empty.
+     * Check the whitelist method, the legal parameters can only contain letters, numbers, and
+     * characters in validChars, and cannot be empty.
      *
      * @param param parameter
      * @return true if valid
@@ -62,7 +62,7 @@ public class ParamUtils {
         }
         return true;
     }
-    
+
     private static boolean isValidChar(char ch) {
         for (char c : VALID_CHARS) {
             if (c == ch) {
@@ -71,13 +71,13 @@ public class ParamUtils {
         }
         return false;
     }
-    
+
     /**
      * Check Tenant, dataId and group.
      *
      * @param tenant tenant
      * @param dataId dataId
-     * @param group  group
+     * @param group group
      * @throws NacosException nacos exception
      */
     public static void checkTdg(String tenant, String dataId, String group) throws NacosException {
@@ -89,12 +89,12 @@ public class ParamUtils {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
     }
-    
+
     /**
      * Check key param.
      *
      * @param dataId dataId
-     * @param group  group
+     * @param group group
      * @throws NacosException nacos exception
      */
     public static void checkKeyParam(String dataId, String group) throws NacosException {
@@ -105,16 +105,17 @@ public class ParamUtils {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
     }
-    
+
     /**
      * Check key param.
      *
-     * @param dataId  dataId
-     * @param group   group
+     * @param dataId dataId
+     * @param group group
      * @param datumId datumId
      * @throws NacosException nacos exception
      */
-    public static void checkKeyParam(String dataId, String group, String datumId) throws NacosException {
+    public static void checkKeyParam(String dataId, String group, String datumId)
+            throws NacosException {
         if (StringUtils.isBlank(dataId) || !ParamUtils.isValid(dataId)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATAID_INVALID_MSG);
         }
@@ -125,12 +126,12 @@ public class ParamUtils {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, DATUMID_INVALID_MSG);
         }
     }
-    
+
     /**
      * Check key param.
      *
      * @param dataIds dataIds
-     * @param group   group
+     * @param group group
      * @throws NacosException nacos exception
      */
     public static void checkKeyParam(List<String> dataIds, String group) throws NacosException {
@@ -146,38 +147,40 @@ public class ParamUtils {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, GROUP_INVALID_MSG);
         }
     }
-    
+
     /**
      * Check parameter.
      *
-     * @param dataId  dataId
-     * @param group   group
+     * @param dataId dataId
+     * @param group group
      * @param content content
      * @throws NacosException nacos exception
      */
-    public static void checkParam(String dataId, String group, String content) throws NacosException {
+    public static void checkParam(String dataId, String group, String content)
+            throws NacosException {
         checkKeyParam(dataId, group);
         if (StringUtils.isBlank(content)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, CONTENT_INVALID_MSG);
         }
     }
-    
+
     /**
      * Check parameter.
      *
-     * @param dataId  dataId
-     * @param group   group
+     * @param dataId dataId
+     * @param group group
      * @param datumId datumId
      * @param content content
      * @throws NacosException nacos exception
      */
-    public static void checkParam(String dataId, String group, String datumId, String content) throws NacosException {
+    public static void checkParam(String dataId, String group, String datumId, String content)
+            throws NacosException {
         checkKeyParam(dataId, group, datumId);
         if (StringUtils.isBlank(content)) {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, CONTENT_INVALID_MSG);
         }
     }
-    
+
     /**
      * Check Tenant.
      *
@@ -189,7 +192,7 @@ public class ParamUtils {
             throw new NacosException(NacosException.CLIENT_INVALID_PARAM, TENANT_INVALID_MSG);
         }
     }
-    
+
     /**
      * Check beta ips.
      *
@@ -207,7 +210,7 @@ public class ParamUtils {
             }
         }
     }
-    
+
     /**
      * Check content.
      *

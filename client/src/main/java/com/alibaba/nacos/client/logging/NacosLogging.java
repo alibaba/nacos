@@ -18,8 +18,8 @@ package com.alibaba.nacos.client.logging;
 
 import com.alibaba.nacos.client.logging.log4j2.Log4J2NacosLogging;
 import com.alibaba.nacos.client.logging.logback.LogbackNacosLogging;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * nacos logging.
@@ -27,13 +27,13 @@ import org.slf4j.Logger;
  * @author mai.jh
  */
 public class NacosLogging {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosLogging.class);
-    
+
     private AbstractNacosLogging nacosLogging;
-    
+
     private boolean isLogback = false;
-    
+
     private NacosLogging() {
         try {
             Class.forName("ch.qos.logback.classic.Logger");
@@ -43,25 +43,24 @@ public class NacosLogging {
             nacosLogging = new Log4J2NacosLogging();
         }
     }
-    
+
     private static class NacosLoggingInstance {
-        
+
         private static final NacosLogging INSTANCE = new NacosLogging();
     }
-    
+
     public static NacosLogging getInstance() {
         return NacosLoggingInstance.INSTANCE;
     }
-    
-    /**
-     * Load logging Configuration.
-     */
+
+    /** Load logging Configuration. */
     public void loadConfiguration() {
         try {
             nacosLogging.loadConfiguration();
         } catch (Throwable t) {
             if (isLogback) {
-                LOGGER.warn("Load Logback Configuration of Nacos fail, message: {}", t.getMessage());
+                LOGGER.warn(
+                        "Load Logback Configuration of Nacos fail, message: {}", t.getMessage());
             } else {
                 LOGGER.warn("Load Log4j Configuration of Nacos fail, message: {}", t.getMessage());
             }

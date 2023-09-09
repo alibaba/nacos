@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.config.ConfigChangeItem;
 import com.alibaba.nacos.api.config.listener.ConfigChangeParser;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
@@ -33,45 +32,45 @@ import java.util.Map;
  * @author rushsky518
  */
 public class ConfigChangeHandler {
-    
+
     private static class ConfigChangeHandlerHolder {
-        
+
         private static final ConfigChangeHandler INSTANCE = new ConfigChangeHandler();
     }
-    
+
     private ConfigChangeHandler() {
         this.parserList = new LinkedList<>();
-        
+
         Collection<ConfigChangeParser> loader = NacosServiceLoader.load(ConfigChangeParser.class);
         this.parserList.addAll(loader);
 
         this.parserList.add(new PropertiesChangeParser());
         this.parserList.add(new YmlChangeParser());
     }
-    
+
     public static ConfigChangeHandler getInstance() {
         return ConfigChangeHandlerHolder.INSTANCE;
     }
-    
+
     /**
      * Parse changed data.
      *
      * @param oldContent old data
      * @param newContent new data
-     * @param type       data type
+     * @param type data type
      * @return change data map
      * @throws IOException io exception
      */
-    public Map<String, ConfigChangeItem> parseChangeData(String oldContent, String newContent, String type) throws IOException {
+    public Map<String, ConfigChangeItem> parseChangeData(
+            String oldContent, String newContent, String type) throws IOException {
         for (ConfigChangeParser changeParser : this.parserList) {
             if (changeParser.isResponsibleFor(type)) {
                 return changeParser.doParse(oldContent, newContent, type);
             }
         }
-        
+
         return Collections.emptyMap();
     }
-    
+
     private final List<ConfigChangeParser> parserList;
-    
 }

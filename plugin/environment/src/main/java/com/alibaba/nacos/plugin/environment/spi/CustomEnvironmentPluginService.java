@@ -41,7 +41,7 @@ public interface CustomEnvironmentPluginService {
     Set<String> propertyKey();
 
     /**
-     * order  The larger the priority, the higher the priority.
+     * order The larger the priority, the higher the priority.
      *
      * @return order
      */

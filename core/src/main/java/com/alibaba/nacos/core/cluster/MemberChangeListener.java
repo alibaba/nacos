@@ -26,7 +26,7 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class MemberChangeListener extends Subscriber<MembersChangeEvent> {
-    
+
     /**
      * return NodeChangeEvent.class info.
      *
@@ -36,7 +36,7 @@ public abstract class MemberChangeListener extends Subscriber<MembersChangeEvent
     public Class<? extends Event> subscribeType() {
         return MembersChangeEvent.class;
     }
-    
+
     /**
      * Whether to ignore expired events.
      *

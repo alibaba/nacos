@@ -17,10 +17,6 @@
 
 package com.alibaba.nacos.consistency.serialize;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 /**
  * {@link JacksonSerializer} unit test.
  *
@@ -28,32 +24,32 @@ import org.junit.Test;
  * @date 2021-07-27 18:32
  */
 public class JacksonSerializerTest {
-    
+
     private JacksonSerializer jacksonSerializer;
-    
+
     @Before
     public void setUp() {
         jacksonSerializer = new JacksonSerializer();
     }
-    
+
     @Test
     public void testSerializerAndDeserialize() {
         String data = "xxx";
         byte[] bytes = jacksonSerializer.serialize(data);
-        
+
         try {
             jacksonSerializer.deserialize(bytes);
         } catch (Exception e) {
             Assert.assertTrue(e instanceof UnsupportedOperationException);
         }
-        
+
         String res1 = jacksonSerializer.deserialize(bytes, String.class);
         Assert.assertEquals(data, res1);
-        
+
         String res2 = jacksonSerializer.deserialize(bytes, "java.lang.String");
         Assert.assertEquals(data, res2);
     }
-    
+
     @Test
     public void testName() {
         Assert.assertEquals("JSON", jacksonSerializer.name());

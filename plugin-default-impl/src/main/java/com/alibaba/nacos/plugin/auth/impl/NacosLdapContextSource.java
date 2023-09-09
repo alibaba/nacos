@@ -18,10 +18,6 @@ package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.common.tls.TlsHelper;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.springframework.ldap.core.support.LdapContextSource;
-
-import javax.naming.Context;
-import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -29,6 +25,9 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import javax.naming.Context;
+import javax.net.ssl.SSLSocketFactory;
+import org.springframework.ldap.core.support.LdapContextSource;
 
 /**
  * NacosLdapContextSource.
@@ -36,15 +35,15 @@ import java.util.Map;
  * @author karsonto
  */
 public class NacosLdapContextSource extends LdapContextSource {
-    
+
     private final Map<String, Object> config = new HashMap<>(16);
-    
+
     private boolean useTsl = false;
-    
+
     private static final String LDAPS = "ldaps";
-    
-    public NacosLdapContextSource(String ldapUrl, String ldapBaseDc, String userDn, String password,
-            String ldapTimeOut) {
+
+    public NacosLdapContextSource(
+            String ldapUrl, String ldapBaseDc, String userDn, String password, String ldapTimeOut) {
         this.setUrl(ldapUrl);
         this.setBase(ldapBaseDc);
         this.setUserDn(userDn);
@@ -55,7 +54,7 @@ public class NacosLdapContextSource extends LdapContextSource {
         this.setPooled(true);
         init(ldapTimeOut);
     }
-    
+
     /**
      * init LdapContextSource config.
      *
@@ -73,12 +72,12 @@ public class NacosLdapContextSource extends LdapContextSource {
         this.setBaseEnvironmentProperties(config);
         this.afterPropertiesSet();
     }
-    
+
     @SuppressWarnings("checkstyle:EmptyLineSeparator")
     public static class LdapSslSocketFactory extends SSLSocketFactory {
-        
+
         private SSLSocketFactory socketFactory;
-        
+
         public LdapSslSocketFactory() {
             try {
                 this.socketFactory = TlsHelper.buildSslContext(true).getSocketFactory();
@@ -86,44 +85,42 @@ public class NacosLdapContextSource extends LdapContextSource {
                 Loggers.AUTH.error("Failed to create SSLContext", e);
             }
         }
-        
+
         @Override
         public String[] getDefaultCipherSuites() {
             return socketFactory.getDefaultCipherSuites();
         }
-        
+
         @Override
         public String[] getSupportedCipherSuites() {
             return socketFactory.getSupportedCipherSuites();
         }
-        
+
         @Override
         public Socket createSocket(Socket socket, String s, int i, boolean b) throws IOException {
             return socketFactory.createSocket(socket, s, i, b);
         }
-        
+
         @Override
         public Socket createSocket(String s, int i) throws IOException {
             return socketFactory.createSocket(s, i);
         }
-        
+
         @Override
         public Socket createSocket(String s, int i, InetAddress inetAddress, int i1)
                 throws IOException {
             return socketFactory.createSocket(s, i, inetAddress, i1);
         }
-        
+
         @Override
         public Socket createSocket(InetAddress inetAddress, int i) throws IOException {
             return socketFactory.createSocket(inetAddress, i);
         }
-        
+
         @Override
         public Socket createSocket(InetAddress inetAddress, int i, InetAddress inetAddress1, int i1)
                 throws IOException {
             return socketFactory.createSocket(inetAddress, i, inetAddress1, i1);
         }
     }
-    
-    
 }

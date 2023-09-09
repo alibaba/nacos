@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.push.v2.executor;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -29,27 +28,29 @@ import java.util.Set;
  * @author xiweng.yy
  */
 public class SpiImplPushExecutorHolder {
-    
+
     private static final SpiImplPushExecutorHolder INSTANCE = new SpiImplPushExecutorHolder();
-    
+
     private final Set<SpiPushExecutor> pushExecutors;
-    
+
     private SpiImplPushExecutorHolder() {
         pushExecutors = new HashSet<>(NacosServiceLoader.load(SpiPushExecutor.class));
     }
-    
+
     public static SpiImplPushExecutorHolder getInstance() {
         return INSTANCE;
     }
-    
+
     /**
      * Try to find an {@link PushExecutor} implement by SPI which interest to execute this push.
      *
-     * @param clientId   client id
+     * @param clientId client id
      * @param subscriber subscriber infor
-     * @return {@link PushExecutor} which interest to execute this push, otherwise {@code Optional.empty()}
+     * @return {@link PushExecutor} which interest to execute this push, otherwise {@code
+     *     Optional.empty()}
      */
-    public Optional<SpiPushExecutor> findPushExecutorSpiImpl(String clientId, Subscriber subscriber) {
+    public Optional<SpiPushExecutor> findPushExecutorSpiImpl(
+            String clientId, Subscriber subscriber) {
         for (SpiPushExecutor each : pushExecutors) {
             if (each.isInterest(clientId, subscriber)) {
                 return Optional.of(each);

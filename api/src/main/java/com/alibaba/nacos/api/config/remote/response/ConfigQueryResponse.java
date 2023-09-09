@@ -25,33 +25,32 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @version $Id: ConfigQueryResponse.java, v 0.1 2020年07月14日 2:47 PM liuzunfei Exp $
  */
 public class ConfigQueryResponse extends Response {
-    
+
     public static final int CONFIG_NOT_FOUND = 300;
-    
+
     public static final int CONFIG_QUERY_CONFLICT = 400;
-    
+
     String content;
-    
+
     String encryptedDataKey;
-    
+
     String contentType;
-    
+
     String md5;
-    
+
     long lastModified;
-    
+
     boolean isBeta;
-    
+
     String tag;
-    
-    public ConfigQueryResponse() {
-    }
-    
+
+    public ConfigQueryResponse() {}
+
     /**
      * Build fail response.
      *
      * @param errorCode errorCode.
-     * @param message   message.
+     * @param message message.
      * @return response.
      */
     public static ConfigQueryResponse buildFailResponse(int errorCode, String message) {
@@ -59,7 +58,7 @@ public class ConfigQueryResponse extends Response {
         response.setErrorInfo(errorCode, message);
         return response;
     }
-    
+
     /**
      * Build success response.
      *
@@ -71,39 +70,39 @@ public class ConfigQueryResponse extends Response {
         response.setContent(content);
         return response;
     }
-    
+
     public String getTag() {
         return tag;
     }
-    
+
     public void setTag(String tag) {
         this.tag = tag;
     }
-    
+
     public String getMd5() {
         return md5;
     }
-    
+
     public void setMd5(String md5) {
         this.md5 = md5;
     }
-    
+
     public long getLastModified() {
         return lastModified;
     }
-    
+
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
-    
+
     public boolean isBeta() {
         return isBeta;
     }
-    
+
     public void setBeta(boolean beta) {
         isBeta = beta;
     }
-    
+
     /**
      * Getter method for property <tt>content</tt>.
      *
@@ -112,7 +111,7 @@ public class ConfigQueryResponse extends Response {
     public String getContent() {
         return content;
     }
-    
+
     /**
      * Setter method for property <tt>content</tt>.
      *
@@ -121,15 +120,15 @@ public class ConfigQueryResponse extends Response {
     public void setContent(String content) {
         this.content = content;
     }
-    
+
     public void setEncryptedDataKey(String encryptedDataKey) {
         this.encryptedDataKey = encryptedDataKey;
     }
-    
+
     public String getEncryptedDataKey() {
         return encryptedDataKey;
     }
-    
+
     /**
      * Getter method for property <tt>contentType</tt>.
      *
@@ -138,7 +137,7 @@ public class ConfigQueryResponse extends Response {
     public String getContentType() {
         return contentType;
     }
-    
+
     /**
      * Setter method for property <tt>contentType</tt>.
      *

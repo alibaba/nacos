@@ -16,34 +16,28 @@
 
 package com.alibaba.nacos.core.distributed.distro.component;
 
+import static org.mockito.Mockito.when;
+
 import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.mockito.Mockito.when;
-
 @RunWith(MockitoJUnitRunner.class)
 public class DistroComponentHolderTest extends TestCase {
-    
+
     private final String type = "com.alibaba.nacos.naming.iplist.";
-    
+
     private DistroComponentHolder componentHolder;
-    
-    @Mock
-    private DistroDataStorage distroDataStorage;
-    
-    @Mock
-    private DistroTransportAgent distroTransportAgent;
-    
-    @Mock
-    private DistroFailedTaskHandler distroFailedTaskHandler;
-    
-    @Mock
-    private DistroDataProcessor distroDataProcessor;
-    
+
+    @Mock private DistroDataStorage distroDataStorage;
+
+    @Mock private DistroTransportAgent distroTransportAgent;
+
+    @Mock private DistroFailedTaskHandler distroFailedTaskHandler;
+
+    @Mock private DistroDataProcessor distroDataProcessor;
+
     @Before
     public void setUp() {
         componentHolder = new DistroComponentHolder();
@@ -53,30 +47,31 @@ public class DistroComponentHolderTest extends TestCase {
         when(distroDataProcessor.processType()).thenReturn(type);
         componentHolder.registerDataProcessor(distroDataProcessor);
     }
-    
+
     @Test
     public void testFindTransportAgent() {
         DistroTransportAgent distroTransportAgent = componentHolder.findTransportAgent(type);
         assertEquals(this.distroTransportAgent, distroTransportAgent);
     }
-    
+
     @Test
     public void testFindDataStorage() {
         DistroDataStorage distroDataStorage = componentHolder.findDataStorage(type);
         assertEquals(this.distroDataStorage, distroDataStorage);
     }
-    
+
     @Test
     public void testGetDataStorageTypes() {
         componentHolder.getDataStorageTypes();
     }
-    
+
     @Test
     public void testFindFailedTaskHandler() {
-        DistroFailedTaskHandler distroFailedTaskHandler = componentHolder.findFailedTaskHandler(type);
+        DistroFailedTaskHandler distroFailedTaskHandler =
+                componentHolder.findFailedTaskHandler(type);
         assertEquals(this.distroFailedTaskHandler, distroFailedTaskHandler);
     }
-    
+
     @Test
     public void testFindDataProcessor() {
         DistroDataProcessor distroDataProcessor = componentHolder.findDataProcessor(type);

@@ -25,61 +25,61 @@ import java.util.Objects;
  * @author Nacos
  */
 public class ConfigMetadata {
-    
+
     private List<ConfigExportItem> metadata;
-    
+
     public static class ConfigExportItem {
-        
+
         private String group;
-        
+
         private String dataId;
-        
+
         private String desc;
-        
+
         private String type;
-        
+
         private String appName;
-        
+
         public String getGroup() {
             return group;
         }
-        
+
         public void setGroup(String group) {
             this.group = group;
         }
-        
+
         public String getDataId() {
             return dataId;
         }
-        
+
         public void setDataId(String dataId) {
             this.dataId = dataId;
         }
-        
+
         public String getDesc() {
             return desc;
         }
-        
+
         public void setDesc(String desc) {
             this.desc = desc;
         }
-        
+
         public String getType() {
             return type;
         }
-        
+
         public void setType(String type) {
             this.type = type;
         }
-        
+
         public String getAppName() {
             return appName;
         }
-        
+
         public void setAppName(String appName) {
             this.appName = appName;
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -89,21 +89,23 @@ public class ConfigMetadata {
                 return false;
             }
             ConfigExportItem that = (ConfigExportItem) o;
-            return Objects.equals(group, that.group) && Objects.equals(dataId, that.dataId) && Objects
-                    .equals(desc, that.desc) && Objects.equals(type, that.type) && Objects
-                    .equals(appName, that.appName);
+            return Objects.equals(group, that.group)
+                    && Objects.equals(dataId, that.dataId)
+                    && Objects.equals(desc, that.desc)
+                    && Objects.equals(type, that.type)
+                    && Objects.equals(appName, that.appName);
         }
-        
+
         @Override
         public int hashCode() {
             return Objects.hash(group, dataId, desc, type, appName);
         }
     }
-    
+
     public List<ConfigExportItem> getMetadata() {
         return metadata;
     }
-    
+
     public void setMetadata(List<ConfigExportItem> metadata) {
         this.metadata = metadata;
     }

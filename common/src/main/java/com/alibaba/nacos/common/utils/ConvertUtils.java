@@ -25,18 +25,17 @@ import java.util.Set;
  */
 public final class ConvertUtils {
 
-    private ConvertUtils() {
-    }
-    
+    private ConvertUtils() {}
+
     private static final String NULL_STR = "null";
-    
+
     public static final Set<String> TRUE_SET = CollectionUtils.set("y", "yes", "on", "true", "t");
-    
+
     public static final Set<String> FALSE_SET = CollectionUtils.set("n", "no", "off", "false", "f");
-    
+
     /**
-     * Convert String value to int value if parameter value is legal. And it automatically defaults to 0 if parameter
-     * value is null or blank str.
+     * Convert String value to int value if parameter value is legal. And it automatically defaults
+     * to 0 if parameter value is null or blank str.
      *
      * @param val String value which need to be converted to int value.
      * @return Converted int value and its default value is 0.
@@ -44,12 +43,12 @@ public final class ConvertUtils {
     public static int toInt(String val) {
         return toInt(val, 0);
     }
-    
+
     /**
-     * Convert String value to int value if parameter value is legal. And return default value if parameter value is
-     * null or blank str.
+     * Convert String value to int value if parameter value is legal. And return default value if
+     * parameter value is null or blank str.
      *
-     * @param val          value
+     * @param val value
      * @param defaultValue default value
      * @return int value if input value is legal, otherwise default value
      */
@@ -66,10 +65,10 @@ public final class ConvertUtils {
             return defaultValue;
         }
     }
-    
+
     /**
-     * Convert Object value to long value if parameter value is legal.
-     * And it automatically defaults to 0 if parameter value is null or other object.
+     * Convert Object value to long value if parameter value is legal. And it automatically defaults
+     * to 0 if parameter value is null or other object.
      *
      * @param val object value
      * @return Converted long value and its default value is 0.
@@ -80,10 +79,10 @@ public final class ConvertUtils {
         }
         return toLong(val.toString());
     }
-    
+
     /**
-     * Convert String value to long value if parameter value is legal. And it automatically defaults to 0 if parameter
-     * value is null or blank str.
+     * Convert String value to long value if parameter value is legal. And it automatically defaults
+     * to 0 if parameter value is null or blank str.
      *
      * @param val String value which need to be converted to int value.
      * @return Converted long value and its default value is 0.
@@ -91,12 +90,12 @@ public final class ConvertUtils {
     public static long toLong(String val) {
         return toLong(val, 0L);
     }
-    
+
     /**
-     * Convert String value to long value if parameter value is legal. And return default value if parameter value is
-     * null or blank str.
+     * Convert String value to long value if parameter value is legal. And return default value if
+     * parameter value is null or blank str.
      *
-     * @param val          value
+     * @param val value
      * @param defaultValue default value
      * @return long value if input value is legal, otherwise default value
      */
@@ -110,12 +109,12 @@ public final class ConvertUtils {
             return defaultValue;
         }
     }
-    
+
     /**
-     * Convert String value to boolean value if parameter value is legal. And return default value if parameter value is
-     * null or blank str.
+     * Convert String value to boolean value if parameter value is legal. And return default value
+     * if parameter value is null or blank str.
      *
-     * @param val          value
+     * @param val value
      * @param defaultValue default value
      * @return boolean value if input value is legal, otherwise default value
      */
@@ -125,18 +124,18 @@ public final class ConvertUtils {
         }
         return Boolean.parseBoolean(val);
     }
-    
+
     //   The following utility functions are extracted from <link>org.apache.commons.lang3</link>
     //   start
-    
+
     /**
-     * <p>Converts a String to a boolean (optimised for performance).</p>
+     * Converts a String to a boolean (optimised for performance).
      *
-     * <p>{@code 'true'}, {@code 'on'}, {@code 'y'}, {@code 't'} or {@code 'yes'}
-     * (case insensitive) will return {@code true}. Otherwise, {@code false} is returned.</p>
+     * <p>{@code 'true'}, {@code 'on'}, {@code 'y'}, {@code 't'} or {@code 'yes'} (case insensitive)
+     * will return {@code true}. Otherwise, {@code false} is returned.
      *
-     * <p>This method performs 4 times faster (JDK1.4) than
-     * {@code Boolean.valueOf(String)}. However, this method accepts 'on' and 'yes', 't', 'y' as true values.
+     * <p>This method performs 4 times faster (JDK1.4) than {@code Boolean.valueOf(String)}.
+     * However, this method accepts 'on' and 'yes', 't', 'y' as true values.
      *
      * <pre>
      *   BooleanUtils.toBoolean(null)    = false
@@ -159,15 +158,15 @@ public final class ConvertUtils {
     public static boolean toBoolean(final String str) {
         return Boolean.TRUE.equals(toBooleanObject(str));
     }
-    
+
     /**
-     * <p>Converts a String to a Boolean.</p>
+     * Converts a String to a Boolean.
      *
-     * <p>{@code 'true'}, {@code 'on'}, {@code 'y'}, {@code 't'} or {@code 'yes'}
-     * (case insensitive) will return {@code true}. {@code 'false'}, {@code 'off'}, {@code 'n'}, {@code 'f'} or {@code
-     * 'no'} (case insensitive) will return {@code false}. Otherwise, {@code null} is returned.</p>
+     * <p>{@code 'true'}, {@code 'on'}, {@code 'y'}, {@code 't'} or {@code 'yes'} (case insensitive)
+     * will return {@code true}. {@code 'false'}, {@code 'off'}, {@code 'n'}, {@code 'f'} or {@code
+     * 'no'} (case insensitive) will return {@code false}. Otherwise, {@code null} is returned.
      *
-     * <p>NOTE: This returns null and will throw a NullPointerException if autoboxed to a boolean. </p>
+     * <p>NOTE: This returns null and will throw a NullPointerException if autoboxed to a boolean.
      *
      * <pre>
      *   // N.B. case is not significant
@@ -195,7 +194,7 @@ public final class ConvertUtils {
     @SuppressWarnings("all")
     public static Boolean toBooleanObject(String str) {
         String formatStr = (str == null ? StringUtils.EMPTY : str).toLowerCase();
-    
+
         if (TRUE_SET.contains(formatStr)) {
             return true;
         } else if (FALSE_SET.contains(formatStr)) {
@@ -204,7 +203,7 @@ public final class ConvertUtils {
             return null;
         }
     }
-    
+
     //   end
-    
+
 }

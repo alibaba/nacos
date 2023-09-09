@@ -16,33 +16,28 @@
 
 package com.alibaba.nacos.naming.core.v2.pojo;
 
-import org.apache.commons.collections.CollectionUtils;
-
 import java.util.List;
 import java.util.Objects;
+import org.apache.commons.collections.CollectionUtils;
 
 /**
  * the client support service registers multiple instance entity classes.
  *
- * @author : ChenHao26
- * @ClassName: BatchInstancePublishInfo
- * @Date: 2022/4/21 16:19
+ * @author : ChenHao26 @ClassName: BatchInstancePublishInfo @Date: 2022/4/21 16:19
  */
 public class BatchInstancePublishInfo extends InstancePublishInfo {
-    
-    /**
-     * save all the service instance data transmitted from the client.
-     */
+
+    /** save all the service instance data transmitted from the client. */
     private List<InstancePublishInfo> instancePublishInfos;
-    
+
     public List<InstancePublishInfo> getInstancePublishInfos() {
         return instancePublishInfos;
     }
-    
+
     public void setInstancePublishInfos(List<InstancePublishInfo> instancePublishInfos) {
         this.instancePublishInfos = instancePublishInfos;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -52,12 +47,12 @@ public class BatchInstancePublishInfo extends InstancePublishInfo {
             return false;
         }
         BatchInstancePublishInfo that = (BatchInstancePublishInfo) o;
-        return CollectionUtils.isEqualCollection(this.getInstancePublishInfos(), that.getInstancePublishInfos());
+        return CollectionUtils.isEqualCollection(
+                this.getInstancePublishInfos(), that.getInstancePublishInfos());
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(CollectionUtils.getCardinalityMap(instancePublishInfos));
     }
 }
-

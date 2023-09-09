@@ -30,16 +30,19 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * @author lixiaoshuang
  */
 public class GroupCapacityMapperByDerby extends AbstractMapper implements GroupCapacityMapper {
-    
+
     @Override
     public String getDataSource() {
         return DataSourceConstant.DERBY;
     }
-    
+
     @Override
     public MapperResult selectGroupInfoBySize(MapperContext context) {
-        String sql = "SELECT id, group_id FROM group_capacity WHERE id > ? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
-        return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
+        String sql =
+                "SELECT id, group_id FROM group_capacity WHERE id > ? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+        return new MapperResult(
+                sql,
+                CollectionUtils.list(
+                        context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
     }
 }

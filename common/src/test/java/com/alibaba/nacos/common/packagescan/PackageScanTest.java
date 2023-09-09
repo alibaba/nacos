@@ -17,9 +17,8 @@
 package com.alibaba.nacos.common.packagescan;
 
 import com.alibaba.nacos.api.remote.request.Request;
-import junit.framework.TestCase;
-
 import java.util.Set;
+import junit.framework.TestCase;
 
 public class PackageScanTest extends TestCase {
 
@@ -27,16 +26,14 @@ public class PackageScanTest extends TestCase {
         super.setUp();
     }
 
-    public void tearDown() throws Exception {
-    }
+    public void tearDown() throws Exception {}
 
-    /**
-     * testGetSubTypesOf.
-     */
+    /** testGetSubTypesOf. */
     public void testGetSubTypesOf() {
         DefaultPackageScan packageScan = new DefaultPackageScan();
-        Set<Class<Request>> subTypesOf = packageScan.getSubTypesOf("com.alibaba.nacos.api.naming.remote.request", Request.class);
+        Set<Class<Request>> subTypesOf =
+                packageScan.getSubTypesOf(
+                        "com.alibaba.nacos.api.naming.remote.request", Request.class);
         assertTrue(subTypesOf.size() > 0);
     }
-
 }

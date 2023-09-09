@@ -16,14 +16,16 @@
 
 package com.alibaba.nacos.config.server.controller;
 
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.sql.Timestamp;
+import javax.servlet.ServletContext;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -38,29 +40,19 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
-import javax.servlet.ServletContext;
-
-import java.sql.Timestamp;
-
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 public class CapacityControllerTest {
 
-    @InjectMocks
-    CapacityController capacityController;
-    
+    @InjectMocks CapacityController capacityController;
+
     private MockMvc mockMvc;
-    
-    @Mock
-    private CapacityService capacityService;
-    
-    @Mock
-    private ServletContext servletContext;
-    
+
+    @Mock private CapacityService capacityService;
+
+    @Mock private ServletContext servletContext;
+
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -68,10 +60,10 @@ public class CapacityControllerTest {
         ReflectionTestUtils.setField(capacityController, "capacityService", capacityService);
         mockMvc = MockMvcBuilders.standaloneSetup(capacityController).build();
     }
-    
+
     @Test
     public void testGetCapacity() throws Exception {
-    
+
         Capacity capacity = new Capacity();
         capacity.setId(1L);
         capacity.setMaxAggrCount(1);
@@ -80,12 +72,17 @@ public class CapacityControllerTest {
         capacity.setGmtCreate(new Timestamp(1));
         capacity.setGmtModified(new Timestamp(2));
         when(capacityService.getCapacityWithDefault(eq("test"), eq("test"))).thenReturn(capacity);
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_PATH)
-                .param("group", "test").param("tenant", "test");
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Capacity result = JacksonUtils.toObj(JacksonUtils.toObj(actualValue).get("data").toString(), Capacity.class);
-        
+
+        MockHttpServletRequestBuilder builder =
+                MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_PATH)
+                        .param("group", "test")
+                        .param("tenant", "test");
+        String actualValue =
+                mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        Capacity result =
+                JacksonUtils.toObj(
+                        JacksonUtils.toObj(actualValue).get("data").toString(), Capacity.class);
+
         Assert.assertNotNull(result);
         Assert.assertEquals(capacity.getId(), result.getId());
         Assert.assertEquals(capacity.getMaxAggrCount(), result.getMaxAggrCount());
@@ -94,60 +91,74 @@ public class CapacityControllerTest {
         Assert.assertEquals(capacity.getGmtCreate(), result.getGmtCreate());
         Assert.assertEquals(capacity.getGmtModified(), result.getGmtModified());
     }
-    
+
     @Test
     public void testUpdateCapacity1x() throws Exception {
-    
+
         when(capacityService.insertOrUpdateCapacity("test", "test", 1, 1, 1, 1)).thenReturn(true);
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH)
-                .param("group", "test").param("tenant", "test")
-                .param("quota", "1").param("maxSize", "1")
-                .param("maxAggrCount", "1").param("maxAggrSize", "1");
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+
+        MockHttpServletRequestBuilder builder =
+                MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH)
+                        .param("group", "test")
+                        .param("tenant", "test")
+                        .param("quota", "1")
+                        .param("maxSize", "1")
+                        .param("maxAggrCount", "1")
+                        .param("maxAggrSize", "1");
+        String actualValue =
+                mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         Assert.assertEquals("200", code);
         Assert.assertEquals("true", data);
     }
-    
+
     @Test
     public void testUpdateCapacity2x() throws Exception {
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH);
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+
+        MockHttpServletRequestBuilder builder =
+                MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH);
+        String actualValue =
+                mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         Assert.assertEquals("400", code);
         Assert.assertEquals("false", data);
     }
-    
+
     @Test
     public void testUpdateCapacity3x() throws Exception {
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH)
-                .param("group", "test").param("tenant", "test");
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+
+        MockHttpServletRequestBuilder builder =
+                MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH)
+                        .param("group", "test")
+                        .param("tenant", "test");
+        String actualValue =
+                mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         Assert.assertEquals("400", code);
         Assert.assertEquals("false", data);
     }
-    
+
     @Test
     public void testUpdateCapacity4x() throws Exception {
-        
+
         when(capacityService.insertOrUpdateCapacity("test", "test", 1, 1, 1, 1)).thenReturn(false);
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH)
-                .param("group", "test").param("tenant", "test")
-                .param("quota", "1").param("maxSize", "1")
-                .param("maxAggrCount", "1").param("maxAggrSize", "1");
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+
+        MockHttpServletRequestBuilder builder =
+                MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH)
+                        .param("group", "test")
+                        .param("tenant", "test")
+                        .param("quota", "1")
+                        .param("maxSize", "1")
+                        .param("maxAggrCount", "1")
+                        .param("maxAggrSize", "1");
+        String actualValue =
+                mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
         String data = JacksonUtils.toObj(actualValue).get("data").toString();
         Assert.assertEquals("500", code);
         Assert.assertEquals("false", data);
     }
-    
 }

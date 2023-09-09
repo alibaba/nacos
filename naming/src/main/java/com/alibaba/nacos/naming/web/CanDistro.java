@@ -26,6 +26,4 @@ import java.lang.annotation.RetentionPolicy;
  * @since 1.0.0
  */
 @Retention(RetentionPolicy.RUNTIME)
-public @interface CanDistro {
-    
-}
+public @interface CanDistro {}

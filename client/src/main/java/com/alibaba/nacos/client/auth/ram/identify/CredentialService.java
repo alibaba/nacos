@@ -19,9 +19,8 @@ package com.alibaba.nacos.client.auth.ram.identify;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.slf4j.Logger;
-
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
 
 /**
  * Credential Service.
@@ -29,22 +28,25 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Nacos
  */
 public final class CredentialService implements SpasCredentialLoader {
-    
+
     private static final Logger LOGGER = LogUtils.logger(CredentialService.class);
-    
-    private static final ConcurrentHashMap<String, CredentialService> INSTANCES = new ConcurrentHashMap<>();
-    
+
+    private static final ConcurrentHashMap<String, CredentialService> INSTANCES =
+            new ConcurrentHashMap<>();
+
     private final String appName;
-    
+
     private Credentials credentials = new Credentials();
-    
+
     private final CredentialWatcher watcher;
-    
+
     private CredentialListener listener;
-    
+
     private CredentialService(String appName) {
         if (appName == null) {
-            String value = NacosClientProperties.PROTOTYPE.getProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
+            String value =
+                    NacosClientProperties.PROTOTYPE.getProperty(
+                            IdentifyConstants.PROJECT_NAME_PROPERTY);
             if (StringUtils.isNotEmpty(value)) {
                 appName = value;
             }
@@ -52,11 +54,11 @@ public final class CredentialService implements SpasCredentialLoader {
         this.appName = appName;
         watcher = new CredentialWatcher(appName, this);
     }
-    
+
     public static CredentialService getInstance() {
         return getInstance(null);
     }
-    
+
     public static CredentialService getInstance(String appName) {
         String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
         if (INSTANCES.get(key) == null) {
@@ -69,11 +71,11 @@ public final class CredentialService implements SpasCredentialLoader {
         }
         return INSTANCES.get(key);
     }
-    
+
     public static CredentialService freeInstance() {
         return freeInstance(null);
     }
-    
+
     /**
      * Free instance.
      *
@@ -88,17 +90,15 @@ public final class CredentialService implements SpasCredentialLoader {
         }
         return instance;
     }
-    
-    /**
-     * Free service.
-     */
+
+    /** Free service. */
     public void free() {
         if (watcher != null) {
             watcher.stop();
         }
         LOGGER.info("[{}] {} is freed", appName, this.getClass().getSimpleName());
     }
-    
+
     @Override
     public Credentials getCredential() {
         Credentials localCredential = credentials;
@@ -107,22 +107,24 @@ public final class CredentialService implements SpasCredentialLoader {
         }
         return credentials;
     }
-    
+
     public void setCredential(Credentials credential) {
-        boolean changed = !(credentials == credential || (credentials != null && credentials.identical(credential)));
+        boolean changed =
+                !(credentials == credential
+                        || (credentials != null && credentials.identical(credential)));
         credentials = credential;
         if (changed && listener != null) {
             listener.onUpdateCredential();
         }
     }
-    
+
     public void setStaticCredential(Credentials credential) {
         if (watcher != null) {
             watcher.stop();
         }
         setCredential(credential);
     }
-    
+
     public void registerCredentialListener(CredentialListener listener) {
         this.listener = listener;
     }

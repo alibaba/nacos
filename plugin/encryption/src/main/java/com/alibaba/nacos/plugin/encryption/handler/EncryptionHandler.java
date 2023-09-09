@@ -19,11 +19,10 @@ package com.alibaba.nacos.plugin.encryption.handler;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.plugin.encryption.EncryptionPluginManager;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Optional;
 import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * EncryptionHandler.
@@ -31,18 +30,16 @@ import java.util.stream.Stream;
  * @author lixiaoshuang
  */
 public class EncryptionHandler {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionHandler.class);
-    
-    /**
-     * For example：cipher-AES-dataId.
-     */
+
+    /** For example：cipher-AES-dataId. */
     private static final String PREFIX = "cipher-";
-    
+
     /**
      * Execute encryption.
      *
-     * @param dataId  dataId
+     * @param dataId dataId
      * @param content Content that needs to be encrypted.
      * @return Return key and ciphertext.
      */
@@ -51,10 +48,11 @@ public class EncryptionHandler {
             return Pair.with("", content);
         }
         Optional<String> algorithmName = parseAlgorithmName(dataId);
-        Optional<EncryptionPluginService> optional = algorithmName
-                .flatMap(EncryptionPluginManager.instance()::findEncryptionService);
+        Optional<EncryptionPluginService> optional =
+                algorithmName.flatMap(EncryptionPluginManager.instance()::findEncryptionService);
         if (!optional.isPresent()) {
-            LOGGER.warn("[EncryptionHandler] [encryptHandler] No encryption program with the corresponding name found");
+            LOGGER.warn(
+                    "[EncryptionHandler] [encryptHandler] No encryption program with the corresponding name found");
             return Pair.with("", content);
         }
         EncryptionPluginService encryptionPluginService = optional.get();
@@ -62,24 +60,26 @@ public class EncryptionHandler {
         String encryptContent = encryptionPluginService.encrypt(secretKey, content);
         return Pair.with(encryptionPluginService.encryptSecretKey(secretKey), encryptContent);
     }
-    
+
     /**
      * Execute decryption.
      *
-     * @param dataId    dataId
+     * @param dataId dataId
      * @param secretKey Decryption key.
-     * @param content   Content that needs to be decrypted.
+     * @param content Content that needs to be decrypted.
      * @return Return key and plaintext.
      */
-    public static Pair<String, String> decryptHandler(String dataId, String secretKey, String content) {
+    public static Pair<String, String> decryptHandler(
+            String dataId, String secretKey, String content) {
         if (!checkCipher(dataId)) {
             return Pair.with("", content);
         }
         Optional<String> algorithmName = parseAlgorithmName(dataId);
-        Optional<EncryptionPluginService> optional = algorithmName
-                .flatMap(EncryptionPluginManager.instance()::findEncryptionService);
+        Optional<EncryptionPluginService> optional =
+                algorithmName.flatMap(EncryptionPluginManager.instance()::findEncryptionService);
         if (!optional.isPresent()) {
-            LOGGER.warn("[EncryptionHandler] [decryptHandler] No encryption program with the corresponding name found");
+            LOGGER.warn(
+                    "[EncryptionHandler] [decryptHandler] No encryption program with the corresponding name found");
             return Pair.with("", content);
         }
         EncryptionPluginService encryptionPluginService = optional.get();
@@ -87,7 +87,7 @@ public class EncryptionHandler {
         String decryptContent = encryptionPluginService.decrypt(decryptSecretKey, content);
         return Pair.with(decryptSecretKey, decryptContent);
     }
-    
+
     /**
      * Parse encryption algorithm name.
      *
@@ -97,7 +97,7 @@ public class EncryptionHandler {
     private static Optional<String> parseAlgorithmName(String dataId) {
         return Stream.of(dataId.split("-")).skip(1).findFirst();
     }
-    
+
     /**
      * Check if encryption and decryption is needed.
      *

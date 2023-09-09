@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.utils;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,13 +28,13 @@ import java.util.regex.Pattern;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ValidatorUtils {
-    
+
     private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
-    
+
     public static void checkInitParam(NacosClientProperties properties) throws NacosException {
         checkContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH));
     }
-    
+
     /**
      * Check context path.
      *
@@ -50,5 +49,4 @@ public final class ValidatorUtils {
             throw new IllegalArgumentException("Illegal url path expression");
         }
     }
-    
 }

@@ -21,17 +21,17 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
 /**
  * Embedded storage apply hook.
  *
- * <p>Async Hook after embedded storage apply raft log.</p>
+ * <p>Async Hook after embedded storage apply raft log.
  *
  * @author xiweng.yy
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class EmbeddedApplyHook {
-    
+
     protected EmbeddedApplyHook() {
         EmbeddedApplyHookHolder.getInstance().register(this);
     }
-    
+
     /**
      * Called after apply finished.
      *

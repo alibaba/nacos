@@ -28,13 +28,13 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class NamespaceConfigInfoService extends AbstractNamespaceDetailInjector {
-    
+
     private final ConfigInfoPersistService configInfoPersistService;
-    
+
     public NamespaceConfigInfoService(ConfigInfoPersistService configInfoPersistService) {
         this.configInfoPersistService = configInfoPersistService;
     }
-    
+
     @Override
     public void injectDetail(Namespace namespace) {
         int configCount = configInfoPersistService.configInfoCount(namespace.getNamespace());

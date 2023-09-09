@@ -22,9 +22,8 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-import org.springframework.stereotype.Component;
-
 import java.util.concurrent.TimeUnit;
+import org.springframework.stereotype.Component;
 
 /**
  * Expired metadata cleaner.
@@ -33,28 +32,32 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
-    
+
     private static final String EXPIRED_METADATA = "expiredMetadata";
-    
+
     private static final int INITIAL_DELAY = 5000;
-    
+
     private final NamingMetadataManager metadataManager;
-    
+
     private final NamingMetadataOperateService metadataOperateService;
-    
-    public ExpiredMetadataCleaner(NamingMetadataManager metadataManager,
+
+    public ExpiredMetadataCleaner(
+            NamingMetadataManager metadataManager,
             NamingMetadataOperateService metadataOperateService) {
         this.metadataManager = metadataManager;
         this.metadataOperateService = metadataOperateService;
-        GlobalExecutor.scheduleExpiredClientCleaner(this, INITIAL_DELAY, GlobalConfig.getExpiredMetadataCleanInterval(),
+        GlobalExecutor.scheduleExpiredClientCleaner(
+                this,
+                INITIAL_DELAY,
+                GlobalConfig.getExpiredMetadataCleanInterval(),
                 TimeUnit.MILLISECONDS);
     }
-    
+
     @Override
     public String getType() {
         return EXPIRED_METADATA;
     }
-    
+
     @Override
     public void doClean() {
         long currentTime = System.currentTimeMillis();
@@ -64,7 +67,7 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
             }
         }
     }
-    
+
     private void removeExpiredMetadata(ExpiredMetadataInfo expiredInfo) {
         Loggers.SRV_LOG.info("Remove expired metadata {}", expiredInfo);
         if (null == expiredInfo.getMetadataId()) {
@@ -72,8 +75,10 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
                 metadataOperateService.deleteServiceMetadata(expiredInfo.getService());
             }
         } else {
-            if (metadataManager.containInstanceMetadata(expiredInfo.getService(), expiredInfo.getMetadataId())) {
-                metadataOperateService.deleteInstanceMetadata(expiredInfo.getService(), expiredInfo.getMetadataId());
+            if (metadataManager.containInstanceMetadata(
+                    expiredInfo.getService(), expiredInfo.getMetadataId())) {
+                metadataOperateService.deleteInstanceMetadata(
+                        expiredInfo.getService(), expiredInfo.getMetadataId());
             }
         }
     }

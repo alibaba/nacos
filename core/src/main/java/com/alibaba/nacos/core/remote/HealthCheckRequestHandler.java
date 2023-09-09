@@ -16,21 +16,22 @@
 
 package com.alibaba.nacos.core.remote;
 
-import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
 import com.alibaba.nacos.core.control.TpsControl;
 import org.springframework.stereotype.Component;
 
 /**
- * push response  to clients.
+ * push response to clients.
  *
  * @author liuzunfei
  * @version $Id: PushService.java, v 0.1 2021年07月17日 1:12 PM liuzunfei Exp $
  */
 @Component
-public class HealthCheckRequestHandler extends RequestHandler<HealthCheckRequest, HealthCheckResponse> {
-    
+public class HealthCheckRequestHandler
+        extends RequestHandler<HealthCheckRequest, HealthCheckResponse> {
+
     @Override
     @TpsControl(pointName = "HealthCheck")
     public HealthCheckResponse handle(HealthCheckRequest request, RequestMeta meta) {

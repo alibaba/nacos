@@ -19,10 +19,9 @@ package com.alibaba.nacos.plugin.control.ruleactivator;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.slf4j.Logger;
-
 import java.io.File;
 import java.io.IOException;
+import org.slf4j.Logger;
 
 /**
  * local disk storage.
@@ -30,48 +29,49 @@ import java.io.IOException;
  * @author shiyiyue
  */
 public class LocalDiskRuleStorage implements RuleStorage {
-    
-    LocalDiskRuleStorage() {
-    
-    }
-    
+
+    LocalDiskRuleStorage() {}
+
     private static final Logger LOGGER = Loggers.CONTROL;
-    
+
     private String localRruleBaseDir = defaultBaseDir();
-    
+
     private File checkTpsBaseDir() {
-        File baseDir = new File(localRruleBaseDir, "data" + File.separator + "tps" + File.separator);
+        File baseDir =
+                new File(localRruleBaseDir, "data" + File.separator + "tps" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdirs();
         }
         return baseDir;
     }
-    
+
     public String getLocalRruleBaseDir() {
         return localRruleBaseDir;
     }
-    
+
     public void setLocalRruleBaseDir(String localRruleBaseDir) {
         this.localRruleBaseDir = localRruleBaseDir;
     }
-    
+
     private static String defaultBaseDir() {
         return EnvUtil.getNacosHome();
     }
-    
+
     private File getConnectionRuleFile() {
-        File baseDir = new File(localRruleBaseDir, "data" + File.separator + "connection" + File.separator);
+        File baseDir =
+                new File(
+                        localRruleBaseDir, "data" + File.separator + "connection" + File.separator);
         if (!baseDir.exists()) {
             baseDir.mkdir();
         }
         return new File(baseDir, "limitRule");
     }
-    
+
     @Override
     public String getName() {
         return "localdisk";
     }
-    
+
     @Override
     public void saveConnectionRule(String ruleContent) throws IOException {
         File pointFile = getConnectionRuleFile();
@@ -81,7 +81,7 @@ public class LocalDiskRuleStorage implements RuleStorage {
         DiskUtils.writeFile(pointFile, ruleContent.getBytes(Constants.ENCODE), false);
         LOGGER.info("Save connection rule to local,pointName={}, ruleContent ={} ", ruleContent);
     }
-    
+
     @Override
     public String getConnectionRule() {
         File connectionRuleFile = getConnectionRuleFile();
@@ -90,7 +90,7 @@ public class LocalDiskRuleStorage implements RuleStorage {
         }
         return DiskUtils.readFile(connectionRuleFile);
     }
-    
+
     @Override
     public void saveTpsRule(String pointName, String ruleContent) throws IOException {
         File file = checkTpsBaseDir();
@@ -102,12 +102,13 @@ public class LocalDiskRuleStorage implements RuleStorage {
             DiskUtils.deleteQuietly(tpsFile);
         } else {
             DiskUtils.writeFile(tpsFile, ruleContent.getBytes(Constants.ENCODE), false);
-            LOGGER.info("Save tps rule to local,pointName={}, ruleContent ={} ", pointName, ruleContent);
-            
+            LOGGER.info(
+                    "Save tps rule to local,pointName={}, ruleContent ={} ",
+                    pointName,
+                    ruleContent);
         }
-        
     }
-    
+
     @Override
     public String getTpsRule(String pointName) {
         File file = checkTpsBaseDir();

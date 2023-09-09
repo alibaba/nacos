@@ -20,7 +20,6 @@ package com.alibaba.nacos.naming.selector;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.Selector;
-
 import java.util.List;
 
 /**
@@ -30,26 +29,26 @@ import java.util.List;
  * @date 2021-08-04 13:28
  */
 public class NoneSelector<T extends Instance> implements Selector<List<T>, List<T>, String> {
-    
+
     private static final String CONTEXT_TYPE = "NONE";
-    
+
     private static final String TYPE = "none";
-    
+
     @Override
     public Selector<List<T>, List<T>, String> parse(String condition) throws NacosException {
         return this;
     }
-    
+
     @Override
     public List<T> select(List<T> context) {
         return context;
     }
-    
+
     @Override
     public String getType() {
         return TYPE;
     }
-    
+
     @Override
     public String getContextType() {
         return CONTEXT_TYPE;

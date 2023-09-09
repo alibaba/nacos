@@ -20,9 +20,8 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
-import org.slf4j.Logger;
-
 import java.util.Collection;
+import org.slf4j.Logger;
 
 /**
  * rule storage proxy.
@@ -30,22 +29,23 @@ import java.util.Collection;
  * @author shiyiyue
  */
 public class RuleStorageProxy {
-    
+
     private static final Logger LOGGER = Loggers.CONTROL;
-    
+
     private static final RuleStorageProxy INSTANCE = new RuleStorageProxy();
-    
+
     private LocalDiskRuleStorage localDiskRuleStorage = null;
-    
+
     private ExternalRuleStorage externalRuleStorage = null;
-    
+
     ControlRuleChangeActivator controlRuleChangeActivator = null;
-    
+
     public RuleStorageProxy() {
-        
-        Collection<ExternalRuleStorage> persistRuleActivators = NacosServiceLoader.load(ExternalRuleStorage.class);
+
+        Collection<ExternalRuleStorage> persistRuleActivators =
+                NacosServiceLoader.load(ExternalRuleStorage.class);
         String rulePersistActivator = ControlConfigs.getInstance().getRuleExternalStorage();
-        
+
         for (ExternalRuleStorage persistRuleActivator : persistRuleActivators) {
             if (persistRuleActivator.getName().equalsIgnoreCase(rulePersistActivator)) {
                 LOGGER.info("Found persist rule storage of name ：" + rulePersistActivator);
@@ -56,25 +56,25 @@ public class RuleStorageProxy {
         if (externalRuleStorage == null && StringUtils.isNotBlank(rulePersistActivator)) {
             LOGGER.error("Fail to found persist rule storage of name ：" + rulePersistActivator);
         }
-        
-        //local disk storage.
+
+        // local disk storage.
         localDiskRuleStorage = new LocalDiskRuleStorage();
         if (StringUtils.isNotBlank(ControlConfigs.getInstance().getLocalRuleStorageBaseDir())) {
-            localDiskRuleStorage.setLocalRruleBaseDir(ControlConfigs.getInstance().getLocalRuleStorageBaseDir());
+            localDiskRuleStorage.setLocalRruleBaseDir(
+                    ControlConfigs.getInstance().getLocalRuleStorageBaseDir());
         }
-        
+
         controlRuleChangeActivator = new ControlRuleChangeActivator();
-        
     }
-    
+
     public RuleStorage getLocalDiskStorage() {
         return localDiskRuleStorage;
     }
-    
+
     public RuleStorage getExternalStorage() {
         return externalRuleStorage;
     }
-    
+
     public static final RuleStorageProxy getInstance() {
         return INSTANCE;
     }

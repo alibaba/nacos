@@ -19,26 +19,24 @@ package com.alibaba.nacos.api.selector;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
-
 import java.io.Serializable;
 
 /**
- * The {@link Selector} mainly work on the logic of parse and select.
- * {@link #parse(Object)} allow user accept the condition which provided by Nacos to build the {@link #select(Object)} judge logic.
- * {@link #select(Object)} allow user to execute the logic to get the target result they want.
- * {@link #getType()} will return the type.
- * {@link #getContextType()} will return the context type which used by {@link #select(Object)}.
+ * The {@link Selector} mainly work on the logic of parse and select. {@link #parse(Object)} allow
+ * user accept the condition which provided by Nacos to build the {@link #select(Object)} judge
+ * logic. {@link #select(Object)} allow user to execute the logic to get the target result they
+ * want. {@link #getType()} will return the type. {@link #getContextType()} will return the context
+ * type which used by {@link #select(Object)}.
  *
- * <p>
- *     Now, Nacos only provide the {@link AbstractCmdbSelector} for user to implement their own select logic. Other type is waiting.
- * </p>
+ * <p>Now, Nacos only provide the {@link AbstractCmdbSelector} for user to implement their own
+ * select logic. Other type is waiting.
  *
  * @author chenglu
  * @date 2021-07-09 21:24
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 public interface Selector<R, C, E> extends Serializable {
-    
+
     /**
      * parse the selector, build the inner info which used by {@link #select(Object)}.
      *
@@ -47,7 +45,7 @@ public interface Selector<R, C, E> extends Serializable {
      * @throws NacosException parse failed exception.
      */
     Selector<R, C, E> parse(E expression) throws NacosException;
-    
+
     /**
      * select the target result.
      *
@@ -55,14 +53,14 @@ public interface Selector<R, C, E> extends Serializable {
      * @return select result.
      */
     R select(C context);
-    
+
     /**
      * Get the selector type.
      *
      * @return selector type.
      */
     String getType();
-    
+
     /**
      * Get the select context which usede by {@link #select(Object)}.
      *

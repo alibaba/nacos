@@ -17,10 +17,9 @@
 package com.alibaba.nacos.common.packagescan.util;
 
 /**
- * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
- * Helper class for implementing exception classes which are capable of
- * holding nested exceptions. Necessary because we can't share a base
- * class among different exception types.
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications Helper
+ * class for implementing exception classes which are capable of holding nested exceptions.
+ * Necessary because we can't share a base class among different exception types.
  *
  * <p>Mainly for use within the framework.
  *
@@ -34,10 +33,9 @@ public abstract class NestedExceptionUtils {
      * Build a message for the given base message and root cause.
      *
      * @param message the base message
-     * @param cause   the root cause
+     * @param cause the root cause
      * @return the full exception message
      */
-
     public static String buildMessage(String message, Throwable cause) {
         if (cause == null) {
             return message;
@@ -57,7 +55,6 @@ public abstract class NestedExceptionUtils {
      * @return the innermost exception, or {@code null} if none
      * @since 4.3.9
      */
-
     public static Throwable getRootCause(Throwable original) {
         if (original == null) {
             return null;
@@ -72,11 +69,11 @@ public abstract class NestedExceptionUtils {
     }
 
     /**
-     * Retrieve the most specific cause of the given exception, that is,
-     * either the innermost cause (root cause) or the exception itself.
+     * Retrieve the most specific cause of the given exception, that is, either the innermost cause
+     * (root cause) or the exception itself.
      *
-     * <p>Differs from {@link #getRootCause} in that it falls back
-     * to the original exception if there is no root cause.
+     * <p>Differs from {@link #getRootCause} in that it falls back to the original exception if
+     * there is no root cause.
      *
      * @param original the original exception to introspect
      * @return the most specific cause (never {@code null})
@@ -86,5 +83,4 @@ public abstract class NestedExceptionUtils {
         Throwable rootCause = getRootCause(original);
         return (rootCause != null ? rootCause : original);
     }
-
 }

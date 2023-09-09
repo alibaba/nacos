@@ -26,6 +26,6 @@ import org.slf4j.LoggerFactory;
  * @since 0.7.0
  */
 public class Loggers {
-    
+
     public static final Logger MAIN = LoggerFactory.getLogger("com.alibaba.nacos.cmdb.main");
 }

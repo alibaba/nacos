@@ -20,8 +20,6 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-
-import javax.crypto.Mac;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -30,6 +28,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.crypto.Mac;
 
 /**
  * SignAlgorithm.
@@ -38,50 +37,51 @@ import java.util.concurrent.TimeUnit;
  * @date 2023/1/15 16:42
  */
 public final class NacosSignatureAlgorithm {
-    
+
     private static final String JWT_SEPERATOR = ".";
-    
+
     private static final int HEADER_POSITION = 0;
-    
+
     private static final int PAYLOAD_POSITION = 1;
-    
+
     private static final int SIGNATURE_POSITION = 2;
-    
+
     private static final int JWT_PARTS = 3;
-    
+
     private static final String HS256_JWT_HEADER = "eyJhbGciOiJIUzI1NiJ9";
-    
+
     private static final String HS384_JWT_HEADER = "eyJhbGciOiJIUzM4NCJ9";
-    
+
     private static final String HS512_JWT_HEADER = "eyJhbGciOiJIUzUxMiJ9";
-    
-    private static final Base64.Encoder URL_BASE64_ENCODER = Base64.getUrlEncoder().withoutPadding();
-    
+
+    private static final Base64.Encoder URL_BASE64_ENCODER =
+            Base64.getUrlEncoder().withoutPadding();
+
     private static final Base64.Decoder URL_BASE64_DECODER = Base64.getUrlDecoder();
-    
+
     private static final Map<String, NacosSignatureAlgorithm> MAP = new HashMap<>(4);
-    
-    public static final NacosSignatureAlgorithm HS256 = new NacosSignatureAlgorithm("HS256", "HmacSHA256",
-            HS256_JWT_HEADER);
-    
-    public static final NacosSignatureAlgorithm HS384 = new NacosSignatureAlgorithm("HS384", "HmacSHA384",
-            HS384_JWT_HEADER);
-    
-    public static final NacosSignatureAlgorithm HS512 = new NacosSignatureAlgorithm("HS512", "HmacSHA512",
-            HS512_JWT_HEADER);
-    
+
+    public static final NacosSignatureAlgorithm HS256 =
+            new NacosSignatureAlgorithm("HS256", "HmacSHA256", HS256_JWT_HEADER);
+
+    public static final NacosSignatureAlgorithm HS384 =
+            new NacosSignatureAlgorithm("HS384", "HmacSHA384", HS384_JWT_HEADER);
+
+    public static final NacosSignatureAlgorithm HS512 =
+            new NacosSignatureAlgorithm("HS512", "HmacSHA512", HS512_JWT_HEADER);
+
     private final String algorithm;
-    
+
     private final String jcaName;
-    
+
     private final String header;
-    
+
     static {
         MAP.put(HS256_JWT_HEADER, HS256);
         MAP.put(HS384_JWT_HEADER, HS384);
         MAP.put(HS512_JWT_HEADER, HS512);
     }
-    
+
     /**
      * verify jwt.
      *
@@ -101,7 +101,7 @@ public final class NacosSignatureAlgorithm {
         String header = split[HEADER_POSITION];
         String payload = split[PAYLOAD_POSITION];
         String signature = split[SIGNATURE_POSITION];
-        
+
         NacosSignatureAlgorithm signatureAlgorithm = MAP.get(header);
         if (signatureAlgorithm == null) {
             throw new AccessException("unsupported signature algorithm");
@@ -110,31 +110,36 @@ public final class NacosSignatureAlgorithm {
         user.setToken(jwt);
         return user;
     }
-    
+
     /**
      * verify jwt.
      *
-     * @param header    header of jwt
-     * @param payload   payload of jwt
+     * @param header header of jwt
+     * @param payload payload of jwt
      * @param signature signature of jwt
-     * @param key       for signature
+     * @param key for signature
      * @return object for payload
      * @throws AccessException access exception
      */
-    public NacosUser verify(String header, String payload, String signature, Key key) throws AccessException {
+    public NacosUser verify(String header, String payload, String signature, Key key)
+            throws AccessException {
         Mac macInstance = getMacInstance(key);
-        byte[] bytes = macInstance.doFinal((header + JWT_SEPERATOR + payload).getBytes(StandardCharsets.US_ASCII));
+        byte[] bytes =
+                macInstance.doFinal(
+                        (header + JWT_SEPERATOR + payload).getBytes(StandardCharsets.US_ASCII));
         if (!URL_BASE64_ENCODER.encodeToString(bytes).equals(signature)) {
             throw new AccessException("Invalid signature");
         }
-        NacosJwtPayload nacosJwtPayload = JacksonUtils.toObj(URL_BASE64_DECODER.decode(payload), NacosJwtPayload.class);
-        if (nacosJwtPayload.getExp() >= TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())) {
+        NacosJwtPayload nacosJwtPayload =
+                JacksonUtils.toObj(URL_BASE64_DECODER.decode(payload), NacosJwtPayload.class);
+        if (nacosJwtPayload.getExp()
+                >= TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis())) {
             return new NacosUser(nacosJwtPayload.getSub());
         }
-        
+
         throw new AccessException("token expired!");
     }
-    
+
     /**
      * get jwt expire time in seconds.
      *
@@ -154,50 +159,56 @@ public final class NacosSignatureAlgorithm {
         String header = split[HEADER_POSITION];
         String payload = split[PAYLOAD_POSITION];
         String signature = split[SIGNATURE_POSITION];
-        
+
         NacosSignatureAlgorithm signatureAlgorithm = MAP.get(header);
         if (signatureAlgorithm == null) {
             throw new AccessException("unsupported signature algorithm");
         }
         return signatureAlgorithm.getExpireTimeInSeconds(header, payload, signature, key);
     }
-    
+
     /**
      * get jwt expire time in seconds.
      *
-     * @param header    header of jwt
-     * @param payload   payload of jwt
+     * @param header header of jwt
+     * @param payload payload of jwt
      * @param signature signature of jwt
-     * @param key       for signature
+     * @param key for signature
      * @return expire time in seconds
      * @throws AccessException access exception
      */
     public long getExpireTimeInSeconds(String header, String payload, String signature, Key key)
             throws AccessException {
         Mac macInstance = getMacInstance(key);
-        byte[] bytes = macInstance.doFinal((header + JWT_SEPERATOR + payload).getBytes(StandardCharsets.US_ASCII));
+        byte[] bytes =
+                macInstance.doFinal(
+                        (header + JWT_SEPERATOR + payload).getBytes(StandardCharsets.US_ASCII));
         if (!URL_BASE64_ENCODER.encodeToString(bytes).equals(signature)) {
             throw new AccessException("Invalid signature");
         }
-        NacosJwtPayload nacosJwtPayload = JacksonUtils.toObj(URL_BASE64_DECODER.decode(payload), NacosJwtPayload.class);
+        NacosJwtPayload nacosJwtPayload =
+                JacksonUtils.toObj(URL_BASE64_DECODER.decode(payload), NacosJwtPayload.class);
         return nacosJwtPayload.getExp();
     }
-    
+
     private NacosSignatureAlgorithm(String alg, String jcaName, String header) {
         this.algorithm = alg;
         this.jcaName = jcaName;
         this.header = header;
     }
-    
+
     String sign(NacosJwtPayload nacosJwtPayload, Key key) {
-        String jwtWithoutSign = header + JWT_SEPERATOR + URL_BASE64_ENCODER.encodeToString(
-                nacosJwtPayload.toString().getBytes(StandardCharsets.UTF_8));
+        String jwtWithoutSign =
+                header
+                        + JWT_SEPERATOR
+                        + URL_BASE64_ENCODER.encodeToString(
+                                nacosJwtPayload.toString().getBytes(StandardCharsets.UTF_8));
         Mac macInstance = getMacInstance(key);
         byte[] bytes = jwtWithoutSign.getBytes(StandardCharsets.US_ASCII);
         String signature = URL_BASE64_ENCODER.encodeToString(macInstance.doFinal(bytes));
         return jwtWithoutSign + JWT_SEPERATOR + signature;
     }
-    
+
     private Mac getMacInstance(Key key) {
         try {
             Mac instance = Mac.getInstance(jcaName);
@@ -207,15 +218,15 @@ public final class NacosSignatureAlgorithm {
             throw new IllegalArgumentException("Invalid key: " + key);
         }
     }
-    
+
     public String getAlgorithm() {
         return algorithm;
     }
-    
+
     public String getJcaName() {
         return jcaName;
     }
-    
+
     public String getHeader() {
         return header;
     }

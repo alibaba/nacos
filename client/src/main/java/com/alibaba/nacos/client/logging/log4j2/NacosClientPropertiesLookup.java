@@ -23,14 +23,14 @@ import org.apache.logging.log4j.core.lookup.AbstractLookup;
 import org.apache.logging.log4j.core.lookup.StrLookup;
 
 /**
- *  support log4j2 read properties from NacosClientProperties.
- *  for example:
- *    <SizeBasedTriggeringPolicy size="${nacosClientProperty:JM.LOG.FILE.SIZE:-10MB}"/>
+ * support log4j2 read properties from NacosClientProperties. for example:
+ * <SizeBasedTriggeringPolicy size="${nacosClientProperty:JM.LOG.FILE.SIZE:-10MB}"/>
+ *
  * @author onewe
  */
 @Plugin(name = "nacosClientProperty", category = StrLookup.CATEGORY)
-public class NacosClientPropertiesLookup  extends AbstractLookup {
-    
+public class NacosClientPropertiesLookup extends AbstractLookup {
+
     @Override
     public String lookup(LogEvent event, String key) {
         return NacosClientProperties.PROTOTYPE.getProperty(key);

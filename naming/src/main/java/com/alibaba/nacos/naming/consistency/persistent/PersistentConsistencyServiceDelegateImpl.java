@@ -25,10 +25,9 @@ import com.alibaba.nacos.naming.consistency.persistent.impl.PersistentServicePro
 import com.alibaba.nacos.naming.consistency.persistent.impl.StandalonePersistentServiceProcessor;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import java.util.Optional;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 /**
  * Persistent consistency service delegate.
@@ -38,52 +37,54 @@ import java.util.Optional;
 @DependsOn("ProtocolManager")
 @Component("persistentConsistencyServiceDelegate")
 public class PersistentConsistencyServiceDelegateImpl implements PersistentConsistencyService {
-    
+
     private final BasePersistentServiceProcessor persistentServiceProcessor;
-    
-    public PersistentConsistencyServiceDelegateImpl(ProtocolManager protocolManager) throws Exception {
+
+    public PersistentConsistencyServiceDelegateImpl(ProtocolManager protocolManager)
+            throws Exception {
         this.persistentServiceProcessor = createPersistentServiceProcessor(protocolManager);
     }
-    
+
     @Override
     public void put(String key, Record value) throws NacosException {
         persistentServiceProcessor.put(key, value);
     }
-    
+
     @Override
     public void remove(String key) throws NacosException {
         persistentServiceProcessor.remove(key);
     }
-    
+
     @Override
     public Datum get(String key) throws NacosException {
         return persistentServiceProcessor.get(key);
     }
-    
+
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
         persistentServiceProcessor.listen(key, listener);
     }
-    
+
     @Override
     public void unListen(String key, RecordListener listener) throws NacosException {
         persistentServiceProcessor.unListen(key, listener);
     }
-    
+
     @Override
     public boolean isAvailable() {
         return persistentServiceProcessor.isAvailable();
     }
-    
+
     @Override
     public Optional<String> getErrorMsg() {
         return persistentServiceProcessor.getErrorMsg();
     }
-    
-    private BasePersistentServiceProcessor createPersistentServiceProcessor(ProtocolManager protocolManager)
-            throws Exception {
+
+    private BasePersistentServiceProcessor createPersistentServiceProcessor(
+            ProtocolManager protocolManager) throws Exception {
         final BasePersistentServiceProcessor processor =
-                EnvUtil.getStandaloneMode() ? new StandalonePersistentServiceProcessor()
+                EnvUtil.getStandaloneMode()
+                        ? new StandalonePersistentServiceProcessor()
                         : new PersistentServiceProcessor(protocolManager);
         processor.afterConstruct();
         return processor;

@@ -24,37 +24,37 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  *
  * @author blake.qiu
  */
-
 public class ConfigCommonConfig extends AbstractDynamicConfig {
-    
+
     private static final String CONFIG_COMMON = "ConfigCommon";
-    
+
     private static final ConfigCommonConfig INSTANCE = new ConfigCommonConfig();
-    
+
     private int maxPushRetryTimes = 50;
-    
+
     private ConfigCommonConfig() {
         super(CONFIG_COMMON);
         resetConfig();
     }
-    
+
     public static ConfigCommonConfig getInstance() {
         return INSTANCE;
     }
-    
+
     public int getMaxPushRetryTimes() {
         return maxPushRetryTimes;
     }
-    
+
     public void setMaxPushRetryTimes(int maxPushRetryTimes) {
         this.maxPushRetryTimes = maxPushRetryTimes;
     }
-    
+
     @Override
     protected void getConfigFromEnv() {
-        maxPushRetryTimes = EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
+        maxPushRetryTimes =
+                EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
     }
-    
+
     @Override
     protected String printConfig() {
         return "ConfigCommonConfigs{" + "maxPushRetryTimes=" + maxPushRetryTimes + '}';

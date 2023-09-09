@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.naming.paramcheck;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * The type Naming instance beat http param extractor test.
@@ -31,15 +30,21 @@ import static org.junit.Assert.assertEquals;
  * @author zhuoguang
  */
 public class NamingInstanceBeatHttpParamExtractorTest {
-    
+
     @Test
     public void extractParamAndCheck() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/nacos" + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
-                + "/beat");
+        request.setRequestURI(
+                "/nacos"
+                        + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
+                        + "/beat");
         request.setMethod(HttpMethod.PUT);
         HttpParamExtractorManager manager = HttpParamExtractorManager.getInstance();
-        AbstractHttpParamExtractor extractor = manager.getExtractor(request.getRequestURI(), request.getMethod(), "naming");
-        assertEquals(NamingInstanceBeatHttpParamExtractor.class.getSimpleName(), extractor.getClass().getSimpleName());
+        AbstractHttpParamExtractor extractor =
+                manager.getExtractor(request.getRequestURI(), request.getMethod(), "naming");
+        assertEquals(
+                NamingInstanceBeatHttpParamExtractor.class.getSimpleName(),
+                extractor.getClass().getSimpleName());
     }
 }

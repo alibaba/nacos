@@ -33,10 +33,9 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.ClientOperationService;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.stereotype.Component;
 
 /**
  * Operation service for ephemeral clients and services.
@@ -45,21 +44,24 @@ import java.util.List;
  */
 @Component("ephemeralClientOperationService")
 public class EphemeralClientOperationServiceImpl implements ClientOperationService {
-    
+
     private final ClientManager clientManager;
-    
+
     public EphemeralClientOperationServiceImpl(ClientManagerDelegate clientManager) {
         this.clientManager = clientManager;
     }
-    
+
     @Override
-    public void registerInstance(Service service, Instance instance, String clientId) throws NacosException {
+    public void registerInstance(Service service, Instance instance, String clientId)
+            throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
-    
+
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         if (!singleton.isEphemeral()) {
-            throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    String.format("Current service %s is persistent service, can't register ephemeral instance.",
+            throw new NacosRuntimeException(
+                    NacosException.INVALID_PARAM,
+                    String.format(
+                            "Current service %s is persistent service, can't register ephemeral instance.",
                             singleton.getGroupedServiceName()));
         }
         Client client = clientManager.getClient(clientId);
@@ -70,17 +72,21 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         client.addServiceInstance(singleton, instanceInfo);
         client.setLastUpdatedTime();
         client.recalculateRevision();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
-        NotifyCenter
-                .publishEvent(new MetadataEvent.InstanceMetadataEvent(singleton, instanceInfo.getMetadataId(), false));
+        NotifyCenter.publishEvent(
+                new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
+        NotifyCenter.publishEvent(
+                new MetadataEvent.InstanceMetadataEvent(
+                        singleton, instanceInfo.getMetadataId(), false));
     }
-    
+
     @Override
     public void batchRegisterInstance(Service service, List<Instance> instances, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         if (!singleton.isEphemeral()) {
-            throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    String.format("Current service %s is persistent service, can't batch register ephemeral instance.",
+            throw new NacosRuntimeException(
+                    NacosException.INVALID_PARAM,
+                    String.format(
+                            "Current service %s is persistent service, can't batch register ephemeral instance.",
                             singleton.getGroupedServiceName()));
         }
         Client client = clientManager.getClient(clientId);
@@ -96,11 +102,13 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         batchInstancePublishInfo.setInstancePublishInfos(resultList);
         client.addServiceInstance(singleton, batchInstancePublishInfo);
         client.setLastUpdatedTime();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
         NotifyCenter.publishEvent(
-                new MetadataEvent.InstanceMetadataEvent(singleton, batchInstancePublishInfo.getMetadataId(), false));
+                new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
+        NotifyCenter.publishEvent(
+                new MetadataEvent.InstanceMetadataEvent(
+                        singleton, batchInstancePublishInfo.getMetadataId(), false));
     }
-    
+
     @Override
     public void deregisterInstance(Service service, Instance instance, String clientId) {
         if (!ServiceManager.getInstance().containSingleton(service)) {
@@ -116,36 +124,42 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         client.setLastUpdatedTime();
         client.recalculateRevision();
         if (null != removedInstance) {
-            NotifyCenter.publishEvent(new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
             NotifyCenter.publishEvent(
-                    new MetadataEvent.InstanceMetadataEvent(singleton, removedInstance.getMetadataId(), true));
+                    new ClientOperationEvent.ClientDeregisterServiceEvent(singleton, clientId));
+            NotifyCenter.publishEvent(
+                    new MetadataEvent.InstanceMetadataEvent(
+                            singleton, removedInstance.getMetadataId(), true));
         }
     }
-    
+
     @Override
     public void subscribeService(Service service, Subscriber subscriber, String clientId) {
-        Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
+        Service singleton =
+                ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
         if (!clientIsLegal(client, clientId)) {
             return;
         }
         client.addServiceSubscriber(singleton, subscriber);
         client.setLastUpdatedTime();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
+        NotifyCenter.publishEvent(
+                new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
     }
-    
+
     @Override
     public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
-        Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
+        Service singleton =
+                ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
         if (!clientIsLegal(client, clientId)) {
             return;
         }
         client.removeServiceSubscriber(singleton);
         client.setLastUpdatedTime();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
+        NotifyCenter.publishEvent(
+                new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
     }
-    
+
     private boolean clientIsLegal(Client client, String clientId) {
         if (client == null) {
             Loggers.SRV_LOG.warn("Client connection {} already disconnect", clientId);

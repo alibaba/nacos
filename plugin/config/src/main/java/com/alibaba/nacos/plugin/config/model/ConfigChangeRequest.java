@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.config.model;
 
 import com.alibaba.nacos.plugin.config.constants.ConfigChangePointCutTypes;
-
 import java.util.HashMap;
 
 /**

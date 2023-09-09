@@ -20,11 +20,6 @@ package com.alibaba.nacos.core.remote.grpc;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -39,29 +34,29 @@ import org.springframework.mock.env.MockEnvironment;
  */
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class GrpcServerTest {
-    
+
     static MockedStatic<ApplicationUtils> applicationUtilsMockedStatic = null;
-    
+
     private BaseGrpcServer grpcSdkServer;
-    
+
     @BeforeClass
     public static void setUpBeforeClass() {
         EnvUtil.setEnvironment(new MockEnvironment());
         applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
     }
-    
+
     @AfterClass
     public static void after() {
         applicationUtilsMockedStatic.close();
     }
-    
+
     @After
     public void tearDown() throws Exception {
         if (null != grpcSdkServer) {
             grpcSdkServer.stopServer();
         }
     }
-    
+
     @Test
     public void testGrpcSdkServer() throws Exception {
         grpcSdkServer = new GrpcSdkServer();
@@ -69,7 +64,7 @@ public class GrpcServerTest {
         Assert.assertEquals(grpcSdkServer.getConnectionType(), ConnectionType.GRPC);
         Assert.assertEquals(grpcSdkServer.rpcPortOffset(), 1000);
     }
-    
+
     @Test
     public void testGrpcClusterServer() throws Exception {
         grpcSdkServer = new GrpcClusterServer();

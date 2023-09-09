@@ -26,7 +26,7 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
  * @author xiweng.yy
  */
 public class HealthCheckEnableInterceptor extends AbstractHealthCheckInterceptor {
-    
+
     @Override
     public boolean intercept(NacosHealthCheckTask object) {
         try {
@@ -35,7 +35,7 @@ public class HealthCheckEnableInterceptor extends AbstractHealthCheckInterceptor
             return true;
         }
     }
-    
+
     @Override
     public int order() {
         return Integer.MIN_VALUE;

@@ -18,24 +18,23 @@ package com.alibaba.nacos.common.http.client.handler;
 
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
-
 import java.lang.reflect.Type;
 
 /**
- * Response Handler abstract interface,
- * the actual processing of the response conversion is done by a concrete implementation class.
+ * Response Handler abstract interface, the actual processing of the response conversion is done by
+ * a concrete implementation class.
  *
  * @author mai.jh
  */
 public interface ResponseHandler<T> {
-    
+
     /**
      * set response type.
      *
      * @param responseType responseType
      */
     void setResponseType(Type responseType);
-    
+
     /**
      * handle response convert to HttpRestResult.
      *
@@ -44,5 +43,4 @@ public interface ResponseHandler<T> {
      * @throws Exception ex
      */
     HttpRestResult<T> handle(HttpClientResponse response) throws Exception;
-    
 }

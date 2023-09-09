@@ -27,17 +27,17 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
  * @author shiyiyue
  */
 public class LongConnectionMetricsCollector implements ConnectionMetricsCollector {
-    
+
     @Override
     public String getName() {
         return "long_connection";
     }
-    
+
     @Override
     public int getTotalCount() {
         return ApplicationUtils.getBean(ConnectionManager.class).currentClientsCount();
     }
-    
+
     @Override
     public int getCountForIp(String ip) {
         ConnectionManager connectionManager = ApplicationUtils.getBean(ConnectionManager.class);

@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -34,57 +33,54 @@ import java.util.List;
  */
 @JsonInclude(Include.NON_NULL)
 public class ServiceInfo {
-    
-    /**
-     * file name pattern: groupName@@name@clusters.
-     */
+
+    /** file name pattern: groupName@@name@clusters. */
     private static final int GROUP_POSITION = 0;
-    
+
     private static final int SERVICE_POSITION = 1;
-    
+
     private static final int CLUSTER_POSITION = 2;
-    
+
     private static final int FILE_NAME_PARTS = 3;
-    
-    @JsonIgnore
-    private String jsonFromServer = EMPTY;
-    
+
+    @JsonIgnore private String jsonFromServer = EMPTY;
+
     private static final String EMPTY = "";
-    
+
     private static final String DEFAULT_CHARSET = "UTF-8";
-    
+
     private String name;
-    
+
     private String groupName;
-    
+
     private String clusters;
-    
+
     private long cacheMillis = 1000L;
-    
+
     private List<Instance> hosts = new ArrayList<>();
-    
+
     private long lastRefTime = 0L;
-    
+
     private String checksum = "";
-    
+
     private volatile boolean allIPs = false;
-    
+
     private volatile boolean reachProtectionThreshold = false;
-    
-    public ServiceInfo() {
-    }
-    
+
+    public ServiceInfo() {}
+
     public boolean isAllIPs() {
         return allIPs;
     }
-    
+
     public void setAllIPs(boolean allIPs) {
         this.allIPs = allIPs;
     }
-    
+
     /**
-     * There is only one form of the key:groupName@@name@clusters. This constructor used by DiskCache.read(String) and
-     * FailoverReactor.FailoverFileReader,you should know that 'groupName' must not be null,and 'clusters' can be null.
+     * There is only one form of the key:groupName@@name@clusters. This constructor used by
+     * DiskCache.read(String) and FailoverReactor.FailoverFileReader,you should know that
+     * 'groupName' must not be null,and 'clusters' can be null.
      */
     public ServiceInfo(final String key) {
         String[] keys = key.split(Constants.SERVICE_INFO_SPLITER);
@@ -96,84 +92,85 @@ public class ServiceInfo {
             this.groupName = keys[GROUP_POSITION];
             this.name = keys[SERVICE_POSITION];
         } else {
-            //defensive programming
-            throw new IllegalArgumentException("Can't parse out 'groupName',but it must not be null!");
+            // defensive programming
+            throw new IllegalArgumentException(
+                    "Can't parse out 'groupName',but it must not be null!");
         }
     }
-    
+
     public ServiceInfo(String name, String clusters) {
         this.name = name;
         this.clusters = clusters;
     }
-    
+
     public int ipCount() {
         return hosts.size();
     }
-    
+
     public boolean expired() {
         return System.currentTimeMillis() - lastRefTime > cacheMillis;
     }
-    
+
     public void setHosts(List<Instance> hosts) {
         this.hosts = hosts;
     }
-    
+
     public void addHost(Instance host) {
         hosts.add(host);
     }
-    
+
     public void addAllHosts(List<? extends Instance> hosts) {
         this.hosts.addAll(hosts);
     }
-    
+
     public List<Instance> getHosts() {
         return new ArrayList<>(hosts);
     }
-    
+
     public boolean isValid() {
         return hosts != null;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public String getGroupName() {
         return groupName;
     }
-    
+
     public void setGroupName(String groupName) {
         this.groupName = groupName;
     }
-    
+
     public void setLastRefTime(long lastRefTime) {
         this.lastRefTime = lastRefTime;
     }
-    
+
     public long getLastRefTime() {
         return lastRefTime;
     }
-    
+
     public String getClusters() {
         return clusters;
     }
-    
+
     public void setClusters(String clusters) {
         this.clusters = clusters;
     }
-    
+
     public long getCacheMillis() {
         return cacheMillis;
     }
-    
+
     public void setCacheMillis(long cacheMillis) {
         this.cacheMillis = cacheMillis;
     }
-    
+
     /**
      * Judge whether service info is validate.
      *
@@ -183,50 +180,50 @@ public class ServiceInfo {
         if (isAllIPs()) {
             return true;
         }
-        
+
         if (hosts == null) {
             return false;
         }
-        
+
         List<Instance> validHosts = new ArrayList<>();
         for (Instance host : hosts) {
             if (!host.isHealthy()) {
                 continue;
             }
-            
+
             for (int i = 0; i < host.getWeight(); i++) {
                 validHosts.add(host);
             }
         }
-        //No valid hosts, return false.
+        // No valid hosts, return false.
         return !validHosts.isEmpty();
     }
-    
+
     @JsonIgnore
     public String getJsonFromServer() {
         return jsonFromServer;
     }
-    
+
     public void setJsonFromServer(String jsonFromServer) {
         this.jsonFromServer = jsonFromServer;
     }
-    
+
     @JsonIgnore
     public String getKey() {
         String serviceName = getGroupedServiceName();
         return getKey(serviceName, clusters);
     }
-    
+
     @JsonIgnore
     public static String getKey(String name, String clusters) {
-        
+
         if (!isEmpty(clusters)) {
             return name + Constants.SERVICE_INFO_SPLITER + clusters;
         }
-        
+
         return name;
     }
-    
+
     @JsonIgnore
     public String getKeyEncoded() {
         String serviceName = getGroupedServiceName();
@@ -236,7 +233,7 @@ public class ServiceInfo {
         }
         return getKey(serviceName, clusters);
     }
-    
+
     private String getGroupedServiceName() {
         String serviceName = this.name;
         if (!isEmpty(groupName) && !serviceName.contains(Constants.SERVICE_INFO_SPLITER)) {
@@ -244,7 +241,7 @@ public class ServiceInfo {
         }
         return serviceName;
     }
-    
+
     /**
      * Get {@link ServiceInfo} from key.
      *
@@ -254,28 +251,28 @@ public class ServiceInfo {
     public static ServiceInfo fromKey(final String key) {
         return new ServiceInfo(key);
     }
-    
+
     @Override
     public String toString() {
         return getKey();
     }
-    
+
     public String getChecksum() {
         return checksum;
     }
-    
+
     public void setChecksum(String checksum) {
         this.checksum = checksum;
     }
-    
+
     private static boolean isEmpty(String str) {
         return str == null || str.length() == 0;
     }
-    
+
     public boolean isReachProtectionThreshold() {
         return reachProtectionThreshold;
     }
-    
+
     public void setReachProtectionThreshold(boolean reachProtectionThreshold) {
         this.reachProtectionThreshold = reachProtectionThreshold;
     }

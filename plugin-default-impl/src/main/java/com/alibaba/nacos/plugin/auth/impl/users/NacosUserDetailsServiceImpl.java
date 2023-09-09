@@ -18,20 +18,19 @@ package com.alibaba.nacos.plugin.auth.impl.users;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
+import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
-import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Custom user service.
@@ -41,15 +40,13 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Service
 public class NacosUserDetailsServiceImpl implements UserDetailsService {
-    
+
     private Map<String, User> userMap = new ConcurrentHashMap<>();
-    
-    @Autowired
-    private UserPersistService userPersistService;
-    
-    @Autowired
-    private AuthConfigs authConfigs;
-    
+
+    @Autowired private UserPersistService userPersistService;
+
+    @Autowired private AuthConfigs authConfigs;
+
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
         try {
@@ -57,7 +54,7 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
             if (users == null) {
                 return;
             }
-            
+
             Map<String, User> map = new ConcurrentHashMap<>(16);
             for (User user : users.getPageItems()) {
                 map.put(user.getUsername(), user);
@@ -67,29 +64,29 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
             Loggers.AUTH.warn("[LOAD-USERS] load failed", e);
         }
     }
-    
+
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        
+
         User user = userMap.get(username);
         if (!authConfigs.isCachingEnabled()) {
             user = userPersistService.findUserByUsername(username);
         }
-        
+
         if (user == null) {
             throw new UsernameNotFoundException(username);
         }
         return new NacosUserDetails(user);
     }
-    
+
     public void updateUserPassword(String username, String password) {
         userPersistService.updateUserPassword(username, password);
     }
-    
+
     public Page<User> getUsersFromDatabase(int pageNo, int pageSize, String username) {
         return userPersistService.getUsers(pageNo, pageSize, username);
     }
-    
+
     public User getUser(String username) {
         User user = userMap.get(username);
         if (!authConfigs.isCachingEnabled() || user == null) {
@@ -100,19 +97,19 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
         }
         return user;
     }
-    
+
     public User getUserFromDatabase(String username) {
         return userPersistService.findUserByUsername(username);
     }
-    
+
     public List<String> findUserLikeUsername(String username) {
         return userPersistService.findUserLikeUsername(username);
     }
-    
+
     public void createUser(String username, String password) {
         userPersistService.createUser(username, password);
     }
-    
+
     public void deleteUser(String username) {
         userPersistService.deleteUser(username);
     }

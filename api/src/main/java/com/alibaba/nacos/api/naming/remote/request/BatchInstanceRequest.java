@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.naming.remote.request;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-
 import java.util.List;
 
 /**
@@ -26,36 +25,37 @@ import java.util.List;
  * @author <a href="mailto:chenhao26@xiaomi.com">chenhao26</a>
  */
 public class BatchInstanceRequest extends AbstractNamingRequest {
-    
+
     private String type;
-    
-    /**
-     * save all service instance.
-     */
+
+    /** save all service instance. */
     private List<Instance> instances;
-    
-    public BatchInstanceRequest() {
-    }
-    
-    public BatchInstanceRequest(String namespace, String serviceName, String groupName, String type,
+
+    public BatchInstanceRequest() {}
+
+    public BatchInstanceRequest(
+            String namespace,
+            String serviceName,
+            String groupName,
+            String type,
             List<Instance> instances) {
         super(namespace, serviceName, groupName);
         this.type = type;
         this.instances = instances;
     }
-    
+
     public void setType(String type) {
         this.type = type;
     }
-    
+
     public String getType() {
         return this.type;
     }
-    
+
     public List<Instance> getInstances() {
         return instances;
     }
-    
+
     public void setInstances(List<Instance> instances) {
         this.instances = instances;
     }

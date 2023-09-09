@@ -20,9 +20,8 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.IoUtils;
-import org.apache.http.HttpStatus;
-
 import java.lang.reflect.Type;
+import org.apache.http.HttpStatus;
 
 /**
  * Abstract response handler.
@@ -30,14 +29,14 @@ import java.lang.reflect.Type;
  * @author mai.jh
  */
 public abstract class AbstractResponseHandler<T> implements ResponseHandler<T> {
-    
+
     private Type responseType;
-    
+
     @Override
     public final void setResponseType(Type responseType) {
         this.responseType = responseType;
     }
-    
+
     @Override
     public final HttpRestResult<T> handle(HttpClientResponse response) throws Exception {
         if (HttpStatus.SC_OK != response.getStatusCode()) {
@@ -45,21 +44,21 @@ public abstract class AbstractResponseHandler<T> implements ResponseHandler<T> {
         }
         return convertResult(response, this.responseType);
     }
-    
+
     private HttpRestResult<T> handleError(HttpClientResponse response) throws Exception {
         Header headers = response.getHeaders();
         String message = IoUtils.toString(response.getBody(), headers.getCharset());
         return new HttpRestResult<>(headers, response.getStatusCode(), null, message);
     }
-    
+
     /**
      * Abstract convertResult method, Different types of converters for expansion.
      *
-     * @param response     http client response
+     * @param response http client response
      * @param responseType responseType
      * @return HttpRestResult
      * @throws Exception ex
      */
-    public abstract HttpRestResult<T> convertResult(HttpClientResponse response, Type responseType) throws Exception;
-    
+    public abstract HttpRestResult<T> convertResult(HttpClientResponse response, Type responseType)
+            throws Exception;
 }

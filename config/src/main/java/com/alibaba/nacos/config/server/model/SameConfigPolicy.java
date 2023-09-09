@@ -22,20 +22,13 @@ package com.alibaba.nacos.config.server.model;
  * @author klw
  */
 public enum SameConfigPolicy {
-    
-    /**
-     * Abort import  on duplicate.
-     */
+
+    /** Abort import on duplicate. */
     ABORT,
-    
-    /**
-     * Skipping on duplicate.
-     */
+
+    /** Skipping on duplicate. */
     SKIP,
-    
-    /**
-     * Overwrite on duplicate.
-     */
+
+    /** Overwrite on duplicate. */
     OVERWRITE
-    
 }

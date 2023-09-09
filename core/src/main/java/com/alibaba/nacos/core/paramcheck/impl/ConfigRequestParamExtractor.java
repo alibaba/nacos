@@ -24,7 +24,6 @@ import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSy
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +33,7 @@ import java.util.List;
  * @author zhuoguang
  */
 public class ConfigRequestParamExtractor extends AbstractRpcParamExtractor {
-    
+
     @Override
     public void init() {
         addTargetRequest(ConfigRemoveRequest.class.getSimpleName());
@@ -42,7 +41,7 @@ public class ConfigRequestParamExtractor extends AbstractRpcParamExtractor {
         addTargetRequest(ConfigPublishRequest.class.getSimpleName());
         addTargetRequest(ConfigChangeClusterSyncRequest.class.getSimpleName());
     }
-    
+
     @Override
     public List<ParamInfo> extractParam(Request request) throws Exception {
         AbstractConfigRequest req = (AbstractConfigRequest) request;

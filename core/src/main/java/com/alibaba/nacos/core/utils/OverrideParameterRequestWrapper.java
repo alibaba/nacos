@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.core.utils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 
 /**
  * A request wrapper to override the parameters.
@@ -30,9 +30,9 @@ import java.util.Map;
  * @since 0.8.0
  */
 public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
-    
+
     private Map<String, String[]> params = new HashMap<>();
-    
+
     /**
      * Constructs a request object wrapping the given request.
      *
@@ -43,39 +43,42 @@ public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
         super(request);
         this.params.putAll(request.getParameterMap());
     }
-    
+
     public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request) {
         return new OverrideParameterRequestWrapper(request);
     }
-    
+
     /**
      * build OverrideParameterRequestWrapper and addParameter.
      *
      * @param request origin HttpServletRequest
-     * @param name    name
-     * @param value   value
+     * @param name name
+     * @param value value
      * @return {@link OverrideParameterRequestWrapper}
      */
-    public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request, String name, String value) {
-        OverrideParameterRequestWrapper requestWrapper = new OverrideParameterRequestWrapper(request);
+    public static OverrideParameterRequestWrapper buildRequest(
+            HttpServletRequest request, String name, String value) {
+        OverrideParameterRequestWrapper requestWrapper =
+                new OverrideParameterRequestWrapper(request);
         requestWrapper.addParameter(name, value);
         return requestWrapper;
     }
-    
+
     /**
      * build OverrideParameterRequestWrapper and addParameter.
      *
-     * @param request          origin HttpServletRequest
+     * @param request origin HttpServletRequest
      * @param appendParameters need to append to request
      * @return {@link OverrideParameterRequestWrapper}
      */
-    public static OverrideParameterRequestWrapper buildRequest(HttpServletRequest request,
-            Map<String, String[]> appendParameters) {
-        OverrideParameterRequestWrapper requestWrapper = new OverrideParameterRequestWrapper(request);
+    public static OverrideParameterRequestWrapper buildRequest(
+            HttpServletRequest request, Map<String, String[]> appendParameters) {
+        OverrideParameterRequestWrapper requestWrapper =
+                new OverrideParameterRequestWrapper(request);
         requestWrapper.params.putAll(appendParameters);
         return requestWrapper;
     }
-    
+
     @Override
     public String getParameter(String name) {
         String[] values = params.get(name);
@@ -84,21 +87,21 @@ public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
         }
         return values[0];
     }
-    
+
     @Override
     public Map<String, String[]> getParameterMap() {
         return params;
     }
-    
+
     @Override
     public String[] getParameterValues(String name) {
         return params.get(name);
     }
-    
+
     /**
      * addParameter.
      *
-     * @param name  name
+     * @param name name
      * @param value value
      */
     public void addParameter(String name, String value) {
@@ -106,5 +109,4 @@ public class OverrideParameterRequestWrapper extends HttpServletRequestWrapper {
             params.put(name, new String[] {value});
         }
     }
-    
 }

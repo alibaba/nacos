@@ -23,13 +23,11 @@ import com.alibaba.nacos.naming.consistency.ConsistencyService;
  *
  * <p>CP consistency is hereby defined as follows:
  *
- * <p>Once the writing operation returned client a success, the data within the operation is guaranteed to be
- * successfully written to the cluster. And the data should be consistent between servers after some time without any
- * outside interfere.
+ * <p>Once the writing operation returned client a success, the data within the operation is
+ * guaranteed to be successfully written to the cluster. And the data should be consistent between
+ * servers after some time without any outside interfere.
  *
  * @author nkorange
  * @since 1.0.0
  */
-public interface PersistentConsistencyService extends ConsistencyService {
-    
-}
+public interface PersistentConsistencyService extends ConsistencyService {}

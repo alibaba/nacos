@@ -25,7 +25,8 @@ import java.util.Arrays;
  * @date 2023/8/7
  */
 public class Base64Decode {
-    private static final char[] BASE64_ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
+    private static final char[] BASE64_ALPHABET =
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/".toCharArray();
 
     private static final int[] BASE64_IALPHABET = new int[256];
 
@@ -42,7 +43,8 @@ public class Base64Decode {
     }
 
     /**
-     * Decodes a Base64 encoded String into a newly-allocated byte array using the Base64 encoding scheme.
+     * Decodes a Base64 encoded String into a newly-allocated byte array using the Base64 encoding
+     * scheme.
      *
      * @param input the string to decode
      * @return a byte array containing binary data
@@ -91,7 +93,11 @@ public class Base64Decode {
         for (int cc = 0, eLen = (len / three) * three; d < eLen; ) {
 
             // Assemble three bytes into an int from four "valid" characters.
-            int i = ctoi(sArr[sIx++]) << 18 | ctoi(sArr[sIx++]) << 12 | ctoi(sArr[sIx++]) << 6 | ctoi(sArr[sIx++]);
+            int i =
+                    ctoi(sArr[sIx++]) << 18
+                            | ctoi(sArr[sIx++]) << 12
+                            | ctoi(sArr[sIx++]) << 6
+                            | ctoi(sArr[sIx++]);
 
             // Add the bytes
             dArr[d++] = (byte) (i >> 16);
@@ -128,5 +134,4 @@ public class Base64Decode {
         }
         return i;
     }
-
 }

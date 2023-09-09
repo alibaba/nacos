@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.AbstractCmdbSelector;
 import com.alibaba.nacos.api.selector.context.CmdbContext;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -33,57 +32,57 @@ import java.util.stream.Collectors;
  * @date 2021-07-14 19:20
  */
 public class MockSelector extends AbstractCmdbSelector<Instance> {
-    
+
     private String key;
-    
+
     private String value;
-    
+
     public String getKey() {
         return key;
     }
-    
+
     public void setKey(String key) {
         this.key = key;
     }
-    
+
     public String getValue() {
         return value;
     }
-    
+
     public void setValue(String value) {
         this.value = value;
     }
-    
+
     @Override
     protected List<Instance> doSelect(CmdbContext<Instance> context) {
         if (context.getProviders() == null) {
             return null;
         }
-        return context.getProviders()
-                .stream()
-                .filter(provider -> {
-                    Map<String, String> labels = provider.getEntity().getLabels();
-                    if (labels == null) {
-                        return false;
-                    }
-                    return value.equals(labels.get(key));
-                })
+        return context.getProviders().stream()
+                .filter(
+                        provider -> {
+                            Map<String, String> labels = provider.getEntity().getLabels();
+                            if (labels == null) {
+                                return false;
+                            }
+                            return value.equals(labels.get(key));
+                        })
                 .map(CmdbContext.CmdbInstance::getInstance)
                 .collect(Collectors.toList());
     }
-    
+
     @Override
     protected void doParse(String expression) throws NacosException {
         String[] keyValues = expression.split("=");
         key = keyValues[0];
         value = keyValues[1];
     }
-    
+
     @Override
     public String getType() {
         return "mock";
     }
-    
+
     @Override
     public String getContextType() {
         return "MOCK_CMDB";

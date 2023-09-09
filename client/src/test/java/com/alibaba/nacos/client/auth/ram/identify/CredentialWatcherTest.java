@@ -16,17 +16,14 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.lang.reflect.Field;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class CredentialWatcherTest {
-    
+
     @Test
     public void stop() throws NoSuchFieldException, IllegalAccessException {
-        CredentialService instance =  CredentialService.getInstance();
+        CredentialService instance = CredentialService.getInstance();
         CredentialWatcher watcher = new CredentialWatcher("app", instance);
         watcher.stop();
         Field executorField = CredentialWatcher.class.getDeclaredField("executor");

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.http.param;
 
 import com.alibaba.nacos.common.utils.MapUtil;
-
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.LinkedHashMap;
@@ -31,27 +30,27 @@ import java.util.Set;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class Query {
-    
+
     private boolean isEmpty = true;
-    
+
     public static final Query EMPTY = Query.newInstance();
-    
+
     private Map<String, Object> params;
-    
+
     private static final String DEFAULT_ENC = "UTF-8";
-    
+
     public Query() {
         params = new LinkedHashMap<>();
     }
-    
+
     public static Query newInstance() {
         return new Query();
     }
-    
+
     /**
      * Add query parameter.
      *
-     * @param key   key
+     * @param key key
      * @param value value
      * @return this query
      */
@@ -60,11 +59,11 @@ public class Query {
         params.put(key, value);
         return this;
     }
-    
+
     public Object getValue(String key) {
         return params.get(key);
     }
-    
+
     /**
      * Add all parameters as query parameter.
      *
@@ -79,7 +78,7 @@ public class Query {
         }
         return this;
     }
-    
+
     /**
      * Add query parameters from KV list. KV list: odd index is key, even index is value.
      *
@@ -93,7 +92,7 @@ public class Query {
             addParam(list.get(i++), list.get(i++));
         }
     }
-    
+
     /**
      * Print query as a http url param string. Like K=V&K=V.
      *
@@ -106,8 +105,12 @@ public class Query {
         for (Map.Entry<String, Object> entry : entrySet) {
             try {
                 if (null != entry.getValue()) {
-                    urlBuilder.append(entry.getKey()).append('=')
-                            .append(URLEncoder.encode(String.valueOf(entry.getValue()), DEFAULT_ENC));
+                    urlBuilder
+                            .append(entry.getKey())
+                            .append('=')
+                            .append(
+                                    URLEncoder.encode(
+                                            String.valueOf(entry.getValue()), DEFAULT_ENC));
                     if (i > 1) {
                         urlBuilder.append('&');
                     }
@@ -117,17 +120,16 @@ public class Query {
                 throw new RuntimeException(e);
             }
         }
-        
+
         return urlBuilder.toString();
     }
-    
+
     public void clear() {
         isEmpty = false;
         params.clear();
     }
-    
+
     public boolean isEmpty() {
         return isEmpty;
     }
-    
 }

@@ -24,54 +24,53 @@ import java.util.Map;
  * @author karsonto
  */
 public interface RpcClientConfig {
-    
+
     /**
      * get name.
      *
      * @return name.
      */
     String name();
-    
+
     /**
      * get request retry times.
      *
      * @return retryTimes.
      */
     int retryTimes();
-    
+
     /**
      * get time out mills.
      *
      * @return timeOutMills.
      */
     long timeOutMills();
-    
+
     /**
      * get connection keep alive time.
      *
      * @return connectionKeepAlive.
      */
     long connectionKeepAlive();
-    
+
     /**
      * get health check retry times.
      *
      * @return healthCheckRetryTimes.
      */
     int healthCheckRetryTimes();
-    
+
     /**
      * get health check time out.
      *
      * @return healthCheckTimeOut.
      */
     long healthCheckTimeOut();
-    
+
     /**
      * get map of labels.
      *
      * @return labels.
      */
     Map<String, String> labels();
-    
 }

@@ -19,7 +19,6 @@ package com.alibaba.nacos.api.cmdb.spi;
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.cmdb.pojo.EntityEvent;
 import com.alibaba.nacos.api.cmdb.pojo.Label;
-
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,21 +30,21 @@ import java.util.Set;
  * @since 0.7.0
  */
 public interface CmdbService {
-    
+
     /**
      * Get all label names stored in CMDB.
      *
      * @return label name set
      */
     Set<String> getLabelNames();
-    
+
     /**
      * Get all possible entity types in CMDB.
      *
      * @return all entity types
      */
     Set<String> getEntityTypes();
-    
+
     /**
      * Get label info.
      *
@@ -53,17 +52,17 @@ public interface CmdbService {
      * @return label info
      */
     Label getLabel(String labelName);
-    
+
     /**
      * Get label value of label name of ip.
      *
      * @param entityName entity name
      * @param entityType entity type
-     * @param labelName  target label name
+     * @param labelName target label name
      * @return label value
      */
     String getLabelValue(String entityName, String entityType, String labelName);
-    
+
     /**
      * Get all label value of ip.
      *
@@ -72,14 +71,14 @@ public interface CmdbService {
      * @return all label values
      */
     Map<String, String> getLabelValues(String entityName, String entityType);
-    
+
     /**
      * Dump all entities in CMDB.
      *
      * @return all entities
      */
     Map<String, Map<String, Entity>> getAllEntities();
-    
+
     /**
      * get label change events.
      *
@@ -87,7 +86,7 @@ public interface CmdbService {
      * @return label events
      */
     List<EntityEvent> getEntityEvents(long timestamp);
-    
+
     /**
      * Get single entity.
      *

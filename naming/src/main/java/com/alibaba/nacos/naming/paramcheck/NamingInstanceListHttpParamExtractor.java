@@ -17,15 +17,14 @@
 package com.alibaba.nacos.naming.paramcheck;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Naming instance list http param extractor.
@@ -36,7 +35,10 @@ public class NamingInstanceListHttpParamExtractor extends AbstractHttpParamExtra
 
     @Override
     public void init() {
-        addTargetRequest(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/list",
+        addTargetRequest(
+                UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
+                        + "/list",
                 HttpMethod.GET);
     }
 
@@ -46,7 +48,8 @@ public class NamingInstanceListHttpParamExtractor extends AbstractHttpParamExtra
         String serviceName = request.getParameter("serviceName");
         String groupName = request.getParameter("groupName");
         String groupServiceName = serviceName;
-        if (StringUtils.isNotBlank(groupServiceName) && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+        if (StringUtils.isNotBlank(groupServiceName)
+                && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
             String[] splits = groupServiceName.split(Constants.SERVICE_INFO_SPLITER, 2);
             groupName = splits[0];
             serviceName = splits[1];

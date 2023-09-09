@@ -25,14 +25,14 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @version $Id: RequestFuture.java, v 0.1 2020年09月01日 6:31 PM liuzunfei Exp $
  */
 public interface RequestFuture {
-    
+
     /**
      * check that it is done or not..
      *
      * @return is done .
      */
     boolean isDone();
-    
+
     /**
      * get response without timeouts.
      *
@@ -40,7 +40,7 @@ public interface RequestFuture {
      * @throws Exception exception throws .
      */
     Response get() throws Exception;
-    
+
     /**
      * get response with a given timeouts.
      *
@@ -49,5 +49,4 @@ public interface RequestFuture {
      * @throws Exception exception throws .
      */
     Response get(long timeout) throws Exception;
-    
 }

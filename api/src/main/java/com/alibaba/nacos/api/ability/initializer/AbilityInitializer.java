@@ -22,7 +22,7 @@ package com.alibaba.nacos.api.ability.initializer;
  * @author xiweng.yy
  */
 public interface AbilityInitializer<A> {
-    
+
     /**
      * Initialize target type abilities content.
      *

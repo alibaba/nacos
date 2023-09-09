@@ -30,7 +30,6 @@ import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.UnsafeByteOperations;
-
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,32 +41,33 @@ import java.util.Map;
  * @version $Id: GrpcUtils.java, v 0.1 2020年08月09日 1:43 PM liuzunfei Exp $
  */
 public class GrpcUtils {
-    
+
     /**
      * convert request to payload.
      *
      * @param request request.
-     * @param meta    request meta.
+     * @param meta request meta.
      * @return payload.
      */
     public static Payload convert(Request request, RequestMeta meta) {
-        //meta.
+        // meta.
         Payload.Builder payloadBuilder = Payload.newBuilder();
         Metadata.Builder metaBuilder = Metadata.newBuilder();
         if (meta != null) {
-            metaBuilder.putAllHeaders(request.getHeaders()).setType(request.getClass().getSimpleName());
+            metaBuilder
+                    .putAllHeaders(request.getHeaders())
+                    .setType(request.getClass().getSimpleName());
         }
         metaBuilder.setClientIp(NetUtils.localIP());
         payloadBuilder.setMetadata(metaBuilder.build());
-        
+
         // request body .
         byte[] jsonBytes = convertRequestToByte(request);
         return payloadBuilder
                 .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .build();
-        
     }
-    
+
     /**
      * convert request to payload.
      *
@@ -75,20 +75,24 @@ public class GrpcUtils {
      * @return payload.
      */
     public static Payload convert(Request request) {
-        
-        Metadata newMeta = Metadata.newBuilder().setType(request.getClass().getSimpleName())
-                .setClientIp(NetUtils.localIP()).putAllHeaders(request.getHeaders()).build();
-        
+
+        Metadata newMeta =
+                Metadata.newBuilder()
+                        .setType(request.getClass().getSimpleName())
+                        .setClientIp(NetUtils.localIP())
+                        .putAllHeaders(request.getHeaders())
+                        .build();
+
         byte[] jsonBytes = convertRequestToByte(request);
-        
+
         Payload.Builder builder = Payload.newBuilder();
-        
-        return builder
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
-                .setMetadata(newMeta).build();
-        
+
+        return builder.setBody(
+                        Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
+                .setMetadata(newMeta)
+                .build();
     }
-    
+
     /**
      * convert response to payload.
      *
@@ -97,13 +101,15 @@ public class GrpcUtils {
      */
     public static Payload convert(Response response) {
         byte[] jsonBytes = JacksonUtils.toJsonBytes(response);
-        
-        Metadata.Builder metaBuilder = Metadata.newBuilder().setType(response.getClass().getSimpleName());
+
+        Metadata.Builder metaBuilder =
+                Metadata.newBuilder().setType(response.getClass().getSimpleName());
         return Payload.newBuilder()
                 .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
-                .setMetadata(metaBuilder.build()).build();
+                .setMetadata(metaBuilder.build())
+                .build();
     }
-    
+
     private static byte[] convertRequestToByte(Request request) {
         Map<String, String> requestHeaders = new HashMap<>(request.getHeaders());
         request.clearHeaders();
@@ -111,7 +117,7 @@ public class GrpcUtils {
         request.putAllHeader(requestHeaders);
         return jsonBytes;
     }
-    
+
     /**
      * parse payload to request/response model.
      *
@@ -129,18 +135,18 @@ public class GrpcUtils {
             }
             return obj;
         } else {
-            throw new RemoteException(NacosException.SERVER_ERROR,
+            throw new RemoteException(
+                    NacosException.SERVER_ERROR,
                     "Unknown payload type:" + payload.getMetadata().getType());
         }
-        
     }
-    
+
     public static class PlainRequest {
-        
+
         String type;
-        
+
         Object body;
-        
+
         /**
          * Getter method for property <tt>type</tt>.
          *
@@ -149,7 +155,7 @@ public class GrpcUtils {
         public String getType() {
             return type;
         }
-        
+
         /**
          * Setter method for property <tt>type</tt>.
          *
@@ -158,7 +164,7 @@ public class GrpcUtils {
         public void setType(String type) {
             this.type = type;
         }
-        
+
         /**
          * Getter method for property <tt>body</tt>.
          *
@@ -167,7 +173,7 @@ public class GrpcUtils {
         public Object getBody() {
             return body;
         }
-        
+
         /**
          * Setter method for property <tt>body</tt>.
          *
@@ -177,5 +183,4 @@ public class GrpcUtils {
             this.body = body;
         }
     }
-    
 }

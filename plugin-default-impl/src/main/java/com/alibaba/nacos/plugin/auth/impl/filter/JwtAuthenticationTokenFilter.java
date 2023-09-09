@@ -21,15 +21,14 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.filter.OncePerRequestFilter;
-
+import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
  * jwt auth token filter.
@@ -37,22 +36,24 @@ import java.io.IOException;
  * @author wfnuser
  */
 public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
-    
+
     private static final String TOKEN_PREFIX = "Bearer ";
-    
+
     private final TokenManagerDelegate tokenManager;
-    
+
     public JwtAuthenticationTokenFilter(TokenManagerDelegate tokenManager) {
         this.tokenManager = tokenManager;
     }
-    
+
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+    protected void doFilterInternal(
+            HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
-        
+
         String jwt = resolveToken(request);
-        
-        if (StringUtils.isNotBlank(jwt) && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+        if (StringUtils.isNotBlank(jwt)
+                && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 Authentication authentication = this.tokenManager.getAuthentication(jwt);
                 SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -62,10 +63,8 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
         }
         chain.doFilter(request, response);
     }
-    
-    /**
-     * Get token from header.
-     */
+
+    /** Get token from header. */
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AuthConstants.AUTHORIZATION_HEADER);
         if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(TOKEN_PREFIX)) {

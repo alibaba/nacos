@@ -24,9 +24,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author Wei.Wang
  */
 public class ContextPathUtil {
-    
+
     private static final String ROOT_WEB_CONTEXT_PATH = "/";
-    
+
     /**
      * normalize context path.
      *
@@ -37,6 +37,8 @@ public class ContextPathUtil {
         if (StringUtils.isBlank(contextPath) || ROOT_WEB_CONTEXT_PATH.equals(contextPath)) {
             return StringUtils.EMPTY;
         }
-        return contextPath.startsWith(ROOT_WEB_CONTEXT_PATH) ? contextPath : ROOT_WEB_CONTEXT_PATH + contextPath;
+        return contextPath.startsWith(ROOT_WEB_CONTEXT_PATH)
+                ? contextPath
+                : ROOT_WEB_CONTEXT_PATH + contextPath;
     }
 }

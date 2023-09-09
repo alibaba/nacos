@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.api.exception;
 
-import com.alibaba.nacos.api.common.Constants;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
+import com.alibaba.nacos.api.common.Constants;
+
 public class NacosExceptionTest {
-    
+
     @Test
     public void testEmptyConstructor() {
         NacosException exception = new NacosException();
@@ -33,7 +32,7 @@ public class NacosExceptionTest {
         exception.setErrMsg("test");
         assertEquals("ErrCode:400, ErrMsg:test", exception.toString());
     }
-    
+
     @Test
     public void testConstructorWithErrMsg() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR, "test");
@@ -41,28 +40,32 @@ public class NacosExceptionTest {
         assertEquals("test", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:test", exception.toString());
     }
-    
+
     @Test
     public void testConstructorWithCause() {
-        NacosException exception = new NacosException(NacosException.SERVER_ERROR, new RuntimeException("cause test"));
+        NacosException exception =
+                new NacosException(NacosException.SERVER_ERROR, new RuntimeException("cause test"));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals("cause test", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:cause test", exception.toString());
     }
-    
+
     @Test
     public void testConstructorWithMultiCauses() {
-        NacosException exception = new NacosException(NacosException.SERVER_ERROR,
-                new RuntimeException("cause test", new RuntimeException("multi")));
+        NacosException exception =
+                new NacosException(
+                        NacosException.SERVER_ERROR,
+                        new RuntimeException("cause test", new RuntimeException("multi")));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals("multi", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:multi", exception.toString());
     }
-    
+
     @Test
     public void testConstructorWithFull() {
-        NacosException exception = new NacosException(NacosException.SERVER_ERROR, "test",
-                new RuntimeException("cause test"));
+        NacosException exception =
+                new NacosException(
+                        NacosException.SERVER_ERROR, "test", new RuntimeException("cause test"));
         assertEquals(NacosException.SERVER_ERROR, exception.getErrCode());
         assertEquals("test", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:test", exception.toString());

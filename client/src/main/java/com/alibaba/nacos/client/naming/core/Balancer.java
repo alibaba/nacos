@@ -16,16 +16,15 @@
 
 package com.alibaba.nacos.client.naming.core;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.utils.Chooser;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.Pair;
-
 import java.util.ArrayList;
 import java.util.List;
-
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * Balancer.
@@ -33,9 +32,9 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xuanyin
  */
 public class Balancer {
-    
+
     public static class RandomByWeight {
-    
+
         /**
          * Select all instance.
          *
@@ -44,14 +43,15 @@ public class Balancer {
          */
         public static List<Instance> selectAll(ServiceInfo serviceInfo) {
             List<Instance> hosts = serviceInfo.getHosts();
-            
+
             if (CollectionUtils.isEmpty(hosts)) {
-                throw new IllegalStateException("no host to srv for serviceInfo: " + serviceInfo.getName());
+                throw new IllegalStateException(
+                        "no host to srv for serviceInfo: " + serviceInfo.getName());
             }
-            
+
             return hosts;
         }
-    
+
         /**
          * Random select one instance from service.
          *
@@ -59,17 +59,17 @@ public class Balancer {
          * @return random instance
          */
         public static Instance selectHost(ServiceInfo dom) {
-            
+
             List<Instance> hosts = selectAll(dom);
-            
+
             if (CollectionUtils.isEmpty(hosts)) {
                 throw new IllegalStateException("no host to srv for service: " + dom.getName());
             }
-            
+
             return getHostByRandomWeight(hosts);
         }
     }
-    
+
     /**
      * Return one host from the host list by random-weight.
      *

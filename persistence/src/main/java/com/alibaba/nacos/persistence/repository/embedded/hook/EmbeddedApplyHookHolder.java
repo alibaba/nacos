@@ -25,23 +25,23 @@ import java.util.Set;
  * @author xiweng.yy
  */
 public class EmbeddedApplyHookHolder {
-    
+
     private static final EmbeddedApplyHookHolder INSTANCE = new EmbeddedApplyHookHolder();
-    
+
     private final Set<EmbeddedApplyHook> hooks;
-    
+
     private EmbeddedApplyHookHolder() {
         hooks = new HashSet<>();
     }
-    
+
     public static EmbeddedApplyHookHolder getInstance() {
         return INSTANCE;
     }
-    
+
     public void register(EmbeddedApplyHook hook) {
         this.hooks.add(hook);
     }
-    
+
     public Set<EmbeddedApplyHook> getAllHooks() {
         return this.hooks;
     }

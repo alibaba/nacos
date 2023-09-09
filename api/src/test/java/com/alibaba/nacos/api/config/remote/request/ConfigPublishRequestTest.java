@@ -16,24 +16,22 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ConfigPublishRequestTest extends BasedConfigRequestTest {
-    
+
     ConfigPublishRequest configPublishRequest;
-    
+
     private static final String TAG_PARAM = "tag";
-    
+
     private static final String APP_NAME_PARAM = "appName";
-    
+
     String requestId;
-    
+
     @Before
     public void before() {
         configPublishRequest = new ConfigPublishRequest(DATA_ID, GROUP, TENANT, CONTENT);
@@ -43,7 +41,7 @@ public class ConfigPublishRequestTest extends BasedConfigRequestTest {
         configPublishRequest.putAllHeader(HEADERS);
         requestId = injectRequestUuId(configPublishRequest);
     }
-    
+
     @Override
     @Test
     public void testSerialize() throws JsonProcessingException {
@@ -56,13 +54,14 @@ public class ConfigPublishRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"casMd5\":\"" + MD5));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
     }
-    
+
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{\"header1\":\"test_header1\"},\"dataId\":\"test_data\",\"group\":\"group\","
-                + "\"tenant\":\"test_tenant\",\"content\":\"content\",\"casMd5\":\"test_MD5\","
-                + "\"additionMap\":{\"appName\":\"appName\",\"tag\":\"tag\"},\"module\":\"config\"}";
+        String json =
+                "{\"headers\":{\"header1\":\"test_header1\"},\"dataId\":\"test_data\",\"group\":\"group\","
+                        + "\"tenant\":\"test_tenant\",\"content\":\"content\",\"casMd5\":\"test_MD5\","
+                        + "\"additionMap\":{\"appName\":\"appName\",\"tag\":\"tag\"},\"module\":\"config\"}";
         ConfigPublishRequest actual = mapper.readValue(json, ConfigPublishRequest.class);
         assertEquals(actual.getDataId(), DATA_ID);
         assertEquals(actual.getGroup(), GROUP);

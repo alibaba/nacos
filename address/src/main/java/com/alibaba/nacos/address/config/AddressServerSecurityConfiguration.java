@@ -23,15 +23,22 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 
 /**
  * nacos web security configuration.
+ *
  * @author onewe
  */
 @Configuration
 @Order(99)
 public class AddressServerSecurityConfiguration extends WebSecurityConfigurerAdapter {
-    
+
     @Override
     protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeHttpRequests(requestMatcherRegistry -> requestMatcherRegistry.mvcMatchers("/nacos/v1/as/**").authenticated())
-                .csrf().disable().httpBasic();
+        http.authorizeHttpRequests(
+                        requestMatcherRegistry ->
+                                requestMatcherRegistry
+                                        .mvcMatchers("/nacos/v1/as/**")
+                                        .authenticated())
+                .csrf()
+                .disable()
+                .httpBasic();
     }
 }

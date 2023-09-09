@@ -22,7 +22,7 @@ package com.alibaba.nacos.common.task;
  * @author xiweng.yy
  */
 public interface NacosTask {
-    
+
     /**
      * Judge Whether this nacos task should do.
      *

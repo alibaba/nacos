@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.core.v2.client.manager;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
-
 import java.util.Collection;
 
 /**
@@ -28,7 +27,7 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public interface ClientManager {
-    
+
     /**
      * New client connected.
      *
@@ -37,7 +36,7 @@ public interface ClientManager {
      * @return true if add successfully, otherwise false
      */
     boolean clientConnected(String clientId, ClientAttributes attributes);
-    
+
     /**
      * New client connected.
      *
@@ -45,16 +44,16 @@ public interface ClientManager {
      * @return true if add successfully, otherwise false
      */
     boolean clientConnected(Client client);
-    
+
     /**
      * New sync client connected.
      *
-     * @param clientId   synced client id
+     * @param clientId synced client id
      * @param attributes client sync attributes, which can help create sync client
      * @return true if add successfully, otherwise false
      */
     boolean syncClientConnected(String clientId, ClientAttributes attributes);
-    
+
     /**
      * Client disconnected.
      *
@@ -62,7 +61,7 @@ public interface ClientManager {
      * @return true if remove successfully, otherwise false
      */
     boolean clientDisconnected(String clientId);
-    
+
     /**
      * Get client by id.
      *
@@ -70,7 +69,7 @@ public interface ClientManager {
      * @return client
      */
     Client getClient(String clientId);
-    
+
     /**
      * Whether the client id exists.
      *
@@ -78,14 +77,14 @@ public interface ClientManager {
      * @return client
      */
     boolean contains(final String clientId);
-    
+
     /**
      * All client id.
      *
      * @return collection of client id
      */
     Collection<String> allClientId();
-    
+
     /**
      * Whether the client is responsible by current server.
      *
@@ -93,7 +92,7 @@ public interface ClientManager {
      * @return true if responsible, otherwise false
      */
     boolean isResponsibleClient(Client client);
-    
+
     /**
      * verify client.
      *

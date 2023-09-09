@@ -33,7 +33,6 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.util.CRC64;
-
 import java.lang.reflect.Type;
 import java.nio.file.Paths;
 import java.util.List;
@@ -42,49 +41,53 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.zip.Checksum;
 
 /**
- * Snapshot processing of persistent service data for accelerated Raft protocol recovery and data synchronization.
+ * Snapshot processing of persistent service data for accelerated Raft protocol recovery and data
+ * synchronization.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  * @author xiweng.yy
  */
 public class NamingSnapshotOperation extends AbstractSnapshotOperation {
-    
-    private static final String NAMING_SNAPSHOT_SAVE = NamingSnapshotOperation.class.getSimpleName() + ".SAVE";
-    
-    private static final String NAMING_SNAPSHOT_LOAD = NamingSnapshotOperation.class.getSimpleName() + ".LOAD";
-    
+
+    private static final String NAMING_SNAPSHOT_SAVE =
+            NamingSnapshotOperation.class.getSimpleName() + ".SAVE";
+
+    private static final String NAMING_SNAPSHOT_LOAD =
+            NamingSnapshotOperation.class.getSimpleName() + ".LOAD";
+
     private final String snapshotDir = "naming_persistent";
-    
+
     private final String snapshotArchive = "naming_persistent.zip";
-    
+
     private final KvStorage storage;
 
     private final Serializer serializer;
-    
-    public NamingSnapshotOperation(KvStorage storage, ReentrantReadWriteLock lock, Serializer serializer) {
+
+    public NamingSnapshotOperation(
+            KvStorage storage, ReentrantReadWriteLock lock, Serializer serializer) {
         super(lock);
         this.storage = storage;
         this.serializer = serializer;
     }
-    
+
     @Override
     protected boolean writeSnapshot(Writer writer) throws Exception {
         final String writePath = writer.getPath();
         final String parentPath = Paths.get(writePath, snapshotDir).toString();
         DiskUtils.deleteDirectory(parentPath);
         DiskUtils.forceMkdir(parentPath);
-        
+
         storage.doSnapshot(parentPath);
         final String outputFile = Paths.get(writePath, snapshotArchive).toString();
         final Checksum checksum = new CRC64();
         DiskUtils.compress(writePath, snapshotDir, outputFile, checksum);
         DiskUtils.deleteDirectory(parentPath);
-        
+
         final LocalFileMeta meta = new LocalFileMeta();
         meta.append(CHECK_SUM_KEY, Long.toHexString(checksum.getValue()));
         return writer.addFile(snapshotArchive, meta);
     }
-    
+
     @Override
     protected boolean readSnapshot(Reader reader) throws Exception {
         final String readerPath = reader.getPath();
@@ -93,7 +96,8 @@ public class NamingSnapshotOperation extends AbstractSnapshotOperation {
         DiskUtils.decompress(sourceFile, readerPath, checksum);
         LocalFileMeta fileMeta = reader.getFileMeta(snapshotArchive);
         if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY)) {
-            if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
+            if (!Objects.equals(
+                    Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
                 throw new IllegalArgumentException("Snapshot checksum failed");
             }
         }
@@ -119,12 +123,17 @@ public class NamingSnapshotOperation extends AbstractSnapshotOperation {
             if (!KeyBuilder.matchSwitchKey(key)) {
                 continue;
             }
-            Datum datum = serializer.deserialize(storage.get(keys.get(i)), getDatumTypeFromKey(key));
+            Datum datum =
+                    serializer.deserialize(storage.get(keys.get(i)), getDatumTypeFromKey(key));
             Record value = (datum != null) ? datum.value : null;
             // report for refreshing <code>SwitchDomain</code> message
             if (value != null) {
-                ValueChangeEvent event = ValueChangeEvent.builder().key(key).value(value)
-                        .action(DataOperation.CHANGE).build();
+                ValueChangeEvent event =
+                        ValueChangeEvent.builder()
+                                .key(key)
+                                .value(value)
+                                .action(DataOperation.CHANGE)
+                                .build();
                 NotifyCenter.publishEvent(event);
             }
         }
@@ -140,12 +149,12 @@ public class NamingSnapshotOperation extends AbstractSnapshotOperation {
         }
         return Record.class;
     }
-    
+
     @Override
     protected String getSnapshotSaveTag() {
         return NAMING_SNAPSHOT_SAVE;
     }
-    
+
     @Override
     protected String getSnapshotLoadTag() {
         return NAMING_SNAPSHOT_LOAD;

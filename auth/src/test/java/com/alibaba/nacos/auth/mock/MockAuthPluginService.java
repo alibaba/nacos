@@ -16,42 +16,42 @@
 
 package com.alibaba.nacos.auth.mock;
 
-import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-
+import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import java.util.Collection;
 import java.util.Collections;
 
 public class MockAuthPluginService implements AuthPluginService {
-    
+
     public static final String TEST_PLUGIN = "test";
-    
+
     public static final String IDENTITY_TEST_KEY = "identity-test-key";
-    
+
     @Override
     public Collection<String> identityNames() {
         return Collections.singletonList(IDENTITY_TEST_KEY);
     }
-    
+
     @Override
     public boolean enableAuth(ActionTypes action, String type) {
         return true;
     }
-    
+
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+    public boolean validateIdentity(IdentityContext identityContext, Resource resource)
+            throws AccessException {
         return false;
     }
-    
+
     @Override
     public Boolean validateAuthority(IdentityContext identityContext, Permission permission) {
         return false;
     }
-    
+
     @Override
     public String getAuthServiceName() {
         return TEST_PLUGIN;

@@ -18,11 +18,10 @@ package com.alibaba.nacos.config.server.service.notify;
 
 import com.alibaba.nacos.common.task.NacosTask;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.slf4j.Logger;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.slf4j.Logger;
 
 /**
  * Notify Single server.
@@ -31,62 +30,93 @@ import java.util.concurrent.TimeUnit;
  */
 public class NotifySingleService {
     private static final Logger LOGGER = LogUtil.FATAL_LOG;
-    
+
     static class NotifyTaskProcessorWrapper extends NotifyTaskProcessor {
-        
+
         public NotifyTaskProcessorWrapper() {
             /*
              *  serverListManager is useless here
              */
             super(null);
         }
-        
+
         @Override
         public boolean process(NacosTask task) {
             NotifySingleTask notifyTask = (NotifySingleTask) task;
-            return notifyToDump(notifyTask.getDataId(), notifyTask.getGroup(), notifyTask.getTenant(),
-                    notifyTask.getLastModified(), notifyTask.target);
+            return notifyToDump(
+                    notifyTask.getDataId(),
+                    notifyTask.getGroup(),
+                    notifyTask.getTenant(),
+                    notifyTask.getLastModified(),
+                    notifyTask.target);
         }
     }
-    
+
     static class NotifySingleTask extends NotifyTask implements Runnable {
-        
-        private static final NotifyTaskProcessorWrapper PROCESSOR = new NotifyTaskProcessorWrapper();
-        
+
+        private static final NotifyTaskProcessorWrapper PROCESSOR =
+                new NotifyTaskProcessorWrapper();
+
         private final Executor executor;
-        
+
         private final String target;
-        
+
         private boolean isSuccess = false;
-        
-        public NotifySingleTask(String dataId, String group, String tenant, long lastModified, String target,
+
+        public NotifySingleTask(
+                String dataId,
+                String group,
+                String tenant,
+                long lastModified,
+                String target,
                 Executor executor) {
             super(dataId, group, tenant, lastModified);
             this.target = target;
             this.executor = executor;
         }
-        
+
         @Override
         public void run() {
             try {
                 this.isSuccess = PROCESSOR.process(this);
-            } catch (Exception e) { // never goes here, but in case (never interrupts this notification thread)
+            } catch (
+                    Exception
+                            e) { // never goes here, but in case (never interrupts this notification
+                // thread)
                 this.isSuccess = false;
-                LogUtil.NOTIFY_LOG
-                        .error("[notify-exception] target:{} dataid:{} group:{} ts:{}", target, getDataId(), getGroup(),
-                                getLastModified());
-                LogUtil.NOTIFY_LOG.debug("[notify-exception] target:{} dataid:{} group:{} ts:{}",
-                        target, getDataId(), getGroup(), getLastModified(), e);
+                LogUtil.NOTIFY_LOG.error(
+                        "[notify-exception] target:{} dataid:{} group:{} ts:{}",
+                        target,
+                        getDataId(),
+                        getGroup(),
+                        getLastModified());
+                LogUtil.NOTIFY_LOG.debug(
+                        "[notify-exception] target:{} dataid:{} group:{} ts:{}",
+                        target,
+                        getDataId(),
+                        getGroup(),
+                        getLastModified(),
+                        e);
             }
-            
+
             if (!this.isSuccess) {
-                LogUtil.NOTIFY_LOG
-                        .error("[notify-retry] target:{} dataid:{} group:{} ts:{}", target, getDataId(), getGroup(),
-                                getLastModified());
+                LogUtil.NOTIFY_LOG.error(
+                        "[notify-retry] target:{} dataid:{} group:{} ts:{}",
+                        target,
+                        getDataId(),
+                        getGroup(),
+                        getLastModified());
                 try {
-                    ((ScheduledThreadPoolExecutor) executor).schedule(this, 500L, TimeUnit.MILLISECONDS);
-                } catch (Exception e) { // The notification failed, but at the same time, the node was offline
-                    LOGGER.warn("[notify-thread-pool] cluster remove node {}, current thread was tear down.", target, e);
+                    ((ScheduledThreadPoolExecutor) executor)
+                            .schedule(this, 500L, TimeUnit.MILLISECONDS);
+                } catch (
+                        Exception
+                                e) { // The notification failed, but at the same time, the node was
+                    // offline
+                    LOGGER.warn(
+                            "[notify-thread-pool] cluster remove node {}, current thread was tear down.",
+                            target,
+                            e);
                 }
             }
         }

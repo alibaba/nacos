@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,45 +31,45 @@ import java.util.Objects;
  * @author yangyi
  */
 public class Http extends AbstractHealthChecker {
-    
+
     public static final String TYPE = "HTTP";
-    
+
     private static final long serialVersionUID = 551826315222362349L;
-    
+
     private String path = "";
-    
+
     private String headers = "";
-    
+
     private int expectedResponseCode = 200;
-    
+
     public Http() {
         super(Http.TYPE);
     }
-    
+
     public int getExpectedResponseCode() {
         return this.expectedResponseCode;
     }
-    
+
     public void setExpectedResponseCode(final int expectedResponseCode) {
         this.expectedResponseCode = expectedResponseCode;
     }
-    
+
     public String getPath() {
         return this.path;
     }
-    
+
     public void setPath(final String path) {
         this.path = path;
     }
-    
+
     public String getHeaders() {
         return this.headers;
     }
-    
+
     public void setHeaders(final String headers) {
         this.headers = headers;
     }
-    
+
     @JsonIgnore
     public Map<String, String> getCustomHeaders() {
         if (StringUtils.isBlank(headers)) {
@@ -86,20 +85,20 @@ public class Http extends AbstractHealthChecker {
         }
         return headerMap;
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(path, headers, expectedResponseCode);
     }
-    
+
     @Override
     public boolean equals(final Object obj) {
         if (!(obj instanceof Http)) {
             return false;
         }
-        
+
         final Http other = (Http) obj;
-        
+
         if (!StringUtils.equals(path, other.getPath())) {
             return false;
         }
@@ -108,7 +107,7 @@ public class Http extends AbstractHealthChecker {
         }
         return expectedResponseCode == other.getExpectedResponseCode();
     }
-    
+
     @Override
     public Http clone() throws CloneNotSupportedException {
         final Http config = new Http();

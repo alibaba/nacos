@@ -26,26 +26,26 @@ import com.alibaba.nacos.core.storage.kv.MemoryKvStorage;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class StorageFactory {
-    
+
     /**
      * Create {@link KvStorage} implementation.
      *
-     * @param type    type of {@link KvStorage}
-     * @param label   label for {@code RocksStorage}
+     * @param type type of {@link KvStorage}
+     * @param label label for {@code RocksStorage}
      * @param baseDir base dir of storage file.
      * @return implementation of {@link KvStorage}
      * @throws Exception exception during creating {@link KvStorage}
      */
-    public static KvStorage createKvStorage(KvStorage.KvType type, final String label, final String baseDir)
-            throws Exception {
+    public static KvStorage createKvStorage(
+            KvStorage.KvType type, final String label, final String baseDir) throws Exception {
         switch (type) {
             case File:
                 return new FileKvStorage(baseDir);
             case Memory:
                 return new MemoryKvStorage();
             default:
-                throw new IllegalArgumentException("this kv type : [" + type.name() + "] not support");
+                throw new IllegalArgumentException(
+                        "this kv type : [" + type.name() + "] not support");
         }
     }
-    
 }

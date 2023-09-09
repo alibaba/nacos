@@ -24,14 +24,14 @@ import java.util.List;
  * @author nkorange
  */
 public interface Poller<T> {
-    
+
     /**
      * Get next element selected by poller.
      *
      * @return next element
      */
     T next();
-    
+
     /**
      * Update items stored in poller.
      *

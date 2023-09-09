@@ -16,39 +16,34 @@
 
 package com.alibaba.nacos.common.task.engine;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.task.AbstractExecuteTask;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.verify;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import java.util.concurrent.TimeUnit;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
 @RunWith(MockitoJUnitRunner.class)
 public class NacosExecuteTaskExecuteEngineTest {
-    
+
     private NacosExecuteTaskExecuteEngine executeTaskExecuteEngine;
-    
+
     @Before
     public void setUp() {
         executeTaskExecuteEngine = new NacosExecuteTaskExecuteEngine("TEST", null);
     }
-    
+
     @After
     public void tearDown() throws NacosException {
         executeTaskExecuteEngine.shutdown();
     }
-    
-    @Mock
-    private AbstractExecuteTask task;
-    
+
+    @Mock private AbstractExecuteTask task;
+
     @Test
     public void testAddTask() throws InterruptedException {
         executeTaskExecuteEngine.addTask("test", task);

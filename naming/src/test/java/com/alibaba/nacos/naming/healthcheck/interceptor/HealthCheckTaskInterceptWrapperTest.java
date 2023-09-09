@@ -16,6 +16,12 @@
 
 package com.alibaba.nacos.naming.healthcheck.interceptor;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
@@ -28,59 +34,46 @@ import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 @RunWith(MockitoJUnitRunner.class)
 public class HealthCheckTaskInterceptWrapperTest {
-    
+
     private static final String IP = "1.1.1.1";
-    
+
     private static final int PORT = 10000;
-    
+
     private static final String CLIENT_ID = IP + ":" + PORT + "#true";
-    
+
     private static final String SERVICE_NAME = "service";
-    
+
     private static final String GROUP_NAME = "group";
-    
+
     private static final String NAMESPACE = "namespace";
-    
+
     private HealthCheckTaskInterceptWrapper taskWrapper;
-    
-    @Mock
-    private NamingMetadataManager namingMetadataManager;
-    
-    @Mock
-    private GlobalConfig globalConfig;
-    
-    @Mock
-    private SwitchDomain switchDomain;
-    
-    @Mock
-    private DistroMapper distroMapper;
-    
-    @Mock
-    private ConfigurableApplicationContext applicationContext;
-    
+
+    @Mock private NamingMetadataManager namingMetadataManager;
+
+    @Mock private GlobalConfig globalConfig;
+
+    @Mock private SwitchDomain switchDomain;
+
+    @Mock private DistroMapper distroMapper;
+
+    @Mock private ConfigurableApplicationContext applicationContext;
+
     private IpPortBasedClient client;
-    
+
     @Before
     public void setUp() throws Exception {
-        when(applicationContext.getBean(NamingMetadataManager.class)).thenReturn(namingMetadataManager);
+        when(applicationContext.getBean(NamingMetadataManager.class))
+                .thenReturn(namingMetadataManager);
         when(applicationContext.getBean(GlobalConfig.class)).thenReturn(globalConfig);
         when(applicationContext.getBean(SwitchDomain.class)).thenReturn(switchDomain);
         when(applicationContext.getBean(DistroMapper.class)).thenReturn(distroMapper);
@@ -91,36 +84,39 @@ public class HealthCheckTaskInterceptWrapperTest {
         ClientBeatCheckTaskV2 beatCheckTask = new ClientBeatCheckTaskV2(client);
         taskWrapper = new HealthCheckTaskInterceptWrapper(beatCheckTask);
     }
-    
+
     @Test
     public void testRunWithDisableHealthCheck() {
         when(switchDomain.isHealthCheckEnabled()).thenReturn(false);
         taskWrapper.run();
         verify(distroMapper, never()).responsible(client.getResponsibleId());
     }
-    
+
     @Test
     public void testRunWithoutResponsibleClient() {
         when(distroMapper.responsible(client.getResponsibleId())).thenReturn(false);
         taskWrapper.run();
         verify(globalConfig, never()).isExpireInstance();
     }
-    
+
     @Test
     public void testRunUnhealthyInstanceWithoutExpire() {
         injectInstance(false, 0);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
     }
-    
+
     @Test
     public void testRunHealthyInstanceWithoutExpire() {
         injectInstance(true, 0);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+                client.getInstancePublishInfo(
+                                Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                        .isHealthy());
     }
-    
+
     @Test
     public void testRunUnHealthyInstanceWithExpire() {
         injectInstance(false, 0);
@@ -128,7 +124,7 @@ public class HealthCheckTaskInterceptWrapperTest {
         taskWrapper.run();
         assertTrue(client.getAllInstancePublishInfo().isEmpty());
     }
-    
+
     @Test
     public void testRunHealthyInstanceWithExpire() {
         injectInstance(true, 0);
@@ -136,27 +132,34 @@ public class HealthCheckTaskInterceptWrapperTest {
         taskWrapper.run();
         assertTrue(client.getAllInstancePublishInfo().isEmpty());
     }
-    
+
     @Test
     public void testRunHealthyInstanceWithHeartBeat() {
         injectInstance(true, System.currentTimeMillis());
         when(globalConfig.isExpireInstance()).thenReturn(true);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertTrue(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertTrue(
+                client.getInstancePublishInfo(
+                                Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                        .isHealthy());
     }
-    
+
     @Test
     public void testRunHealthyInstanceWithTimeoutFromInstance() throws InterruptedException {
-        injectInstance(true, System.currentTimeMillis()).getExtendDatum()
+        injectInstance(true, System.currentTimeMillis())
+                .getExtendDatum()
                 .put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, 1000);
         when(globalConfig.isExpireInstance()).thenReturn(true);
         TimeUnit.MILLISECONDS.sleep(1100);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+                client.getInstancePublishInfo(
+                                Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                        .isHealthy());
     }
-    
+
     @Test
     public void testRunHealthyInstanceWithTimeoutFromMetadata() throws InterruptedException {
         InstancePublishInfo instance = injectInstance(true, System.currentTimeMillis());
@@ -169,9 +172,12 @@ public class HealthCheckTaskInterceptWrapperTest {
         TimeUnit.SECONDS.sleep(1);
         taskWrapper.run();
         assertFalse(client.getAllInstancePublishInfo().isEmpty());
-        assertFalse(client.getInstancePublishInfo(Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME)).isHealthy());
+        assertFalse(
+                client.getInstancePublishInfo(
+                                Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME))
+                        .isHealthy());
     }
-    
+
     private HealthCheckInstancePublishInfo injectInstance(boolean healthy, long heartbeatTime) {
         Service service = Service.newService(NAMESPACE, GROUP_NAME, SERVICE_NAME);
         HealthCheckInstancePublishInfo instance = new HealthCheckInstancePublishInfo(IP, PORT);

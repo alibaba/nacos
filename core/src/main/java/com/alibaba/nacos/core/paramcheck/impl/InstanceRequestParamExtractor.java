@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,12 +30,12 @@ import java.util.List;
  * @author zhuoguang
  */
 public class InstanceRequestParamExtractor extends AbstractRpcParamExtractor {
-    
+
     @Override
     public void init() {
         addTargetRequest(InstanceRequest.class.getSimpleName());
     }
-    
+
     @Override
     public List<ParamInfo> extractParam(Request request) throws Exception {
         InstanceRequest req = (InstanceRequest) request;

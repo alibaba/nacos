@@ -17,9 +17,6 @@
 package com.alibaba.nacos.client.config.utils;
 
 import com.alibaba.nacos.common.utils.IoUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -30,6 +27,8 @@ import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * concurrent disk util;op file with file lock.
@@ -37,24 +36,22 @@ import java.nio.charset.CharsetDecoder;
  * @author configCenter
  */
 public class ConcurrentDiskUtil {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentDiskUtil.class);
-    
+
     static final int RETRY_COUNT = 10;
-    
-    /**
-     * ms.
-     */
+
+    /** ms. */
     static final int SLEEP_BASETIME = 10;
-    
+
     private static final String READ_ONLY = "r";
-    
+
     private static final String READ_WRITE = "rw";
-    
+
     /**
      * get file content.
      *
-     * @param path        file path
+     * @param path file path
      * @param charsetName charsetName
      * @return content
      * @throws IOException IOException
@@ -63,11 +60,11 @@ public class ConcurrentDiskUtil {
         File file = new File(path);
         return getFileContent(file, charsetName);
     }
-    
+
     /**
      * get file content.
      *
-     * @param file        file
+     * @param file file
      * @param charsetName charsetName
      * @return content
      * @throws IOException IOException
@@ -108,31 +105,33 @@ public class ConcurrentDiskUtil {
             }
         }
     }
-    
+
     /**
      * write file content.
      *
-     * @param path        file path
-     * @param content     content
+     * @param path file path
+     * @param content content
      * @param charsetName charsetName
      * @return whether write ok
      * @throws IOException IOException
      */
-    public static Boolean writeFileContent(String path, String content, String charsetName) throws IOException {
+    public static Boolean writeFileContent(String path, String content, String charsetName)
+            throws IOException {
         File file = new File(path);
         return writeFileContent(file, content, charsetName);
     }
-    
+
     /**
      * write file content.
      *
-     * @param file        file
-     * @param content     content
+     * @param file file
+     * @param content content
      * @param charsetName charsetName
      * @return whether write ok
      * @throws IOException IOException
      */
-    public static Boolean writeFileContent(File file, String content, String charsetName) throws IOException {
+    public static Boolean writeFileContent(File file, String content, String charsetName)
+            throws IOException {
         if (!file.exists()) {
             boolean isCreateOk = file.createNewFile();
             if (!isCreateOk) {
@@ -159,7 +158,7 @@ public class ConcurrentDiskUtil {
                     LOGGER.warn("write {} conflict;retry time:{}", file.getName(), i);
                 }
             } while (null == lock);
-            
+
             ByteBuffer sendBuffer = ByteBuffer.wrap(content.getBytes(charsetName));
             while (sendBuffer.hasRemaining()) {
                 channel.write(sendBuffer);
@@ -192,20 +191,20 @@ public class ConcurrentDiskUtil {
                     LOGGER.warn("close wrong", e);
                 }
             }
-            
         }
         return true;
     }
-    
+
     /**
      * transfer ByteBuffer to String.
      *
-     * @param buffer      buffer
+     * @param buffer buffer
      * @param charsetName charsetName
      * @return String
      * @throws IOException IOException
      */
-    public static String byteBufferToString(ByteBuffer buffer, String charsetName) throws IOException {
+    public static String byteBufferToString(ByteBuffer buffer, String charsetName)
+            throws IOException {
         Charset charset = null;
         CharsetDecoder decoder = null;
         CharBuffer charBuffer = null;
@@ -214,7 +213,7 @@ public class ConcurrentDiskUtil {
         charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
         return charBuffer.toString();
     }
-    
+
     private static void sleep(int time) {
         try {
             Thread.sleep(time);

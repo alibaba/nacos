@@ -28,5 +28,4 @@ public class PrintGetConfigResponeTask implements Runnable {
     public void run() {
         MEMORY_LOG.info(ResponseMonitor.getStringForPrint());
     }
-    
 }

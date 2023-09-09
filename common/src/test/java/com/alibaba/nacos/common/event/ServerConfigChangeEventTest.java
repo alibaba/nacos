@@ -17,11 +17,9 @@
 package com.alibaba.nacos.common.event;
 
 import com.alibaba.nacos.common.notify.Event;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class ServerConfigChangeEventTest {
-    
+
     @Test
     public void test() {
         Event event = ServerConfigChangeEvent.newEvent();

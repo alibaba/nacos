@@ -31,9 +31,8 @@ import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Collection;
+import java.util.HashSet;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -41,9 +40,6 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
-
-import java.util.Collection;
-import java.util.HashSet;
 
 /**
  * {@link OperatorController} unit test.
@@ -53,45 +49,39 @@ import java.util.HashSet;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class OperatorControllerTest {
-    
-    @InjectMocks
-    private OperatorController operatorController;
-    
-    @Mock
-    private SwitchDomain switchDomain;
-    
-    @Mock
-    private SwitchManager switchManager;
-    
-    @Mock
-    private ServerStatusManager serverStatusManager;
-    
-    @Mock
-    private ClientManager clientManager;
-    
-    @Mock
-    private DistroMapper distroMapper;
-    
+
+    @InjectMocks private OperatorController operatorController;
+
+    @Mock private SwitchDomain switchDomain;
+
+    @Mock private SwitchManager switchManager;
+
+    @Mock private ServerStatusManager serverStatusManager;
+
+    @Mock private ClientManager clientManager;
+
+    @Mock private DistroMapper distroMapper;
+
     @Before
     public void setUp() {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(environment);
     }
-    
+
     @Test
     public void testPushState() {
         MetricsMonitor.resetPush();
         ObjectNode objectNode = operatorController.pushState(true, true);
         Assert.assertTrue(objectNode.toString().contains("succeed\":0"));
     }
-    
+
     @Test
     public void testSwitchDomain() {
         SwitchDomain switchDomain = operatorController.switches(new MockHttpServletRequest());
         Assert.assertEquals(this.switchDomain, switchDomain);
     }
-    
+
     @Test
     public void testUpdateSwitch() {
         try {
@@ -102,7 +92,7 @@ public class OperatorControllerTest {
             Assert.fail(e.getMessage());
         }
     }
-    
+
     @Test
     public void testMetrics() {
         Mockito.when(serverStatusManager.getServerStatus()).thenReturn(ServerStatus.UP);
@@ -115,11 +105,11 @@ public class OperatorControllerTest {
         client.addServiceInstance(Service.newService("", "", ""), new InstancePublishInfo());
         Mockito.when(clientManager.getClient("127.0.0.1:8081#true")).thenReturn(client);
         Mockito.when(clientManager.isResponsibleClient(client)).thenReturn(Boolean.TRUE);
-        
+
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter("onlyStatus", "false");
         ObjectNode objectNode = operatorController.metrics(servletRequest);
-        
+
         Assert.assertEquals(1, objectNode.get("responsibleInstanceCount").asInt());
         Assert.assertEquals(ServerStatus.UP.toString(), objectNode.get("status").asText());
         Assert.assertEquals(3, objectNode.get("clientCount").asInt());
@@ -128,14 +118,14 @@ public class OperatorControllerTest {
         Assert.assertEquals(1, objectNode.get("persistentIpPortClientCount").asInt());
         Assert.assertEquals(1, objectNode.get("responsibleClientCount").asInt());
     }
-    
+
     @Test
     public void testGetResponsibleServer4Client() {
         Mockito.when(distroMapper.mapSrv(Mockito.anyString())).thenReturn("test");
         ObjectNode objectNode = operatorController.getResponsibleServer4Client("test", "test");
         Assert.assertEquals("test", objectNode.get("responsibleServer").asText());
     }
-    
+
     @Test
     public void testSetLogLevel() {
         String res = operatorController.setLogLevel("test", "info");

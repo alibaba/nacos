@@ -19,46 +19,49 @@ package com.alibaba.nacos.naming.core.v2.event.publisher;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.EventPublisherFactory;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * event publisher factory for naming event.
  *
- * <p>
- * Some naming event is in order, so these event need publish by sync(with same thread and same queue).
- * </p>
+ * <p>Some naming event is in order, so these event need publish by sync(with same thread and same
+ * queue).
  *
  * @author xiweng.yy
  */
 public class NamingEventPublisherFactory implements EventPublisherFactory {
-    
+
     private static final NamingEventPublisherFactory INSTANCE = new NamingEventPublisherFactory();
-    
+
     private final Map<Class<? extends Event>, NamingEventPublisher> publisher;
-    
+
     private NamingEventPublisherFactory() {
         publisher = new ConcurrentHashMap<>();
     }
-    
+
     public static NamingEventPublisherFactory getInstance() {
         return INSTANCE;
     }
-    
+
     @Override
-    public EventPublisher apply(final Class<? extends Event> eventType, final Integer maxQueueSize) {
+    public EventPublisher apply(
+            final Class<? extends Event> eventType, final Integer maxQueueSize) {
         // Like ClientEvent$ClientChangeEvent cache by ClientEvent
         Class<? extends Event> cachedEventType =
-                eventType.isMemberClass() ? (Class<? extends Event>) eventType.getEnclosingClass() : eventType;
-        publisher.computeIfAbsent(cachedEventType, eventClass -> {
-            NamingEventPublisher result = new NamingEventPublisher();
-            result.init(eventClass, maxQueueSize);
-            return result;
-        });
+                eventType.isMemberClass()
+                        ? (Class<? extends Event>) eventType.getEnclosingClass()
+                        : eventType;
+        publisher.computeIfAbsent(
+                cachedEventType,
+                eventClass -> {
+                    NamingEventPublisher result = new NamingEventPublisher();
+                    result.init(eventClass, maxQueueSize);
+                    return result;
+                });
         return publisher.get(cachedEventType);
     }
-    
+
     public String getAllPublisherStatues() {
         StringBuilder result = new StringBuilder("Naming event publisher statues:\n");
         for (NamingEventPublisher each : publisher.values()) {

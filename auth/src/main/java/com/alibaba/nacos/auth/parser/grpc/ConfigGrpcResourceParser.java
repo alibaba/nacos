@@ -21,7 +21,6 @@ import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.util.List;
 
 /**
@@ -30,15 +29,19 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
-    
+
     @Override
     protected String getNamespaceId(Request request) {
         String namespaceId = StringUtils.EMPTY;
         if (request instanceof ConfigBatchListenRequest) {
-            List<ConfigBatchListenRequest.ConfigListenContext> configListenContexts = ((ConfigBatchListenRequest) request)
-                    .getConfigListenContexts();
+            List<ConfigBatchListenRequest.ConfigListenContext> configListenContexts =
+                    ((ConfigBatchListenRequest) request).getConfigListenContexts();
             if (!configListenContexts.isEmpty()) {
-                namespaceId = ((ConfigBatchListenRequest) request).getConfigListenContexts().get(0).getTenant();
+                namespaceId =
+                        ((ConfigBatchListenRequest) request)
+                                .getConfigListenContexts()
+                                .get(0)
+                                .getTenant();
             }
         } else if (request instanceof AbstractConfigRequest) {
             namespaceId = ((AbstractConfigRequest) request).getTenant();
@@ -47,27 +50,35 @@ public class ConfigGrpcResourceParser extends AbstractGrpcResourceParser {
         }
         return StringUtils.isBlank(namespaceId) ? StringUtils.EMPTY : namespaceId;
     }
-    
+
     @Override
     protected String getGroup(Request request) {
         String groupName;
         if (request instanceof AbstractConfigRequest) {
             groupName = ((AbstractConfigRequest) request).getGroup();
         } else {
-            groupName = (String) ReflectUtils
-                    .getFieldValue(request, com.alibaba.nacos.api.common.Constants.GROUP, StringUtils.EMPTY);
+            groupName =
+                    (String)
+                            ReflectUtils.getFieldValue(
+                                    request,
+                                    com.alibaba.nacos.api.common.Constants.GROUP,
+                                    StringUtils.EMPTY);
         }
         return StringUtils.isBlank(groupName) ? StringUtils.EMPTY : groupName;
     }
-    
+
     @Override
     protected String getResourceName(Request request) {
         String dataId;
         if (request instanceof AbstractConfigRequest) {
             dataId = ((AbstractConfigRequest) request).getDataId();
         } else {
-            dataId = (String) ReflectUtils
-                    .getFieldValue(request, com.alibaba.nacos.api.common.Constants.DATAID, StringUtils.EMPTY);
+            dataId =
+                    (String)
+                            ReflectUtils.getFieldValue(
+                                    request,
+                                    com.alibaba.nacos.api.common.Constants.DATAID,
+                                    StringUtils.EMPTY);
         }
         return StringUtils.isBlank(dataId) ? StringUtils.EMPTY : dataId;
     }

@@ -22,7 +22,6 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
-
 import java.util.Collection;
 import java.util.Collections;
 
@@ -32,27 +31,29 @@ import java.util.Collections;
  * @author xiweng.yy
  */
 public class MockAuthPluginService implements AuthPluginService {
-    
+
     @Override
     public Collection<String> identityNames() {
         return Collections.singletonList("mock");
     }
-    
+
     @Override
     public boolean enableAuth(ActionTypes action, String type) {
         return false;
     }
-    
+
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+    public boolean validateIdentity(IdentityContext identityContext, Resource resource)
+            throws AccessException {
         return false;
     }
-    
+
     @Override
-    public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
+    public Boolean validateAuthority(IdentityContext identityContext, Permission permission)
+            throws AccessException {
         return false;
     }
-    
+
     @Override
     public String getAuthServiceName() {
         return "mock";

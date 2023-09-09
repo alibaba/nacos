@@ -16,18 +16,17 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
+
 import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.RegexParser;
-
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 
 /**
  * AggrWhitelist.
@@ -35,12 +34,12 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  * @author Nacos
  */
 public class AggrWhitelist {
-    
+
     public static final String AGGRIDS_METADATA = "com.alibaba.nacos.metadata.aggrIDs";
-    
-    static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST = new AtomicReference<>(
-            new ArrayList<>());
-    
+
+    static final AtomicReference<List<Pattern>> AGGR_DATAID_WHITELIST =
+            new AtomicReference<>(new ArrayList<>());
+
     /**
      * Judge whether specified dataId includes aggregation white list.
      *
@@ -51,7 +50,7 @@ public class AggrWhitelist {
         if (null == dataId) {
             throw new IllegalArgumentException("dataId is null");
         }
-        
+
         for (Pattern pattern : AGGR_DATAID_WHITELIST.get()) {
             if (pattern.matcher(dataId).matches()) {
                 return true;
@@ -59,7 +58,7 @@ public class AggrWhitelist {
         }
         return false;
     }
-    
+
     /**
      * Load aggregation white lists based content parameter value.
      *
@@ -71,7 +70,7 @@ public class AggrWhitelist {
             return;
         }
         DEFAULT_LOG.warn("[aggr-dataIds] {}", content);
-        
+
         try {
             List<String> lines = IoUtils.readLines(new StringReader(content));
             compile(lines);
@@ -79,10 +78,10 @@ public class AggrWhitelist {
             DEFAULT_LOG.error("failed to load aggr whitelist, " + ioe, ioe);
         }
     }
-    
+
     static void compile(List<String> whitelist) {
         List<Pattern> list = new ArrayList<>(whitelist.size());
-        
+
         for (String line : whitelist) {
             if (!StringUtils.isBlank(line)) {
                 String regex = RegexParser.regexFormat(line.trim());
@@ -91,7 +90,7 @@ public class AggrWhitelist {
         }
         AGGR_DATAID_WHITELIST.set(list);
     }
-    
+
     public static List<Pattern> getWhiteList() {
         return AGGR_DATAID_WHITELIST.get();
     }

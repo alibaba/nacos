@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
-
 import java.util.Objects;
 import java.util.Properties;
 
@@ -33,55 +32,58 @@ import java.util.Properties;
  * @author lixiaoshuang
  */
 public class ConfigEncryptionFilter extends AbstractConfigFilter {
-    
+
     private static final String DEFAULT_NAME = ConfigEncryptionFilter.class.getName();
-    
+
     @Override
-    public void init(Properties properties) {
-    
-    }
-    
+    public void init(Properties properties) {}
+
     @Override
-    public void doFilter(IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
+    public void doFilter(
+            IConfigRequest request, IConfigResponse response, IConfigFilterChain filterChain)
             throws NacosException {
-        if (Objects.nonNull(request) && request instanceof ConfigRequest && Objects.isNull(response)) {
-            
+        if (Objects.nonNull(request)
+                && request instanceof ConfigRequest
+                && Objects.isNull(response)) {
+
             // Publish configuration, encrypt
             ConfigRequest configRequest = (ConfigRequest) request;
             String dataId = configRequest.getDataId();
             String content = configRequest.getContent();
-            
+
             Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
             String secretKey = pair.getFirst();
             String encryptContent = pair.getSecond();
-            
+
             ((ConfigRequest) request).setContent(encryptContent);
             ((ConfigRequest) request).setEncryptedDataKey(secretKey);
         }
-        if (Objects.nonNull(response) && response instanceof ConfigResponse && Objects.isNull(request)) {
-            
+        if (Objects.nonNull(response)
+                && response instanceof ConfigResponse
+                && Objects.isNull(request)) {
+
             // Get configuration, decrypt
             ConfigResponse configResponse = (ConfigResponse) response;
-            
+
             String dataId = configResponse.getDataId();
             String encryptedDataKey = configResponse.getEncryptedDataKey();
             String content = configResponse.getContent();
-            
-            Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
+
+            Pair<String, String> pair =
+                    EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
             String decryptContent = pair.getSecond();
             ((ConfigResponse) response).setContent(decryptContent);
         }
         filterChain.doFilter(request, response);
     }
-    
+
     @Override
     public int getOrder() {
         return 0;
     }
-    
+
     @Override
     public String getFilterName() {
         return DEFAULT_NAME;
     }
-    
 }

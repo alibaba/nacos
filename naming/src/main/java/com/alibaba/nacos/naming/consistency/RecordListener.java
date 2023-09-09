@@ -24,7 +24,7 @@ import com.alibaba.nacos.naming.pojo.Record;
  * @author nacos
  */
 public interface RecordListener<T extends Record> {
-    
+
     /**
      * Determine if the listener was registered with this key.
      *
@@ -32,7 +32,7 @@ public interface RecordListener<T extends Record> {
      * @return true if the listener was registered with this key
      */
     boolean interests(String key);
-    
+
     /**
      * Determine if the listener is to be removed by matching the 'key'.
      *
@@ -40,16 +40,16 @@ public interface RecordListener<T extends Record> {
      * @return true if match success
      */
     boolean matchUnlistenKey(String key);
-    
+
     /**
      * Action to do if data of target key has changed.
      *
-     * @param key   target key
+     * @param key target key
      * @param value data of the key
      * @throws Exception exception
      */
     void onChange(String key, T value) throws Exception;
-    
+
     /**
      * Action to do if data of target key has been removed.
      *

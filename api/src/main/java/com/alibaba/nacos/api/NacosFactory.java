@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingMaintainFactory;
 import com.alibaba.nacos.api.naming.NamingMaintainService;
 import com.alibaba.nacos.api.naming.NamingService;
-
 import java.util.Properties;
 
 /**
@@ -32,7 +31,7 @@ import java.util.Properties;
  * @author Nacos
  */
 public class NacosFactory {
-    
+
     /**
      * Create config service.
      *
@@ -43,7 +42,7 @@ public class NacosFactory {
     public static ConfigService createConfigService(Properties properties) throws NacosException {
         return ConfigFactory.createConfigService(properties);
     }
-    
+
     /**
      * Create config service.
      *
@@ -54,7 +53,7 @@ public class NacosFactory {
     public static ConfigService createConfigService(String serverAddr) throws NacosException {
         return ConfigFactory.createConfigService(serverAddr);
     }
-    
+
     /**
      * Create naming service.
      *
@@ -65,7 +64,7 @@ public class NacosFactory {
     public static NamingService createNamingService(String serverAddr) throws NacosException {
         return NamingFactory.createNamingService(serverAddr);
     }
-    
+
     /**
      * Create naming service.
      *
@@ -76,7 +75,7 @@ public class NacosFactory {
     public static NamingService createNamingService(Properties properties) throws NacosException {
         return NamingFactory.createNamingService(properties);
     }
-    
+
     /**
      * Create maintain service.
      *
@@ -84,10 +83,11 @@ public class NacosFactory {
      * @return NamingMaintainService
      * @throws NacosException Exception
      */
-    public static NamingMaintainService createMaintainService(String serverAddr) throws NacosException {
+    public static NamingMaintainService createMaintainService(String serverAddr)
+            throws NacosException {
         return NamingMaintainFactory.createMaintainService(serverAddr);
     }
-    
+
     /**
      * Create maintain service.
      *
@@ -95,7 +95,8 @@ public class NacosFactory {
      * @return NamingMaintainService
      * @throws NacosException Exception
      */
-    public static NamingMaintainService createMaintainService(Properties properties) throws NacosException {
+    public static NamingMaintainService createMaintainService(Properties properties)
+            throws NacosException {
         return NamingMaintainFactory.createMaintainService(properties);
     }
 }

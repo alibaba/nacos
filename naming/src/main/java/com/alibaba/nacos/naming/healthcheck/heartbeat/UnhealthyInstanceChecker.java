@@ -32,7 +32,6 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-
 import java.util.Optional;
 
 /**
@@ -43,43 +42,60 @@ import java.util.Optional;
  * @author xiweng.yy
  */
 public class UnhealthyInstanceChecker implements InstanceBeatChecker {
-    
+
     @Override
     public void doCheck(Client client, Service service, HealthCheckInstancePublishInfo instance) {
         if (instance.isHealthy() && isUnhealthy(service, instance)) {
             changeHealthyStatus(client, service, instance);
         }
     }
-    
+
     private boolean isUnhealthy(Service service, HealthCheckInstancePublishInfo instance) {
         long beatTimeout = getTimeout(service, instance);
         return System.currentTimeMillis() - instance.getLastHeartBeatTime() > beatTimeout;
     }
-    
+
     private long getTimeout(Service service, InstancePublishInfo instance) {
         Optional<Object> timeout = getTimeoutFromMetadata(service, instance);
         if (!timeout.isPresent()) {
-            timeout = Optional.ofNullable(instance.getExtendDatum().get(PreservedMetadataKeys.HEART_BEAT_TIMEOUT));
+            timeout =
+                    Optional.ofNullable(
+                            instance.getExtendDatum()
+                                    .get(PreservedMetadataKeys.HEART_BEAT_TIMEOUT));
         }
         return timeout.map(ConvertUtils::toLong).orElse(Constants.DEFAULT_HEART_BEAT_TIMEOUT);
     }
-    
+
     private Optional<Object> getTimeoutFromMetadata(Service service, InstancePublishInfo instance) {
-        Optional<InstanceMetadata> instanceMetadata = ApplicationUtils.getBean(NamingMetadataManager.class)
-                .getInstanceMetadata(service, instance.getMetadataId());
-        return instanceMetadata.map(metadata -> metadata.getExtendData().get(PreservedMetadataKeys.HEART_BEAT_TIMEOUT));
+        Optional<InstanceMetadata> instanceMetadata =
+                ApplicationUtils.getBean(NamingMetadataManager.class)
+                        .getInstanceMetadata(service, instance.getMetadataId());
+        return instanceMetadata.map(
+                metadata -> metadata.getExtendData().get(PreservedMetadataKeys.HEART_BEAT_TIMEOUT));
     }
-    
-    private void changeHealthyStatus(Client client, Service service, HealthCheckInstancePublishInfo instance) {
+
+    private void changeHealthyStatus(
+            Client client, Service service, HealthCheckInstancePublishInfo instance) {
         instance.setHealthy(false);
-        Loggers.EVT_LOG
-                .info("{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client last beat: {}", instance.getIp(),
-                        instance.getPort(), instance.getCluster(), service.getName(), UtilsAndCommons.LOCALHOST_SITE,
-                        instance.getLastHeartBeatTime());
+        Loggers.EVT_LOG.info(
+                "{POS} {IP-DISABLED} valid: {}:{}@{}@{}, region: {}, msg: client last beat: {}",
+                instance.getIp(),
+                instance.getPort(),
+                instance.getCluster(),
+                service.getName(),
+                UtilsAndCommons.LOCALHOST_SITE,
+                instance.getLastHeartBeatTime());
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
         NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));
-        NotifyCenter.publishEvent(new HealthStateChangeTraceEvent(System.currentTimeMillis(),
-                service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(), instance.getPort(),
-                false, "client_beat"));
+        NotifyCenter.publishEvent(
+                new HealthStateChangeTraceEvent(
+                        System.currentTimeMillis(),
+                        service.getNamespace(),
+                        service.getGroup(),
+                        service.getName(),
+                        instance.getIp(),
+                        instance.getPort(),
+                        false,
+                        "client_beat"));
     }
 }

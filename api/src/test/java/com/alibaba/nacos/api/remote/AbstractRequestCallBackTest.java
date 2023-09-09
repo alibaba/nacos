@@ -16,38 +16,37 @@
 
 package com.alibaba.nacos.api.remote;
 
-import com.alibaba.nacos.api.remote.response.ErrorResponse;
-import com.alibaba.nacos.api.remote.response.Response;
-import org.junit.Test;
-
-import java.util.concurrent.Executor;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.remote.response.ErrorResponse;
+import com.alibaba.nacos.api.remote.response.Response;
+import java.util.concurrent.Executor;
+
 public class AbstractRequestCallBackTest {
-    
+
     boolean testValue;
-    
+
     @Test
     public void testAbstractPushCallBack() {
-        AbstractRequestCallBack callBack = new AbstractRequestCallBack() {
-            @Override
-            public Executor getExecutor() {
-                return null;
-            }
-            
-            @Override
-            public void onResponse(Response response) {
-                testValue = true;
-            }
-            
-            @Override
-            public void onException(Throwable e) {
-                testValue = false;
-            }
-        };
+        AbstractRequestCallBack callBack =
+                new AbstractRequestCallBack() {
+                    @Override
+                    public Executor getExecutor() {
+                        return null;
+                    }
+
+                    @Override
+                    public void onResponse(Response response) {
+                        testValue = true;
+                    }
+
+                    @Override
+                    public void onException(Throwable e) {
+                        testValue = false;
+                    }
+                };
         assertEquals(3000L, callBack.getTimeout());
         assertFalse(testValue);
         callBack.onResponse(new ErrorResponse());
@@ -55,5 +54,4 @@ public class AbstractRequestCallBackTest {
         callBack.onException(new RuntimeException("test"));
         assertFalse(testValue);
     }
-    
 }

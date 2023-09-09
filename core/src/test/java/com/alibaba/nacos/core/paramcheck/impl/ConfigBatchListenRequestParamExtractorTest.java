@@ -16,31 +16,30 @@
 
 package com.alibaba.nacos.core.paramcheck.impl;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 import com.alibaba.nacos.core.paramcheck.RpcParamExtractorManager;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class ConfigBatchListenRequestParamExtractorTest {
-    
+
     private static ConfigBatchListenRequest req;
-    
+
     @BeforeClass
     public static void initConfigBatchListenRequest() {
         req = new ConfigBatchListenRequest();
     }
-    
-    /**
-     * Test extract param and check.
-     */
+
+    /** Test extract param and check. */
     @Test
     public void testExtractParamAndCheck() throws Exception {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
-        AbstractRpcParamExtractor extractor = paramExtractorManager.getExtractor(req.getClass().getSimpleName());
-        assertEquals(extractor.getClass().getSimpleName(), ConfigBatchListenRequestParamExtractor.class.getSimpleName());
+        AbstractRpcParamExtractor extractor =
+                paramExtractorManager.getExtractor(req.getClass().getSimpleName());
+        assertEquals(
+                extractor.getClass().getSimpleName(),
+                ConfigBatchListenRequestParamExtractor.class.getSimpleName());
         extractor.extractParam(req);
     }
 }

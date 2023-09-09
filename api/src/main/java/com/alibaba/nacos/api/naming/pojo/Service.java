@@ -23,93 +23,97 @@ import java.util.Map;
 /**
  * Service of Nacos.
  *
- * <p>We introduce a 'service --> cluster --> instance' model, in which service stores a list of clusters, which contains a
- * list of instances.
+ * <p>We introduce a 'service --> cluster --> instance' model, in which service stores a list of
+ * clusters, which contains a list of instances.
  *
  * <p>Typically we put some unique properties between instances to service level.
  *
  * @author nkorange
  */
 public class Service implements Serializable {
-    
+
     private static final long serialVersionUID = -3470985546826874460L;
-    
-    /**
-     * service name.
-     */
+
+    /** service name. */
     private String name;
-    
-    /**
-     * protect threshold.
-     */
+
+    /** protect threshold. */
     private float protectThreshold = 0.0F;
-    
-    /**
-     * application name of this service.
-     */
+
+    /** application name of this service. */
     private String appName;
-    
-    /**
-     * Service group to classify services into different sets.
-     */
+
+    /** Service group to classify services into different sets. */
     private String groupName;
-    
+
     private Map<String, String> metadata = new HashMap<>();
-    
-    public Service() {
-    }
-    
+
+    public Service() {}
+
     public Service(String name) {
         this.name = name;
     }
-    
+
     public String getName() {
         return name;
     }
-    
+
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public float getProtectThreshold() {
         return protectThreshold;
     }
-    
+
     public void setProtectThreshold(float protectThreshold) {
         this.protectThreshold = protectThreshold;
     }
-    
+
     public String getAppName() {
         return appName;
     }
-    
+
     public void setAppName(String appName) {
         this.appName = appName;
     }
-    
+
     public String getGroupName() {
         return groupName;
     }
-    
+
     public void setGroupName(String groupName) {
         this.groupName = groupName;
     }
-    
+
     public Map<String, String> getMetadata() {
         return metadata;
     }
-    
+
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
-    
+
     public void addMetadata(String key, String value) {
         this.metadata.put(key, value);
     }
-    
+
     @Override
     public String toString() {
-        return "Service{" + "name='" + name + '\'' + ", protectThreshold=" + protectThreshold + ", appName='" + appName
-                + '\'' + ", groupName='" + groupName + '\'' + ", metadata=" + metadata + '}';
+        return "Service{"
+                + "name='"
+                + name
+                + '\''
+                + ", protectThreshold="
+                + protectThreshold
+                + ", appName='"
+                + appName
+                + '\''
+                + ", groupName='"
+                + groupName
+                + '\''
+                + ", metadata="
+                + metadata
+                + '}';
     }
 }

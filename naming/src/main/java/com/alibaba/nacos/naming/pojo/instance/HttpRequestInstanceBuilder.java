@@ -26,42 +26,39 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Http instance builder.
  *
- * <p>
- * The http openAPI will split each attributes of {@link Instance} as parameters of http parameters. This Builder can
- * set an http request and get necessary parameters to build {@link Instance}.
- * </p>
+ * <p>The http openAPI will split each attributes of {@link Instance} as parameters of http
+ * parameters. This Builder can set an http request and get necessary parameters to build {@link
+ * Instance}.
  *
- * <p>
- * This builder is a wrapper for {@link com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder} and will inject some
- * extension handler by spi.
- * </p>
+ * <p>This builder is a wrapper for {@link
+ * com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder} and will inject some extension handler
+ * by spi.
  *
  * @author xiweng.yy
  */
 public class HttpRequestInstanceBuilder {
-    
+
     private final InstanceBuilder actualBuilder;
-    
+
     private final Collection<InstanceExtensionHandler> handlers;
-    
+
     private boolean defaultInstanceEphemeral = true;
-    
+
     private HttpRequestInstanceBuilder() {
         this.actualBuilder = InstanceBuilder.newBuilder();
         this.handlers = NacosServiceLoader.newServiceInstances(InstanceExtensionHandler.class);
     }
-    
+
     public static HttpRequestInstanceBuilder newBuilder() {
         return new HttpRequestInstanceBuilder();
     }
-    
+
     /**
      * Build a new {@link Instance} and chain handled by {@link InstanceExtensionHandler}.
      *
@@ -75,12 +72,13 @@ public class HttpRequestInstanceBuilder {
         setInstanceId(result);
         return result;
     }
-    
-    public HttpRequestInstanceBuilder setDefaultInstanceEphemeral(boolean defaultInstanceEphemeral) {
+
+    public HttpRequestInstanceBuilder setDefaultInstanceEphemeral(
+            boolean defaultInstanceEphemeral) {
         this.defaultInstanceEphemeral = defaultInstanceEphemeral;
         return this;
     }
-    
+
     public HttpRequestInstanceBuilder setRequest(HttpServletRequest request) throws NacosException {
         for (InstanceExtensionHandler each : handlers) {
             each.configExtensionInfoFromRequest(request);
@@ -88,30 +86,36 @@ public class HttpRequestInstanceBuilder {
         setAttributesToBuilder(request);
         return this;
     }
-    
+
     private void setAttributesToBuilder(HttpServletRequest request) throws NacosException {
         actualBuilder.setServiceName(WebUtils.required(request, CommonParams.SERVICE_NAME));
         actualBuilder.setIp(WebUtils.required(request, "ip"));
         actualBuilder.setPort(Integer.parseInt(WebUtils.required(request, "port")));
-        actualBuilder.setHealthy(ConvertUtils.toBoolean(WebUtils.optional(request, "healthy", "true")));
-        actualBuilder.setEphemeral(ConvertUtils
-                .toBoolean(WebUtils.optional(request, "ephemeral", String.valueOf(defaultInstanceEphemeral))));
+        actualBuilder.setHealthy(
+                ConvertUtils.toBoolean(WebUtils.optional(request, "healthy", "true")));
+        actualBuilder.setEphemeral(
+                ConvertUtils.toBoolean(
+                        WebUtils.optional(
+                                request, "ephemeral", String.valueOf(defaultInstanceEphemeral))));
         setWeight(request);
         setCluster(request);
         setEnabled(request);
         setMetadata(request);
     }
-    
+
     private void setWeight(HttpServletRequest request) throws NacosException {
         double weight = Double.parseDouble(WebUtils.optional(request, "weight", "1"));
         if (weight > Constants.MAX_WEIGHT_VALUE || weight < Constants.MIN_WEIGHT_VALUE) {
-            throw new NacosException(NacosException.INVALID_PARAM,
-                    "instance format invalid: The weights range from " + Constants.MIN_WEIGHT_VALUE + " to "
+            throw new NacosException(
+                    NacosException.INVALID_PARAM,
+                    "instance format invalid: The weights range from "
+                            + Constants.MIN_WEIGHT_VALUE
+                            + " to "
                             + Constants.MAX_WEIGHT_VALUE);
         }
         actualBuilder.setWeight(weight);
     }
-    
+
     private void setCluster(HttpServletRequest request) {
         String cluster = WebUtils.optional(request, CommonParams.CLUSTER_NAME, StringUtils.EMPTY);
         if (StringUtils.isBlank(cluster)) {
@@ -119,7 +123,7 @@ public class HttpRequestInstanceBuilder {
         }
         actualBuilder.setClusterName(cluster);
     }
-    
+
     private void setEnabled(HttpServletRequest request) {
         String enabledString = WebUtils.optional(request, "enabled", StringUtils.EMPTY);
         boolean enabled;
@@ -130,20 +134,22 @@ public class HttpRequestInstanceBuilder {
         }
         actualBuilder.setEnabled(enabled);
     }
-    
+
     private void setMetadata(HttpServletRequest request) throws NacosException {
         String metadata = WebUtils.optional(request, "metadata", StringUtils.EMPTY);
         if (StringUtils.isNotEmpty(metadata)) {
             actualBuilder.setMetadata(UtilsAndCommons.parseMetadata(metadata));
         }
     }
-    
-    /**
-     * TODO use spi and metadata info to generate instanceId.
-     */
+
+    /** TODO use spi and metadata info to generate instanceId. */
     private void setInstanceId(Instance instance) {
-        DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(instance.getServiceName(),
-                instance.getClusterName(), instance.getIp(), instance.getPort());
+        DefaultInstanceIdGenerator idGenerator =
+                new DefaultInstanceIdGenerator(
+                        instance.getServiceName(),
+                        instance.getClusterName(),
+                        instance.getIp(),
+                        instance.getPort());
         instance.setInstanceId(idGenerator.generateInstanceId());
     }
 }

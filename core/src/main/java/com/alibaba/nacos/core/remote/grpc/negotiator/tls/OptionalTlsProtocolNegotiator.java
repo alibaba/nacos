@@ -28,7 +28,6 @@ import io.grpc.netty.shaded.io.netty.handler.codec.ByteToMessageDecoder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslHandler;
 import io.grpc.netty.shaded.io.netty.util.AsciiString;
-
 import java.lang.reflect.Field;
 import java.util.List;
 
@@ -38,40 +37,42 @@ import java.util.List;
  * @author githubcheng2978.
  */
 public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiator {
-    
+
     private static final int MAGIC_VALUE = 5;
-    
+
     private final boolean supportPlainText;
-    
+
     private SslContext sslContext;
-    
+
     public OptionalTlsProtocolNegotiator(SslContext sslContext, boolean supportPlainText) {
         this.sslContext = sslContext;
         this.supportPlainText = supportPlainText;
     }
-    
+
     void setSslContext(SslContext sslContext) {
         this.sslContext = sslContext;
     }
-    
+
     @Override
     public AsciiString scheme() {
         return AsciiString.of("https");
     }
-    
+
     @Override
     public ChannelHandler newHandler(GrpcHttp2ConnectionHandler grpcHttp2ConnectionHandler) {
-        ChannelHandler plaintext = InternalProtocolNegotiators.serverPlaintext().newHandler(grpcHttp2ConnectionHandler);
-        ChannelHandler ssl = InternalProtocolNegotiators.serverTls(sslContext).newHandler(grpcHttp2ConnectionHandler);
+        ChannelHandler plaintext =
+                InternalProtocolNegotiators.serverPlaintext()
+                        .newHandler(grpcHttp2ConnectionHandler);
+        ChannelHandler ssl =
+                InternalProtocolNegotiators.serverTls(sslContext)
+                        .newHandler(grpcHttp2ConnectionHandler);
         ChannelHandler decoder = new PortUnificationServerHandler(ssl, plaintext);
         return decoder;
     }
-    
+
     @Override
-    public void close() {
-    
-    }
-    
+    public void close() {}
+
     @Override
     public void reloadNegotiator() {
         RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
@@ -79,7 +80,7 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
             sslContext = DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
         }
     }
-    
+
     private ProtocolNegotiationEvent getDefPne() {
         ProtocolNegotiationEvent protocolNegotiationEvent = null;
         try {
@@ -91,27 +92,28 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
         }
         return protocolNegotiationEvent;
     }
-    
+
     public class PortUnificationServerHandler extends ByteToMessageDecoder {
-        
+
         private ProtocolNegotiationEvent pne;
-        
+
         private final ChannelHandler ssl;
-        
+
         private final ChannelHandler plaintext;
-        
+
         public PortUnificationServerHandler(ChannelHandler ssl, ChannelHandler plaintext) {
             this.ssl = ssl;
             this.plaintext = plaintext;
             this.pne = getDefPne();
         }
-        
+
         private boolean isSsl(ByteBuf buf) {
             return SslHandler.isEncrypted(buf);
         }
-        
+
         @Override
-        protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+        protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out)
+                throws Exception {
             if (in.readableBytes() < MAGIC_VALUE) {
                 return;
             }
@@ -126,5 +128,4 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
             }
         }
     }
-    
 }

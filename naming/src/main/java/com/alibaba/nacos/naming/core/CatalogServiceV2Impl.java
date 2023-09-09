@@ -36,8 +36,6 @@ import com.alibaba.nacos.naming.pojo.ServiceDetailInfo;
 import com.alibaba.nacos.naming.pojo.ServiceView;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.springframework.stereotype.Component;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,6 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 
 /**
  * Catalog service for v2.x .
@@ -56,45 +55,52 @@ import java.util.stream.Collectors;
  */
 @Component()
 public class CatalogServiceV2Impl implements CatalogService {
-    
+
     private final ServiceStorage serviceStorage;
-    
+
     private final NamingMetadataManager metadataManager;
-    
+
     private static final int DEFAULT_PORT = 80;
-    
-    public CatalogServiceV2Impl(ServiceStorage serviceStorage, NamingMetadataManager metadataManager) {
+
+    public CatalogServiceV2Impl(
+            ServiceStorage serviceStorage, NamingMetadataManager metadataManager) {
         this.serviceStorage = serviceStorage;
         this.metadataManager = metadataManager;
     }
-    
+
     @Override
-    public Object getServiceDetail(String namespaceId, String groupName, String serviceName) throws NacosException {
+    public Object getServiceDetail(String namespaceId, String groupName, String serviceName)
+            throws NacosException {
         Service service = Service.newService(namespaceId, groupName, serviceName);
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.NOT_FOUND,
+            throw new NacosException(
+                    NacosException.NOT_FOUND,
                     String.format("service %s@@%s is not found!", groupName, serviceName));
         }
-        
+
         Optional<ServiceMetadata> metadata = metadataManager.getServiceMetadata(service);
         ServiceMetadata detailedService = metadata.orElseGet(ServiceMetadata::new);
-        
+
         ObjectNode serviceObject = JacksonUtils.createEmptyJsonNode();
         serviceObject.put(FieldsConstants.NAME, serviceName);
         serviceObject.put(FieldsConstants.GROUP_NAME, groupName);
         serviceObject.put(FieldsConstants.PROTECT_THRESHOLD, detailedService.getProtectThreshold());
-        serviceObject.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(detailedService.getSelector()));
-        serviceObject.replace(FieldsConstants.METADATA,
+        serviceObject.replace(
+                FieldsConstants.SELECTOR,
+                JacksonUtils.transferToJsonNode(detailedService.getSelector()));
+        serviceObject.replace(
+                FieldsConstants.METADATA,
                 JacksonUtils.transferToJsonNode(detailedService.getExtendData()));
-        
+
         ObjectNode detailView = JacksonUtils.createEmptyJsonNode();
         detailView.replace(FieldsConstants.SERVICE, serviceObject);
-        
+
         List<com.alibaba.nacos.api.naming.pojo.Cluster> clusters = new ArrayList<>();
-        
+
         for (String each : serviceStorage.getClusters(service)) {
             ClusterMetadata clusterMetadata =
-                    detailedService.getClusters().containsKey(each) ? detailedService.getClusters().get(each)
+                    detailedService.getClusters().containsKey(each)
+                            ? detailedService.getClusters().get(each)
                             : new ClusterMetadata();
             com.alibaba.nacos.api.naming.pojo.Cluster clusterView = new Cluster();
             clusterView.setName(each);
@@ -106,67 +112,82 @@ public class CatalogServiceV2Impl implements CatalogService {
             clusterView.setServiceName(service.getGroupedServiceName());
             clusters.add(clusterView);
         }
-        
+
         detailView.replace(FieldsConstants.CLUSTERS, JacksonUtils.transferToJsonNode(clusters));
-        
+
         return detailView;
     }
-    
+
     @Override
-    public List<? extends Instance> listInstances(String namespaceId, String groupName, String serviceName,
-            String clusterName) throws NacosException {
+    public List<? extends Instance> listInstances(
+            String namespaceId, String groupName, String serviceName, String clusterName)
+            throws NacosException {
         Service service = Service.newService(namespaceId, groupName, serviceName);
         if (!ServiceManager.getInstance().containSingleton(service)) {
-            throw new NacosException(NacosException.NOT_FOUND,
+            throw new NacosException(
+                    NacosException.NOT_FOUND,
                     String.format("service %s@@%s is not found!", groupName, serviceName));
         }
         if (!serviceStorage.getClusters(service).contains(clusterName)) {
-            throw new NacosException(NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
+            throw new NacosException(
+                    NacosException.NOT_FOUND, "cluster " + clusterName + " is not found!");
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         ServiceInfo result = ServiceUtil.selectInstances(serviceInfo, clusterName);
         return result.getHosts();
     }
-    
+
     @Override
-    public List<? extends Instance> listAllInstances(String namespaceId, String groupName, String serviceName) {
+    public List<? extends Instance> listAllInstances(
+            String namespaceId, String groupName, String serviceName) {
         Service service = Service.newService(namespaceId, groupName, serviceName);
         if (!ServiceManager.getInstance().containSingleton(service)) {
             return Collections.EMPTY_LIST;
         }
-        
+
         ServiceInfo serviceInfo = serviceStorage.getData(service);
-        
+
         return serviceInfo.getHosts();
     }
-    
+
     @Override
-    public Object pageListService(String namespaceId, String groupName, String serviceName, int pageNo, int pageSize,
-            String instancePattern, boolean ignoreEmptyService) throws NacosException {
+    public Object pageListService(
+            String namespaceId,
+            String groupName,
+            String serviceName,
+            int pageNo,
+            int pageSize,
+            String instancePattern,
+            boolean ignoreEmptyService)
+            throws NacosException {
         ObjectNode result = JacksonUtils.createEmptyJsonNode();
         List<ServiceView> serviceViews = new LinkedList<>();
         Collection<Service> services = patternServices(namespaceId, groupName, serviceName);
         if (ignoreEmptyService) {
-            services = services.stream().filter(each -> 0 != serviceStorage.getData(each).ipCount())
-                    .collect(Collectors.toList());
+            services =
+                    services.stream()
+                            .filter(each -> 0 != serviceStorage.getData(each).ipCount())
+                            .collect(Collectors.toList());
         }
         result.put(FieldsConstants.COUNT, services.size());
         services = doPage(services, pageNo - 1, pageSize);
         for (Service each : services) {
-            ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(each).orElseGet(ServiceMetadata::new);
+            ServiceMetadata serviceMetadata =
+                    metadataManager.getServiceMetadata(each).orElseGet(ServiceMetadata::new);
             ServiceView serviceView = new ServiceView();
             serviceView.setName(each.getName());
             serviceView.setGroupName(each.getGroup());
             serviceView.setClusterCount(serviceStorage.getClusters(each).size());
             serviceView.setIpCount(serviceStorage.getData(each).ipCount());
             serviceView.setHealthyInstanceCount(countHealthyInstance(serviceStorage.getData(each)));
-            serviceView.setTriggerFlag(isProtectThreshold(serviceView, serviceMetadata) ? "true" : "false");
+            serviceView.setTriggerFlag(
+                    isProtectThreshold(serviceView, serviceMetadata) ? "true" : "false");
             serviceViews.add(serviceView);
         }
         result.set(FieldsConstants.SERVICE_LIST, JacksonUtils.transferToJsonNode(serviceViews));
         return result;
     }
-    
+
     private int countHealthyInstance(ServiceInfo data) {
         int result = 0;
         for (Instance each : data.getHosts()) {
@@ -176,15 +197,16 @@ public class CatalogServiceV2Impl implements CatalogService {
         }
         return result;
     }
-    
+
     private boolean isProtectThreshold(ServiceView serviceView, ServiceMetadata metadata) {
-        return (serviceView.getHealthyInstanceCount() * 1.0 / serviceView.getIpCount()) <= metadata
-                .getProtectThreshold();
+        return (serviceView.getHealthyInstanceCount() * 1.0 / serviceView.getIpCount())
+                <= metadata.getProtectThreshold();
     }
-    
+
     @Override
-    public Object pageListServiceDetail(String namespaceId, String groupName, String serviceName, int pageNo,
-            int pageSize) throws NacosException {
+    public Object pageListServiceDetail(
+            String namespaceId, String groupName, String serviceName, int pageNo, int pageSize)
+            throws NacosException {
         List<ServiceDetailInfo> result = new ArrayList<>();
         Collection<Service> services = patternServices(namespaceId, groupName, serviceName);
         services = doPage(services, pageNo - 1, pageSize);
@@ -192,14 +214,15 @@ public class CatalogServiceV2Impl implements CatalogService {
             ServiceDetailInfo serviceDetailInfo = new ServiceDetailInfo();
             serviceDetailInfo.setServiceName(each.getName());
             serviceDetailInfo.setGroupName(each.getGroup());
-            ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(each).orElseGet(ServiceMetadata::new);
+            ServiceMetadata serviceMetadata =
+                    metadataManager.getServiceMetadata(each).orElseGet(ServiceMetadata::new);
             serviceDetailInfo.setMetadata(serviceMetadata.getExtendData());
             serviceDetailInfo.setClusterMap(getClusterMap(each));
             result.add(serviceDetailInfo);
         }
         return result;
     }
-    
+
     private Map<String, ClusterInfo> getClusterMap(Service service) {
         Map<String, ClusterInfo> result = new HashMap<>(1);
         for (Instance each : serviceStorage.getData(service).getHosts()) {
@@ -213,7 +236,7 @@ public class CatalogServiceV2Impl implements CatalogService {
         }
         return result;
     }
-    
+
     private IpAddressInfo transferToIpAddressInfo(Instance instance) {
         IpAddressInfo result = new IpAddressInfo();
         result.setIp(instance.getIp());
@@ -224,8 +247,9 @@ public class CatalogServiceV2Impl implements CatalogService {
         result.setMetadata(instance.getMetadata());
         return result;
     }
-    
-    private Collection<Service> patternServices(String namespaceId, String group, String serviceName) {
+
+    private Collection<Service> patternServices(
+            String namespaceId, String group, String serviceName) {
         boolean noFilter = StringUtils.isBlank(serviceName) && StringUtils.isBlank(group);
         if (noFilter) {
             return ServiceManager.getInstance().getSingletons(namespaceId);
@@ -242,12 +266,13 @@ public class CatalogServiceV2Impl implements CatalogService {
         }
         return result;
     }
-    
+
     private String getRegexString(String target) {
-        return StringUtils.isBlank(target) ? Constants.ANY_PATTERN
+        return StringUtils.isBlank(target)
+                ? Constants.ANY_PATTERN
                 : Constants.ANY_PATTERN + target + Constants.ANY_PATTERN;
     }
-    
+
     private Collection<Service> doPage(Collection<Service> services, int pageNo, int pageSize) {
         if (services.size() < pageSize) {
             return services;

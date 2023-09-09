@@ -20,9 +20,8 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Client beatInfo instance builder.
@@ -30,20 +29,20 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public class BeatInfoInstanceBuilder {
-    
+
     private final InstanceBuilder actualBuilder;
-    
+
     private final Collection<InstanceExtensionHandler> handlers;
-    
+
     private BeatInfoInstanceBuilder() {
         this.actualBuilder = InstanceBuilder.newBuilder();
         this.handlers = NacosServiceLoader.newServiceInstances(InstanceExtensionHandler.class);
     }
-    
+
     public static BeatInfoInstanceBuilder newBuilder() {
         return new BeatInfoInstanceBuilder();
     }
-    
+
     /**
      * Build a new {@link Instance} and chain handled by {@link InstanceExtensionHandler}.
      *
@@ -57,24 +56,24 @@ public class BeatInfoInstanceBuilder {
         setInstanceId(result);
         return result;
     }
-    
+
     public BeatInfoInstanceBuilder setRequest(HttpServletRequest request) {
         for (InstanceExtensionHandler each : handlers) {
             each.configExtensionInfoFromRequest(request);
         }
         return this;
     }
-    
+
     public BeatInfoInstanceBuilder setServiceName(String serviceName) {
         actualBuilder.setServiceName(serviceName);
         return this;
     }
-    
+
     public BeatInfoInstanceBuilder setBeatInfo(RsInfo beatInfo) {
         setAttributesToBuilder(beatInfo);
         return this;
     }
-    
+
     private void setAttributesToBuilder(RsInfo beatInfo) {
         actualBuilder.setPort(beatInfo.getPort());
         actualBuilder.setIp(beatInfo.getIp());
@@ -83,13 +82,15 @@ public class BeatInfoInstanceBuilder {
         actualBuilder.setClusterName(beatInfo.getCluster());
         actualBuilder.setEphemeral(beatInfo.isEphemeral());
     }
-    
-    /**
-     * TODO use spi and metadata info to generate instanceId.
-     */
+
+    /** TODO use spi and metadata info to generate instanceId. */
     private void setInstanceId(Instance instance) {
-        DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(instance.getServiceName(),
-                instance.getClusterName(), instance.getIp(), instance.getPort());
+        DefaultInstanceIdGenerator idGenerator =
+                new DefaultInstanceIdGenerator(
+                        instance.getServiceName(),
+                        instance.getClusterName(),
+                        instance.getIp(),
+                        instance.getPort());
         instance.setInstanceId(idGenerator.generateInstanceId());
     }
 }

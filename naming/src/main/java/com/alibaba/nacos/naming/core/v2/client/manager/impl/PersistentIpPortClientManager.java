@@ -28,14 +28,13 @@ import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import org.springframework.stereotype.Component;
 
 /**
  * The manager of {@code IpPortBasedClient} and persistence.
@@ -45,36 +44,40 @@ import java.util.concurrent.ConcurrentMap;
  */
 @Component("persistentIpPortClientManager")
 public class PersistentIpPortClientManager implements ClientManager {
-    
+
     private final ClientFactory<IpPortBasedClient> clientFactory;
-    
+
     private ConcurrentMap<String, IpPortBasedClient> clients = new ConcurrentHashMap<>();
-    
+
     public PersistentIpPortClientManager() {
-        clientFactory = ClientFactoryHolder.getInstance().findClientFactory(ClientConstants.PERSISTENT_IP_PORT);
+        clientFactory =
+                ClientFactoryHolder.getInstance()
+                        .findClientFactory(ClientConstants.PERSISTENT_IP_PORT);
     }
-    
+
     @Override
     public boolean clientConnected(String clientId, ClientAttributes attributes) {
         return clientConnected(clientFactory.newClient(clientId, attributes));
     }
-    
+
     @Override
     public boolean clientConnected(final Client client) {
-        clients.computeIfAbsent(client.getClientId(), s -> {
-            Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
-            IpPortBasedClient ipPortBasedClient = (IpPortBasedClient) client;
-            ipPortBasedClient.init();
-            return ipPortBasedClient;
-        });
+        clients.computeIfAbsent(
+                client.getClientId(),
+                s -> {
+                    Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
+                    IpPortBasedClient ipPortBasedClient = (IpPortBasedClient) client;
+                    ipPortBasedClient.init();
+                    return ipPortBasedClient;
+                });
         return true;
     }
-    
+
     @Override
     public boolean syncClientConnected(String clientId, ClientAttributes attributes) {
         throw new UnsupportedOperationException("");
     }
-    
+
     @Override
     public boolean clientDisconnected(String clientId) {
         Loggers.SRV_LOG.info("Persistent client connection {} disconnect", clientId);
@@ -85,20 +88,21 @@ public class PersistentIpPortClientManager implements ClientManager {
         boolean isResponsible = isResponsibleClient(client);
         NotifyCenter.publishEvent(new ClientEvent.ClientDisconnectEvent(client, isResponsible));
         client.release();
-        NotifyCenter.publishEvent(new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
+        NotifyCenter.publishEvent(
+                new ClientOperationEvent.ClientReleaseEvent(client, isResponsible));
         return true;
     }
-    
+
     @Override
     public Client getClient(String clientId) {
         return clients.get(clientId);
     }
-    
+
     @Override
     public boolean contains(String clientId) {
         return clients.containsKey(clientId);
     }
-    
+
     @Override
     public Collection<String> allClientId() {
         // client id is unique in the application
@@ -108,9 +112,10 @@ public class PersistentIpPortClientManager implements ClientManager {
         clientIds.addAll(clients.keySet());
         return clientIds;
     }
-    
+
     /**
-     * Because the persistence instance relies on the Raft algorithm, any node can process the request.
+     * Because the persistence instance relies on the Raft algorithm, any node can process the
+     * request.
      *
      * @param client client
      * @return true
@@ -119,16 +124,16 @@ public class PersistentIpPortClientManager implements ClientManager {
     public boolean isResponsibleClient(Client client) {
         return true;
     }
-    
+
     @Override
     public boolean verifyClient(DistroClientVerifyInfo verifyData) {
         throw new UnsupportedOperationException("");
     }
-    
+
     public Map<String, IpPortBasedClient> showClients() {
         return Collections.unmodifiableMap(clients);
     }
-    
+
     /**
      * Load persistent clients from snapshot.
      *

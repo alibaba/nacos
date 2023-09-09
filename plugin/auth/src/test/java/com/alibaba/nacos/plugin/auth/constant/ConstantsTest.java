@@ -16,23 +16,27 @@
 
 package com.alibaba.nacos.plugin.auth.constant;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
 public class ConstantsTest {
-    
+
     @Test
     public void testConstantsForAuth() {
         assertEquals("nacos.core.auth.enabled", Constants.Auth.NACOS_CORE_AUTH_ENABLED);
         assertEquals("nacos.core.auth.system.type", Constants.Auth.NACOS_CORE_AUTH_SYSTEM_TYPE);
-        assertEquals("nacos.core.auth.caching.enabled", Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED);
-        assertEquals("nacos.core.auth.server.identity.key", Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY);
-        assertEquals("nacos.core.auth.server.identity.value", Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE);
-        assertEquals("nacos.core.auth.enable.userAgentAuthWhite",
+        assertEquals(
+                "nacos.core.auth.caching.enabled", Constants.Auth.NACOS_CORE_AUTH_CACHING_ENABLED);
+        assertEquals(
+                "nacos.core.auth.server.identity.key",
+                Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_KEY);
+        assertEquals(
+                "nacos.core.auth.server.identity.value",
+                Constants.Auth.NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE);
+        assertEquals(
+                "nacos.core.auth.enable.userAgentAuthWhite",
                 Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE);
     }
-    
+
     @Test
     public void testConstantsForResource() {
         assertEquals(":", Constants.Resource.SPLITTER);
@@ -40,14 +44,14 @@ public class ConstantsTest {
         assertEquals("action", Constants.Resource.ACTION);
         assertEquals("requestClass", Constants.Resource.REQUEST_CLASS);
     }
-    
+
     @Test
     public void testConstantsForIdentity() {
         assertEquals("identity_id", Constants.Identity.IDENTITY_ID);
         assertEquals("X-Real-IP", Constants.Identity.X_REAL_IP);
         assertEquals("remote_ip", Constants.Identity.REMOTE_IP);
     }
-    
+
     @Test
     public void testConstantsForSignType() {
         assertEquals("naming", SignType.NAMING);

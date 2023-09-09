@@ -21,15 +21,15 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 
 /**
- * Can be discovered through SPI or Spring, This interface is just a function definition interface. Different
- * consistency protocols have their pwd
- * LogDispatcher. It is not recommended to directly implement this interface.
+ * Can be discovered through SPI or Spring, This interface is just a function definition interface.
+ * Different consistency protocols have their pwd LogDispatcher. It is not recommended to directly
+ * implement this interface.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RequestProcessor {
-    
+
     /**
      * get data by key.
      *
@@ -37,7 +37,7 @@ public abstract class RequestProcessor {
      * @return target type data
      */
     public abstract Response onRequest(ReadRequest request);
-    
+
     /**
      * Process Submitted Log.
      *
@@ -45,21 +45,19 @@ public abstract class RequestProcessor {
      * @return {@link boolean}
      */
     public abstract Response onApply(WriteRequest log);
-    
+
     /**
      * Irremediable errors that need to trigger business price cuts.
      *
      * @param error {@link Throwable}
      */
-    public void onError(Throwable error) {
-    }
-    
+    public void onError(Throwable error) {}
+
     /**
-     * In order for the state machine that handles the transaction to be able to route the Log to the correct
-     * LogProcessor, the LogProcessor needs to have an identity information.
+     * In order for the state machine that handles the transaction to be able to route the Log to
+     * the correct LogProcessor, the LogProcessor needs to have an identity information.
      *
      * @return Business unique identification name
      */
     public abstract String group();
-    
 }

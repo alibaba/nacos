@@ -24,54 +24,52 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
  * @author xiweng.yy
  */
 public class RequestResource {
-    
-    /**
-     * Request type: naming or config.
-     */
+
+    /** Request type: naming or config. */
     private String type;
-    
+
     private String namespace;
-    
+
     private String group;
-    
+
     /**
-     * For type: naming, the resource should be service name.
-     * For type: config, the resource should be config dataId.
+     * For type: naming, the resource should be service name. For type: config, the resource should
+     * be config dataId.
      */
     private String resource;
-    
+
     public String getType() {
         return type;
     }
-    
+
     public void setType(String type) {
         this.type = type;
     }
-    
+
     public String getNamespace() {
         return namespace;
     }
-    
+
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-    
+
     public String getGroup() {
         return group;
     }
-    
+
     public void setGroup(String group) {
         this.group = group;
     }
-    
+
     public String getResource() {
         return resource;
     }
-    
+
     public void setResource(String resource) {
         this.resource = resource;
     }
-    
+
     /**
      * Create new naming request resource builder.
      *
@@ -82,7 +80,7 @@ public class RequestResource {
         result.setType(SignType.NAMING);
         return result;
     }
-    
+
     /**
      * Create new config request resource builder.
      *
@@ -93,36 +91,36 @@ public class RequestResource {
         result.setType(SignType.CONFIG);
         return result;
     }
-    
+
     public static class Builder {
-        
+
         private String type;
-    
+
         private String namespace;
-    
+
         private String group;
-        
+
         private String resource;
-    
+
         public void setType(String type) {
             this.type = type;
         }
-    
+
         public Builder setNamespace(String namespace) {
             this.namespace = namespace;
             return this;
         }
-    
+
         public Builder setGroup(String group) {
             this.group = group;
             return this;
         }
-    
+
         public Builder setResource(String resource) {
             this.resource = resource;
             return this;
         }
-    
+
         /**
          * Build request resource.
          *

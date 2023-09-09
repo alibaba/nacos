@@ -25,7 +25,6 @@ import com.alibaba.nacos.naming.healthcheck.NacosHealthCheckTask;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-
 import java.util.Collection;
 
 /**
@@ -33,59 +32,60 @@ import java.util.Collection;
  *
  * @author nkorange
  */
-public class ClientBeatCheckTaskV2 extends AbstractExecuteTask implements BeatCheckTask, NacosHealthCheckTask {
-    
+public class ClientBeatCheckTaskV2 extends AbstractExecuteTask
+        implements BeatCheckTask, NacosHealthCheckTask {
+
     private final IpPortBasedClient client;
-    
+
     private final String taskId;
-    
+
     private final InstanceBeatCheckTaskInterceptorChain interceptorChain;
-    
+
     public ClientBeatCheckTaskV2(IpPortBasedClient client) {
         this.client = client;
         this.taskId = client.getResponsibleId();
         this.interceptorChain = InstanceBeatCheckTaskInterceptorChain.getInstance();
     }
-    
+
     public GlobalConfig getGlobalConfig() {
         return ApplicationUtils.getBean(GlobalConfig.class);
     }
-    
+
     @Override
     public String taskKey() {
-        return KeyBuilder.buildServiceMetaKey(client.getClientId(), String.valueOf(client.isEphemeral()));
+        return KeyBuilder.buildServiceMetaKey(
+                client.getClientId(), String.valueOf(client.isEphemeral()));
     }
-    
+
     @Override
     public String getTaskId() {
         return taskId;
     }
-    
+
     @Override
     public void doHealthCheck() {
         try {
             Collection<Service> services = client.getAllPublishedService();
             for (Service each : services) {
-                HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) client
-                        .getInstancePublishInfo(each);
+                HealthCheckInstancePublishInfo instance =
+                        (HealthCheckInstancePublishInfo) client.getInstancePublishInfo(each);
                 interceptorChain.doInterceptor(new InstanceBeatCheckTask(client, each, instance));
             }
         } catch (Exception e) {
             Loggers.SRV_LOG.warn("Exception while processing client beat time out.", e);
         }
     }
-    
+
     @Override
     public void run() {
         doHealthCheck();
     }
-    
+
     @Override
     public void passIntercept() {
         doHealthCheck();
     }
-    
+
     @Override
-    public void afterIntercept() {
-    }
+    public void afterIntercept() {}
 }

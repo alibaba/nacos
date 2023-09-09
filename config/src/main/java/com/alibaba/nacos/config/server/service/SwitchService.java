@@ -16,18 +16,16 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
+
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.config.server.utils.LogUtil;
-
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.stereotype.Service;
-
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
+import org.springframework.stereotype.Service;
 
 /**
  * SwitchService.
@@ -36,19 +34,19 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  */
 @Service
 public class SwitchService {
-    
+
     public static final String SWITCH_META_DATAID = "com.alibaba.nacos.meta.switch";
-    
+
     public static final String FIXED_POLLING = "isFixedPolling";
-    
+
     public static final String FIXED_POLLING_INTERVAL = "fixedPollingInertval";
-    
+
     public static final String FIXED_DELAY_TIME = "fixedDelayTime";
-    
+
     public static final String DISABLE_APP_COLLECTOR = "disableAppCollector";
-    
+
     private static volatile Map<String, String> switches = new HashMap<>();
-    
+
     public static boolean getSwitchBoolean(String key, boolean defaultValue) {
         boolean rtn;
         try {
@@ -60,7 +58,7 @@ public class SwitchService {
         }
         return rtn;
     }
-    
+
     public static int getSwitchInteger(String key, int defaultValue) {
         int rtn;
         try {
@@ -72,12 +70,12 @@ public class SwitchService {
         }
         return rtn;
     }
-    
+
     public static String getSwitchString(String key, String defaultValue) {
         String value = switches.get(key);
         return StringUtils.isBlank(value) ? defaultValue : value;
     }
-    
+
     /**
      * Load config.
      *
@@ -89,21 +87,21 @@ public class SwitchService {
             return;
         }
         FATAL_LOG.warn("[switch-config] {}", config);
-        
+
         Map<String, String> map = new HashMap<>(30);
         try {
             for (String line : IoUtils.readLines(new StringReader(config))) {
                 if (!StringUtils.isBlank(line) && !line.startsWith("#")) {
                     String[] array = line.split("=");
-                    
+
                     if (array == null || array.length != 2) {
                         LogUtil.FATAL_LOG.error("corrupt switch record {}", line);
                         continue;
                     }
-                    
+
                     String key = array[0].trim();
                     String value = array[1].trim();
-                    
+
                     map.put(key, value);
                 }
                 switches = map;
@@ -113,10 +111,10 @@ public class SwitchService {
             LogUtil.FATAL_LOG.warn("[reload-switches] error! {}", config);
         }
     }
-    
+
     public static String getSwitches() {
         StringBuilder sb = new StringBuilder();
-        
+
         String split = "";
         for (Map.Entry<String, String> entry : switches.entrySet()) {
             String key = entry.getKey();
@@ -127,7 +125,7 @@ public class SwitchService {
             sb.append(value);
             split = "; ";
         }
-        
+
         return sb.toString();
     }
 }

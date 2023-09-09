@@ -16,98 +16,102 @@
 
 package com.alibaba.nacos.core.cluster.lookup;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
-import com.alibaba.nacos.core.utils.GenericType;
-import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import junit.framework.TestCase;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.lang.reflect.Type;
-import java.util.Map;
-
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.utils.GenericType;
+import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import java.lang.reflect.Type;
+import java.util.Map;
+import junit.framework.TestCase;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.test.util.ReflectionTestUtils;
+
 @RunWith(MockitoJUnitRunner.class)
 public class AddressServerMemberLookupTest extends TestCase {
-    
-    @Mock
-    private NacosRestTemplate restTemplate;
-    
-    @Mock
-    private ServerMemberManager memberManager;
-    
-    @Mock
-    private HttpRestResult<String> result;
-    
-    private AddressServerMemberLookup addressServerMemberLookup;
-    
-    private String addressUrl;
-    
-    private String envIdUrl;
-    
-    private String addressServerUrl;
-    
-    private String addressPort;
-    
-    private String domainName;
-    
-    @Mock
-    private ConfigurableEnvironment environment;
 
-    private final GenericType<String> genericType = new GenericType<String>() { };
-    
+    @Mock private NacosRestTemplate restTemplate;
+
+    @Mock private ServerMemberManager memberManager;
+
+    @Mock private HttpRestResult<String> result;
+
+    private AddressServerMemberLookup addressServerMemberLookup;
+
+    private String addressUrl;
+
+    private String envIdUrl;
+
+    private String addressServerUrl;
+
+    private String addressPort;
+
+    private String domainName;
+
+    @Mock private ConfigurableEnvironment environment;
+
+    private final GenericType<String> genericType = new GenericType<String>() {};
+
     @Before
     public void setUp() throws Exception {
         EnvUtil.setEnvironment(environment);
         when(environment.getProperty("maxHealthCheckFailCount", "12")).thenReturn("12");
-        when(environment.getProperty("nacos.core.address-server.retry", Integer.class, 5)).thenReturn(5);
-        when(environment.getProperty("address.server.domain", "jmenv.tbsite.net")).thenReturn("jmenv.tbsite.net");
+        when(environment.getProperty("nacos.core.address-server.retry", Integer.class, 5))
+                .thenReturn(5);
+        when(environment.getProperty("address.server.domain", "jmenv.tbsite.net"))
+                .thenReturn("jmenv.tbsite.net");
         when(environment.getProperty("address.server.port", "8080")).thenReturn("8080");
-        when(environment.getProperty(eq("address.server.url"), any(String.class))).thenReturn("/nacos/serverlist");
+        when(environment.getProperty(eq("address.server.url"), any(String.class)))
+                .thenReturn("/nacos/serverlist");
         initAddressSys();
-        when(restTemplate.<String>get(eq(addressServerUrl), any(Header.EMPTY.getClass()), any(Query.EMPTY.getClass()), any(Type.class)))
+        when(restTemplate.<String>get(
+                        eq(addressServerUrl),
+                        any(Header.EMPTY.getClass()),
+                        any(Query.EMPTY.getClass()),
+                        any(Type.class)))
                 .thenReturn(result);
         addressServerMemberLookup = new AddressServerMemberLookup();
         ReflectionTestUtils.setField(addressServerMemberLookup, "restTemplate", restTemplate);
-        
+
         when(result.ok()).thenReturn(true);
         when(result.getData()).thenReturn("1.1.1.1:8848");
         addressServerMemberLookup.start();
     }
-    
+
     @After
     public void tearDown() throws NacosException {
         addressServerMemberLookup.destroy();
     }
-    
+
     @Test
     public void testMemberChange() throws Exception {
         addressServerMemberLookup.injectMemberManager(memberManager);
-        verify(restTemplate).get(eq(addressServerUrl), any(Header.EMPTY.getClass()), any(Query.EMPTY.getClass()), any(Type.class));
+        verify(restTemplate)
+                .get(
+                        eq(addressServerUrl),
+                        any(Header.EMPTY.getClass()),
+                        any(Query.EMPTY.getClass()),
+                        any(Type.class));
     }
-    
+
     @Test
     public void testInfo() {
-        Map<String, Object> infos =  addressServerMemberLookup.info();
+        Map<String, Object> infos = addressServerMemberLookup.info();
         assertEquals(4, infos.size());
         assertTrue(infos.containsKey("addressServerHealth"));
         assertTrue(infos.containsKey("addressServerUrl"));
@@ -119,11 +123,12 @@ public class AddressServerMemberLookupTest extends TestCase {
 
     @Test
     public void testSyncFromAddressUrl() throws Exception {
-        RestResult<String> result = restTemplate
-                .get(addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
+        RestResult<String> result =
+                restTemplate.get(
+                        addressServerUrl, Header.EMPTY, Query.EMPTY, genericType.getType());
         assertEquals("1.1.1.1:8848", result.getData());
     }
-    
+
     private void initAddressSys() {
         String envDomainName = System.getenv("address_server_domain");
         if (StringUtils.isBlank(envDomainName)) {
@@ -139,13 +144,15 @@ public class AddressServerMemberLookupTest extends TestCase {
         }
         String envAddressUrl = System.getenv("address_server_url");
         if (StringUtils.isBlank(envAddressUrl)) {
-            addressUrl = EnvUtil.getProperty("address.server.url", EnvUtil.getContextPath() + "/" + "serverlist");
+            addressUrl =
+                    EnvUtil.getProperty(
+                            "address.server.url", EnvUtil.getContextPath() + "/" + "serverlist");
         } else {
             addressUrl = envAddressUrl;
         }
         addressServerUrl = HTTP_PREFIX + domainName + ":" + addressPort + addressUrl;
         envIdUrl = HTTP_PREFIX + domainName + ":" + addressPort + "/env";
-        
+
         Loggers.CORE.info("ServerListService address-server port:" + addressPort);
         Loggers.CORE.info("ADDRESS_SERVER_URL:" + addressServerUrl);
     }

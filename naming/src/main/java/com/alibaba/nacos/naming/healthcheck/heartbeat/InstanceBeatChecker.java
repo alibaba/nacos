@@ -26,12 +26,12 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
  * @author xiweng.yy
  */
 public interface InstanceBeatChecker {
-    
+
     /**
      * Do check for input instance.
      *
-     * @param client   client
-     * @param service  service of instance
+     * @param client client
+     * @param service service of instance
      * @param instance instance publish info
      */
     void doCheck(Client client, Service service, HealthCheckInstancePublishInfo instance);

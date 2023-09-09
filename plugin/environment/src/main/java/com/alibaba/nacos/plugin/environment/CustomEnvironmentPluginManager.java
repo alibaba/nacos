@@ -19,19 +19,18 @@ package com.alibaba.nacos.plugin.environment;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.environment.spi.CustomEnvironmentPluginService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Objects;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * CustomEnvironment Plugin Management.
@@ -40,31 +39,39 @@ import java.util.stream.Collectors;
  */
 public class CustomEnvironmentPluginManager {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CustomEnvironmentPluginManager.class);
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(CustomEnvironmentPluginManager.class);
 
     private static final List<CustomEnvironmentPluginService> SERVICE_LIST = new LinkedList<>();
 
-    private static final CustomEnvironmentPluginManager INSTANCE = new CustomEnvironmentPluginManager();
+    private static final CustomEnvironmentPluginManager INSTANCE =
+            new CustomEnvironmentPluginManager();
 
     public CustomEnvironmentPluginManager() {
         loadInitial();
     }
 
     private void loadInitial() {
-        Collection<CustomEnvironmentPluginService> customEnvironmentPluginServices = NacosServiceLoader.load(
-                CustomEnvironmentPluginService.class);
-        for (CustomEnvironmentPluginService customEnvironmentPluginService : customEnvironmentPluginServices) {
+        Collection<CustomEnvironmentPluginService> customEnvironmentPluginServices =
+                NacosServiceLoader.load(CustomEnvironmentPluginService.class);
+        for (CustomEnvironmentPluginService customEnvironmentPluginService :
+                customEnvironmentPluginServices) {
             if (StringUtils.isBlank(customEnvironmentPluginService.pluginName())) {
-                LOGGER.warn("[customEnvironmentPluginService] Load customEnvironmentPluginService({}) customEnvironmentPluginName(null/empty) fail."
-                        + " Please Add customEnvironmentPluginName to resolve.", customEnvironmentPluginService.getClass());
+                LOGGER.warn(
+                        "[customEnvironmentPluginService] Load customEnvironmentPluginService({}) customEnvironmentPluginName(null/empty) fail."
+                                + " Please Add customEnvironmentPluginName to resolve.",
+                        customEnvironmentPluginService.getClass());
                 continue;
             }
-            LOGGER.info("[CustomEnvironmentPluginManager] Load customEnvironmentPluginService({}) customEnvironmentPluginName({}) successfully.",
-                    customEnvironmentPluginService.getClass(), customEnvironmentPluginService.pluginName());
+            LOGGER.info(
+                    "[CustomEnvironmentPluginManager] Load customEnvironmentPluginService({}) customEnvironmentPluginName({}) successfully.",
+                    customEnvironmentPluginService.getClass(),
+                    customEnvironmentPluginService.pluginName());
         }
-        SERVICE_LIST.addAll(customEnvironmentPluginServices.stream()
-                .sorted(Comparator.comparingInt(CustomEnvironmentPluginService::order))
-                .collect(Collectors.toList()));
+        SERVICE_LIST.addAll(
+                customEnvironmentPluginServices.stream()
+                        .sorted(Comparator.comparingInt(CustomEnvironmentPluginService::order))
+                        .collect(Collectors.toList()));
     }
 
     public static CustomEnvironmentPluginManager getInstance() {
@@ -87,8 +94,9 @@ public class CustomEnvironmentPluginManager {
             for (String key : keys) {
                 propertyMap.put(key, sourceProperty.get(key));
             }
-            Map<String, Object> targetPropertyMap = customEnvironmentPluginService.customValue(propertyMap);
-            //Only the current plugin key is allowed
+            Map<String, Object> targetPropertyMap =
+                    customEnvironmentPluginService.customValue(propertyMap);
+            // Only the current plugin key is allowed
             Set<String> targetKeys = new HashSet<>(targetPropertyMap.keySet());
             targetKeys.removeAll(keys);
             for (String key : targetKeys) {
@@ -109,7 +117,8 @@ public class CustomEnvironmentPluginManager {
      *
      * @param customEnvironmentPluginService customEnvironmentPluginService implementation
      */
-    public static synchronized void join(CustomEnvironmentPluginService customEnvironmentPluginService) {
+    public static synchronized void join(
+            CustomEnvironmentPluginService customEnvironmentPluginService) {
         if (Objects.isNull(customEnvironmentPluginService)) {
             return;
         }

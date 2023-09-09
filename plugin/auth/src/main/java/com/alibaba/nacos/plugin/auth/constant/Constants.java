@@ -22,42 +22,45 @@ package com.alibaba.nacos.plugin.auth.constant;
  * @author onew
  */
 public class Constants {
-    
+
     public static class Auth {
-        
+
         public static final String NACOS_CORE_AUTH_ENABLED = "nacos.core.auth.enabled";
-        
+
         public static final String NACOS_CORE_AUTH_SYSTEM_TYPE = "nacos.core.auth.system.type";
-        
-        public static final String NACOS_CORE_AUTH_CACHING_ENABLED = "nacos.core.auth.caching.enabled";
-        
-        public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_KEY = "nacos.core.auth.server.identity.key";
-        
-        public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE = "nacos.core.auth.server.identity.value";
-        
-        public static final String NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE = "nacos.core.auth.enable.userAgentAuthWhite";
-        
+
+        public static final String NACOS_CORE_AUTH_CACHING_ENABLED =
+                "nacos.core.auth.caching.enabled";
+
+        public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_KEY =
+                "nacos.core.auth.server.identity.key";
+
+        public static final String NACOS_CORE_AUTH_SERVER_IDENTITY_VALUE =
+                "nacos.core.auth.server.identity.value";
+
+        public static final String NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE =
+                "nacos.core.auth.enable.userAgentAuthWhite";
     }
-    
+
     public static class Resource {
-        
+
         public static final String SPLITTER = ":";
-        
+
         public static final String ANY = "*";
-        
+
         public static final String ACTION = "action";
-        
+
         public static final String REQUEST_CLASS = "requestClass";
     }
-    
+
     public static class Identity {
-        
+
         public static final String IDENTITY_ID = "identity_id";
-        
+
         public static final String X_REAL_IP = "X-Real-IP";
-        
+
         public static final String REMOTE_IP = "remote_ip";
-        
+
         public static final String IDENTITY_CONTEXT = "identity_context";
     }
 }

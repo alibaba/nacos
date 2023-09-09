@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.utils.ReflectUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,12 +30,11 @@ import java.net.URL;
  * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
  * Utility for detecting and accessing JBoss VFS in the classpath.
  *
- * <p>As of Spring 4.0, this class supports VFS 3.x on JBoss AS 6+
- * (package {@code org.jboss.vfs}) and is in particular compatible with
- * JBoss AS 7 and WildFly 8+.
+ * <p>As of Spring 4.0, this class supports VFS 3.x on JBoss AS 6+ (package {@code org.jboss.vfs})
+ * and is in particular compatible with JBoss AS 7 and WildFly 8+.
  *
- * <p>Thanks go to Marius Bogoevici for the initial patch.
- * <b>Note:</b> This is an internal class and should not be used outside the framework.
+ * <p>Thanks go to Marius Bogoevici for the initial patch. <b>Note:</b> This is an internal class
+ * and should not be used outside the framework.
  *
  * @author Costin Leau
  * @author Juergen Hoeller
@@ -98,7 +96,8 @@ public abstract class VfsUtils {
             VIRTUAL_FILE_METHOD_GET_CHILD = virtualFile.getMethod("getChild", String.class);
 
             VIRTUAL_FILE_VISITOR_INTERFACE = loader.loadClass(VFS3_PKG + "VirtualFileVisitor");
-            VIRTUAL_FILE_METHOD_VISIT = virtualFile.getMethod("visit", VIRTUAL_FILE_VISITOR_INTERFACE);
+            VIRTUAL_FILE_METHOD_VISIT =
+                    virtualFile.getMethod("visit", VIRTUAL_FILE_VISITOR_INTERFACE);
 
             Class<?> visitorAttributesClass = loader.loadClass(VFS3_PKG + "VisitorAttributes");
             VISITOR_ATTRIBUTES_FIELD_RECURSE = visitorAttributesClass.getField("RECURSE");
@@ -107,7 +106,8 @@ public abstract class VfsUtils {
         }
     }
 
-    protected static Object invokeVfsMethod(Method method, Object target, Object... args) throws IOException {
+    protected static Object invokeVfsMethod(Method method, Object target, Object... args)
+            throws IOException {
         try {
             return method.invoke(target, args);
         } catch (InvocationTargetException ex) {
@@ -196,5 +196,4 @@ public abstract class VfsUtils {
     protected static String doGetPath(Object resource) {
         return (String) ReflectUtils.invokeMethod(VIRTUAL_FILE_METHOD_GET_PATH_NAME, resource);
     }
-
 }

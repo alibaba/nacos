@@ -16,30 +16,29 @@
 
 package com.alibaba.nacos.api.remote;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class AbstractPushCallBackTest {
-    
+
     boolean testValue;
-    
+
     @Test
     public void testAbstractPushCallBack() {
-        AbstractPushCallBack callBack = new AbstractPushCallBack(2000) {
-            
-            @Override
-            public void onSuccess() {
-                testValue = true;
-            }
-            
-            @Override
-            public void onFail(Throwable e) {
-                testValue = false;
-            }
-        };
+        AbstractPushCallBack callBack =
+                new AbstractPushCallBack(2000) {
+
+                    @Override
+                    public void onSuccess() {
+                        testValue = true;
+                    }
+
+                    @Override
+                    public void onFail(Throwable e) {
+                        testValue = false;
+                    }
+                };
         assertEquals(2000, callBack.getTimeout());
         assertFalse(testValue);
         callBack.onSuccess();

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.namespace.repository;
 
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
-
 import java.util.List;
 
 /**
@@ -26,48 +25,53 @@ import java.util.List;
  * @author lixiaoshuang
  */
 public interface NamespacePersistService {
-    
+
     String PATTERN_STR = "*";
-    
-    //------------------------------------------insert---------------------------------------------//
-    
+
+    // ------------------------------------------insert---------------------------------------------//
+
     /**
      * insert tenant info.
      *
-     * @param kp             kp
-     * @param tenantId       tenant Id
-     * @param tenantName     tenant name
-     * @param tenantDesc     tenant description
+     * @param kp kp
+     * @param tenantId tenant Id
+     * @param tenantName tenant name
+     * @param tenantDesc tenant description
      * @param createResource create resource
-     * @param time           time
+     * @param time time
      */
-    void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResource,
+    void insertTenantInfoAtomic(
+            String kp,
+            String tenantId,
+            String tenantName,
+            String tenantDesc,
+            String createResource,
             final long time);
-    
-    //------------------------------------------delete---------------------------------------------//
-    
+
+    // ------------------------------------------delete---------------------------------------------//
+
     /**
      * Remote tenant info.
      *
-     * @param kp       kp
+     * @param kp kp
      * @param tenantId tenant id
      */
     void removeTenantInfoAtomic(final String kp, final String tenantId);
-    
-    //------------------------------------------update---------------------------------------------//
-    
+
+    // ------------------------------------------update---------------------------------------------//
+
     /**
      * Update tenantInfo show name.
      *
-     * @param kp         kp
-     * @param tenantId   tenant Id
+     * @param kp kp
+     * @param tenantId tenant Id
      * @param tenantName tenant name
      * @param tenantDesc tenant description
      */
     void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc);
-    
-    //------------------------------------------select---------------------------------------------//
-    
+
+    // ------------------------------------------select---------------------------------------------//
+
     /**
      * Query tenant info.
      *
@@ -75,16 +79,16 @@ public interface NamespacePersistService {
      * @return {@link TenantInfo} list
      */
     List<TenantInfo> findTenantByKp(String kp);
-    
+
     /**
      * Query tenant info.
      *
-     * @param kp       kp
+     * @param kp kp
      * @param tenantId tenant id
      * @return {@link TenantInfo}
      */
     TenantInfo findTenantByKp(String kp, String tenantId);
-    
+
     /**
      * Generate fuzzy search Sql.
      *
@@ -92,7 +96,7 @@ public interface NamespacePersistService {
      * @return fuzzy search Sql
      */
     String generateLikeArgument(String s);
-    
+
     /**
      * Determine whether the table exists.
      *
@@ -100,7 +104,7 @@ public interface NamespacePersistService {
      * @return {@code true} if table exist
      */
     boolean isExistTable(String tableName);
-    
+
     /**
      * query tenantInfo (namespace) existence based by tenantId.
      *

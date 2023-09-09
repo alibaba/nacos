@@ -25,32 +25,38 @@ import io.prometheus.client.Histogram;
  * @author Nacos
  */
 public class MetricsMonitor {
-    
-    private static final Gauge NACOS_MONITOR = Gauge.build().name("nacos_monitor").labelNames("module", "name")
-            .help("nacos_monitor").register();
-    
-    private static final Histogram NACOS_CLIENT_REQUEST_HISTOGRAM = Histogram.build()
-            .labelNames("module", "method", "url", "code").name("nacos_client_request").help("nacos_client_request")
-            .register();
-    
+
+    private static final Gauge NACOS_MONITOR =
+            Gauge.build()
+                    .name("nacos_monitor")
+                    .labelNames("module", "name")
+                    .help("nacos_monitor")
+                    .register();
+
+    private static final Histogram NACOS_CLIENT_REQUEST_HISTOGRAM =
+            Histogram.build()
+                    .labelNames("module", "method", "url", "code")
+                    .name("nacos_client_request")
+                    .help("nacos_client_request")
+                    .register();
+
     public static Gauge.Child getServiceInfoMapSizeMonitor() {
         return NACOS_MONITOR.labels("naming", "serviceInfoMapSize");
     }
-    
+
     public static Gauge.Child getDom2BeatSizeMonitor() {
         return NACOS_MONITOR.labels("naming", "dom2BeatSize");
     }
-    
+
     public static Gauge.Child getListenConfigCountMonitor() {
         return NACOS_MONITOR.labels("config", "listenConfigCount");
     }
-    
+
     public static Histogram.Child getConfigRequestMonitor(String method, String url, String code) {
         return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("config", method, url, code);
     }
-    
+
     public static Histogram.Child getNamingRequestMonitor(String method, String url, String code) {
         return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("naming", method, url, code);
     }
 }
-

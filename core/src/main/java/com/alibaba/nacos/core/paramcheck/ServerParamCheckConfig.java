@@ -25,50 +25,55 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  * @author zhuoguang
  */
 public class ServerParamCheckConfig extends AbstractDynamicConfig {
-    
+
     private static final String PARAM_CHECK = "ParamCheck";
-    
+
     private static final ServerParamCheckConfig INSTANCE = new ServerParamCheckConfig();
-    
+
     private boolean paramCheckEnabled = true;
-    
+
     private String activeParamChecker = "default";
-    
+
     protected ServerParamCheckConfig() {
         super(PARAM_CHECK);
         resetConfig();
     }
-    
+
     public static ServerParamCheckConfig getInstance() {
         return INSTANCE;
     }
-    
+
     @Override
     protected void getConfigFromEnv() {
-        paramCheckEnabled = EnvUtil.getProperty("nacos.core.param.check.enabled", Boolean.class, true);
-        activeParamChecker = EnvUtil.getProperty("nacos.core.param.check.checker", String.class, "default");
+        paramCheckEnabled =
+                EnvUtil.getProperty("nacos.core.param.check.enabled", Boolean.class, true);
+        activeParamChecker =
+                EnvUtil.getProperty("nacos.core.param.check.checker", String.class, "default");
     }
-    
+
     public boolean isParamCheckEnabled() {
         return paramCheckEnabled;
     }
-    
+
     public void setParamCheckEnabled(boolean paramCheckEnabled) {
         this.paramCheckEnabled = paramCheckEnabled;
     }
-    
+
     public String getActiveParamChecker() {
         return activeParamChecker;
     }
-    
+
     public void setActiveParamChecker(String activeParamChecker) {
         this.activeParamChecker = activeParamChecker;
     }
-    
+
     @Override
     protected String printConfig() {
-        return "ParamCheckConfig{" + "paramCheckEnabled=" + paramCheckEnabled
-                + "activeParamChecker=" + activeParamChecker + "}";
+        return "ParamCheckConfig{"
+                + "paramCheckEnabled="
+                + paramCheckEnabled
+                + "activeParamChecker="
+                + activeParamChecker
+                + "}";
     }
-    
 }

@@ -22,43 +22,40 @@ import com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
-import org.slf4j.Logger;
-
-import javax.management.ObjectName;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
+import javax.management.ObjectName;
+import org.slf4j.Logger;
 
 /**
- * TaskManager, is aim to process the task which is need to be done.
- * And this class process the task by single thread to ensure task should be process successfully.
+ * TaskManager, is aim to process the task which is need to be done. And this class process the task
+ * by single thread to ensure task should be process successfully.
  *
  * @author huali
  */
 public final class TaskManager extends NacosDelayTaskExecuteEngine implements TaskManagerMBean {
-    
+
     private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
-    
+
     private String name;
-    
+
     Condition notEmpty = this.lock.newCondition();
-    
+
     public TaskManager(String name) {
         super(name, LOGGER, 100L);
         this.name = name;
     }
-    
-    /**
-     * Close task manager.
-     */
+
+    /** Close task manager. */
     public void close() {
         try {
             super.shutdown();
         } catch (NacosException ignored) {
         }
     }
-    
+
     /**
      * Await for lock.
      *
@@ -74,7 +71,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
             this.lock.unlock();
         }
     }
-    
+
     /**
      * Await for lock by timeout.
      *
@@ -95,20 +92,20 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
             this.lock.unlock();
         }
     }
-    
+
     @Override
     public void addTask(Object key, AbstractDelayTask newTask) {
         super.addTask(key, newTask);
         MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
     }
-    
+
     @Override
     public AbstractDelayTask removeTask(Object key) {
         AbstractDelayTask result = super.removeTask(key);
         MetricsMonitor.getDumpTaskMonitor().set(tasks.size());
         return result;
     }
-    
+
     @Override
     protected void processTasks() {
         super.processTasks();
@@ -122,7 +119,7 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
             }
         }
     }
-    
+
     @Override
     public String getTaskInfos() {
         StringBuilder sb = new StringBuilder();
@@ -136,16 +133,15 @@ public final class TaskManager extends NacosDelayTaskExecuteEngine implements Ta
             }
             sb.append(Constants.NACOS_LINE_SEPARATOR);
         }
-        
+
         return sb.toString();
     }
-    
-    /**
-     * Init and register the mbean object.
-     */
+
+    /** Init and register the mbean object. */
     public void init() {
         try {
-            ObjectName oName = new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
+            ObjectName oName =
+                    new ObjectName(this.name + ":type=" + TaskManager.class.getSimpleName());
             ManagementFactory.getPlatformMBeanServer().registerMBean(this, oName);
         } catch (Exception e) {
             LOGGER.error("registerMBean_fail", e);

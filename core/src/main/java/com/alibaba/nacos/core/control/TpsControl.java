@@ -29,20 +29,18 @@ import java.lang.annotation.RetentionPolicy;
  */
 @Retention(RetentionPolicy.RUNTIME)
 public @interface TpsControl {
-    
-    
+
     /**
      * alias name for control point.
      *
      * @return
      */
     String name() default "";
-    
+
     /**
      * The point name should applied for.
      *
      * @return action type, default READ
      */
     String pointName();
-    
 }

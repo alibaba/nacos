@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -33,24 +32,25 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author zhuoguang
  */
 public class RpcParamExtractorManager {
-    
+
     private static final RpcParamExtractorManager INSTANCE = new RpcParamExtractorManager();
-    
-    private static final AbstractRpcParamExtractor DEFAULT_EXTRACTOR = new AbstractRpcParamExtractor() {
-        @Override
-        public void init() {
-        }
-        
-        @Override
-        public List<ParamInfo> extractParam(Request request) throws Exception {
-            return Collections.emptyList();
-        }
-    };
-    
+
+    private static final AbstractRpcParamExtractor DEFAULT_EXTRACTOR =
+            new AbstractRpcParamExtractor() {
+                @Override
+                public void init() {}
+
+                @Override
+                public List<ParamInfo> extractParam(Request request) throws Exception {
+                    return Collections.emptyList();
+                }
+            };
+
     private final Map<String, AbstractRpcParamExtractor> extractorMap = new ConcurrentHashMap<>(32);
-    
+
     private RpcParamExtractorManager() {
-        Collection<AbstractRpcParamExtractor> extractors = NacosServiceLoader.load(AbstractRpcParamExtractor.class);
+        Collection<AbstractRpcParamExtractor> extractors =
+                NacosServiceLoader.load(AbstractRpcParamExtractor.class);
         for (AbstractRpcParamExtractor extractor : extractors) {
             List<String> targetrequestlist = extractor.getTargetRequestList();
             for (String targetRequest : targetrequestlist) {
@@ -58,11 +58,11 @@ public class RpcParamExtractorManager {
             }
         }
     }
-    
+
     public static RpcParamExtractorManager getInstance() {
         return INSTANCE;
     }
-    
+
     public AbstractRpcParamExtractor getExtractor(String type) {
         if (StringUtils.isBlank(type)) {
             return DEFAULT_EXTRACTOR;
@@ -73,5 +73,4 @@ public class RpcParamExtractorManager {
         }
         return extractor;
     }
-    
 }

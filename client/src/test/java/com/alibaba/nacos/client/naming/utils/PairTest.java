@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class PairTest {
-    
+
     @Test
     public void testItem() {
         String item = "aa";

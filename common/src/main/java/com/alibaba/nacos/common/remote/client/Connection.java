@@ -26,25 +26,25 @@ import com.alibaba.nacos.api.remote.Requester;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
-    
+
     private String connectionId;
-    
+
     private boolean abandon = false;
-    
+
     protected RpcClient.ServerInfo serverInfo;
-    
+
     public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
     }
-    
+
     public String getConnectionId() {
         return connectionId;
     }
-    
+
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }
-    
+
     /**
      * Getter method for property <tt>abandon</tt>.
      *
@@ -53,14 +53,14 @@ public abstract class Connection implements Requester {
     public boolean isAbandon() {
         return abandon;
     }
-    
+
     /**
-     * Setter method for property <tt>abandon</tt>. connection event will be ignored if connection is abandoned.
+     * Setter method for property <tt>abandon</tt>. connection event will be ignored if connection
+     * is abandoned.
      *
      * @param abandon value to be assigned to property abandon
      */
     public void setAbandon(boolean abandon) {
         this.abandon = abandon;
     }
-    
 }

@@ -40,58 +40,60 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class HealthCheckCommonV2 {
-    
-    @Autowired
-    private DistroMapper distroMapper;
-    
-    @Autowired
-    private SwitchDomain switchDomain;
-    
-    @Autowired
-    private PersistentHealthStatusSynchronizer healthStatusSynchronizer;
-    
+
+    @Autowired private DistroMapper distroMapper;
+
+    @Autowired private SwitchDomain switchDomain;
+
+    @Autowired private PersistentHealthStatusSynchronizer healthStatusSynchronizer;
+
     /**
      * Re-evaluate check response time.
      *
      * @param checkRT check response time
-     * @param task    health check task
-     * @param params  health params
+     * @param task health check task
+     * @param params health params
      */
-    public void reEvaluateCheckRT(long checkRT, HealthCheckTaskV2 task, SwitchDomain.HealthParams params) {
+    public void reEvaluateCheckRT(
+            long checkRT, HealthCheckTaskV2 task, SwitchDomain.HealthParams params) {
         task.setCheckRtLast(checkRT);
-        
+
         if (checkRT > task.getCheckRtWorst()) {
             task.setCheckRtWorst(checkRT);
         }
-        
+
         if (checkRT < task.getCheckRtBest()) {
             task.setCheckRtBest(checkRT);
         }
-        
-        checkRT = (long) ((params.getFactor() * task.getCheckRtNormalized()) + (1 - params.getFactor()) * checkRT);
-        
+
+        checkRT =
+                (long)
+                        ((params.getFactor() * task.getCheckRtNormalized())
+                                + (1 - params.getFactor()) * checkRT);
+
         if (checkRT > params.getMax()) {
             checkRT = params.getMax();
         }
-        
+
         if (checkRT < params.getMin()) {
             checkRT = params.getMin();
         }
-        
+
         task.setCheckRtNormalized(checkRT);
     }
-    
+
     /**
      * Health check pass.
      *
-     * @param task    health check task
+     * @param task health check task
      * @param service service
-     * @param msg     message
+     * @param msg message
      */
     public void checkOk(HealthCheckTaskV2 task, Service service, String msg) {
         try {
-            HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) task.getClient()
-                    .getInstancePublishInfo(service);
+            HealthCheckInstancePublishInfo instance =
+                    (HealthCheckInstancePublishInfo)
+                            task.getClient().getInstancePublishInfo(service);
             if (instance == null) {
                 return;
             }
@@ -100,19 +102,39 @@ public class HealthCheckCommonV2 {
                     String serviceName = service.getGroupedServiceName();
                     String clusterName = instance.getCluster();
                     if (instance.getOkCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
-                        if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
-                                .responsible(task.getClient().getResponsibleId())) {
-                            healthStatusSynchronizer.instanceHealthStatusChange(true, task.getClient(), service, instance);
-                            Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
-                                    serviceName, instance.getIp(), instance.getPort(), clusterName,
-                                    UtilsAndCommons.LOCALHOST_SITE, msg);
-                            NotifyCenter.publishEvent(new HealthStateChangeTraceEvent(System.currentTimeMillis(),
-                                    service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
-                                    instance.getPort(), true, msg));
+                        if (switchDomain.isHealthCheckEnabled(serviceName)
+                                && !task.isCancelled()
+                                && distroMapper.responsible(task.getClient().getResponsibleId())) {
+                            healthStatusSynchronizer.instanceHealthStatusChange(
+                                    true, task.getClient(), service, instance);
+                            Loggers.EVT_LOG.info(
+                                    "serviceName: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: {}",
+                                    serviceName,
+                                    instance.getIp(),
+                                    instance.getPort(),
+                                    clusterName,
+                                    UtilsAndCommons.LOCALHOST_SITE,
+                                    msg);
+                            NotifyCenter.publishEvent(
+                                    new HealthStateChangeTraceEvent(
+                                            System.currentTimeMillis(),
+                                            service.getNamespace(),
+                                            service.getGroup(),
+                                            service.getName(),
+                                            instance.getIp(),
+                                            instance.getPort(),
+                                            true,
+                                            msg));
                         }
                     } else {
-                        Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-ENABLED} pre-valid: {}:{}@{} in {}, msg: {}",
-                                serviceName, instance.getIp(), instance.getPort(), clusterName, instance.getOkCount(), msg);
+                        Loggers.EVT_LOG.info(
+                                "serviceName: {} {OTHER} {IP-ENABLED} pre-valid: {}:{}@{} in {}, msg: {}",
+                                serviceName,
+                                instance.getIp(),
+                                instance.getPort(),
+                                clusterName,
+                                instance.getOkCount(),
+                                msg);
                     }
                 }
             } finally {
@@ -123,18 +145,19 @@ public class HealthCheckCommonV2 {
             Loggers.SRV_LOG.error("[CHECK-OK] error when close check task.", t);
         }
     }
-    
+
     /**
      * Health check fail, when instance check failed count more than max failed time, set unhealthy.
      *
-     * @param task    health check task
+     * @param task health check task
      * @param service service
-     * @param msg     message
+     * @param msg message
      */
     public void checkFail(HealthCheckTaskV2 task, Service service, String msg) {
         try {
-            HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) task.getClient()
-                    .getInstancePublishInfo(service);
+            HealthCheckInstancePublishInfo instance =
+                    (HealthCheckInstancePublishInfo)
+                            task.getClient().getInstancePublishInfo(service);
             if (instance == null) {
                 return;
             }
@@ -143,20 +166,38 @@ public class HealthCheckCommonV2 {
                     String serviceName = service.getGroupedServiceName();
                     String clusterName = instance.getCluster();
                     if (instance.getFailCount().incrementAndGet() >= switchDomain.getCheckTimes()) {
-                        if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
-                                .responsible(task.getClient().getResponsibleId())) {
-                            healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
-                            Loggers.EVT_LOG
-                                    .info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
-                                        serviceName, instance.getIp(), instance.getPort(), clusterName,
-                                        UtilsAndCommons.LOCALHOST_SITE, msg);
-                            NotifyCenter.publishEvent(new HealthStateChangeTraceEvent(System.currentTimeMillis(),
-                                    service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
-                                    instance.getPort(), false, msg));
+                        if (switchDomain.isHealthCheckEnabled(serviceName)
+                                && !task.isCancelled()
+                                && distroMapper.responsible(task.getClient().getResponsibleId())) {
+                            healthStatusSynchronizer.instanceHealthStatusChange(
+                                    false, task.getClient(), service, instance);
+                            Loggers.EVT_LOG.info(
+                                    "serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
+                                    serviceName,
+                                    instance.getIp(),
+                                    instance.getPort(),
+                                    clusterName,
+                                    UtilsAndCommons.LOCALHOST_SITE,
+                                    msg);
+                            NotifyCenter.publishEvent(
+                                    new HealthStateChangeTraceEvent(
+                                            System.currentTimeMillis(),
+                                            service.getNamespace(),
+                                            service.getGroup(),
+                                            service.getName(),
+                                            instance.getIp(),
+                                            instance.getPort(),
+                                            false,
+                                            msg));
                         }
                     } else {
-                        Loggers.EVT_LOG.info("serviceName: {} {OTHER} {IP-DISABLED} pre-invalid: {}:{}@{} in {}, msg: {}",
-                                serviceName, instance.getIp(), instance.getPort(), clusterName, instance.getFailCount(),
+                        Loggers.EVT_LOG.info(
+                                "serviceName: {} {OTHER} {IP-DISABLED} pre-invalid: {}:{}@{} in {}, msg: {}",
+                                serviceName,
+                                instance.getIp(),
+                                instance.getPort(),
+                                clusterName,
+                                instance.getFailCount(),
                                 msg);
                     }
                 }
@@ -168,18 +209,19 @@ public class HealthCheckCommonV2 {
             Loggers.SRV_LOG.error("[CHECK-FAIL] error when close check task.", t);
         }
     }
-    
+
     /**
      * Health check fail, set instance unhealthy directly.
      *
-     * @param task    health check task
+     * @param task health check task
      * @param service service
-     * @param msg     message
+     * @param msg message
      */
     public void checkFailNow(HealthCheckTaskV2 task, Service service, String msg) {
         try {
-            HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) task.getClient()
-                    .getInstancePublishInfo(service);
+            HealthCheckInstancePublishInfo instance =
+                    (HealthCheckInstancePublishInfo)
+                            task.getClient().getInstancePublishInfo(service);
             if (null == instance) {
                 return;
             }
@@ -187,15 +229,29 @@ public class HealthCheckCommonV2 {
                 if (instance.isHealthy()) {
                     String serviceName = service.getGroupedServiceName();
                     String clusterName = instance.getCluster();
-                    if (switchDomain.isHealthCheckEnabled(serviceName) && !task.isCancelled() && distroMapper
-                            .responsible(task.getClient().getResponsibleId())) {
-                        healthStatusSynchronizer.instanceHealthStatusChange(false, task.getClient(), service, instance);
-                        Loggers.EVT_LOG.info("serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
-                                serviceName, instance.getIp(), instance.getPort(), clusterName,
-                                UtilsAndCommons.LOCALHOST_SITE, msg);
-                        NotifyCenter.publishEvent(new HealthStateChangeTraceEvent(System.currentTimeMillis(),
-                                service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
-                                instance.getPort(), false, msg));
+                    if (switchDomain.isHealthCheckEnabled(serviceName)
+                            && !task.isCancelled()
+                            && distroMapper.responsible(task.getClient().getResponsibleId())) {
+                        healthStatusSynchronizer.instanceHealthStatusChange(
+                                false, task.getClient(), service, instance);
+                        Loggers.EVT_LOG.info(
+                                "serviceName: {} {POS} {IP-DISABLED} invalid: {}:{}@{}, region: {}, msg: {}",
+                                serviceName,
+                                instance.getIp(),
+                                instance.getPort(),
+                                clusterName,
+                                UtilsAndCommons.LOCALHOST_SITE,
+                                msg);
+                        NotifyCenter.publishEvent(
+                                new HealthStateChangeTraceEvent(
+                                        System.currentTimeMillis(),
+                                        service.getNamespace(),
+                                        service.getGroup(),
+                                        service.getName(),
+                                        instance.getIp(),
+                                        instance.getPort(),
+                                        false,
+                                        msg));
                     }
                 }
             } finally {

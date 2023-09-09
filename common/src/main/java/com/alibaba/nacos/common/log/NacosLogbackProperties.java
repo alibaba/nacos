@@ -18,13 +18,14 @@ package com.alibaba.nacos.common.log;
 
 /**
  * nacos logback properties.
+ *
  * @author hujun
  */
 public interface NacosLogbackProperties {
     /**
      * get value.
      *
-     * @param source       source
+     * @param source source
      * @param defaultValue defaultValue
      * @return value
      */

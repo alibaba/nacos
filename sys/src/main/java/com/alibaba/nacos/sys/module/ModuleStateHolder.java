@@ -18,14 +18,13 @@ package com.alibaba.nacos.sys.module;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Module State Holder.
@@ -33,13 +32,13 @@ import java.util.Set;
  * @author xiweng.yy
  */
 public class ModuleStateHolder {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ModuleStateHolder.class);
-    
+
     private static final ModuleStateHolder INSTANCE = new ModuleStateHolder();
-    
+
     private final Map<String, ModuleState> moduleStates;
-    
+
     private ModuleStateHolder() {
         this.moduleStates = new HashMap<>();
         for (ModuleStateBuilder each : NacosServiceLoader.load(ModuleStateBuilder.class)) {
@@ -50,32 +49,35 @@ public class ModuleStateHolder {
                 ModuleState moduleState = each.build();
                 moduleStates.put(moduleState.getModuleName(), moduleState);
             } catch (Exception e) {
-                LOGGER.warn("Build ModuleState failed in builder:{}", each.getClass().getCanonicalName(), e);
+                LOGGER.warn(
+                        "Build ModuleState failed in builder:{}",
+                        each.getClass().getCanonicalName(),
+                        e);
             }
         }
     }
-    
+
     public static ModuleStateHolder getInstance() {
         return INSTANCE;
     }
-    
+
     public Optional<ModuleState> getModuleState(String moduleName) {
         return Optional.ofNullable(moduleStates.get(moduleName));
     }
-    
+
     public Set<ModuleState> getAllModuleStates() {
         return new HashSet<>(moduleStates.values());
     }
-    
+
     public String getStateValueByName(String moduleName, String stateName) {
         return getStateValueByName(moduleName, stateName, StringUtils.EMPTY);
     }
-    
+
     /**
      * Get State Value by module name and state name.
      *
-     * @param moduleName   module name of state
-     * @param stateName    state name
+     * @param moduleName module name of state
+     * @param stateName state name
      * @param defaultValue default value when can't find module or state
      * @return state value
      */
@@ -86,11 +88,11 @@ public class ModuleStateHolder {
         }
         return moduleState.get().getState(stateName, defaultValue);
     }
-    
+
     /**
      * Search State Value by state name one by one.
      *
-     * @param stateName    state name
+     * @param stateName state name
      * @param defaultValue default value when can't find module or state
      * @return state value
      */

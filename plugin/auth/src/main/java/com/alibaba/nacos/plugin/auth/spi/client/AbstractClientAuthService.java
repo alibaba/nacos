@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.auth.spi.client;
 
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-
 import java.util.List;
 
 /**
@@ -26,16 +25,16 @@ import java.util.List;
  * @author Nacos
  */
 public abstract class AbstractClientAuthService implements ClientAuthService {
-    
+
     protected List<String> serverList;
-    
+
     protected NacosRestTemplate nacosRestTemplate;
-    
+
     @Override
     public void setServerList(List<String> serverList) {
         this.serverList = serverList;
     }
-    
+
     @Override
     public void setNacosRestTemplate(NacosRestTemplate nacosRestTemplate) {
         this.nacosRestTemplate = nacosRestTemplate;

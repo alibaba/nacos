@@ -19,12 +19,11 @@ package com.alibaba.nacos.naming.core.v2.service;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import com.alibaba.nacos.naming.constants.Constants;
-
 import java.util.List;
 import java.util.Map;
 
@@ -34,57 +33,54 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public interface ClientOperationService {
-    
+
     /**
      * Register instance to service.
      *
-     * @param service  service
+     * @param service service
      * @param instance instance
      * @param clientId id of client
      * @throws NacosException throws NacosException
      */
-    void registerInstance(Service service, Instance instance, String clientId) throws NacosException;
-    
+    void registerInstance(Service service, Instance instance, String clientId)
+            throws NacosException;
+
     /**
      * Batch register instance to service.
      *
-     * @param service  service
+     * @param service service
      * @param instances instances
      * @param clientId id of client
      */
     void batchRegisterInstance(Service service, List<Instance> instances, String clientId);
-    
+
     /**
      * Deregister instance from service.
      *
-     * @param service  service
+     * @param service service
      * @param instance instance
      * @param clientId id of client
      */
     void deregisterInstance(Service service, Instance instance, String clientId);
-    
+
     /**
      * Subscribe a service.
      *
-     * @param service    service
+     * @param service service
      * @param subscriber subscribe
-     * @param clientId   id of client
+     * @param clientId id of client
      */
-    default void subscribeService(Service service, Subscriber subscriber, String clientId) {
-    
-    }
-    
+    default void subscribeService(Service service, Subscriber subscriber, String clientId) {}
+
     /**
      * Unsubscribe a service.
      *
-     * @param service    service
+     * @param service service
      * @param subscriber subscribe
-     * @param clientId   id of client
+     * @param clientId id of client
      */
-    default void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
-    
-    }
-    
+    default void unsubscribeService(Service service, Subscriber subscriber, String clientId) {}
+
     /**
      * get publish info.
      *
@@ -106,8 +102,10 @@ public interface ClientOperationService {
         if (!instance.isEnabled()) {
             extendDatum.put(Constants.PUBLISH_INSTANCE_ENABLE, instance.isEnabled());
         }
-        String clusterName = StringUtils.isBlank(instance.getClusterName()) ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
-                : instance.getClusterName();
+        String clusterName =
+                StringUtils.isBlank(instance.getClusterName())
+                        ? UtilsAndCommons.DEFAULT_CLUSTER_NAME
+                        : instance.getClusterName();
         result.setHealthy(instance.isHealthy());
         result.setCluster(clusterName);
         return result;

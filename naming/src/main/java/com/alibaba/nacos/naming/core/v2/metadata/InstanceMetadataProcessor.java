@@ -27,17 +27,16 @@ import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.misc.Loggers;
-import org.springframework.stereotype.Component;
-
 import java.lang.reflect.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import org.springframework.stereotype.Component;
 
 /**
  * Instance metadata processor.
@@ -46,19 +45,20 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @Component
 public class InstanceMetadataProcessor extends RequestProcessor4CP {
-    
+
     private final NamingMetadataManager namingMetadataManager;
-    
+
     private final Serializer serializer;
-    
+
     private final Type processType;
-    
+
     private final ReentrantReadWriteLock lock;
-    
+
     private final ReentrantReadWriteLock.ReadLock readLock;
-    
+
     @SuppressWarnings("unchecked")
-    public InstanceMetadataProcessor(NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
+    public InstanceMetadataProcessor(
+            NamingMetadataManager namingMetadataManager, ProtocolManager protocolManager) {
         this.namingMetadataManager = namingMetadataManager;
         this.serializer = SerializeFactory.getDefault();
         this.processType = TypeUtils.parameterize(MetadataOperation.class, InstanceMetadata.class);
@@ -66,22 +66,24 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
         this.readLock = lock.readLock();
         protocolManager.getCpProtocol().addRequestProcessors(Collections.singletonList(this));
     }
-    
+
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(new InstanceMetadataSnapshotOperation(namingMetadataManager, lock));
+        return Collections.singletonList(
+                new InstanceMetadataSnapshotOperation(namingMetadataManager, lock));
     }
-    
+
     @Override
     public Response onRequest(ReadRequest request) {
         return null;
     }
-    
+
     @Override
     public Response onApply(WriteRequest request) {
         readLock.lock();
         try {
-            MetadataOperation<InstanceMetadata> op = serializer.deserialize(request.getData().toByteArray(), processType);
+            MetadataOperation<InstanceMetadata> op =
+                    serializer.deserialize(request.getData().toByteArray(), processType);
             switch (DataOperation.valueOf(request.getOperation())) {
                 case ADD:
                 case CHANGE:
@@ -91,32 +93,35 @@ public class InstanceMetadataProcessor extends RequestProcessor4CP {
                     deleteInstanceMetadata(op);
                     break;
                 default:
-                    return Response.newBuilder().setSuccess(false)
-                            .setErrMsg("Unsupported operation " + request.getOperation()).build();
+                    return Response.newBuilder()
+                            .setSuccess(false)
+                            .setErrMsg("Unsupported operation " + request.getOperation())
+                            .build();
             }
             return Response.newBuilder().setSuccess(true).build();
         } catch (Exception e) {
-            Loggers.RAFT.error("onApply {} instance metadata operation failed. ", request.getOperation(), e);
+            Loggers.RAFT.error(
+                    "onApply {} instance metadata operation failed. ", request.getOperation(), e);
             String errorMessage = null == e.getMessage() ? e.getClass().getName() : e.getMessage();
             return Response.newBuilder().setSuccess(false).setErrMsg(errorMessage).build();
         } finally {
             readLock.unlock();
         }
     }
-    
+
     private void updateInstanceMetadata(MetadataOperation<InstanceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         service = ServiceManager.getInstance().getSingleton(service);
         namingMetadataManager.updateInstanceMetadata(service, op.getTag(), op.getMetadata());
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
-    
+
     private void deleteInstanceMetadata(MetadataOperation<InstanceMetadata> op) {
         Service service = Service.newService(op.getNamespace(), op.getGroup(), op.getServiceName());
         service = ServiceManager.getInstance().getSingleton(service);
         namingMetadataManager.removeInstanceMetadata(service, op.getTag());
     }
-    
+
     @Override
     public String group() {
         return Constants.INSTANCE_METADATA;

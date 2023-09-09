@@ -27,6 +27,8 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
+import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,9 +36,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-
-import javax.servlet.http.HttpServletRequest;
-import java.util.List;
 
 /**
  * Builtin access control entry of Nacos.
@@ -47,16 +46,13 @@ import java.util.List;
 @Component
 @Deprecated
 public class NacosAuthManager {
-    
-    @Autowired
-    private TokenManagerDelegate tokenManager;
-    
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    
-    @Autowired
-    private NacosRoleServiceImpl roleService;
-    
+
+    @Autowired private TokenManagerDelegate tokenManager;
+
+    @Autowired private AuthenticationManager authenticationManager;
+
+    @Autowired private NacosRoleServiceImpl roleService;
+
     /**
      * Authentication of request, identify the user who request the resource.
      *
@@ -70,36 +66,35 @@ public class NacosAuthManager {
         validate0(token);
         return getNacosUser(token);
     }
-    
+
     NacosUser login(IdentityContext identityContext) throws AccessException {
         String token = resolveToken(identityContext);
         validate0(token);
         return getNacosUser(token);
     }
-    
+
     /**
      * Authorization of request, constituted with resource and user.
      *
      * @param permission permission to auth
-     * @param user       user who wants to access the resource.
+     * @param user user who wants to access the resource.
      * @throws AccessException if authorization is failed
      */
     public void auth(Permission permission, NacosUser user) throws AccessException {
         if (Loggers.AUTH.isDebugEnabled()) {
             Loggers.AUTH.debug("auth permission: {}, user: {}", permission, user);
         }
-        
+
         if (!roleService.hasPermission(user, permission)) {
             throw new AccessException("authorization failed!");
         }
     }
-    
-    /**
-     * Get token from header.
-     */
+
+    /** Get token from header. */
     private String resolveToken(HttpServletRequest request) throws AccessException {
         String bearerToken = request.getHeader(AuthConstants.AUTHORIZATION_HEADER);
-        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
+        if (StringUtils.isNotBlank(bearerToken)
+                && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
             return bearerToken.substring(7);
         }
         bearerToken = request.getParameter(Constants.ACCESS_TOKEN);
@@ -108,13 +103,15 @@ public class NacosAuthManager {
             String password = request.getParameter(AuthConstants.PARAM_PASSWORD);
             bearerToken = resolveTokenFromUser(userName, password);
         }
-        
+
         return bearerToken;
     }
-    
+
     private String resolveToken(IdentityContext identityContext) throws AccessException {
-        String bearerToken = identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY);
-        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
+        String bearerToken =
+                identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(bearerToken)
+                && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
             return bearerToken.substring(7);
         }
         bearerToken = identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY);
@@ -125,40 +122,40 @@ public class NacosAuthManager {
         }
         return bearerToken;
     }
-    
-    private String resolveTokenFromUser(String userName, String rawPassword) throws AccessException {
+
+    private String resolveTokenFromUser(String userName, String rawPassword)
+            throws AccessException {
         String finalName;
         Authentication authenticate;
         try {
-            UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userName,
-                    rawPassword);
+            UsernamePasswordAuthenticationToken authenticationToken =
+                    new UsernamePasswordAuthenticationToken(userName, rawPassword);
             authenticate = authenticationManager.authenticate(authenticationToken);
         } catch (AuthenticationException e) {
             throw new AccessException("unknown user!");
         }
-        
+
         if (null == authenticate || StringUtils.isBlank(authenticate.getName())) {
             finalName = userName;
         } else {
             finalName = authenticate.getName();
         }
-        
+
         return tokenManager.createToken(finalName);
     }
-    
+
     private void validate0(String token) throws AccessException {
         if (StringUtils.isBlank(token)) {
             throw new AccessException("user not found!");
         }
-        
+
         tokenManager.validateToken(token);
-        
     }
-    
+
     private NacosUser getNacosUser(String token) throws AccessException {
         Authentication authentication = tokenManager.getAuthentication(token);
         SecurityContextHolder.getContext().setAuthentication(authentication);
-        
+
         String username = authentication.getName();
         NacosUser user = new NacosUser();
         user.setUserName(username);

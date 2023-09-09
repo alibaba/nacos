@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.pojo;
 
 import com.alibaba.nacos.api.selector.Selector;
-
 import java.io.Serializable;
 import java.util.Map;
 
@@ -32,21 +31,21 @@ public class ServiceDetailInfo implements Serializable {
     private static final long serialVersionUID = 6351606608785841722L;
 
     private String namespace;
-    
+
     private String serviceName;
-    
+
     private String groupName;
-    
+
     private Map<String, ClusterInfo> clusterMap;
-    
+
     private Map<String, String> metadata;
-    
+
     private float protectThreshold;
-    
+
     private Selector selector;
-    
+
     private Boolean ephemeral;
-    
+
     /**
      * Getter method for property <tt>serviceName</tt>.
      *
@@ -55,7 +54,7 @@ public class ServiceDetailInfo implements Serializable {
     public String getServiceName() {
         return serviceName;
     }
-    
+
     /**
      * Setter method for property <tt>serviceName </tt>.
      *
@@ -64,15 +63,15 @@ public class ServiceDetailInfo implements Serializable {
     public void setServiceName(String serviceName) {
         this.serviceName = serviceName;
     }
-    
+
     public String getGroupName() {
         return groupName;
     }
-    
+
     public void setGroupName(String groupName) {
         this.groupName = groupName;
     }
-    
+
     /**
      * Getter method for property <tt>clusterMap</tt>.
      *
@@ -81,7 +80,7 @@ public class ServiceDetailInfo implements Serializable {
     public Map<String, ClusterInfo> getClusterMap() {
         return clusterMap;
     }
-    
+
     /**
      * Setter method for property <tt>clusterMap </tt>.
      *
@@ -90,7 +89,7 @@ public class ServiceDetailInfo implements Serializable {
     public void setClusterMap(Map<String, ClusterInfo> clusterMap) {
         this.clusterMap = clusterMap;
     }
-    
+
     /**
      * Getter method for property <tt>metadata</tt>.
      *
@@ -99,7 +98,7 @@ public class ServiceDetailInfo implements Serializable {
     public Map<String, String> getMetadata() {
         return metadata;
     }
-    
+
     /**
      * Setter method for property <tt>metadata </tt>.
      *
@@ -108,35 +107,35 @@ public class ServiceDetailInfo implements Serializable {
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
-    
+
     public String getNamespace() {
         return namespace;
     }
-    
+
     public void setNamespace(String namespace) {
         this.namespace = namespace;
     }
-    
+
     public float getProtectThreshold() {
         return protectThreshold;
     }
-    
+
     public void setProtectThreshold(float protectThreshold) {
         this.protectThreshold = protectThreshold;
     }
-    
+
     public Selector getSelector() {
         return selector;
     }
-    
+
     public void setSelector(Selector selector) {
         this.selector = selector;
     }
-    
+
     public Boolean isEphemeral() {
         return ephemeral;
     }
-    
+
     public void setEphemeral(boolean ephemeral) {
         this.ephemeral = ephemeral;
     }

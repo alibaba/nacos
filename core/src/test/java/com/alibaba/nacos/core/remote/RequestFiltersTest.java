@@ -21,8 +21,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * {@link RequestFilters} unit test.
@@ -31,17 +29,19 @@ import org.junit.Test;
  * @date 2021-07-02 19:20
  */
 public class RequestFiltersTest {
-    
+
     @Test
     public void testRegisterFilter() {
         RequestFilters requestFilters = new RequestFilters();
-        requestFilters.registerFilter(new AbstractRequestFilter() {
-            @Override
-            protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
-                return null;
-            }
-        });
-    
+        requestFilters.registerFilter(
+                new AbstractRequestFilter() {
+                    @Override
+                    protected Response filter(Request request, RequestMeta meta, Class handlerClazz)
+                            throws NacosException {
+                        return null;
+                    }
+                });
+
         Assert.assertEquals(1, requestFilters.filters.size());
     }
 }

@@ -22,14 +22,14 @@ package com.alibaba.nacos.naming.push.v2.hook;
  * @author xiweng.yy
  */
 public interface PushResultHook {
-    
+
     /**
      * Push success.
      *
      * @param result push result
      */
     void pushSuccess(PushResult result);
-    
+
     /**
      * Push failed.
      *

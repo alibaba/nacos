@@ -24,8 +24,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
  * The derby implementation of TenantInfoMapper.
  *
  * @author hyx
- **/
-
+ */
 public class TenantInfoMapperByDerby extends AbstractMapper implements TenantInfoMapper {
 
     @Override

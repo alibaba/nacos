@@ -26,38 +26,39 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author Nacos
  */
 public class TenantUtil {
-    
+
     private static final String USER_TENANT;
-    
+
     private static final String DEFAULT_ACM_NAMESPACE = "";
-    
+
     private static final String TENANT_ID = "tenant.id";
-    
+
     private static final String ACM_NAMESPACE_PROPERTY = "acm.namespace";
-    
+
     static {
         USER_TENANT = NacosClientProperties.PROTOTYPE.getProperty(TENANT_ID, "");
     }
-    
+
     /**
      * Adapt the way ACM gets tenant on the cloud.
-     * <p>
-     * Note the difference between getting and getting ANS. Since the processing logic on the server side is different,
-     * the default value returns differently.
-     * </p>
+     *
+     * <p>Note the difference between getting and getting ANS. Since the processing logic on the
+     * server side is different, the default value returns differently.
      *
      * @return user tenant for acm
      */
     public static String getUserTenantForAcm() {
         String tmp = USER_TENANT;
-        
+
         if (StringUtils.isBlank(USER_TENANT)) {
-            tmp = NacosClientProperties.PROTOTYPE.getProperty(ACM_NAMESPACE_PROPERTY, DEFAULT_ACM_NAMESPACE);
+            tmp =
+                    NacosClientProperties.PROTOTYPE.getProperty(
+                            ACM_NAMESPACE_PROPERTY, DEFAULT_ACM_NAMESPACE);
         }
-        
+
         return tmp;
     }
-    
+
     /**
      * Adapt the way ANS gets tenant on the cloud.
      *
@@ -65,7 +66,7 @@ public class TenantUtil {
      */
     public static String getUserTenantForAns() {
         String tmp = USER_TENANT;
-        
+
         if (StringUtils.isBlank(USER_TENANT)) {
             tmp = NacosClientProperties.PROTOTYPE.getProperty(SystemPropertyKeyConst.ANS_NAMESPACE);
         }

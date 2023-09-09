@@ -29,32 +29,28 @@ public class ServerRemoteAbility implements Serializable {
 
     private static final long serialVersionUID = -3069795759506428390L;
 
-    /**
-     * if support remote connection.
-     */
+    /** if support remote connection. */
     private boolean supportRemoteConnection;
-    
-    /**
-     * if support grpc report.
-     */
+
+    /** if support grpc report. */
     private boolean grpcReportEnabled = true;
-    
+
     public boolean isSupportRemoteConnection() {
         return this.supportRemoteConnection;
     }
-    
+
     public void setSupportRemoteConnection(boolean supportRemoteConnection) {
         this.supportRemoteConnection = supportRemoteConnection;
     }
-    
+
     public boolean isGrpcReportEnabled() {
         return grpcReportEnabled;
     }
-    
+
     public void setGrpcReportEnabled(boolean grpcReportEnabled) {
         this.grpcReportEnabled = grpcReportEnabled;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -64,9 +60,10 @@ public class ServerRemoteAbility implements Serializable {
             return false;
         }
         ServerRemoteAbility that = (ServerRemoteAbility) o;
-        return supportRemoteConnection == that.supportRemoteConnection && grpcReportEnabled == that.grpcReportEnabled;
+        return supportRemoteConnection == that.supportRemoteConnection
+                && grpcReportEnabled == that.grpcReportEnabled;
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(supportRemoteConnection, grpcReportEnabled);

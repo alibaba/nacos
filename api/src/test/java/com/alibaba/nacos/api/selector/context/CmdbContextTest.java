@@ -16,15 +16,13 @@
 
 package com.alibaba.nacos.api.selector.context;
 
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Test;
-
-import java.util.Collections;
-
 import static org.junit.Assert.assertEquals;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import java.util.Collections;
+
 public class CmdbContextTest {
-    
+
     @Test
     public void testToString() {
         CmdbContext<Instance> cmdbContext = new CmdbContext<>();

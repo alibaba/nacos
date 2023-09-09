@@ -16,27 +16,22 @@
 
 package com.alibaba.nacos.persistence.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class PersistenceExecutorTest {
-    
+
     @Test
     public void testExecuteEmbeddedDump() throws InterruptedException {
-        
+
         AtomicInteger atomicInteger = new AtomicInteger();
-        
+
         Runnable runnable = atomicInteger::incrementAndGet;
-        
+
         PersistenceExecutor.executeEmbeddedDump(runnable);
-        
+
         TimeUnit.MILLISECONDS.sleep(20);
-        
+
         Assert.assertEquals(1, atomicInteger.get());
-        
     }
-    
 }

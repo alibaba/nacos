@@ -24,7 +24,7 @@ import com.alibaba.nacos.api.ability.ServerAbilities;
  * @author xiweng.yy
  */
 public class RemoteAbilityInitializer implements ServerAbilityInitializer {
-    
+
     @Override
     public void initialize(ServerAbilities abilities) {
         abilities.getRemoteAbility().setSupportRemoteConnection(true);

@@ -35,7 +35,6 @@ import com.alibaba.nacos.naming.push.NamingSubscriberService;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutorDelegate;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTask;
 import com.alibaba.nacos.naming.push.v2.task.PushDelayTaskExecuteEngine;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -48,27 +47,37 @@ import java.util.stream.Stream;
  * @author xiweng.yy
  */
 @org.springframework.stereotype.Service
-public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements NamingSubscriberService {
-    
+public class NamingSubscriberServiceV2Impl extends SmartSubscriber
+        implements NamingSubscriberService {
+
     private static final int PARALLEL_SIZE = 100;
-    
+
     private final ClientManager clientManager;
-    
+
     private final ClientServiceIndexesManager indexesManager;
-    
+
     private final PushDelayTaskExecuteEngine delayTaskEngine;
-    
-    public NamingSubscriberServiceV2Impl(ClientManagerDelegate clientManager,
-            ClientServiceIndexesManager indexesManager, ServiceStorage serviceStorage,
-            NamingMetadataManager metadataManager, PushExecutorDelegate pushExecutor, SwitchDomain switchDomain) {
+
+    public NamingSubscriberServiceV2Impl(
+            ClientManagerDelegate clientManager,
+            ClientServiceIndexesManager indexesManager,
+            ServiceStorage serviceStorage,
+            NamingMetadataManager metadataManager,
+            PushExecutorDelegate pushExecutor,
+            SwitchDomain switchDomain) {
         this.clientManager = clientManager;
         this.indexesManager = indexesManager;
-        this.delayTaskEngine = new PushDelayTaskExecuteEngine(clientManager, indexesManager, serviceStorage,
-                metadataManager, pushExecutor, switchDomain);
+        this.delayTaskEngine =
+                new PushDelayTaskExecuteEngine(
+                        clientManager,
+                        indexesManager,
+                        serviceStorage,
+                        metadataManager,
+                        pushExecutor,
+                        switchDomain);
         NotifyCenter.registerSubscriber(this, NamingEventPublisherFactory.getInstance());
-        
     }
-    
+
     @Override
     public Collection<Subscriber> getSubscribers(String namespaceId, String serviceName) {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(serviceName);
@@ -76,7 +85,7 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
         Service service = Service.newService(namespaceId, groupName, serviceNameWithoutGroup);
         return getSubscribers(service);
     }
-    
+
     @Override
     public Collection<Subscriber> getSubscribers(Service service) {
         Collection<Subscriber> result = new HashSet<>();
@@ -85,24 +94,28 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
         }
         return result;
     }
-    
+
     @Override
     public Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName) {
         Collection<Subscriber> result = new HashSet<>();
         Stream<Service> serviceStream = getServiceStream();
         String serviceNamePattern = NamingUtils.getServiceName(serviceName);
         String groupNamePattern = NamingUtils.getGroupName(serviceName);
-        serviceStream.filter(service -> service.getNamespace().equals(namespaceId) && service.getName()
-                .contains(serviceNamePattern) && service.getGroup().contains(groupNamePattern))
+        serviceStream
+                .filter(
+                        service ->
+                                service.getNamespace().equals(namespaceId)
+                                        && service.getName().contains(serviceNamePattern)
+                                        && service.getGroup().contains(groupNamePattern))
                 .forEach(service -> result.addAll(getSubscribers(service)));
         return result;
     }
-    
+
     @Override
     public Collection<Subscriber> getFuzzySubscribers(Service service) {
         return getFuzzySubscribers(service.getNamespace(), service.getGroupedServiceName());
     }
-    
+
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         List<Class<? extends Event>> result = new LinkedList<>();
@@ -110,29 +123,38 @@ public class NamingSubscriberServiceV2Impl extends SmartSubscriber implements Na
         result.add(ServiceEvent.ServiceSubscribedEvent.class);
         return result;
     }
-    
+
     @Override
     public void onEvent(Event event) {
         if (event instanceof ServiceEvent.ServiceChangedEvent) {
             // If service changed, push to all subscribers.
-            ServiceEvent.ServiceChangedEvent serviceChangedEvent = (ServiceEvent.ServiceChangedEvent) event;
+            ServiceEvent.ServiceChangedEvent serviceChangedEvent =
+                    (ServiceEvent.ServiceChangedEvent) event;
             Service service = serviceChangedEvent.getService();
-            delayTaskEngine.addTask(service, new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay()));
-            MetricsMonitor.incrementServiceChangeCount(service.getNamespace(), service.getGroup(), service.getName());
+            delayTaskEngine.addTask(
+                    service,
+                    new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay()));
+            MetricsMonitor.incrementServiceChangeCount(
+                    service.getNamespace(), service.getGroup(), service.getName());
         } else if (event instanceof ServiceEvent.ServiceSubscribedEvent) {
             // If service is subscribed by one client, only push this client.
-            ServiceEvent.ServiceSubscribedEvent subscribedEvent = (ServiceEvent.ServiceSubscribedEvent) event;
+            ServiceEvent.ServiceSubscribedEvent subscribedEvent =
+                    (ServiceEvent.ServiceSubscribedEvent) event;
             Service service = subscribedEvent.getService();
-            delayTaskEngine.addTask(service, new PushDelayTask(service, PushConfig.getInstance().getPushTaskDelay(),
-                    subscribedEvent.getClientId()));
+            delayTaskEngine.addTask(
+                    service,
+                    new PushDelayTask(
+                            service,
+                            PushConfig.getInstance().getPushTaskDelay(),
+                            subscribedEvent.getClientId()));
         }
     }
-    
+
     private Stream<Service> getServiceStream() {
         Collection<Service> services = indexesManager.getSubscribedService();
         return services.size() > PARALLEL_SIZE ? services.parallelStream() : services.stream();
     }
-    
+
     public int getPushPendingTaskCount() {
         return delayTaskEngine.size();
     }

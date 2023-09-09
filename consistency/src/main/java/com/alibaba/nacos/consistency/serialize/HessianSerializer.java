@@ -22,7 +22,6 @@ import com.alibaba.nacos.consistency.Serializer;
 import com.caucho.hessian.io.Hessian2Input;
 import com.caucho.hessian.io.Hessian2Output;
 import com.caucho.hessian.io.SerializerFactory;
-
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -35,19 +34,18 @@ import java.lang.reflect.Type;
  */
 @SuppressWarnings("all")
 public class HessianSerializer implements Serializer {
-    
+
     private static final String NAME = "Hessian";
-    
+
     private SerializerFactory serializerFactory = new NacosHessianSerializerFactory();
-    
-    public HessianSerializer() {
-    }
-    
+
+    public HessianSerializer() {}
+
     @Override
     public <T> T deserialize(byte[] data) {
         return deseiralize0(data);
     }
-    
+
     @Override
     public <T> T deserialize(byte[] data, Class<T> cls) {
         T result = deserialize(data);
@@ -57,20 +55,25 @@ public class HessianSerializer implements Serializer {
         if (cls.isAssignableFrom(result.getClass())) {
             return result;
         }
-        throw new NacosDeserializationException(cls, new ClassCastException(
-                "%s cannot be cast to %s".format(result.getClass().getCanonicalName(), cls.getCanonicalName())));
+        throw new NacosDeserializationException(
+                cls,
+                new ClassCastException(
+                        "%s cannot be cast to %s"
+                                .format(
+                                        result.getClass().getCanonicalName(),
+                                        cls.getCanonicalName())));
     }
-    
+
     @Override
     public <T> T deserialize(byte[] data, Type type) {
         return deserialize(data);
     }
-    
+
     private <T> T deseiralize0(byte[] data) {
         if (ByteUtils.isEmpty(data)) {
             return null;
         }
-        
+
         Hessian2Input input = new Hessian2Input(new ByteArrayInputStream(data));
         input.setSerializerFactory(serializerFactory);
         Object resultObject;
@@ -82,7 +85,7 @@ public class HessianSerializer implements Serializer {
         }
         return (T) resultObject;
     }
-    
+
     @Override
     public <T> byte[] serialize(T obj) {
         ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
@@ -94,13 +97,12 @@ public class HessianSerializer implements Serializer {
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred when Hessian serializer encode!", e);
         }
-        
+
         return byteArray.toByteArray();
     }
-    
+
     @Override
     public String name() {
         return NAME;
     }
-    
 }

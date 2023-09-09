@@ -16,28 +16,28 @@
 
 package com.alibaba.nacos.naming.misc;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.mock.env.MockEnvironment;
-
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT;
 import static com.alibaba.nacos.naming.misc.UtilsAndCommons.NACOS_NAMING_CONTEXT;
 
+import org.springframework.mock.env.MockEnvironment;
+
 public class UtilsAndCommonsTest {
-    
+
     @Test
     public void testControllerPathsDefaultValues() {
-        
+
         MockEnvironment environment = new MockEnvironment();
-        
-        Assert.assertEquals(DEFAULT_NACOS_NAMING_CONTEXT, environment.resolvePlaceholders(NACOS_NAMING_CONTEXT));
+
+        Assert.assertEquals(
+                DEFAULT_NACOS_NAMING_CONTEXT,
+                environment.resolvePlaceholders(NACOS_NAMING_CONTEXT));
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testShakeUpException() {
         UtilsAndCommons.shakeUp(null, 0);
     }
-    
+
     @Test
     public void testShakeUp() {
         Assert.assertEquals(0, UtilsAndCommons.shakeUp(null, 1));

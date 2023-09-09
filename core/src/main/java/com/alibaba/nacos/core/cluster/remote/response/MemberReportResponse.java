@@ -27,20 +27,19 @@ import com.alibaba.nacos.core.cluster.Member;
  * @author : huangtianhui
  */
 public class MemberReportResponse extends Response {
-    
+
     private Member node;
-    
-    public MemberReportResponse() {
-    }
-    
+
+    public MemberReportResponse() {}
+
     public MemberReportResponse(Member node) {
         this.node = node;
     }
-    
+
     public Member getNode() {
         return node;
     }
-    
+
     public void setNode(Member node) {
         this.node = node;
     }

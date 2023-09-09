@@ -29,15 +29,14 @@ import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.ArrayList;
-import java.util.Collection;
 
 /**
  * Cluster communication interface.
@@ -47,19 +46,22 @@ import java.util.Collection;
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT + "/cluster")
 public class NacosClusterController {
-    
+
     private final ServerMemberManager memberManager;
-    
+
     public NacosClusterController(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
-    
+
     @GetMapping(value = "/self")
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Secured(
+            resource = Commons.NACOS_CORE_CONTEXT + "/cluster",
+            action = ActionTypes.READ,
+            signType = SignType.CONSOLE)
     public RestResult<Member> self() {
         return RestResultUtils.success(memberManager.getSelf());
     }
-    
+
     /**
      * The console displays the list of cluster members.
      *
@@ -67,41 +69,54 @@ public class NacosClusterController {
      * @return all members
      */
     @GetMapping(value = "/nodes")
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Secured(
+            resource = Commons.NACOS_CORE_CONTEXT + "/cluster",
+            action = ActionTypes.READ,
+            signType = SignType.CONSOLE)
     public RestResult<Collection<Member>> listNodes(
             @RequestParam(value = "keyword", required = false) String ipKeyWord) {
         Collection<Member> members = memberManager.allMembers();
         Collection<Member> result = new ArrayList<>();
-        
-        members.stream().sorted().forEach(member -> {
-            if (StringUtils.isBlank(ipKeyWord)) {
-                result.add(member);
-                return;
-            }
-            final String address = member.getAddress();
-            if (StringUtils.equals(address, ipKeyWord) || StringUtils.startsWith(address, ipKeyWord)) {
-                result.add(member);
-            }
-        });
-        
+
+        members.stream()
+                .sorted()
+                .forEach(
+                        member -> {
+                            if (StringUtils.isBlank(ipKeyWord)) {
+                                result.add(member);
+                                return;
+                            }
+                            final String address = member.getAddress();
+                            if (StringUtils.equals(address, ipKeyWord)
+                                    || StringUtils.startsWith(address, ipKeyWord)) {
+                                result.add(member);
+                            }
+                        });
+
         return RestResultUtils.success(result);
     }
-    
+
     // The client can get all the nacos node information in the current
     // cluster according to this interface
-    
+
     @GetMapping(value = "/simple/nodes")
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Secured(
+            resource = Commons.NACOS_CORE_CONTEXT + "/cluster",
+            action = ActionTypes.READ,
+            signType = SignType.CONSOLE)
     public RestResult<Collection<String>> listSimpleNodes() {
         return RestResultUtils.success(memberManager.getMemberAddressInfos());
     }
-    
+
     @GetMapping("/health")
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.READ, signType = SignType.CONSOLE)
+    @Secured(
+            resource = Commons.NACOS_CORE_CONTEXT + "/cluster",
+            action = ActionTypes.READ,
+            signType = SignType.CONSOLE)
     public RestResult<String> getHealth() {
         return RestResultUtils.success(memberManager.getSelf().getState().name());
     }
-    
+
     /**
      * Other nodes return their own metadata information.
      *
@@ -110,18 +125,22 @@ public class NacosClusterController {
      */
     @Deprecated
     @PostMapping(value = {"/report"})
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Secured(
+            resource = Commons.NACOS_CORE_CONTEXT + "/cluster",
+            action = ActionTypes.WRITE,
+            signType = SignType.CONSOLE)
     public RestResult<String> report(@RequestBody Member node) {
         if (!node.check()) {
             return RestResultUtils.failedWithMsg(400, "Node information is illegal");
         }
-        LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "node state report, receive info : {}", node);
+        LoggerUtils.printIfDebugEnabled(
+                Loggers.CLUSTER, "node state report, receive info : {}", node);
         node.setState(NodeState.UP);
         node.setFailAccessCnt(0);
         memberManager.update(node);
         return RestResultUtils.success(JacksonUtils.toJson(memberManager.getSelf()));
     }
-    
+
     /**
      * Addressing mode switch.
      *
@@ -129,7 +148,10 @@ public class NacosClusterController {
      * @return {@link RestResult}
      */
     @PostMapping(value = "/switch/lookup")
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Secured(
+            resource = Commons.NACOS_CORE_CONTEXT + "/cluster",
+            action = ActionTypes.WRITE,
+            signType = SignType.CONSOLE)
     public RestResult<String> switchLookup(@RequestParam(name = "type") String type) {
         try {
             memberManager.switchLookup(type);
@@ -138,7 +160,7 @@ public class NacosClusterController {
             return RestResultUtils.failed(ex.getMessage());
         }
     }
-    
+
     /**
      * member leave.
      *
@@ -147,10 +169,15 @@ public class NacosClusterController {
      * @throws Exception {@link Exception}
      */
     @PostMapping("/server/leave")
-    @Secured(resource = Commons.NACOS_CORE_CONTEXT + "/cluster", action = ActionTypes.WRITE, signType = SignType.CONSOLE)
-    public RestResult<String> leave(@RequestBody Collection<String> params,
-            @RequestParam(defaultValue = "true") Boolean notifyOtherMembers) throws Exception {
-        return RestResultUtils.failed(405, null, "/v1/core/cluster/server/leave API not allow to use temporarily.");
+    @Secured(
+            resource = Commons.NACOS_CORE_CONTEXT + "/cluster",
+            action = ActionTypes.WRITE,
+            signType = SignType.CONSOLE)
+    public RestResult<String> leave(
+            @RequestBody Collection<String> params,
+            @RequestParam(defaultValue = "true") Boolean notifyOtherMembers)
+            throws Exception {
+        return RestResultUtils.failed(
+                405, null, "/v1/core/cluster/server/leave API not allow to use temporarily.");
     }
-    
 }

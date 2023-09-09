@@ -22,14 +22,14 @@ package com.alibaba.nacos.core.remote.grpc.negotiator;
  * @author xiweng.yy
  */
 public interface ProtocolNegotiatorBuilder {
-    
+
     /**
      * Build new ProtocolNegotiator.
      *
      * @return ProtocolNegotiator, Nullable.
      */
     NacosGrpcProtocolNegotiator build();
-    
+
     /**
      * Builder type of ProtocolNegotiator.
      *

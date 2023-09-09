@@ -16,22 +16,18 @@
 
 package com.alibaba.nacos.core.distributed.distro.entity;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 public class DistroKeyTest {
-    
+
     private final String type = "com.alibaba.nacos.naming.iplist.";
-    
+
     private final String resourceKey = "checksum";
-    
+
     private final String targetServer = "1.1.1.1";
-    
+
     private DistroKey distroKey1;
-    
+
     private DistroKey distroKey2;
-    
+
     @Before
     public void setUp() {
         distroKey1 = new DistroKey(resourceKey, type, targetServer);
@@ -40,15 +36,14 @@ public class DistroKeyTest {
         distroKey2.setResourceType(type);
         distroKey2.setTargetServer(targetServer);
     }
-    
+
     @Test
     public void testGetters() {
         Assert.assertEquals(distroKey2.getResourceKey(), resourceKey);
         Assert.assertEquals(distroKey2.getResourceType(), type);
         Assert.assertEquals(distroKey2.getTargetServer(), targetServer);
-    
     }
-    
+
     @Test
     public void testEquals() {
         Assert.assertEquals(distroKey1, distroKey2);

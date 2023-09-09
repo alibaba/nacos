@@ -28,9 +28,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Type;
 
 /**
@@ -40,16 +39,15 @@ import java.lang.reflect.Type;
  */
 public final class JacksonUtils {
 
-    private JacksonUtils() {
-    }
-    
+    private JacksonUtils() {}
+
     static ObjectMapper mapper = new ObjectMapper();
-    
+
     static {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(Include.NON_NULL);
     }
-    
+
     /**
      * Object to json string.
      *
@@ -64,7 +62,7 @@ public final class JacksonUtils {
             throw new NacosSerializationException(obj.getClass(), e);
         }
     }
-    
+
     /**
      * Object to json string byte array.
      *
@@ -79,13 +77,13 @@ public final class JacksonUtils {
             throw new NacosSerializationException(obj.getClass(), e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
      * @param json json string
-     * @param cls  class of object
-     * @param <T>  General type
+     * @param cls class of object
+     * @param <T> General type
      * @return object
      * @throws NacosDeserializationException if deserialize failed
      */
@@ -96,13 +94,13 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(cls, e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
      * @param json json string
-     * @param cls  {@link Type} of object
-     * @param <T>  General type
+     * @param cls {@link Type} of object
+     * @param <T> General type
      * @return object
      * @throws NacosDeserializationException if deserialize failed
      */
@@ -113,13 +111,13 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
      * @param inputStream json string input stream
-     * @param cls         class of object
-     * @param <T>         General type
+     * @param cls class of object
+     * @param <T> General type
      * @return object
      * @throws NacosDeserializationException if deserialize failed
      */
@@ -130,13 +128,13 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
-     * @param json          json string byte array
+     * @param json json string byte array
      * @param typeReference {@link TypeReference} of object
-     * @param <T>           General type
+     * @param <T> General type
      * @return object
      * @throws NacosDeserializationException if deserialize failed
      */
@@ -147,13 +145,13 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
      * @param json json string
-     * @param cls  class of object
-     * @param <T>  General type
+     * @param cls class of object
+     * @param <T> General type
      * @return object
      * @throws NacosDeserializationException if deserialize failed
      */
@@ -164,13 +162,13 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(cls, e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
      * @param json json string
      * @param type {@link Type} of object
-     * @param <T>  General type
+     * @param <T> General type
      * @return object
      * @throws NacosDeserializationException if deserialize failed
      */
@@ -181,13 +179,13 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
-     * @param json          json string
+     * @param json json string
      * @param typeReference {@link TypeReference} of object
-     * @param <T>           General type
+     * @param <T> General type
      * @return object
      * @throws NacosDeserializationException if deserialize failed
      */
@@ -198,13 +196,13 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(typeReference.getClass(), e);
         }
     }
-    
+
     /**
      * Json string deserialize to Object.
      *
      * @param inputStream json string input stream
-     * @param type        {@link Type} of object
-     * @param <T>         General type
+     * @param type {@link Type} of object
+     * @param <T> General type
      * @return object
      * @throws NacosDeserializationException if deserialize failed
      */
@@ -215,7 +213,7 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(type, e);
         }
     }
-    
+
     /**
      * Json string deserialize to Jackson {@link JsonNode}.
      *
@@ -230,17 +228,17 @@ public final class JacksonUtils {
             throw new NacosDeserializationException(e);
         }
     }
-    
+
     /**
      * Register sub type for child class.
      *
-     * @param clz  child class
+     * @param clz child class
      * @param type type name of child class
      */
     public static void registerSubtype(Class<?> clz, String type) {
         mapper.registerSubtypes(new NamedType(clz, type));
     }
-    
+
     /**
      * Create a new empty Jackson {@link ObjectNode}.
      *
@@ -249,7 +247,7 @@ public final class JacksonUtils {
     public static ObjectNode createEmptyJsonNode() {
         return new ObjectNode(mapper.getNodeFactory());
     }
-    
+
     /**
      * Create a new empty Jackson {@link ArrayNode}.
      *
@@ -258,7 +256,7 @@ public final class JacksonUtils {
     public static ArrayNode createEmptyArrayNode() {
         return new ArrayNode(mapper.getNodeFactory());
     }
-    
+
     /**
      * Parse object to Jackson {@link JsonNode}.
      *
@@ -268,7 +266,7 @@ public final class JacksonUtils {
     public static JsonNode transferToJsonNode(Object obj) {
         return mapper.valueToTree(obj);
     }
-    
+
     /**
      * construct java type -> Jackson Java Type.
      *

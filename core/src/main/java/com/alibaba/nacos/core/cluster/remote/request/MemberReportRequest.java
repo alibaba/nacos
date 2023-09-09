@@ -26,20 +26,19 @@ import com.alibaba.nacos.core.cluster.Member;
  * @author : huangtianhui
  */
 public class MemberReportRequest extends AbstractClusterRequest {
-    
+
     private Member node;
-    
-    public MemberReportRequest() {
-    }
-    
+
+    public MemberReportRequest() {}
+
     public MemberReportRequest(Member node) {
         this.node = node;
     }
-    
+
     public Member getNode() {
         return node;
     }
-    
+
     public void setNode(Member node) {
         this.node = node;
     }

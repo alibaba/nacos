@@ -20,14 +20,6 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
-
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -37,171 +29,187 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ClientServiceIndexesManagerTest {
-    
-    @Mock
-    private Service service;
-    
-    @Mock
-    private ClientOperationEvent.ClientReleaseEvent clientReleaseEvent;
-    
-    @Mock
-    private ClientOperationEvent clientOperationEvent;
-    
-    @Mock
-    private Client client;
-    
+
+    @Mock private Service service;
+
+    @Mock private ClientOperationEvent.ClientReleaseEvent clientReleaseEvent;
+
+    @Mock private ClientOperationEvent clientOperationEvent;
+
+    @Mock private Client client;
+
     private ClientServiceIndexesManager clientServiceIndexesManager;
-    
+
     private static final String NACOS = "nacos";
-    
+
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
         clientServiceIndexesManager = new ClientServiceIndexesManager();
-        
-        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass = ClientServiceIndexesManager.class;
-        Field publisherIndexesField = clientServiceIndexesManagerClass.getDeclaredField("publisherIndexes");
+
+        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass =
+                ClientServiceIndexesManager.class;
+        Field publisherIndexesField =
+                clientServiceIndexesManagerClass.getDeclaredField("publisherIndexes");
         publisherIndexesField.setAccessible(true);
-        ConcurrentMap<Service, Set<String>> publisherIndexes = (ConcurrentMap<Service, Set<String>>) publisherIndexesField
-                .get(clientServiceIndexesManager);
+        ConcurrentMap<Service, Set<String>> publisherIndexes =
+                (ConcurrentMap<Service, Set<String>>)
+                        publisherIndexesField.get(clientServiceIndexesManager);
         publisherIndexes.put(service, new HashSet<>(Collections.singletonList(NACOS)));
-        
-        Field subscriberIndexesField = clientServiceIndexesManagerClass.getDeclaredField("subscriberIndexes");
+
+        Field subscriberIndexesField =
+                clientServiceIndexesManagerClass.getDeclaredField("subscriberIndexes");
         subscriberIndexesField.setAccessible(true);
-        ConcurrentMap<Service, Set<String>> subscriberIndexes = (ConcurrentMap<Service, Set<String>>) subscriberIndexesField
-                .get(clientServiceIndexesManager);
+        ConcurrentMap<Service, Set<String>> subscriberIndexes =
+                (ConcurrentMap<Service, Set<String>>)
+                        subscriberIndexesField.get(clientServiceIndexesManager);
         subscriberIndexes.put(service, new HashSet<>(Collections.singletonList(NACOS)));
     }
-    
+
     @Test
     public void testGetAllClientsRegisteredService() {
-        Collection<String> allClientsRegisteredService = clientServiceIndexesManager
-                .getAllClientsRegisteredService(service);
-        
+        Collection<String> allClientsRegisteredService =
+                clientServiceIndexesManager.getAllClientsRegisteredService(service);
+
         Assert.assertNotNull(allClientsRegisteredService);
         Assert.assertEquals(allClientsRegisteredService.size(), 1);
     }
-    
+
     @Test
     public void testGetAllClientsSubscribeService() {
-        
-        Collection<String> allClientsSubscribeService = clientServiceIndexesManager
-                .getAllClientsSubscribeService(service);
-        
+
+        Collection<String> allClientsSubscribeService =
+                clientServiceIndexesManager.getAllClientsSubscribeService(service);
+
         Assert.assertNotNull(allClientsSubscribeService);
         Assert.assertEquals(allClientsSubscribeService.size(), 1);
     }
-    
+
     @Test
     public void testGetSubscribedService() {
         Collection<Service> subscribedService = clientServiceIndexesManager.getSubscribedService();
-        
+
         Assert.assertNotNull(subscribedService);
         Assert.assertEquals(subscribedService.size(), 1);
     }
-    
+
     @Test
-    public void testRemovePublisherIndexesByEmptyService() throws NoSuchFieldException, IllegalAccessException {
+    public void testRemovePublisherIndexesByEmptyService()
+            throws NoSuchFieldException, IllegalAccessException {
         clientServiceIndexesManager.removePublisherIndexesByEmptyService(service);
-        
-        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass = ClientServiceIndexesManager.class;
-        Field publisherIndexesField = clientServiceIndexesManagerClass.getDeclaredField("publisherIndexes");
+
+        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass =
+                ClientServiceIndexesManager.class;
+        Field publisherIndexesField =
+                clientServiceIndexesManagerClass.getDeclaredField("publisherIndexes");
         publisherIndexesField.setAccessible(true);
-        ConcurrentMap<Service, Set<String>> publisherIndexes = (ConcurrentMap<Service, Set<String>>) publisherIndexesField
-                .get(clientServiceIndexesManager);
-        
+        ConcurrentMap<Service, Set<String>> publisherIndexes =
+                (ConcurrentMap<Service, Set<String>>)
+                        publisherIndexesField.get(clientServiceIndexesManager);
+
         Assert.assertEquals(publisherIndexes.size(), 1);
     }
-    
+
     @Test
     public void testSubscribeTypes() {
         List<Class<? extends Event>> classes = clientServiceIndexesManager.subscribeTypes();
-        
+
         Assert.assertNotNull(classes);
         Assert.assertEquals(classes.size(), 5);
     }
-    
+
     @Test
     public void testOnEvent() {
         Mockito.when(clientReleaseEvent.getClient()).thenReturn(client);
         clientServiceIndexesManager.onEvent(clientReleaseEvent);
-        
+
         Mockito.verify(clientReleaseEvent).getClient();
-        
+
         clientServiceIndexesManager.onEvent(clientOperationEvent);
-        
+
         Mockito.verify(clientOperationEvent).getService();
         Mockito.verify(clientOperationEvent).getClientId();
     }
-    
+
     @Test
     public void testAddPublisherIndexes()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String clientId = "clientId";
-        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass = ClientServiceIndexesManager.class;
-        Method addPublisherIndexes = clientServiceIndexesManagerClass
-                .getDeclaredMethod("addPublisherIndexes", Service.class, String.class);
+        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass =
+                ClientServiceIndexesManager.class;
+        Method addPublisherIndexes =
+                clientServiceIndexesManagerClass.getDeclaredMethod(
+                        "addPublisherIndexes", Service.class, String.class);
         addPublisherIndexes.setAccessible(true);
         addPublisherIndexes.invoke(clientServiceIndexesManager, service, clientId);
-        
-        Collection<String> allClientsSubscribeService = clientServiceIndexesManager
-                .getAllClientsRegisteredService(service);
-        
+
+        Collection<String> allClientsSubscribeService =
+                clientServiceIndexesManager.getAllClientsRegisteredService(service);
+
         Assert.assertNotNull(allClientsSubscribeService);
         Assert.assertEquals(allClientsSubscribeService.size(), 2);
     }
-    
+
     @Test
     public void testRemovePublisherIndexes()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String clientId = "clientId";
-        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass = ClientServiceIndexesManager.class;
-        Method removePublisherIndexes = clientServiceIndexesManagerClass
-                .getDeclaredMethod("removePublisherIndexes", Service.class, String.class);
+        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass =
+                ClientServiceIndexesManager.class;
+        Method removePublisherIndexes =
+                clientServiceIndexesManagerClass.getDeclaredMethod(
+                        "removePublisherIndexes", Service.class, String.class);
         removePublisherIndexes.setAccessible(true);
         removePublisherIndexes.invoke(clientServiceIndexesManager, service, clientId);
-        
-        Collection<String> allClientsSubscribeService = clientServiceIndexesManager
-                .getAllClientsRegisteredService(service);
-        
+
+        Collection<String> allClientsSubscribeService =
+                clientServiceIndexesManager.getAllClientsRegisteredService(service);
+
         Assert.assertNotNull(allClientsSubscribeService);
         Assert.assertEquals(allClientsSubscribeService.size(), 1);
     }
-    
+
     @Test
     public void testAddSubscriberIndexes()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String clientId = "clientId";
-        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass = ClientServiceIndexesManager.class;
-        Method addSubscriberIndexes = clientServiceIndexesManagerClass
-                .getDeclaredMethod("addSubscriberIndexes", Service.class, String.class);
+        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass =
+                ClientServiceIndexesManager.class;
+        Method addSubscriberIndexes =
+                clientServiceIndexesManagerClass.getDeclaredMethod(
+                        "addSubscriberIndexes", Service.class, String.class);
         addSubscriberIndexes.setAccessible(true);
         addSubscriberIndexes.invoke(clientServiceIndexesManager, service, clientId);
-        
-        Collection<String> allClientsSubscribeService = clientServiceIndexesManager
-                .getAllClientsSubscribeService(service);
-        
+
+        Collection<String> allClientsSubscribeService =
+                clientServiceIndexesManager.getAllClientsSubscribeService(service);
+
         Assert.assertNotNull(allClientsSubscribeService);
         Assert.assertEquals(allClientsSubscribeService.size(), 2);
     }
-    
+
     @Test
     public void testRemoveSubscriberIndexes()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         String clientId = "clientId";
-        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass = ClientServiceIndexesManager.class;
-        Method removeSubscriberIndexes = clientServiceIndexesManagerClass
-                .getDeclaredMethod("removeSubscriberIndexes", Service.class, String.class);
+        Class<ClientServiceIndexesManager> clientServiceIndexesManagerClass =
+                ClientServiceIndexesManager.class;
+        Method removeSubscriberIndexes =
+                clientServiceIndexesManagerClass.getDeclaredMethod(
+                        "removeSubscriberIndexes", Service.class, String.class);
         removeSubscriberIndexes.setAccessible(true);
         removeSubscriberIndexes.invoke(clientServiceIndexesManager, service, clientId);
-        
-        Collection<String> allClientsSubscribeService = clientServiceIndexesManager
-                .getAllClientsSubscribeService(service);
-        
+
+        Collection<String> allClientsSubscribeService =
+                clientServiceIndexesManager.getAllClientsSubscribeService(service);
+
         Assert.assertNotNull(allClientsSubscribeService);
         Assert.assertEquals(allClientsSubscribeService.size(), 1);
     }
-    
 }

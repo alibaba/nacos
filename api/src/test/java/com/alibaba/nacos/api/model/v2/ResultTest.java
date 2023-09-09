@@ -16,13 +16,11 @@
 
 package com.alibaba.nacos.api.model.v2;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class ResultTest {
-    
+
     @Test
     public void testSuccessEmptyResult() {
         Result<String> result = Result.success();
@@ -30,7 +28,7 @@ public class ResultTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), result.getMessage());
     }
-    
+
     @Test
     public void testSuccessWithData() {
         Result<String> result = Result.success("test");
@@ -38,7 +36,7 @@ public class ResultTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), result.getMessage());
     }
-    
+
     @Test
     public void testFailureMessageResult() {
         Result<String> result = Result.failure("test");
@@ -46,7 +44,7 @@ public class ResultTest {
         assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
         assertEquals("test", result.getMessage());
     }
-    
+
     @Test
     public void testFailureWithoutData() {
         Result<String> result = Result.failure(ErrorCode.DATA_ACCESS_ERROR);
@@ -54,7 +52,7 @@ public class ResultTest {
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getCode(), result.getCode());
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getMsg(), result.getMessage());
     }
-    
+
     @Test
     public void testFailureWithData() {
         Result<String> result = Result.failure(ErrorCode.DATA_ACCESS_ERROR, "error");
@@ -62,7 +60,7 @@ public class ResultTest {
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getCode(), result.getCode());
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getMsg(), result.getMessage());
     }
-    
+
     @Test
     public void testToString() {
         Result<String> result = Result.success("test");

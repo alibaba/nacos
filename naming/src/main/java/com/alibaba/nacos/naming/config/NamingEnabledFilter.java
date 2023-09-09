@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.naming.config;
 
+import static com.alibaba.nacos.sys.env.EnvUtil.FUNCTION_MODE_NAMING;
+
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.NamingApp;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.filter.NacosPackageExcludeFilter;
-
 import java.util.Set;
-
-import static com.alibaba.nacos.sys.env.EnvUtil.FUNCTION_MODE_NAMING;
 
 /**
  * Naming module enabled filter by spring packages scan.
@@ -31,16 +30,17 @@ import static com.alibaba.nacos.sys.env.EnvUtil.FUNCTION_MODE_NAMING;
  * @author xiweng.yy
  */
 public class NamingEnabledFilter implements NacosPackageExcludeFilter {
-    
+
     @Override
     public String getResponsiblePackagePrefix() {
         return NamingApp.class.getPackage().getName();
     }
-    
+
     @Override
     public boolean isExcluded(String className, Set<String> annotationNames) {
         String functionMode = EnvUtil.getFunctionMode();
-        // When not specified naming mode or specified all mode, the naming module not start and load.
+        // When not specified naming mode or specified all mode, the naming module not start and
+        // load.
         if (StringUtils.isEmpty(functionMode)) {
             return false;
         }

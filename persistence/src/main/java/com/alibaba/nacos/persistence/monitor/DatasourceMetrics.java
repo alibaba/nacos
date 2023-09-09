@@ -25,10 +25,12 @@ import io.micrometer.core.instrument.Metrics;
  * @author xiweng.yy
  */
 public class DatasourceMetrics {
-    
+
     public static Counter getDbException() {
-        // TODO: After {@code NacosMeterRegistryCenter} move to more basic module, the usage can be changed.
-        // TODO: Current {@code NacosMeterRegistryCenter} is in core module, but core module maybe depend persistence to save namespace.
+        // TODO: After {@code NacosMeterRegistryCenter} move to more basic module, the usage can be
+        // changed.
+        // TODO: Current {@code NacosMeterRegistryCenter} is in core module, but core module maybe
+        // depend persistence to save namespace.
         return Metrics.counter("nacos_exception", "module", "config", "name", "db");
     }
 }

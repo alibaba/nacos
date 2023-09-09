@@ -17,11 +17,9 @@
 package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.config.filter.IConfigContext;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class ConfigResponseTest {
-    
+
     @Test
     public void testGetterAndSetter() {
         ConfigResponse configResponse = new ConfigResponse();
@@ -29,19 +27,18 @@ public class ConfigResponseTest {
         String group = "group";
         String tenant = "n";
         String content = "abc";
-        
+
         configResponse.setContent(content);
         configResponse.setDataId(dataId);
         configResponse.setGroup(group);
         configResponse.setTenant(tenant);
-        
+
         Assert.assertEquals(dataId, configResponse.getDataId());
         Assert.assertEquals(group, configResponse.getGroup());
         Assert.assertEquals(tenant, configResponse.getTenant());
         Assert.assertEquals(content, configResponse.getContent());
-        
     }
-    
+
     @Test
     public void getParameter() {
         ConfigResponse configResponse = new ConfigResponse();
@@ -49,18 +46,18 @@ public class ConfigResponseTest {
         String group = "group";
         String tenant = "n";
         String content = "abc";
-        
+
         configResponse.setContent(content);
         configResponse.setDataId(dataId);
         configResponse.setGroup(group);
         configResponse.setTenant(tenant);
-        
+
         Assert.assertEquals(dataId, configResponse.getParameter("dataId"));
         Assert.assertEquals(group, configResponse.getParameter("group"));
         Assert.assertEquals(tenant, configResponse.getParameter("tenant"));
         Assert.assertEquals(content, configResponse.getParameter("content"));
     }
-    
+
     @Test
     public void getConfigContext() {
         ConfigResponse configResponse = new ConfigResponse();

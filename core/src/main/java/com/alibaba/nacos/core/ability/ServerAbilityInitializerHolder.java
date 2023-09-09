@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.ability;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.core.utils.Loggers;
-
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -28,23 +27,26 @@ import java.util.HashSet;
  * @author xiweng.yy
  */
 public class ServerAbilityInitializerHolder {
-    
-    private static final ServerAbilityInitializerHolder INSTANCE = new ServerAbilityInitializerHolder();
-    
+
+    private static final ServerAbilityInitializerHolder INSTANCE =
+            new ServerAbilityInitializerHolder();
+
     private final Collection<ServerAbilityInitializer> initializers;
-    
+
     private ServerAbilityInitializerHolder() {
         initializers = new HashSet<>();
-        for (ServerAbilityInitializer each : NacosServiceLoader.load(ServerAbilityInitializer.class)) {
-            Loggers.CORE.info("Load {} for ServerAbilityInitializer", each.getClass().getCanonicalName());
+        for (ServerAbilityInitializer each :
+                NacosServiceLoader.load(ServerAbilityInitializer.class)) {
+            Loggers.CORE.info(
+                    "Load {} for ServerAbilityInitializer", each.getClass().getCanonicalName());
             initializers.add(each);
         }
     }
-    
+
     public static ServerAbilityInitializerHolder getInstance() {
         return INSTANCE;
     }
-    
+
     public Collection<ServerAbilityInitializer> getInitializers() {
         return initializers;
     }

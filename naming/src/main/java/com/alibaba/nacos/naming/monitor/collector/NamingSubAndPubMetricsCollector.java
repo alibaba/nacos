@@ -22,11 +22,10 @@ import com.alibaba.nacos.naming.core.v2.client.manager.impl.ConnectionBasedClien
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.EphemeralIpPortClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.impl.PersistentIpPortClientManager;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * v1 and v2 naming subscriber and publisher metrics collector.
@@ -35,49 +34,59 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class NamingSubAndPubMetricsCollector {
-    
+
     private static final long DELAY_SECONDS = 5;
-    
-    private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
-        Thread thread = new Thread(r, "nacos.naming.monitor.NamingSubAndPubMetricsCollector");
-        thread.setDaemon(true);
-        return thread;
-    });
-    
+
+    private static ScheduledExecutorService executorService =
+            ExecutorFactory.newSingleScheduledExecutorService(
+                    r -> {
+                        Thread thread =
+                                new Thread(
+                                        r, "nacos.naming.monitor.NamingSubAndPubMetricsCollector");
+                        thread.setDaemon(true);
+                        return thread;
+                    });
+
     @Autowired
-    public NamingSubAndPubMetricsCollector(ConnectionBasedClientManager connectionBasedClientManager,
-            EphemeralIpPortClientManager ephemeralIpPortClientManager, PersistentIpPortClientManager persistentIpPortClientManager) {
-        executorService.scheduleWithFixedDelay(() -> {
-            int v1SubscriberCount = 0;
-            int v1PublisherCount = 0;
-            for (String clientId : ephemeralIpPortClientManager.allClientId()) {
-                Client client = ephemeralIpPortClientManager.getClient(clientId);
-                if (null != client) {
-                    v1PublisherCount += client.getAllPublishedService().size();
-                    v1SubscriberCount += client.getAllSubscribeService().size();
-                }
-            }
-            for (String clientId : persistentIpPortClientManager.allClientId()) {
-                Client client = persistentIpPortClientManager.getClient(clientId);
-                if (null != client) {
-                    v1PublisherCount += client.getAllPublishedService().size();
-                    v1SubscriberCount += client.getAllSubscribeService().size();
-                }
-            }
-            MetricsMonitor.getNamingSubscriber("v1").set(v1SubscriberCount);
-            MetricsMonitor.getNamingPublisher("v1").set(v1PublisherCount);
-    
-            int v2SubscriberCount = 0;
-            int v2PublisherCount = 0;
-            for (String clientId : connectionBasedClientManager.allClientId()) {
-                Client client = connectionBasedClientManager.getClient(clientId);
-                if (null != client) {
-                    v2PublisherCount += client.getAllPublishedService().size();
-                    v2SubscriberCount += client.getAllSubscribeService().size();
-                }
-            }
-            MetricsMonitor.getNamingSubscriber("v2").set(v2SubscriberCount);
-            MetricsMonitor.getNamingPublisher("v2").set(v2PublisherCount);
-        }, DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+    public NamingSubAndPubMetricsCollector(
+            ConnectionBasedClientManager connectionBasedClientManager,
+            EphemeralIpPortClientManager ephemeralIpPortClientManager,
+            PersistentIpPortClientManager persistentIpPortClientManager) {
+        executorService.scheduleWithFixedDelay(
+                () -> {
+                    int v1SubscriberCount = 0;
+                    int v1PublisherCount = 0;
+                    for (String clientId : ephemeralIpPortClientManager.allClientId()) {
+                        Client client = ephemeralIpPortClientManager.getClient(clientId);
+                        if (null != client) {
+                            v1PublisherCount += client.getAllPublishedService().size();
+                            v1SubscriberCount += client.getAllSubscribeService().size();
+                        }
+                    }
+                    for (String clientId : persistentIpPortClientManager.allClientId()) {
+                        Client client = persistentIpPortClientManager.getClient(clientId);
+                        if (null != client) {
+                            v1PublisherCount += client.getAllPublishedService().size();
+                            v1SubscriberCount += client.getAllSubscribeService().size();
+                        }
+                    }
+                    MetricsMonitor.getNamingSubscriber("v1").set(v1SubscriberCount);
+                    MetricsMonitor.getNamingPublisher("v1").set(v1PublisherCount);
+
+                    int v2SubscriberCount = 0;
+                    int v2PublisherCount = 0;
+                    for (String clientId : connectionBasedClientManager.allClientId()) {
+                        Client client = connectionBasedClientManager.getClient(clientId);
+                        if (null != client) {
+                            v2PublisherCount += client.getAllPublishedService().size();
+                            v2SubscriberCount += client.getAllSubscribeService().size();
+                        }
+                    }
+                    MetricsMonitor.getNamingSubscriber("v2").set(v2SubscriberCount);
+                    MetricsMonitor.getNamingPublisher("v2").set(v2PublisherCount);
+                },
+                DELAY_SECONDS,
+                DELAY_SECONDS,
+                TimeUnit.SECONDS);
     }
 }

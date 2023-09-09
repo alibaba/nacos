@@ -16,21 +16,19 @@
 
 package com.alibaba.nacos.api.remote;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-
 public class RpcScheduledExecutorTest {
-    
+
     private static final String NAME = "test.rpc.thread";
-    
+
     Map<String, String> threadNameMap = new HashMap<>();
-    
+
     @Test
     public void testRpcScheduledExecutor() throws InterruptedException {
         RpcScheduledExecutor executor = new RpcScheduledExecutor(2, NAME);
@@ -42,18 +40,18 @@ public class RpcScheduledExecutorTest {
         assertEquals(NAME + ".0", threadNameMap.get("1"));
         assertEquals(NAME + ".1", threadNameMap.get("2"));
     }
-    
+
     private class TestRunner implements Runnable {
-        
+
         int id;
-        
+
         CountDownLatch latch;
-        
+
         public TestRunner(int id, CountDownLatch latch) {
             this.id = id;
             this.latch = latch;
         }
-        
+
         @Override
         public void run() {
             try {

@@ -18,13 +18,12 @@ package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * HttpParamExtractor Manager.
@@ -32,26 +31,28 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author zhuoguang
  */
 public class HttpParamExtractorManager {
-    
+
     private static final String SPLITTER = "@@";
-    
+
     private static final HttpParamExtractorManager INSTANCE = new HttpParamExtractorManager();
-    
-    private static final AbstractHttpParamExtractor DEFAULT_EXTRACTOR = new AbstractHttpParamExtractor() {
-        @Override
-        public void init() {
-        }
-        
-        @Override
-        public List<ParamInfo> extractParam(HttpServletRequest params) throws Exception {
-            return Collections.emptyList();
-        }
-    };
-    
-    private final Map<String, AbstractHttpParamExtractor> extractorMap = new ConcurrentHashMap<>(32);
-    
+
+    private static final AbstractHttpParamExtractor DEFAULT_EXTRACTOR =
+            new AbstractHttpParamExtractor() {
+                @Override
+                public void init() {}
+
+                @Override
+                public List<ParamInfo> extractParam(HttpServletRequest params) throws Exception {
+                    return Collections.emptyList();
+                }
+            };
+
+    private final Map<String, AbstractHttpParamExtractor> extractorMap =
+            new ConcurrentHashMap<>(32);
+
     private HttpParamExtractorManager() {
-        Collection<AbstractHttpParamExtractor> extractors = NacosServiceLoader.load(AbstractHttpParamExtractor.class);
+        Collection<AbstractHttpParamExtractor> extractors =
+                NacosServiceLoader.load(AbstractHttpParamExtractor.class);
         for (AbstractHttpParamExtractor extractor : extractors) {
             List<String> targetrequestlist = extractor.getTargetRequestList();
             for (String targetrequest : targetrequestlist) {
@@ -59,11 +60,11 @@ public class HttpParamExtractorManager {
             }
         }
     }
-    
+
     public static HttpParamExtractorManager getInstance() {
         return INSTANCE;
     }
-    
+
     public AbstractHttpParamExtractor getExtractor(String uri, String method, String module) {
         AbstractHttpParamExtractor extractor = extractorMap.get(uri + SPLITTER + method);
         if (extractor == null) {
@@ -71,5 +72,4 @@ public class HttpParamExtractorManager {
         }
         return extractor == null ? DEFAULT_EXTRACTOR : extractor;
     }
-    
 }

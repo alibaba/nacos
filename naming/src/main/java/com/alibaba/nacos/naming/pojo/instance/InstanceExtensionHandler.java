@@ -17,25 +17,25 @@
 package com.alibaba.nacos.naming.pojo.instance;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-
 import javax.servlet.http.HttpServletRequest;
 
 /**
  * Instance extension handler.
  *
- * <p>An extension handler for {@link Instance}, which is to handle some specified request for 1.x client.
+ * <p>An extension handler for {@link Instance}, which is to handle some specified request for 1.x
+ * client.
  *
  * @author xiweng.yy
  */
 public interface InstanceExtensionHandler {
-    
+
     /**
      * Config extension info from http request.
      *
      * @param request http request
      */
     void configExtensionInfoFromRequest(HttpServletRequest request);
-    
+
     /**
      * Do handle for instance.
      *

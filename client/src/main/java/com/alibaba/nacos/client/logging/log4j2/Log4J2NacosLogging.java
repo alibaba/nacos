@@ -19,6 +19,10 @@ package com.alibaba.nacos.client.logging.log4j2;
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
 import com.alibaba.nacos.common.utils.ResourceUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -27,11 +31,6 @@ import org.apache.logging.log4j.core.config.ConfigurationFactory;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
-import java.util.Map;
-
 /**
  * Support for Log4j version 2.7 or higher
  *
@@ -39,31 +38,32 @@ import java.util.Map;
  * @since 0.9.0
  */
 public class Log4J2NacosLogging extends AbstractNacosLogging {
-    
+
     private static final String NACOS_LOG4J2_LOCATION = "classpath:nacos-log4j2.xml";
-    
+
     private static final String FILE_PROTOCOL = "file";
-    
+
     private static final String NACOS_LOGGER_PREFIX = "com.alibaba.nacos";
-    
-    private static final String NACOS_LOG4J2_PLUGIN_PACKAGE = "com.alibaba.nacos.client.logging.log4j2";
-    
+
+    private static final String NACOS_LOG4J2_PLUGIN_PACKAGE =
+            "com.alibaba.nacos.client.logging.log4j2";
+
     private final String location = getLocation(NACOS_LOG4J2_LOCATION);
-    
+
     @Override
     public void loadConfiguration() {
         if (StringUtils.isBlank(location)) {
             return;
         }
-        
+
         final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
         final Configuration contextConfiguration = loggerContext.getConfiguration();
-        
+
         // load and start nacos configuration
         Configuration configuration = loadConfiguration(loggerContext, location);
         configuration.getPluginPackages().add(NACOS_LOG4J2_PLUGIN_PACKAGE);
         configuration.start();
-        
+
         // append loggers and appenders to contextConfiguration
         Map<String, Appender> appenders = configuration.getAppenders();
         for (Appender appender : appenders.values()) {
@@ -75,21 +75,23 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
                 contextConfiguration.addLogger(name, loggers.get(name));
             }
         }
-        
+
         loggerContext.updateLoggers();
     }
-    
+
     private Configuration loadConfiguration(LoggerContext loggerContext, String location) {
         try {
             URL url = ResourceUtils.getResourceUrl(location);
             ConfigurationSource source = getConfigurationSource(url);
-            // since log4j 2.7 getConfiguration(LoggerContext loggerContext, ConfigurationSource source)
+            // since log4j 2.7 getConfiguration(LoggerContext loggerContext, ConfigurationSource
+            // source)
             return ConfigurationFactory.getInstance().getConfiguration(loggerContext, source);
         } catch (Exception e) {
-            throw new IllegalStateException("Could not initialize Log4J2 logging from " + location, e);
+            throw new IllegalStateException(
+                    "Could not initialize Log4J2 logging from " + location, e);
         }
     }
-    
+
     private ConfigurationSource getConfigurationSource(URL url) throws IOException {
         InputStream stream = url.openStream();
         if (FILE_PROTOCOL.equals(url.getProtocol())) {

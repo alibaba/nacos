@@ -26,23 +26,24 @@ import org.slf4j.LoggerFactory;
  * @author nacos
  */
 public class Loggers {
-    
+
     public static final Logger PUSH = LoggerFactory.getLogger("com.alibaba.nacos.naming.push");
-    
+
     public static final Logger CHECK_RT = LoggerFactory.getLogger("com.alibaba.nacos.naming.rt");
-    
+
     public static final Logger SRV_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.main");
-    
+
     public static final Logger EVT_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.event");
-    
+
     public static final Logger RAFT = LoggerFactory.getLogger("com.alibaba.nacos.naming.raft");
-    
+
     public static final Logger DISTRO = LoggerFactory.getLogger("com.alibaba.nacos.naming.distro");
-    
-    public static final Logger PERFORMANCE_LOG = LoggerFactory.getLogger("com.alibaba.nacos.naming.performance");
-    
+
+    public static final Logger PERFORMANCE_LOG =
+            LoggerFactory.getLogger("com.alibaba.nacos.naming.performance");
+
     public static void setLogLevel(String logName, String level) {
-        
+
         switch (logName) {
             case "naming-push":
                 ((ch.qos.logback.classic.Logger) PUSH).setLevel(Level.valueOf(level));
@@ -68,6 +69,5 @@ public class Loggers {
             default:
                 break;
         }
-        
     }
 }

@@ -20,10 +20,9 @@ import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * v1 and v2 config subscriber metrics collector.
@@ -32,14 +31,22 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class ConfigSubscriberMetricsCollector {
-    
+
     private static final long DELAY_SECONDS = 5;
-    
+
     @Autowired
-    public ConfigSubscriberMetricsCollector(LongPollingService longPollingService, ConfigChangeListenContext configChangeListenContext) {
-        ConfigExecutor.scheduleConfigTask(() -> {
-            MetricsMonitor.getConfigSubscriberMonitor("v1").set(longPollingService.getSubscriberCount());
-            MetricsMonitor.getConfigSubscriberMonitor("v2").set(configChangeListenContext.getConnectionCount());
-        }, DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+    public ConfigSubscriberMetricsCollector(
+            LongPollingService longPollingService,
+            ConfigChangeListenContext configChangeListenContext) {
+        ConfigExecutor.scheduleConfigTask(
+                () -> {
+                    MetricsMonitor.getConfigSubscriberMonitor("v1")
+                            .set(longPollingService.getSubscriberCount());
+                    MetricsMonitor.getConfigSubscriberMonitor("v2")
+                            .set(configChangeListenContext.getConnectionCount());
+                },
+                DELAY_SECONDS,
+                DELAY_SECONDS,
+                TimeUnit.SECONDS);
     }
 }

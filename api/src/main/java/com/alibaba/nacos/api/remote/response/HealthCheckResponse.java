@@ -22,6 +22,4 @@ package com.alibaba.nacos.api.remote.response;
  * @author liuzunfei
  * @version $Id: ServerCheckResponse.java, v 0.1 2020年07月22日 8:37 PM liuzunfei Exp $
  */
-public class HealthCheckResponse extends Response {
-    
-}
+public class HealthCheckResponse extends Response {}

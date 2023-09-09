@@ -16,24 +16,22 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 public class CollectionUtilsTest {
-    
+
     @Test
     public void testSubtract() {
-        List<String> subtract = (List<String>) CollectionUtils
-                .subtract(Arrays.asList("a", "b"), Arrays.asList("b", "c"));
+        List<String> subtract =
+                (List<String>)
+                        CollectionUtils.subtract(Arrays.asList("a", "b"), Arrays.asList("b", "c"));
         Assert.assertEquals(1, subtract.size());
         Assert.assertEquals("a", subtract.get(0));
     }
-    
+
     @Test
     public void testGetCardinalityMap() {
         List<String> list1 = Arrays.asList("2", "2", "3");
@@ -41,9 +39,8 @@ public class CollectionUtilsTest {
         Assert.assertEquals(2, map1.size());
         Assert.assertEquals(2, map1.get("2").intValue());
         Assert.assertEquals(1, map1.get("3").intValue());
-        
     }
-    
+
     @Test
     public void testIsEqualCollection() {
         List<String> list1 = Arrays.asList("2", "2", "3");
@@ -51,9 +48,8 @@ public class CollectionUtilsTest {
         List<String> list3 = Arrays.asList("3", "2", "3");
         Assert.assertTrue(CollectionUtils.isEqualCollection(list1, list2));
         Assert.assertFalse(CollectionUtils.isEqualCollection(list1, list3));
-        
     }
-    
+
     @Test
     public void testIsEmpty() {
         Assert.assertTrue(CollectionUtils.isEmpty(null));

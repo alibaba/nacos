@@ -17,12 +17,11 @@
 package com.alibaba.nacos.naming.healthcheck.extend;
 
 import com.alibaba.nacos.common.utils.StringUtils;
+import java.util.Set;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.config.SingletonBeanRegistry;
-
-import java.util.Set;
 
 /**
  * Abstract Health Check Processor Extend.

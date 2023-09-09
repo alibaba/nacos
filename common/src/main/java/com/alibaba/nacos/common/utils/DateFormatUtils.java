@@ -21,38 +21,38 @@ import java.util.Date;
 
 /**
  * Date and time formatting utilities.
+ *
  * @author zzq
  */
 public class DateFormatUtils {
 
-    private DateFormatUtils() {
-    }
-    
+    private DateFormatUtils() {}
+
     public static final String YYYYMMDD = "yyyyMMdd";
-    
+
     public static final String YYMMDD = "yyMMdd";
-    
+
     public static final String HHMMSS = "HHmmss";
-    
+
     public static final String YYYYMM = "yyyyMM";
-    
+
     public static final String YYYYMMDDHHMMSS = "yyyyMMddHHmmss";
-    
+
     public static final String YYYY = "yyyy";
-    
+
     public static final String MM = "MM";
-    
+
     public static final String DD = "dd";
-    
+
     public static final String YYYYMMDDSLASH = "yyyy/MM/dd";
-    
+
     public static final String YYYYMMDDHHMMSSNOMARK = "yyyyMMddHHmmss";
-    
+
     /**
      * Formats a date/time into a specific pattern.
      *
-     * @param date  the date to format, not null
-     * @param pattern  the pattern to use to format the date, not null
+     * @param date the date to format, not null
+     * @param pattern the pattern to use to format the date, not null
      * @return the formatted date
      */
     public static String format(final Date date, final String pattern) {
@@ -65,5 +65,4 @@ public class DateFormatUtils {
         SimpleDateFormat sdf = new SimpleDateFormat(pattern);
         return sdf.format(date);
     }
-
 }

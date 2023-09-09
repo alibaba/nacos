@@ -16,27 +16,24 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ConfigRemoveRequestTest extends BasedConfigRequestTest {
-    
+
     ConfigRemoveRequest configRemoveRequest;
-    
+
     String requestId;
-    
+
     @Before
     public void before() {
         configRemoveRequest = new ConfigRemoveRequest(DATA_ID, GROUP, TENANT, TAG);
         requestId = injectRequestUuId(configRemoveRequest);
-        
     }
-    
+
     @Override
     @Test
     public void testSerialize() throws JsonProcessingException {
@@ -47,14 +44,14 @@ public class ConfigRemoveRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"tenant\":\"" + TENANT));
         assertTrue(json.contains("\"tag\":\"" + TAG));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
-        
     }
-    
+
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"dataId\":\"test_data\",\"group\":\"group\",\"tenant\":\"test_tenant\""
-                + ",\"tag\":\"tag\",\"module\":\"config\"}";
+        String json =
+                "{\"headers\":{},\"dataId\":\"test_data\",\"group\":\"group\",\"tenant\":\"test_tenant\""
+                        + ",\"tag\":\"tag\",\"module\":\"config\"}";
         ConfigRemoveRequest actual = mapper.readValue(json, ConfigRemoveRequest.class);
         assertEquals(actual.getDataId(), DATA_ID);
         assertEquals(actual.getGroup(), GROUP);

@@ -17,14 +17,11 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.HashMap;
 import java.util.Map;
 
 public class ParamUtilsTest {
-    
+
     @Test
     public void testIsValid() {
         Assert.assertTrue(ParamUtils.isValid("test"));
@@ -33,10 +30,10 @@ public class ParamUtilsTest {
         Assert.assertFalse(ParamUtils.isValid("test!"));
         Assert.assertFalse(ParamUtils.isValid("test~"));
     }
-    
+
     @Test
     public void testCheckParamV1() {
-        //dataId is empty
+        // dataId is empty
         String dataId = "";
         String group = "test";
         String datumId = "test";
@@ -47,7 +44,7 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        //group is empty
+        // group is empty
         dataId = "test";
         group = "";
         datumId = "test";
@@ -58,7 +55,7 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        //datumId is empty
+        // datumId is empty
         dataId = "test";
         group = "test";
         datumId = "";
@@ -69,7 +66,7 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        //content is empty
+        // content is empty
         dataId = "test";
         group = "test";
         datumId = "test";
@@ -80,7 +77,7 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        //dataId invalid
+        // dataId invalid
         dataId = "test!";
         group = "test";
         datumId = "test";
@@ -91,7 +88,7 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        //group invalid
+        // group invalid
         dataId = "test";
         group = "test!";
         datumId = "test";
@@ -102,7 +99,7 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        //datumId invalid
+        // datumId invalid
         dataId = "test";
         group = "test";
         datumId = "test!";
@@ -113,7 +110,7 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        //content over length
+        // content over length
         dataId = "test";
         group = "test";
         datumId = "test";
@@ -123,7 +120,7 @@ public class ParamUtilsTest {
             contentBuilder.append("t");
         }
         content = contentBuilder.toString();
-        
+
         try {
             ParamUtils.checkParam(dataId, group, datumId, content);
             Assert.fail();
@@ -131,10 +128,10 @@ public class ParamUtilsTest {
             System.out.println(e.toString());
         }
     }
-    
+
     @Test
     public void testCheckParamV2() {
-        //tag invalid
+        // tag invalid
         String tag = "test!";
         try {
             ParamUtils.checkParam(tag);
@@ -142,8 +139,8 @@ public class ParamUtilsTest {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
-        
-        //tag over length
+
+        // tag over length
         tag = "testtesttesttest1";
         try {
             ParamUtils.checkParam(tag);
@@ -151,12 +148,11 @@ public class ParamUtilsTest {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
-        
     }
-    
+
     @Test
     public void testCheckParamV3() {
-        //tag size over 5
+        // tag size over 5
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "test,test,test,test,test,test");
         try {
@@ -165,7 +161,7 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        //tag length over 5
+        // tag length over 5
         configAdvanceInfo.clear();
         StringBuilder tagBuilder = new StringBuilder();
         for (int i = 0; i < 65; i++) {
@@ -178,8 +174,8 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        
-        //desc length over 128
+
+        // desc length over 128
         configAdvanceInfo.clear();
         StringBuilder descBuilder = new StringBuilder();
         for (int i = 0; i < 129; i++) {
@@ -192,8 +188,8 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        
-        //use length over 32
+
+        // use length over 32
         configAdvanceInfo.clear();
         StringBuilder useBuilder = new StringBuilder();
         for (int i = 0; i < 33; i++) {
@@ -206,8 +202,8 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        
-        //effect length over 32
+
+        // effect length over 32
         configAdvanceInfo.clear();
         StringBuilder effectBuilder = new StringBuilder();
         for (int i = 0; i < 33; i++) {
@@ -220,8 +216,8 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        
-        //type length over 32
+
+        // type length over 32
         configAdvanceInfo.clear();
         StringBuilder typeBuilder = new StringBuilder();
         for (int i = 0; i < 33; i++) {
@@ -234,8 +230,8 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        
-        //schema length over 32768
+
+        // schema length over 32768
         configAdvanceInfo.clear();
         StringBuilder schemaBuilder = new StringBuilder();
         for (int i = 0; i < 32769; i++) {
@@ -248,8 +244,8 @@ public class ParamUtilsTest {
         } catch (NacosException e) {
             System.out.println(e.toString());
         }
-        
-        //invalid param
+
+        // invalid param
         configAdvanceInfo.clear();
         configAdvanceInfo.put("test", "test");
         try {
@@ -259,10 +255,10 @@ public class ParamUtilsTest {
             System.out.println(e.toString());
         }
     }
-    
+
     @Test
     public void testCheckTenant() {
-        //tag invalid
+        // tag invalid
         String tenant = "test!";
         try {
             ParamUtils.checkTenant(tenant);
@@ -270,8 +266,8 @@ public class ParamUtilsTest {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
-        
-        //tag over length
+
+        // tag over length
         int tanantMaxLen = 128;
         StringBuilder tenantBuilder = new StringBuilder();
         for (int i = 0; i < tanantMaxLen + 1; i++) {
@@ -285,5 +281,4 @@ public class ParamUtilsTest {
             System.out.println(e.toString());
         }
     }
-    
 }

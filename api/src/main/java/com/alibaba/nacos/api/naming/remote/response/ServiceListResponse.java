@@ -18,7 +18,6 @@ package com.alibaba.nacos.api.naming.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-
 import java.util.List;
 
 /**
@@ -27,23 +26,22 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class ServiceListResponse extends Response {
-    
+
     private int count;
-    
+
     private List<String> serviceNames;
-    
-    public ServiceListResponse(){
-    }
-    
+
+    public ServiceListResponse() {}
+
     private ServiceListResponse(int count, List<String> serviceNames, String message) {
         this.count = count;
         this.serviceNames = serviceNames;
     }
-    
+
     public static ServiceListResponse buildSuccessResponse(int count, List<String> serviceNames) {
         return new ServiceListResponse(count, serviceNames, "success");
     }
-    
+
     /**
      * Build fail response.
      *
@@ -55,19 +53,19 @@ public class ServiceListResponse extends Response {
         result.setErrorInfo(ResponseCode.FAIL.getCode(), message);
         return result;
     }
-    
+
     public int getCount() {
         return count;
     }
-    
+
     public void setCount(int count) {
         this.count = count;
     }
-    
+
     public List<String> getServiceNames() {
         return serviceNames;
     }
-    
+
     public void setServiceNames(List<String> serviceNames) {
         this.serviceNames = serviceNames;
     }

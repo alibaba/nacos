@@ -28,19 +28,15 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * {@link ServiceQueryRequestHandler} unit tests.
@@ -51,28 +47,23 @@ import java.util.Optional;
 @RunWith(MockitoJUnitRunner.class)
 public class ServiceQueryRequestHandlerTest {
 
-    @InjectMocks
-    private ServiceQueryRequestHandler serviceQueryRequestHandler;
-    
-    @Mock
-    private ServiceStorage serviceStorage;
-    
-    @Mock
-    private NamingMetadataManager metadataManager;
-    
-    @Mock
-    private ConfigurableApplicationContext applicationContext;
-    
-    @Mock
-    private SelectorManager selectorManager;
-    
+    @InjectMocks private ServiceQueryRequestHandler serviceQueryRequestHandler;
+
+    @Mock private ServiceStorage serviceStorage;
+
+    @Mock private NamingMetadataManager metadataManager;
+
+    @Mock private ConfigurableApplicationContext applicationContext;
+
+    @Mock private SelectorManager selectorManager;
+
     @Before
     public void setUp() {
         ApplicationUtils applicationUtils = new ApplicationUtils();
         applicationUtils.initialize(applicationContext);
         Mockito.when(applicationContext.getBean(SelectorManager.class)).thenReturn(selectorManager);
     }
-    
+
     @Test
     public void testHandle() throws NacosException {
         Instance instance = new Instance();
@@ -84,17 +75,19 @@ public class ServiceQueryRequestHandlerTest {
         serviceInfo.setName("C");
         serviceInfo.setHosts(instances);
         Mockito.when(serviceStorage.getData(Mockito.any())).thenReturn(serviceInfo);
-        
+
         ServiceMetadata serviceMetadata = new ServiceMetadata();
-        Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(serviceMetadata));
-        
+        Mockito.when(metadataManager.getServiceMetadata(Mockito.any()))
+                .thenReturn(Optional.of(serviceMetadata));
+
         ServiceQueryRequest serviceQueryRequest = new ServiceQueryRequest();
         serviceQueryRequest.setNamespace("A");
         serviceQueryRequest.setGroupName("B");
         serviceQueryRequest.setServiceName("C");
         serviceQueryRequest.setHealthyOnly(false);
-        QueryServiceResponse queryServiceResponse = serviceQueryRequestHandler.handle(serviceQueryRequest, new RequestMeta());
-    
+        QueryServiceResponse queryServiceResponse =
+                serviceQueryRequestHandler.handle(serviceQueryRequest, new RequestMeta());
+
         Assert.assertEquals(queryServiceResponse.getServiceInfo().getName(), "C");
     }
 }

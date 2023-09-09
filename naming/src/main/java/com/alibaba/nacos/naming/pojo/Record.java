@@ -25,7 +25,7 @@ import java.io.Serializable;
  * @since 1.0.0
  */
 public interface Record extends Serializable {
-    
+
     /**
      * get the checksum of this record, usually for record comparison.
      *

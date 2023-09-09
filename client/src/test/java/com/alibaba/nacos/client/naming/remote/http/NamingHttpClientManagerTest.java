@@ -18,42 +18,40 @@
 
 package com.alibaba.nacos.client.naming.remote.http;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
-import org.junit.Assert;
-import org.junit.Test;
-import org.mockito.Mockito;
-
-import java.io.IOException;
-import java.lang.reflect.Field;
-
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
+import java.io.IOException;
+import java.lang.reflect.Field;
+import org.mockito.Mockito;
+
 public class NamingHttpClientManagerTest {
-    
+
     @Test
     public void testGetInstance() {
         Assert.assertNotNull(NamingHttpClientManager.getInstance());
     }
-    
+
     @Test
     public void testGetPrefix() {
         Assert.assertEquals(HTTP_PREFIX, NamingHttpClientManager.getInstance().getPrefix());
     }
-    
+
     @Test
     public void testGetNacosRestTemplate() {
         Assert.assertNotNull(NamingHttpClientManager.getInstance().getNacosRestTemplate());
     }
-    
+
     @Test
-    public void testShutdown() throws NoSuchFieldException, IllegalAccessException, NacosException, IOException {
-        //given
+    public void testShutdown()
+            throws NoSuchFieldException, IllegalAccessException, NacosException, IOException {
+        // given
         NamingHttpClientManager instance = NamingHttpClientManager.getInstance();
-        
+
         HttpClientRequest mockHttpClientRequest = Mockito.mock(HttpClientRequest.class);
         Field requestClient = NacosRestTemplate.class.getDeclaredField("requestClient");
         requestClient.setAccessible(true);
@@ -62,7 +60,5 @@ public class NamingHttpClientManagerTest {
         NamingHttpClientManager.getInstance().shutdown();
         // then
         verify(mockHttpClientRequest, times(1)).close();
-        
     }
-    
 }

@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,12 +29,12 @@ import java.util.List;
  * @author zhuoguang
  */
 public class ServiceListRequestParamExtractor extends AbstractRpcParamExtractor {
-    
+
     @Override
     public void init() {
         addTargetRequest(ServiceListRequest.class.getSimpleName());
     }
-    
+
     @Override
     public List<ParamInfo> extractParam(Request request) throws Exception {
         ServiceListRequest req = (ServiceListRequest) request;

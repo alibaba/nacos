@@ -17,8 +17,8 @@
 package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import org.springframework.stereotype.Component;
 
 /**
@@ -30,38 +30,38 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class AddressServerManager {
-    
+
     public String getRawProductName(String name) {
-        
+
         if (StringUtils.isBlank(name)) {
-            
+
             return AddressServerConstants.DEFAULT_PRODUCT;
         }
-        
+
         return name;
     }
-    
+
     /**
-     * If the name is empty then return the default {@link UtilsAndCommons#DEFAULT_CLUSTER_NAME}, or return the source
-     * name by input.
+     * If the name is empty then return the default {@link UtilsAndCommons#DEFAULT_CLUSTER_NAME}, or
+     * return the source name by input.
      *
      * @param name name
      * @return default cluster name
      */
     public String getDefaultClusterNameIfEmpty(String name) {
-        
+
         if (StringUtils.isEmpty(name)) {
             return AddressServerConstants.DEFAULT_GET_CLUSTER;
         }
-        
+
         return name;
     }
-    
+
     public String getRawClusterName(String name) {
-        
+
         return getDefaultClusterNameIfEmpty(name);
     }
-    
+
     /**
      * Split ips.
      *
@@ -69,12 +69,12 @@ public class AddressServerManager {
      * @return array of ip
      */
     public String[] splitIps(String ips) {
-        
+
         if (StringUtils.isBlank(ips)) {
-            
+
             return new String[0];
         }
-        
+
         return ips.split(AddressServerConstants.MULTI_IPS_SEPARATOR);
     }
 }

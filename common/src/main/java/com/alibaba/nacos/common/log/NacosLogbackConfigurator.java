@@ -20,25 +20,29 @@ import java.net.URL;
 
 /**
  * logback configurator interface,different version can adapter this.
+ *
  * @author hujun
  */
 public interface NacosLogbackConfigurator {
-    
+
     /**
      * config logback.
+     *
      * @param resourceUrl resourceUrl
      * @throws Exception exception
      */
     void configure(URL resourceUrl) throws Exception;
-    
+
     /**
      * logback configurator will be sorted by version.
+     *
      * @return version
      */
     int getVersion();
-    
+
     /**
      * set loggerContext.
+     *
      * @param loggerContext loggerContext
      */
     void setContext(Object loggerContext);

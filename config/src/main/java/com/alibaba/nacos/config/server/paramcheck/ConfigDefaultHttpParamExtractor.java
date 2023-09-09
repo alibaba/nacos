@@ -19,10 +19,9 @@ package com.alibaba.nacos.config.server.paramcheck;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Config default http param extractor.
@@ -30,12 +29,12 @@ import java.util.List;
  * @author zhuoguang
  */
 public class ConfigDefaultHttpParamExtractor extends AbstractHttpParamExtractor {
-    
+
     @Override
     public void init() {
         addDefaultTargetRequest("config");
     }
-    
+
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) {
         ParamInfo paramInfo = new ParamInfo();
@@ -47,7 +46,7 @@ public class ConfigDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         paramInfos.add(paramInfo);
         return paramInfos;
     }
-    
+
     private String getAliasNamespaceId(HttpServletRequest request) {
         String namespaceid = request.getParameter("namespaceId");
         if (StringUtils.isBlank(namespaceid)) {
@@ -58,17 +57,17 @@ public class ConfigDefaultHttpParamExtractor extends AbstractHttpParamExtractor 
         }
         return namespaceid;
     }
-    
+
     private String getAliasDataId(HttpServletRequest request) {
         String dataid = request.getParameter("dataId");
         return dataid;
     }
-    
+
     private String getAliasGroup(HttpServletRequest request) {
         String group = request.getParameter("group");
         return group;
     }
-    
+
     private String getAliasIp(HttpServletRequest request) {
         String ip = request.getParameter("ip");
         return ip;

@@ -21,98 +21,96 @@ import ch.qos.logback.core.ContextBase;
 import ch.qos.logback.core.joran.spi.ActionException;
 import ch.qos.logback.core.joran.spi.InterpretationContext;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import org.junit.Assert;
-import org.junit.Test;
 import org.mockito.Mockito;
 import org.xml.sax.Attributes;
 
 public class NacosClientPropertyActionTest {
-    
+
     @Test
     public void testLookUpVar() throws ActionException {
-    
+
         NacosClientProperties.PROTOTYPE.setProperty("test.nacos.logging.action.lookup", "true");
-        
+
         Context context = new ContextBase();
-        final InterpretationContext interpretationContext = new InterpretationContext(context, null);
-        
+        final InterpretationContext interpretationContext =
+                new InterpretationContext(context, null);
+
         final Attributes mockAttr = Mockito.mock(AttributesForTest.class);
         Mockito.when(mockAttr.getValue(Mockito.eq("name"))).thenReturn("logPath");
-        Mockito.when(mockAttr.getValue(Mockito.eq("source"))).thenReturn("test.nacos.logging.action.lookup");
+        Mockito.when(mockAttr.getValue(Mockito.eq("source")))
+                .thenReturn("test.nacos.logging.action.lookup");
         Mockito.when(mockAttr.getValue(Mockito.eq("scope"))).thenReturn("context");
         Mockito.when(mockAttr.getValue(Mockito.eq("defaultValue"))).thenReturn("/root");
-    
+
         NacosClientPropertyAction nacosClientPropertyAction = new NacosClientPropertyAction();
         nacosClientPropertyAction.setContext(context);
-        
+
         nacosClientPropertyAction.begin(interpretationContext, "nacosClientProperty", mockAttr);
-    
+
         final String actual = context.getProperty("logPath");
         Assert.assertEquals("true", actual);
-    
     }
-    
+
     static class AttributesForTest implements Attributes {
-        
+
         @Override
         public int getLength() {
             return 0;
         }
-        
+
         @Override
         public String getURI(int index) {
             return null;
         }
-        
+
         @Override
         public String getLocalName(int index) {
             return null;
         }
-        
+
         @Override
         public String getQName(int index) {
             return null;
         }
-        
+
         @Override
         public int getIndex(String uri, String localName) {
             return 0;
         }
-        
+
         @Override
         public int getIndex(String qName) {
             return 0;
         }
-        
+
         @Override
         public String getType(int index) {
             return null;
         }
-        
+
         @Override
         public String getType(String uri, String localName) {
             return null;
         }
-        
+
         @Override
         public String getType(String qName) {
             return null;
         }
-    
+
         @Override
         public String getValue(int index) {
             return null;
         }
-        
+
         @Override
         public String getValue(String uri, String localName) {
             return null;
         }
-        
+
         @Override
         public String getValue(String qName) {
             return null;
         }
     }
-    
 }

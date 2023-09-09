@@ -19,7 +19,6 @@ package com.alibaba.nacos.plugin.auth.impl.authenticate;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -29,17 +28,17 @@ import javax.servlet.http.HttpServletRequest;
  * @date 2023/1/12 23:31
  */
 public interface IAuthenticationManager {
-    
+
     /**
      * Authentication of user with password.
      *
-     * @param username    username
+     * @param username username
      * @param rawPassword raw password
      * @return user related to this request, null if no user info is found.
      * @throws AccessException if authentication is failed
      */
     NacosUser authenticate(String username, String rawPassword) throws AccessException;
-    
+
     /**
      * Authentication with jwt.
      *
@@ -48,7 +47,7 @@ public interface IAuthenticationManager {
      * @throws AccessException if authentication is failed
      */
     NacosUser authenticate(String jwtToken) throws AccessException;
-    
+
     /**
      * Authentication of request, identify the user who request the resource.
      *
@@ -57,16 +56,16 @@ public interface IAuthenticationManager {
      * @throws AccessException if authentication is failed
      */
     NacosUser authenticate(HttpServletRequest httpServletRequest) throws AccessException;
-    
+
     /**
      * Authorize if the nacosUser has the specified permission.
      *
      * @param permission permission to auth
-     * @param nacosUser  nacosUser who wants to access the resource.
+     * @param nacosUser nacosUser who wants to access the resource.
      * @throws AccessException if authorization is failed
      */
     void authorize(Permission permission, NacosUser nacosUser) throws AccessException;
-    
+
     /**
      * Whether the user has the administrator role.
      *
@@ -74,7 +73,7 @@ public interface IAuthenticationManager {
      * @return if the user has the administrator role.
      */
     boolean hasGlobalAdminRole(String username);
-    
+
     /**
      * Whether the user has the administrator role.
      *

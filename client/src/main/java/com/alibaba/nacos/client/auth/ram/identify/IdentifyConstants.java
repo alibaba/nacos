@@ -22,46 +22,46 @@ package com.alibaba.nacos.client.auth.ram.identify;
  * @author Nacos
  */
 public class IdentifyConstants {
-    
+
     public static final String ACCESS_KEY = "accessKey";
-    
+
     public static final String SECRET_KEY = "secretKey";
-    
+
     public static final String SECURITY_TOKEN_HEADER = "Spas-SecurityToken";
-    
+
     public static final String TENANT_ID = "tenantId";
-    
+
     public static final String PROPERTIES_FILENAME = "spas.properties";
-    
+
     public static final String CREDENTIAL_PATH = "/home/admin/.spas_key/";
-    
+
     public static final String CREDENTIAL_DEFAULT = "default";
-    
+
     public static final String DOCKER_CREDENTIAL_PATH = "/etc/instanceInfo";
-    
+
     public static final String DOCKER_ACCESS_KEY = "env_spas_accessKey";
-    
+
     public static final String DOCKER_SECRET_KEY = "env_spas_secretKey";
-    
+
     public static final String DOCKER_TENANT_ID = "ebv_spas_tenantId";
-    
+
     public static final String ENV_ACCESS_KEY = "spas_accessKey";
-    
+
     public static final String ENV_SECRET_KEY = "spas_secretKey";
-    
+
     public static final String ENV_TENANT_ID = "tenant.id";
-    
+
     public static final String NO_APP_NAME = "";
-    
+
     public static final String PROJECT_NAME_PROPERTY = "project.name";
-    
+
     public static final String RAM_ROLE_NAME_PROPERTY = "ram.role.name";
-    
+
     public static final String REFRESH_TIME_PROPERTY = "time.to.refresh.in.millisecond";
-    
+
     public static final String SECURITY_PROPERTY = "security.credentials";
-    
+
     public static final String SECURITY_URL_PROPERTY = "security.credentials.url";
-    
+
     public static final String SECURITY_CACHE_PROPERTY = "cache.security.credentials";
 }

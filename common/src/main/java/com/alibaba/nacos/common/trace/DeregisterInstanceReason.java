@@ -22,21 +22,12 @@ package com.alibaba.nacos.common.trace;
  * @author yanda
  */
 public enum DeregisterInstanceReason {
-    /**
-     * client initiates request.
-     */
+    /** client initiates request. */
     REQUEST,
-    /**
-     * Instance native disconnected.
-     */
+    /** Instance native disconnected. */
     NATIVE_DISCONNECTED,
-    /**
-     * Instance synced disconnected.
-     */
+    /** Instance synced disconnected. */
     SYNCED_DISCONNECTED,
-    /**
-     * Instance heart beat timeout expire.
-     */
+    /** Instance heart beat timeout expire. */
     HEARTBEAT_EXPIRE,
-   
 }

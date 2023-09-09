@@ -24,51 +24,50 @@ import java.util.Objects;
  * @author xiweng.yy
  */
 public class DistroKey {
-    
+
     private String resourceKey;
-    
+
     private String resourceType;
-    
+
     private String targetServer;
-    
-    public DistroKey() {
-    }
-    
+
+    public DistroKey() {}
+
     public DistroKey(String resourceKey, String resourceType) {
         this.resourceKey = resourceKey;
         this.resourceType = resourceType;
     }
-    
+
     public DistroKey(String resourceKey, String resourceType, String targetServer) {
         this.resourceKey = resourceKey;
         this.resourceType = resourceType;
         this.targetServer = targetServer;
     }
-    
+
     public String getResourceKey() {
         return resourceKey;
     }
-    
+
     public void setResourceKey(String resourceKey) {
         this.resourceKey = resourceKey;
     }
-    
+
     public String getResourceType() {
         return resourceType;
     }
-    
+
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
     }
-    
+
     public String getTargetServer() {
         return targetServer;
     }
-    
+
     public void setTargetServer(String targetServer) {
         this.targetServer = targetServer;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -78,18 +77,28 @@ public class DistroKey {
             return false;
         }
         DistroKey distroKey = (DistroKey) o;
-        return Objects.equals(resourceKey, distroKey.resourceKey) && Objects
-                .equals(resourceType, distroKey.resourceType) && Objects.equals(targetServer, distroKey.targetServer);
+        return Objects.equals(resourceKey, distroKey.resourceKey)
+                && Objects.equals(resourceType, distroKey.resourceType)
+                && Objects.equals(targetServer, distroKey.targetServer);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(resourceKey, resourceType, targetServer);
     }
-    
+
     @Override
     public String toString() {
-        return "DistroKey{" + "resourceKey='" + resourceKey + '\'' + ", resourceType='" + resourceType + '\''
-                + ", targetServer='" + targetServer + '\'' + '}';
+        return "DistroKey{"
+                + "resourceKey='"
+                + resourceKey
+                + '\''
+                + ", resourceType='"
+                + resourceType
+                + '\''
+                + ", targetServer='"
+                + targetServer
+                + '\''
+                + '}';
     }
 }

@@ -16,25 +16,22 @@
 
 package com.alibaba.nacos.api.config.remote.request;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.HashMap;
+import java.util.Map;
+
 public class ConfigQueryRequestTest extends BasedConfigRequestTest {
-    
+
     ConfigQueryRequest configQueryRequest;
-    
+
     Map<String, String> headers = new HashMap<>();
-    
+
     String requestId;
-    
+
     @Before
     public void before() {
         headers.put(Constants.Config.NOTIFY_HEADER, Boolean.TRUE.toString());
@@ -43,12 +40,12 @@ public class ConfigQueryRequestTest extends BasedConfigRequestTest {
         configQueryRequest.setTag(TAG);
         requestId = injectRequestUuId(configQueryRequest);
     }
-    
+
     @Test
     public void testIsNotify() {
         assertTrue(configQueryRequest.isNotify());
     }
-    
+
     @Override
     @Test
     public void testSerialize() throws JsonProcessingException {
@@ -60,12 +57,13 @@ public class ConfigQueryRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"tag\":\"" + TAG));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
     }
-    
+
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{\"notify\":\"true\"},\"dataId\":\"test_data\",\"group\":\"group\","
-                + "\"tenant\":\"test_tenant\",\"notify\":true,\"module\":\"config\",\"tag\":\"tag\"}";
+        String json =
+                "{\"headers\":{\"notify\":\"true\"},\"dataId\":\"test_data\",\"group\":\"group\","
+                        + "\"tenant\":\"test_tenant\",\"notify\":true,\"module\":\"config\",\"tag\":\"tag\"}";
         ConfigQueryRequest actual = mapper.readValue(json, ConfigQueryRequest.class);
         assertEquals(actual.getDataId(), DATA_ID);
         assertEquals(actual.getGroup(), GROUP);

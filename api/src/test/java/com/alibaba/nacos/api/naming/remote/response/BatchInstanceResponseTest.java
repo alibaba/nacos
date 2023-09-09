@@ -16,38 +16,38 @@
 
 package com.alibaba.nacos.api.naming.remote.response;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public class BatchInstanceResponseTest {
-    
+
     protected static ObjectMapper mapper;
-    
+
     @BeforeClass
     public static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Test
     public void testSerialize() throws JsonProcessingException {
-        BatchInstanceResponse response = new BatchInstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
+        BatchInstanceResponse response =
+                new BatchInstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
         String json = mapper.writeValueAsString(response);
         assertTrue(json.contains("\"type\":\"" + NamingRemoteConstants.REGISTER_INSTANCE + "\""));
     }
-    
+
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"type\":\"registerInstance\",\"success\":true}";
+        String json =
+                "{\"resultCode\":200,\"errorCode\":0,\"type\":\"registerInstance\",\"success\":true}";
         BatchInstanceResponse response = mapper.readValue(json, BatchInstanceResponse.class);
         assertEquals(NamingRemoteConstants.REGISTER_INSTANCE, response.getType());
     }

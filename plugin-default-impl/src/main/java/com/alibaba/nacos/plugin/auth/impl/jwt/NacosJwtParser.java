@@ -19,10 +19,9 @@ package com.alibaba.nacos.plugin.auth.impl.jwt;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.utils.Base64Decode;
-
-import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.util.concurrent.TimeUnit;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * JwtParse.
@@ -32,23 +31,26 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.UndefineMagicConstantRule")
 public class NacosJwtParser {
-    
+
     private final NacosSignatureAlgorithm signatureAlgorithm;
-    
+
     private final Key key;
-    
+
     public NacosJwtParser(String base64edKey) {
         byte[] decode = Base64Decode.decode(base64edKey);
         int bitLength = decode.length << 3;
         if (bitLength < 256) {
-            String msg = "The specified key byte array is " + bitLength + " bits which "
-                    + "is not secure enough for any JWT HMAC-SHA algorithm.  The JWT "
-                    + "JWA Specification (RFC 7518, Section 3.2) states that keys used with HMAC-SHA algorithms MUST have a "
-                    + "size >= 256 bits (the key size must be greater than or equal to the hash "
-                    + "output size).  See https://tools.ietf.org/html/rfc7518#section-3.2 for more information.";
+            String msg =
+                    "The specified key byte array is "
+                            + bitLength
+                            + " bits which "
+                            + "is not secure enough for any JWT HMAC-SHA algorithm.  The JWT "
+                            + "JWA Specification (RFC 7518, Section 3.2) states that keys used with HMAC-SHA algorithms MUST have a "
+                            + "size >= 256 bits (the key size must be greater than or equal to the hash "
+                            + "output size).  See https://tools.ietf.org/html/rfc7518#section-3.2 for more information.";
             throw new IllegalArgumentException(msg);
         }
-        
+
         if (bitLength < 384) {
             this.signatureAlgorithm = NacosSignatureAlgorithm.HS256;
         } else if (bitLength < 512) {
@@ -58,37 +60,38 @@ public class NacosJwtParser {
         }
         this.key = new SecretKeySpec(decode, signatureAlgorithm.getJcaName());
     }
-    
+
     private String sign(NacosJwtPayload payload) {
         return signatureAlgorithm.sign(payload, key);
     }
-    
+
     public JwtBuilder jwtBuilder() {
         return new JwtBuilder();
     }
-    
+
     public NacosUser parse(String token) throws AccessException {
         return NacosSignatureAlgorithm.verify(token, key);
     }
-    
+
     public long getExpireTimeInSeconds(String token) throws AccessException {
         return NacosSignatureAlgorithm.getExpiredTimeInSeconds(token, key);
     }
-    
+
     public class JwtBuilder {
-        
+
         private final NacosJwtPayload nacosJwtPayload = new NacosJwtPayload();
-        
+
         public JwtBuilder setUserName(String userName) {
             this.nacosJwtPayload.setSub(userName);
             return this;
         }
-        
+
         public JwtBuilder setExpiredTime(long validSeconds) {
-            this.nacosJwtPayload.setExp(TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + validSeconds);
+            this.nacosJwtPayload.setExp(
+                    TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + validSeconds);
             return this;
         }
-        
+
         public String compact() {
             return sign(nacosJwtPayload);
         }

@@ -25,10 +25,9 @@ import static com.alibaba.nacos.api.common.Constants.Remote.INTERNAL_MODULE;
  * @version $Id: ClientDetectionRequest.java, v 0.1 2021年01月20日 2:42 PM liuzunfei Exp $
  */
 public class ClientDetectionRequest extends ServerRequest {
-    
+
     @Override
     public String getModule() {
         return INTERNAL_MODULE;
     }
-    
 }

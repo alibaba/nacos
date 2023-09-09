@@ -19,51 +19,57 @@ package com.alibaba.nacos.config.server.utils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import java.io.File;
+import java.io.IOException;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
-import java.io.File;
-import java.io.IOException;
-
 public class DiskUtilsTest {
-    
+
     static MockedStatic<FileUtils> fileUtils;
-    
+
     @BeforeClass
     public static void before() {
-        fileUtils =  Mockito.mockStatic(FileUtils.class);
+        fileUtils = Mockito.mockStatic(FileUtils.class);
     }
-    
+
     @Test
     public void testSaveHeartBeatToDisk() throws IOException {
         String heartBeatTime = System.currentTimeMillis() + "";
         DiskUtil.saveHeartBeatToDisk(heartBeatTime);
-        fileUtils.verify(() -> FileUtils.writeStringToFile(DiskUtil.heartBeatFile(), heartBeatTime, Constants.ENCODE), Mockito.times(1));
+        fileUtils.verify(
+                () ->
+                        FileUtils.writeStringToFile(
+                                DiskUtil.heartBeatFile(), heartBeatTime, Constants.ENCODE),
+                Mockito.times(1));
     }
 
     @Test
     public void testSaveToDisk() throws IOException {
         File targetFile = DiskUtil.targetFile("test", "test", "test");
         DiskUtil.saveToDisk("test", "test", "test", "saveToDisk");
-        fileUtils.verify(() -> FileUtils.writeStringToFile(targetFile, "saveToDisk", Constants.ENCODE), Mockito.times(1));
+        fileUtils.verify(
+                () -> FileUtils.writeStringToFile(targetFile, "saveToDisk", Constants.ENCODE),
+                Mockito.times(1));
     }
 
     @Test
     public void testSaveBetaToDisk() throws IOException {
         File targetFile = DiskUtil.targetBetaFile("test", "test", "test");
         DiskUtil.saveBetaToDisk("test", "test", "test", "saveBetaToDisk");
-        fileUtils.verify(() -> FileUtils.writeStringToFile(targetFile, "saveBetaToDisk", Constants.ENCODE), Mockito.times(1));
+        fileUtils.verify(
+                () -> FileUtils.writeStringToFile(targetFile, "saveBetaToDisk", Constants.ENCODE),
+                Mockito.times(1));
     }
 
     @Test
     public void testSaveTagToDisk() throws IOException {
         File targetFile = DiskUtil.targetTagFile("test", "test", "test", "tag");
         DiskUtil.saveTagToDisk("test", "test", "test", "tag", "saveTagToDisk");
-        fileUtils.verify(() -> FileUtils.writeStringToFile(targetFile, "saveTagToDisk", Constants.ENCODE), Mockito.times(1));
+        fileUtils.verify(
+                () -> FileUtils.writeStringToFile(targetFile, "saveTagToDisk", Constants.ENCODE),
+                Mockito.times(1));
     }
 
     @Test
@@ -172,7 +178,7 @@ public class DiskUtilsTest {
         Assert.assertEquals("test2", arr[arr.length - 1]);
         Assert.assertEquals("test1", arr[arr.length - 2]);
     }
-    
+
     @Test
     public void testClearAll() {
         DiskUtil.clearAll();
@@ -181,7 +187,7 @@ public class DiskUtilsTest {
         File fileTenant = new File(EnvUtil.getNacosHome(), DiskUtil.TENANT_BASE_DIR);
         fileUtils.verify(() -> FileUtils.deleteQuietly(fileTenant), Mockito.times(1));
     }
-    
+
     @Test
     public void testClearAllBeta() {
         DiskUtil.clearAllBeta();
@@ -190,7 +196,7 @@ public class DiskUtilsTest {
         File fileTenant = new File(EnvUtil.getNacosHome(), DiskUtil.TENANT_BETA_DIR);
         fileUtils.verify(() -> FileUtils.deleteQuietly(fileTenant), Mockito.times(1));
     }
-    
+
     @Test
     public void testClearAllTag() {
         DiskUtil.clearAllTag();
@@ -199,5 +205,4 @@ public class DiskUtilsTest {
         File fileTenant = new File(EnvUtil.getNacosHome(), DiskUtil.TENANT_TAG_DIR);
         fileUtils.verify(() -> FileUtils.deleteQuietly(fileTenant), Mockito.times(1));
     }
-    
 }

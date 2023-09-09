@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
-import com.alibaba.nacos.api.common.Constants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.common.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ServiceQueryRequestTest extends BasedNamingRequestTest {
-    
+
     @Test
     public void testSerialize() throws JsonProcessingException {
         ServiceQueryRequest request = new ServiceQueryRequest(NAMESPACE, SERVICE, GROUP);
@@ -35,11 +34,12 @@ public class ServiceQueryRequestTest extends BasedNamingRequestTest {
         assertTrue(json.contains("\"healthyOnly\":false"));
         assertTrue(json.contains("\"udpPort\":0"));
     }
-    
+
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
-                + "\"cluster\":\"DEFAULT\",\"healthyOnly\":true,\"udpPort\":0,\"module\":\"naming\"}";
+        String json =
+                "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
+                        + "\"cluster\":\"DEFAULT\",\"healthyOnly\":true,\"udpPort\":0,\"module\":\"naming\"}";
         ServiceQueryRequest actual = mapper.readValue(json, ServiceQueryRequest.class);
         checkNamingRequestBasedInfo(actual);
         assertEquals(Constants.DEFAULT_CLUSTER_NAME, actual.getCluster());

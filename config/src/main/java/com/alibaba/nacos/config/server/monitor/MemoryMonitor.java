@@ -18,11 +18,10 @@ package com.alibaba.nacos.config.server.monitor;
 
 import com.alibaba.nacos.config.server.service.notify.AsyncNotifyService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Memory monitor.
@@ -31,26 +30,26 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class MemoryMonitor {
-    
+
     @Autowired
     public MemoryMonitor(AsyncNotifyService notifySingleService) {
-        
-        ConfigExecutor.scheduleConfigTask(new PrintMemoryTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
-        
-        ConfigExecutor
-                .scheduleConfigTask(new PrintGetConfigResponeTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
-        
-        ConfigExecutor
-                .scheduleConfigTask(new ThreadTaskQueueMonitorTask(notifySingleService), DELAY_SECONDS, DELAY_SECONDS,
-                        TimeUnit.SECONDS);
-        
+
+        ConfigExecutor.scheduleConfigTask(
+                new PrintMemoryTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+
+        ConfigExecutor.scheduleConfigTask(
+                new PrintGetConfigResponeTask(), DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+
+        ConfigExecutor.scheduleConfigTask(
+                new ThreadTaskQueueMonitorTask(notifySingleService),
+                DELAY_SECONDS,
+                DELAY_SECONDS,
+                TimeUnit.SECONDS);
     }
-    
+
     private static final long DELAY_SECONDS = 10;
-    
-    /**
-     * reset some metrics to 0 every day.
-     */
+
+    /** reset some metrics to 0 every day. */
     @Scheduled(cron = "0 0 0 * * ?")
     public void clear() {
         MetricsMonitor.getConfigMonitor().set(0);

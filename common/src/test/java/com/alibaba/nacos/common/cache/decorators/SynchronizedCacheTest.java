@@ -18,13 +18,10 @@ package com.alibaba.nacos.common.cache.decorators;
 
 import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.stream.IntStream;
 
 public class SynchronizedCacheTest {
-    
+
     @Test
     public void testSync() throws Exception {
         Cache cache = CacheBuilder.builder().sync(true).build();
@@ -39,5 +36,4 @@ public class SynchronizedCacheTest {
         cache.clear();
         Assert.assertEquals(0, cache.getSize());
     }
-    
 }

@@ -26,11 +26,11 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  * @version $Id: ConfigPublishResponse.java, v 0.1 2020年07月16日 4:59 PM liuzunfei Exp $
  */
 public class ConfigPublishResponse extends Response {
-    
+
     public ConfigPublishResponse() {
         super();
     }
-    
+
     /**
      * Build success response.
      *
@@ -39,7 +39,7 @@ public class ConfigPublishResponse extends Response {
     public static ConfigPublishResponse buildSuccessResponse() {
         return new ConfigPublishResponse();
     }
-    
+
     /**
      * Build fail response.
      *

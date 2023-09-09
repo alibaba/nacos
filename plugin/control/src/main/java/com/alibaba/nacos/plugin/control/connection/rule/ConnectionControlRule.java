@@ -25,23 +25,23 @@ import java.util.Set;
  * @author shiyiyue
  */
 public class ConnectionControlRule {
-    
+
     private Set<String> monitorIpList = new HashSet<>();
-    
+
     private int countLimit = -1;
-    
+
     public int getCountLimit() {
         return countLimit;
     }
-    
+
     public void setCountLimit(int countLimit) {
         this.countLimit = countLimit;
     }
-    
+
     public Set<String> getMonitorIpList() {
         return monitorIpList;
     }
-    
+
     public void setMonitorIpList(Set<String> monitorIpList) {
         this.monitorIpList = monitorIpList;
     }

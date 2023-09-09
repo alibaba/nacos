@@ -22,48 +22,50 @@ package com.alibaba.nacos.plugin.encryption.spi;
  * @author lixiaoshuang
  */
 public interface EncryptionPluginService {
-    
+
     /**
      * Encrypted interface.
      *
      * @param secretKey secret key
-     * @param content   content unencrypted
+     * @param content content unencrypted
      * @return encrypt value
      */
     String encrypt(String secretKey, String content);
-    
+
     /**
      * Decryption interface.
      *
      * @param secretKey secret key
-     * @param content   encrypted
+     * @param content encrypted
      * @return decrypt value
      */
     String decrypt(String secretKey, String content);
-    
+
     /**
      * Generate Secret key.
      *
      * @return Secret key
      */
     String generateSecretKey();
-    
+
     /**
      * Algorithm naming.
      *
      * @return name
      */
     String algorithmName();
-    
+
     /**
      * encrypt secretKey.
+     *
      * @param secretKey secretKey
      * @return encrypted secretKey
      */
     String encryptSecretKey(String secretKey);
-    
+
     /**
      * decrypt secretKey.
+     *
      * @param secretKey secretKey
      * @return decrypted secretKey
      */

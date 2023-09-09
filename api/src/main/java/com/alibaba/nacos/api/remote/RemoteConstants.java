@@ -23,19 +23,17 @@ package com.alibaba.nacos.api.remote;
  * @version $Id: ConnectionMetaConstants.java, v 0.1 2020年08月13日 1:05 PM liuzunfei Exp $
  */
 public class RemoteConstants {
-    
-    /**
-     * label key value  define.
-     */
+
+    /** label key value define. */
     public static final String LABEL_SOURCE = "source";
-    
+
     public static final String LABEL_SOURCE_SDK = "sdk";
-    
+
     public static final String LABEL_SOURCE_CLUSTER = "cluster";
-    
+
     public static final String LABEL_MODULE = "module";
-    
+
     public static final String LABEL_MODULE_CONFIG = "config";
-    
+
     public static final String LABEL_MODULE_NAMING = "naming";
 }

@@ -22,17 +22,18 @@ package com.alibaba.nacos.naming.interceptor;
  * @author xiweng.yy
  */
 public interface NacosNamingInterceptor<T extends Interceptable> {
-    
+
     /**
      * Judge whether the input type is intercepted by this Interceptor.
      *
-     * <p>This method only should judge the object type whether need be do intercept. Not the intercept logic.
+     * <p>This method only should judge the object type whether need be do intercept. Not the
+     * intercept logic.
      *
      * @param type type
      * @return true if the input type is intercepted by this Interceptor, otherwise false
      */
     boolean isInterceptType(Class<?> type);
-    
+
     /**
      * Do intercept operation.
      *
@@ -42,7 +43,7 @@ public interface NacosNamingInterceptor<T extends Interceptable> {
      * @return true if object is intercepted, otherwise false
      */
     boolean intercept(T object);
-    
+
     /**
      * The order of interceptor. The lower the number, the earlier the execution.
      *

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.cmdb.service;
 
 import com.alibaba.nacos.api.cmdb.pojo.Entity;
-
 import java.util.List;
 
 /**
@@ -27,7 +26,7 @@ import java.util.List;
  * @since 0.7.0
  */
 public interface CmdbReader {
-    
+
     /**
      * Get entity.
      *
@@ -36,21 +35,21 @@ public interface CmdbReader {
      * @return entity
      */
     Entity queryEntity(String entityName, String entityType);
-    
+
     /**
      * Get label of entity.
      *
      * @param entityName name of entity
      * @param entityType type of entity
-     * @param labelName  label name
+     * @param labelName label name
      * @return label value
      */
     String queryLabel(String entityName, String entityType, String labelName);
-    
+
     /**
      * Get entities of selected label.
      *
-     * @param labelName  name of label
+     * @param labelName name of label
      * @param labelValue value of label
      * @return list of entity
      */

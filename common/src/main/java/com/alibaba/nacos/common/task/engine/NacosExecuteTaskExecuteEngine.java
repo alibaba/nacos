@@ -20,31 +20,32 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.slf4j.Logger;
-
 import java.util.Collection;
+import org.slf4j.Logger;
 
 /**
  * Nacos execute task execute engine.
  *
  * @author xiweng.yy
  */
-public class NacosExecuteTaskExecuteEngine extends AbstractNacosTaskExecuteEngine<AbstractExecuteTask> {
-    
+public class NacosExecuteTaskExecuteEngine
+        extends AbstractNacosTaskExecuteEngine<AbstractExecuteTask> {
+
     private final TaskExecuteWorker[] executeWorkers;
-    
+
     public NacosExecuteTaskExecuteEngine(String name, Logger logger) {
         this(name, logger, ThreadUtils.getSuitableThreadCount(1));
     }
-    
+
     public NacosExecuteTaskExecuteEngine(String name, Logger logger, int dispatchWorkerCount) {
         super(logger);
         executeWorkers = new TaskExecuteWorker[dispatchWorkerCount];
         for (int mod = 0; mod < dispatchWorkerCount; ++mod) {
-            executeWorkers[mod] = new TaskExecuteWorker(name, mod, dispatchWorkerCount, getEngineLog());
+            executeWorkers[mod] =
+                    new TaskExecuteWorker(name, mod, dispatchWorkerCount, getEngineLog());
         }
     }
-    
+
     @Override
     public int size() {
         int result = 0;
@@ -53,12 +54,12 @@ public class NacosExecuteTaskExecuteEngine extends AbstractNacosTaskExecuteEngin
         }
         return result;
     }
-    
+
     @Override
     public boolean isEmpty() {
         return 0 == size();
     }
-    
+
     @Override
     public void addTask(Object tag, AbstractExecuteTask task) {
         NacosTaskProcessor processor = getProcessor(tag);
@@ -69,33 +70,34 @@ public class NacosExecuteTaskExecuteEngine extends AbstractNacosTaskExecuteEngin
         TaskExecuteWorker worker = getWorker(tag);
         worker.process(task);
     }
-    
+
     private TaskExecuteWorker getWorker(Object tag) {
         int idx = (tag.hashCode() & Integer.MAX_VALUE) % workersCount();
         return executeWorkers[idx];
     }
-    
+
     private int workersCount() {
         return executeWorkers.length;
     }
-    
+
     @Override
     public AbstractExecuteTask removeTask(Object key) {
         throw new UnsupportedOperationException("ExecuteTaskEngine do not support remove task");
     }
-    
+
     @Override
     public Collection<Object> getAllTaskKeys() {
-        throw new UnsupportedOperationException("ExecuteTaskEngine do not support get all task keys");
+        throw new UnsupportedOperationException(
+                "ExecuteTaskEngine do not support get all task keys");
     }
-    
+
     @Override
     public void shutdown() throws NacosException {
         for (TaskExecuteWorker each : executeWorkers) {
             each.shutdown();
         }
     }
-    
+
     /**
      * Get workers status.
      *

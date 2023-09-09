@@ -27,10 +27,9 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConditionOnExternalStorage implements Condition {
-    
+
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
         return !DatasourceConfiguration.isEmbeddedStorage();
     }
-    
 }

@@ -23,22 +23,22 @@ package com.alibaba.nacos.naming.cluster.transport;
  * @since 1.0.0
  */
 public interface Serializer {
-    
+
     /**
-     * Serialize  data with some kind of serializing protocol.
+     * Serialize data with some kind of serializing protocol.
      *
      * @param data data to serialize
-     * @param <T>  type of data
+     * @param <T> type of data
      * @return byte array of serialized data
      */
     <T> byte[] serialize(T data);
-    
+
     /**
      * Deserialize byte array data to target type.
      *
-     * @param data  data to deserialize
+     * @param data data to deserialize
      * @param clazz target type
-     * @param <T>   target type
+     * @param <T> target type
      * @return deserialized data map
      */
     <T> T deserialize(byte[] data, Class<T> clazz);

@@ -25,26 +25,22 @@ import org.slf4j.Logger;
 import org.springframework.stereotype.Component;
 
 /**
- * The pointcut for configuration change operations, it will log when the configuration change fails.
+ * The pointcut for configuration change operations, it will log when the configuration change
+ * fails.
  *
  * @author blake.qiu
  */
 @Aspect
 @Component
 public class ConfigOpFailureAspect {
-    
+
     private static final Logger LOGGER = LogUtil.DEFAULT_LOG;
-    
-    /**
-     * Pointcut for all methods from 'configRepositoryInterface'.
-     */
+
+    /** Pointcut for all methods from 'configRepositoryInterface'. */
     @Pointcut("within(com.alibaba.nacos.config.server.service.repository..*)")
-    public void configRepositoryInterfaceMethods() {
-    }
-    
-    /**
-     * Log message when a method from 'configRepositoryInterface' throws an exception.
-     */
+    public void configRepositoryInterfaceMethods() {}
+
+    /** Log message when a method from 'configRepositoryInterface' throws an exception. */
     @AfterThrowing(pointcut = "configRepositoryInterfaceMethods()", throwing = "exception")
     public void logException(JoinPoint joinPoint, Throwable exception) {
         try {
@@ -60,11 +56,16 @@ public class ConfigOpFailureAspect {
                 }
             }
             String methodName = joinPoint.getSignature().getName();
-            LOGGER.error("An error occurred while executing method [{}].\n Parameters: [{}].", methodName, params,
+            LOGGER.error(
+                    "An error occurred while executing method [{}].\n Parameters: [{}].",
+                    methodName,
+                    params,
                     exception);
         } catch (Exception e) {
-            LOGGER.error("An error occurred while logging the original exception. method [{}]",
-                    joinPoint.getSignature().getName(), e);
+            LOGGER.error(
+                    "An error occurred while logging the original exception. method [{}]",
+                    joinPoint.getSignature().getName(),
+                    e);
         }
     }
 }

@@ -16,15 +16,13 @@
 
 package com.alibaba.nacos.persistence.utils;
 
-import com.zaxxer.hikari.HikariDataSource;
-import org.junit.Test;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.zaxxer.hikari.HikariDataSource;
+import java.sql.Connection;
+import java.sql.SQLException;
 
 /**
  * DataSource Connection CheckUtil Unit Test.
@@ -32,7 +30,7 @@ import static org.mockito.Mockito.when;
  * @author Long Yu
  */
 public class ConnectionCheckUtilTest {
-    
+
     @Test(expected = RuntimeException.class)
     public void testCheckConnectionThrowException() throws SQLException {
         HikariDataSource ds = mock(HikariDataSource.class);
@@ -40,7 +38,7 @@ public class ConnectionCheckUtilTest {
         ConnectionCheckUtil.checkDataSourceConnection(ds);
         verify(ds).getConnection();
     }
-    
+
     @Test
     public void testCheckConnectionNormal() throws SQLException {
         HikariDataSource ds = mock(HikariDataSource.class);
@@ -50,5 +48,4 @@ public class ConnectionCheckUtilTest {
         verify(ds).getConnection();
         verify(connection).close();
     }
-    
 }

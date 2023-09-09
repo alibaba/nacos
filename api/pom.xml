@@ -15,45 +15,21 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.alibaba.nacos</groupId>
         <artifactId>nacos-all</artifactId>
         <version>${revision}</version>
     </parent>
-    
-    <modelVersion>4.0.0</modelVersion>
-    
+
     <artifactId>nacos-api</artifactId>
     <packaging>jar</packaging>
-    
+
     <name>nacos-api ${project.version}</name>
-    <url>https://nacos.io</url>
     <description>Nacos api pom.xml file</description>
-    <build>
-        <plugins>
-            <!--  reuse when you need to update grpc model  -->
-             <!--<plugin>
-                 <groupId>org.xolstice.maven.plugins</groupId>
-                 <artifactId>protobuf-maven-plugin</artifactId>
-                 <version>0.5.0</version>
-                 <configuration>
-                     <protocArtifact>com.google.protobuf:protoc:3.8.0:exe:${os.detected.classifier}</protocArtifact>
-                     <pluginId>grpc-java</pluginId>
-                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.14.0:exe:${os.detected.classifier}</pluginArtifact>
-                 </configuration>
-                 <executions>
-                     <execution>
-                         <goals>
-                             <goal>compile</goal>
-                             <goal>compile-custom</goal>
-                         </goals>
-                     </execution>
-                 </executions>
-             </plugin>-->
-        </plugins>
-    </build>
-    
+
     <dependencies>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -97,6 +73,30 @@
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
         </dependency>
-    
+
     </dependencies>
+    <build>
+        <plugins>
+            <!--  reuse when you need to update grpc model  -->
+            <!--<plugin>
+                 <groupId>org.xolstice.maven.plugins</groupId>
+                 <artifactId>protobuf-maven-plugin</artifactId>
+                 <version>0.5.0</version>
+                 <configuration>
+                     <protocArtifact>com.google.protobuf:protoc:3.8.0:exe:${os.detected.classifier}</protocArtifact>
+                     <pluginId>grpc-java</pluginId>
+                     <pluginArtifact>io.grpc:protoc-gen-grpc-java:1.14.0:exe:${os.detected.classifier}</pluginArtifact>
+                 </configuration>
+                 <executions>
+                     <execution>
+                         <goals>
+                             <goal>compile</goal>
+                             <goal>compile-custom</goal>
+                         </goals>
+                     </execution>
+                 </executions>
+             </plugin>-->
+        </plugins>
+    </build>
+    <url>https://nacos.io</url>
 </project>

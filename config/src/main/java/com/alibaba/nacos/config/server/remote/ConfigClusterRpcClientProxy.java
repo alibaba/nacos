@@ -31,25 +31,25 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ConfigClusterRpcClientProxy {
-    
+
     final ClusterRpcClientProxy clusterRpcClientProxy;
-    
+
     public ConfigClusterRpcClientProxy(ClusterRpcClientProxy clusterRpcClientProxy) {
         this.clusterRpcClientProxy = clusterRpcClientProxy;
     }
-    
+
     /**
      * sync config change request.
      *
-     * @param member  member of server.
+     * @param member member of server.
      * @param request request of config change sync.
      * @param callBack callBack of config change sync.
      * @throws NacosException exception.
      */
-    public void syncConfigChange(Member member, ConfigChangeClusterSyncRequest request, RequestCallBack callBack)
+    public void syncConfigChange(
+            Member member, ConfigChangeClusterSyncRequest request, RequestCallBack callBack)
             throws NacosException {
-    
+
         clusterRpcClientProxy.asyncRequest(member, request, callBack);
-        
     }
 }

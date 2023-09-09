@@ -25,19 +25,18 @@ import com.alipay.sofa.jraft.Closure;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface FailoverClosure extends Closure {
-    
+
     /**
      * Set the return interface if needed.
      *
      * @param response {@link Response} data
      */
     void setResponse(Response response);
-    
+
     /**
      * Catch exception.
      *
      * @param throwable {@link Throwable}
      */
     void setThrowable(Throwable throwable);
-    
 }

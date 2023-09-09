@@ -16,17 +16,14 @@
 
 package com.alibaba.nacos.core.model.request;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class LogUpdateRequestTest {
-    
+
     @Test
     public void test() {
         LogUpdateRequest request = new LogUpdateRequest();
         request.setLogName("test");
         request.setLogLevel("info");
-    
+
         Assert.assertEquals(request.getLogName(), "test");
         Assert.assertEquals(request.getLogLevel(), "info");
     }

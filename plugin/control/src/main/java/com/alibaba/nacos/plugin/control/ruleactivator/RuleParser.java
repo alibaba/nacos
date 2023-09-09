@@ -25,7 +25,7 @@ import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
  * @author shiyiyue
  */
 public interface RuleParser {
-    
+
     /**
      * parse tps rule content.
      *
@@ -33,7 +33,7 @@ public interface RuleParser {
      * @return
      */
     TpsControlRule parseTpsRule(String ruleContent);
-    
+
     /**
      * parse connection rule.
      *
@@ -41,7 +41,7 @@ public interface RuleParser {
      * @return
      */
     ConnectionControlRule parseConnectionRule(String ruleContent);
-    
+
     /**
      * get name.
      *

@@ -16,39 +16,33 @@
 
 package com.alibaba.nacos.console.filter;
 
-import org.junit.Test;
+import java.io.IOException;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-
 @RunWith(MockitoJUnitRunner.class)
 public class XssFilterTest {
-    
+
     private static final String CONTENT_SECURITY_POLICY_HEADER = "Content-Security-Policy";
-    
+
     private static final String CONTENT_SECURITY_POLICY = "script-src 'self'";
-    
-    @Mock
-    private HttpServletRequest request;
-    
-    @Mock
-    private HttpServletResponse response;
-    
-    @Mock
-    private FilterChain filterChain;
-    
+
+    @Mock private HttpServletRequest request;
+
+    @Mock private HttpServletResponse response;
+
+    @Mock private FilterChain filterChain;
+
     @Test
     public void testSetResponseHeader() throws ServletException, IOException {
         XssFilter xssFilter = new XssFilter();
         xssFilter.doFilterInternal(request, response, filterChain);
         Mockito.verify(response).setHeader(CONTENT_SECURITY_POLICY_HEADER, CONTENT_SECURITY_POLICY);
     }
-    
 }

@@ -17,23 +17,24 @@
 package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeItem;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.IOException;
 import java.util.Map;
 
 public class ConfigChangeHandlerTest {
-    
+
     @Test
     public void testParseProperties() throws IOException {
-        Map properties = ConfigChangeHandler.getInstance().parseChangeData("", "app.name = nacos", "properties");
+        Map properties =
+                ConfigChangeHandler.getInstance()
+                        .parseChangeData("", "app.name = nacos", "properties");
         Assert.assertEquals("nacos", ((ConfigChangeItem) properties.get("app.name")).getNewValue());
     }
-    
+
     @Test
     public void testParseYaml() throws IOException {
-        Map properties = ConfigChangeHandler.getInstance().parseChangeData("", "app:\n  name: nacos", "yaml");
+        Map properties =
+                ConfigChangeHandler.getInstance()
+                        .parseChangeData("", "app:\n  name: nacos", "yaml");
         Assert.assertEquals("nacos", ((ConfigChangeItem) properties.get("app.name")).getNewValue());
     }
 }

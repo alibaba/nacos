@@ -25,12 +25,12 @@ import com.alibaba.nacos.plugin.control.tps.TpsBarrierCreator;
  * @author shiyiyue
  */
 public class DefaultNacosTpsBarrierCreator implements TpsBarrierCreator {
-    
+
     @Override
     public String getName() {
         return "nacos";
     }
-    
+
     @Override
     public TpsBarrier createTpsBarrier(String pointName) {
         return new NacosTpsBarrier(pointName);

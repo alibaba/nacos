@@ -20,14 +20,14 @@ import java.util.Map;
 import java.util.Properties;
 
 class SystemEnvPropertySource extends AbstractPropertySource {
-    
+
     private final Map<String, String> env = System.getenv();
-    
+
     @Override
     SourceType getType() {
         return SourceType.ENV;
     }
-    
+
     @Override
     String getProperty(String key) {
         String checkedKey = checkPropertyName(key);
@@ -42,14 +42,10 @@ class SystemEnvPropertySource extends AbstractPropertySource {
         }
         return env.get(checkedKey);
     }
-    
+
     /**
-     * copy from https://github.com/spring-projects/spring-framework.git
-     * Copyright 2002-2021 the original author or authors.
-     * Since:
-     * 3.1
-     * Author:
-     * Chris Beams, Juergen Hoeller
+     * copy from https://github.com/spring-projects/spring-framework.git Copyright 2002-2021 the
+     * original author or authors. Since: 3.1 Author: Chris Beams, Juergen Hoeller
      */
     private String checkPropertyName(String name) {
         // Check name as-is
@@ -74,12 +70,12 @@ class SystemEnvPropertySource extends AbstractPropertySource {
         // Give up
         return null;
     }
-    
+
     @Override
     boolean containsKey(String name) {
         return this.env.containsKey(name);
     }
-    
+
     @Override
     Properties asProperties() {
         Properties properties = new Properties();

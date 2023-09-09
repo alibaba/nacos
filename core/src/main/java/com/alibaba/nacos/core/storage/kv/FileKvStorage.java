@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.sys.utils.DiskUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -36,23 +35,21 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class FileKvStorage implements KvStorage {
-    
+
     private final String baseDir;
-    
-    /**
-     * Ensure that a consistent view exists when implementing file copies.
-     */
+
+    /** Ensure that a consistent view exists when implementing file copies. */
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    
+
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    
+
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    
+
     public FileKvStorage(String baseDir) throws IOException {
         this.baseDir = baseDir;
         DiskUtils.forceMkdir(baseDir);
     }
-    
+
     @Override
     public byte[] get(byte[] key) throws KvStorageException {
         readLock.lock();
@@ -67,7 +64,7 @@ public class FileKvStorage implements KvStorage {
             readLock.unlock();
         }
     }
-    
+
     @Override
     public Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KvStorageException {
         readLock.lock();
@@ -84,7 +81,7 @@ public class FileKvStorage implements KvStorage {
             readLock.unlock();
         }
     }
-    
+
     @Override
     public void put(byte[] key, byte[] value) throws KvStorageException {
         readLock.lock();
@@ -101,13 +98,14 @@ public class FileKvStorage implements KvStorage {
             readLock.unlock();
         }
     }
-    
+
     @Override
     public void batchPut(List<byte[]> keys, List<byte[]> values) throws KvStorageException {
         readLock.lock();
         try {
             if (keys.size() != values.size()) {
-                throw new KvStorageException(ErrorCode.KVStorageBatchWriteError,
+                throw new KvStorageException(
+                        ErrorCode.KVStorageBatchWriteError,
                         "key's size must be equal to value's size");
             }
             int size = keys.size();
@@ -118,7 +116,7 @@ public class FileKvStorage implements KvStorage {
             readLock.unlock();
         }
     }
-    
+
     @Override
     public void delete(byte[] key) throws KvStorageException {
         readLock.lock();
@@ -129,7 +127,7 @@ public class FileKvStorage implements KvStorage {
             readLock.unlock();
         }
     }
-    
+
     @Override
     public void batchDelete(List<byte[]> keys) throws KvStorageException {
         readLock.lock();
@@ -141,7 +139,7 @@ public class FileKvStorage implements KvStorage {
             readLock.unlock();
         }
     }
-    
+
     @Override
     public void doSnapshot(String backupPath) throws KvStorageException {
         writeLock.lock();
@@ -155,7 +153,7 @@ public class FileKvStorage implements KvStorage {
             writeLock.unlock();
         }
     }
-    
+
     @Override
     public void snapshotLoad(String path) throws KvStorageException {
         writeLock.lock();
@@ -174,7 +172,7 @@ public class FileKvStorage implements KvStorage {
             writeLock.unlock();
         }
     }
-    
+
     @Override
     public List<byte[]> allKeys() throws KvStorageException {
         List<byte[]> result = new LinkedList<>();
@@ -188,8 +186,7 @@ public class FileKvStorage implements KvStorage {
         }
         return result;
     }
-    
+
     @Override
-    public void shutdown() {
-    }
+    public void shutdown() {}
 }

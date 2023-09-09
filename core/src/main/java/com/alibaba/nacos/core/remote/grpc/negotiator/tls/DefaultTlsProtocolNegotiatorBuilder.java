@@ -27,19 +27,20 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
  * @author xiweng.yy
  */
 public class DefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiatorBuilder {
-    
+
     public static final String TYPE_DEFAULT_TLS = "DEFAULT_TLS";
-    
+
     @Override
     public NacosGrpcProtocolNegotiator build() {
         RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
         if (rpcServerTlsConfig.getEnableTls()) {
             SslContext sslContext = DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
-            return new OptionalTlsProtocolNegotiator(sslContext, rpcServerTlsConfig.getCompatibility());
+            return new OptionalTlsProtocolNegotiator(
+                    sslContext, rpcServerTlsConfig.getCompatibility());
         }
         return null;
     }
-    
+
     @Override
     public String type() {
         return TYPE_DEFAULT_TLS;

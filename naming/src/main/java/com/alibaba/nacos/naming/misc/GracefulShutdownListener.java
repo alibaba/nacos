@@ -26,7 +26,7 @@ import org.springframework.context.ConfigurableApplicationContext;
  * @date 2022/11/2 14:40
  */
 public class GracefulShutdownListener implements NacosApplicationListener {
-    
+
     @Override
     public void failed(ConfigurableApplicationContext context, Throwable exception) {
         try {

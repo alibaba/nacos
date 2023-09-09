@@ -22,7 +22,6 @@ import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.naming.consistency.persistent.impl.AbstractSnapshotOperation;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.util.CRC64;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Paths;
@@ -36,13 +35,13 @@ import java.util.zip.Checksum;
  * @author xiweng.yy
  */
 public abstract class AbstractMetadataSnapshotOperation extends AbstractSnapshotOperation {
-    
+
     private static final String METADATA_CHILD_NAME = "metadata";
-    
+
     public AbstractMetadataSnapshotOperation(ReentrantReadWriteLock lock) {
         super(lock);
     }
-    
+
     @Override
     protected boolean writeSnapshot(Writer writer) throws IOException {
         final String writePath = writer.getPath();
@@ -55,7 +54,7 @@ public abstract class AbstractMetadataSnapshotOperation extends AbstractSnapshot
         meta.append(CHECK_SUM_KEY, Long.toHexString(checksum.getValue()));
         return writer.addFile(getSnapshotArchive(), meta);
     }
-    
+
     @Override
     protected boolean readSnapshot(Reader reader) throws Exception {
         final String readerPath = reader.getPath();
@@ -64,28 +63,29 @@ public abstract class AbstractMetadataSnapshotOperation extends AbstractSnapshot
         byte[] snapshotBytes = DiskUtils.decompress(sourceFile, checksum);
         LocalFileMeta fileMeta = reader.getFileMeta(getSnapshotArchive());
         if (fileMeta.getFileMeta().containsKey(CHECK_SUM_KEY)) {
-            if (!Objects.equals(Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
+            if (!Objects.equals(
+                    Long.toHexString(checksum.getValue()), fileMeta.get(CHECK_SUM_KEY))) {
                 throw new IllegalArgumentException("Snapshot checksum failed");
             }
         }
         loadSnapshot(snapshotBytes);
         return true;
     }
-    
+
     /**
      * Get snapshot archive file name.
      *
      * @return snapshot archive
      */
     protected abstract String getSnapshotArchive();
-    
+
     /**
      * Dump snapshot as input stream.
      *
      * @return snapshot
      */
     protected abstract InputStream dumpSnapshot();
-    
+
     /**
      * Load snapshot.
      *

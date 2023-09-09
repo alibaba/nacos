@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import static com.alibaba.nacos.api.common.Constants.ENCODE;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -26,10 +29,9 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import java.io.File;
+import java.io.IOException;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -38,57 +40,57 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.StandardEnvironment;
 
-import java.io.File;
-import java.io.IOException;
-
-import static com.alibaba.nacos.api.common.Constants.ENCODE;
-import static org.mockito.Mockito.when;
-
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigQueryRequestHandlerTest {
-    
-    @InjectMocks
-    private ConfigQueryRequestHandler configQueryRequestHandler;
-    
-    @Mock
-    private File file;
-    
+
+    @InjectMocks private ConfigQueryRequestHandler configQueryRequestHandler;
+
+    @Mock private File file;
+
     @Before
     public void setUp() throws IOException {
         EnvUtil.setEnvironment(new StandardEnvironment());
     }
-    
+
     @Test
     public void testHandle() throws NacosException {
-        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(
-                ConfigCacheService.class);
+        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic =
+                Mockito.mockStatic(ConfigCacheService.class);
         final MockedStatic<FileUtils> fileUtilsMockedStatic = Mockito.mockStatic(FileUtils.class);
         final MockedStatic<DiskUtil> diskUtilMockedStatic = Mockito.mockStatic(DiskUtil.class);
-        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
-        
+        MockedStatic<PropertyUtil> propertyUtilMockedStatic =
+                Mockito.mockStatic(PropertyUtil.class);
+
         propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
-        
+
         final String groupKey = GroupKey2.getKey("dataId", "group", "");
-        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryReadLock(groupKey)).thenReturn(1);
-        diskUtilMockedStatic.when(() -> DiskUtil.targetFile(Mockito.any(), Mockito.any(), Mockito.any()))
+        configCacheServiceMockedStatic
+                .when(() -> ConfigCacheService.tryReadLock(groupKey))
+                .thenReturn(1);
+        diskUtilMockedStatic
+                .when(() -> DiskUtil.targetFile(Mockito.any(), Mockito.any(), Mockito.any()))
                 .thenReturn(file);
-        fileUtilsMockedStatic.when(() -> FileUtils.readFileToString(file, ENCODE)).thenReturn("content");
+        fileUtilsMockedStatic
+                .when(() -> FileUtils.readFileToString(file, ENCODE))
+                .thenReturn("content");
         when(file.exists()).thenReturn(true);
         CacheItem cacheItem = new CacheItem(groupKey);
         cacheItem.getConfigCache().setMd5Utf8("1");
         cacheItem.getConfigCache().setLastModifiedTs(1L);
-        
-        configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentCache(Mockito.any()))
+
+        configCacheServiceMockedStatic
+                .when(() -> ConfigCacheService.getContentCache(Mockito.any()))
                 .thenReturn(cacheItem);
-        
+
         ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
         configQueryRequest.setDataId("dataId");
         configQueryRequest.setGroup("group");
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
-        ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
+        ConfigQueryResponse response =
+                configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         Assert.assertEquals(response.getContent(), "content");
-        
+
         configCacheServiceMockedStatic.close();
         fileUtilsMockedStatic.close();
         diskUtilMockedStatic.close();

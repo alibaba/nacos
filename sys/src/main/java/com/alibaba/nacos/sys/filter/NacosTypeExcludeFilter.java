@@ -17,6 +17,10 @@
 package com.alibaba.nacos.sys.filter;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -24,31 +28,29 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.core.type.filter.TypeFilter;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-
 /**
  * Nacos server execute filter. To exclude some beans or features by config
  *
  * @author xiweng.yy
  */
 public class NacosTypeExcludeFilter implements TypeFilter {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosTypeExcludeFilter.class);
-    
+
     private final Map<String, NacosPackageExcludeFilter> packageExcludeFilters;
-    
+
     public NacosTypeExcludeFilter() {
         this.packageExcludeFilters = new HashMap<>(2);
-        for (NacosPackageExcludeFilter each : NacosServiceLoader.load(NacosPackageExcludeFilter.class)) {
+        for (NacosPackageExcludeFilter each :
+                NacosServiceLoader.load(NacosPackageExcludeFilter.class)) {
             packageExcludeFilters.put(each.getResponsiblePackagePrefix(), each);
-            LOGGER.info("Load Nacos package exclude filter success, package prefix {}, filter {}",
-                    each.getResponsiblePackagePrefix(), each.getClass().getCanonicalName());
+            LOGGER.info(
+                    "Load Nacos package exclude filter success, package prefix {}, filter {}",
+                    each.getResponsiblePackagePrefix(),
+                    each.getClass().getCanonicalName());
         }
     }
-    
+
     @Override
     public boolean match(MetadataReader metadataReader, MetadataReaderFactory metadataReaderFactory)
             throws IOException {
@@ -56,17 +58,23 @@ public class NacosTypeExcludeFilter implements TypeFilter {
         if (packageExcludeFilters.isEmpty()) {
             return false;
         }
-        boolean isSpringBootApplication = metadataReader.getAnnotationMetadata()
-                .hasAnnotation(SpringBootApplication.class.getCanonicalName());
+        boolean isSpringBootApplication =
+                metadataReader
+                        .getAnnotationMetadata()
+                        .hasAnnotation(SpringBootApplication.class.getCanonicalName());
         String className = metadataReader.getClassMetadata().getClassName();
         if (isSpringBootApplication) {
-            LOGGER.info("Skip @SpringBootApplication annotation for class {} to avoid duplicate scan", className);
+            LOGGER.info(
+                    "Skip @SpringBootApplication annotation for class {} to avoid duplicate scan",
+                    className);
             return true;
         }
-        for (Map.Entry<String, NacosPackageExcludeFilter> entry : packageExcludeFilters.entrySet()) {
+        for (Map.Entry<String, NacosPackageExcludeFilter> entry :
+                packageExcludeFilters.entrySet()) {
             // If match the package exclude filter, judged by filter.
             if (className.startsWith(entry.getKey())) {
-                Set<String> annotations = metadataReader.getAnnotationMetadata().getAnnotationTypes();
+                Set<String> annotations =
+                        metadataReader.getAnnotationMetadata().getAnnotationTypes();
                 return entry.getValue().isExcluded(className, annotations);
             }
         }

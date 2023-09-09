@@ -16,37 +16,32 @@
 
 package com.alibaba.nacos.auth.parser.http;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.eq;
+
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import org.junit.Before;
-import org.junit.Test;
+import java.lang.reflect.Method;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import javax.servlet.http.HttpServletRequest;
-
-import java.lang.reflect.Method;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
-
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigHttpResourceParserTest {
-    
-    @Mock
-    private HttpServletRequest request;
-    
+
+    @Mock private HttpServletRequest request;
+
     private ConfigHttpResourceParser resourceParser;
-    
+
     @Before
     public void setUp() throws Exception {
         resourceParser = new ConfigHttpResourceParser();
     }
-    
+
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     public void testParseWithFullContext() throws NoSuchMethodException {
@@ -60,7 +55,7 @@ public class ConfigHttpResourceParserTest {
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     public void testParseWithoutNamespace() throws NoSuchMethodException {
@@ -73,7 +68,7 @@ public class ConfigHttpResourceParserTest {
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     public void testParseWithoutGroup() throws NoSuchMethodException {
@@ -86,7 +81,7 @@ public class ConfigHttpResourceParserTest {
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     public void testParseWithoutDataId() throws NoSuchMethodException {
@@ -99,7 +94,7 @@ public class ConfigHttpResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-    
+
     private Secured getMethodSecure() throws NoSuchMethodException {
         StackTraceElement[] traces = new Exception().getStackTrace();
         StackTraceElement callerElement = traces[1];

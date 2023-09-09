@@ -26,9 +26,9 @@ import org.slf4j.LoggerFactory;
  * @author Long Yu
  */
 public class ConnectionCheckUtil {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConnectionCheckUtil.class);
-    
+
     /**
      * check HikariDataSource connection ,avoid [no datasource set] text.
      *
@@ -50,5 +50,4 @@ public class ConnectionCheckUtil {
             }
         }
     }
-    
 }

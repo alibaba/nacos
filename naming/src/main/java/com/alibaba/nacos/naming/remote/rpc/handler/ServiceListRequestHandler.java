@@ -26,13 +26,12 @@ import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import org.springframework.stereotype.Component;
 
 /**
  * Service list request handler.
@@ -40,25 +39,32 @@ import java.util.Objects;
  * @author xiweng.yy
  */
 @Component
-public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest, ServiceListResponse> {
-    
+public class ServiceListRequestHandler
+        extends RequestHandler<ServiceListRequest, ServiceListResponse> {
+
     @Override
     @Secured(action = ActionTypes.READ)
-    public ServiceListResponse handle(ServiceListRequest request, RequestMeta meta) throws NacosException {
-        Collection<Service> serviceSet = ServiceManager.getInstance().getSingletons(request.getNamespace());
-        ServiceListResponse result = ServiceListResponse.buildSuccessResponse(0, new LinkedList<>());
+    public ServiceListResponse handle(ServiceListRequest request, RequestMeta meta)
+            throws NacosException {
+        Collection<Service> serviceSet =
+                ServiceManager.getInstance().getSingletons(request.getNamespace());
+        ServiceListResponse result =
+                ServiceListResponse.buildSuccessResponse(0, new LinkedList<>());
         if (!serviceSet.isEmpty()) {
-            Collection<String> serviceNameSet = selectServiceWithGroupName(serviceSet, request.getGroupName());
+            Collection<String> serviceNameSet =
+                    selectServiceWithGroupName(serviceSet, request.getGroupName());
             // TODO select service by selector
-            List<String> serviceNameList = ServiceUtil
-                    .pageServiceName(request.getPageNo(), request.getPageSize(), serviceNameSet);
+            List<String> serviceNameList =
+                    ServiceUtil.pageServiceName(
+                            request.getPageNo(), request.getPageSize(), serviceNameSet);
             result.setCount(serviceNameSet.size());
             result.setServiceNames(serviceNameList);
         }
         return result;
     }
-    
-    private Collection<String> selectServiceWithGroupName(Collection<Service> serviceSet, String groupName) {
+
+    private Collection<String> selectServiceWithGroupName(
+            Collection<Service> serviceSet, String groupName) {
         Collection<String> result = new HashSet<>(serviceSet.size());
         for (Service each : serviceSet) {
             if (Objects.equals(groupName, each.getGroup())) {
@@ -67,5 +73,4 @@ public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest
         }
         return result;
     }
-    
 }

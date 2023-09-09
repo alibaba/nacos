@@ -28,22 +28,20 @@ import java.util.Properties;
  */
 public class VersionUtils {
 
-    private VersionUtils() {
-    }
-    
+    private VersionUtils() {}
+
     public static String version;
-    
+
     private static String clientVersion;
-    
-    /**
-     * current version.
-     */
+
+    /** current version. */
     public static final String VERSION_PLACEHOLDER = "${project.version}";
-    
+
     private static final String NACOS_VERSION_FILE = "nacos-version.txt";
-    
+
     static {
-        try (InputStream in = VersionUtils.class.getClassLoader().getResourceAsStream(NACOS_VERSION_FILE)) {
+        try (InputStream in =
+                VersionUtils.class.getClassLoader().getResourceAsStream(NACOS_VERSION_FILE)) {
             Properties props = new Properties();
             props.load(in);
             String val = props.getProperty("version");
@@ -55,9 +53,9 @@ public class VersionUtils {
             e.printStackTrace();
         }
     }
-    
+
     private static final Comparator<String> STRING_COMPARATOR = String::compareTo;
-    
+
     /**
      * compare two version who is latest.
      *
@@ -82,7 +80,7 @@ public class VersionUtils {
         }
         return Objects.compare(sA[2].split("-")[0], sB[2].split("-")[0], STRING_COMPARATOR);
     }
-    
+
     public static String getFullClientVersion() {
         return clientVersion;
     }

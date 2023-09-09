@@ -16,41 +16,36 @@
 
 package com.alibaba.nacos.naming.controllers;
 
-import com.alibaba.nacos.api.naming.CommonParams;
-import com.alibaba.nacos.naming.BaseTest;
-import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
-import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import javax.servlet.http.HttpServletRequest;
-
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.naming.core.ClusterOperatorV2Impl;
+import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
+import javax.servlet.http.HttpServletRequest;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
 @RunWith(MockitoJUnitRunner.class)
 public class ClusterControllerTest extends BaseTest {
-    
-    @Mock
-    private ClusterOperatorV2Impl clusterOperatorV2;
-    
-    @Mock
-    private HttpServletRequest request;
-    
+
+    @Mock private ClusterOperatorV2Impl clusterOperatorV2;
+
+    @Mock private HttpServletRequest request;
+
     private ClusterController clusterController;
-    
+
     @Before
     public void before() {
         super.before();
         clusterController = new ClusterController(clusterOperatorV2);
     }
-    
+
     @Test
     public void testUpdate() throws Exception {
         mockRequestParameter(CommonParams.NAMESPACE_ID, "test-namespace");
@@ -61,10 +56,13 @@ public class ClusterControllerTest extends BaseTest {
         mockRequestParameter("healthChecker", "{\"type\":\"HTTP\"}");
         assertEquals("ok", clusterController.update(request));
         verify(clusterOperatorV2)
-                .updateClusterMetadata(eq("test-namespace"), eq(TEST_SERVICE_NAME), eq(TEST_CLUSTER_NAME),
+                .updateClusterMetadata(
+                        eq("test-namespace"),
+                        eq(TEST_SERVICE_NAME),
+                        eq(TEST_CLUSTER_NAME),
                         any(ClusterMetadata.class));
     }
-    
+
     private void mockRequestParameter(String paramKey, String value) {
         when(request.getParameter(paramKey)).thenReturn(value);
     }

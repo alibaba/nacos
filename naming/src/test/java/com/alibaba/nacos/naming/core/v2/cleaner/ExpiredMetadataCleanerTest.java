@@ -16,57 +16,54 @@
 
 package com.alibaba.nacos.naming.core.v2.cleaner;
 
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.naming.core.v2.metadata.ExpiredMetadataInfo;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import java.util.Set;
 import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
-
-import java.util.Set;
-
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ExpiredMetadataCleanerTest extends TestCase {
 
     private ExpiredMetadataCleaner expiredMetadataCleaner;
 
-    @Mock
-    private NamingMetadataManager metadataManagerMock;
+    @Mock private NamingMetadataManager metadataManagerMock;
 
-    @Mock
-    private NamingMetadataOperateService metadataOperateServiceMock;
+    @Mock private NamingMetadataOperateService metadataOperateServiceMock;
 
     private Set<ExpiredMetadataInfo> set = new ConcurrentHashSet<>();
 
-    @Mock
-    private ExpiredMetadataInfo expiredMetadataInfoMock;
+    @Mock private ExpiredMetadataInfo expiredMetadataInfoMock;
 
     @Before
     public void setUp() throws Exception {
         super.setUp();
         EnvUtil.setEnvironment(new MockEnvironment());
-        expiredMetadataCleaner = new ExpiredMetadataCleaner(metadataManagerMock, metadataOperateServiceMock);
+        expiredMetadataCleaner =
+                new ExpiredMetadataCleaner(metadataManagerMock, metadataOperateServiceMock);
 
         set.add(expiredMetadataInfoMock);
 
         when(metadataManagerMock.getExpiredMetadataInfos()).thenReturn(set);
         when(expiredMetadataInfoMock.getCreateTime()).thenReturn(0L);
-        when(metadataManagerMock.containServiceMetadata(expiredMetadataInfoMock.getService())).thenReturn(true);
+        when(metadataManagerMock.containServiceMetadata(expiredMetadataInfoMock.getService()))
+                .thenReturn(true);
     }
 
     @Test
     public void testDoClean() {
         expiredMetadataCleaner.doClean();
         verify(metadataManagerMock).getExpiredMetadataInfos();
-        verify(metadataOperateServiceMock).deleteServiceMetadata(expiredMetadataInfoMock.getService());
+        verify(metadataOperateServiceMock)
+                .deleteServiceMetadata(expiredMetadataInfoMock.getService());
     }
 }

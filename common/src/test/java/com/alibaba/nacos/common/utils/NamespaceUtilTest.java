@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 /**
  * test NamespaceUtil.
  *
@@ -26,7 +23,7 @@ import org.junit.Test;
  * @date 2020/10/13 9:46
  */
 public class NamespaceUtilTest {
-    
+
     @Test
     public void testProcessTenantParameter() {
         String strPublic = "public";
@@ -43,5 +40,4 @@ public class NamespaceUtilTest {
         Assert.assertEquals(strdef123, NamespaceUtil.processNamespaceParameter(strdef123));
         Assert.assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbcHasSpace));
     }
-    
 }

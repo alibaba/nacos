@@ -22,6 +22,4 @@ package com.alibaba.nacos.api.remote.response;
  * @author liuzunfei
  * @version $Id: ConnectResetResponse.java, v 0.1 2020年09月01日 2:43 PM liuzunfei Exp $
  */
-public class ConnectResetResponse extends Response {
-    
-}
+public class ConnectResetResponse extends Response {}

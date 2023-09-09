@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.naming.utils;
 
-import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import org.junit.Test;
-
 import static org.junit.Assert.assertNotNull;
 
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+
 public class ServiceUtilTest {
-    
+
     @Test
     public void testSelectInstances() {
         ServiceInfo serviceInfo = new ServiceInfo();

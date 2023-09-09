@@ -22,7 +22,6 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.HealthCheckInstancePublishInfo;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-
 import java.util.Optional;
 
 /**
@@ -31,21 +30,29 @@ import java.util.Optional;
  * @author xiweng.yy
  */
 public class InstanceEnableBeatCheckInterceptor extends AbstractBeatCheckInterceptor {
-    
+
     @Override
     public boolean intercept(InstanceBeatCheckTask object) {
-        NamingMetadataManager metadataManager = ApplicationUtils.getBean(NamingMetadataManager.class);
+        NamingMetadataManager metadataManager =
+                ApplicationUtils.getBean(NamingMetadataManager.class);
         HealthCheckInstancePublishInfo instance = object.getInstancePublishInfo();
-        Optional<InstanceMetadata> metadata = metadataManager.getInstanceMetadata(object.getService(), instance.getMetadataId());
-        if (metadata.isPresent() && metadata.get().getExtendData().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
-            return ConvertUtils.toBoolean(metadata.get().getExtendData().get(UtilsAndCommons.ENABLE_CLIENT_BEAT).toString());
+        Optional<InstanceMetadata> metadata =
+                metadataManager.getInstanceMetadata(object.getService(), instance.getMetadataId());
+        if (metadata.isPresent()
+                && metadata.get().getExtendData().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
+            return ConvertUtils.toBoolean(
+                    metadata.get()
+                            .getExtendData()
+                            .get(UtilsAndCommons.ENABLE_CLIENT_BEAT)
+                            .toString());
         }
         if (instance.getExtendDatum().containsKey(UtilsAndCommons.ENABLE_CLIENT_BEAT)) {
-            return ConvertUtils.toBoolean(instance.getExtendDatum().get(UtilsAndCommons.ENABLE_CLIENT_BEAT).toString());
+            return ConvertUtils.toBoolean(
+                    instance.getExtendDatum().get(UtilsAndCommons.ENABLE_CLIENT_BEAT).toString());
         }
         return false;
     }
-    
+
     @Override
     public int order() {
         return Integer.MIN_VALUE + 1;

@@ -24,12 +24,11 @@ import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
-import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.HandlerInterceptor;
-
+import java.lang.reflect.Method;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.lang.reflect.Method;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerInterceptor;
 
 /**
  * nacos http control interceptor.
@@ -39,15 +38,18 @@ import java.lang.reflect.Method;
 public class NacosHttpTpsControlInterceptor implements HandlerInterceptor {
 
     @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+    public boolean preHandle(
+            HttpServletRequest request, HttpServletResponse response, Object handler) {
         try {
             if (handler instanceof HandlerMethod) {
                 Method method = ((HandlerMethod) handler).getMethod();
-                if (method.isAnnotationPresent(TpsControl.class) && TpsControlConfig.isTpsControlEnabled()) {
-                    
+                if (method.isAnnotationPresent(TpsControl.class)
+                        && TpsControlConfig.isTpsControlEnabled()) {
+
                     TpsControl tpsControl = method.getAnnotation(TpsControl.class);
                     String pointName = tpsControl.pointName();
-                    HttpTpsCheckRequestParser parser = HttpTpsCheckRequestParserRegistry.getParser(pointName);
+                    HttpTpsCheckRequestParser parser =
+                            HttpTpsCheckRequestParserRegistry.getParser(pointName);
                     TpsCheckRequest httpTpsCheckRequest = null;
                     if (parser != null) {
                         httpTpsCheckRequest = parser.parse(request);
@@ -55,27 +57,29 @@ public class NacosHttpTpsControlInterceptor implements HandlerInterceptor {
                     if (httpTpsCheckRequest == null) {
                         httpTpsCheckRequest = new TpsCheckRequest();
                     }
-                    
+
                     httpTpsCheckRequest.setPointName(pointName);
-                    TpsCheckResponse checkResponse = ControlManagerCenter.getInstance().getTpsControlManager()
-                            .check(httpTpsCheckRequest);
+                    TpsCheckResponse checkResponse =
+                            ControlManagerCenter.getInstance()
+                                    .getTpsControlManager()
+                                    .check(httpTpsCheckRequest);
                     if (!checkResponse.isSuccess()) {
                         generate503Response(request, response, checkResponse.getMessage());
                         return false;
                     }
-                    
                 }
             }
-            
+
         } catch (Throwable throwable) {
             Loggers.TPS.error("Error to check tps control", throwable);
         }
-        
+
         return true;
     }
-    
-    void generate503Response(HttpServletRequest request, HttpServletResponse response, String message) {
-        
+
+    void generate503Response(
+            HttpServletRequest request, HttpServletResponse response, String message) {
+
         try {
             // Disable cache.
             response.setHeader("Pragma", "no-cache");

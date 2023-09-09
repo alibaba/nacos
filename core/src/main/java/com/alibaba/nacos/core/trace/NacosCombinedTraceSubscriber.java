@@ -23,7 +23,6 @@ import com.alibaba.nacos.common.trace.event.TraceEvent;
 import com.alibaba.nacos.common.trace.publisher.TraceEventPublisherFactory;
 import com.alibaba.nacos.plugin.trace.NacosTracePluginManager;
 import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
-
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,37 +36,41 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author xiweng.yy
  */
 public class NacosCombinedTraceSubscriber extends SmartSubscriber {
-    
+
     private final Map<Class<? extends TraceEvent>, Set<NacosTraceSubscriber>> interestedEvents;
-    
+
     public NacosCombinedTraceSubscriber(Class<? extends TraceEvent> combinedEvent) {
         this.interestedEvents = new ConcurrentHashMap<>();
         TraceEventPublisherFactory.getInstance().addPublisherEvent(combinedEvent);
-        for (NacosTraceSubscriber each : NacosTracePluginManager.getInstance().getAllTraceSubscribers()) {
+        for (NacosTraceSubscriber each :
+                NacosTracePluginManager.getInstance().getAllTraceSubscribers()) {
             filterInterestedEvents(each, combinedEvent);
         }
         NotifyCenter.registerSubscriber(this, TraceEventPublisherFactory.getInstance());
     }
-    
-    private void filterInterestedEvents(NacosTraceSubscriber plugin, Class<? extends TraceEvent> combinedEvent) {
+
+    private void filterInterestedEvents(
+            NacosTraceSubscriber plugin, Class<? extends TraceEvent> combinedEvent) {
         for (Class<? extends TraceEvent> each : plugin.subscribeTypes()) {
             if (combinedEvent.isAssignableFrom(each)) {
-                interestedEvents.compute(each, (eventClass, nacosTraceSubscribers) -> {
-                    if (null == nacosTraceSubscribers) {
-                        nacosTraceSubscribers = new HashSet<>();
-                    }
-                    nacosTraceSubscribers.add(plugin);
-                    return nacosTraceSubscribers;
-                });
+                interestedEvents.compute(
+                        each,
+                        (eventClass, nacosTraceSubscribers) -> {
+                            if (null == nacosTraceSubscribers) {
+                                nacosTraceSubscribers = new HashSet<>();
+                            }
+                            nacosTraceSubscribers.add(plugin);
+                            return nacosTraceSubscribers;
+                        });
             }
         }
     }
-    
+
     @Override
     public List<Class<? extends Event>> subscribeTypes() {
         return new LinkedList<>(interestedEvents.keySet());
     }
-    
+
     @Override
     public void onEvent(Event event) {
         Set<NacosTraceSubscriber> subscribers = interestedEvents.get(event.getClass());
@@ -83,14 +86,14 @@ public class NacosCombinedTraceSubscriber extends SmartSubscriber {
             }
         }
     }
-    
+
     private void onEvent0(NacosTraceSubscriber subscriber, TraceEvent event) {
         try {
             subscriber.onEvent(event);
         } catch (Exception ignored) {
         }
     }
-    
+
     public void shutdown() {
         NotifyCenter.deregisterSubscriber(this);
     }

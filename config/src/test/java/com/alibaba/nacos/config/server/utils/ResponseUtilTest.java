@@ -16,16 +16,13 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import java.io.UnsupportedEncodingException;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import java.io.UnsupportedEncodingException;
-
 public class ResponseUtilTest {
-    
+
     String lineSeparator = System.lineSeparator();
-    
+
     @Test
     public void testWriteErrMsg() {
         MockHttpServletResponse response = new MockHttpServletResponse();

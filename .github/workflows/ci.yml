@@ -38,7 +38,7 @@ jobs:
       - name: "Print maven version"
         run: mvn -version
       - name: "Check with Maven"
-        run: mvn -B clean package apache-rat:check findbugs:findbugs -DskipTests -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+        run: mvn -B clean package spotless:check apache-rat:check findbugs:findbugs -DskipTests -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Build with Maven"
         run: mvn -Prelease-nacos -DskipTests clean install -U -e -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
       - name: "Test With Maven"

@@ -19,7 +19,6 @@ package com.alibaba.nacos.common.http.client.response;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.IoUtils;
-
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,19 +32,19 @@ import java.util.Map;
  * @author mai.jh
  */
 public class JdkHttpClientResponse implements HttpClientResponse {
-    
+
     private final HttpURLConnection conn;
-    
+
     private InputStream responseStream;
-    
+
     private Header responseHeader;
-    
+
     private static final String CONTENT_ENCODING = "gzip";
-    
+
     public JdkHttpClientResponse(HttpURLConnection conn) {
         this.conn = conn;
     }
-    
+
     @Override
     public Header getHeaders() {
         if (this.responseHeader == null) {
@@ -56,7 +55,7 @@ public class JdkHttpClientResponse implements HttpClientResponse {
         }
         return this.responseHeader;
     }
-    
+
     @Override
     public InputStream getBody() throws IOException {
         Header headers = getHeaders();
@@ -73,17 +72,17 @@ public class JdkHttpClientResponse implements HttpClientResponse {
         }
         return this.responseStream;
     }
-    
+
     @Override
     public int getStatusCode() throws IOException {
         return this.conn.getResponseCode();
     }
-    
+
     @Override
     public String getStatusText() throws IOException {
         return this.conn.getResponseMessage();
     }
-    
+
     @Override
     public void close() {
         IoUtils.closeQuietly(this.responseStream);

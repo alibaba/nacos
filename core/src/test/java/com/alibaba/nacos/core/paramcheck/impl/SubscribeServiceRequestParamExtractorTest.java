@@ -16,32 +16,30 @@
 
 package com.alibaba.nacos.core.paramcheck.impl;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 import com.alibaba.nacos.core.paramcheck.RpcParamExtractorManager;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
 
 public class SubscribeServiceRequestParamExtractorTest {
-    
+
     private static SubscribeServiceRequest req;
-    
+
     @BeforeClass
     public static void initSubscribeServiceRequest() {
         req = new SubscribeServiceRequest();
     }
-    
-    /**
-     * Test extract param and check.
-     */
+
+    /** Test extract param and check. */
     @Test
     public void testExtractParamAndCheck() throws Exception {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
-        AbstractRpcParamExtractor extractor = paramExtractorManager.getExtractor(req.getClass().getSimpleName());
-        assertEquals(extractor.getClass().getSimpleName(), SubscribeServiceRequestParamExtractor.class.getSimpleName());
+        AbstractRpcParamExtractor extractor =
+                paramExtractorManager.getExtractor(req.getClass().getSimpleName());
+        assertEquals(
+                extractor.getClass().getSimpleName(),
+                SubscribeServiceRequestParamExtractor.class.getSimpleName());
         extractor.extractParam(req);
     }
-    
 }

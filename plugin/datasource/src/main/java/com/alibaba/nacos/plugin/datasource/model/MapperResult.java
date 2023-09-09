@@ -22,47 +22,46 @@ import java.util.List;
  * The object returned by the execution of the Mapper method.
  *
  * @author hyx
- **/
-
+ */
 public class MapperResult {
-    
-    public MapperResult() { }
-    
+
+    public MapperResult() {}
+
     public MapperResult(String sql, List<Object> paramList) {
         this.sql = sql;
         this.paramList = paramList;
     }
-    
+
     private String sql;
-    
+
     private List<Object> paramList;
-    
+
     public String getSql() {
         return sql;
     }
-    
+
     public void setSql(String sql) {
         this.sql = sql;
     }
-    
+
     public List<Object> getParamList() {
         return paramList;
     }
-    
+
     public void setParamList(List<Object> paramList) {
         this.paramList = paramList;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         return super.equals(o);
     }
-    
+
     @Override
     public int hashCode() {
         return super.hashCode();
     }
-    
+
     @Override
     public String toString() {
         return "MapperResult{" + "sql='" + sql + '\'' + ", paramList=" + paramList + '}';

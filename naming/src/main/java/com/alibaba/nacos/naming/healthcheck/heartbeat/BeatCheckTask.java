@@ -22,12 +22,11 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
  * @author xiweng.yy
  */
 public interface BeatCheckTask extends Runnable {
-    
+
     /**
      * Task key.
      *
      * @return task key
      */
     String taskKey();
-    
 }

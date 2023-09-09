@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.core.remote.tls.RpcServerSslContextRefresherHolder;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 
@@ -32,69 +31,73 @@ import javax.annotation.PreDestroy;
  * @version $Id: BaseRpcServer.java, v 0.1 2020年07月13日 3:41 PM liuzunfei Exp $
  */
 public abstract class BaseRpcServer {
-    
+
     static {
         PayloadRegistry.init();
     }
-    
-    /**
-     * Start sever.
-     */
+
+    /** Start sever. */
     @PostConstruct
     public void start() throws Exception {
         String serverName = getClass().getSimpleName();
-        Loggers.REMOTE.info("Nacos {} Rpc server starting at port {}", serverName, getServicePort());
-        
+        Loggers.REMOTE.info(
+                "Nacos {} Rpc server starting at port {}", serverName, getServicePort());
+
         startServer();
-        
+
         if (RpcServerSslContextRefresherHolder.getInstance() != null) {
             RpcServerSslContextRefresherHolder.getInstance().refresh(this);
         }
-        
+
         Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", serverName, getServicePort());
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            Loggers.REMOTE.info("Nacos {} Rpc server stopping", serverName);
-            try {
-                BaseRpcServer.this.stopServer();
-                Loggers.REMOTE.info("Nacos {} Rpc server stopped successfully...", serverName);
-            } catch (Exception e) {
-                Loggers.REMOTE.error("Nacos {} Rpc server stopped fail...", serverName, e);
-            }
-        }));
-        
+        Runtime.getRuntime()
+                .addShutdownHook(
+                        new Thread(
+                                () -> {
+                                    Loggers.REMOTE.info("Nacos {} Rpc server stopping", serverName);
+                                    try {
+                                        BaseRpcServer.this.stopServer();
+                                        Loggers.REMOTE.info(
+                                                "Nacos {} Rpc server stopped successfully...",
+                                                serverName);
+                                    } catch (Exception e) {
+                                        Loggers.REMOTE.error(
+                                                "Nacos {} Rpc server stopped fail...",
+                                                serverName,
+                                                e);
+                                    }
+                                }));
     }
-    
+
     /**
      * get connection type.
      *
      * @return connection type.
      */
     public abstract ConnectionType getConnectionType();
-    
+
     /**
      * Reload protocol context if necessary.
      *
-     * <p>
-     *     protocol like:
-     *     <li>Tls</li>
-     * </p>
+     * <p>protocol like:
+     * <li>Tls
      */
     public abstract void reloadProtocolContext();
-    
+
     /**
      * Start sever.
      *
      * @throws Exception exception throw if start server fail.
      */
     public abstract void startServer() throws Exception;
-    
+
     /**
      * the increase offset of nacos server port for rpc server port.
      *
      * @return delta port offset of main port.
      */
     public abstract int rpcPortOffset();
-    
+
     /**
      * get service port.
      *
@@ -103,7 +106,7 @@ public abstract class BaseRpcServer {
     public int getServicePort() {
         return EnvUtil.getPort() + rpcPortOffset();
     }
-    
+
     /**
      * Stop Server.
      *
@@ -112,11 +115,8 @@ public abstract class BaseRpcServer {
     public final void stopServer() throws Exception {
         shutdownServer();
     }
-    
-    /**
-     * the increase offset of nacos server port for rpc server port.
-     */
+
+    /** the increase offset of nacos server port for rpc server port. */
     @PreDestroy
     public abstract void shutdownServer();
-    
 }

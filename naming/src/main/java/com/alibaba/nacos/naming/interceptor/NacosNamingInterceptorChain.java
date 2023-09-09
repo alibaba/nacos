@@ -22,14 +22,14 @@ package com.alibaba.nacos.naming.interceptor;
  * @author xiweng.yy
  */
 public interface NacosNamingInterceptorChain<T extends Interceptable> {
-    
+
     /**
      * Add interceptor.
      *
      * @param interceptor interceptor
      */
     void addInterceptor(NacosNamingInterceptor<T> interceptor);
-    
+
     /**
      * Do intercept by added interceptors.
      *

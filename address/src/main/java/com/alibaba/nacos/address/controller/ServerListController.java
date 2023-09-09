@@ -27,14 +27,13 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
+import java.util.Optional;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Optional;
 
 /**
  * Server list controller.
@@ -44,20 +43,22 @@ import java.util.Optional;
  */
 @RestController
 public class ServerListController {
-    
+
     private final AddressServerGeneratorManager addressServerBuilderManager;
-    
+
     private final NamingMetadataManager metadataManager;
-    
+
     private final ServiceStorage serviceStorage;
-    
-    public ServerListController(AddressServerGeneratorManager addressServerBuilderManager,
-            NamingMetadataManager metadataManager, ServiceStorage serviceStorage) {
+
+    public ServerListController(
+            AddressServerGeneratorManager addressServerBuilderManager,
+            NamingMetadataManager metadataManager,
+            ServiceStorage serviceStorage) {
         this.addressServerBuilderManager = addressServerBuilderManager;
         this.metadataManager = metadataManager;
         this.serviceStorage = serviceStorage;
     }
-    
+
     /**
      * Get cluster.
      *
@@ -66,19 +67,27 @@ public class ServerListController {
      * @return result of get
      */
     @RequestMapping(value = "/{product}/{cluster}", method = RequestMethod.GET)
-    public ResponseEntity<String> getCluster(@PathVariable String product, @PathVariable String cluster) {
-        
+    public ResponseEntity<String> getCluster(
+            @PathVariable String product, @PathVariable String cluster) {
+
         String productName = addressServerBuilderManager.generateProductName(product);
         String serviceName = addressServerBuilderManager.generateNacosServiceName(productName);
         String serviceWithoutGroup = NamingUtils.getServiceName(serviceName);
         String groupName = NamingUtils.getGroupName(serviceName);
-        Optional<Service> service = ServiceManager.getInstance()
-                .getSingletonIfExist(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceWithoutGroup);
+        Optional<Service> service =
+                ServiceManager.getInstance()
+                        .getSingletonIfExist(
+                                Constants.DEFAULT_NAMESPACE_ID, groupName, serviceWithoutGroup);
         if (!service.isPresent()) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("product=" + product + " not found.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("product=" + product + " not found.");
         }
-        ClusterMetadata metadata = metadataManager.getServiceMetadata(service.get()).orElse(new ServiceMetadata())
-                .getClusters().get(cluster);
+        ClusterMetadata metadata =
+                metadataManager
+                        .getServiceMetadata(service.get())
+                        .orElse(new ServiceMetadata())
+                        .getClusters()
+                        .get(cluster);
         if (null == metadata) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body("product=" + product + ",cluster=" + cluster + " not found.");

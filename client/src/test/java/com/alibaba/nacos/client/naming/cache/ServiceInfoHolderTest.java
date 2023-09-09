@@ -24,9 +24,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,19 +31,21 @@ import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class ServiceInfoHolderTest {
-    
+
     @Test
     public void testGetServiceInfoMap() throws NoSuchFieldException, IllegalAccessException {
         Properties prop = new Properties();
-    
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(prop);
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
         Assert.assertEquals(0, holder.getServiceInfoMap().size());
-        Field fieldNotifierEventScope = ServiceInfoHolder.class.getDeclaredField("notifierEventScope");
+        Field fieldNotifierEventScope =
+                ServiceInfoHolder.class.getDeclaredField("notifierEventScope");
         fieldNotifierEventScope.setAccessible(true);
         Assert.assertEquals("scope-001", fieldNotifierEventScope.get(holder));
     }
-    
+
     @Test
     public void testProcessServiceInfo() {
         ServiceInfo info = new ServiceInfo("a@@b@@c");
@@ -56,14 +55,15 @@ public class ServiceInfoHolderTest {
         hosts.add(instance1);
         hosts.add(instance2);
         info.setHosts(hosts);
-        
+
         Properties prop = new Properties();
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(prop);
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
-        
+
         ServiceInfo actual1 = holder.processServiceInfo(info);
         Assert.assertEquals(info, actual1);
-        
+
         Instance newInstance1 = createInstance("1.1.1.1", 1);
         newInstance1.setWeight(2.0);
         Instance instance3 = createInstance("1.1.1.3", 3);
@@ -72,31 +72,32 @@ public class ServiceInfoHolderTest {
         hosts2.add(instance3);
         ServiceInfo info2 = new ServiceInfo("a@@b@@c");
         info2.setHosts(hosts2);
-        
+
         ServiceInfo actual2 = holder.processServiceInfo(info2);
         Assert.assertEquals(info2, actual2);
     }
-    
+
     private Instance createInstance(String ip, int port) {
         Instance instance = new Instance();
         instance.setIp(ip);
         instance.setPort(port);
         return instance;
     }
-    
+
     @Test
     public void testProcessServiceInfo2() {
         Properties prop = new Properties();
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(prop);
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
         String json = "{\"groupName\":\"a\",\"name\":\"b\",\"clusters\":\"c\"}";
-        
+
         ServiceInfo actual = holder.processServiceInfo(json);
         ServiceInfo expect = new ServiceInfo("a@@b@@c");
         expect.setJsonFromServer(json);
         Assert.assertEquals(expect.getKey(), actual.getKey());
     }
-    
+
     @Test
     public void testProcessServiceInfoWithPushEmpty() {
         ServiceInfo oldInfo = new ServiceInfo("a@@b@@c");
@@ -106,21 +107,22 @@ public class ServiceInfoHolderTest {
         hosts.add(instance1);
         hosts.add(instance2);
         oldInfo.setHosts(hosts);
-        
+
         Properties prop = new Properties();
         prop.setProperty(PropertyKeyConst.NAMING_PUSH_EMPTY_PROTECTION, "true");
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(prop);
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
         holder.processServiceInfo(oldInfo);
-        
+
         ServiceInfo newInfo = new ServiceInfo("a@@b@@c");
-        
+
         final ServiceInfo actual = holder.processServiceInfo(newInfo);
-        
+
         Assert.assertEquals(oldInfo.getKey(), actual.getKey());
         Assert.assertEquals(2, actual.getHosts().size());
     }
-    
+
     @Test
     public void testGetServiceInfo() {
         ServiceInfo info = new ServiceInfo("a@@b@@c");
@@ -128,11 +130,12 @@ public class ServiceInfoHolderTest {
         List<Instance> hosts = new ArrayList<>();
         hosts.add(instance1);
         info.setHosts(hosts);
-        
+
         Properties prop = new Properties();
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(prop);
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
-        
+
         ServiceInfo expect = holder.processServiceInfo(info);
         String serviceName = "b";
         String groupName = "a";
@@ -142,11 +145,12 @@ public class ServiceInfoHolderTest {
         Assert.assertEquals(expect.getHosts().size(), actual.getHosts().size());
         Assert.assertEquals(expect.getHosts().get(0), actual.getHosts().get(0));
     }
-    
+
     @Test
     public void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties prop = new Properties();
-        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        final NacosClientProperties nacosClientProperties =
+                NacosClientProperties.PROTOTYPE.derive(prop);
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
         Field field = ServiceInfoHolder.class.getDeclaredField("failoverReactor");
         field.setAccessible(true);

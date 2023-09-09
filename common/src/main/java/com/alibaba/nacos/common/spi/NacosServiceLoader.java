@@ -29,9 +29,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author xiweng.yy
  */
 public class NacosServiceLoader {
-    
+
     private static final Map<Class<?>, Collection<Class<?>>> SERVICES = new ConcurrentHashMap<>();
-    
+
     /**
      * Load service.
      *
@@ -52,14 +52,14 @@ public class NacosServiceLoader {
         }
         return result;
     }
-    
+
     private static <T> void cacheServiceClass(final Class<T> service, final T instance) {
         if (!SERVICES.containsKey(service)) {
             SERVICES.put(service, new LinkedHashSet<>());
         }
         SERVICES.get(service).add(instance.getClass());
     }
-    
+
     /**
      * New service instances.
      *
@@ -68,9 +68,11 @@ public class NacosServiceLoader {
      * @return service instances
      */
     public static <T> Collection<T> newServiceInstances(final Class<T> service) {
-        return SERVICES.containsKey(service) ? newServiceInstancesFromCache(service) : Collections.<T>emptyList();
+        return SERVICES.containsKey(service)
+                ? newServiceInstancesFromCache(service)
+                : Collections.<T>emptyList();
     }
-    
+
     @SuppressWarnings("unchecked")
     private static <T> Collection<T> newServiceInstancesFromCache(Class<T> service) {
         Collection<T> result = new LinkedHashSet<>();
@@ -79,7 +81,7 @@ public class NacosServiceLoader {
         }
         return result;
     }
-    
+
     private static Object newServiceInstance(final Class<?> clazz) {
         try {
             return clazz.newInstance();

@@ -17,24 +17,20 @@
 package com.alibaba.nacos.core.distributed.id;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Test;
-import org.springframework.core.env.StandardEnvironment;
-
 import java.util.stream.IntStream;
+import org.springframework.core.env.StandardEnvironment;
 
 public class SnowFlowerIdGeneratorTest {
 
     @Test
     public void nextId() {
-        
+
         EnvUtil.setEnvironment(new StandardEnvironment());
         SnowFlowerIdGenerator generator = new SnowFlowerIdGenerator();
         generator.initialize(1);
 
-        long count = IntStream.range(0, 10).mapToObj(i -> generator.nextId())
-                .distinct().count();
-                
+        long count = IntStream.range(0, 10).mapToObj(i -> generator.nextId()).distinct().count();
+
         Assert.assertEquals(10, count);
     }
 }

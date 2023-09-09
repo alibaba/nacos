@@ -23,9 +23,8 @@ package com.alibaba.nacos.cmdb.utils;
  * @since 0.7.0
  */
 public class UtilsAndCommons {
-    
+
     private static final String NACOS_SERVER_VERSION = "/v1";
-    
+
     public static final String NACOS_CMDB_CONTEXT = NACOS_SERVER_VERSION + "/cmdb";
-    
 }

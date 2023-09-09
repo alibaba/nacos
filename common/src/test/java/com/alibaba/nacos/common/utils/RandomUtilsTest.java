@@ -16,21 +16,19 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 /**
  * test RandomUtils.
+ *
  * @author zzq
  */
 public class RandomUtilsTest {
-    
+
     @Test
     public void nextLong() {
         final long result = RandomUtils.nextLong(1L, 199L);
         Assert.assertTrue(result >= 1L && result < 199L);
     }
-    
+
     @Test
     public void nextInt() {
         final int result = RandomUtils.nextInt(1, 199);

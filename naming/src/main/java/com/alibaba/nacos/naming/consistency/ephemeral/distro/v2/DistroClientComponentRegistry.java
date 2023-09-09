@@ -24,9 +24,8 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.task.DistroTaskEngineHolder;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
-import org.springframework.stereotype.Component;
-
 import javax.annotation.PostConstruct;
+import org.springframework.stereotype.Component;
 
 /**
  * Distro component registry for v2.
@@ -35,22 +34,26 @@ import javax.annotation.PostConstruct;
  */
 @Component
 public class DistroClientComponentRegistry {
-    
+
     private final ServerMemberManager serverMemberManager;
-    
+
     private final DistroProtocol distroProtocol;
-    
+
     private final DistroComponentHolder componentHolder;
-    
+
     private final DistroTaskEngineHolder taskEngineHolder;
-    
+
     private final ClientManager clientManager;
-    
+
     private final ClusterRpcClientProxy clusterRpcClientProxy;
-    
-    public DistroClientComponentRegistry(ServerMemberManager serverMemberManager, DistroProtocol distroProtocol,
-            DistroComponentHolder componentHolder, DistroTaskEngineHolder taskEngineHolder,
-            ClientManagerDelegate clientManager, ClusterRpcClientProxy clusterRpcClientProxy) {
+
+    public DistroClientComponentRegistry(
+            ServerMemberManager serverMemberManager,
+            DistroProtocol distroProtocol,
+            DistroComponentHolder componentHolder,
+            DistroTaskEngineHolder taskEngineHolder,
+            ClientManagerDelegate clientManager,
+            ClusterRpcClientProxy clusterRpcClientProxy) {
         this.serverMemberManager = serverMemberManager;
         this.distroProtocol = distroProtocol;
         this.componentHolder = componentHolder;
@@ -58,20 +61,23 @@ public class DistroClientComponentRegistry {
         this.clientManager = clientManager;
         this.clusterRpcClientProxy = clusterRpcClientProxy;
     }
-    
+
     /**
-     * Register necessary component to distro protocol for v2 {@link com.alibaba.nacos.naming.core.v2.client.Client}
-     * implement.
+     * Register necessary component to distro protocol for v2 {@link
+     * com.alibaba.nacos.naming.core.v2.client.Client} implement.
      */
     @PostConstruct
     public void doRegister() {
-        DistroClientDataProcessor dataProcessor = new DistroClientDataProcessor(clientManager, distroProtocol);
-        DistroTransportAgent transportAgent = new DistroClientTransportAgent(clusterRpcClientProxy,
-                serverMemberManager);
-        DistroClientTaskFailedHandler taskFailedHandler = new DistroClientTaskFailedHandler(taskEngineHolder);
+        DistroClientDataProcessor dataProcessor =
+                new DistroClientDataProcessor(clientManager, distroProtocol);
+        DistroTransportAgent transportAgent =
+                new DistroClientTransportAgent(clusterRpcClientProxy, serverMemberManager);
+        DistroClientTaskFailedHandler taskFailedHandler =
+                new DistroClientTaskFailedHandler(taskEngineHolder);
         componentHolder.registerDataStorage(DistroClientDataProcessor.TYPE, dataProcessor);
         componentHolder.registerDataProcessor(dataProcessor);
         componentHolder.registerTransportAgent(DistroClientDataProcessor.TYPE, transportAgent);
-        componentHolder.registerFailedTaskHandler(DistroClientDataProcessor.TYPE, taskFailedHandler);
+        componentHolder.registerFailedTaskHandler(
+                DistroClientDataProcessor.TYPE, taskFailedHandler);
     }
 }

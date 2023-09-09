@@ -24,33 +24,32 @@ import java.io.Serializable;
  * @author xiweng.yy
  */
 public class DistroClientVerifyInfo implements Serializable {
-    
+
     private static final long serialVersionUID = 2223964944788737629L;
-    
+
     private String clientId;
-    
+
     private long revision;
-    
-    public DistroClientVerifyInfo() {
-    }
-    
+
+    public DistroClientVerifyInfo() {}
+
     public DistroClientVerifyInfo(String clientId, long revision) {
         this.clientId = clientId;
         this.revision = revision;
     }
-    
+
     public String getClientId() {
         return clientId;
     }
-    
+
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
-    
+
     public long getRevision() {
         return revision;
     }
-    
+
     public void setRevision(long revision) {
         this.revision = revision;
     }

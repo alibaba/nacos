@@ -16,13 +16,11 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class TcpTest {
-    
+
     @Test
     public void testClone() throws CloneNotSupportedException {
         Tcp original = new Tcp();

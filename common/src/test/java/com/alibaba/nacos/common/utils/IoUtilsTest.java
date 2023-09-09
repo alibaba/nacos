@@ -16,14 +16,11 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.apache.commons.io.Charsets;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import org.apache.commons.io.Charsets;
 
 /**
  * Unit test of IoUtils.
@@ -31,11 +28,14 @@ import java.io.InputStreamReader;
  * @author karsonto
  */
 public class IoUtilsTest {
-    
+
     @Test()
     public void testCloseQuietly() throws IOException {
-        BufferedReader br = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream("111".getBytes(Charsets.toCharset("UTF-8")))));
+        BufferedReader br =
+                new BufferedReader(
+                        new InputStreamReader(
+                                new ByteArrayInputStream(
+                                        "111".getBytes(Charsets.toCharset("UTF-8")))));
         Assert.assertEquals("111", br.readLine());
         IoUtils.closeQuietly(br);
         try {
@@ -46,14 +46,20 @@ public class IoUtilsTest {
         }
         Assert.fail();
     }
-    
+
     @Test()
     public void testCloseQuietly2() throws IOException {
-        BufferedReader br = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream("123".getBytes(Charsets.toCharset("UTF-8")))));
+        BufferedReader br =
+                new BufferedReader(
+                        new InputStreamReader(
+                                new ByteArrayInputStream(
+                                        "123".getBytes(Charsets.toCharset("UTF-8")))));
         Assert.assertEquals("123", br.readLine());
-        BufferedReader br2 = new BufferedReader(
-                new InputStreamReader(new ByteArrayInputStream("456".getBytes(Charsets.toCharset("UTF-8")))));
+        BufferedReader br2 =
+                new BufferedReader(
+                        new InputStreamReader(
+                                new ByteArrayInputStream(
+                                        "456".getBytes(Charsets.toCharset("UTF-8")))));
         Assert.assertEquals("456", br2.readLine());
         IoUtils.closeQuietly(br, br2);
         try {
@@ -69,5 +75,4 @@ public class IoUtilsTest {
         }
         Assert.fail();
     }
-    
 }

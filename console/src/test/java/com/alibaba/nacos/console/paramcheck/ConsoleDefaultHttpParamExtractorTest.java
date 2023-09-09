@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.console.paramcheck;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
-import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * The type Console default http param extractor test.
@@ -30,14 +29,17 @@ import static org.junit.Assert.assertEquals;
  * @author zhuoguang
  */
 public class ConsoleDefaultHttpParamExtractorTest {
-    
+
     @Test
     public void extractParamAndCheck() {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setMethod(HttpMethod.POST);
         request.setRequestURI("/nacos/v2/console/namespace");
         HttpParamExtractorManager manager = HttpParamExtractorManager.getInstance();
-        AbstractHttpParamExtractor extractor = manager.getExtractor(request.getRequestURI(), request.getMethod(), "console");
-        assertEquals(ConsoleDefaultHttpParamExtractor.class.getSimpleName(), extractor.getClass().getSimpleName());
+        AbstractHttpParamExtractor extractor =
+                manager.getExtractor(request.getRequestURI(), request.getMethod(), "console");
+        assertEquals(
+                ConsoleDefaultHttpParamExtractor.class.getSimpleName(),
+                extractor.getClass().getSimpleName());
     }
 }

@@ -17,20 +17,19 @@
 package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.plugin.auth.api.IdentityContext;
-import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.auth.context.HttpIdentityContextBuilder;
 import com.alibaba.nacos.auth.parser.http.AbstractHttpResourceParser;
 import com.alibaba.nacos.auth.parser.http.ConfigHttpResourceParser;
 import com.alibaba.nacos.auth.parser.http.NamingHttpResourceParser;
 import com.alibaba.nacos.auth.util.Loggers;
 import com.alibaba.nacos.common.utils.StringUtils;
-
-import javax.servlet.http.HttpServletRequest;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
+import com.alibaba.nacos.plugin.auth.api.Resource;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import java.util.HashMap;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Auth Service for Http protocol.
@@ -38,23 +37,23 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpServletRequest> {
-    
+
     private final Map<String, AbstractHttpResourceParser> resourceParserMap;
-    
+
     private final HttpIdentityContextBuilder identityContextBuilder;
-    
+
     public HttpProtocolAuthService(AuthConfigs authConfigs) {
         super(authConfigs);
         resourceParserMap = new HashMap<>(2);
         identityContextBuilder = new HttpIdentityContextBuilder(authConfigs);
     }
-    
+
     @Override
     public void initialize() {
         resourceParserMap.put(SignType.NAMING, new NamingHttpResourceParser());
         resourceParserMap.put(SignType.CONFIG, new ConfigHttpResourceParser());
     }
-    
+
     @Override
     public Resource parseResource(HttpServletRequest request, Secured secured) {
         if (StringUtils.isNotBlank(secured.resource())) {
@@ -62,12 +61,14 @@ public class HttpProtocolAuthService extends AbstractProtocolAuthService<HttpSer
         }
         String type = secured.signType();
         if (!resourceParserMap.containsKey(type)) {
-            Loggers.AUTH.warn("Can't find Http request resourceParser for type {} use specified resource parser", type);
+            Loggers.AUTH.warn(
+                    "Can't find Http request resourceParser for type {} use specified resource parser",
+                    type);
             return useSpecifiedParserToParse(secured, request);
         }
         return resourceParserMap.get(type).parse(request, secured);
     }
-    
+
     @Override
     public IdentityContext parseIdentity(HttpServletRequest request) {
         return identityContextBuilder.build(request);

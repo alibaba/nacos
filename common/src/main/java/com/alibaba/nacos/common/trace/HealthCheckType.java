@@ -22,29 +22,21 @@ package com.alibaba.nacos.common.trace;
  * @author yanda
  */
 public enum HealthCheckType {
-    /**
-     * Instance heart beat timeout.
-     */
+    /** Instance heart beat timeout. */
     CLIENT_BEAT("client_beat"),
-    /**
-     * Http health check.
-     */
+    /** Http health check. */
     HTTP_HEALTH_CHECK("http"),
-    /**
-     * Mysql health check.
-     */
+    /** Mysql health check. */
     MYSQL_HEALTH_CHECK("mysql"),
-    /**
-     * Tcp super sense health check .
-     */
+    /** Tcp super sense health check . */
     TCP_SUPER_SENSE("tcp");
-    
+
     private String prefix;
-    
+
     HealthCheckType(String prefix) {
         this.prefix = prefix;
     }
-    
+
     public String getPrefix() {
         return prefix;
     }

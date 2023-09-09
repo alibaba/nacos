@@ -26,15 +26,15 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
  * @author xiweng.yy
  */
 public interface HealthStatusSynchronizer {
-    
+
     /**
      * Instance health status change.
      *
      * @param isHealthy is the instance change to healthy or not
-     * @param client    client of instance
-     * @param service   service of instance
-     * @param instance  instance
+     * @param client client of instance
+     * @param service service of instance
+     * @param instance instance
      */
-    void instanceHealthStatusChange(boolean isHealthy, Client client, Service service, InstancePublishInfo instance);
-    
+    void instanceHealthStatusChange(
+            boolean isHealthy, Client client, Service service, InstancePublishInfo instance);
 }

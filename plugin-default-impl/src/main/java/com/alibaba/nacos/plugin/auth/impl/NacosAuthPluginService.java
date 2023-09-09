@@ -30,7 +30,6 @@ import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,34 +41,35 @@ import java.util.List;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class NacosAuthPluginService implements AuthPluginService {
-    
-    @Deprecated
-    private static final String USER_IDENTITY_PARAM_KEY = "user";
-    
-    private static final List<String> IDENTITY_NAMES = new LinkedList<String>() {
-        {
-            add(AuthConstants.AUTHORIZATION_HEADER);
-            add(Constants.ACCESS_TOKEN);
-            add(AuthConstants.PARAM_USERNAME);
-            add(AuthConstants.PARAM_PASSWORD);
-        }
-    };
-    
+
+    @Deprecated private static final String USER_IDENTITY_PARAM_KEY = "user";
+
+    private static final List<String> IDENTITY_NAMES =
+            new LinkedList<String>() {
+                {
+                    add(AuthConstants.AUTHORIZATION_HEADER);
+                    add(Constants.ACCESS_TOKEN);
+                    add(AuthConstants.PARAM_USERNAME);
+                    add(AuthConstants.PARAM_PASSWORD);
+                }
+            };
+
     protected IAuthenticationManager authenticationManager;
-    
+
     @Override
     public Collection<String> identityNames() {
         return IDENTITY_NAMES;
     }
-    
+
     @Override
     public boolean enableAuth(ActionTypes action, String type) {
         // enable all of action and type
         return true;
     }
-    
+
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+    public boolean validateIdentity(IdentityContext identityContext, Resource resource)
+            throws AccessException {
         checkNacosAuthManager();
         String token = resolveToken(identityContext);
         NacosUser nacosUser;
@@ -81,38 +81,42 @@ public class NacosAuthPluginService implements AuthPluginService {
             nacosUser = authenticationManager.authenticate(userName, password);
         }
         identityContext.setParameter(AuthConstants.NACOS_USER_KEY, nacosUser);
-        identityContext.setParameter(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
+        identityContext.setParameter(
+                com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID,
                 nacosUser.getUserName());
         return true;
     }
-    
+
     private String resolveToken(IdentityContext identityContext) {
-        String bearerToken = identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY);
-        if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
+        String bearerToken =
+                identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY);
+        if (StringUtils.isNotBlank(bearerToken)
+                && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
             return bearerToken.substring(AuthConstants.TOKEN_PREFIX.length());
         }
-        
+
         return identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY);
     }
-    
+
     @Override
-    public Boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
+    public Boolean validateAuthority(IdentityContext identityContext, Permission permission)
+            throws AccessException {
         NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
         authenticationManager.authorize(permission, user);
-        
+
         return true;
     }
-    
+
     @Override
     public String getAuthServiceName() {
         return AuthConstants.AUTH_PLUGIN_TYPE;
     }
-    
+
     @Override
     public boolean isLoginEnabled() {
         return ApplicationUtils.getBean(AuthConfigs.class).isAuthEnabled();
     }
-    
+
     protected void checkNacosAuthManager() {
         if (null == authenticationManager) {
             authenticationManager = ApplicationUtils.getBean(DefaultAuthenticationManager.class);

@@ -19,14 +19,13 @@ package com.alibaba.nacos.plugin.encryption;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Encryption Plugin Management.
@@ -34,35 +33,39 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author lixiaoshuang
  */
 public class EncryptionPluginManager {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(EncryptionPluginManager.class);
-    
-    private static final Map<String, EncryptionPluginService> ENCRYPTION_SPI_MAP = new ConcurrentHashMap<>();
-    
+
+    private static final Map<String, EncryptionPluginService> ENCRYPTION_SPI_MAP =
+            new ConcurrentHashMap<>();
+
     private static final EncryptionPluginManager INSTANCE = new EncryptionPluginManager();
-    
+
     private EncryptionPluginManager() {
         loadInitial();
     }
-    
-    /**
-     * Load initial.
-     */
+
+    /** Load initial. */
     private void loadInitial() {
-        Collection<EncryptionPluginService> encryptionPluginServices = NacosServiceLoader.load(
-                EncryptionPluginService.class);
+        Collection<EncryptionPluginService> encryptionPluginServices =
+                NacosServiceLoader.load(EncryptionPluginService.class);
         for (EncryptionPluginService encryptionPluginService : encryptionPluginServices) {
             if (StringUtils.isBlank(encryptionPluginService.algorithmName())) {
-                LOGGER.warn("[EncryptionPluginManager] Load EncryptionPluginService({}) algorithmName(null/empty) fail."
-                        + " Please Add algorithmName to resolve.", encryptionPluginService.getClass());
+                LOGGER.warn(
+                        "[EncryptionPluginManager] Load EncryptionPluginService({}) algorithmName(null/empty) fail."
+                                + " Please Add algorithmName to resolve.",
+                        encryptionPluginService.getClass());
                 continue;
             }
-            ENCRYPTION_SPI_MAP.put(encryptionPluginService.algorithmName(), encryptionPluginService);
-            LOGGER.info("[EncryptionPluginManager] Load EncryptionPluginService({}) algorithmName({}) successfully.",
-                    encryptionPluginService.getClass(), encryptionPluginService.algorithmName());
+            ENCRYPTION_SPI_MAP.put(
+                    encryptionPluginService.algorithmName(), encryptionPluginService);
+            LOGGER.info(
+                    "[EncryptionPluginManager] Load EncryptionPluginService({}) algorithmName({}) successfully.",
+                    encryptionPluginService.getClass(),
+                    encryptionPluginService.algorithmName());
         }
     }
-    
+
     /**
      * Get EncryptionPluginManager instance.
      *
@@ -71,7 +74,7 @@ public class EncryptionPluginManager {
     public static EncryptionPluginManager instance() {
         return INSTANCE;
     }
-    
+
     /**
      * get EncryptionPluginService instance.
      *
@@ -81,7 +84,7 @@ public class EncryptionPluginManager {
     public Optional<EncryptionPluginService> findEncryptionService(String algorithmName) {
         return Optional.ofNullable(ENCRYPTION_SPI_MAP.get(algorithmName));
     }
-    
+
     /**
      * Injection realization.
      *
@@ -94,5 +97,4 @@ public class EncryptionPluginManager {
         ENCRYPTION_SPI_MAP.put(encryptionPluginService.algorithmName(), encryptionPluginService);
         LOGGER.info("[EncryptionPluginManager] join successfully.");
     }
-    
 }

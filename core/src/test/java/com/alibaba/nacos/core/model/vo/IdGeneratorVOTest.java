@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.core.model.vo;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class IdGeneratorVOTest {
-    
+
     @Test
     public void test() {
         IdGeneratorVO vo = new IdGeneratorVO();
@@ -29,7 +26,7 @@ public class IdGeneratorVOTest {
         info.setCurrentId(2L);
         vo.setResource("test");
         vo.setInfo(info);
-    
+
         Assert.assertEquals(vo.getInfo(), info);
         Assert.assertEquals(vo.getResource(), "test");
         Assert.assertEquals(vo.getInfo().getWorkerId().longValue(), 1L);

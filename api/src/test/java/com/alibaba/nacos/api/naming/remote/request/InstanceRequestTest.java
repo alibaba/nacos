@@ -16,33 +16,38 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
-import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class InstanceRequestTest extends BasedNamingRequestTest {
-    
+
     @Test
     public void testSerialize() throws JsonProcessingException {
-        InstanceRequest request = new InstanceRequest(NAMESPACE, SERVICE, GROUP,
-                NamingRemoteConstants.REGISTER_INSTANCE, new Instance());
+        InstanceRequest request =
+                new InstanceRequest(
+                        NAMESPACE,
+                        SERVICE,
+                        GROUP,
+                        NamingRemoteConstants.REGISTER_INSTANCE,
+                        new Instance());
         String json = mapper.writeValueAsString(request);
         checkSerializeBasedInfo(json);
         assertTrue(json.contains("\"type\":\"" + NamingRemoteConstants.REGISTER_INSTANCE + "\""));
         assertTrue(json.contains("\"instance\":{"));
     }
-    
+
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
-                + "\"type\":\"deregisterInstance\",\"instance\":{\"port\":0,\"weight\":1.0,\"healthy\":true,"
-                + "\"enabled\":true,\"ephemeral\":true,\"metadata\":{},\"instanceIdGenerator\":\"simple\","
-                + "\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000},"
-                + "\"module\":\"naming\"}";
+        String json =
+                "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
+                        + "\"type\":\"deregisterInstance\",\"instance\":{\"port\":0,\"weight\":1.0,\"healthy\":true,"
+                        + "\"enabled\":true,\"ephemeral\":true,\"metadata\":{},\"instanceIdGenerator\":\"simple\","
+                        + "\"instanceHeartBeatInterval\":5000,\"instanceHeartBeatTimeOut\":15000,\"ipDeleteTimeout\":30000},"
+                        + "\"module\":\"naming\"}";
         InstanceRequest actual = mapper.readValue(json, InstanceRequest.class);
         checkNamingRequestBasedInfo(actual);
         assertEquals(NamingRemoteConstants.DE_REGISTER_INSTANCE, actual.getType());

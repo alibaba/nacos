@@ -17,9 +17,6 @@
 package com.alibaba.nacos.plugin.encryption;
 
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Optional;
 
 /**
@@ -28,54 +25,54 @@ import java.util.Optional;
  * @author lixiaoshuang
  */
 public class EncryptionPluginManagerTest {
-    
+
     @Test
     public void testInstance() {
         EncryptionPluginManager instance = EncryptionPluginManager.instance();
         Assert.assertNotNull(instance);
     }
-    
+
     @Test
     public void testJoin() {
-        EncryptionPluginManager.join(new EncryptionPluginService() {
-            @Override
-            public String encrypt(String secretKey, String content) {
-                return content;
-            }
-            
-            @Override
-            public String decrypt(String secretKey, String content) {
-                return content;
-            }
-            
-            @Override
-            public String generateSecretKey() {
-                return "12345678";
-            }
-            
-            @Override
-            public String algorithmName() {
-                return "aes";
-            }
-    
-            @Override
-            public String encryptSecretKey(String secretKey) {
-                return secretKey;
-            }
-    
-            @Override
-            public String decryptSecretKey(String secretKey) {
-                return secretKey;
-            }
-        });
+        EncryptionPluginManager.join(
+                new EncryptionPluginService() {
+                    @Override
+                    public String encrypt(String secretKey, String content) {
+                        return content;
+                    }
+
+                    @Override
+                    public String decrypt(String secretKey, String content) {
+                        return content;
+                    }
+
+                    @Override
+                    public String generateSecretKey() {
+                        return "12345678";
+                    }
+
+                    @Override
+                    public String algorithmName() {
+                        return "aes";
+                    }
+
+                    @Override
+                    public String encryptSecretKey(String secretKey) {
+                        return secretKey;
+                    }
+
+                    @Override
+                    public String decryptSecretKey(String secretKey) {
+                        return secretKey;
+                    }
+                });
         Assert.assertNotNull(EncryptionPluginManager.instance().findEncryptionService("aes"));
     }
-    
+
     @Test
     public void testFindEncryptionService() {
         EncryptionPluginManager instance = EncryptionPluginManager.instance();
         Optional<EncryptionPluginService> optional = instance.findEncryptionService("aes");
         Assert.assertTrue(optional.isPresent());
     }
-    
 }

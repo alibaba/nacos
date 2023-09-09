@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,11 +31,11 @@ import java.nio.file.StandardOpenOption;
 
 /**
  * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
- * Abstract base class for resources which resolve URLs into File references,
- * such as {@link UrlResource} or {@link ClassPathResource}.
+ * Abstract base class for resources which resolve URLs into File references, such as {@link
+ * UrlResource} or {@link ClassPathResource}.
  *
- * <p>Detects the "file" protocol as well as the JBoss "vfs" protocol in URLs,
- * resolving file system references accordingly.
+ * <p>Detects the "file" protocol as well as the JBoss "vfs" protocol in URLs, resolving file system
+ * references accordingly.
  *
  * @author Juergen Hoeller
  * @since 3.0
@@ -140,8 +139,8 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
     }
 
     /**
-     * This implementation returns a File reference for the given URI-identified
-     * resource, provided that it refers to a file in the file system.
+     * This implementation returns a File reference for the given URI-identified resource, provided
+     * that it refers to a file in the file system.
      *
      * @see #getFile(URI)
      * @since 5.0
@@ -158,8 +157,8 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
     }
 
     /**
-     * This implementation returns a File reference for the underlying class path
-     * resource, provided that it refers to a file in the file system.
+     * This implementation returns a File reference for the underlying class path resource, provided
+     * that it refers to a file in the file system.
      *
      * @see ResourceUtils#getFile(URL, String)
      */
@@ -173,8 +172,8 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
     }
 
     /**
-     * This implementation returns a File reference for the given URI-identified
-     * resource, provided that it refers to a file in the file system.
+     * This implementation returns a File reference for the given URI-identified resource, provided
+     * that it refers to a file in the file system.
      *
      * @see ResourceUtils#getFile(URI, String)
      */
@@ -186,8 +185,8 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
     }
 
     /**
-     * This implementation determines the underlying File
-     * (or jar file, in case of a resource in a jar/zip).
+     * This implementation determines the underlying File (or jar file, in case of a resource in a
+     * jar/zip).
      */
     @Override
     protected File getFileForLastModifiedCheck() throws IOException {
@@ -203,10 +202,9 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
         }
     }
 
-
     /**
-     * This implementation returns a FileChannel for the given URI-identified
-     * resource, provided that it refers to a file in the file system.
+     * This implementation returns a FileChannel for the given URI-identified resource, provided
+     * that it refers to a file in the file system.
      *
      * @see #getFile()
      * @since 5.0
@@ -230,8 +228,9 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
             File file = getFile();
             long length = file.length();
             if (length == 0L && !file.exists()) {
-                throw new FileNotFoundException(getDescription()
-                        + " cannot be resolved in the file system for checking its content length");
+                throw new FileNotFoundException(
+                        getDescription()
+                                + " cannot be resolved in the file system for checking its content length");
             }
             return length;
         } else {
@@ -264,18 +263,18 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
         customizeConnection(con);
         long lastModified = con.getLastModified();
         if (fileCheck && lastModified == 0 && con.getContentLengthLong() <= 0) {
-            throw new FileNotFoundException(getDescription()
-                    + " cannot be resolved in the file system for checking its last-modified timestamp");
+            throw new FileNotFoundException(
+                    getDescription()
+                            + " cannot be resolved in the file system for checking its last-modified timestamp");
         }
         return lastModified;
     }
 
     /**
-     * Customize the given {@link URLConnection}, obtained in the course of an
-     * {@link #exists()}, {@link #contentLength()} or {@link #lastModified()} call.
-     * Calls {@link ResourceUtils#useCachesIfNecessary(URLConnection)} and
-     * delegates to {@link #customizeConnection(HttpURLConnection)} if possible.
-     * Can be overridden in subclasses.
+     * Customize the given {@link URLConnection}, obtained in the course of an {@link #exists()},
+     * {@link #contentLength()} or {@link #lastModified()} call. Calls {@link
+     * ResourceUtils#useCachesIfNecessary(URLConnection)} and delegates to {@link
+     * #customizeConnection(HttpURLConnection)} if possible. Can be overridden in subclasses.
      *
      * @param con the URLConnection to customize
      * @throws IOException if thrown from URLConnection methods
@@ -288,9 +287,9 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
     }
 
     /**
-     * Customize the given {@link HttpURLConnection}, obtained in the course of an
-     * {@link #exists()}, {@link #contentLength()} or {@link #lastModified()} call.
-     * Sets request method "HEAD" by default. Can be overridden in subclasses.
+     * Customize the given {@link HttpURLConnection}, obtained in the course of an {@link
+     * #exists()}, {@link #contentLength()} or {@link #lastModified()} call. Sets request method
+     * "HEAD" by default. Can be overridden in subclasses.
      *
      * @param con the HttpURLConnection to customize
      * @throws IOException if thrown from HttpURLConnection methods
@@ -299,9 +298,7 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
         con.setRequestMethod("HEAD");
     }
 
-    /**
-     * Inner delegate class, avoiding a hard JBoss VFS API dependency at runtime.
-     */
+    /** Inner delegate class, avoiding a hard JBoss VFS API dependency at runtime. */
     private static class VfsResourceDelegate {
 
         public static Resource getResource(URL url) throws IOException {
@@ -312,5 +309,4 @@ public abstract class AbstractFileResolvingResource extends AbstractResource {
             return new VfsResource(VfsUtils.getRoot(uri));
         }
     }
-
 }

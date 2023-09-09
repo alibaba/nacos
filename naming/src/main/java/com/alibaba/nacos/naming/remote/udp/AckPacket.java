@@ -22,10 +22,10 @@ package com.alibaba.nacos.naming.remote.udp;
  * @author xiweng.yy
  */
 public class AckPacket {
-    
+
     public String type;
-    
+
     public long lastRefTime;
-    
+
     public String data;
 }

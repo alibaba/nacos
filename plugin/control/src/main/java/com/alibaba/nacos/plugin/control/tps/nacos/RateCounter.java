@@ -25,35 +25,31 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RateCounter {
-    
-    /**
-     * rate count name.
-     */
+
+    /** rate count name. */
     private String name;
-    
-    /**
-     * rate period.
-     */
+
+    /** rate period. */
     private TimeUnit period;
-    
+
     public RateCounter(String name, TimeUnit period) {
         this.name = name;
         this.period = period;
     }
-    
+
     public TimeUnit getPeriod() {
         return period;
     }
-    
+
     /**
      * add count for the second of timestamp.
      *
      * @param timestamp timestamp.
-     * @param count     count.
+     * @param count count.
      * @return
      */
     public abstract long add(long timestamp, long count);
-    
+
     /**
      * get count of the second of timestamp.
      *
@@ -61,11 +57,11 @@ public abstract class RateCounter {
      * @return
      */
     public abstract long getCount(long timestamp);
-    
+
     public String getName() {
         return name;
     }
-    
+
     /**
      * get trim mills of second.
      *
@@ -77,7 +73,7 @@ public abstract class RateCounter {
         String substring = millString.substring(0, millString.length() - 3);
         return Long.valueOf(Long.valueOf(substring) / 60 * 60 + "000");
     }
-    
+
     /**
      * get trim mills of second.
      *
@@ -89,7 +85,7 @@ public abstract class RateCounter {
         String substring = millString.substring(0, millString.length() - 3);
         return Long.valueOf(substring + "000");
     }
-    
+
     /**
      * get trim mills of second.
      *

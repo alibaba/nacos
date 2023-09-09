@@ -29,13 +29,13 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class ConfigReadinessCheckService extends AbstractModuleHealthChecker {
-    
+
     private final ConfigInfoPersistService configInfoPersistService;
-    
+
     public ConfigReadinessCheckService(ConfigInfoPersistService configInfoPersistService) {
         this.configInfoPersistService = configInfoPersistService;
     }
-    
+
     @Override
     public boolean readiness() {
         // check db
@@ -47,7 +47,7 @@ public class ConfigReadinessCheckService extends AbstractModuleHealthChecker {
         }
         return false;
     }
-    
+
     @Override
     public String getModuleName() {
         return Constants.Config.CONFIG_MODULE;

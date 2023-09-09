@@ -21,9 +21,6 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -36,41 +33,39 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 /**
- * ServerStateController unit test.
- *
- * @ClassName: ServerStateControllerTest
- * @Author: ChenHao26
- * @Date: 2022/8/13 10:54
- * @Description: TODO
+ * ServerStateController unit test. @ClassName: ServerStateControllerTest @Author: ChenHao26 @Date:
+ * 2022/8/13 10:54 @Description: TODO
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ServerStateControllerTest {
-    
-    @InjectMocks
-    private ServerStateController serverStateController;
-    
+
+    @InjectMocks private ServerStateController serverStateController;
+
     private MockMvc mockmvc;
-    
+
     private static final String CONSOLE_URL = "/v1/console/server/state";
-    
+
     private ConfigurableEnvironment environment;
-    
+
     @Before
     public void setUp() {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         mockmvc = MockMvcBuilders.standaloneSetup(serverStateController).build();
     }
-    
+
     @Test
     public void serverState() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(CONSOLE_URL);
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         Assert.assertEquals(200, response.getStatus());
-        ObjectNode responseContent = JacksonUtils.toObj(response.getContentAsByteArray(), ObjectNode.class);
-        Assert.assertEquals(EnvUtil.STANDALONE_MODE_CLUSTER,
+        ObjectNode responseContent =
+                JacksonUtils.toObj(response.getContentAsByteArray(), ObjectNode.class);
+        Assert.assertEquals(
+                EnvUtil.STANDALONE_MODE_CLUSTER,
                 responseContent.get(Constants.STARTUP_MODE_STATE).asText());
         Assert.assertEquals("null", responseContent.get(Constants.FUNCTION_MODE_STATE).asText());
-        Assert.assertEquals(VersionUtils.version, responseContent.get(Constants.NACOS_VERSION).asText());
+        Assert.assertEquals(
+                VersionUtils.version, responseContent.get(Constants.NACOS_VERSION).asText());
     }
 }

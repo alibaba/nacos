@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.control.configs;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-
 import java.util.Collection;
 
 /**
@@ -26,106 +25,106 @@ import java.util.Collection;
  * @author shiyiyue
  */
 public class ControlConfigs {
-    
+
     private static volatile ControlConfigs instance = null;
-    
+
     public static ControlConfigs getInstance() {
         if (instance == null) {
             synchronized (ControlConfigs.class) {
                 if (instance == null) {
                     instance = new ControlConfigs();
-                    Collection<ControlConfigsInitializer> load = NacosServiceLoader
-                            .load(ControlConfigsInitializer.class);
+                    Collection<ControlConfigsInitializer> load =
+                            NacosServiceLoader.load(ControlConfigsInitializer.class);
                     for (ControlConfigsInitializer controlConfigsInitializer : load) {
                         controlConfigsInitializer.initialize(instance);
                     }
                 }
             }
         }
-        
+
         return instance;
     }
-    
+
     public static void setInstance(ControlConfigs instance) {
         ControlConfigs.instance = instance;
     }
-    
+
     private String tpsBarrierCreator = "nacos";
-    
+
     private String tpsRuleBarrierCreator = "nacos";
-    
+
     private String connectionRuntimeEjector = "nacos";
-    
+
     private String connectionManager = "nacos";
-    
+
     private String tpsManager = "nacos";
-    
+
     private String ruleExternalStorage = "";
-    
+
     private String ruleParser = "nacos";
-    
+
     private String localRuleStorageBaseDir = "";
-    
+
     public String getTpsBarrierCreator() {
         return tpsBarrierCreator;
     }
-    
+
     public void setTpsBarrierCreator(String tpsBarrierCreator) {
         this.tpsBarrierCreator = tpsBarrierCreator;
     }
-    
+
     public String getTpsRuleBarrierCreator() {
         return tpsRuleBarrierCreator;
     }
-    
+
     public void setTpsRuleBarrierCreator(String tpsRuleBarrierCreator) {
         this.tpsRuleBarrierCreator = tpsRuleBarrierCreator;
     }
-    
+
     public String getRuleExternalStorage() {
         return ruleExternalStorage;
     }
-    
+
     public void setRuleExternalStorage(String ruleExternalStorage) {
         this.ruleExternalStorage = ruleExternalStorage;
     }
-    
+
     public String getRuleParser() {
         return ruleParser;
     }
-    
+
     public void setRuleParser(String ruleParser) {
         this.ruleParser = ruleParser;
     }
-    
+
     public String getConnectionManager() {
         return connectionManager;
     }
-    
+
     public void setConnectionManager(String connectionManager) {
         this.connectionManager = connectionManager;
     }
-    
+
     public String getConnectionRuntimeEjector() {
         return connectionRuntimeEjector;
     }
-    
+
     public void setConnectionRuntimeEjector(String connectionRuntimeEjector) {
         this.connectionRuntimeEjector = connectionRuntimeEjector;
     }
-    
+
     public String getTpsManager() {
         return tpsManager;
     }
-    
+
     public void setTpsManager(String tpsManager) {
         this.tpsManager = tpsManager;
     }
-    
+
     public String getLocalRuleStorageBaseDir() {
         return localRuleStorageBaseDir;
     }
-    
+
     public void setLocalRuleStorageBaseDir(String localRuleStorageBaseDir) {
         this.localRuleStorageBaseDir = localRuleStorageBaseDir;
     }

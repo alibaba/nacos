@@ -26,61 +26,60 @@ import com.alibaba.nacos.naming.pojo.Record;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ValueChangeEvent extends Event {
-    
+
     private final String key;
-    
+
     private final Record value;
-    
+
     private final DataOperation action;
-    
+
     public ValueChangeEvent(String key, Record value, DataOperation action) {
         this.key = key;
         this.value = value;
         this.action = action;
     }
-    
+
     public String getKey() {
         return key;
     }
-    
+
     public Record getValue() {
         return value;
     }
-    
+
     public DataOperation getAction() {
         return action;
     }
-    
+
     public static ValueChangeEventBuilder builder() {
         return new ValueChangeEventBuilder();
     }
-    
+
     public static final class ValueChangeEventBuilder {
-        
+
         private String key;
-        
+
         private Record value;
-        
+
         private DataOperation action;
-        
-        private ValueChangeEventBuilder() {
-        }
-        
+
+        private ValueChangeEventBuilder() {}
+
         public ValueChangeEventBuilder key(String key) {
             this.key = key;
             return this;
         }
-        
+
         public ValueChangeEventBuilder value(Record value) {
             this.value = value;
             return this;
         }
-        
+
         public ValueChangeEventBuilder action(DataOperation action) {
             this.action = action;
             return this;
         }
-        
+
         public ValueChangeEvent build() {
             return new ValueChangeEvent(key, value, action);
         }

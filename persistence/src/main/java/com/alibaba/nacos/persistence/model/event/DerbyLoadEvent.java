@@ -24,9 +24,8 @@ import com.alibaba.nacos.common.notify.SlowEvent;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbyLoadEvent extends SlowEvent {
-    
+
     public static final DerbyLoadEvent INSTANCE = new DerbyLoadEvent();
-    
+
     private static final long serialVersionUID = 875401667921565121L;
-    
 }

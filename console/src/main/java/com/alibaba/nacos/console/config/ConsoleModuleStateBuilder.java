@@ -26,11 +26,11 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
  * @author xiweng.yy
  */
 public class ConsoleModuleStateBuilder implements ModuleStateBuilder {
-    
+
     public static final String CONSOLE_MODULE = "console";
-    
+
     private static final String CONSOLE_UI_ENABLED = "console_ui_enabled";
-    
+
     @Override
     public ModuleState build() {
         ModuleState result = new ModuleState(CONSOLE_MODULE);

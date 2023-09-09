@@ -22,55 +22,55 @@ package com.alibaba.nacos.core.model.vo;
  * @author wuzhiguo
  */
 public class IdGeneratorVO {
-    
+
     private String resource;
-    
+
     private IdInfo info;
-    
+
     public String getResource() {
         return resource;
     }
-    
+
     public void setResource(String resource) {
         this.resource = resource;
     }
-    
+
     public IdInfo getInfo() {
         return info;
     }
-    
+
     public void setInfo(IdInfo info) {
         this.info = info;
     }
-    
+
     public static class IdInfo {
-        
+
         private Long currentId;
-    
+
         private Long workerId;
-    
+
         public Long getCurrentId() {
             return currentId;
         }
-    
+
         public void setCurrentId(Long currentId) {
             this.currentId = currentId;
         }
-    
+
         public Long getWorkerId() {
             return workerId;
         }
-    
+
         public void setWorkerId(Long workerId) {
             this.workerId = workerId;
         }
-    
+
         @Override
         public String toString() {
             return "IdInfo{" + "currentId=" + currentId + ", workerId=" + workerId + '}';
         }
     }
-    
+
     @Override
     public String toString() {
         return "IdGeneratorVO{" + "resource='" + resource + '\'' + ", info=" + info + '}';

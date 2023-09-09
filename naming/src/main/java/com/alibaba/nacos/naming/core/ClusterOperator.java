@@ -25,17 +25,20 @@ import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
  * @author xiweng.yy
  */
 public interface ClusterOperator {
-    
+
     /**
      * Update cluster metadata.
      *
-     * @param namespaceId     namespace id
-     * @param serviceName     service name of cluster
-     * @param clusterName     cluster name
+     * @param namespaceId namespace id
+     * @param serviceName service name of cluster
+     * @param clusterName cluster name
      * @param clusterMetadata cluster metadata
      * @throws NacosException exception during update metadata
      */
-    void updateClusterMetadata(String namespaceId, String serviceName, String clusterName,
-            ClusterMetadata clusterMetadata) throws NacosException;
-    
+    void updateClusterMetadata(
+            String namespaceId,
+            String serviceName,
+            String clusterName,
+            ClusterMetadata clusterMetadata)
+            throws NacosException;
 }

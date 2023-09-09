@@ -19,12 +19,11 @@ package com.alibaba.nacos.api.remote.request;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
 
 public abstract class BasicRequestTest {
-    
+
     protected ObjectMapper mapper;
-    
+
     @Before
     public void setUp() throws Exception {
         mapper = new ObjectMapper();

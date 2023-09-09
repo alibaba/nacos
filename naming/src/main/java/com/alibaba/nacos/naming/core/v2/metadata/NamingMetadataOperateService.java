@@ -25,8 +25,8 @@ import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.entity.Response;
 import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.constants.Constants;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.google.protobuf.ByteString;
 import org.springframework.stereotype.Component;
 
@@ -37,31 +37,34 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class NamingMetadataOperateService {
-    
+
     private final CPProtocol cpProtocol;
-    
+
     private final Serializer serializer;
-    
+
     public NamingMetadataOperateService(ProtocolManager protocolManager) {
         this.cpProtocol = protocolManager.getCpProtocol();
         this.serializer = SerializeFactory.getDefault();
     }
-    
+
     /**
      * Update service metadata.
      *
-     * @param service         service of metadata
+     * @param service service of metadata
      * @param serviceMetadata metadata
      */
     public void updateServiceMetadata(Service service, ServiceMetadata serviceMetadata) {
         MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
         operation.setMetadata(serviceMetadata);
-        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.SERVICE_METADATA)
-                .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+        WriteRequest operationLog =
+                WriteRequest.newBuilder()
+                        .setGroup(Constants.SERVICE_METADATA)
+                        .setOperation(DataOperation.CHANGE.name())
+                        .setData(ByteString.copyFrom(serializer.serialize(operation)))
+                        .build();
         submitMetadataOperation(operationLog);
     }
-    
+
     /**
      * Delete service metadata.
      *
@@ -69,63 +72,77 @@ public class NamingMetadataOperateService {
      */
     public void deleteServiceMetadata(Service service) {
         MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
-        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.SERVICE_METADATA)
-                .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+        WriteRequest operationLog =
+                WriteRequest.newBuilder()
+                        .setGroup(Constants.SERVICE_METADATA)
+                        .setOperation(DataOperation.DELETE.name())
+                        .setData(ByteString.copyFrom(serializer.serialize(operation)))
+                        .build();
         submitMetadataOperation(operationLog);
     }
-    
+
     /**
      * Update instance metadata.
      *
-     * @param service          service of metadata
-     * @param metadataId       instance metadataId Id
+     * @param service service of metadata
+     * @param metadataId instance metadataId Id
      * @param instanceMetadata metadata
      */
-    public void updateInstanceMetadata(Service service, String metadataId, InstanceMetadata instanceMetadata) {
+    public void updateInstanceMetadata(
+            Service service, String metadataId, InstanceMetadata instanceMetadata) {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
         operation.setTag(metadataId);
         operation.setMetadata(instanceMetadata);
-        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
-                .setOperation(DataOperation.CHANGE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+        WriteRequest operationLog =
+                WriteRequest.newBuilder()
+                        .setGroup(Constants.INSTANCE_METADATA)
+                        .setOperation(DataOperation.CHANGE.name())
+                        .setData(ByteString.copyFrom(serializer.serialize(operation)))
+                        .build();
         submitMetadataOperation(operationLog);
     }
-    
+
     /**
      * Delete instance metadata.
      *
-     * @param service    service of metadata
+     * @param service service of metadata
      * @param metadataId instance metadata Id
      */
     public void deleteInstanceMetadata(Service service, String metadataId) {
         MetadataOperation<InstanceMetadata> operation = buildMetadataOperation(service);
         operation.setTag(metadataId);
-        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.INSTANCE_METADATA)
-                .setOperation(DataOperation.DELETE.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+        WriteRequest operationLog =
+                WriteRequest.newBuilder()
+                        .setGroup(Constants.INSTANCE_METADATA)
+                        .setOperation(DataOperation.DELETE.name())
+                        .setData(ByteString.copyFrom(serializer.serialize(operation)))
+                        .build();
         submitMetadataOperation(operationLog);
     }
-    
+
     /**
      * Add cluster metadata to service metadata.
      *
-     * @param service         service
-     * @param clusterName     cluster name
+     * @param service service
+     * @param clusterName cluster name
      * @param clusterMetadata cluster metadata
      */
-    public void addClusterMetadata(Service service, String clusterName, ClusterMetadata clusterMetadata) {
+    public void addClusterMetadata(
+            Service service, String clusterName, ClusterMetadata clusterMetadata) {
         MetadataOperation<ServiceMetadata> operation = buildMetadataOperation(service);
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setEphemeral(service.isEphemeral());
         serviceMetadata.getClusters().put(clusterName, clusterMetadata);
         operation.setMetadata(serviceMetadata);
-        WriteRequest operationLog = WriteRequest.newBuilder().setGroup(Constants.SERVICE_METADATA)
-                .setOperation(DataOperation.ADD.name()).setData(ByteString.copyFrom(serializer.serialize(operation)))
-                .build();
+        WriteRequest operationLog =
+                WriteRequest.newBuilder()
+                        .setGroup(Constants.SERVICE_METADATA)
+                        .setOperation(DataOperation.ADD.name())
+                        .setData(ByteString.copyFrom(serializer.serialize(operation)))
+                        .build();
         submitMetadataOperation(operationLog);
     }
-    
+
     private <T> MetadataOperation<T> buildMetadataOperation(Service service) {
         MetadataOperation<T> result = new MetadataOperation<>();
         result.setNamespace(service.getNamespace());
@@ -133,16 +150,18 @@ public class NamingMetadataOperateService {
         result.setServiceName(service.getName());
         return result;
     }
-    
+
     private void submitMetadataOperation(WriteRequest operationLog) {
         try {
             Response response = cpProtocol.write(operationLog);
             if (!response.getSuccess()) {
-                throw new NacosRuntimeException(NacosException.SERVER_ERROR,
+                throw new NacosRuntimeException(
+                        NacosException.SERVER_ERROR,
                         "do metadata operation failed " + response.getErrMsg());
             }
         } catch (Exception e) {
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "do metadata operation failed", e);
+            throw new NacosRuntimeException(
+                    NacosException.SERVER_ERROR, "do metadata operation failed", e);
         }
     }
 }

@@ -27,21 +27,21 @@ import java.util.TreeMap;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Request implements Payload {
-    
+
     private final Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
-    
+
     private String requestId;
-    
+
     /**
      * put header.
      *
-     * @param key   key of value.
+     * @param key key of value.
      * @param value value.
      */
     public void putHeader(String key, String value) {
         headers.put(key, value);
     }
-    
+
     /**
      * put headers .
      *
@@ -53,7 +53,7 @@ public abstract class Request implements Payload {
         }
         this.headers.putAll(headers);
     }
-    
+
     /**
      * get a header value .
      *
@@ -63,11 +63,11 @@ public abstract class Request implements Payload {
     public String getHeader(String key) {
         return headers.get(key);
     }
-    
+
     /**
      * get a header value of default value.
      *
-     * @param key          key of value.
+     * @param key key of value.
      * @param defaultValue default value if key is not exist.
      * @return return final value.
      */
@@ -75,7 +75,7 @@ public abstract class Request implements Payload {
         String value = headers.get(key);
         return (value == null) ? defaultValue : value;
     }
-    
+
     /**
      * Getter method for property <tt>requestId</tt>.
      *
@@ -84,7 +84,7 @@ public abstract class Request implements Payload {
     public String getRequestId() {
         return requestId;
     }
-    
+
     /**
      * Setter method for property <tt>requestId</tt>.
      *
@@ -93,14 +93,14 @@ public abstract class Request implements Payload {
     public void setRequestId(String requestId) {
         this.requestId = requestId;
     }
-    
+
     /**
      * Getter method for property <tt>type</tt>.
      *
      * @return property value of type
      */
     public abstract String getModule();
-    
+
     /**
      * Getter method for property <tt>headers</tt>.
      *
@@ -109,13 +109,20 @@ public abstract class Request implements Payload {
     public Map<String, String> getHeaders() {
         return headers;
     }
-    
+
     public void clearHeaders() {
         this.headers.clear();
     }
-    
+
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + "{" + "headers=" + headers + ", requestId='" + requestId + '\'' + '}';
+        return this.getClass().getSimpleName()
+                + "{"
+                + "headers="
+                + headers
+                + ", requestId='"
+                + requestId
+                + '\''
+                + '}';
     }
 }

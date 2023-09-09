@@ -25,11 +25,11 @@ import io.grpc.ServerTransportFilter;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class NacosGrpcServerTransportFilter extends ServerTransportFilter {
-    
+
     public static final String SDK_FILTER = "SDK";
-    
+
     public static final String CLUSTER_FILTER = "CLUSTER";
-    
+
     /**
      * Get the type of Interceptor.
      *

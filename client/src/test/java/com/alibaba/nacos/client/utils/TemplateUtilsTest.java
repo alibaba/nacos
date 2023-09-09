@@ -18,12 +18,10 @@
 
 package com.alibaba.nacos.client.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.mockito.Mockito;
 
 public class TemplateUtilsTest {
-    
+
     @Test
     public void testStringNotEmptyAndThenExecuteSuccess() {
         String word = "run";
@@ -31,7 +29,7 @@ public class TemplateUtilsTest {
         TemplateUtils.stringNotEmptyAndThenExecute(word, task);
         Mockito.verify(task, Mockito.times(1)).run();
     }
-    
+
     @Test
     public void testStringNotEmptyAndThenExecuteFail() {
         String word = "";
@@ -39,14 +37,14 @@ public class TemplateUtilsTest {
         TemplateUtils.stringNotEmptyAndThenExecute(word, task);
         Mockito.verify(task, Mockito.times(0)).run();
     }
-    
+
     @Test
     public void testStringEmptyAndThenExecuteSuccess() {
         String word = "   ";
         String actual = TemplateUtils.stringEmptyAndThenExecute(word, () -> "call");
         Assert.assertEquals("", actual);
     }
-    
+
     @Test
     public void testStringEmptyAndThenExecuteFail() {
         String word = "";
@@ -54,14 +52,14 @@ public class TemplateUtilsTest {
         String actual = TemplateUtils.stringEmptyAndThenExecute(word, () -> expect);
         Assert.assertEquals(expect, actual);
     }
-    
+
     @Test
     public void testStringBlankAndThenExecuteSuccess() {
         String word = "success";
         String actual = TemplateUtils.stringBlankAndThenExecute(word, () -> "call");
         Assert.assertEquals(word, actual);
     }
-    
+
     @Test
     public void testStringBlankAndThenExecuteFail() {
         String word = "   ";

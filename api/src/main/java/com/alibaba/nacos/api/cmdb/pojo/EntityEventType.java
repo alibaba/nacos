@@ -23,13 +23,9 @@ package com.alibaba.nacos.api.cmdb.pojo;
  * @since 0.7.0
  */
 public enum EntityEventType {
-    
-    /**
-     * Add or update entity.
-     */
+
+    /** Add or update entity. */
     ENTITY_ADD_OR_UPDATE,
-    /**
-     * Remove entity.
-     */
+    /** Remove entity. */
     ENTITY_REMOVE
 }

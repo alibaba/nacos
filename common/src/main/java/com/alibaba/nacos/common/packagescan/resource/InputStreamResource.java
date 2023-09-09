@@ -17,23 +17,21 @@
 package com.alibaba.nacos.common.packagescan.resource;
 
 import com.alibaba.nacos.common.utils.AbstractAssert;
-
 import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
- * {@link Resource} implementation for a given {@link InputStream}.
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications {@link
+ * Resource} implementation for a given {@link InputStream}.
  *
- * <p>Should only be used if no other specific {@code Resource} implementation
- * is applicable. In particular, prefer {@link ByteArrayResource} or any of the
- * file-based {@code Resource} implementations where possible.
+ * <p>Should only be used if no other specific {@code Resource} implementation is applicable. In
+ * particular, prefer {@link ByteArrayResource} or any of the file-based {@code Resource}
+ * implementations where possible.
  *
- * <p>In contrast to other {@code Resource} implementations, this is a descriptor
- * for an <i>already opened</i> resource - therefore returning {@code true} from
- * {@link #isOpen()}. Do not use an {@code InputStreamResource} if you need to
- * keep the resource descriptor somewhere, or if you need to read from a stream
- * multiple times.
+ * <p>In contrast to other {@code Resource} implementations, this is a descriptor for an <i>already
+ * opened</i> resource - therefore returning {@code true} from {@link #isOpen()}. Do not use an
+ * {@code InputStreamResource} if you need to keep the resource descriptor somewhere, or if you need
+ * to read from a stream multiple times.
  *
  * @author Juergen Hoeller
  * @author Sam Brannen
@@ -72,62 +70,52 @@ public class InputStreamResource extends AbstractResource {
         this.description = (description != null ? description : "");
     }
 
-
-    /**
-     * This implementation always returns {@code true}.
-     */
+    /** This implementation always returns {@code true}. */
     @Override
     public boolean exists() {
         return true;
     }
 
-    /**
-     * This implementation always returns {@code true}.
-     */
+    /** This implementation always returns {@code true}. */
     @Override
     public boolean isOpen() {
         return true;
     }
 
     /**
-     * This implementation throws IllegalStateException if attempting to
-     * read the underlying stream multiple times.
+     * This implementation throws IllegalStateException if attempting to read the underlying stream
+     * multiple times.
      */
     @Override
     public InputStream getInputStream() throws IOException, IllegalStateException {
         if (this.read) {
-            throw new IllegalStateException("InputStream has already been read - "
-                    + "do not use InputStreamResource if a stream needs to be read multiple times");
+            throw new IllegalStateException(
+                    "InputStream has already been read - "
+                            + "do not use InputStreamResource if a stream needs to be read multiple times");
         }
         this.read = true;
         return this.inputStream;
     }
 
     /**
-     * This implementation returns a description that includes the passed-in
-     * description, if any.
+     * This implementation returns a description that includes the passed-in description, if any.
      */
     @Override
     public String getDescription() {
         return "InputStream resource [" + this.description + "]";
     }
 
-
-    /**
-     * This implementation compares the underlying InputStream.
-     */
+    /** This implementation compares the underlying InputStream. */
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof InputStreamResource
-                && ((InputStreamResource) other).inputStream.equals(this.inputStream)));
+        return (this == other
+                || (other instanceof InputStreamResource
+                        && ((InputStreamResource) other).inputStream.equals(this.inputStream)));
     }
 
-    /**
-     * This implementation returns the hash code of the underlying InputStream.
-     */
+    /** This implementation returns the hash code of the underlying InputStream. */
     @Override
     public int hashCode() {
         return this.inputStream.hashCode();
     }
-
 }

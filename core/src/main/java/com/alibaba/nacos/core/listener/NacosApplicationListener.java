@@ -27,59 +27,50 @@ import org.springframework.core.env.ConfigurableEnvironment;
  * @since 1.4.1
  */
 public interface NacosApplicationListener {
-    
-    /**
-     * {@link SpringApplicationRunListener#starting}.
-     */
-    default void starting() {
-    }
-    
+
+    /** {@link SpringApplicationRunListener#starting}. */
+    default void starting() {}
+
     /**
      * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#environmentPrepared}.
      *
      * @param environment environment
      */
-    default void environmentPrepared(ConfigurableEnvironment environment) {
-    }
-    
+    default void environmentPrepared(ConfigurableEnvironment environment) {}
+
     /**
      * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#contextLoaded}.
      *
      * @param context context
      */
-    default void contextPrepared(ConfigurableApplicationContext context) {
-    }
-    
+    default void contextPrepared(ConfigurableApplicationContext context) {}
+
     /**
      * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#contextLoaded}.
      *
      * @param context context
      */
-    default void contextLoaded(ConfigurableApplicationContext context) {
-    }
-    
+    default void contextLoaded(ConfigurableApplicationContext context) {}
+
     /**
      * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#started}.
      *
      * @param context context
      */
-    default void started(ConfigurableApplicationContext context) {
-    }
-    
+    default void started(ConfigurableApplicationContext context) {}
+
     /**
      * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#running}.
      *
      * @param context context
      */
-    default void running(ConfigurableApplicationContext context) {
-    }
-    
+    default void running(ConfigurableApplicationContext context) {}
+
     /**
      * {@link com.alibaba.nacos.core.code.SpringApplicationRunListener#failed}.
      *
-     * @param context   context
+     * @param context context
      * @param exception exception
      */
-    default void failed(ConfigurableApplicationContext context, Throwable exception) {
-    }
+    default void failed(ConfigurableApplicationContext context, Throwable exception) {}
 }

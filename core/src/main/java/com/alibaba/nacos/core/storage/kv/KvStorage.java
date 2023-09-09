@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.storage.kv;
 
 import com.alibaba.nacos.core.exception.KvStorageException;
-
 import java.util.List;
 import java.util.Map;
 
@@ -27,25 +26,18 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface KvStorage {
-    
+
     enum KvType {
-        /**
-         * Local file storage.
-         */
+        /** Local file storage. */
         File,
-    
-        /**
-         * Local memory storage.
-         */
+
+        /** Local memory storage. */
         Memory,
-    
-        /**
-         * RocksDB storage.
-         */
+
+        /** RocksDB storage. */
         RocksDB,
     }
-    
-    
+
     /**
      * get data by key.
      *
@@ -54,7 +46,7 @@ public interface KvStorage {
      * @throws KvStorageException KVStorageException
      */
     byte[] get(byte[] key) throws KvStorageException;
-    
+
     /**
      * batch get by List byte[].
      *
@@ -63,25 +55,25 @@ public interface KvStorage {
      * @throws KvStorageException KvStorageException
      */
     Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KvStorageException;
-    
+
     /**
      * write data.
      *
-     * @param key   byte[]
+     * @param key byte[]
      * @param value byte[]
      * @throws KvStorageException KvStorageException
      */
     void put(byte[] key, byte[] value) throws KvStorageException;
-    
+
     /**
      * batch write.
      *
-     * @param keys    List byte[]
+     * @param keys List byte[]
      * @param values List byte[]
      * @throws KvStorageException KvStorageException
      */
     void batchPut(List<byte[]> keys, List<byte[]> values) throws KvStorageException;
-    
+
     /**
      * delete with key.
      *
@@ -89,7 +81,7 @@ public interface KvStorage {
      * @throws KvStorageException KvStorageException
      */
     void delete(byte[] key) throws KvStorageException;
-    
+
     /**
      * batch delete with keys.
      *
@@ -97,7 +89,7 @@ public interface KvStorage {
      * @throws KvStorageException KvStorageException
      */
     void batchDelete(List<byte[]> keys) throws KvStorageException;
-    
+
     /**
      * do snapshot.
      *
@@ -105,7 +97,7 @@ public interface KvStorage {
      * @throws KvStorageException KVStorageException
      */
     void doSnapshot(final String backupPath) throws KvStorageException;
-    
+
     /**
      * load snapshot.
      *
@@ -113,7 +105,7 @@ public interface KvStorage {
      * @throws KvStorageException KVStorageException
      */
     void snapshotLoad(String path) throws KvStorageException;
-    
+
     /**
      * Get all keys.
      *
@@ -121,10 +113,7 @@ public interface KvStorage {
      * @throws KvStorageException KVStorageException
      */
     List<byte[]> allKeys() throws KvStorageException;
-    
-    /**
-     * shutdown.
-     */
+
+    /** shutdown. */
     void shutdown();
-    
 }

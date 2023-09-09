@@ -27,7 +27,7 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
  * @author xiweng.yy
  */
 public class AuthHeaderUtil {
-    
+
     /**
      * Add identity info to Http header.
      *
@@ -36,8 +36,8 @@ public class AuthHeaderUtil {
     public static void addIdentityToHeader(Header header) {
         AuthConfigs authConfigs = ApplicationUtils.getBean(AuthConfigs.class);
         if (StringUtils.isNotBlank(authConfigs.getServerIdentityKey())) {
-            header.addParam(authConfigs.getServerIdentityKey(), authConfigs.getServerIdentityValue());
+            header.addParam(
+                    authConfigs.getServerIdentityKey(), authConfigs.getServerIdentityValue());
         }
     }
-    
 }

@@ -20,12 +20,11 @@ import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Tag;
-import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 
 /**
  * dynamic meter refresh service.
@@ -34,29 +33,30 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Service
 public class ConfigDynamicMeterRefreshService {
-    
-    private static final String TOPN_CONFIG_CHANGE_REGISTRY = NacosMeterRegistryCenter.TOPN_CONFIG_CHANGE_REGISTRY;
-    
+
+    private static final String TOPN_CONFIG_CHANGE_REGISTRY =
+            NacosMeterRegistryCenter.TOPN_CONFIG_CHANGE_REGISTRY;
+
     private static final int CONFIG_CHANGE_N = 10;
-    
-    /**
-     * refresh config change count top n per 30s.
-     */
+
+    /** refresh config change count top n per 30s. */
     @Scheduled(cron = "0/30 * * * * *")
     public void refreshTopnConfigChangeCount() {
         NacosMeterRegistryCenter.clear(TOPN_CONFIG_CHANGE_REGISTRY);
-        List<Pair<String, AtomicInteger>> topnConfigChangeCount = MetricsMonitor.getConfigChangeCount()
-                .getTopNCounter(CONFIG_CHANGE_N);
+        List<Pair<String, AtomicInteger>> topnConfigChangeCount =
+                MetricsMonitor.getConfigChangeCount().getTopNCounter(CONFIG_CHANGE_N);
         for (Pair<String, AtomicInteger> configChangeCount : topnConfigChangeCount) {
             List<Tag> tags = new ArrayList<>();
             tags.add(new ImmutableTag("config", configChangeCount.getFirst()));
-            NacosMeterRegistryCenter.gauge(TOPN_CONFIG_CHANGE_REGISTRY, "config_change_count", tags, configChangeCount.getSecond());
+            NacosMeterRegistryCenter.gauge(
+                    TOPN_CONFIG_CHANGE_REGISTRY,
+                    "config_change_count",
+                    tags,
+                    configChangeCount.getSecond());
         }
     }
-    
-    /**
-     * reset config change count to 0 every week.
-     */
+
+    /** reset config change count to 0 every week. */
     @Scheduled(cron = "0 0 0 ? * 1")
     public void resetTopnConfigChangeCount() {
         MetricsMonitor.getConfigChangeCount().removeAll();

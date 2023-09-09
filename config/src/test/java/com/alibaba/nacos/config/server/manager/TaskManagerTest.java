@@ -16,21 +16,6 @@
 
 package com.alibaba.nacos.config.server.manager;
 
-import com.alibaba.nacos.common.task.AbstractDelayTask;
-import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import com.alibaba.nacos.config.server.constant.Constants;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.internal.verification.Times;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -38,35 +23,44 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
+import com.alibaba.nacos.config.server.constant.Constants;
+import java.lang.management.ManagementFactory;
+import java.util.concurrent.TimeUnit;
+import javax.management.ObjectName;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.internal.verification.Times;
+import org.mockito.junit.MockitoJUnitRunner;
+
 @RunWith(MockitoJUnitRunner.class)
 public class TaskManagerTest {
-    
+
     private TaskManager taskManager;
-    
-    @Mock
-    private NacosTaskProcessor taskProcessor;
-    
-    @Mock
-    private NacosTaskProcessor testTaskProcessor;
-    
+
+    @Mock private NacosTaskProcessor taskProcessor;
+
+    @Mock private NacosTaskProcessor testTaskProcessor;
+
     private AbstractDelayTask abstractTask;
-    
+
     @Before
     public void setUp() {
         taskManager = new TaskManager(TaskManagerTest.class.getName());
         taskManager.setDefaultTaskProcessor(taskProcessor);
-        abstractTask = new AbstractDelayTask() {
-            @Override
-            public void merge(AbstractDelayTask task) {
-            }
-        };
+        abstractTask =
+                new AbstractDelayTask() {
+                    @Override
+                    public void merge(AbstractDelayTask task) {}
+                };
     }
-    
+
     @After
     public void tearDown() {
         taskManager.close();
     }
-    
+
     @Test
     public void testSize() {
         assertEquals(0, taskManager.size());
@@ -75,7 +69,7 @@ public class TaskManagerTest {
         taskManager.removeTask("test");
         assertEquals(0, taskManager.size());
     }
-    
+
     @Test
     public void testIsEmpty() {
         assertTrue(taskManager.isEmpty());
@@ -84,7 +78,7 @@ public class TaskManagerTest {
         taskManager.removeTask("test");
         assertTrue(taskManager.isEmpty());
     }
-    
+
     @Test
     public void testAddProcessor() throws InterruptedException {
         when(testTaskProcessor.process(abstractTask)).thenReturn(true);
@@ -94,7 +88,7 @@ public class TaskManagerTest {
         verify(testTaskProcessor).process(abstractTask);
         verify(taskProcessor, never()).process(abstractTask);
     }
-    
+
     @Test
     public void testRemoveProcessor() throws InterruptedException {
         when(taskProcessor.process(abstractTask)).thenReturn(true);
@@ -105,7 +99,7 @@ public class TaskManagerTest {
         verify(testTaskProcessor, never()).process(abstractTask);
         verify(taskProcessor).process(abstractTask);
     }
-    
+
     @Test
     public void testRetryTaskAfterFail() throws InterruptedException {
         when(taskProcessor.process(abstractTask)).thenReturn(false, true);
@@ -113,21 +107,27 @@ public class TaskManagerTest {
         TimeUnit.MILLISECONDS.sleep(300);
         verify(taskProcessor, new Times(2)).process(abstractTask);
     }
-    
+
     @Test
     public void testGetTaskInfos() throws InterruptedException {
         taskManager.addProcessor("test", testTaskProcessor);
         when(testTaskProcessor.process(abstractTask)).thenReturn(true);
         taskManager.addTask("test", abstractTask);
-        assertEquals("test:Thu Jan 01 08:00:00 CST 1970" + Constants.NACOS_LINE_SEPARATOR, taskManager.getTaskInfos());
+        assertEquals(
+                "test:Thu Jan 01 08:00:00 CST 1970" + Constants.NACOS_LINE_SEPARATOR,
+                taskManager.getTaskInfos());
         TimeUnit.MILLISECONDS.sleep(150);
         assertEquals("test:finished" + Constants.NACOS_LINE_SEPARATOR, taskManager.getTaskInfos());
     }
-    
+
     @Test
     public void testInit() throws Exception {
         taskManager.init();
-        ObjectName oName = new ObjectName(TaskManagerTest.class.getName() + ":type=" + TaskManager.class.getSimpleName());
+        ObjectName oName =
+                new ObjectName(
+                        TaskManagerTest.class.getName()
+                                + ":type="
+                                + TaskManager.class.getSimpleName());
         assertTrue(ManagementFactory.getPlatformMBeanServer().isRegistered(oName));
     }
 }

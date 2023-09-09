@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class ServerReloadRequestTest extends BasicRequestTest {
-    
+
     @Test
     public void testSerialize() throws Exception {
         ServerReloadRequest request = new ServerReloadRequest();
@@ -35,11 +32,12 @@ public class ServerReloadRequestTest extends BasicRequestTest {
         Assert.assertTrue(json.contains("\"module\":\"internal\""));
         Assert.assertTrue(json.contains("\"requestId\":\"1\""));
     }
-    
+
     @Test
     public void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"reloadCount\":10,\"reloadServer\":\"1.1.1.1\","
-                + "\"module\":\"internal\"}";
+        String json =
+                "{\"headers\":{},\"requestId\":\"1\",\"reloadCount\":10,\"reloadServer\":\"1.1.1.1\","
+                        + "\"module\":\"internal\"}";
         ServerReloadRequest result = mapper.readValue(json, ServerReloadRequest.class);
         Assert.assertNotNull(result);
         Assert.assertEquals(10, result.getReloadCount());

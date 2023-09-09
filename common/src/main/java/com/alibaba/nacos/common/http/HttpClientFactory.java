@@ -25,19 +25,18 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
  * @author mai.jh
  */
 public interface HttpClientFactory {
-    
+
     /**
      * create new nacost rest.
      *
      * @return NacosRestTemplate
      */
     NacosRestTemplate createNacosRestTemplate();
-    
+
     /**
      * create new nacos async rest.
      *
      * @return NacosAsyncRestTemplate
      */
     NacosAsyncRestTemplate createNacosAsyncRestTemplate();
-    
 }

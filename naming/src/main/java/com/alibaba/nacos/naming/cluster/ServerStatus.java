@@ -23,28 +23,16 @@ package com.alibaba.nacos.naming.cluster;
  * @since 1.0.0
  */
 public enum ServerStatus {
-    /**
-     * server is up and ready for request.
-     */
+    /** server is up and ready for request. */
     UP,
-    /**
-     * server is out of service, something abnormal happened.
-     */
+    /** server is out of service, something abnormal happened. */
     DOWN,
-    /**
-     * server is preparing itself for request, usually 'UP' is the next status.
-     */
+    /** server is preparing itself for request, usually 'UP' is the next status. */
     STARTING,
-    /**
-     * server is manually paused.
-     */
+    /** server is manually paused. */
     PAUSED,
-    /**
-     * only write operation is permitted.
-     */
+    /** only write operation is permitted. */
     WRITE_ONLY,
-    /**
-     * only read operation is permitted.
-     */
+    /** only read operation is permitted. */
     READ_ONLY
 }

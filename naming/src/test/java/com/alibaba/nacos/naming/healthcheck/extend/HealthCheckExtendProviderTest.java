@@ -18,22 +18,18 @@ package com.alibaba.nacos.naming.healthcheck.extend;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.Collection;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.beans.factory.config.SingletonBeanRegistry;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
 @RunWith(MockitoJUnitRunner.class)
 public class HealthCheckExtendProviderTest {
 
-    @Mock
-    private SingletonBeanRegistry registry;
+    @Mock private SingletonBeanRegistry registry;
 
     private HealthCheckExtendProvider healthCheckExtendProvider;
 
@@ -41,7 +37,8 @@ public class HealthCheckExtendProviderTest {
     public void setUp() throws Exception {
         healthCheckExtendProvider = new HealthCheckExtendProvider();
 
-        AbstractHealthCheckProcessorExtend checkProcessorExtend = new HealthCheckProcessorExtendV2();
+        AbstractHealthCheckProcessorExtend checkProcessorExtend =
+                new HealthCheckProcessorExtendV2();
         Collection<HealthCheckProcessorV2> processors = new ArrayList<>();
         processors.add(new TestHealthCheckProcessor());
         ReflectionTestUtils.setField(checkProcessorExtend, "processors", processors);

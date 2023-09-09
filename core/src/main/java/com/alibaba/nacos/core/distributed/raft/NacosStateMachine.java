@@ -20,8 +20,8 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
-import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.ProtoMessageUtil;
+import com.alibaba.nacos.consistency.RequestProcessor;
 import com.alibaba.nacos.consistency.cp.RequestProcessor4CP;
 import com.alibaba.nacos.consistency.entity.ReadRequest;
 import com.alibaba.nacos.consistency.entity.Response;
@@ -47,7 +47,6 @@ import com.alipay.sofa.jraft.error.RaftException;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotReader;
 import com.alipay.sofa.jraft.storage.snapshot.SnapshotWriter;
 import com.google.protobuf.Message;
-
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -67,30 +66,30 @@ import java.util.function.BiConsumer;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 class NacosStateMachine extends StateMachineAdapter {
-    
+
     protected final JRaftServer server;
-    
+
     protected final RequestProcessor processor;
-    
+
     private final AtomicBoolean isLeader = new AtomicBoolean(false);
-    
+
     private final String groupId;
-    
+
     private Collection<JSnapshotOperation> operations;
-    
+
     private Node node;
-    
+
     private volatile long term = -1;
-    
+
     private volatile String leaderIp = "unknown";
-    
+
     NacosStateMachine(JRaftServer server, RequestProcessor4CP processor) {
         this.server = server;
         this.processor = processor;
         this.groupId = processor.group();
         adapterToJRaftSnapshot(processor.loadSnapshotOperate());
     }
-    
+
     @Override
     public void onApply(Iterator iter) {
         int index = 0;
@@ -108,21 +107,22 @@ class NacosStateMachine extends StateMachineAdapter {
                         final ByteBuffer data = iter.getData();
                         message = ProtoMessageUtil.parse(data.array());
                         if (message instanceof ReadRequest) {
-                            //'iter.done() == null' means current node is follower, ignore read operation
+                            // 'iter.done() == null' means current node is follower, ignore read
+                            // operation
                             applied++;
                             index++;
                             iter.next();
                             continue;
                         }
                     }
-                    
+
                     LoggerUtils.printIfDebugEnabled(Loggers.RAFT, "receive log : {}", message);
-                    
+
                     if (message instanceof WriteRequest) {
                         Response response = processor.onApply((WriteRequest) message);
                         postProcessor(response, closure);
                     }
-                    
+
                     if (message instanceof ReadRequest) {
                         Response response = processor.onRequest((ReadRequest) message);
                         postProcessor(response, closure);
@@ -135,36 +135,42 @@ class NacosStateMachine extends StateMachineAdapter {
                 } finally {
                     Optional.ofNullable(closure).ifPresent(closure1 -> closure1.run(status));
                 }
-                
+
                 applied++;
                 index++;
                 iter.next();
             }
         } catch (Throwable t) {
-            Loggers.RAFT.error("processor : {}, stateMachine meet critical error: {}.", processor, t);
-            iter.setErrorAndRollback(index - applied,
-                    new Status(RaftError.ESTATEMACHINE, "StateMachine meet critical error: %s.",
+            Loggers.RAFT.error(
+                    "processor : {}, stateMachine meet critical error: {}.", processor, t);
+            iter.setErrorAndRollback(
+                    index - applied,
+                    new Status(
+                            RaftError.ESTATEMACHINE,
+                            "StateMachine meet critical error: %s.",
                             ExceptionUtil.getStackTrace(t)));
         }
     }
-    
+
     public void setNode(Node node) {
         this.node = node;
     }
-    
+
     @Override
     public void onSnapshotSave(SnapshotWriter writer, Closure done) {
         for (JSnapshotOperation operation : operations) {
             try {
                 operation.onSnapshotSave(writer, done);
             } catch (Throwable t) {
-                Loggers.RAFT.error("There was an error saving the snapshot , error : {}, operation : {}", t,
+                Loggers.RAFT.error(
+                        "There was an error saving the snapshot , error : {}, operation : {}",
+                        t,
                         operation.info());
                 throw t;
             }
         }
     }
-    
+
     @Override
     public boolean onSnapshotLoad(SnapshotReader reader) {
         for (JSnapshotOperation operation : operations) {
@@ -174,13 +180,14 @@ class NacosStateMachine extends StateMachineAdapter {
                     return false;
                 }
             } catch (Throwable t) {
-                Loggers.RAFT.error("Snapshot load failed on : {}, has error : {}", operation.info(), t);
+                Loggers.RAFT.error(
+                        "Snapshot load failed on : {}, has error : {}", operation.info(), t);
                 return false;
             }
         }
         return true;
     }
-    
+
     @Override
     public void onLeaderStart(final long term) {
         super.onLeaderStart(term);
@@ -188,134 +195,168 @@ class NacosStateMachine extends StateMachineAdapter {
         this.isLeader.set(true);
         this.leaderIp = node.getNodeId().getPeerId().getEndpoint().toString();
         NotifyCenter.publishEvent(
-                RaftEvent.builder().groupId(groupId).leader(leaderIp).term(term).raftClusterInfo(allPeers()).build());
+                RaftEvent.builder()
+                        .groupId(groupId)
+                        .leader(leaderIp)
+                        .term(term)
+                        .raftClusterInfo(allPeers())
+                        .build());
     }
-    
+
     @Override
     public void onLeaderStop(final Status status) {
         super.onLeaderStop(status);
         this.isLeader.set(false);
     }
-    
+
     @Override
     public void onStartFollowing(LeaderChangeContext ctx) {
         this.term = ctx.getTerm();
         this.leaderIp = ctx.getLeaderId().getEndpoint().toString();
         NotifyCenter.publishEvent(
-                RaftEvent.builder().groupId(groupId).leader(leaderIp).term(ctx.getTerm()).raftClusterInfo(allPeers())
+                RaftEvent.builder()
+                        .groupId(groupId)
+                        .leader(leaderIp)
+                        .term(ctx.getTerm())
+                        .raftClusterInfo(allPeers())
                         .build());
     }
-    
+
     @Override
     public void onConfigurationCommitted(Configuration conf) {
         NotifyCenter.publishEvent(
-                RaftEvent.builder().groupId(groupId).raftClusterInfo(JRaftUtils.toStrings(conf.getPeers())).build());
+                RaftEvent.builder()
+                        .groupId(groupId)
+                        .raftClusterInfo(JRaftUtils.toStrings(conf.getPeers()))
+                        .build());
     }
-    
+
     @Override
     public void onError(RaftException e) {
         super.onError(e);
         processor.onError(e);
         NotifyCenter.publishEvent(
-                RaftEvent.builder().groupId(groupId).leader(leaderIp).term(term).raftClusterInfo(allPeers())
+                RaftEvent.builder()
+                        .groupId(groupId)
+                        .leader(leaderIp)
+                        .term(term)
+                        .raftClusterInfo(allPeers())
                         .errMsg(e.toString())
                         .build());
     }
-    
+
     public boolean isLeader() {
         return isLeader.get();
     }
-    
+
     private List<String> allPeers() {
         if (node == null) {
             return Collections.emptyList();
         }
-        
+
         if (node.isLeader()) {
             return JRaftUtils.toStrings(node.listPeers());
         }
-        
-        return JRaftUtils.toStrings(RouteTable.getInstance().getConfiguration(node.getGroupId()).getPeers());
+
+        return JRaftUtils.toStrings(
+                RouteTable.getInstance().getConfiguration(node.getGroupId()).getPeers());
     }
-    
+
     private void postProcessor(Response data, NacosClosure closure) {
         if (Objects.nonNull(closure)) {
             closure.setResponse(data);
         }
     }
-    
+
     public long getTerm() {
         return term;
     }
-    
+
     private void adapterToJRaftSnapshot(Collection<SnapshotOperation> userOperates) {
         List<JSnapshotOperation> tmp = new ArrayList<>();
-        
+
         for (SnapshotOperation item : userOperates) {
-            
+
             if (item == null) {
                 Loggers.RAFT.error("Existing SnapshotOperation for null");
                 continue;
             }
-            
-            tmp.add(new JSnapshotOperation() {
-                
-                @Override
-                public void onSnapshotSave(SnapshotWriter writer, Closure done) {
-                    final Writer wCtx = new Writer(writer.getPath());
-                    
-                    // Do a layer of proxy operation to shield different Raft
-                    // components from implementing snapshots
-                    
-                    final BiConsumer<Boolean, Throwable> callFinally = (result, t) -> {
-                        Boolean[] results = new Boolean[wCtx.listFiles().size()];
-                        int[] index = new int[] {0};
-                        wCtx.listFiles().forEach((file, meta) -> {
-                            try {
-                                results[index[0]++] = writer.addFile(file, buildMetadata(meta));
-                            } catch (Exception e) {
-                                throw new ConsistencyException(e);
-                            }
-                        });
-                        final Status status = result
-                                && Arrays.stream(results).allMatch(Boolean.TRUE::equals) ? Status.OK()
-                                : new Status(RaftError.EIO, "Fail to compress snapshot at %s, error is %s",
-                                        writer.getPath(), t == null ? "" : t.getMessage());
-                        done.run(status);
-                    };
-                    item.onSnapshotSave(wCtx, callFinally);
-                }
-                
-                @Override
-                public boolean onSnapshotLoad(SnapshotReader reader) {
-                    final Map<String, LocalFileMeta> metaMap = new HashMap<>(reader.listFiles().size());
-                    for (String fileName : reader.listFiles()) {
-                        final LocalFileMetaOutter.LocalFileMeta meta = (LocalFileMetaOutter.LocalFileMeta) reader
-                                .getFileMeta(fileName);
-                        
-                        byte[] bytes = meta.getUserMeta().toByteArray();
-                        
-                        final LocalFileMeta fileMeta;
-                        if (bytes == null || bytes.length == 0) {
-                            fileMeta = new LocalFileMeta();
-                        } else {
-                            fileMeta = JacksonUtils.toObj(bytes, LocalFileMeta.class);
+
+            tmp.add(
+                    new JSnapshotOperation() {
+
+                        @Override
+                        public void onSnapshotSave(SnapshotWriter writer, Closure done) {
+                            final Writer wCtx = new Writer(writer.getPath());
+
+                            // Do a layer of proxy operation to shield different Raft
+                            // components from implementing snapshots
+
+                            final BiConsumer<Boolean, Throwable> callFinally =
+                                    (result, t) -> {
+                                        Boolean[] results = new Boolean[wCtx.listFiles().size()];
+                                        int[] index = new int[] {0};
+                                        wCtx.listFiles()
+                                                .forEach(
+                                                        (file, meta) -> {
+                                                            try {
+                                                                results[index[0]++] =
+                                                                        writer.addFile(
+                                                                                file,
+                                                                                buildMetadata(
+                                                                                        meta));
+                                                            } catch (Exception e) {
+                                                                throw new ConsistencyException(e);
+                                                            }
+                                                        });
+                                        final Status status =
+                                                result
+                                                                && Arrays.stream(results)
+                                                                        .allMatch(
+                                                                                Boolean.TRUE
+                                                                                        ::equals)
+                                                        ? Status.OK()
+                                                        : new Status(
+                                                                RaftError.EIO,
+                                                                "Fail to compress snapshot at %s, error is %s",
+                                                                writer.getPath(),
+                                                                t == null ? "" : t.getMessage());
+                                        done.run(status);
+                                    };
+                            item.onSnapshotSave(wCtx, callFinally);
                         }
-                        
-                        metaMap.put(fileName, fileMeta);
-                    }
-                    final Reader rCtx = new Reader(reader.getPath(), metaMap);
-                    return item.onSnapshotLoad(rCtx);
-                }
-                
-                @Override
-                public String info() {
-                    return item.toString();
-                }
-            });
+
+                        @Override
+                        public boolean onSnapshotLoad(SnapshotReader reader) {
+                            final Map<String, LocalFileMeta> metaMap =
+                                    new HashMap<>(reader.listFiles().size());
+                            for (String fileName : reader.listFiles()) {
+                                final LocalFileMetaOutter.LocalFileMeta meta =
+                                        (LocalFileMetaOutter.LocalFileMeta)
+                                                reader.getFileMeta(fileName);
+
+                                byte[] bytes = meta.getUserMeta().toByteArray();
+
+                                final LocalFileMeta fileMeta;
+                                if (bytes == null || bytes.length == 0) {
+                                    fileMeta = new LocalFileMeta();
+                                } else {
+                                    fileMeta = JacksonUtils.toObj(bytes, LocalFileMeta.class);
+                                }
+
+                                metaMap.put(fileName, fileMeta);
+                            }
+                            final Reader rCtx = new Reader(reader.getPath(), metaMap);
+                            return item.onSnapshotLoad(rCtx);
+                        }
+
+                        @Override
+                        public String info() {
+                            return item.toString();
+                        }
+                    });
         }
-        
+
         this.operations = Collections.unmodifiableList(tmp);
     }
-    
 }

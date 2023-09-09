@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.controllers.v2;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.naming.cluster.ServerStatus;
@@ -27,19 +29,13 @@ import com.alibaba.nacos.naming.model.form.UpdateSwitchForm;
 import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Collection;
+import java.util.HashSet;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
-
-import java.util.Collection;
-import java.util.HashSet;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * OperatorControllerV2Test.
@@ -47,47 +43,43 @@ import static org.junit.Assert.assertEquals;
  * @author dongyafei
  * @date 2022/9/15
  */
-
 @RunWith(MockitoJUnitRunner.class)
 public class OperatorControllerV2Test {
-    
+
     private OperatorControllerV2 operatorControllerV2;
-    
-    @Mock
-    private SwitchDomain switchDomain;
-    
-    @Mock
-    private SwitchManager switchManager;
-    
-    @Mock
-    private ServerStatusManager serverStatusManager;
-    
-    @Mock
-    private ClientManager clientManager;
-    
+
+    @Mock private SwitchDomain switchDomain;
+
+    @Mock private SwitchManager switchManager;
+
+    @Mock private ServerStatusManager serverStatusManager;
+
+    @Mock private ClientManager clientManager;
+
     @Before
     public void setUp() {
-        this.operatorControllerV2 = new OperatorControllerV2(switchManager, serverStatusManager, switchDomain,
-                clientManager);
+        this.operatorControllerV2 =
+                new OperatorControllerV2(
+                        switchManager, serverStatusManager, switchDomain, clientManager);
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(environment);
     }
-    
+
     @Test
     public void testSwitches() {
         Result<SwitchDomain> result = operatorControllerV2.switches();
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(this.switchDomain, result.getData());
     }
-    
+
     @Test
     public void testUpdateSwitches() {
         UpdateSwitchForm updateSwitchForm = new UpdateSwitchForm();
         updateSwitchForm.setDebug(true);
         updateSwitchForm.setEntry("test");
         updateSwitchForm.setValue("test");
-        
+
         try {
             Result<String> result = operatorControllerV2.updateSwitch(updateSwitchForm);
             assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
@@ -97,7 +89,7 @@ public class OperatorControllerV2Test {
             Assert.fail(e.getMessage());
         }
     }
-    
+
     @Test
     public void testMetrics() {
         Mockito.when(serverStatusManager.getServerStatus()).thenReturn(ServerStatus.UP);
@@ -107,12 +99,12 @@ public class OperatorControllerV2Test {
         clients.add("127.0.0.1:8082#false");
         Mockito.when(clientManager.allClientId()).thenReturn(clients);
         Mockito.when(clientManager.isResponsibleClient(null)).thenReturn(Boolean.TRUE);
-        
+
         Result<MetricsInfoVo> result = operatorControllerV2.metrics(false);
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
-        
+
         MetricsInfoVo metricsInfoVo = result.getData();
-        
+
         Assert.assertEquals(ServerStatus.UP.toString(), metricsInfoVo.getStatus());
         Assert.assertEquals(3, metricsInfoVo.getClientCount().intValue());
         Assert.assertEquals(1, metricsInfoVo.getConnectionBasedClientCount().intValue());

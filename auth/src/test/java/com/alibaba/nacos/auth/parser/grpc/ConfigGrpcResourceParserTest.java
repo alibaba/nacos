@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.auth.parser.grpc;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
@@ -23,22 +25,17 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.assertEquals;
-
 public class ConfigGrpcResourceParserTest {
-    
+
     private ConfigGrpcResourceParser resourceParser;
-    
+
     @Before
     public void setUp() throws Exception {
         resourceParser = new ConfigGrpcResourceParser();
     }
-    
+
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     public void testParseWithFullContext() throws NoSuchMethodException {
@@ -50,7 +47,7 @@ public class ConfigGrpcResourceParserTest {
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     public void testParseWithoutNamespace() throws NoSuchMethodException {
@@ -62,7 +59,7 @@ public class ConfigGrpcResourceParserTest {
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     public void testParseWithoutGroup() throws NoSuchMethodException {
@@ -74,7 +71,7 @@ public class ConfigGrpcResourceParserTest {
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     public void testParseWithoutDataId() throws NoSuchMethodException {
@@ -86,7 +83,7 @@ public class ConfigGrpcResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-    
+
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
     public void testParseWithConfigBatchListenRequest() throws NoSuchMethodException {
@@ -99,7 +96,7 @@ public class ConfigGrpcResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
     }
-    
+
     private Request mockConfigRequest(String tenant, String group, String dataId) {
         ConfigPublishRequest request = new ConfigPublishRequest();
         request.setTenant(tenant);
@@ -107,7 +104,7 @@ public class ConfigGrpcResourceParserTest {
         request.setDataId(dataId);
         return request;
     }
-    
+
     private Secured getMethodSecure() throws NoSuchMethodException {
         StackTraceElement[] traces = new Exception().getStackTrace();
         StackTraceElement callerElement = traces[1];

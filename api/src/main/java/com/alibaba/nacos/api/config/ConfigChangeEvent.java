@@ -25,20 +25,18 @@ import java.util.Map;
  * @author rushsky518
  */
 public class ConfigChangeEvent {
-    
+
     private final Map<String, ConfigChangeItem> data;
-    
+
     public ConfigChangeEvent(Map<String, ConfigChangeItem> data) {
         this.data = data;
     }
-    
+
     public ConfigChangeItem getChangeItem(String key) {
         return data.get(key);
     }
-    
+
     public Collection<ConfigChangeItem> getChangeItems() {
         return data.values();
     }
-    
 }
-

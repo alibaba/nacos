@@ -16,8 +16,9 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
-import com.alibaba.nacos.common.utils.IoUtils;
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
+import com.alibaba.nacos.common.utils.IoUtils;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -29,27 +30,25 @@ import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
-
 /**
  * Concurrent Disk util.
  *
  * @author nkorange
  */
 public class ConcurrentDiskUtil {
-    
+
     private static final String READ_ONLY = "r";
-    
+
     private static final String READ_WRITE = "rw";
-    
+
     private static final int RETRY_COUNT = 10;
-    
+
     private static final int SLEEP_BASETIME = 10;
-    
+
     /**
      * get file content.
      *
-     * @param path        file path
+     * @param path file path
      * @param charsetName charsetName
      * @return content
      * @throws IOException IOException
@@ -58,11 +57,11 @@ public class ConcurrentDiskUtil {
         File file = new File(path);
         return getFileContent(file, charsetName);
     }
-    
+
     /**
      * get file content.
      *
-     * @param file        file
+     * @param file file
      * @param charsetName charsetName
      * @return content
      * @throws IOException IOException
@@ -80,7 +79,8 @@ public class ConcurrentDiskUtil {
                 } catch (Exception e) {
                     ++i;
                     if (i > RETRY_COUNT) {
-                        NAMING_LOGGER.error("[NA] read " + file.getName() + " fail;retryed time: " + i, e);
+                        NAMING_LOGGER.error(
+                                "[NA] read " + file.getName() + " fail;retryed time: " + i, e);
                         throw new IOException("read " + file.getAbsolutePath() + " conflict");
                     }
                     sleep(SLEEP_BASETIME * i);
@@ -103,32 +103,34 @@ public class ConcurrentDiskUtil {
             }
         }
     }
-    
+
     /**
      * write file content.
      *
-     * @param path        file path
-     * @param content     content
+     * @param path file path
+     * @param content content
      * @param charsetName charsetName
      * @return whether write ok
      * @throws IOException IOException
      */
-    public static Boolean writeFileContent(String path, String content, String charsetName) throws IOException {
+    public static Boolean writeFileContent(String path, String content, String charsetName)
+            throws IOException {
         File file = new File(path);
         return writeFileContent(file, content, charsetName);
     }
-    
+
     /**
      * write file content.
      *
-     * @param file        file
-     * @param content     content
+     * @param file file
+     * @param content content
      * @param charsetName charsetName
      * @return whether write ok
      * @throws IOException IOException
      */
-    public static Boolean writeFileContent(File file, String content, String charsetName) throws IOException {
-        
+    public static Boolean writeFileContent(File file, String content, String charsetName)
+            throws IOException {
+
         if (!file.exists() && !file.createNewFile()) {
             return false;
         }
@@ -145,14 +147,15 @@ public class ConcurrentDiskUtil {
                 } catch (Exception e) {
                     ++i;
                     if (i > RETRY_COUNT) {
-                        NAMING_LOGGER.error("[NA] write {} fail;retryed time:{}", file.getName(), i);
+                        NAMING_LOGGER.error(
+                                "[NA] write {} fail;retryed time:{}", file.getName(), i);
                         throw new IOException("write " + file.getAbsolutePath() + " conflict", e);
                     }
                     sleep(SLEEP_BASETIME * i);
                     NAMING_LOGGER.warn("write " + file.getName() + " conflict;retry time: " + i);
                 }
             } while (null == lock);
-            
+
             byte[] contentBytes = content.getBytes(charsetName);
             ByteBuffer sendBuffer = ByteBuffer.wrap(contentBytes);
             while (sendBuffer.hasRemaining()) {
@@ -186,26 +189,26 @@ public class ConcurrentDiskUtil {
                     NAMING_LOGGER.warn("close wrong", e);
                 }
             }
-            
         }
         return true;
     }
-    
+
     /**
      * transfer ByteBuffer to String.
      *
-     * @param buffer      buffer
+     * @param buffer buffer
      * @param charsetName charsetName
      * @return String
      * @throws IOException IOException
      */
-    public static String byteBufferToString(ByteBuffer buffer, String charsetName) throws IOException {
+    public static String byteBufferToString(ByteBuffer buffer, String charsetName)
+            throws IOException {
         Charset charset = Charset.forName(charsetName);
         CharsetDecoder decoder = charset.newDecoder();
         CharBuffer charBuffer = decoder.decode(buffer.asReadOnlyBuffer());
         return charBuffer.toString();
     }
-    
+
     private static void sleep(int time) {
         try {
             Thread.sleep(time);
@@ -215,5 +218,4 @@ public class ConcurrentDiskUtil {
             Thread.currentThread().interrupt();
         }
     }
-    
 }

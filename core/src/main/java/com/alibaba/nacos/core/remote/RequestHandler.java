@@ -31,15 +31,14 @@ import org.springframework.beans.factory.annotation.Autowired;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class RequestHandler<T extends Request, S extends Response> {
-    
-    @Autowired
-    private RequestFilters requestFilters;
-    
+
+    @Autowired private RequestFilters requestFilters;
+
     /**
      * Handler request.
      *
      * @param request request
-     * @param meta    request meta data
+     * @param meta request meta data
      * @return response
      * @throws NacosException nacos exception when handle request has problem.
      */
@@ -53,19 +52,17 @@ public abstract class RequestHandler<T extends Request, S extends Response> {
             } catch (Throwable throwable) {
                 Loggers.REMOTE.error("filter error", throwable);
             }
-            
         }
         return handle(request, meta);
     }
-    
+
     /**
      * Handler request.
      *
      * @param request request
-     * @param meta    request meta data
+     * @param meta request meta data
      * @return response
      * @throws NacosException nacos exception when handle request has problem.
      */
     public abstract S handle(T request, RequestMeta meta) throws NacosException;
-    
 }

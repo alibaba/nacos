@@ -25,12 +25,16 @@ import java.util.Map;
  * @date 2023/8/31
  */
 public class UpdateServiceTraceEvent extends NamingTraceEvent {
-    
+
     private static final long serialVersionUID = -6792054530665003857L;
-    
+
     private final Map<String, String> metadata;
-    
-    public UpdateServiceTraceEvent(long eventTime, String serviceNamespace, String serviceGroup, String serviceName,
+
+    public UpdateServiceTraceEvent(
+            long eventTime,
+            String serviceNamespace,
+            String serviceGroup,
+            String serviceName,
             Map<String, String> metadata) {
         super("UPDATE_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
         this.metadata = metadata;

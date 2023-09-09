@@ -16,67 +16,68 @@
 
 package com.alibaba.nacos.api.naming.ability;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ServerNamingAbilityTest {
-    
+
     private static ObjectMapper jacksonMapper;
-    
+
     @BeforeClass
     public static void setUpClass() throws Exception {
         jacksonMapper = new ObjectMapper();
         jacksonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         jacksonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Test
     public void testDeserializeServerNamingAbilityForNonExistItem() throws JsonProcessingException {
         String nonExistItemJson = "{\"exampleAbility\":false}";
-        ServerNamingAbility actual = jacksonMapper.readValue(nonExistItemJson, ServerNamingAbility.class);
+        ServerNamingAbility actual =
+                jacksonMapper.readValue(nonExistItemJson, ServerNamingAbility.class);
         assertFalse(actual.isSupportJraft());
     }
-    
+
     @Test
     public void testEquals() throws JsonProcessingException {
         ServerNamingAbility expected = new ServerNamingAbility();
         expected.setSupportJraft(true);
         String serializeJson = jacksonMapper.writeValueAsString(expected);
-        ServerNamingAbility actual = jacksonMapper.readValue(serializeJson, ServerNamingAbility.class);
+        ServerNamingAbility actual =
+                jacksonMapper.readValue(serializeJson, ServerNamingAbility.class);
         assertEquals(expected, actual);
         actual = new ServerNamingAbility();
         assertNotEquals(expected, actual);
         actual.setSupportJraft(true);
         assertEquals(expected, actual);
     }
-    
+
     @Test
     public void testEqualsForOneObject() {
         ServerNamingAbility ability = new ServerNamingAbility();
         assertTrue(ability.equals(ability));
     }
-    
+
     @Test
     public void testEqualsForOtherAbility() {
         ServerNamingAbility ability = new ServerNamingAbility();
         assertFalse(ability.equals(new ClientNamingAbility()));
     }
-    
+
     @Test
     public void testHashCode() throws JsonProcessingException {
         ServerNamingAbility expected = new ServerNamingAbility();
         expected.setSupportJraft(true);
         String serializeJson = jacksonMapper.writeValueAsString(expected);
-        ServerNamingAbility actual = jacksonMapper.readValue(serializeJson, ServerNamingAbility.class);
+        ServerNamingAbility actual =
+                jacksonMapper.readValue(serializeJson, ServerNamingAbility.class);
         assertEquals(expected, actual);
         actual = new ServerNamingAbility();
         assertNotEquals(expected, actual);

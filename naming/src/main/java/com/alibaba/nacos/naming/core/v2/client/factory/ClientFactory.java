@@ -25,14 +25,14 @@ import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
  * @author xiweng.yy
  */
 public interface ClientFactory<C extends Client> {
-    
+
     /**
      * Get the type of client this factory can build.
      *
      * @return client type
      */
     String getType();
-    
+
     /**
      * Build a new {@link Client}.
      *
@@ -41,11 +41,11 @@ public interface ClientFactory<C extends Client> {
      * @return new {@link Client} implementation
      */
     C newClient(String clientId, ClientAttributes attributes);
-    
+
     /**
      * Build a new {@link Client} synced from other server node.
      *
-     * @param clientId   client id
+     * @param clientId client id
      * @param attributes client attributes
      * @return new sync {@link Client} implementation
      */

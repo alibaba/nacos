@@ -22,28 +22,16 @@ package com.alibaba.nacos.consistency;
  * @author nkorange
  */
 public enum DataOperation {
-    /**
-     * Data add.
-     */
+    /** Data add. */
     ADD,
-    /**
-     * Data changed.
-     */
+    /** Data changed. */
     CHANGE,
-    /**
-     * Data deleted.
-     */
+    /** Data deleted. */
     DELETE,
-    /**
-     * Data verify.
-     */
+    /** Data verify. */
     VERIFY,
-    /**
-     * Data Snapshot.
-     */
+    /** Data Snapshot. */
     SNAPSHOT,
-    /**
-     * Data query.
-     */
+    /** Data query. */
     QUERY;
 }

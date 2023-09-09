@@ -33,14 +33,13 @@ import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import java.util.Collection;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Collection;
 
 /**
  * OperatorControllerV2.
@@ -50,26 +49,31 @@ import java.util.Collection;
  */
 @NacosApi
 @RestController
-@RequestMapping({UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
-        UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + "/ops"})
+@RequestMapping({
+    UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
+    UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + "/ops"
+})
 public class OperatorControllerV2 {
-    
+
     private final SwitchManager switchManager;
-    
+
     private final ServerStatusManager serverStatusManager;
-    
+
     private final SwitchDomain switchDomain;
-    
+
     private final ClientManager clientManager;
-    
-    public OperatorControllerV2(SwitchManager switchManager, ServerStatusManager serverStatusManager,
-            SwitchDomain switchDomain, ClientManager clientManager) {
+
+    public OperatorControllerV2(
+            SwitchManager switchManager,
+            ServerStatusManager serverStatusManager,
+            SwitchDomain switchDomain,
+            ClientManager clientManager) {
         this.switchManager = switchManager;
         this.serverStatusManager = serverStatusManager;
         this.switchDomain = switchDomain;
         this.clientManager = clientManager;
     }
-    
+
     /**
      * Get switch information.
      *
@@ -79,7 +83,7 @@ public class OperatorControllerV2 {
     public Result<SwitchDomain> switches() {
         return Result.success(switchDomain);
     }
-    
+
     /**
      * Update switch information.
      *
@@ -92,15 +96,20 @@ public class OperatorControllerV2 {
     public Result<String> updateSwitch(UpdateSwitchForm updateSwitchForm) throws Exception {
         updateSwitchForm.validate();
         try {
-            switchManager.update(updateSwitchForm.getEntry(), updateSwitchForm.getValue(), updateSwitchForm.getDebug());
+            switchManager.update(
+                    updateSwitchForm.getEntry(),
+                    updateSwitchForm.getValue(),
+                    updateSwitchForm.getDebug());
         } catch (IllegalArgumentException e) {
-            throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.SERVER_ERROR,
+            throw new NacosApiException(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    ErrorCode.SERVER_ERROR,
                     e.getMessage());
         }
-        
+
         return Result.success("ok");
     }
-    
+
     /**
      * Get metrics information.
      *
@@ -109,13 +118,14 @@ public class OperatorControllerV2 {
      */
     @GetMapping("/metrics")
     public Result<MetricsInfoVo> metrics(
-            @RequestParam(value = "onlyStatus", required = false, defaultValue = "true") Boolean onlyStatus) {
+            @RequestParam(value = "onlyStatus", required = false, defaultValue = "true")
+                    Boolean onlyStatus) {
         MetricsInfoVo metricsInfoVo = new MetricsInfoVo();
         metricsInfoVo.setStatus(serverStatusManager.getServerStatus().name());
         if (onlyStatus) {
             return Result.success(metricsInfoVo);
         }
-        
+
         int connectionBasedClient = 0;
         int ephemeralIpPortClient = 0;
         int persistentIpPortClient = 0;
@@ -135,7 +145,7 @@ public class OperatorControllerV2 {
                 responsibleClientCount += 1;
             }
         }
-        
+
         metricsInfoVo.setServiceCount(MetricsMonitor.getDomCountMonitor().get());
         metricsInfoVo.setInstanceCount(MetricsMonitor.getIpCountMonitor().get());
         metricsInfoVo.setSubscribeCount(MetricsMonitor.getSubscriberCount().get());

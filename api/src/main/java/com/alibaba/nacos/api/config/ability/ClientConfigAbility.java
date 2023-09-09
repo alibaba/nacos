@@ -28,15 +28,13 @@ public class ClientConfigAbility implements Serializable {
 
     private static final long serialVersionUID = 2442741206510725737L;
 
-    /**
-     * support remote metrics get.
-     */
+    /** support remote metrics get. */
     private boolean supportRemoteMetrics;
-    
+
     public boolean isSupportRemoteMetrics() {
         return supportRemoteMetrics;
     }
-    
+
     public void setSupportRemoteMetrics(boolean supportRemoteMetrics) {
         this.supportRemoteMetrics = supportRemoteMetrics;
     }

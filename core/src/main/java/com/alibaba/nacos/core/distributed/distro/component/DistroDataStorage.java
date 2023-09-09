@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.distributed.distro.component;
 
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
-
 import java.util.List;
 
 /**
@@ -27,12 +26,10 @@ import java.util.List;
  * @author xiweng.yy
  */
 public interface DistroDataStorage {
-    
-    /**
-     * Set this distro data storage has finished initial step.
-     */
+
+    /** Set this distro data storage has finished initial step. */
     void finishInitial();
-    
+
     /**
      * Whether this distro data is finished initial.
      *
@@ -41,7 +38,7 @@ public interface DistroDataStorage {
      * @return {@code true} if finished, otherwise false
      */
     boolean isFinishInitial();
-    
+
     /**
      * Get distro datum.
      *
@@ -49,14 +46,14 @@ public interface DistroDataStorage {
      * @return need to sync datum
      */
     DistroData getDistroData(DistroKey distroKey);
-    
+
     /**
      * Get all distro datum snapshot.
      *
      * @return all datum
      */
     DistroData getDatumSnapshot();
-    
+
     /**
      * Get verify datum.
      *

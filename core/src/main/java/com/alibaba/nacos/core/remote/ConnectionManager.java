@@ -31,10 +31,6 @@ import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
-import org.slf4j.Logger;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -44,6 +40,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import javax.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.springframework.stereotype.Service;
 
 /**
  * connect manager.
@@ -53,21 +52,22 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @Service
 public class ConnectionManager {
-    
+
     private static final Logger LOGGER = com.alibaba.nacos.plugin.control.Loggers.CONNECTION;
-    
+
     private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<>(16);
-    
+
     Map<String, Connection> connections = new ConcurrentHashMap<>();
-    
+
     private RuntimeConnectionEjector runtimeConnectionEjector;
-    
+
     private ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry;
-    
-    public ConnectionManager(ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry) {
+
+    public ConnectionManager(
+            ClientConnectionEventListenerRegistry clientConnectionEventListenerRegistry) {
         this.clientConnectionEventListenerRegistry = clientConnectionEventListenerRegistry;
     }
-    
+
     /**
      * if monitor detail.
      *
@@ -75,12 +75,15 @@ public class ConnectionManager {
      * @return
      */
     public boolean traced(String clientIp) {
-        ConnectionControlRule connectionControlRule = ControlManagerCenter.getInstance().getConnectionControlManager()
-                .getConnectionLimitRule();
-        return connectionControlRule != null && connectionControlRule.getMonitorIpList() != null
+        ConnectionControlRule connectionControlRule =
+                ControlManagerCenter.getInstance()
+                        .getConnectionControlManager()
+                        .getConnectionLimitRule();
+        return connectionControlRule != null
+                && connectionControlRule.getMonitorIpList() != null
                 && connectionControlRule.getMonitorIpList().contains(clientIp);
     }
-    
+
     /**
      * check connection id is valid.
      *
@@ -90,15 +93,15 @@ public class ConnectionManager {
     public boolean checkValid(String connectionId) {
         return connections.containsKey(connectionId);
     }
-    
+
     /**
      * register a new connect.
      *
      * @param connectionId connectionId
-     * @param connection   connection
+     * @param connection connection
      */
     public synchronized boolean register(String connectionId, Connection connection) {
-        
+
         if (connection.isConnected()) {
             String clientIp = connection.getMetaInfo().clientIp;
             if (connections.containsKey(connectionId)) {
@@ -115,31 +118,36 @@ public class ConnectionManager {
                 connectionForClientIp.put(clientIp, new AtomicInteger(0));
             }
             connectionForClientIp.get(clientIp).getAndIncrement();
-            
+
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
-            
-            LOGGER.info("new connection registered successfully, connectionId = {},connection={} ", connectionId,
+
+            LOGGER.info(
+                    "new connection registered successfully, connectionId = {},connection={} ",
+                    connectionId,
                     connection);
             return true;
-            
         }
         return false;
-        
     }
-    
+
     private boolean checkLimit(Connection connection) {
         if (connection.getMetaInfo().isClusterSource()) {
             return false;
         }
         ConnectionMeta metaInfo = connection.getMetaInfo();
-        ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest(metaInfo.getClientIp(),
-                metaInfo.getAppName(), metaInfo.getLabel(RemoteConstants.LABEL_SOURCE));
+        ConnectionCheckRequest connectionCheckRequest =
+                new ConnectionCheckRequest(
+                        metaInfo.getClientIp(),
+                        metaInfo.getAppName(),
+                        metaInfo.getLabel(RemoteConstants.LABEL_SOURCE));
         connectionCheckRequest.setLabels(connection.getLabels());
-        ConnectionCheckResponse checkResponse = ControlManagerCenter.getInstance().getConnectionControlManager()
-                .check(connectionCheckRequest);
+        ConnectionCheckResponse checkResponse =
+                ControlManagerCenter.getInstance()
+                        .getConnectionControlManager()
+                        .check(connectionCheckRequest);
         return !checkResponse.isSuccess();
     }
-    
+
     /**
      * unregister a connection .
      *
@@ -161,7 +169,7 @@ public class ConnectionManager {
             clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
         }
     }
-    
+
     /**
      * get by connection id.
      *
@@ -171,7 +179,7 @@ public class ConnectionManager {
     public Connection getConnection(String connectionId) {
         return connections.get(connectionId);
     }
-    
+
     /**
      * get by client ip.
      *
@@ -189,18 +197,21 @@ public class ConnectionManager {
         }
         return connections;
     }
-    
-    /**
-     * init connection ejector.
-     */
+
+    /** init connection ejector. */
     public void initConnectionEjector() {
         String connectionRuntimeEjector = null;
         try {
             connectionRuntimeEjector = ControlConfigs.getInstance().getConnectionRuntimeEjector();
-            Collection<RuntimeConnectionEjector> ejectors = NacosServiceLoader.load(RuntimeConnectionEjector.class);
+            Collection<RuntimeConnectionEjector> ejectors =
+                    NacosServiceLoader.load(RuntimeConnectionEjector.class);
             for (RuntimeConnectionEjector runtimeConnectionEjectorLoad : ejectors) {
-                if (runtimeConnectionEjectorLoad.getName().equalsIgnoreCase(connectionRuntimeEjector)) {
-                    Loggers.CONNECTION.info("Found connection runtime ejector for name {}", connectionRuntimeEjector);
+                if (runtimeConnectionEjectorLoad
+                        .getName()
+                        .equalsIgnoreCase(connectionRuntimeEjector)) {
+                    Loggers.CONNECTION.info(
+                            "Found connection runtime ejector for name {}",
+                            connectionRuntimeEjector);
                     runtimeConnectionEjectorLoad.setConnectionManager(this);
                     runtimeConnectionEjector = runtimeConnectionEjectorLoad;
                 }
@@ -208,16 +219,18 @@ public class ConnectionManager {
         } catch (Throwable throwable) {
             Loggers.CONNECTION.warn("Fail to load  runtime ejector ", throwable);
         }
-        
+
         if (runtimeConnectionEjector == null) {
-            Loggers.CONNECTION
-                    .info("Fail to find connection runtime ejector for name {},use default", connectionRuntimeEjector);
-            NacosRuntimeConnectionEjector nacosRuntimeConnectionEjector = new NacosRuntimeConnectionEjector();
+            Loggers.CONNECTION.info(
+                    "Fail to find connection runtime ejector for name {},use default",
+                    connectionRuntimeEjector);
+            NacosRuntimeConnectionEjector nacosRuntimeConnectionEjector =
+                    new NacosRuntimeConnectionEjector();
             nacosRuntimeConnectionEjector.setConnectionManager(this);
             runtimeConnectionEjector = nacosRuntimeConnectionEjector;
         }
     }
-    
+
     /**
      * get current connections count.
      *
@@ -226,7 +239,7 @@ public class ConnectionManager {
     public int getCurrentConnectionCount() {
         return this.connections.size();
     }
-    
+
     /**
      * refresh connection active time.
      *
@@ -238,40 +251,42 @@ public class ConnectionManager {
             connection.freshActiveTime();
         }
     }
-    
-    /**
-     * Start Task：Expel the connection which active Time expire.
-     */
+
+    /** Start Task：Expel the connection which active Time expire. */
     @PostConstruct
     public void start() {
-        
+
         initConnectionEjector();
         // Start UnHealthy Connection Expel Task.
-        RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(() -> {
-            runtimeConnectionEjector.doEject();
-        }, 1000L, 3000L, TimeUnit.MILLISECONDS);
-        
+        RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(
+                () -> {
+                    runtimeConnectionEjector.doEject();
+                },
+                1000L,
+                3000L,
+                TimeUnit.MILLISECONDS);
     }
-    
+
     public void loadCount(int loadClient, String redirectAddress) {
         runtimeConnectionEjector.setLoadClient(loadClient);
         runtimeConnectionEjector.setRedirectAddress(redirectAddress);
     }
-    
+
     /**
      * send load request to specific connectionId.
      *
-     * @param connectionId    connection id of client.
+     * @param connectionId connection id of client.
      * @param redirectAddress server address to redirect.
      * @return whether remove connection.
      */
     public boolean loadSingle(String connectionId, String redirectAddress) {
         Connection connection = getConnection(connectionId);
-        
+
         if (connection != null) {
             if (connection.getMetaInfo().isSdkSource()) {
                 ConnectResetRequest connectResetRequest = new ConnectResetRequest();
-                if (StringUtils.isNotBlank(redirectAddress) && redirectAddress.contains(Constants.COLON)) {
+                if (StringUtils.isNotBlank(redirectAddress)
+                        && redirectAddress.contains(Constants.COLON)) {
                     String[] split = redirectAddress.split(Constants.COLON);
                     connectResetRequest.setServerIp(split[0]);
                     connectResetRequest.setServerPort(split[1]);
@@ -281,15 +296,17 @@ public class ConnectionManager {
                 } catch (ConnectionAlreadyClosedException e) {
                     unregister(connectionId);
                 } catch (Exception e) {
-                    LOGGER.error("error occurs when expel connection, connectionId: {} ", connectionId, e);
+                    LOGGER.error(
+                            "error occurs when expel connection, connectionId: {} ",
+                            connectionId,
+                            e);
                     return false;
                 }
             }
         }
         return true;
-        
     }
-    
+
     /**
      * get all client count.
      *
@@ -298,7 +315,7 @@ public class ConnectionManager {
     public int currentClientsCount() {
         return connections.size();
     }
-    
+
     /**
      * get client count with labels filter.
      *
@@ -322,7 +339,7 @@ public class ConnectionManager {
         }
         return count;
     }
-    
+
     /**
      * get client count from sdk.
      *
@@ -333,11 +350,11 @@ public class ConnectionManager {
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
         return currentClientsCount(filter);
     }
-    
+
     public Map<String, Connection> currentClients() {
         return connections;
     }
-    
+
     public Map<String, AtomicInteger> getConnectionForClientIp() {
         return connectionForClientIp;
     }

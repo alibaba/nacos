@@ -18,7 +18,6 @@ package com.alibaba.nacos.common.http.client.request;
 
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-
 import java.io.Closeable;
 import java.net.URI;
 
@@ -28,15 +27,16 @@ import java.net.URI;
  * @author mai.jh
  */
 public interface HttpClientRequest extends Closeable {
-    
+
     /**
      * execute http request.
      *
-     * @param uri               http url
-     * @param httpMethod        http request method
+     * @param uri http url
+     * @param httpMethod http request method
      * @param requestHttpEntity http request entity
      * @return HttpClientResponse
      * @throws Exception ex
      */
-    HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) throws Exception;
+    HttpClientResponse execute(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity)
+            throws Exception;
 }

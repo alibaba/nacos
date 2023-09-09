@@ -17,11 +17,9 @@
 package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class ConfigFilterChainTest {
-    
+
     @Test
     public void testConfigFilterChain() {
         ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(null);

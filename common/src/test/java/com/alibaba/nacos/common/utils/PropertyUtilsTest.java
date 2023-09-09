@@ -16,30 +16,22 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
-/**
- * PropertyUtils Test.
- * @ClassName: PropertyUtilsTest
- * @Author: ChenHao26
- * @Date: 2022/8/22 13:28
- */
+/** PropertyUtils Test. @ClassName: PropertyUtilsTest @Author: ChenHao26 @Date: 2022/8/22 13:28 */
 public class PropertyUtilsTest {
-    
+
     @Test
     public void getProperty() {
         System.setProperty("nacos.test", "google");
         String property = PropertyUtils.getProperty("nacos.test", "xx");
         Assert.assertEquals(property, "google");
     }
-    
+
     @Test
     public void getPropertyWithDefaultValue() {
         String property = PropertyUtils.getProperty("nacos.test", "xx", "test001");
         Assert.assertEquals(property, "test001");
     }
-    
+
     @Test
     public void getProcessorsCount() {
         int processorsCount = PropertyUtils.getProcessorsCount();

@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.config.server.paramcheck;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
-import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * The type Config listener http param extractor test.
@@ -31,14 +30,17 @@ import static org.junit.Assert.assertEquals;
  * @author zhuoguang
  */
 public class ConfigListenerHttpParamExtractorTest {
-    
+
     @Test
     public void extractParamAndCheck() {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/nacos" + Constants.CONFIG_CONTROLLER_PATH + "/listener");
         request.setMethod(HttpMethod.POST);
         HttpParamExtractorManager manager = HttpParamExtractorManager.getInstance();
-        AbstractHttpParamExtractor extractor = manager.getExtractor(request.getRequestURI(), request.getMethod(), "config");
-        assertEquals(ConfigListenerHttpParamExtractor.class.getSimpleName(), extractor.getClass().getSimpleName());
+        AbstractHttpParamExtractor extractor =
+                manager.getExtractor(request.getRequestURI(), request.getMethod(), "config");
+        assertEquals(
+                ConfigListenerHttpParamExtractor.class.getSimpleName(),
+                extractor.getClass().getSimpleName());
     }
 }

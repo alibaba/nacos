@@ -18,7 +18,6 @@ package com.alibaba.nacos.common.paramcheck;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,25 +28,26 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author zhuoguang
  */
 public class ParamCheckerManager {
-    
+
     private static final ParamCheckerManager INSTANCE = new ParamCheckerManager();
-    
+
     private static final AbstractParamChecker DEFAULT_PARAM_CHECKER = new DefaultParamChecker();
-    
+
     private final Map<String, AbstractParamChecker> paramCheckerMap = new ConcurrentHashMap<>();
-    
+
     private ParamCheckerManager() {
-        Collection<AbstractParamChecker> paramCheckers = NacosServiceLoader.load(AbstractParamChecker.class);
+        Collection<AbstractParamChecker> paramCheckers =
+                NacosServiceLoader.load(AbstractParamChecker.class);
         for (AbstractParamChecker paramChecker : paramCheckers) {
             String checkerType = paramChecker.getCheckerType();
             paramCheckerMap.put(checkerType, paramChecker);
         }
     }
-    
+
     public static ParamCheckerManager getInstance() {
         return INSTANCE;
     }
-    
+
     public AbstractParamChecker getParamChecker(String checkerType) {
         if (StringUtils.isBlank(checkerType)) {
             return DEFAULT_PARAM_CHECKER;

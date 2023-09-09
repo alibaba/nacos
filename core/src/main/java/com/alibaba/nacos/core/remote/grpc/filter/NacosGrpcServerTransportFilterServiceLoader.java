@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.remote.grpc.filter;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.util.LinkedList;
 import java.util.List;
 
@@ -28,7 +27,7 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class NacosGrpcServerTransportFilterServiceLoader {
-    
+
     /**
      * Load Server Interceptors by type.
      *
@@ -37,7 +36,8 @@ public class NacosGrpcServerTransportFilterServiceLoader {
      */
     public static List<NacosGrpcServerTransportFilter> loadServerTransportFilters(String type) {
         List<NacosGrpcServerTransportFilter> result = new LinkedList<>();
-        for (NacosGrpcServerTransportFilter each : NacosServiceLoader.load(NacosGrpcServerTransportFilter.class)) {
+        for (NacosGrpcServerTransportFilter each :
+                NacosServiceLoader.load(NacosGrpcServerTransportFilter.class)) {
             if (StringUtils.equals(type, each.type())) {
                 result.add(each);
             }

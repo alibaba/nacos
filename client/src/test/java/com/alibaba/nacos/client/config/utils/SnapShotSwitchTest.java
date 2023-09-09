@@ -18,21 +18,17 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class SnapShotSwitchTest {
-    
+
     @Test
     public void testGetIsSnapShot() {
         Boolean isSnapShot = SnapShotSwitch.getIsSnapShot();
         Assert.assertTrue(isSnapShot);
-        
+
         SnapShotSwitch.setIsSnapShot(false);
         Assert.assertFalse(SnapShotSwitch.getIsSnapShot());
-        
+
         SnapShotSwitch.setIsSnapShot(true);
         Assert.assertTrue(SnapShotSwitch.getIsSnapShot());
     }
-    
 }

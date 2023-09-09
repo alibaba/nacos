@@ -24,6 +24,7 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.roles.NacosRoleServiceImpl;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,8 +32,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 /**
  * Role operation controller.
@@ -43,22 +42,25 @@ import java.util.List;
 @RestController
 @RequestMapping("/v1/auth/roles")
 public class RoleController {
-    
-    @Autowired
-    private NacosRoleServiceImpl roleService;
-    
+
+    @Autowired private NacosRoleServiceImpl roleService;
+
     /**
      * Get roles list.
      *
-     * @param pageNo   number index of page
+     * @param pageNo number index of page
      * @param pageSize page size
      * @param username optional, username of user
      * @param role optional role
      * @return role list
      */
     @GetMapping(params = "search=accurate")
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
-    public Object getRoles(@RequestParam int pageNo, @RequestParam int pageSize,
+    @Secured(
+            resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
+            action = ActionTypes.READ)
+    public Object getRoles(
+            @RequestParam int pageNo,
+            @RequestParam int pageSize,
             @RequestParam(name = "username", defaultValue = "") String username,
             @RequestParam(name = "role", defaultValue = "") String role) {
         return roleService.getRolesFromDatabase(username, role, pageNo, pageSize);
@@ -66,6 +68,7 @@ public class RoleController {
 
     /**
      * Fuzzy query role information.
+     *
      * @param pageNo number index of page
      * @param pageSize page size
      * @param username username of user
@@ -73,13 +76,17 @@ public class RoleController {
      * @return role list
      */
     @GetMapping(params = "search=blur")
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
-    public Page<RoleInfo> fuzzySearchRole(@RequestParam int pageNo, @RequestParam int pageSize,
+    @Secured(
+            resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
+            action = ActionTypes.READ)
+    public Page<RoleInfo> fuzzySearchRole(
+            @RequestParam int pageNo,
+            @RequestParam int pageSize,
             @RequestParam(name = "username", defaultValue = "") String username,
             @RequestParam(name = "role", defaultValue = "") String role) {
         return roleService.findRolesLike4Page(username, role, pageNo, pageSize);
     }
-    
+
     /**
      * Fuzzy matching role name .
      *
@@ -87,37 +94,45 @@ public class RoleController {
      * @return role list
      */
     @GetMapping("/search")
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.READ)
+    @Secured(
+            resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
+            action = ActionTypes.READ)
     public List<String> searchRoles(@RequestParam String role) {
         return roleService.findRolesLikeRoleName(role);
     }
-    
+
     /**
      * Add a role to a user
      *
-     * <p>This method is used for 2 functions: 1. create a role and bind it to GLOBAL_ADMIN. 2. bind a role to an user.
+     * <p>This method is used for 2 functions: 1. create a role and bind it to GLOBAL_ADMIN. 2. bind
+     * a role to an user.
      *
-     * @param role     role name
+     * @param role role name
      * @param username username
      * @return Code 200 and message 'add role ok!'
      */
     @PostMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
+    @Secured(
+            resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
+            action = ActionTypes.WRITE)
     public Object addRole(@RequestParam String role, @RequestParam String username) {
         roleService.addRole(role, username);
         return RestResultUtils.success("add role ok!");
     }
-    
+
     /**
      * Delete a role. If no username is specified, all users under this role are deleted.
      *
-     * @param role     role
+     * @param role role
      * @param username username
      * @return ok if succeed
      */
     @DeleteMapping
-    @Secured(resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles", action = ActionTypes.WRITE)
-    public Object deleteRole(@RequestParam String role,
+    @Secured(
+            resource = AuthConstants.CONSOLE_RESOURCE_NAME_PREFIX + "roles",
+            action = ActionTypes.WRITE)
+    public Object deleteRole(
+            @RequestParam String role,
             @RequestParam(name = "username", defaultValue = StringUtils.EMPTY) String username) {
         if (StringUtils.isBlank(username)) {
             roleService.deleteRole(role);
@@ -126,5 +141,4 @@ public class RoleController {
         }
         return RestResultUtils.success("delete role of user " + username + " ok!");
     }
-    
 }

@@ -16,6 +16,12 @@
 
 package com.alibaba.nacos.sys.utils;
 
+import static com.alibaba.nacos.sys.env.Constants.IP_ADDRESS;
+import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
+import static com.alibaba.nacos.sys.env.Constants.PREFER_HOSTNAME_OVER_IP;
+import static com.alibaba.nacos.sys.env.Constants.SYSTEM_PREFER_HOSTNAME_OVER_IP;
+import static com.alibaba.nacos.sys.env.Constants.USE_ONLY_SITE_INTERFACES;
+
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -24,9 +30,6 @@ import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
@@ -39,12 +42,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.sys.env.Constants.IP_ADDRESS;
-import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
-import static com.alibaba.nacos.sys.env.Constants.PREFER_HOSTNAME_OVER_IP;
-import static com.alibaba.nacos.sys.env.Constants.SYSTEM_PREFER_HOSTNAME_OVER_IP;
-import static com.alibaba.nacos.sys.env.Constants.USE_ONLY_SITE_INTERFACES;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Network card operation tool class.
@@ -52,67 +51,79 @@ import static com.alibaba.nacos.sys.env.Constants.USE_ONLY_SITE_INTERFACES;
  * @author Nacos
  */
 public class InetUtils {
-    
+
     private static final Logger LOG = LoggerFactory.getLogger(InetUtils.class);
-    
+
     private static final List<String> PREFERRED_NETWORKS = new ArrayList<>();
-    
+
     private static final List<String> IGNORED_INTERFACES = new ArrayList<>();
-    
-    private static final ScheduledExecutorService INET_AUTO_REFRESH_EXECUTOR = ExecutorFactory.Managed.newSingleScheduledExecutorService(
-            InetUtils.class.getCanonicalName(), new NameThreadFactory("com.alibaba.inet.ip.auto-refresh"));
-    
+
+    private static final ScheduledExecutorService INET_AUTO_REFRESH_EXECUTOR =
+            ExecutorFactory.Managed.newSingleScheduledExecutorService(
+                    InetUtils.class.getCanonicalName(),
+                    new NameThreadFactory("com.alibaba.inet.ip.auto-refresh"));
+
     private static volatile String selfIP;
-    
+
     private static boolean useOnlySiteLocalInterface = false;
-    
+
     private static boolean preferHostnameOverIP = false;
-    
+
     static {
         NotifyCenter.registerToSharePublisher(IPChangeEvent.class);
-        
-        useOnlySiteLocalInterface = Boolean.parseBoolean(EnvUtil.getProperty(USE_ONLY_SITE_INTERFACES));
-        
+
+        useOnlySiteLocalInterface =
+                Boolean.parseBoolean(EnvUtil.getProperty(USE_ONLY_SITE_INTERFACES));
+
         List<String> networks = EnvUtil.getPropertyList(Constants.PREFERRED_NETWORKS);
         PREFERRED_NETWORKS.addAll(networks);
-        
+
         List<String> interfaces = EnvUtil.getPropertyList(Constants.IGNORED_INTERFACES);
         IGNORED_INTERFACES.addAll(interfaces);
-        
+
         refreshIp();
-        
+
         final long delayMs = Long.getLong(Constants.AUTO_REFRESH_TIME, 30_000L);
-        
-        INET_AUTO_REFRESH_EXECUTOR.scheduleAtFixedRate(() -> {
-            try {
-                InetUtils.refreshIp();
-            } catch (Exception e) {
-                LOG.error("refresh ip error", e);
-            }
-        }, delayMs, delayMs, TimeUnit.MILLISECONDS);
+
+        INET_AUTO_REFRESH_EXECUTOR.scheduleAtFixedRate(
+                () -> {
+                    try {
+                        InetUtils.refreshIp();
+                    } catch (Exception e) {
+                        LOG.error("refresh ip error", e);
+                    }
+                },
+                delayMs,
+                delayMs,
+                TimeUnit.MILLISECONDS);
     }
-    
-    /**
-     * refresh ip address.
-     */
+
+    /** refresh ip address. */
     private static void refreshIp() {
-        
+
         String tmpSelfIp = getNacosIp();
-        
+
         if (StringUtils.isBlank(tmpSelfIp)) {
             tmpSelfIp = getPreferHostnameOverIP();
         }
-        
+
         if (StringUtils.isBlank(tmpSelfIp)) {
             tmpSelfIp = Objects.requireNonNull(findFirstNonLoopbackAddress()).getHostAddress();
         }
-        
-        if (InternetAddressUtil.PREFER_IPV6_ADDRESSES && !tmpSelfIp.startsWith(InternetAddressUtil.IPV6_START_MARK)
+
+        if (InternetAddressUtil.PREFER_IPV6_ADDRESSES
+                && !tmpSelfIp.startsWith(InternetAddressUtil.IPV6_START_MARK)
                 && !tmpSelfIp.endsWith(InternetAddressUtil.IPV6_END_MARK)) {
-            tmpSelfIp = InternetAddressUtil.IPV6_START_MARK + tmpSelfIp + InternetAddressUtil.IPV6_END_MARK;
+            tmpSelfIp =
+                    InternetAddressUtil.IPV6_START_MARK
+                            + tmpSelfIp
+                            + InternetAddressUtil.IPV6_END_MARK;
             if (StringUtils.contains(tmpSelfIp, InternetAddressUtil.PERCENT_SIGN_IN_IPV6)) {
-                tmpSelfIp = tmpSelfIp.substring(0, tmpSelfIp.indexOf(InternetAddressUtil.PERCENT_SIGN_IN_IPV6))
-                        + InternetAddressUtil.IPV6_END_MARK;
+                tmpSelfIp =
+                        tmpSelfIp.substring(
+                                        0,
+                                        tmpSelfIp.indexOf(InternetAddressUtil.PERCENT_SIGN_IN_IPV6))
+                                + InternetAddressUtil.IPV6_END_MARK;
             }
         }
         if (!Objects.equals(selfIP, tmpSelfIp) && Objects.nonNull(selfIP)) {
@@ -123,11 +134,10 @@ public class InetUtils {
         }
         selfIP = tmpSelfIp;
     }
-    
+
     /**
-     * Get ip address from environment
-     * System property nacos.server.ip
-     * Spring property nacos.inetutils.ip-address.
+     * Get ip address from environment System property nacos.server.ip Spring property
+     * nacos.inetutils.ip-address.
      *
      * @return ip address
      */
@@ -141,10 +151,10 @@ public class InetUtils {
                 throw new RuntimeException("nacos address " + nacosIp + " is not ip");
             }
         }
-        
+
         return nacosIp;
     }
-    
+
     /**
      * Get ip address.
      *
@@ -152,11 +162,12 @@ public class InetUtils {
      */
     private static String getPreferHostnameOverIP() {
         preferHostnameOverIP = Boolean.getBoolean(SYSTEM_PREFER_HOSTNAME_OVER_IP);
-        
+
         if (!preferHostnameOverIP) {
-            preferHostnameOverIP = Boolean.parseBoolean(EnvUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
+            preferHostnameOverIP =
+                    Boolean.parseBoolean(EnvUtil.getProperty(PREFER_HOSTNAME_OVER_IP));
         }
-        
+
         if (!preferHostnameOverIP) {
             return null;
         }
@@ -174,11 +185,11 @@ public class InetUtils {
         }
         return preferHostnameOverIp;
     }
-    
+
     public static String getSelfIP() {
         return selfIP;
     }
-    
+
     /**
      * findFirstNonLoopbackAddress.
      *
@@ -186,7 +197,7 @@ public class InetUtils {
      */
     public static InetAddress findFirstNonLoopbackAddress() {
         InetAddress result = null;
-        
+
         try {
             int lowest = Integer.MAX_VALUE;
             for (Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
@@ -199,14 +210,18 @@ public class InetUtils {
                     } else {
                         continue;
                     }
-                    
+
                     if (!ignoreInterface(ifc.getDisplayName())) {
-                        for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
+                        for (Enumeration<InetAddress> addrs = ifc.getInetAddresses();
+                                addrs.hasMoreElements(); ) {
                             InetAddress address = addrs.nextElement();
                             boolean isLegalIpVersion =
-                                    InternetAddressUtil.PREFER_IPV6_ADDRESSES ? address instanceof Inet6Address
+                                    InternetAddressUtil.PREFER_IPV6_ADDRESSES
+                                            ? address instanceof Inet6Address
                                             : address instanceof Inet4Address;
-                            if (isLegalIpVersion && !address.isLoopbackAddress() && isPreferredAddress(address)) {
+                            if (isLegalIpVersion
+                                    && !address.isLoopbackAddress()
+                                    && isPreferredAddress(address)) {
                                 LOG.debug("Found non-loopback interface: " + ifc.getDisplayName());
                                 result = address;
                             }
@@ -217,20 +232,20 @@ public class InetUtils {
         } catch (IOException ex) {
             LOG.error("Cannot get first non-loopback address", ex);
         }
-        
+
         if (result != null) {
             return result;
         }
-        
+
         try {
             return InetAddress.getLocalHost();
         } catch (UnknownHostException e) {
             LOG.error("Unable to retrieve localhost", e);
         }
-        
+
         return null;
     }
-    
+
     private static boolean isPreferredAddress(InetAddress address) {
         if (useOnlySiteLocalInterface) {
             final boolean siteLocalAddress = address.isSiteLocalAddress();
@@ -248,10 +263,10 @@ public class InetUtils {
                 return true;
             }
         }
-        
+
         return false;
     }
-    
+
     private static boolean ignoreInterface(String interfaceName) {
         for (String regex : IGNORED_INTERFACES) {
             if (interfaceName.matches(regex)) {
@@ -261,37 +276,34 @@ public class InetUtils {
         }
         return false;
     }
-    
-    /**
-     * {@link com.alibaba.nacos.core.cluster.ServerMemberManager} is listener.
-     */
+
+    /** {@link com.alibaba.nacos.core.cluster.ServerMemberManager} is listener. */
     @SuppressWarnings({"PMD.ClassNamingShouldBeCamelRule", "checkstyle:AbbreviationAsWordInName"})
     public static class IPChangeEvent extends SlowEvent {
-        
+
         private String oldIP;
-        
+
         private String newIP;
-        
+
         public String getOldIP() {
             return oldIP;
         }
-        
+
         public void setOldIP(String oldIP) {
             this.oldIP = oldIP;
         }
-        
+
         public String getNewIP() {
             return newIP;
         }
-        
+
         public void setNewIP(String newIP) {
             this.newIP = newIP;
         }
-        
+
         @Override
         public String toString() {
             return "IPChangeEvent{" + "oldIP='" + oldIP + '\'' + ", newIP='" + newIP + '\'' + '}';
         }
     }
-    
 }

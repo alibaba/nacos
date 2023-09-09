@@ -16,23 +16,21 @@
 
 package com.alibaba.nacos.api.config.remote.response;
 
-import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ConfigRemoveResponseTest extends BasedConfigResponseTest {
-    
+
     ConfigRemoveResponse configRemoveResponse;
-    
+
     @Before
     public void before() {
         configRemoveResponse = ConfigRemoveResponse.buildSuccessResponse();
         requestId = injectResponseUuId(configRemoveResponse);
     }
-    
+
     @Override
     @Test
     public void testSerializeSuccessResponse() throws JsonProcessingException {
@@ -42,7 +40,7 @@ public class ConfigRemoveResponseTest extends BasedConfigResponseTest {
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.SUCCESS.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));
     }
-    
+
     @Override
     @Test
     public void testSerializeFailResponse() throws JsonProcessingException {

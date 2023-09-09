@@ -28,13 +28,13 @@ import io.grpc.netty.shaded.io.netty.channel.Channel;
  * @date 2023/1/4 21:08
  */
 public class NettyChannelHelper {
-    
-    private static final ReferenceFieldUpdater<NettyServerStream, WriteQueue> WRITE_QUEUE_GETTER = Updaters.newReferenceFieldUpdater(
-            NettyServerStream.class, "writeQueue");
-    
-    private static final ReferenceFieldUpdater<WriteQueue, Channel> CHANNEL_GETTER = Updaters.newReferenceFieldUpdater(
-            WriteQueue.class, "channel");
-    
+
+    private static final ReferenceFieldUpdater<NettyServerStream, WriteQueue> WRITE_QUEUE_GETTER =
+            Updaters.newReferenceFieldUpdater(NettyServerStream.class, "writeQueue");
+
+    private static final ReferenceFieldUpdater<WriteQueue, Channel> CHANNEL_GETTER =
+            Updaters.newReferenceFieldUpdater(WriteQueue.class, "channel");
+
     public static Channel getChannel(final ServerStream stream) {
         if (stream instanceof NettyServerStream) {
             return CHANNEL_GETTER.get(WRITE_QUEUE_GETTER.get((NettyServerStream) stream));

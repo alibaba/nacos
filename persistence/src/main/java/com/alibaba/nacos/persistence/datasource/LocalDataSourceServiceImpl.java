@@ -25,13 +25,6 @@ import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.zaxxer.hikari.HikariDataSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
-
-import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -43,6 +36,12 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import javax.sql.DataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * local data source.
@@ -50,31 +49,32 @@ import java.util.concurrent.Callable;
  * @author Nacos
  */
 public class LocalDataSourceServiceImpl implements DataSourceService {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(LocalDataSourceServiceImpl.class);
-    
+
     private final String jdbcDriverName = "org.apache.derby.jdbc.EmbeddedDriver";
-    
+
     private final String userName = "nacos";
-    
+
     private final String password = "nacos";
-    
-    private final String derbyBaseDir = "data" + File.separator + PersistenceConstant.DERBY_BASE_DIR;
-    
+
+    private final String derbyBaseDir =
+            "data" + File.separator + PersistenceConstant.DERBY_BASE_DIR;
+
     private final String derbyShutdownErrMsg = "Derby system shutdown.";
-    
+
     private volatile JdbcTemplate jt;
-    
+
     private volatile TransactionTemplate tjt;
-    
+
     private boolean initialize = false;
-    
+
     private boolean jdbcTemplateInit = false;
-    
+
     private String healthStatus = "UP";
-    
+
     private String dataSourceType = "derby";
-    
+
     @Override
     public synchronized void init() throws Exception {
         if (DatasourceConfiguration.isUseExternalDB()) {
@@ -82,12 +82,15 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         }
         if (!initialize) {
             LOGGER.info("use local db service for init");
-            final String jdbcUrl = "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir) + ";create=true";
+            final String jdbcUrl =
+                    "jdbc:derby:"
+                            + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir)
+                            + ";create=true";
             initialize(jdbcUrl);
             initialize = true;
         }
     }
-    
+
     @Override
     public synchronized void reload() {
         DataSource ds = jt.getDataSource();
@@ -100,14 +103,15 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             if (LOGGER.isErrorEnabled()) {
                 LOGGER.error(e.getMessage(), e);
             }
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, "load derby-schema.sql error.", e);
+            throw new NacosRuntimeException(
+                    NacosException.SERVER_ERROR, "load derby-schema.sql error.", e);
         }
     }
-    
+
     public DataSource getDatasource() {
         return jt.getDataSource();
     }
-    
+
     /**
      * Clean and reopen Derby.
      *
@@ -116,14 +120,16 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
     public void cleanAndReopenDerby() throws Exception {
         doDerbyClean();
         final String jdbcUrl =
-                "jdbc:derby:" + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString() + ";create=true";
+                "jdbc:derby:"
+                        + Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString()
+                        + ";create=true";
         initialize(jdbcUrl);
     }
-    
+
     /**
      * Restore derby.
      *
-     * @param jdbcUrl  jdbcUrl string value.
+     * @param jdbcUrl jdbcUrl string value.
      * @param callable callable.
      * @throws Exception exception.
      */
@@ -132,7 +138,7 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         callable.call();
         initialize(jdbcUrl);
     }
-    
+
     private void doDerbyClean() throws Exception {
         LOGGER.warn("use local db service for reopenDerby");
         try {
@@ -145,9 +151,10 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         }
         DiskUtils.deleteDirectory(Paths.get(EnvUtil.getNacosHome(), derbyBaseDir).toString());
     }
-    
+
     private synchronized void initialize(String jdbcUrl) {
-        DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(EnvUtil.getEnvironment());
+        DataSourcePoolProperties poolProperties =
+                DataSourcePoolProperties.build(EnvUtil.getEnvironment());
         poolProperties.setDriverClassName(jdbcDriverName);
         poolProperties.setJdbcUrl(jdbcUrl);
         poolProperties.setUsername(userName);
@@ -169,41 +176,45 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         }
         reload();
     }
-    
+
     @Override
     public boolean checkMasterWritable() {
         return true;
     }
-    
+
     @Override
     public JdbcTemplate getJdbcTemplate() {
         return jt;
     }
-    
+
     @Override
     public TransactionTemplate getTransactionTemplate() {
         return tjt;
     }
-    
+
     @Override
     public String getCurrentDbUrl() {
-        return "jdbc:derby:" + EnvUtil.getNacosHome() + File.separator + derbyBaseDir + ";create=true";
+        return "jdbc:derby:"
+                + EnvUtil.getNacosHome()
+                + File.separator
+                + derbyBaseDir
+                + ";create=true";
     }
-    
+
     @Override
     public String getHealth() {
         return healthStatus;
     }
-    
+
     @Override
     public String getDataSourceType() {
         return dataSourceType;
     }
-    
+
     public void setHealthStatus(String healthStatus) {
         this.healthStatus = healthStatus;
     }
-    
+
     /**
      * Load sql.
      *
@@ -215,8 +226,13 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
         List<String> sqlList = new ArrayList<>();
         InputStream sqlFileIn = null;
         try {
-            File file = new File(
-                    EnvUtil.getNacosHome() + File.separator + "conf" + File.separator + "derby-schema.sql");
+            File file =
+                    new File(
+                            EnvUtil.getNacosHome()
+                                    + File.separator
+                                    + "conf"
+                                    + File.separator
+                                    + "derby-schema.sql");
             if (StringUtils.isBlank(EnvUtil.getNacosHome()) || !file.exists()) {
                 ClassLoader classLoader = getClass().getClassLoader();
                 URL url = classLoader.getResource(sqlFile);
@@ -224,14 +240,14 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             } else {
                 sqlFileIn = new FileInputStream(file);
             }
-            
+
             StringBuilder sqlSb = new StringBuilder();
             byte[] buff = new byte[1024];
             int byteRead = 0;
             while ((byteRead = sqlFileIn.read(buff)) != -1) {
                 sqlSb.append(new String(buff, 0, byteRead, PersistenceConstant.DEFAULT_ENCODE));
             }
-            
+
             String[] sqlArr = sqlSb.toString().split(";");
             for (int i = 0; i < sqlArr.length; i++) {
                 String sql = sqlArr[i].replaceAll("--.*", "").trim();
@@ -246,11 +262,11 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             IoUtils.closeQuietly(sqlFileIn);
         }
     }
-    
+
     /**
      * Execute sql.
      *
-     * @param conn    connect.
+     * @param conn connect.
      * @param sqlFile sql.
      * @throws Exception Exception.
      */
@@ -266,5 +282,4 @@ public class LocalDataSourceServiceImpl implements DataSourceService {
             }
         }
     }
-    
 }

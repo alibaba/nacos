@@ -26,16 +26,16 @@ import com.alibaba.nacos.naming.misc.Loggers;
  * @author xiweng.yy
  */
 public class HealthCheckTaskInterceptWrapper implements Runnable {
-    
+
     private final NacosHealthCheckTask task;
-    
+
     private final NacosNamingInterceptorChain<NacosHealthCheckTask> interceptorChain;
-    
+
     public HealthCheckTaskInterceptWrapper(NacosHealthCheckTask task) {
         this.task = task;
         this.interceptorChain = HealthCheckInterceptorChain.getInstance();
     }
-    
+
     @Override
     public void run() {
         try {

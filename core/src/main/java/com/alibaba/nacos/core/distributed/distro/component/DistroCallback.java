@@ -22,12 +22,10 @@ package com.alibaba.nacos.core.distributed.distro.component;
  * @author xiweng.yy
  */
 public interface DistroCallback {
-    
-    /**
-     * Callback when distro task execute successfully.
-     */
+
+    /** Callback when distro task execute successfully. */
     void onSuccess();
-    
+
     /**
      * Callback when distro task execute failed.
      *

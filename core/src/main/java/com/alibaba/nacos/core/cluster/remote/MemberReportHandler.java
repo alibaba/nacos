@@ -37,26 +37,27 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MemberReportHandler extends RequestHandler<MemberReportRequest, MemberReportResponse> {
-    
+
     private final ServerMemberManager memberManager;
-    
+
     public MemberReportHandler(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
-    
+
     @Override
-    public MemberReportResponse handle(MemberReportRequest request, RequestMeta meta) throws NacosException {
+    public MemberReportResponse handle(MemberReportRequest request, RequestMeta meta)
+            throws NacosException {
         Member node = request.getNode();
         if (!node.check()) {
             MemberReportResponse result = new MemberReportResponse();
             result.setErrorInfo(400, "Node information is illegal");
             return result;
         }
-        LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "node state report, receive info : {}", node);
+        LoggerUtils.printIfDebugEnabled(
+                Loggers.CLUSTER, "node state report, receive info : {}", node);
         node.setState(NodeState.UP);
         node.setFailAccessCnt(0);
         memberManager.update(node);
         return new MemberReportResponse(memberManager.getSelf());
     }
-    
 }

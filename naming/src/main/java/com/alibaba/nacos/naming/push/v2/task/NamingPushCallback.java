@@ -25,10 +25,10 @@ import com.alibaba.nacos.api.remote.PushCallBack;
  * @author xiweng.yy
  */
 public interface NamingPushCallback extends PushCallBack {
-    
+
     /**
-     * Set actual pushed service info, the host list of service info may be changed by selector. Detail see implement of
-     * {@link com.alibaba.nacos.naming.push.v2.executor.PushExecutor}.
+     * Set actual pushed service info, the host list of service info may be changed by selector.
+     * Detail see implement of {@link com.alibaba.nacos.naming.push.v2.executor.PushExecutor}.
      *
      * @param serviceInfo actual pushed service info
      */

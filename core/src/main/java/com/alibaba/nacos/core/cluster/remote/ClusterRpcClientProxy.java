@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.core.cluster.remote;
 
+import static com.alibaba.nacos.api.exception.NacosException.CLIENT_INVALID_PARAM;
+
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.RequestCallBack;
@@ -33,18 +35,15 @@ import com.alibaba.nacos.core.cluster.MembersChangeEvent;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-
-import static com.alibaba.nacos.api.exception.NacosException.CLIENT_INVALID_PARAM;
+import javax.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * cluster rpc client proxy.
@@ -54,50 +53,50 @@ import static com.alibaba.nacos.api.exception.NacosException.CLIENT_INVALID_PARA
  */
 @Service
 public class ClusterRpcClientProxy extends MemberChangeListener {
-    
+
     private static final long DEFAULT_REQUEST_TIME_OUT = 3000L;
-    
-    @Autowired
-    ServerMemberManager serverMemberManager;
-    
-    /**
-     * init after constructor.
-     */
+
+    @Autowired ServerMemberManager serverMemberManager;
+
+    /** init after constructor. */
     @PostConstruct
     public void init() {
         try {
             NotifyCenter.registerSubscriber(this);
             List<Member> members = serverMemberManager.allMembersWithoutSelf();
             refresh(members);
-            Loggers.CLUSTER
-                    .info("[ClusterRpcClientProxy] success to refresh cluster rpc client on start up,members ={} ",
-                            members);
+            Loggers.CLUSTER.info(
+                    "[ClusterRpcClientProxy] success to refresh cluster rpc client on start up,members ={} ",
+                    members);
         } catch (NacosException e) {
-            Loggers.CLUSTER.warn("[ClusterRpcClientProxy] fail to refresh cluster rpc client,{} ", e.getMessage());
+            Loggers.CLUSTER.warn(
+                    "[ClusterRpcClientProxy] fail to refresh cluster rpc client,{} ",
+                    e.getMessage());
         }
-        
     }
-    
+
     /**
      * init cluster rpc clients.
      *
      * @param members cluster server list member list.
      */
     private void refresh(List<Member> members) throws NacosException {
-        
-        //ensure to create client of new members
+
+        // ensure to create client of new members
         for (Member member : members) {
             createRpcClientAndStart(member, ConnectionType.GRPC);
         }
-        
-        //shutdown and remove old members.
+
+        // shutdown and remove old members.
         Set<Map.Entry<String, RpcClient>> allClientEntrys = RpcClientFactory.getAllClientEntries();
         Iterator<Map.Entry<String, RpcClient>> iterator = allClientEntrys.iterator();
-        List<String> newMemberKeys = members.stream().map(this::memberClientKey).collect(Collectors.toList());
+        List<String> newMemberKeys =
+                members.stream().map(this::memberClientKey).collect(Collectors.toList());
         while (iterator.hasNext()) {
             Map.Entry<String, RpcClient> next1 = iterator.next();
             if (next1.getKey().startsWith("Cluster-") && !newMemberKeys.contains(next1.getKey())) {
-                Loggers.CLUSTER.info("member leave,destroy client of member - > : {}", next1.getKey());
+                Loggers.CLUSTER.info(
+                        "member leave,destroy client of member - > : {}", next1.getKey());
                 RpcClient client = RpcClientFactory.getClient(next1.getKey());
                 if (client != null) {
                     RpcClientFactory.getClient(next1.getKey()).shutdown();
@@ -105,63 +104,69 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
                 iterator.remove();
             }
         }
-        
     }
-    
+
     private String memberClientKey(Member member) {
         return "Cluster-" + member.getAddress();
     }
-    
+
     private void createRpcClientAndStart(Member member, ConnectionType type) throws NacosException {
         Map<String, String> labels = new HashMap<>(2);
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_CLUSTER);
         String memberClientKey = memberClientKey(member);
         RpcClient client = buildRpcClient(type, labels, memberClientKey);
         if (!client.getConnectionType().equals(type)) {
-            Loggers.CLUSTER.info("connection type changed,destroy client of member - > : {}", member);
+            Loggers.CLUSTER.info(
+                    "connection type changed,destroy client of member - > : {}", member);
             RpcClientFactory.destroyClient(memberClientKey);
             client = buildRpcClient(type, labels, memberClientKey);
         }
-        
+
         if (client.isWaitInitiated()) {
             Loggers.CLUSTER.info("start a new rpc client to member - > : {}", member);
-            
-            //one fixed server
-            client.serverListFactory(new ServerListFactory() {
-                @Override
-                public String genNextServer() {
-                    return member.getAddress();
-                }
-                
-                @Override
-                public String getCurrentServer() {
-                    return member.getAddress();
-                }
-                
-                @Override
-                public List<String> getServerList() {
-                    return CollectionUtils.list(member.getAddress());
-                }
-            });
-            
+
+            // one fixed server
+            client.serverListFactory(
+                    new ServerListFactory() {
+                        @Override
+                        public String genNextServer() {
+                            return member.getAddress();
+                        }
+
+                        @Override
+                        public String getCurrentServer() {
+                            return member.getAddress();
+                        }
+
+                        @Override
+                        public List<String> getServerList() {
+                            return CollectionUtils.list(member.getAddress());
+                        }
+                    });
+
             client.start();
         }
     }
-    
+
     /**
      * Using {@link EnvUtil#getAvailableProcessors(int)} to build cluster clients' grpc thread pool.
      */
-    private RpcClient buildRpcClient(ConnectionType type, Map<String, String> labels, String memberClientKey) {
-        RpcClient clusterClient = RpcClientFactory
-                .createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
-                        EnvUtil.getAvailableProcessors(8), labels);
+    private RpcClient buildRpcClient(
+            ConnectionType type, Map<String, String> labels, String memberClientKey) {
+        RpcClient clusterClient =
+                RpcClientFactory.createClusterClient(
+                        memberClientKey,
+                        type,
+                        EnvUtil.getAvailableProcessors(2),
+                        EnvUtil.getAvailableProcessors(8),
+                        labels);
         return clusterClient;
     }
-    
+
     /**
      * send request to member.
      *
-     * @param member  member of server.
+     * @param member member of server.
      * @param request request.
      * @return Response response.
      * @throws NacosException exception may throws.
@@ -169,41 +174,45 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     public Response sendRequest(Member member, Request request) throws NacosException {
         return sendRequest(member, request, DEFAULT_REQUEST_TIME_OUT);
     }
-    
+
     /**
      * send request to member.
      *
-     * @param member  member of server.
+     * @param member member of server.
      * @param request request.
      * @return Response response.
      * @throws NacosException exception may throws.
      */
-    public Response sendRequest(Member member, Request request, long timeoutMills) throws NacosException {
+    public Response sendRequest(Member member, Request request, long timeoutMills)
+            throws NacosException {
         RpcClient client = RpcClientFactory.getClient(memberClientKey(member));
         if (client != null) {
             return client.request(request, timeoutMills);
         } else {
-            throw new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + member);
+            throw new NacosException(
+                    CLIENT_INVALID_PARAM, "No rpc client related to member: " + member);
         }
     }
-    
+
     /**
      * aync send request to member with callback.
      *
-     * @param member   member of server.
-     * @param request  request.
+     * @param member member of server.
+     * @param request request.
      * @param callBack RequestCallBack.
      * @throws NacosException exception may throws.
      */
-    public void asyncRequest(Member member, Request request, RequestCallBack callBack) throws NacosException {
+    public void asyncRequest(Member member, Request request, RequestCallBack callBack)
+            throws NacosException {
         RpcClient client = RpcClientFactory.getClient(memberClientKey(member));
         if (client != null) {
             client.asyncRequest(request, callBack);
         } else {
-            throw new NacosException(CLIENT_INVALID_PARAM, "No rpc client related to member: " + member);
+            throw new NacosException(
+                    CLIENT_INVALID_PARAM, "No rpc client related to member: " + member);
         }
     }
-    
+
     /**
      * send request to member.
      *
@@ -216,17 +225,20 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             sendRequest(member1, request);
         }
     }
-    
+
     @Override
     public void onEvent(MembersChangeEvent event) {
         try {
             List<Member> members = serverMemberManager.allMembersWithoutSelf();
             refresh(members);
         } catch (NacosException e) {
-            Loggers.CLUSTER.warn("[serverlist] fail to refresh cluster rpc client, event:{}, msg: {} ", event, e.getMessage());
+            Loggers.CLUSTER.warn(
+                    "[serverlist] fail to refresh cluster rpc client, event:{}, msg: {} ",
+                    event,
+                    e.getMessage());
         }
     }
-    
+
     /**
      * Check whether client for member is running.
      *

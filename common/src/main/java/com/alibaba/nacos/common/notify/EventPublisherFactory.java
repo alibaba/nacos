@@ -23,12 +23,13 @@ import java.util.function.BiFunction;
  *
  * @author xiweng.yy
  */
-public interface EventPublisherFactory extends BiFunction<Class<? extends Event>, Integer, EventPublisher> {
-    
+public interface EventPublisherFactory
+        extends BiFunction<Class<? extends Event>, Integer, EventPublisher> {
+
     /**
      * Build an new {@link EventPublisher}.
      *
-     * @param eventType    eventType for {@link EventPublisher}
+     * @param eventType eventType for {@link EventPublisher}
      * @param maxQueueSize max queue size for {@link EventPublisher}
      * @return new {@link EventPublisher}
      */

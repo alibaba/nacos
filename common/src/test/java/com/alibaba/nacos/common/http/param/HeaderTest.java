@@ -16,12 +16,10 @@
 
 package com.alibaba.nacos.common.http.param;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
 public class HeaderTest {
-    
+
     @Test
     public void testHeaderKyeIgnoreCase() {
         Header header = Header.newInstance();

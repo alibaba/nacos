@@ -27,24 +27,25 @@ import java.util.concurrent.atomic.AtomicLong;
  * @version $Id: RpcScheduledExecutor.java, v 0.1 2020年09月07日 4:12 PM liuzunfei Exp $
  */
 public class RpcScheduledExecutor extends ScheduledThreadPoolExecutor {
-    
-    public static final RpcScheduledExecutor TIMEOUT_SCHEDULER = new RpcScheduledExecutor(1,
-            "com.alibaba.nacos.remote.TimerScheduler");
-    
-    public static final RpcScheduledExecutor COMMON_SERVER_EXECUTOR = new RpcScheduledExecutor(1,
-            "com.alibaba.nacos.remote.ServerCommonScheduler");
-    
+
+    public static final RpcScheduledExecutor TIMEOUT_SCHEDULER =
+            new RpcScheduledExecutor(1, "com.alibaba.nacos.remote.TimerScheduler");
+
+    public static final RpcScheduledExecutor COMMON_SERVER_EXECUTOR =
+            new RpcScheduledExecutor(1, "com.alibaba.nacos.remote.ServerCommonScheduler");
+
     public RpcScheduledExecutor(int corePoolSize, final String threadName) {
-        super(corePoolSize, new ThreadFactory() {
-            private AtomicLong index = new AtomicLong();
-            
-            @Override
-            public Thread newThread(Runnable r) {
-                Thread thread = new Thread(r, threadName + "." + index.getAndIncrement());
-                thread.setDaemon(true);
-                return thread;
-            }
-        });
+        super(
+                corePoolSize,
+                new ThreadFactory() {
+                    private AtomicLong index = new AtomicLong();
+
+                    @Override
+                    public Thread newThread(Runnable r) {
+                        Thread thread = new Thread(r, threadName + "." + index.getAndIncrement());
+                        thread.setDaemon(true);
+                        return thread;
+                    }
+                });
     }
-    
 }

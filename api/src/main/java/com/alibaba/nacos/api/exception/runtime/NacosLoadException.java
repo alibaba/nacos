@@ -28,5 +28,4 @@ public class NacosLoadException extends RuntimeException {
     public NacosLoadException(String errMsg) {
         super(errMsg);
     }
-
 }

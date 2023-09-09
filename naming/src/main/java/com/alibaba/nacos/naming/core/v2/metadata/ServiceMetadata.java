@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.core.v2.metadata;
 
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
-
 import java.io.Serializable;
 import java.util.Map;
 import java.util.Objects;
@@ -30,68 +29,62 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author xiweng.yy
  */
 public class ServiceMetadata implements Serializable {
-    
+
     private static final long serialVersionUID = -6605609934135069566L;
-    
-    /**
-     * Service is ephemeral or persistence.
-     */
+
+    /** Service is ephemeral or persistence. */
     private boolean ephemeral = true;
-    
-    /**
-     * protect threshold.
-     */
+
+    /** protect threshold. */
     private float protectThreshold = 0.0F;
-    
-    /**
-     * Type of {@link Selector}.
-     */
+
+    /** Type of {@link Selector}. */
     private Selector selector = new NoneSelector();
-    
+
     private Map<String, String> extendData = new ConcurrentHashMap<>(1);
-    
+
     private Map<String, ClusterMetadata> clusters = new ConcurrentHashMap<>(1);
-    
+
     public boolean isEphemeral() {
         return ephemeral;
     }
-    
+
     public void setEphemeral(boolean ephemeral) {
         this.ephemeral = ephemeral;
     }
-    
+
     public float getProtectThreshold() {
         return protectThreshold;
     }
-    
+
     public void setProtectThreshold(float protectThreshold) {
         this.protectThreshold = protectThreshold;
     }
-    
+
     public Selector getSelector() {
         return selector;
     }
-    
+
     public void setSelector(Selector selector) {
         this.selector = selector;
     }
-    
+
     public Map<String, String> getExtendData() {
         return extendData;
     }
-    
+
     public void setExtendData(Map<String, String> extendData) {
         this.extendData = extendData;
     }
-    
+
     public Map<String, ClusterMetadata> getClusters() {
         return clusters;
     }
-    
+
     public void setClusters(Map<String, ClusterMetadata> clusters) {
         this.clusters = clusters;
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -101,10 +94,12 @@ public class ServiceMetadata implements Serializable {
             return false;
         }
         ServiceMetadata metadata = (ServiceMetadata) o;
-        return Float.compare(metadata.protectThreshold, protectThreshold) == 0 && selector == metadata.selector
-                && Objects.equals(extendData, metadata.extendData) && Objects.equals(clusters, metadata.clusters);
+        return Float.compare(metadata.protectThreshold, protectThreshold) == 0
+                && selector == metadata.selector
+                && Objects.equals(extendData, metadata.extendData)
+                && Objects.equals(clusters, metadata.clusters);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(protectThreshold, selector, extendData, clusters);

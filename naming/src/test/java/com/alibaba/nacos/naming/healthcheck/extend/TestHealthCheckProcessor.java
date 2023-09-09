@@ -31,9 +31,7 @@ public class TestHealthCheckProcessor implements HealthCheckProcessorV2 {
     public static final String TYPE = TestChecker.TYPE;
 
     @Override
-    public void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata) {
-
-    }
+    public void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata) {}
 
     @Override
     public String getType() {

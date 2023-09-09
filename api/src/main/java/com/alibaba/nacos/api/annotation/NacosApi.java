@@ -24,13 +24,11 @@ import java.lang.annotation.Target;
 
 /**
  * An annotation for Nacos API v2 Controller.
+ *
  * @author dongyafei
  * @date 2022/7/22
  */
-
 @Target({ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-public @interface NacosApi {
-
-}
+public @interface NacosApi {}

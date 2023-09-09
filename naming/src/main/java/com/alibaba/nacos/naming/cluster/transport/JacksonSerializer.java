@@ -26,18 +26,18 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class JacksonSerializer implements Serializer {
-    
+
     private static final String TIMESTAMP_KEY = "timestamp";
-    
+
     private static final String KEY = "key";
-    
+
     private static final String VALUE = "value";
-    
+
     @Override
     public <T> byte[] serialize(T data) {
         return JacksonUtils.toJsonBytes(data);
     }
-    
+
     @Override
     public <T> T deserialize(byte[] data, Class<T> clazz) {
         return JacksonUtils.toObj(data, clazz);

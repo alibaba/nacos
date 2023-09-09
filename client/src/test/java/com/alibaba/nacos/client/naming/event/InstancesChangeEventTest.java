@@ -17,14 +17,11 @@
 package com.alibaba.nacos.client.naming.event;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class InstancesChangeEventTest {
-    
+
     @Test
     public void testGetServiceName() {
         String eventScope = "scope-001";
@@ -34,7 +31,8 @@ public class InstancesChangeEventTest {
         List<Instance> hosts = new ArrayList<>();
         Instance ins = new Instance();
         hosts.add(ins);
-        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts);
+        InstancesChangeEvent event =
+                new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts);
         Assert.assertEquals(eventScope, event.scope());
         Assert.assertEquals(serviceName, event.getServiceName());
         Assert.assertEquals(clusters, event.getClusters());

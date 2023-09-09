@@ -17,16 +17,15 @@
 package com.alibaba.nacos.naming.pojo.instance;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-
 import javax.servlet.http.HttpServletRequest;
 
 public class MockInstanceExtensionHandler implements InstanceExtensionHandler {
-    
+
     @Override
     public void configExtensionInfoFromRequest(HttpServletRequest request) {
         request.getParameter("mock");
     }
-    
+
     @Override
     public void handleExtensionInfo(Instance needHandleInstance) {
         needHandleInstance.getMetadata().put("mock", "mock");

@@ -34,19 +34,20 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
  * @author nkorange
  */
 public class ClientBeatProcessorV2 implements BeatProcessor {
-    
+
     private final String namespace;
-    
+
     private final RsInfo rsInfo;
-    
+
     private final IpPortBasedClient client;
-    
-    public ClientBeatProcessorV2(String namespace, RsInfo rsInfo, IpPortBasedClient ipPortBasedClient) {
+
+    public ClientBeatProcessorV2(
+            String namespace, RsInfo rsInfo, IpPortBasedClient ipPortBasedClient) {
         this.namespace = namespace;
         this.rsInfo = rsInfo;
         this.client = ipPortBasedClient;
     }
-    
+
     @Override
     public void run() {
         if (Loggers.EVT_LOG.isDebugEnabled()) {
@@ -56,8 +57,10 @@ public class ClientBeatProcessorV2 implements BeatProcessor {
         int port = rsInfo.getPort();
         String serviceName = NamingUtils.getServiceName(rsInfo.getServiceName());
         String groupName = NamingUtils.getGroupName(rsInfo.getServiceName());
-        Service service = Service.newService(namespace, groupName, serviceName, rsInfo.isEphemeral());
-        HealthCheckInstancePublishInfo instance = (HealthCheckInstancePublishInfo) client.getInstancePublishInfo(service);
+        Service service =
+                Service.newService(namespace, groupName, serviceName, rsInfo.isEphemeral());
+        HealthCheckInstancePublishInfo instance =
+                (HealthCheckInstancePublishInfo) client.getInstancePublishInfo(service);
         if (instance.getIp().equals(ip) && instance.getPort() == port) {
             if (Loggers.EVT_LOG.isDebugEnabled()) {
                 Loggers.EVT_LOG.debug("[CLIENT-BEAT] refresh beat: {}", rsInfo);
@@ -65,13 +68,25 @@ public class ClientBeatProcessorV2 implements BeatProcessor {
             instance.setLastHeartBeatTime(System.currentTimeMillis());
             if (!instance.isHealthy()) {
                 instance.setHealthy(true);
-                Loggers.EVT_LOG.info("service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
-                        rsInfo.getServiceName(), ip, port, rsInfo.getCluster(), UtilsAndCommons.LOCALHOST_SITE);
+                Loggers.EVT_LOG.info(
+                        "service: {} {POS} {IP-ENABLED} valid: {}:{}@{}, region: {}, msg: client beat ok",
+                        rsInfo.getServiceName(),
+                        ip,
+                        port,
+                        rsInfo.getCluster(),
+                        UtilsAndCommons.LOCALHOST_SITE);
                 NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service));
                 NotifyCenter.publishEvent(new ClientEvent.ClientChangedEvent(client));
-                NotifyCenter.publishEvent(new HealthStateChangeTraceEvent(System.currentTimeMillis(),
-                        service.getNamespace(), service.getGroup(), service.getName(), instance.getIp(),
-                        instance.getPort(), true, "client_beat"));
+                NotifyCenter.publishEvent(
+                        new HealthStateChangeTraceEvent(
+                                System.currentTimeMillis(),
+                                service.getNamespace(),
+                                service.getGroup(),
+                                service.getName(),
+                                instance.getIp(),
+                                instance.getPort(),
+                                true,
+                                "client_beat"));
             }
         }
     }

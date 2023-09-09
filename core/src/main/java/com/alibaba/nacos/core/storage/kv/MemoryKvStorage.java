@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.storage.kv;
 import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alipay.sofa.jraft.util.BytesUtil;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -33,14 +32,14 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class MemoryKvStorage implements KvStorage {
-    
+
     private final Map<Key, byte[]> storage = new ConcurrentSkipListMap<>();
-    
+
     @Override
     public byte[] get(byte[] key) throws KvStorageException {
         return storage.get(new Key(key));
     }
-    
+
     @Override
     public Map<byte[], byte[]> batchGet(List<byte[]> keys) throws KvStorageException {
         Map<byte[], byte[]> result = new HashMap<>(keys.size());
@@ -52,16 +51,17 @@ public class MemoryKvStorage implements KvStorage {
         }
         return result;
     }
-    
+
     @Override
     public void put(byte[] key, byte[] value) throws KvStorageException {
         storage.put(new Key(key), value);
     }
-    
+
     @Override
     public void batchPut(List<byte[]> keys, List<byte[]> values) throws KvStorageException {
         if (keys.size() != values.size()) {
-            throw new KvStorageException(ErrorCode.KVStorageBatchWriteError.getCode(),
+            throw new KvStorageException(
+                    ErrorCode.KVStorageBatchWriteError.getCode(),
                     "key's size must be equal to value's size");
         }
         int size = keys.size();
@@ -69,29 +69,29 @@ public class MemoryKvStorage implements KvStorage {
             storage.put(new Key(keys.get(i)), values.get(i));
         }
     }
-    
+
     @Override
     public void delete(byte[] key) throws KvStorageException {
         storage.remove(new Key(key));
     }
-    
+
     @Override
     public void batchDelete(List<byte[]> keys) throws KvStorageException {
         for (byte[] key : keys) {
             storage.remove(new Key(key));
         }
     }
-    
+
     @Override
     public void doSnapshot(String backupPath) throws KvStorageException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public void snapshotLoad(String path) throws KvStorageException {
         throw new UnsupportedOperationException();
     }
-    
+
     @Override
     public List<byte[]> allKeys() throws KvStorageException {
         List<byte[]> result = new LinkedList<>();
@@ -100,25 +100,25 @@ public class MemoryKvStorage implements KvStorage {
         }
         return result;
     }
-    
+
     @Override
     public void shutdown() {
         storage.clear();
     }
-    
+
     private static class Key implements Comparable<Key> {
-        
+
         private final byte[] origin;
-        
+
         private Key(byte[] origin) {
             this.origin = origin;
         }
-        
+
         @Override
         public int compareTo(Key o) {
             return BytesUtil.compare(origin, o.origin);
         }
-        
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -130,11 +130,10 @@ public class MemoryKvStorage implements KvStorage {
             Key key = (Key) o;
             return Arrays.equals(origin, key.origin);
         }
-        
+
         @Override
         public int hashCode() {
             return Arrays.hashCode(origin);
         }
     }
-    
 }

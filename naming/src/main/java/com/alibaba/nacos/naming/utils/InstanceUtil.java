@@ -24,7 +24,6 @@ import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.instance.DefaultInstanceIdGenerator;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,11 +34,11 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public final class InstanceUtil {
-    
+
     /**
      * Parse {@code InstancePublishInfo} to {@code Instance}.
      *
-     * @param service      service of instance
+     * @param service service of instance
      * @param instanceInfo instance info
      * @return api instance
      */
@@ -62,7 +61,9 @@ public final class InstanceUtil {
                     result.setWeight((Double) entry.getValue());
                     break;
                 default:
-                    instanceMetadata.put(entry.getKey(), null != entry.getValue() ? entry.getValue().toString() : null);
+                    instanceMetadata.put(
+                            entry.getKey(),
+                            null != entry.getValue() ? entry.getValue().toString() : null);
             }
         }
         result.setMetadata(instanceMetadata);
@@ -70,7 +71,7 @@ public final class InstanceUtil {
         result.setHealthy(instanceInfo.isHealthy());
         return result;
     }
-    
+
     /**
      * Update metadata in {@code Instance} according to {@code InstanceMetadata}.
      *
@@ -87,7 +88,7 @@ public final class InstanceUtil {
 
     /**
      * Deepcopy one instance.
-     * 
+     *
      * @param source instance to be deepcopy
      */
     public static Instance deepCopy(Instance source) {
@@ -104,28 +105,34 @@ public final class InstanceUtil {
         target.setMetadata(new HashMap<>(source.getMetadata()));
         return target;
     }
-    
+
     /**
-     * If the instance id is empty, use the default-instance-id-generator method to set the instance id.
+     * If the instance id is empty, use the default-instance-id-generator method to set the instance
+     * id.
      *
-     * @param instance    instance from request
+     * @param instance instance from request
      * @param groupedServiceName groupedServiceName from service
      */
     public static void setInstanceIdIfEmpty(Instance instance, String groupedServiceName) {
         if (null != instance && StringUtils.isEmpty(instance.getInstanceId())) {
-            DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(groupedServiceName,
-                    instance.getClusterName(), instance.getIp(), instance.getPort());
+            DefaultInstanceIdGenerator idGenerator =
+                    new DefaultInstanceIdGenerator(
+                            groupedServiceName,
+                            instance.getClusterName(),
+                            instance.getIp(),
+                            instance.getPort());
             instance.setInstanceId(idGenerator.generateInstanceId());
         }
     }
-    
+
     /**
      * Batch set instance id if empty.
      *
-     * @param instances   instances from request
+     * @param instances instances from request
      * @param groupedServiceName groupedServiceName from service
      */
-    public static void batchSetInstanceIdIfEmpty(List<Instance> instances, String groupedServiceName) {
+    public static void batchSetInstanceIdIfEmpty(
+            List<Instance> instances, String groupedServiceName) {
         if (null != instances) {
             for (Instance instance : instances) {
                 setInstanceIdIfEmpty(instance, groupedServiceName);

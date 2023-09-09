@@ -30,38 +30,40 @@ import java.net.URLConnection;
 import java.util.List;
 
 /**
- * ensure that Nacos configuration does not affect user configuration savepoints and  scanning url.
+ * ensure that Nacos configuration does not affect user configuration savepoints and scanning url.
  *
  * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
  * @see <a href="https://github.com/alibaba/nacos/issues/6999">#6999</a>
  */
-public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator implements NacosLogbackConfigurator {
-    
+public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator
+        implements NacosLogbackConfigurator {
+
     /**
      * ensure that Nacos configuration does not affect user configuration savepoints.
      *
      * @param eventList safe data
      */
     @Override
-    public void registerSafeConfiguration(List<SaxEvent> eventList) {
-    }
-    
+    public void registerSafeConfiguration(List<SaxEvent> eventList) {}
+
     @Override
     public void addInstanceRules(RuleStore rs) {
         super.addInstanceRules(rs);
-        rs.addRule(new ElementSelector("configuration/nacosClientProperty"), new NacosClientPropertyAction());
+        rs.addRule(
+                new ElementSelector("configuration/nacosClientProperty"),
+                new NacosClientPropertyAction());
     }
-    
+
     @Override
     public int getVersion() {
         return 1;
     }
-    
+
     @Override
     public void setContext(Object loggerContext) {
         super.setContext((Context) loggerContext);
     }
-    
+
     /**
      * ensure that Nacos configuration does not affect user configuration scanning url.
      *
@@ -92,5 +94,4 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator impleme
             }
         }
     }
-    
 }

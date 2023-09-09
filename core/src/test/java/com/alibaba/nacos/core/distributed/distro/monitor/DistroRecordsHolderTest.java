@@ -16,54 +16,54 @@
 
 package com.alibaba.nacos.core.distributed.distro.monitor;
 
-import org.junit.Test;
-
-import java.util.Optional;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Optional;
+
 public class DistroRecordsHolderTest {
-    
+
     @Test
     public void testGetRecordIfExist() {
-        Optional<DistroRecord> actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetRecordIfExist");
+        Optional<DistroRecord> actual =
+                DistroRecordsHolder.getInstance().getRecordIfExist("testGetRecordIfExist");
         assertFalse(actual.isPresent());
         DistroRecordsHolder.getInstance().getRecord("testGetRecordIfExist");
         actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetRecordIfExist");
         assertTrue(actual.isPresent());
     }
-    
+
     @Test
     public void testGetTotalSyncCount() {
         long expected = DistroRecordsHolder.getInstance().getTotalSyncCount() + 1;
         DistroRecordsHolder.getInstance().getRecord("testGetTotalSyncCount").syncSuccess();
         assertEquals(expected, DistroRecordsHolder.getInstance().getTotalSyncCount());
     }
-    
+
     @Test
     public void testGetSuccessfulSyncCount() {
         long expected = DistroRecordsHolder.getInstance().getSuccessfulSyncCount() + 1;
         DistroRecordsHolder.getInstance().getRecord("testGetSuccessfulSyncCount").syncSuccess();
         assertEquals(expected, DistroRecordsHolder.getInstance().getSuccessfulSyncCount());
     }
-    
+
     @Test
     public void testGetFailedSyncCount() {
         DistroRecordsHolder.getInstance().getRecord("testGetFailedSyncCount");
-        Optional<DistroRecord> actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetFailedSyncCount");
+        Optional<DistroRecord> actual =
+                DistroRecordsHolder.getInstance().getRecordIfExist("testGetFailedSyncCount");
         assertTrue(actual.isPresent());
         assertEquals(0, DistroRecordsHolder.getInstance().getFailedSyncCount());
         actual.get().syncFail();
         assertEquals(1, DistroRecordsHolder.getInstance().getFailedSyncCount());
-        
     }
-    
+
     @Test
     public void testGetFailedVerifyCount() {
         DistroRecordsHolder.getInstance().getRecord("testGetFailedVerifyCount");
-        Optional<DistroRecord> actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetFailedVerifyCount");
+        Optional<DistroRecord> actual =
+                DistroRecordsHolder.getInstance().getRecordIfExist("testGetFailedVerifyCount");
         assertTrue(actual.isPresent());
         assertEquals(0, DistroRecordsHolder.getInstance().getFailedVerifyCount());
         actual.get().verifyFail();

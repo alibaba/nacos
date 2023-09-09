@@ -22,28 +22,28 @@ package com.alibaba.nacos.auth.config;
  * @author xiweng.yy
  */
 public enum AuthErrorCode {
-    
-    /**
-     * invalid auth type.
-     */
-    INVALID_TYPE(50001,
+
+    /** invalid auth type. */
+    INVALID_TYPE(
+            50001,
             "Invalid auth type, Please set `nacos.core.auth.system.type`, detail: https://nacos.io/zh-cn/docs/v2/plugin/auth-plugin.html"),
-    
-    EMPTY_IDENTITY(50002,
+
+    EMPTY_IDENTITY(
+            50002,
             "Empty identity, Please set `nacos.core.auth.server.identity.key` and `nacos.core.auth.server.identity.value`, detail: https://nacos.io/zh-cn/docs/v2/guide/user/auth.html");
-    
+
     private final Integer code;
-    
+
     private final String msg;
-    
+
     public Integer getCode() {
         return code;
     }
-    
+
     public String getMsg() {
         return msg;
     }
-    
+
     AuthErrorCode(Integer code, String msg) {
         this.code = code;
         this.msg = msg;

@@ -36,38 +36,35 @@ import java.util.Set;
  */
 public final class CollectionUtils {
 
-    private CollectionUtils() {
-    }
-    
+    private CollectionUtils() {}
+
     /**
-     * Returns the <code>index</code>-th value in <code>object</code>, throwing
-     * <code>IndexOutOfBoundsException</code> if there is no such element or
-     * <code>IllegalArgumentException</code> if <code>object</code> is not an
-     * instance of one of the supported types.
+     * Returns the <code>index</code>-th value in <code>object</code>, throwing <code>
+     * IndexOutOfBoundsException</code> if there is no such element or <code>
+     * IllegalArgumentException</code> if <code>object</code> is not an instance of one of the
+     * supported types.
      *
      * <p>The supported types, and associated semantics are:
+     *
      * <ul>
-     * <li> Map -- the value returned is the <code>Map.Entry</code> in position
-     *      <code>index</code> in the map's <code>entrySet</code> iterator,
-     *      if there is such an entry.</li>
-     * <li> List -- this method is equivalent to the list's get method.</li>
-     * <li> Array -- the <code>index</code>-th array entry is returned,
-     *      if there is such an entry; otherwise an <code>IndexOutOfBoundsException</code>
-     *      is thrown.</li>
-     * <li> Collection -- the value returned is the <code>index</code>-th object
-     *      returned by the collection's default iterator, if there is such an element.</li>
-     * <li> Iterator or Enumeration -- the value returned is the
-     *      <code>index</code>-th object in the Iterator/Enumeration, if there
-     *      is such an element.  The Iterator/Enumeration is advanced to
-     *      <code>index</code> (or to the end, if <code>index</code> exceeds the
-     *      number of entries) as a side effect of this method.</li>
+     *   <li>Map -- the value returned is the <code>Map.Entry</code> in position <code>index</code>
+     *       in the map's <code>entrySet</code> iterator, if there is such an entry.
+     *   <li>List -- this method is equivalent to the list's get method.
+     *   <li>Array -- the <code>index</code>-th array entry is returned, if there is such an entry;
+     *       otherwise an <code>IndexOutOfBoundsException</code> is thrown.
+     *   <li>Collection -- the value returned is the <code>index</code>-th object returned by the
+     *       collection's default iterator, if there is such an element.
+     *   <li>Iterator or Enumeration -- the value returned is the <code>index</code>-th object in
+     *       the Iterator/Enumeration, if there is such an element. The Iterator/Enumeration is
+     *       advanced to <code>index</code> (or to the end, if <code>index</code> exceeds the number
+     *       of entries) as a side effect of this method.
      * </ul>
      *
      * @param object the object to get a value from
-     * @param index  the index to get
+     * @param index the index to get
      * @return the object at the specified index
      * @throws IndexOutOfBoundsException if the index is invalid
-     * @throws IllegalArgumentException  if the object type is invalid
+     * @throws IllegalArgumentException if the object type is invalid
      */
     public static Object get(Object object, int index) {
         if (index < 0) {
@@ -112,21 +109,23 @@ public final class CollectionUtils {
             try {
                 return Array.get(object, index);
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Unsupported object type: " + object.getClass().getName());
+                throw new IllegalArgumentException(
+                        "Unsupported object type: " + object.getClass().getName());
             }
         }
     }
-    
+
     /**
      * Gets the size of the collection/iterator specified.
      *
      * <p>This method can handles objects as follows
+     *
      * <ul>
-     * <li>Collection - the collection size
-     * <li>Map - the map size
-     * <li>Array - the array size
-     * <li>Iterator - the number of elements remaining in the iterator
-     * <li>Enumeration - the number of elements remaining in the enumeration
+     *   <li>Collection - the collection size
+     *   <li>Map - the map size
+     *   <li>Array - the array size
+     *   <li>Iterator - the number of elements remaining in the iterator
+     *   <li>Enumeration - the number of elements remaining in the enumeration
      * </ul>
      *
      * @param object the object to get the size of
@@ -160,12 +159,13 @@ public final class CollectionUtils {
             try {
                 total = Array.getLength(object);
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Unsupported object type: " + object.getClass().getName());
+                throw new IllegalArgumentException(
+                        "Unsupported object type: " + object.getClass().getName());
             }
         }
         return total;
     }
-    
+
     /**
      * Judge whether object is empty.
      *
@@ -190,17 +190,18 @@ public final class CollectionUtils {
             try {
                 return Array.getLength(object) == 0;
             } catch (IllegalArgumentException ex) {
-                throw new IllegalArgumentException("Unsupported object type: " + object.getClass().getName());
+                throw new IllegalArgumentException(
+                        "Unsupported object type: " + object.getClass().getName());
             }
         }
     }
-    
+
     /**
      * Whether contain item in collection.
      *
-     * @param coll   collection
+     * @param coll collection
      * @param target target value
-     * @param <T>    General Type
+     * @param <T> General Type
      * @return true if contain, otherwise false
      */
     public static <T> boolean contains(Collection<T> coll, T target) {
@@ -209,7 +210,7 @@ public final class CollectionUtils {
         }
         return coll.contains(target);
     }
-    
+
     /**
      * Null-safe check if the specified collection is empty.
      *
@@ -222,7 +223,7 @@ public final class CollectionUtils {
     public static boolean isEmpty(Collection coll) {
         return (coll == null || coll.isEmpty());
     }
-    
+
     /**
      * Null-safe check if the specified collection is not empty.
      *
@@ -235,17 +236,17 @@ public final class CollectionUtils {
     public static boolean isNotEmpty(Collection coll) {
         return !CollectionUtils.isEmpty(coll);
     }
-    
+
     /**
-     * Returns the value to which the specified index , or {@code defaultValue} if this collection contains no value for
-     * the index.
+     * Returns the value to which the specified index , or {@code defaultValue} if this collection
+     * contains no value for the index.
      *
-     * @param obj          the object to get a value from
-     * @param index        the index to get
+     * @param obj the object to get a value from
+     * @param index the index to get
      * @param defaultValue default value
-     * @param <T>          General Type
-     * @return the value to which the specified index , or {@code defaultValue} if this collection contains no value for
-     * the index.
+     * @param <T> General Type
+     * @return the value to which the specified index , or {@code defaultValue} if this collection
+     *     contains no value for the index.
      */
     public static <T> T getOrDefault(Object obj, int index, T defaultValue) {
         try {
@@ -254,7 +255,7 @@ public final class CollectionUtils {
             return defaultValue;
         }
     }
-    
+
     /**
      * return an arraylist containing all input parameters.
      *
@@ -264,13 +265,14 @@ public final class CollectionUtils {
      */
     public static <T> List<T> list(T... elements) {
         if (elements == null) {
-            throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
+            throw new IllegalArgumentException(
+                    "Expected an array of elements (or empty array) but received a null.");
         }
         ArrayList<T> list = new ArrayList<>(elements.length);
         Collections.addAll(list, elements);
         return list;
     }
-    
+
     /**
      * Return a set containing all input parameters.
      *
@@ -279,19 +281,20 @@ public final class CollectionUtils {
      */
     public static <T> Set<T> set(T... elements) {
         if (elements == null) {
-            throw new IllegalArgumentException("Expected an array of elements (or empty array) but received a null.");
+            throw new IllegalArgumentException(
+                    "Expected an array of elements (or empty array) but received a null.");
         } else {
             return new LinkedHashSet<>(Arrays.asList(elements));
         }
     }
-    
+
     /**
      * return the first element, if the iterator contains multiple elements, will throw {@code
      * IllegalArgumentException}.
      *
-     * @throws NoSuchElementException   if the iterator is empty
-     * @throws IllegalArgumentException if the iterator contains multiple elements. The state of the iterator is
-     *                                  unspecified.
+     * @throws NoSuchElementException if the iterator is empty
+     * @throws IllegalArgumentException if the iterator contains multiple elements. The state of the
+     *     iterator is unspecified.
      */
     public static <T> T getOnlyElement(Iterable<T> iterable) {
         if (iterable == null) {
@@ -304,11 +307,11 @@ public final class CollectionUtils {
         }
         throw new IllegalArgumentException(buildExceptionMessage(iterator, first));
     }
-    
+
     /**
      * check list is equal.
      *
-     * @param firstList  first list.
+     * @param firstList first list.
      * @param secondList second list.
      * @return
      */
@@ -319,20 +322,20 @@ public final class CollectionUtils {
         if (firstList == null || secondList == null) {
             return false;
         }
-        
+
         if (firstList == secondList) {
             return true;
         }
-        
+
         if (firstList.size() != secondList.size()) {
             return false;
         }
-        
+
         boolean flag1 = firstList.containsAll(secondList);
         boolean flag2 = secondList.containsAll(firstList);
         return flag1 && flag2;
     }
-    
+
     @SuppressWarnings("PMD.UndefineMagicConstantRule")
     private static <T> String buildExceptionMessage(Iterator<T> iterator, T first) {
         StringBuilder msg = new StringBuilder();
@@ -348,9 +351,10 @@ public final class CollectionUtils {
         msg.append('>');
         return msg.toString();
     }
-    
+
     /**
-     * Return {@code true} if the supplied Map is {@code null} or empty. Otherwise, return {@code false}.
+     * Return {@code true} if the supplied Map is {@code null} or empty. Otherwise, return {@code
+     * false}.
      *
      * @param map the Map to check
      * @return whether the given Map is empty

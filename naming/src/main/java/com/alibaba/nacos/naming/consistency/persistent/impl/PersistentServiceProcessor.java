@@ -35,7 +35,6 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.protobuf.ByteString;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -49,39 +48,43 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.ServiceOrDaoClassShouldEndWithImplRule")
 public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
-    
+
     private final CPProtocol protocol;
-    
-    /**
-     * Is there a leader node currently.
-     */
+
+    /** Is there a leader node currently. */
     private volatile boolean hasLeader = false;
-    
+
     public PersistentServiceProcessor(ProtocolManager protocolManager) throws Exception {
         this.protocol = protocolManager.getCpProtocol();
     }
-    
+
     @Override
     public void afterConstruct() {
         super.afterConstruct();
         String raftGroup = Constants.NAMING_PERSISTENT_SERVICE_GROUP;
-        this.protocol.protocolMetaData().subscribe(raftGroup, MetadataKey.LEADER_META_DATA, o -> {
-            if (!(o instanceof ProtocolMetaData.ValueItem)) {
-                return;
-            }
-            Object leader = ((ProtocolMetaData.ValueItem) o).getData();
-            hasLeader = StringUtils.isNotBlank(String.valueOf(leader));
-            Loggers.RAFT.info("Raft group {} has leader {}", raftGroup, leader);
-        });
+        this.protocol
+                .protocolMetaData()
+                .subscribe(
+                        raftGroup,
+                        MetadataKey.LEADER_META_DATA,
+                        o -> {
+                            if (!(o instanceof ProtocolMetaData.ValueItem)) {
+                                return;
+                            }
+                            Object leader = ((ProtocolMetaData.ValueItem) o).getData();
+                            hasLeader = StringUtils.isNotBlank(String.valueOf(leader));
+                            Loggers.RAFT.info("Raft group {} has leader {}", raftGroup, leader);
+                        });
         this.protocol.addRequestProcessors(Collections.singletonList(this));
-        // If you choose to use the new RAFT protocol directly, there will be no compatible logical execution
+        // If you choose to use the new RAFT protocol directly, there will be no compatible logical
+        // execution
         if (EnvUtil.getProperty(Constants.NACOS_NAMING_USE_NEW_RAFT_FIRST, Boolean.class, false)) {
             NotifyCenter.registerSubscriber(notifier);
             waitLeader();
             startNotify = true;
         }
     }
-    
+
     private void waitLeader() {
         while (!hasLeader && !hasError) {
             Loggers.RAFT.info("Waiting Jraft leader vote ...");
@@ -91,54 +94,68 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
             }
         }
     }
-    
+
     @Override
     public void put(String key, Record value) throws NacosException {
         final BatchWriteRequest req = new BatchWriteRequest();
         Datum datum = Datum.createDatum(key, value);
         req.append(ByteUtils.toBytes(key), serializer.serialize(datum));
-        final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
-                .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Write.desc).build();
+        final WriteRequest request =
+                WriteRequest.newBuilder()
+                        .setData(ByteString.copyFrom(serializer.serialize(req)))
+                        .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
+                        .setOperation(Op.Write.desc)
+                        .build();
         try {
             protocol.write(request);
         } catch (Exception e) {
             throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }
     }
-    
+
     @Override
     public void remove(String key) throws NacosException {
         final BatchWriteRequest req = new BatchWriteRequest();
         req.append(ByteUtils.toBytes(key), ByteUtils.EMPTY);
-        final WriteRequest request = WriteRequest.newBuilder().setData(ByteString.copyFrom(serializer.serialize(req)))
-                .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP).setOperation(Op.Delete.desc).build();
+        final WriteRequest request =
+                WriteRequest.newBuilder()
+                        .setData(ByteString.copyFrom(serializer.serialize(req)))
+                        .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
+                        .setOperation(Op.Delete.desc)
+                        .build();
         try {
             protocol.write(request);
         } catch (Exception e) {
             throw new NacosException(ErrorCode.ProtoSubmitError.getCode(), e.getMessage());
         }
     }
-    
+
     @Override
     public Datum get(String key) throws NacosException {
         final List<byte[]> keys = new ArrayList<>(1);
         keys.add(ByteUtils.toBytes(key));
-        final ReadRequest req = ReadRequest.newBuilder().setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
-                .setData(ByteString.copyFrom(serializer.serialize(keys))).build();
+        final ReadRequest req =
+                ReadRequest.newBuilder()
+                        .setGroup(Constants.NAMING_PERSISTENT_SERVICE_GROUP)
+                        .setData(ByteString.copyFrom(serializer.serialize(keys)))
+                        .build();
         try {
             Response resp = protocol.getData(req);
             if (resp.getSuccess()) {
-                BatchReadResponse response = serializer
-                        .deserialize(resp.getData().toByteArray(), BatchReadResponse.class);
+                BatchReadResponse response =
+                        serializer.deserialize(
+                                resp.getData().toByteArray(), BatchReadResponse.class);
                 final List<byte[]> rValues = response.getValues();
-                return rValues.isEmpty() ? null : serializer.deserialize(rValues.get(0), getDatumTypeFromKey(key));
+                return rValues.isEmpty()
+                        ? null
+                        : serializer.deserialize(rValues.get(0), getDatumTypeFromKey(key));
             }
             throw new NacosException(ErrorCode.ProtoReadError.getCode(), resp.getErrMsg());
         } catch (Throwable e) {
             throw new NacosException(ErrorCode.ProtoReadError.getCode(), e.getMessage());
         }
     }
-    
+
     @Override
     public void listen(String key, RecordListener listener) throws NacosException {
         notifier.registerListener(key, listener);
@@ -146,17 +163,17 @@ public class PersistentServiceProcessor extends BasePersistentServiceProcessor {
             notifierDatumIfAbsent(key, listener);
         }
     }
-    
+
     @Override
     public void unListen(String key, RecordListener listener) throws NacosException {
         notifier.deregisterListener(key, listener);
     }
-    
+
     @Override
     public boolean isAvailable() {
         return hasLeader && !hasError;
     }
-    
+
     @Override
     public Optional<String> getErrorMsg() {
         String errorMsg;

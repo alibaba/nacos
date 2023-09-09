@@ -22,8 +22,6 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -38,18 +36,16 @@ import org.mockito.junit.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ServerLoaderInfoRequestHandlerTest {
-    
-    @InjectMocks
-    private ServerLoaderInfoRequestHandler handler;
-    
-    @Mock
-    private ConnectionManager connectionManager;
-    
+
+    @InjectMocks private ServerLoaderInfoRequestHandler handler;
+
+    @Mock private ConnectionManager connectionManager;
+
     @Test
     public void testHandle() {
         Mockito.when(connectionManager.currentClientsCount()).thenReturn(1);
         Mockito.when(connectionManager.currentClientsCount(Mockito.any())).thenReturn(1);
-    
+
         ServerLoaderInfoRequest request = new ServerLoaderInfoRequest();
         RequestMeta meta = new RequestMeta();
 
@@ -57,7 +53,7 @@ public class ServerLoaderInfoRequestHandlerTest {
             ServerLoaderInfoResponse response = handler.handle(request, meta);
             String sdkConCount = response.getMetricsValue("sdkConCount");
             Assert.assertEquals(sdkConCount, "1");
-            
+
         } catch (NacosException e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());

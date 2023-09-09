@@ -24,23 +24,22 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 public class ClientConstants {
-    
+
     public static final String CONNECTION_TYPE = "connectionType";
-    
+
     public static final String CONNECTION_METADATA = "connectionMetadata";
-    
+
     public static final String DEFAULT_FACTORY = "default";
-    
+
     public static final String EPHEMERAL_IP_PORT = "ephemeralIpPort";
-    
+
     public static final String PERSISTENT_IP_PORT = "persistentIpPort";
-    
+
     public static final String REVISION = "revision";
-    
+
     public static final String PERSISTENT_SUFFIX = "false";
-    
+
     public static final String CLIENT_EXPIRED_TIME_CONFIG_KEY = "nacos.naming.client.expired.time";
-    
+
     public static final long DEFAULT_CLIENT_EXPIRED_TIME = TimeUnit.MINUTES.toMillis(3);
-    
 }

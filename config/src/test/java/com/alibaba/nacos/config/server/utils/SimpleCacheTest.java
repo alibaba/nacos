@@ -16,23 +16,19 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.concurrent.TimeUnit;
 
 public class SimpleCacheTest {
-    
+
     @Test
     public void testPutAndGet() throws InterruptedException {
         SimpleCache<String> simpleCache = new SimpleCache<>();
         simpleCache.put("key", "value", 1000);
         Assert.assertEquals("value", simpleCache.get("key"));
-        
-        //time expire
+
+        // time expire
         TimeUnit.MILLISECONDS.sleep(1100);
         Object value = simpleCache.get("key");
         Assert.assertNull(value);
     }
-    
 }

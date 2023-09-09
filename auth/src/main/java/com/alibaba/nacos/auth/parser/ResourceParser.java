@@ -27,7 +27,7 @@ import com.alibaba.nacos.plugin.auth.api.Resource;
  * @since 1.2.0
  */
 public interface ResourceParser<R> {
-    
+
     /**
      * Parse resource from request.
      *

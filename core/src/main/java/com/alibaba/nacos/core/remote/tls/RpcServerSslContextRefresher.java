@@ -25,7 +25,7 @@ import com.alibaba.nacos.core.remote.BaseRpcServer;
  * @version $Id: RequestFilters.java, v 0.1 2023年03月17日 12:00 PM liuzunfei Exp $
  */
 public interface RpcServerSslContextRefresher {
-    
+
     /**
      * listener current rpc server and do something on ssl context change.
      *
@@ -33,7 +33,7 @@ public interface RpcServerSslContextRefresher {
      * @return
      */
     SslContextChangeAware refresh(BaseRpcServer baseRpcServer);
-    
+
     /**
      * refresher name.
      *

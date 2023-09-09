@@ -22,12 +22,11 @@ package com.alibaba.nacos.plugin.control.configs;
  * @author shiyiyue
  */
 public interface ControlConfigsInitializer {
-    
+
     /**
      * init control configs.
      *
      * @param controlConfigs control configs.
      */
     void initialize(ControlConfigs controlConfigs);
-    
 }

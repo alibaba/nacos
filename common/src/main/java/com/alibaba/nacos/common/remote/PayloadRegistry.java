@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.remote;
 
 import com.alibaba.nacos.api.remote.Payload;
-
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,17 +29,16 @@ import java.util.ServiceLoader;
  * @author hujun
  * @version $Id: PayloadRegistry.java, v 0.1 2020年09月01日 10:56 AM liuzunfei Exp $
  */
-
 public class PayloadRegistry {
-    
+
     private static final Map<String, Class<?>> REGISTRY_REQUEST = new HashMap<>();
-    
+
     static boolean initialized = false;
-    
+
     public static void init() {
         scan();
     }
-    
+
     private static synchronized void scan() {
         if (initialized) {
             return;
@@ -51,17 +49,18 @@ public class PayloadRegistry {
         }
         initialized = true;
     }
-    
+
     static void register(String type, Class<?> clazz) {
         if (Modifier.isAbstract(clazz.getModifiers())) {
             return;
         }
         if (REGISTRY_REQUEST.containsKey(type)) {
-            throw new RuntimeException(String.format("Fail to register, type:%s ,clazz:%s ", type, clazz.getName()));
+            throw new RuntimeException(
+                    String.format("Fail to register, type:%s ,clazz:%s ", type, clazz.getName()));
         }
         REGISTRY_REQUEST.put(type, clazz);
     }
-    
+
     public static Class<?> getClassByType(String type) {
         return REGISTRY_REQUEST.get(type);
     }

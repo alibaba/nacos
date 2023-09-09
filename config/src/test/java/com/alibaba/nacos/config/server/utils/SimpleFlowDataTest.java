@@ -16,29 +16,25 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class SimpleFlowDataTest {
-    
+
     @Test
     public void testAddAndGet() {
-        
+
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
         Assert.assertEquals(10, simpleFlowData.addAndGet(10));
         Assert.assertEquals(20, simpleFlowData.addAndGet(10));
     }
-    
+
     @Test
     public void testIncrementAndGet() {
-        
+
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
         Assert.assertEquals(1, simpleFlowData.incrementAndGet());
         Assert.assertEquals(2, simpleFlowData.incrementAndGet());
         Assert.assertEquals(3, simpleFlowData.incrementAndGet());
-        
     }
-    
+
     @Test
     public void testGetSlotInfo() {
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
@@ -47,7 +43,7 @@ public class SimpleFlowDataTest {
         simpleFlowData.incrementAndGet();
         Assert.assertEquals("0 0 0 0 3", simpleFlowData.getSlotInfo());
     }
-    
+
     @Test
     public void testGetSlotInfo2() {
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
@@ -61,7 +57,7 @@ public class SimpleFlowDataTest {
         Assert.assertEquals(2, simpleFlowData.getAverageCount());
         Assert.assertEquals(5, simpleFlowData.getSlotCount());
     }
-    
+
     @Test
     public void testGetCount() {
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
@@ -73,5 +69,4 @@ public class SimpleFlowDataTest {
         Assert.assertEquals("0 0 2 3 1", simpleFlowData.getSlotInfo());
         Assert.assertEquals(2, simpleFlowData.getCount(2));
     }
-    
 }

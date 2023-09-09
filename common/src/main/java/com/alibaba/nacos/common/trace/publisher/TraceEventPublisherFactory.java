@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.EventPublisherFactory;
 import com.alibaba.nacos.common.trace.event.TraceEvent;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -31,12 +30,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author yanda
  */
-
 public class TraceEventPublisherFactory implements EventPublisherFactory {
     private static final TraceEventPublisherFactory INSTANCE = new TraceEventPublisherFactory();
 
     private final Map<Class<? extends Event>, TraceEventPublisher> publisher;
-    
+
     private final Set<Class<? extends Event>> publisherEvents;
 
     private TraceEventPublisherFactory() {
@@ -49,21 +47,24 @@ public class TraceEventPublisherFactory implements EventPublisherFactory {
     }
 
     @Override
-    public EventPublisher apply(final Class<? extends Event> eventType, final Integer maxQueueSize) {
+    public EventPublisher apply(
+            final Class<? extends Event> eventType, final Integer maxQueueSize) {
         Class<? extends Event> cachedEventType = TraceEvent.class;
-        
+
         for (Class<? extends Event> publisherEvent : publisherEvents) {
             if (publisherEvent.isAssignableFrom(eventType)) {
                 cachedEventType = publisherEvent;
                 break;
             }
         }
-        
-        publisher.computeIfAbsent(cachedEventType, eventClass -> {
-            TraceEventPublisher result = new TraceEventPublisher();
-            result.init(eventClass, maxQueueSize);
-            return result;
-        });
+
+        publisher.computeIfAbsent(
+                cachedEventType,
+                eventClass -> {
+                    TraceEventPublisher result = new TraceEventPublisher();
+                    result.init(eventClass, maxQueueSize);
+                    return result;
+                });
         return publisher.get(cachedEventType);
     }
 
@@ -74,7 +75,7 @@ public class TraceEventPublisherFactory implements EventPublisherFactory {
         }
         return result.toString();
     }
-    
+
     public void addPublisherEvent(Class<? extends Event> event) {
         this.publisherEvents.add(event);
     }

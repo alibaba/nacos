@@ -17,9 +17,6 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.consistency.serialize.JacksonSerializer;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -28,22 +25,22 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 public class SerializeFactoryTest {
-    
+
     @Test
     public void testListSerialize() {
         Serializer serializer = SerializeFactory.getDefault();
-        
+
         List<Integer> logsList = new ArrayList<>();
         for (int i = 0; i < 4; i++) {
             logsList.add(i);
         }
         byte[] data = serializer.serialize(logsList);
         Assert.assertNotEquals(0, data.length);
-        
+
         ArrayList<Integer> list = serializer.deserialize(data, ArrayList.class);
         System.out.println(list);
     }
-    
+
     @Test
     public void testMapSerialize() {
         Serializer serializer = SerializeFactory.getDefault();
@@ -56,7 +53,7 @@ public class SerializeFactoryTest {
         Map<Integer, Integer> result = serializer.deserialize(data, HashMap.class);
         System.out.println(result);
     }
-    
+
     @Test
     public void testSetSerialize() {
         Serializer serializer = SerializeFactory.getDefault();
@@ -64,13 +61,13 @@ public class SerializeFactoryTest {
         for (int i = 0; i < 4; i++) {
             logsMap.add(i);
         }
-        
+
         byte[] data = serializer.serialize(logsMap);
         Assert.assertNotEquals(0, data.length);
         Set<Integer> result = serializer.deserialize(data, CopyOnWriteArraySet.class);
         System.out.println(result);
     }
-    
+
     @Test
     public void testGetSerializer() {
         Serializer serializer = SerializeFactory.getSerializer("JSON");

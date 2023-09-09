@@ -26,23 +26,27 @@ import com.alibaba.nacos.naming.push.v2.task.NamingPushCallback;
  * @author xiweng.yy
  */
 public interface PushExecutor {
-    
+
     /**
      * Do push.
      *
-     * @param clientId   client id
+     * @param clientId client id
      * @param subscriber subscriber
-     * @param data       push data
+     * @param data push data
      */
     void doPush(String clientId, Subscriber subscriber, PushDataWrapper data);
-    
+
     /**
      * Do push with callback.
      *
-     * @param clientId   client id
+     * @param clientId client id
      * @param subscriber subscriber
-     * @param data       push data
-     * @param callBack   callback
+     * @param data push data
+     * @param callBack callback
      */
-    void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data, NamingPushCallback callBack);
+    void doPushWithCallback(
+            String clientId,
+            Subscriber subscriber,
+            PushDataWrapper data,
+            NamingPushCallback callBack);
 }

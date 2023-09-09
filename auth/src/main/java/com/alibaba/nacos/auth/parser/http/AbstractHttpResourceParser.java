@@ -17,7 +17,6 @@
 package com.alibaba.nacos.auth.parser.http;
 
 import com.alibaba.nacos.auth.parser.AbstractResourceParser;
-
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -25,6 +24,5 @@ import javax.servlet.http.HttpServletRequest;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractHttpResourceParser extends AbstractResourceParser<HttpServletRequest> {
-
-}
+public abstract class AbstractHttpResourceParser
+        extends AbstractResourceParser<HttpServletRequest> {}

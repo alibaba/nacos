@@ -16,18 +16,16 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Calendar;
 import java.util.TimeZone;
 
 /**
  * DateFormatUtils test.
+ *
  * @author zzq
  */
 public class DateFormatUtilsTest {
-    
+
     @Test
     public void testformat() {
         final Calendar c = Calendar.getInstance(TimeZone.getDefault());

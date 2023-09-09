@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.client.auth.ram.injector;
 
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.RamContext;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 
 /**
@@ -26,14 +26,14 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
  * @author xiweng.yy
  */
 public abstract class AbstractResourceInjector {
-    
+
     /**
      * Generate and inject resource into context. Default impl will do nothing.
      *
      * @param resource request resource
-     * @param context  ram context
-     * @param result   the result identity context
+     * @param context ram context
+     * @param result the result identity context
      */
-    public void doInject(RequestResource resource, RamContext context, LoginIdentityContext result) {
-    }
+    public void doInject(
+            RequestResource resource, RamContext context, LoginIdentityContext result) {}
 }

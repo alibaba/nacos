@@ -25,9 +25,9 @@ import com.alibaba.nacos.api.naming.NamingResponseCode;
  * @author xiweng.yy
  */
 public class NoRequiredRetryException extends NacosRuntimeException {
-    
+
     private static final long serialVersionUID = -7941235764759109405L;
-    
+
     public NoRequiredRetryException() {
         super(NamingResponseCode.NO_NEED_RETRY);
     }

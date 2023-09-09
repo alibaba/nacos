@@ -16,23 +16,19 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class SimpleIpFlowDataTest {
-    
+
     @Test
     public void testIncrementAndGet() {
-        
+
         SimpleIpFlowData simpleIpFlowData = new SimpleIpFlowData(5, 10000);
         Assert.assertEquals(1, simpleIpFlowData.incrementAndGet("127.0.0.1"));
         Assert.assertEquals(2, simpleIpFlowData.incrementAndGet("127.0.0.1"));
         Assert.assertEquals(3, simpleIpFlowData.incrementAndGet("127.0.0.1"));
         Assert.assertEquals(1, simpleIpFlowData.incrementAndGet("127.0.0.2"));
         Assert.assertEquals(2, simpleIpFlowData.incrementAndGet("127.0.0.2"));
-        
     }
-    
+
     @Test
     public void testGetCurrentCount() {
         SimpleIpFlowData simpleIpFlowData = new SimpleIpFlowData(3, 10000);
@@ -44,5 +40,4 @@ public class SimpleIpFlowDataTest {
         Assert.assertEquals(0, simpleIpFlowData.getCurrentCount("127.0.0.1"));
         Assert.assertEquals(1, simpleIpFlowData.getAverageCount());
     }
-    
 }

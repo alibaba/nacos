@@ -26,50 +26,65 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  * @author xiweng.yy
  */
 public class PushConfig extends AbstractDynamicConfig {
-    
+
     private static final String PUSH = "Push";
-    
+
     private static final PushConfig INSTANCE = new PushConfig();
-    
+
     private long pushTaskDelay = PushConstants.DEFAULT_PUSH_TASK_DELAY;
-    
+
     private long pushTaskTimeout = PushConstants.DEFAULT_PUSH_TASK_TIMEOUT;
-    
+
     private long pushTaskRetryDelay = PushConstants.DEFAULT_PUSH_TASK_RETRY_DELAY;
-    
+
     private PushConfig() {
         super(PUSH);
         resetConfig();
     }
-    
+
     @Override
     protected void getConfigFromEnv() {
-        pushTaskDelay = EnvUtil
-                .getProperty(PushConstants.PUSH_TASK_DELAY, Long.class, PushConstants.DEFAULT_PUSH_TASK_DELAY);
-        pushTaskTimeout = EnvUtil
-                .getProperty(PushConstants.PUSH_TASK_TIMEOUT, Long.class, PushConstants.DEFAULT_PUSH_TASK_TIMEOUT);
-        pushTaskRetryDelay = EnvUtil.getProperty(PushConstants.PUSH_TASK_RETRY_DELAY, Long.class,
-                PushConstants.DEFAULT_PUSH_TASK_RETRY_DELAY);
+        pushTaskDelay =
+                EnvUtil.getProperty(
+                        PushConstants.PUSH_TASK_DELAY,
+                        Long.class,
+                        PushConstants.DEFAULT_PUSH_TASK_DELAY);
+        pushTaskTimeout =
+                EnvUtil.getProperty(
+                        PushConstants.PUSH_TASK_TIMEOUT,
+                        Long.class,
+                        PushConstants.DEFAULT_PUSH_TASK_TIMEOUT);
+        pushTaskRetryDelay =
+                EnvUtil.getProperty(
+                        PushConstants.PUSH_TASK_RETRY_DELAY,
+                        Long.class,
+                        PushConstants.DEFAULT_PUSH_TASK_RETRY_DELAY);
     }
-    
+
     @Override
     protected String printConfig() {
-        return "PushConfig{" + "pushTaskDelay=" + pushTaskDelay + ", pushTaskTimeout=" + pushTaskTimeout
-                + ", pushTaskRetryDelay=" + pushTaskRetryDelay + '}';
+        return "PushConfig{"
+                + "pushTaskDelay="
+                + pushTaskDelay
+                + ", pushTaskTimeout="
+                + pushTaskTimeout
+                + ", pushTaskRetryDelay="
+                + pushTaskRetryDelay
+                + '}';
     }
-    
+
     public static PushConfig getInstance() {
         return INSTANCE;
     }
-    
+
     public long getPushTaskDelay() {
         return pushTaskDelay;
     }
-    
+
     public long getPushTaskTimeout() {
         return pushTaskTimeout;
     }
-    
+
     public long getPushTaskRetryDelay() {
         return pushTaskRetryDelay;
     }

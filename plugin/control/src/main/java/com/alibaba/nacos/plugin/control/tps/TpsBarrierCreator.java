@@ -22,14 +22,14 @@ package com.alibaba.nacos.plugin.control.tps;
  * @author shiyiyue
  */
 public interface TpsBarrierCreator {
-    
+
     /**
      * get name.
      *
      * @return
      */
     String getName();
-    
+
     /**
      * create tps barrier.
      *

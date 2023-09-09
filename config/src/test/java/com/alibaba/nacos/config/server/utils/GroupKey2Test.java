@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -27,10 +24,9 @@ import org.springframework.test.context.web.WebAppConfiguration;
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
 public class GroupKey2Test {
-    
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
-    
+
+    @Rule public final ExpectedException thrown = ExpectedException.none();
+
     @Test
     public void testParseInvalidGroupKey2() {
         String key = "11111+222+333333+444";
@@ -40,7 +36,7 @@ public class GroupKey2Test {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
-        
+
         key = "11111+";
         try {
             GroupKey2.parseKey(key);
@@ -48,7 +44,7 @@ public class GroupKey2Test {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
-        
+
         key = "11111%29+222";
         try {
             GroupKey2.parseKey(key);
@@ -56,7 +52,7 @@ public class GroupKey2Test {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
-        
+
         key = "11111%2b+222";
         try {
             GroupKey2.parseKey(key);
@@ -64,108 +60,108 @@ public class GroupKey2Test {
         } catch (IllegalArgumentException e) {
             System.out.println(e.toString());
         }
-        
+
         key = "11111%25+222";
         String[] pair = GroupKey2.parseKey(key);
         Assert.assertEquals("11111%", pair[0]);
         Assert.assertEquals("222", pair[1]);
     }
-    
+
     @Test
     public void testGetKeyByThreeParams() {
-        
+
         // Act
         final String actual = GroupKey2.getKey(",", ",", "3");
-        
+
         // Assert result
         Assert.assertEquals(",+,+3", actual);
     }
-    
+
     @Test
     public void testGetKeyByTwoParams() {
-        
+
         // Act
         final String actual = GroupKey2.getKey("3", "'");
-        
+
         // Assert result
         Assert.assertEquals("3+'", actual);
     }
-    
+
     @Test
     public void testParseKeyBySingleCharacter() {
-        
+
         // Act
         final String[] actual = GroupKey2.parseKey("/");
-        
+
         // Assert result
         Assert.assertArrayEquals(new String[] {null, "/", null}, actual);
     }
-    
+
     @Test
     public void testParseKeyForPlusIllegalArgumentException() {
-        
+
         // Act
         thrown.expect(IllegalArgumentException.class);
         GroupKey2.parseKey("+");
-        
+
         // Method is not expected to return due to exception thrown
     }
-    
+
     @Test
     public void testParseKeyForPercentIllegalArgumentException() {
-        
+
         // Act
         thrown.expect(IllegalArgumentException.class);
         GroupKey2.parseKey("%%%5\u0000??????????????");
-        
+
         // Method is not expected to return due to exception thrown
     }
-    
+
     @Test
     public void testParseKeyForInvalidStringIndexOutOfBoundsException() {
-        
+
         // Act
         thrown.expect(StringIndexOutOfBoundsException.class);
         GroupKey2.parseKey("++%");
-        
+
         // Method is not expected to return due to exception thrown
     }
-    
+
     @Test
     public void testUrlEncodePlus() {
-        
+
         // Arrange
         final StringBuilder sb = new StringBuilder("????");
-        
+
         // Act
         GroupKey2.urlEncode("+", sb);
-        
+
         // Assert side effects
         Assert.assertNotNull(sb);
         Assert.assertEquals("????%2B", sb.toString());
     }
-    
+
     @Test
     public void testUrlEncodeByPercent() {
-        
+
         // Arrange
         final StringBuilder sb = new StringBuilder("??????");
-        
+
         // Act
         GroupKey2.urlEncode("%", sb);
-        
+
         // Assert side effects
         Assert.assertNotNull(sb);
         Assert.assertEquals("??????%25", sb.toString());
     }
-    
+
     @Test
     public void testUrlEncodeForNullStringBuilder() {
-        
+
         // Act
         thrown.expect(NullPointerException.class);
         GroupKey2.urlEncode("+", null);
-        
+
         // Method is not expected to return due to exception thrown
     }
 }

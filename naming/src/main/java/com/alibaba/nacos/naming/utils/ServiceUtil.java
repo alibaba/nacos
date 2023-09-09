@@ -24,7 +24,6 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,16 +40,17 @@ import java.util.stream.Collectors;
  * @author xiweng.yy
  */
 public final class ServiceUtil {
-    
+
     /**
      * Page service name.
      *
-     * @param pageNo         page number
-     * @param pageSize       size per page
+     * @param pageNo page number
+     * @param pageSize size per page
      * @param serviceNameSet service name set
      * @return service name list by paged
      */
-    public static List<String> pageServiceName(int pageNo, int pageSize, Collection<String> serviceNameSet) {
+    public static List<String> pageServiceName(
+            int pageNo, int pageSize, Collection<String> serviceNameSet) {
         List<String> result = new ArrayList<>(serviceNameSet);
         int start = (pageNo - 1) * pageSize;
         if (start < 0) {
@@ -73,7 +73,7 @@ public final class ServiceUtil {
         }
         return result.subList(start, end);
     }
-    
+
     /**
      * Select healthy instance of service info.
      *
@@ -83,7 +83,7 @@ public final class ServiceUtil {
     public static ServiceInfo selectHealthyInstances(ServiceInfo serviceInfo) {
         return selectInstances(serviceInfo, true, false);
     }
-    
+
     /**
      * Select healthy instance of service info.
      *
@@ -93,139 +93,171 @@ public final class ServiceUtil {
     public static ServiceInfo selectEnabledInstances(ServiceInfo serviceInfo) {
         return selectInstances(serviceInfo, false, true);
     }
-    
+
     /**
      * Select instance of service info.
      *
      * @param serviceInfo original service info
-     * @param cluster     cluster of instances
+     * @param cluster cluster of instances
      * @return new service info
      */
     public static ServiceInfo selectInstances(ServiceInfo serviceInfo, String cluster) {
         return selectInstances(serviceInfo, cluster, false, false);
     }
-    
+
     /**
      * Select instance of service info.
      *
      * @param serviceInfo original service info
      * @param healthyOnly whether only select instance which healthy
-     * @param enableOnly  whether only select instance which enabled
+     * @param enableOnly whether only select instance which enabled
      * @return new service info
      */
-    public static ServiceInfo selectInstances(ServiceInfo serviceInfo, boolean healthyOnly, boolean enableOnly) {
+    public static ServiceInfo selectInstances(
+            ServiceInfo serviceInfo, boolean healthyOnly, boolean enableOnly) {
         return selectInstances(serviceInfo, StringUtils.EMPTY, healthyOnly, enableOnly);
     }
-    
+
     /**
      * Select instance of service info.
      *
      * @param serviceInfo original service info
-     * @param cluster     cluster of instances
+     * @param cluster cluster of instances
      * @param healthyOnly whether only select instance which healthy
      * @return new service info
      */
-    public static ServiceInfo selectInstances(ServiceInfo serviceInfo, String cluster, boolean healthyOnly) {
+    public static ServiceInfo selectInstances(
+            ServiceInfo serviceInfo, String cluster, boolean healthyOnly) {
         return selectInstances(serviceInfo, cluster, healthyOnly, false);
     }
-    
+
     /**
      * Select instance of service info.
      *
      * @param serviceInfo original service info
-     * @param cluster     cluster of instances
+     * @param cluster cluster of instances
      * @param healthyOnly whether only select instance which healthy
-     * @param enableOnly  whether only select instance which enabled
+     * @param enableOnly whether only select instance which enabled
      * @return new service info
      */
-    public static ServiceInfo selectInstances(ServiceInfo serviceInfo, String cluster, boolean healthyOnly,
-            boolean enableOnly) {
+    public static ServiceInfo selectInstances(
+            ServiceInfo serviceInfo, String cluster, boolean healthyOnly, boolean enableOnly) {
         return doSelectInstances(serviceInfo, cluster, healthyOnly, enableOnly, null);
     }
-    
+
     /**
      * Select instance of service info with healthy protection.
      *
-     * @param serviceInfo     original service info
+     * @param serviceInfo original service info
      * @param serviceMetadata service meta info
      * @param subscriber subscriber
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, Subscriber subscriber) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, subscriber.getCluster(), false, false, subscriber.getIp());
+    public static ServiceInfo selectInstancesWithHealthyProtection(
+            ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, Subscriber subscriber) {
+        return selectInstancesWithHealthyProtection(
+                serviceInfo,
+                serviceMetadata,
+                subscriber.getCluster(),
+                false,
+                false,
+                subscriber.getIp());
     }
 
     /**
      * Select instance of service info with healthy protection.
      *
-     * @param serviceInfo     original service info
+     * @param serviceInfo original service info
      * @param serviceMetadata service meta info
-     * @param healthyOnly     whether only select instance which healthy
-     * @param enableOnly      whether only select instance which enabled
+     * @param healthyOnly whether only select instance which healthy
+     * @param enableOnly whether only select instance which enabled
      * @param subscriber subscriber
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo,
-            ServiceMetadata serviceMetadata, boolean healthyOnly, boolean enableOnly, Subscriber subscriber) {
-        return selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, subscriber.getCluster(), healthyOnly,
-                enableOnly, subscriber.getIp());
+    public static ServiceInfo selectInstancesWithHealthyProtection(
+            ServiceInfo serviceInfo,
+            ServiceMetadata serviceMetadata,
+            boolean healthyOnly,
+            boolean enableOnly,
+            Subscriber subscriber) {
+        return selectInstancesWithHealthyProtection(
+                serviceInfo,
+                serviceMetadata,
+                subscriber.getCluster(),
+                healthyOnly,
+                enableOnly,
+                subscriber.getIp());
     }
 
     /**
      * Select instance of service info with healthy protection.
      *
-     * @param serviceInfo     original service info
+     * @param serviceInfo original service info
      * @param serviceMetadata service meta info
-     * @param cluster         cluster of instances
-     * @param healthyOnly     whether only select instance which healthy
-     * @param enableOnly      whether only select instance which enabled
+     * @param cluster cluster of instances
+     * @param healthyOnly whether only select instance which healthy
+     * @param enableOnly whether only select instance which enabled
      * @param subscriberIp subscriber ip address
      * @return new service info
      */
-    public static ServiceInfo selectInstancesWithHealthyProtection(ServiceInfo serviceInfo, ServiceMetadata serviceMetadata, String cluster,
-            boolean healthyOnly, boolean enableOnly, String subscriberIp) {
-        InstancesFilter filter = (filteredResult, allInstances, healthyCount) -> {
-            if (serviceMetadata == null) {
-                return;
-            }
-            allInstances = filteredResult.getHosts();
-            int originalTotal = allInstances.size();
-            // filter ips using selector
-            SelectorManager selectorManager = ApplicationUtils.getBean(SelectorManager.class);
-            allInstances = selectorManager.select(serviceMetadata.getSelector(), subscriberIp, allInstances);
-            filteredResult.setHosts(allInstances);
-            
-            // will re-compute healthCount
-            long newHealthyCount = healthyCount;
-            if (originalTotal != allInstances.size()) {
-                newHealthyCount = 0L;
-                for (com.alibaba.nacos.api.naming.pojo.Instance allInstance : allInstances) {
-                    if (allInstance.isHealthy()) {
-                        newHealthyCount++;
+    public static ServiceInfo selectInstancesWithHealthyProtection(
+            ServiceInfo serviceInfo,
+            ServiceMetadata serviceMetadata,
+            String cluster,
+            boolean healthyOnly,
+            boolean enableOnly,
+            String subscriberIp) {
+        InstancesFilter filter =
+                (filteredResult, allInstances, healthyCount) -> {
+                    if (serviceMetadata == null) {
+                        return;
                     }
-                }
-            }
-            
-            float threshold = serviceMetadata.getProtectThreshold();
-            if (threshold < 0) {
-                threshold = 0F;
-            }
-            if ((float) newHealthyCount / allInstances.size() <= threshold) {
-                Loggers.SRV_LOG.warn("protect threshold reached, return all ips, service: {}", filteredResult.getName());
-                filteredResult.setReachProtectionThreshold(true);
-                List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstances = allInstances.stream()
-                        .map(i -> {
-                            if (!i.isHealthy()) {
-                                i = InstanceUtil.deepCopy(i);
-                                // set all to `healthy` state to protect
-                                i.setHealthy(true);
-                            } // else deepcopy is unnecessary
-                            return i;
-                        })
-                        .collect(Collectors.toCollection(LinkedList::new));
-                filteredResult.setHosts(filteredInstances);
-            }
-        };
+                    allInstances = filteredResult.getHosts();
+                    int originalTotal = allInstances.size();
+                    // filter ips using selector
+                    SelectorManager selectorManager =
+                            ApplicationUtils.getBean(SelectorManager.class);
+                    allInstances =
+                            selectorManager.select(
+                                    serviceMetadata.getSelector(), subscriberIp, allInstances);
+                    filteredResult.setHosts(allInstances);
+
+                    // will re-compute healthCount
+                    long newHealthyCount = healthyCount;
+                    if (originalTotal != allInstances.size()) {
+                        newHealthyCount = 0L;
+                        for (com.alibaba.nacos.api.naming.pojo.Instance allInstance :
+                                allInstances) {
+                            if (allInstance.isHealthy()) {
+                                newHealthyCount++;
+                            }
+                        }
+                    }
+
+                    float threshold = serviceMetadata.getProtectThreshold();
+                    if (threshold < 0) {
+                        threshold = 0F;
+                    }
+                    if ((float) newHealthyCount / allInstances.size() <= threshold) {
+                        Loggers.SRV_LOG.warn(
+                                "protect threshold reached, return all ips, service: {}",
+                                filteredResult.getName());
+                        filteredResult.setReachProtectionThreshold(true);
+                        List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstances =
+                                allInstances.stream()
+                                        .map(
+                                                i -> {
+                                                    if (!i.isHealthy()) {
+                                                        i = InstanceUtil.deepCopy(i);
+                                                        // set all to `healthy` state to protect
+                                                        i.setHealthy(true);
+                                                    } // else deepcopy is unnecessary
+                                                    return i;
+                                                })
+                                        .collect(Collectors.toCollection(LinkedList::new));
+                        filteredResult.setHosts(filteredInstances);
+                    }
+                };
         return doSelectInstances(serviceInfo, cluster, healthyOnly, enableOnly, filter);
     }
 
@@ -233,15 +265,18 @@ public final class ServiceUtil {
      * Select instance of service info.
      *
      * @param serviceInfo original service info
-     * @param cluster     cluster of instances
+     * @param cluster cluster of instances
      * @param healthyOnly whether only select instance which healthy
-     * @param enableOnly  whether only select instance which enabled
-     * @param filter      do some other filter operation
+     * @param enableOnly whether only select instance which enabled
+     * @param filter do some other filter operation
      * @return new service info
      */
-    private static ServiceInfo doSelectInstances(ServiceInfo serviceInfo, String cluster,
-                                                 boolean healthyOnly, boolean enableOnly,
-                                                 InstancesFilter filter) {
+    private static ServiceInfo doSelectInstances(
+            ServiceInfo serviceInfo,
+            String cluster,
+            boolean healthyOnly,
+            boolean enableOnly,
+            InstancesFilter filter) {
         ServiceInfo result = new ServiceInfo();
         result.setName(serviceInfo.getName());
         result.setGroupName(serviceInfo.getGroupName());
@@ -249,8 +284,10 @@ public final class ServiceUtil {
         result.setLastRefTime(System.currentTimeMillis());
         result.setClusters(cluster);
         result.setReachProtectionThreshold(false);
-        Set<String> clusterSets = com.alibaba.nacos.common.utils.StringUtils.isNotBlank(cluster) ? new HashSet<>(
-                Arrays.asList(cluster.split(","))) : new HashSet<>();
+        Set<String> clusterSets =
+                com.alibaba.nacos.common.utils.StringUtils.isNotBlank(cluster)
+                        ? new HashSet<>(Arrays.asList(cluster.split(",")))
+                        : new HashSet<>();
         long healthyCount = 0L;
         // The instance list won't be modified almost time.
         List<com.alibaba.nacos.api.naming.pojo.Instance> filteredInstances = new LinkedList<>();
@@ -273,15 +310,17 @@ public final class ServiceUtil {
         }
         return result;
     }
-    
-    private static boolean checkCluster(Set<String> clusterSets, com.alibaba.nacos.api.naming.pojo.Instance instance) {
+
+    private static boolean checkCluster(
+            Set<String> clusterSets, com.alibaba.nacos.api.naming.pojo.Instance instance) {
         if (clusterSets.isEmpty()) {
             return true;
         }
         return clusterSets.contains(instance.getClusterName());
     }
-    
-    private static boolean checkEnabled(boolean enableOnly, com.alibaba.nacos.api.naming.pojo.Instance instance) {
+
+    private static boolean checkEnabled(
+            boolean enableOnly, com.alibaba.nacos.api.naming.pojo.Instance instance) {
         return !enableOnly || instance.isEnabled();
     }
 
@@ -291,13 +330,12 @@ public final class ServiceUtil {
          * Do customized filtering.
          *
          * @param filteredResult result with instances already been filtered cluster/enabled/healthy
-         * @param allInstances   all instances filtered by cluster/enabled
-         * @param healthyCount   healthy instances count filtered by cluster/enabled
+         * @param allInstances all instances filtered by cluster/enabled
+         * @param healthyCount healthy instances count filtered by cluster/enabled
          */
-        void doFilter(ServiceInfo filteredResult,
-                      List<com.alibaba.nacos.api.naming.pojo.Instance> allInstances,
-                      long healthyCount);
-
+        void doFilter(
+                ServiceInfo filteredResult,
+                List<com.alibaba.nacos.api.naming.pojo.Instance> allInstances,
+                long healthyCount);
     }
-
 }

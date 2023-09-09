@@ -31,11 +31,10 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
-
-import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import javax.net.ssl.SSLException;
 
 /**
  * Ssl context builder.
@@ -43,26 +42,33 @@ import java.util.Arrays;
  * @author xiweng.yy
  */
 public class DefaultTlsContextBuilder {
-    
+
     private static final ResourceLoader RESOURCE_LOADER = new DefaultResourceLoader();
-    
+
     static SslContext getSslContext(RpcServerTlsConfig rpcServerTlsConfig) {
         try {
-            if (StringUtils.isBlank(rpcServerTlsConfig.getCertChainFile()) || StringUtils
-                    .isBlank(rpcServerTlsConfig.getCertPrivateKey())) {
-                throw new IllegalArgumentException("Server certChainFile or certPrivateKey must be not null");
+            if (StringUtils.isBlank(rpcServerTlsConfig.getCertChainFile())
+                    || StringUtils.isBlank(rpcServerTlsConfig.getCertPrivateKey())) {
+                throw new IllegalArgumentException(
+                        "Server certChainFile or certPrivateKey must be not null");
             }
-            InputStream certificateChainFile = getInputStream(rpcServerTlsConfig.getCertChainFile(), "certChainFile");
-            InputStream privateKeyFile = getInputStream(rpcServerTlsConfig.getCertPrivateKey(), "certPrivateKey");
-            SslContextBuilder sslClientContextBuilder = SslContextBuilder
-                    .forServer(certificateChainFile, privateKeyFile, rpcServerTlsConfig.getCertPrivateKeyPassword());
-            
+            InputStream certificateChainFile =
+                    getInputStream(rpcServerTlsConfig.getCertChainFile(), "certChainFile");
+            InputStream privateKeyFile =
+                    getInputStream(rpcServerTlsConfig.getCertPrivateKey(), "certPrivateKey");
+            SslContextBuilder sslClientContextBuilder =
+                    SslContextBuilder.forServer(
+                            certificateChainFile,
+                            privateKeyFile,
+                            rpcServerTlsConfig.getCertPrivateKeyPassword());
+
             if (StringUtils.isNotBlank(rpcServerTlsConfig.getProtocols())) {
                 sslClientContextBuilder.protocols(rpcServerTlsConfig.getProtocols().split(","));
             }
-            
+
             if (StringUtils.isNotBlank(rpcServerTlsConfig.getCiphers())) {
-                sslClientContextBuilder.ciphers(Arrays.asList(rpcServerTlsConfig.getCiphers().split(",")));
+                sslClientContextBuilder.ciphers(
+                        Arrays.asList(rpcServerTlsConfig.getCiphers().split(",")));
             }
             if (rpcServerTlsConfig.getMutualAuthEnable()) {
                 // trust all certificate
@@ -73,23 +79,28 @@ public class DefaultTlsContextBuilder {
                         throw new IllegalArgumentException(
                                 "enable mutual auth,trustCollectionCertFile must be not null");
                     }
-                    
-                    InputStream clientCert = getInputStream(rpcServerTlsConfig.getTrustCollectionCertFile(),
-                            "trustCollectionCertFile");
+
+                    InputStream clientCert =
+                            getInputStream(
+                                    rpcServerTlsConfig.getTrustCollectionCertFile(),
+                                    "trustCollectionCertFile");
                     sslClientContextBuilder.trustManager(clientCert);
                 }
                 sslClientContextBuilder.clientAuth(ClientAuth.REQUIRE);
             }
-            SslContextBuilder configure = GrpcSslContexts.configure(sslClientContextBuilder,
-                    TlsTypeResolve.getSslProvider(rpcServerTlsConfig.getSslProvider()));
+            SslContextBuilder configure =
+                    GrpcSslContexts.configure(
+                            sslClientContextBuilder,
+                            TlsTypeResolve.getSslProvider(rpcServerTlsConfig.getSslProvider()));
             return configure.build();
         } catch (SSLException e) {
-            Loggers.REMOTE.info("Nacos Rpc server reload ssl context fail tls config:{}",
+            Loggers.REMOTE.info(
+                    "Nacos Rpc server reload ssl context fail tls config:{}",
                     JacksonUtils.toJson(rpcServerTlsConfig));
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
         }
     }
-    
+
     private static InputStream getInputStream(String path, String config) {
         try {
             Resource resource = RESOURCE_LOADER.getResource(path);

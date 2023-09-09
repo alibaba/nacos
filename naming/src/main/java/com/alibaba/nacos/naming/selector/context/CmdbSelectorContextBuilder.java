@@ -24,22 +24,23 @@ import com.alibaba.nacos.api.selector.context.CmdbContext;
 import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
 import com.alibaba.nacos.cmdb.service.CmdbReader;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * The {@link CmdbSelectorContextBuilder} will build default {@link CmdbContext}, it query the consumer and providers' CMDB {@link Entity}.
+ * The {@link CmdbSelectorContextBuilder} will build default {@link CmdbContext}, it query the
+ * consumer and providers' CMDB {@link Entity}.
  *
  * @author chenglu
  * @date 2021-07-16 11:58
  */
-public class CmdbSelectorContextBuilder<T extends Instance> implements SelectorContextBuilder<CmdbContext<Instance>, String, List<T>> {
-    
+public class CmdbSelectorContextBuilder<T extends Instance>
+        implements SelectorContextBuilder<CmdbContext<Instance>, String, List<T>> {
+
     private static final String CONTEXT_TYPE = "CMDB";
-    
+
     /**
      * Get the {@link CmdbReader} from Spring container.
      *
@@ -48,11 +49,12 @@ public class CmdbSelectorContextBuilder<T extends Instance> implements SelectorC
     public CmdbReader getCmdbReader() {
         return ApplicationUtils.getBean(CmdbReader.class);
     }
-    
+
     @Override
     public CmdbContext<Instance> build(String consumer, List<T> provider) {
         // build consumer context
-        Entity consumerEntity = getCmdbReader().queryEntity(consumer, PreservedEntityTypes.ip.name());
+        Entity consumerEntity =
+                getCmdbReader().queryEntity(consumer, PreservedEntityTypes.ip.name());
         Instance consumerInstance = new Instance();
         consumerInstance.setIp(consumer);
         CmdbContext.CmdbInstance<Instance> consumerCmdbInstance = new CmdbContext.CmdbInstance<>();
@@ -62,22 +64,27 @@ public class CmdbSelectorContextBuilder<T extends Instance> implements SelectorC
         cmdbContext.setConsumer(consumerCmdbInstance);
 
         // build providers context
-        List<CmdbContext.CmdbInstance<Instance>> providerCmdbInstances = Optional.ofNullable(provider)
-                .orElse(Collections.emptyList())
-                .stream()
-                .map(is -> {
-                    CmdbContext.CmdbInstance<Instance> providerCmdbInstance = new CmdbContext.CmdbInstance<>();
-                    providerCmdbInstance.setInstance(is);
-                    Entity providerEntity = getCmdbReader().queryEntity(is.getIp(), PreservedEntityTypes.ip.name());
-                    providerCmdbInstance.setEntity(providerEntity);
-                    return providerCmdbInstance;
-                })
-                .collect(Collectors.toList());
+        List<CmdbContext.CmdbInstance<Instance>> providerCmdbInstances =
+                Optional.ofNullable(provider).orElse(Collections.emptyList()).stream()
+                        .map(
+                                is -> {
+                                    CmdbContext.CmdbInstance<Instance> providerCmdbInstance =
+                                            new CmdbContext.CmdbInstance<>();
+                                    providerCmdbInstance.setInstance(is);
+                                    Entity providerEntity =
+                                            getCmdbReader()
+                                                    .queryEntity(
+                                                            is.getIp(),
+                                                            PreservedEntityTypes.ip.name());
+                                    providerCmdbInstance.setEntity(providerEntity);
+                                    return providerCmdbInstance;
+                                })
+                        .collect(Collectors.toList());
         cmdbContext.setProviders(providerCmdbInstances);
-        
+
         return cmdbContext;
     }
-    
+
     @Override
     public String getContextType() {
         return CONTEXT_TYPE;

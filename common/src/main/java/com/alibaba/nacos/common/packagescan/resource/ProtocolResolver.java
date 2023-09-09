@@ -16,14 +16,12 @@
 
 package com.alibaba.nacos.common.packagescan.resource;
 
-
 /**
- * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
- * A resolution strategy for protocol-specific resource handles.
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications A
+ * resolution strategy for protocol-specific resource handles.
  *
- * <p>Used as an SPI for {@link DefaultResourceLoader}, allowing for
- * custom protocols to be handled without subclassing the loader
- * implementation (or application context implementation).
+ * <p>Used as an SPI for {@link DefaultResourceLoader}, allowing for custom protocols to be handled
+ * without subclassing the loader implementation (or application context implementation).
  *
  * @author Juergen Hoeller
  * @see DefaultResourceLoader#addProtocolResolver
@@ -33,15 +31,13 @@ package com.alibaba.nacos.common.packagescan.resource;
 public interface ProtocolResolver {
 
     /**
-     * Resolve the given location against the given resource loader
-     * if this implementation's protocol matches.
+     * Resolve the given location against the given resource loader if this implementation's
+     * protocol matches.
      *
-     * @param location       the user-specified resource location
+     * @param location the user-specified resource location
      * @param resourceLoader the associated resource loader
-     * @return a corresponding {@code Resource} handle if the given location
-     * matches this resolver's protocol, or {@code null} otherwise
+     * @return a corresponding {@code Resource} handle if the given location matches this resolver's
+     *     protocol, or {@code null} otherwise
      */
-
     Resource resolve(String location, ResourceLoader resourceLoader);
-
 }

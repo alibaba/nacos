@@ -22,7 +22,6 @@ import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
-
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -33,37 +32,37 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class SimpleCountRuleBarrier extends RuleBarrier {
-    
+
     RateCounter rateCounter;
-    
+
     public SimpleCountRuleBarrier(String pointName, String ruleName, TimeUnit period) {
         super.setPointName(pointName);
         super.setPeriod(period);
         super.setRuleName(ruleName);
         this.rateCounter = createSimpleCounter(ruleName, period);
     }
-    
+
     /**
      * create rate count.
      *
-     * @param name   name.
+     * @param name name.
      * @param period period.
      * @return
      */
     public abstract RateCounter createSimpleCounter(String name, TimeUnit period);
-    
+
     public void reCreateRaterCounter(String name, TimeUnit period) {
         this.rateCounter = createSimpleCounter(name, period);
     }
-    
+
     @Override
     public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest) {
-        
+
         rateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
-        
+
         return new TpsCheckResponse(true, TpsResultCode.PASS_BY_POINT, "success");
     }
-    
+
     long trimTimeStamp(long timeStamp) {
         if (this.getPeriod() == TimeUnit.SECONDS) {
             timeStamp = RateCounter.getTrimMillsOfSecond(timeStamp);
@@ -72,16 +71,16 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
         } else if (this.getPeriod() == TimeUnit.HOURS) {
             timeStamp = RateCounter.getTrimMillsOfHour(timeStamp);
         } else {
-            //second default
+            // second default
             timeStamp = RateCounter.getTrimMillsOfSecond(timeStamp);
         }
         return timeStamp;
     }
-    
+
     @Override
     public TpsMetrics getMetrics(long timeStamp) {
         timeStamp = trimTimeStamp(timeStamp);
-        
+
         TpsMetrics tpsMetrics = new TpsMetrics("", "", timeStamp, super.getPeriod());
         long totalPass = rateCounter.getCount(timeStamp);
         if (totalPass <= 0) {
@@ -89,16 +88,15 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
         }
         tpsMetrics.setCounter(new TpsMetrics.Counter(totalPass, 0));
         return tpsMetrics;
-        
     }
-    
+
     /**
      * apply rule detail.
      *
      * @param ruleDetail ruleDetail.
      */
     public void applyRuleDetail(RuleDetail ruleDetail) {
-        
+
         if (!Objects.equals(this.getPeriod(), ruleDetail.getPeriod())) {
             this.setMaxCount(ruleDetail.getMaxCount());
             this.setMonitorType(ruleDetail.getMonitorType());
@@ -109,5 +107,4 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
             this.setMonitorType(ruleDetail.getMonitorType());
         }
     }
-    
 }

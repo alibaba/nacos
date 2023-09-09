@@ -20,8 +20,6 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -29,71 +27,68 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NamingMetadataOperateServiceTest {
-    
-    @Mock
-    private ProtocolManager protocolManager;
-    
-    @Mock
-    private CPProtocol cpProtocol;
-    
-    @Mock
-    private Service service;
-    
+
+    @Mock private ProtocolManager protocolManager;
+
+    @Mock private CPProtocol cpProtocol;
+
+    @Mock private Service service;
+
     private NamingMetadataOperateService namingMetadataOperateService;
-    
+
     @Before
     public void testSetUp() throws Exception {
         Mockito.when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
-        
+
         namingMetadataOperateService = new NamingMetadataOperateService(protocolManager);
     }
-    
+
     @Test(expected = NacosRuntimeException.class)
     public void testUpdateServiceMetadata() {
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         namingMetadataOperateService.updateServiceMetadata(service, serviceMetadata);
-        
+
         Mockito.verify(service).getNamespace();
         Mockito.verify(service).getGroup();
         Mockito.verify(service).getName();
     }
-    
+
     @Test(expected = NacosRuntimeException.class)
     public void testDeleteServiceMetadata() {
         namingMetadataOperateService.deleteServiceMetadata(service);
-        
+
         Mockito.verify(service).getNamespace();
         Mockito.verify(service).getGroup();
         Mockito.verify(service).getName();
     }
-    
+
     @Test(expected = NacosRuntimeException.class)
     public void testUpdateInstanceMetadata() {
         String metadataId = "metadataId";
         InstanceMetadata instanceMetadata = new InstanceMetadata();
         namingMetadataOperateService.updateInstanceMetadata(service, metadataId, instanceMetadata);
-        
+
         Mockito.verify(service).getNamespace();
         Mockito.verify(service).getGroup();
         Mockito.verify(service).getName();
     }
-    
+
     @Test(expected = NacosRuntimeException.class)
     public void testDeleteInstanceMetadata() {
         String metadataId = "metadataId";
         namingMetadataOperateService.deleteInstanceMetadata(service, metadataId);
-        
+
         Mockito.verify(service).getNamespace();
         Mockito.verify(service).getGroup();
         Mockito.verify(service).getName();
     }
-    
+
     @Test(expected = NacosRuntimeException.class)
     public void testAddClusterMetadata() {
         String clusterName = "clusterName";
         ClusterMetadata clusterMetadata = new ClusterMetadata();
         namingMetadataOperateService.addClusterMetadata(service, clusterName, clusterMetadata);
-        
+
         Mockito.verify(service).getNamespace();
         Mockito.verify(service).getGroup();
         Mockito.verify(service).getName();

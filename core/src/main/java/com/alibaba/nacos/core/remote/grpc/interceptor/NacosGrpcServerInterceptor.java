@@ -24,11 +24,11 @@ import io.grpc.ServerInterceptor;
  * @author xiweng.yy
  */
 public interface NacosGrpcServerInterceptor extends ServerInterceptor {
-    
+
     String SDK_INTERCEPTOR = "SDK";
-    
+
     String CLUSTER_INTERCEPTOR = "CLUSTER";
-    
+
     /**
      * Get the type of Interceptor.
      *

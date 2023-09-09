@@ -16,31 +16,29 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 /**
  * Test ArrayUtils.
+ *
  * @author zzq
  */
 public class ArrayUtilsTest {
-    
+
     Integer[] nullArr = null;
-    
-    Integer[] nothingArr = new Integer[]{};
-    
+
+    Integer[] nothingArr = new Integer[] {};
+
     @Test
     public void testisEmpty() {
-        Integer[] arr = new Integer[]{1, 2};
+        Integer[] arr = new Integer[] {1, 2};
         Assert.assertTrue(ArrayUtils.isEmpty(nullArr));
         Assert.assertTrue(ArrayUtils.isEmpty(nothingArr));
         Assert.assertFalse(ArrayUtils.isEmpty(arr));
     }
-    
+
     @Test
     public void contains() {
-        Integer[] arr = new Integer[]{1, 2, 3};
-        Integer[] arr1 = new Integer[]{1, 2, 3, null};
+        Integer[] arr = new Integer[] {1, 2, 3};
+        Integer[] arr1 = new Integer[] {1, 2, 3, null};
         Assert.assertFalse(ArrayUtils.contains(nullArr, "a"));
         Assert.assertFalse(ArrayUtils.contains(nullArr, null));
         Assert.assertFalse(ArrayUtils.contains(nothingArr, "b"));

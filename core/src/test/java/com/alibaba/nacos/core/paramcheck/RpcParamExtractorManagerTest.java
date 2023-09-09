@@ -19,18 +19,14 @@ package com.alibaba.nacos.core.paramcheck;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import junit.framework.TestCase;
 
-/**
- * The type Rpc param extractor manager test.
- */
+/** The type Rpc param extractor manager test. */
 public class RpcParamExtractorManagerTest extends TestCase {
-    
-    /**
-     * Test get instance.
-     */
+
+    /** Test get instance. */
     public void testGetInstance() {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
     }
-    
+
     /**
      * Test get extractor.
      *
@@ -39,7 +35,8 @@ public class RpcParamExtractorManagerTest extends TestCase {
     public void testGetExtractor() throws Exception {
         RpcParamExtractorManager paramExtractorManager = RpcParamExtractorManager.getInstance();
         ConfigQueryRequest request = new ConfigQueryRequest();
-        AbstractRpcParamExtractor extractor = paramExtractorManager.getExtractor(request.getClass().getSimpleName());
+        AbstractRpcParamExtractor extractor =
+                paramExtractorManager.getExtractor(request.getClass().getSimpleName());
         extractor.extractParam(request);
     }
 }

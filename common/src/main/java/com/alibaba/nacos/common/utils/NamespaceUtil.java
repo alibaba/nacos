@@ -17,26 +17,23 @@
 package com.alibaba.nacos.common.utils;
 
 /**
- * namespace(tenant) util. Because config and naming treat namespace(tenant) differently, this tool class can only be
- * used by the config module.
+ * namespace(tenant) util. Because config and naming treat namespace(tenant) differently, this tool
+ * class can only be used by the config module.
  *
  * @author klw(213539 @ qq.com)
  * @date 2020/10/12 17:56
  */
 public class NamespaceUtil {
 
-    private NamespaceUtil() {
-    }
-    
+    private NamespaceUtil() {}
+
     private static final String NAMESPACE_PUBLIC_KEY = "public";
-    
-    /**
-     * public id，默认值为 "".
-     */
+
+    /** public id，默认值为 "". */
     public static String namespaceDefaultId = "";
-    
+
     private static final String NAMESPACE_NULL_KEY = "null";
-    
+
     /**
      * Treat the namespace(tenant) parameters with values of "public" and "null" as an empty string.
      *
@@ -44,13 +41,14 @@ public class NamespaceUtil {
      * @return java.lang.String A namespace(tenant) string processed
      */
     public static String processNamespaceParameter(String tenant) {
-        if (StringUtils.isBlank(tenant) || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant)
+        if (StringUtils.isBlank(tenant)
+                || NAMESPACE_PUBLIC_KEY.equalsIgnoreCase(tenant)
                 || NAMESPACE_NULL_KEY.equalsIgnoreCase(tenant)) {
             return getNamespaceDefaultId();
         }
         return tenant.trim();
     }
-    
+
     /**
      * Set default namespace id. Invoke settings at system startup.
      *
@@ -59,7 +57,7 @@ public class NamespaceUtil {
     public static void setNamespaceDefaultId(String namespaceDefaultId) {
         NamespaceUtil.namespaceDefaultId = namespaceDefaultId;
     }
-    
+
     /**
      * Get default namespace id.
      *

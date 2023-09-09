@@ -24,30 +24,30 @@ import java.util.Properties;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class LocalFileMeta {
-    
+
     private final Properties fileMeta;
-    
+
     public LocalFileMeta() {
         this.fileMeta = new Properties();
     }
-    
+
     public LocalFileMeta(Properties properties) {
         this.fileMeta = properties;
     }
-    
+
     public LocalFileMeta append(Object key, Object value) {
         fileMeta.put(key, value);
         return this;
     }
-    
+
     public Object get(String key) {
         return fileMeta.getProperty(key);
     }
-    
+
     public Properties getFileMeta() {
         return fileMeta;
     }
-    
+
     @Override
     public String toString() {
         return "LocalFileMeta{" + "fileMeta=" + fileMeta + '}';

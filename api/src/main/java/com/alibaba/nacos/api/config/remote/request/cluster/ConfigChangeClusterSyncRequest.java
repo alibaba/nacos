@@ -25,31 +25,31 @@ import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
  * @version $Id: ConfigChangeClusterSyncRequest.java, v 0.1 2020年08月11日 4:30 PM liuzunfei Exp $
  */
 public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
-    
+
     String tag;
-    
+
     long lastModified;
-    
+
     boolean isBeta;
-    
+
     boolean isBatch;
-    
+
     public boolean isBeta() {
         return isBeta;
     }
-    
+
     public void setBeta(boolean beta) {
         isBeta = beta;
     }
-    
+
     public boolean isBatch() {
         return isBatch;
     }
-    
+
     public void setBatch(boolean batch) {
         isBatch = batch;
     }
-    
+
     /**
      * Getter method for property <tt>tag</tt>.
      *
@@ -58,7 +58,7 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     public String getTag() {
         return tag;
     }
-    
+
     /**
      * Setter method for property <tt>tag</tt>.
      *
@@ -67,7 +67,7 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     public void setTag(String tag) {
         this.tag = tag;
     }
-    
+
     /**
      * Getter method for property <tt>lastModified</tt>.
      *
@@ -76,7 +76,7 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     public long getLastModified() {
         return lastModified;
     }
-    
+
     /**
      * Setter method for property <tt>lastModified</tt>.
      *
@@ -85,5 +85,4 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
-    
 }

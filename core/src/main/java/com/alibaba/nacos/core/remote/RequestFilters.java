@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.core.remote;
 
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.stereotype.Service;
 
 /**
  * filters of request.
@@ -29,9 +28,9 @@ import java.util.List;
  */
 @Service
 public class RequestFilters {
-    
+
     List<AbstractRequestFilter> filters = new ArrayList<>();
-    
+
     public void registerFilter(AbstractRequestFilter requestFilter) {
         filters.add(requestFilter);
     }

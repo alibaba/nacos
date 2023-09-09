@@ -23,16 +23,12 @@ package com.alibaba.nacos.config.server.constant;
  * @date 2018/3/13
  */
 public enum CounterMode {
-    
-    /**
-     * Increment.
-     */
+
+    /** Increment. */
     INCREMENT,
-    /**
-     * Decrement.
-     */
+    /** Decrement. */
     DECREMENT;
-    
+
     /**
      * Reverse the two mode value.
      *

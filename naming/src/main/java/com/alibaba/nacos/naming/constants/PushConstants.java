@@ -22,25 +22,19 @@ package com.alibaba.nacos.naming.constants;
  * @author xiweng.yy
  */
 public class PushConstants {
-    
-    /**
-     * Naming push task delay time, unit: milliseconds.
-     */
+
+    /** Naming push task delay time, unit: milliseconds. */
     public static final String PUSH_TASK_DELAY = "nacos.naming.push.pushTaskDelay";
-    
+
     public static final long DEFAULT_PUSH_TASK_DELAY = 500L;
-    
-    /**
-     * Naming push task execute timeout, unit: milliseconds.
-     */
+
+    /** Naming push task execute timeout, unit: milliseconds. */
     public static final String PUSH_TASK_TIMEOUT = "nacos.naming.push.pushTaskTimeout";
-    
+
     public static final long DEFAULT_PUSH_TASK_TIMEOUT = 5000L;
-    
-    /**
-     * Naming push task retry delay, unit: milliseconds.
-     */
+
+    /** Naming push task retry delay, unit: milliseconds. */
     public static final String PUSH_TASK_RETRY_DELAY = "nacos.naming.push.pushTaskRetryDelay";
-    
+
     public static final long DEFAULT_PUSH_TASK_RETRY_DELAY = 1000L;
 }

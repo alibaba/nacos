@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.cluster.remote.request;
 
 import com.alibaba.nacos.api.remote.Payload;
 import com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,16 +27,16 @@ import java.util.Set;
  * @author shiyiyue
  */
 public class RequestRegistry {
-    
+
     private static Set<Class<? extends Payload>> payloads = registryPayload();
-    
+
     private static Set<Class<? extends Payload>> registryPayload() {
         HashSet<Class<? extends Payload>> payloads = new HashSet<>();
         payloads.add(AbstractClusterRequest.class);
         payloads.add(DistroDataRequest.class);
         return payloads;
     }
-    
+
     public static final Set<Class<? extends Payload>> getPayloads() {
         return payloads;
     }

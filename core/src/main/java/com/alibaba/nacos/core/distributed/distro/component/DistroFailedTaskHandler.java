@@ -25,7 +25,7 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
  * @author xiweng.yy
  */
 public interface DistroFailedTaskHandler {
-    
+
     /**
      * Build retry task when distro task execute failed.
      *

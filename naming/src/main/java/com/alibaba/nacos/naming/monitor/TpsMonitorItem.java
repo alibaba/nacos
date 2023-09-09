@@ -22,64 +22,40 @@ package com.alibaba.nacos.naming.monitor;
  * @author xiweng.yy
  */
 public enum TpsMonitorItem {
-    
-    /**
-     * Naming rpc total push.
-     */
+
+    /** Naming rpc total push. */
     NAMING_RPC_PUSH,
-    
-    /**
-     * Naming rpc success push.
-     */
+
+    /** Naming rpc success push. */
     NAMING_RPC_PUSH_SUCCESS,
-    
-    /**
-     * Naming rpc failed push.
-     */
+
+    /** Naming rpc failed push. */
     NAMING_RPC_PUSH_FAIL,
-    
-    /**
-     * Naming udp total push.
-     */
+
+    /** Naming udp total push. */
     NAMING_UDP_PUSH,
-    
-    /**
-     * Naming udp success push.
-     */
+
+    /** Naming udp success push. */
     NAMING_UDP_PUSH_SUCCESS,
-    
-    /**
-     * Naming udp fail push.
-     */
+
+    /** Naming udp fail push. */
     NAMING_UDP_PUSH_FAIL,
-    
-    /**
-     * Naming rpc distro sync total count.
-     */
+
+    /** Naming rpc distro sync total count. */
     NAMING_DISTRO_SYNC,
-    
-    /**
-     * Naming rpc distro sync success count.
-     */
+
+    /** Naming rpc distro sync success count. */
     NAMING_DISTRO_SYNC_SUCCESS,
-    
-    /**
-     * Naming rpc distro sync fail count.
-     */
+
+    /** Naming rpc distro sync fail count. */
     NAMING_DISTRO_SYNC_FAIL,
-    
-    /**
-     * Naming rpc distro verify fail count.
-     */
+
+    /** Naming rpc distro verify fail count. */
     NAMING_DISTRO_VERIFY,
-    
-    /**
-     * Naming rpc distro verify fail count.
-     */
+
+    /** Naming rpc distro verify fail count. */
     NAMING_DISTRO_VERIFY_SUCCESS,
-    
-    /**
-     * Naming rpc distro verify fail count.
-     */
+
+    /** Naming rpc distro verify fail count. */
     NAMING_DISTRO_VERIFY_FAIL,
 }

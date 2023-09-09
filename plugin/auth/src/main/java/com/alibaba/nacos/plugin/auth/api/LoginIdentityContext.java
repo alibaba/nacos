@@ -26,12 +26,10 @@ import java.util.Set;
  * @author Nacos
  */
 public class LoginIdentityContext {
-    
-    /**
-     * get context from request.
-     */
+
+    /** get context from request. */
     private final Map<String, String> param = new HashMap<>();
-    
+
     /**
      * get key from context.
      *
@@ -41,17 +39,17 @@ public class LoginIdentityContext {
     public String getParameter(String key) {
         return param.get(key);
     }
-    
+
     /**
      * put key and value to param.
      *
-     * @param key   key of request
+     * @param key key of request
      * @param value value of request's key
      */
     public void setParameter(String key, String value) {
         param.put(key, value);
     }
-    
+
     /**
      * put all parameters from Map.
      *
@@ -60,7 +58,7 @@ public class LoginIdentityContext {
     public void setParameters(Map<String, String> parameters) {
         param.putAll(parameters);
     }
-    
+
     /**
      * get all keys of param map.
      *
@@ -69,5 +67,4 @@ public class LoginIdentityContext {
     public Set<String> getAllKey() {
         return param.keySet();
     }
-    
 }

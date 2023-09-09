@@ -24,7 +24,7 @@ package com.alibaba.nacos.api.config.convert;
  * @since 0.2.0
  */
 public interface NacosConfigConverter<T> {
-    
+
     /**
      * can convert to be target type or not.
      *
@@ -32,13 +32,13 @@ public interface NacosConfigConverter<T> {
      * @return If can , return <code>true</code>, or <code>false</code>
      */
     boolean canConvert(Class<T> targetType);
-    
+
     /**
      * Convert the Nacos' config of type S to target type T.
      *
-     * @param config the Nacos's config to convert, which must be an instance of S (never {@code null})
+     * @param config the Nacos's config to convert, which must be an instance of S (never {@code
+     *     null})
      * @return the converted object, which must be an instance of T (potentially {@code null})
      */
     T convert(String config);
-    
 }

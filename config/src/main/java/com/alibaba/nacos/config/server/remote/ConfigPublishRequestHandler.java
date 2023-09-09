@@ -40,11 +40,10 @@ import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
-import org.springframework.stereotype.Component;
-
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.stereotype.Component;
 
 /**
  * request handler to publish config.
@@ -53,33 +52,36 @@ import java.util.Map;
  * @version $Id: ConfigPublishRequestHandler.java, v 0.1 2020年07月16日 4:41 PM liuzunfei Exp $
  */
 @Component
-public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishRequest, ConfigPublishResponse> {
-    
+public class ConfigPublishRequestHandler
+        extends RequestHandler<ConfigPublishRequest, ConfigPublishResponse> {
+
     private final ConfigInfoPersistService configInfoPersistService;
-    
+
     private final ConfigInfoTagPersistService configInfoTagPersistService;
-    
+
     private final ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
-    public ConfigPublishRequestHandler(ConfigInfoPersistService configInfoPersistService,
+
+    public ConfigPublishRequestHandler(
+            ConfigInfoPersistService configInfoPersistService,
             ConfigInfoTagPersistService configInfoTagPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoTagPersistService = configInfoTagPersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
     }
-    
+
     @Override
     @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public ConfigPublishResponse handle(ConfigPublishRequest request, RequestMeta meta) throws NacosException {
-        
+    public ConfigPublishResponse handle(ConfigPublishRequest request, RequestMeta meta)
+            throws NacosException {
+
         try {
             String dataId = request.getDataId();
             String group = request.getGroup();
             String content = request.getContent();
             final String tenant = request.getTenant();
-            
+
             final String srcIp = meta.getClientIp();
             final String requestIpApp = request.getAdditionParam("requestIpApp");
             final String tag = request.getAdditionParam("tag");
@@ -87,25 +89,29 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             final String type = request.getAdditionParam("type");
             final String srcUser = request.getAdditionParam("src_user");
             final String encryptedDataKey = request.getAdditionParam("encryptedDataKey");
-            
+
             // check tenant
             ParamUtils.checkParam(dataId, group, "datumId", content);
             ParamUtils.checkParam(tag);
             Map<String, Object> configAdvanceInfo = new HashMap<>(10);
-            MapUtil.putIfValNoNull(configAdvanceInfo, "config_tags", request.getAdditionParam("config_tags"));
+            MapUtil.putIfValNoNull(
+                    configAdvanceInfo, "config_tags", request.getAdditionParam("config_tags"));
             MapUtil.putIfValNoNull(configAdvanceInfo, "desc", request.getAdditionParam("desc"));
             MapUtil.putIfValNoNull(configAdvanceInfo, "use", request.getAdditionParam("use"));
             MapUtil.putIfValNoNull(configAdvanceInfo, "effect", request.getAdditionParam("effect"));
             MapUtil.putIfValNoNull(configAdvanceInfo, "type", type);
             MapUtil.putIfValNoNull(configAdvanceInfo, "schema", request.getAdditionParam("schema"));
             ParamUtils.checkParam(configAdvanceInfo);
-            
+
             if (AggrWhitelist.isAggrDataId(dataId)) {
-                Loggers.REMOTE_DIGEST.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", srcIp, dataId,
+                Loggers.REMOTE_DIGEST.warn(
+                        "[aggr-conflict] {} attempt to publish single data, {}, {}",
+                        srcIp,
+                        dataId,
                         group);
                 throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
             }
-            
+
             final Timestamp time = TimeUtils.getCurrentTime();
             ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
             configInfo.setMd5(request.getCasMd5());
@@ -117,63 +123,96 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             if (StringUtils.isBlank(betaIps)) {
                 if (StringUtils.isBlank(tag)) {
                     if (StringUtils.isNotBlank(request.getCasMd5())) {
-                        configOperateResult = configInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo,
-                                configAdvanceInfo);
+                        configOperateResult =
+                                configInfoPersistService.insertOrUpdateCas(
+                                        srcIp, srcUser, configInfo, configAdvanceInfo);
                         if (!configOperateResult.isSuccess()) {
-                            return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                            return ConfigPublishResponse.buildFailResponse(
+                                    ResponseCode.FAIL.getCode(),
                                     "Cas publish fail,server md5 may have changed.");
                         }
                     } else {
-                        configOperateResult = configInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo,
-                                configAdvanceInfo);
+                        configOperateResult =
+                                configInfoPersistService.insertOrUpdate(
+                                        srcIp, srcUser, configInfo, configAdvanceInfo);
                     }
-                    ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant,
-                            configOperateResult.getLastModified()));
+                    ConfigChangePublisher.notifyConfigChange(
+                            new ConfigDataChangeEvent(
+                                    false,
+                                    dataId,
+                                    group,
+                                    tenant,
+                                    configOperateResult.getLastModified()));
                 } else {
                     if (StringUtils.isNotBlank(request.getCasMd5())) {
-                        configOperateResult = configInfoTagPersistService.insertOrUpdateTagCas(configInfo, tag, srcIp,
-                                srcUser);
+                        configOperateResult =
+                                configInfoTagPersistService.insertOrUpdateTagCas(
+                                        configInfo, tag, srcIp, srcUser);
                         if (!configOperateResult.isSuccess()) {
-                            return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                            return ConfigPublishResponse.buildFailResponse(
+                                    ResponseCode.FAIL.getCode(),
                                     "Cas publish tag config fail,server md5 may have changed.");
                         }
                     } else {
-                        configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp,
-                                srcUser);
+                        configOperateResult =
+                                configInfoTagPersistService.insertOrUpdateTag(
+                                        configInfo, tag, srcIp, srcUser);
                     }
                     persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
                     ConfigChangePublisher.notifyConfigChange(
-                            new ConfigDataChangeEvent(false, dataId, group, tenant, tag,
+                            new ConfigDataChangeEvent(
+                                    false,
+                                    dataId,
+                                    group,
+                                    tenant,
+                                    tag,
                                     configOperateResult.getLastModified()));
                 }
             } else {
                 // beta publish
                 if (StringUtils.isNotBlank(request.getCasMd5())) {
-                    configOperateResult = configInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp,
-                            srcUser);
+                    configOperateResult =
+                            configInfoBetaPersistService.insertOrUpdateBetaCas(
+                                    configInfo, betaIps, srcIp, srcUser);
                     if (!configOperateResult.isSuccess()) {
-                        return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                        return ConfigPublishResponse.buildFailResponse(
+                                ResponseCode.FAIL.getCode(),
                                 "Cas publish beta config fail,server md5 may have changed.");
                     }
                 } else {
-                    configOperateResult = configInfoBetaPersistService.insertOrUpdateBeta(configInfo, betaIps, srcIp,
-                            srcUser);
+                    configOperateResult =
+                            configInfoBetaPersistService.insertOrUpdateBeta(
+                                    configInfo, betaIps, srcIp, srcUser);
                 }
                 persistEvent = ConfigTraceService.PERSISTENCE_EVENT_BETA;
-                
+
                 ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(true, dataId, group, tenant, configOperateResult.getLastModified()));
+                        new ConfigDataChangeEvent(
+                                true,
+                                dataId,
+                                group,
+                                tenant,
+                                configOperateResult.getLastModified()));
             }
-            ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp,
-                    configOperateResult.getLastModified(), srcIp, persistEvent, ConfigTraceService.PERSISTENCE_TYPE_PUB,
+            ConfigTraceService.logPersistenceEvent(
+                    dataId,
+                    group,
+                    tenant,
+                    requestIpApp,
+                    configOperateResult.getLastModified(),
+                    srcIp,
+                    persistEvent,
+                    ConfigTraceService.PERSISTENCE_TYPE_PUB,
                     content);
             return ConfigPublishResponse.buildSuccessResponse();
         } catch (Exception e) {
-            Loggers.REMOTE_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
+            Loggers.REMOTE_DIGEST.error(
+                    "[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
             return ConfigPublishResponse.buildFailResponse(
-                    (e instanceof NacosException) ? ((NacosException) e).getErrCode() : ResponseCode.FAIL.getCode(),
+                    (e instanceof NacosException)
+                            ? ((NacosException) e).getErrCode()
+                            : ResponseCode.FAIL.getCode(),
                     e.getMessage());
         }
     }
-    
 }

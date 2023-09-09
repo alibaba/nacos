@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.remote;
 
 import com.alibaba.nacos.api.remote.response.Response;
-
 import java.util.concurrent.Executor;
 
 /**
@@ -27,33 +26,32 @@ import java.util.concurrent.Executor;
  * @version $Id: PushCallBack.java, v 0.1 2020年09月01日 6:33 PM liuzunfei Exp $
  */
 public interface RequestCallBack<T extends Response> {
-    
+
     /**
      * get executor on callback.
      *
      * @return executor.
      */
     Executor getExecutor();
-    
+
     /**
      * get timeout mills.
      *
      * @return timeouts.
      */
     long getTimeout();
-    
+
     /**
      * called on success.
      *
      * @param response response received.
      */
     void onResponse(T response);
-    
+
     /**
      * called on failed.
      *
      * @param e exception throwed.
      */
     void onException(Throwable e);
-    
 }

@@ -26,27 +26,27 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class ClientAttributes implements Serializable {
-    
+
     private static final long serialVersionUID = -5794675800507288793L;
-    
+
     private Map<String, Object> clientAttributes;
-    
+
     public ClientAttributes() {
         this.clientAttributes = new HashMap<>(1);
     }
-    
+
     public Map<String, Object> getClientAttributes() {
         return clientAttributes;
     }
-    
+
     public void setClientAttributes(Map<String, Object> clientAttributes) {
         this.clientAttributes = clientAttributes;
     }
-    
+
     public void addClientAttribute(String key, Object value) {
         clientAttributes.put(key, value);
     }
-    
+
     /**
      * Get client attribute.
      *
@@ -61,7 +61,7 @@ public class ClientAttributes implements Serializable {
             return null;
         }
     }
-    
+
     /**
      * Get client attribute.
      *

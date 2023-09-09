@@ -24,9 +24,8 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class RequestHandler {
-    
+
     public static String parse(Object object) throws Exception {
         return JacksonUtils.toJson(object);
     }
-    
 }

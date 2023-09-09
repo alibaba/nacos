@@ -26,31 +26,30 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
  * @author xiweng.yy
  */
 public class DistroDataRequest extends AbstractClusterRequest {
-    
+
     private DistroData distroData;
-    
+
     private DataOperation dataOperation;
-    
-    public DistroDataRequest() {
-    }
-    
+
+    public DistroDataRequest() {}
+
     public DistroDataRequest(DistroData distroData, DataOperation dataOperation) {
         this.distroData = distroData;
         this.dataOperation = dataOperation;
     }
-    
+
     public DistroData getDistroData() {
         return distroData;
     }
-    
+
     public void setDistroData(DistroData distroData) {
         this.distroData = distroData;
     }
-    
+
     public DataOperation getDataOperation() {
         return dataOperation;
     }
-    
+
     public void setDataOperation(DataOperation dataOperation) {
         this.dataOperation = dataOperation;
     }

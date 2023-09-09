@@ -27,17 +27,17 @@ import com.alibaba.nacos.api.remote.response.Response;
  * @version $Id: Requester.java, v 0.1 2020年09月11日 4:05 PM liuzunfei Exp $
  */
 public interface Requester {
-    
+
     /**
      * send request.
      *
-     * @param request      request.
+     * @param request request.
      * @param timeoutMills mills of timeouts.
-     * @return response  response returned.
+     * @return response response returned.
      * @throws NacosException exception throw.
      */
     Response request(Request request, long timeoutMills) throws NacosException;
-    
+
     /**
      * send request.
      *
@@ -46,19 +46,16 @@ public interface Requester {
      * @throws NacosException exception throw.
      */
     RequestFuture requestFuture(Request request) throws NacosException;
-    
+
     /**
      * send async request.
      *
-     * @param request         request.
+     * @param request request.
      * @param requestCallBack callback of request.
      * @throws NacosException exception throw.
      */
     void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException;
-    
-    /**
-     * close connection.
-     */
+
+    /** close connection. */
     void close();
-    
 }

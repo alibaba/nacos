@@ -25,17 +25,17 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author xiweng.yy
  */
 public class DistroRecord {
-    
+
     private final String type;
-    
+
     private final AtomicLong totalSyncCount;
-    
+
     private final AtomicLong successfulSyncCount;
-    
+
     private final AtomicLong failedSyncCount;
-    
+
     private final AtomicInteger failedVerifyCount;
-    
+
     public DistroRecord(String type) {
         this.type = type;
         this.totalSyncCount = new AtomicLong();
@@ -43,37 +43,37 @@ public class DistroRecord {
         this.failedSyncCount = new AtomicLong();
         this.failedVerifyCount = new AtomicInteger();
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     public void syncSuccess() {
         successfulSyncCount.incrementAndGet();
         totalSyncCount.incrementAndGet();
     }
-    
+
     public void syncFail() {
         failedSyncCount.incrementAndGet();
         totalSyncCount.incrementAndGet();
     }
-    
+
     public void verifyFail() {
         failedVerifyCount.incrementAndGet();
     }
-    
+
     public long getTotalSyncCount() {
         return totalSyncCount.get();
     }
-    
+
     public long getSuccessfulSyncCount() {
         return successfulSyncCount.get();
     }
-    
+
     public long getFailedSyncCount() {
         return failedSyncCount.get();
     }
-    
+
     public int getFailedVerifyCount() {
         return failedVerifyCount.get();
     }

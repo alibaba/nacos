@@ -16,27 +16,24 @@
 
 package com.alibaba.nacos.plugin.auth.api;
 
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class LoginIdentityContextTest {
-    
+
     private static final String TEST = "test";
-    
+
     private LoginIdentityContext loginIdentityContext;
-    
+
     @Before
     public void setUp() throws Exception {
         loginIdentityContext = new LoginIdentityContext();
     }
-    
+
     @Test
     public void testSetParameter() {
         assertNull(loginIdentityContext.getParameter(TEST));
@@ -45,7 +42,7 @@ public class LoginIdentityContextTest {
         assertEquals(TEST, loginIdentityContext.getParameter(TEST));
         assertEquals(1, loginIdentityContext.getAllKey().size());
     }
-    
+
     @Test
     public void testSetParameters() {
         assertNull(loginIdentityContext.getParameter(TEST));

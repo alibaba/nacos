@@ -22,12 +22,12 @@ package com.alibaba.nacos.plugin.auth.constant;
  * @author xiweng.yy
  */
 public class SignType {
-    
+
     public static final String NAMING = "naming";
-    
+
     public static final String CONFIG = "config";
-    
+
     public static final String CONSOLE = "console";
-    
+
     public static final String SPECIFIED = "specified";
 }

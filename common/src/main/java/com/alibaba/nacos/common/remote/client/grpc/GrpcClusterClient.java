@@ -18,7 +18,6 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
-
 import java.util.Map;
 import java.util.Properties;
 
@@ -29,7 +28,7 @@ import java.util.Properties;
  * @version $Id: GrpcClusterClient.java, v 0.1 2020年09月07日 11:05 AM liuzunfei Exp $
  */
 public class GrpcClusterClient extends GrpcClient {
-    
+
     /**
      * Empty constructor.
      *
@@ -38,7 +37,7 @@ public class GrpcClusterClient extends GrpcClient {
     public GrpcClusterClient(String name) {
         super(name);
     }
-    
+
     /**
      * Empty constructor.
      *
@@ -47,7 +46,7 @@ public class GrpcClusterClient extends GrpcClient {
     public GrpcClusterClient(GrpcClientConfig config) {
         super(config);
     }
-    
+
     /**
      * Constructor.
      *
@@ -56,29 +55,37 @@ public class GrpcClusterClient extends GrpcClient {
     public GrpcClusterClient(Properties properties) {
         super(properties);
     }
-    
+
     /**
      * Constructor.
      *
-     * @param name               name of client.
+     * @param name name of client.
      * @param threadPoolCoreSize .
-     * @param threadPoolMaxSize  .
-     * @param labels             .
+     * @param threadPoolMaxSize .
+     * @param labels .
      */
-    public GrpcClusterClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
-                             Map<String, String> labels) {
+    public GrpcClusterClient(
+            String name,
+            Integer threadPoolCoreSize,
+            Integer threadPoolMaxSize,
+            Map<String, String> labels) {
         this(name, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
 
-    public GrpcClusterClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
-                             Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+    public GrpcClusterClient(
+            String name,
+            Integer threadPoolCoreSize,
+            Integer threadPoolMaxSize,
+            Map<String, String> labels,
+            RpcClientTlsConfig tlsConfig) {
         super(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
     }
 
     @Override
     public int rpcPortOffset() {
-        return Integer.parseInt(System.getProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
-                String.valueOf(Constants.CLUSTER_GRPC_PORT_DEFAULT_OFFSET)));
+        return Integer.parseInt(
+                System.getProperty(
+                        GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY,
+                        String.valueOf(Constants.CLUSTER_GRPC_PORT_DEFAULT_OFFSET)));
     }
-    
 }

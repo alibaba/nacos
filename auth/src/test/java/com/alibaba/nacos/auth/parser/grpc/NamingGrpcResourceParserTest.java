@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.auth.parser.grpc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
@@ -23,23 +26,17 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-
 public class NamingGrpcResourceParserTest {
-    
+
     private NamingGrpcResourceParser resourceParser;
-    
+
     @Before
     public void setUp() throws Exception {
         resourceParser = new NamingGrpcResourceParser();
     }
-    
+
     @Test
     @Secured()
     public void testParseWithFullContextForNamingRequest() throws NoSuchMethodException {
@@ -50,10 +47,14 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
-        assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties().getProperty(
-                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+        assertEquals(
+                MockNamingRequest.class.getSimpleName(),
+                actual.getProperties()
+                        .getProperty(
+                                com.alibaba.nacos.plugin.auth.constant.Constants.Resource
+                                        .REQUEST_CLASS));
     }
-    
+
     @Test
     @Secured()
     public void testParseWithFullContextForOtherRequest() throws NoSuchMethodException {
@@ -64,10 +65,14 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
-        assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties().getProperty(
-                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+        assertEquals(
+                NotifySubscriberRequest.class.getSimpleName(),
+                actual.getProperties()
+                        .getProperty(
+                                com.alibaba.nacos.plugin.auth.constant.Constants.Resource
+                                        .REQUEST_CLASS));
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutNamespaceForNamingRequest() throws NoSuchMethodException {
@@ -78,10 +83,14 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
-        assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties().getProperty(
-                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+        assertEquals(
+                MockNamingRequest.class.getSimpleName(),
+                actual.getProperties()
+                        .getProperty(
+                                com.alibaba.nacos.plugin.auth.constant.Constants.Resource
+                                        .REQUEST_CLASS));
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutNamespaceForOtherRequest() throws NoSuchMethodException {
@@ -92,10 +101,14 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
-        assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties().getProperty(
-                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+        assertEquals(
+                NotifySubscriberRequest.class.getSimpleName(),
+                actual.getProperties()
+                        .getProperty(
+                                com.alibaba.nacos.plugin.auth.constant.Constants.Resource
+                                        .REQUEST_CLASS));
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutGroupForNamingRequest() throws NoSuchMethodException {
@@ -106,10 +119,14 @@ public class NamingGrpcResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
-        assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties().getProperty(
-                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+        assertEquals(
+                MockNamingRequest.class.getSimpleName(),
+                actual.getProperties()
+                        .getProperty(
+                                com.alibaba.nacos.plugin.auth.constant.Constants.Resource
+                                        .REQUEST_CLASS));
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutGroupForOtherRequest() throws NoSuchMethodException {
@@ -120,10 +137,14 @@ public class NamingGrpcResourceParserTest {
         assertEquals(StringUtils.EMPTY, actual.getGroup());
         assertEquals("testS", actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
-        assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties().getProperty(
-                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+        assertEquals(
+                NotifySubscriberRequest.class.getSimpleName(),
+                actual.getProperties()
+                        .getProperty(
+                                com.alibaba.nacos.plugin.auth.constant.Constants.Resource
+                                        .REQUEST_CLASS));
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutDataIdForNamingRequest() throws NoSuchMethodException {
@@ -134,10 +155,14 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
-        assertEquals(MockNamingRequest.class.getSimpleName(), actual.getProperties().getProperty(
-                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+        assertEquals(
+                MockNamingRequest.class.getSimpleName(),
+                actual.getProperties()
+                        .getProperty(
+                                com.alibaba.nacos.plugin.auth.constant.Constants.Resource
+                                        .REQUEST_CLASS));
     }
-    
+
     @Test
     @Secured()
     public void testParseWithoutDataIdForOtherRequest() throws NoSuchMethodException {
@@ -148,10 +173,14 @@ public class NamingGrpcResourceParserTest {
         assertEquals("testG", actual.getGroup());
         assertEquals(StringUtils.EMPTY, actual.getName());
         assertEquals(Constants.Naming.NAMING_MODULE, actual.getType());
-        assertEquals(NotifySubscriberRequest.class.getSimpleName(), actual.getProperties().getProperty(
-                com.alibaba.nacos.plugin.auth.constant.Constants.Resource.REQUEST_CLASS));
+        assertEquals(
+                NotifySubscriberRequest.class.getSimpleName(),
+                actual.getProperties()
+                        .getProperty(
+                                com.alibaba.nacos.plugin.auth.constant.Constants.Resource
+                                        .REQUEST_CLASS));
     }
-    
+
     private AbstractNamingRequest mockNamingRequest(String testNs, String testG, String testS) {
         MockNamingRequest result = new MockNamingRequest();
         result.setNamespace(testNs);
@@ -159,7 +188,7 @@ public class NamingGrpcResourceParserTest {
         result.setServiceName(testS);
         return result;
     }
-    
+
     private Request mockOtherRequest(String testNs, String testG, String testS) {
         NotifySubscriberRequest result = new NotifySubscriberRequest();
         result.setNamespace(testNs);
@@ -167,7 +196,7 @@ public class NamingGrpcResourceParserTest {
         result.setServiceName(testS);
         return result;
     }
-    
+
     private Secured getMethodSecure() throws NoSuchMethodException {
         StackTraceElement[] traces = new Exception().getStackTrace();
         StackTraceElement callerElement = traces[1];
@@ -175,8 +204,6 @@ public class NamingGrpcResourceParserTest {
         Method method = this.getClass().getMethod(methodName);
         return method.getAnnotation(Secured.class);
     }
-    
-    private class MockNamingRequest extends AbstractNamingRequest {
-    
-    }
+
+    private class MockNamingRequest extends AbstractNamingRequest {}
 }

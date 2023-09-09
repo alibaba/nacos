@@ -24,29 +24,29 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author Nacos
  */
 public class GroupKey {
-    
+
     private static final char PLUS = '+';
-    
+
     private static final char PERCENT = '%';
-    
+
     private static final char TWO = '2';
-    
+
     private static final char B = 'B';
-    
+
     private static final char FIVE = '5';
-    
+
     public static String getKey(String dataId, String group) {
         return getKey(dataId, group, "");
     }
-    
+
     public static String getKey(String dataId, String group, String datumStr) {
         return doGetKey(dataId, group, datumStr);
     }
-    
+
     public static String getKeyTenant(String dataId, String group, String tenant) {
         return doGetKey(dataId, group, tenant);
     }
-    
+
     private static String doGetKey(String dataId, String group, String datumStr) {
         if (StringUtils.isBlank(dataId)) {
             throw new IllegalArgumentException("invalid dataId");
@@ -62,10 +62,10 @@ public class GroupKey {
             sb.append(PLUS);
             urlEncode(datumStr, sb);
         }
-        
+
         return sb.toString();
     }
-    
+
     /**
      * Parse key.
      *
@@ -77,7 +77,7 @@ public class GroupKey {
         String dataId = null;
         String group = null;
         String tenant = null;
-        
+
         for (int i = 0; i < groupKey.length(); ++i) {
             char c = groupKey.charAt(i);
             if (PLUS == c) {
@@ -104,13 +104,13 @@ public class GroupKey {
                 sb.append(c);
             }
         }
-        
+
         if (group == null) {
             group = sb.toString();
         } else {
             tenant = sb.toString();
         }
-        
+
         if (StringUtils.isBlank(dataId)) {
             throw new IllegalArgumentException("invalid dataId");
         }
@@ -119,10 +119,8 @@ public class GroupKey {
         }
         return new String[] {dataId, group, tenant};
     }
-    
-    /**
-     * + -> %2B % -> %25.
-     */
+
+    /** + -> %2B % -> %25. */
     static void urlEncode(String str, StringBuilder sb) {
         for (int idx = 0; idx < str.length(); ++idx) {
             char c = str.charAt(idx);
@@ -135,5 +133,4 @@ public class GroupKey {
             }
         }
     }
-    
 }

@@ -25,19 +25,16 @@ import java.util.Random;
  */
 public class RandomUtils {
 
-    private RandomUtils() {
-    }
-    
-    /**
-     * Random Object for random method.
-     */
+    private RandomUtils() {}
+
+    /** Random Object for random method. */
     private static final Random RANDOM = new Random();
-    
+
     /**
      * Returns a random long within the specified range.
      *
      * @param startInclusive the smallest value that can be returned, must be non-negative
-     * @param endExclusive   the upper bound (not included)
+     * @param endExclusive the upper bound (not included)
      * @return the random long
      * @throws IllegalArgumentException if startInclusive or endExclusive illegal
      */
@@ -49,12 +46,12 @@ public class RandomUtils {
         }
         return (long) (startInclusive + (diff * RANDOM.nextDouble()));
     }
-    
+
     /**
      * Returns a random integer within the specified range.
      *
      * @param startInclusive lower limit, must be non-negative
-     * @param endExclusive   the upper bound (not included)
+     * @param endExclusive the upper bound (not included)
      * @return the random integer
      * @throws IllegalArgumentException if startInclusive or endExclusive illegal
      */
@@ -66,16 +63,17 @@ public class RandomUtils {
         }
         return startInclusive + RANDOM.nextInt(diff);
     }
-    
+
     /**
      * Check input parameters.
      *
      * @param startInclusive lower limit, must be non-negative
-     * @param endExclusive   the upper bound (not included)
+     * @param endExclusive the upper bound (not included)
      */
     private static void checkParameters(final long startInclusive, final long endExclusive) {
         if (endExclusive < startInclusive) {
-            throw new IllegalArgumentException("startInclusive must be less than or equal to the endExclusive.");
+            throw new IllegalArgumentException(
+                    "startInclusive must be less than or equal to the endExclusive.");
         }
         if (startInclusive < 0) {
             throw new IllegalArgumentException("Both parameters must be non-negative");

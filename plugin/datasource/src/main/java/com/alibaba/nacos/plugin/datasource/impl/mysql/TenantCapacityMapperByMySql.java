@@ -28,20 +28,21 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * The mysql implementation of TenantCapacityMapper.
  *
  * @author hyx
- **/
-
+ */
 public class TenantCapacityMapperByMySql extends AbstractMapper implements TenantCapacityMapper {
-    
+
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
     }
-    
+
     @Override
     public MapperResult getCapacityList4CorrectUsage(MapperContext context) {
         String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
-                context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
+        return new MapperResult(
+                sql,
+                CollectionUtils.list(
+                        context.getWhereParameter(FieldConstant.ID),
+                        context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
-    
 }

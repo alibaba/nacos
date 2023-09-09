@@ -26,29 +26,38 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
  * @author xiweng.yy
  */
 public class PushResult {
-    
+
     private final boolean pushSuccess;
-    
+
     private final String subscribeClientId;
-    
+
     private final Service service;
-    
+
     private final ServiceInfo data;
-    
+
     private final Subscriber subscriber;
-    
+
     private final long networkCost;
-    
+
     private final long allCost;
-    
+
     private final long sla;
-    
+
     private final Throwable exception;
-    
+
     private final boolean isPushToAll;
-    
-    private PushResult(boolean pushSuccess, String subscribeClientId, Service service, ServiceInfo data,
-            Subscriber subscriber, long networkCost, long allCost, long sla, Throwable exception, boolean isPushToAll) {
+
+    private PushResult(
+            boolean pushSuccess,
+            String subscribeClientId,
+            Service service,
+            ServiceInfo data,
+            Subscriber subscriber,
+            long networkCost,
+            long allCost,
+            long sla,
+            Throwable exception,
+            boolean isPushToAll) {
         this.pushSuccess = pushSuccess;
         this.subscribeClientId = subscribeClientId;
         this.service = service;
@@ -60,51 +69,82 @@ public class PushResult {
         this.exception = exception;
         this.isPushToAll = isPushToAll;
     }
-    
-    public static PushResult pushSuccess(Service service, String subscribeClientId, ServiceInfo data,
-            Subscriber subscriber, long networkCost, long allCost, long sla, boolean isPushToAll) {
-        return new PushResult(true, subscribeClientId, service, data, subscriber, networkCost, allCost, sla, null,
+
+    public static PushResult pushSuccess(
+            Service service,
+            String subscribeClientId,
+            ServiceInfo data,
+            Subscriber subscriber,
+            long networkCost,
+            long allCost,
+            long sla,
+            boolean isPushToAll) {
+        return new PushResult(
+                true,
+                subscribeClientId,
+                service,
+                data,
+                subscriber,
+                networkCost,
+                allCost,
+                sla,
+                null,
                 isPushToAll);
     }
-    
-    public static PushResult pushFailed(Service service, String subscribeClientId, ServiceInfo data,
-            Subscriber subscriber, long allCost, Throwable exception, boolean isPushToAll) {
-        return new PushResult(false, subscribeClientId, service, data, subscriber, -1, allCost, -1, exception,
+
+    public static PushResult pushFailed(
+            Service service,
+            String subscribeClientId,
+            ServiceInfo data,
+            Subscriber subscriber,
+            long allCost,
+            Throwable exception,
+            boolean isPushToAll) {
+        return new PushResult(
+                false,
+                subscribeClientId,
+                service,
+                data,
+                subscriber,
+                -1,
+                allCost,
+                -1,
+                exception,
                 isPushToAll);
     }
-    
+
     public boolean isPushSuccess() {
         return pushSuccess;
     }
-    
+
     public String getSubscribeClientId() {
         return subscribeClientId;
     }
-    
+
     public Service getService() {
         return service;
     }
-    
+
     public ServiceInfo getData() {
         return data;
     }
-    
+
     public Subscriber getSubscriber() {
         return subscriber;
     }
-    
+
     public long getNetworkCost() {
         return networkCost;
     }
-    
+
     public long getAllCost() {
         return allCost;
     }
-    
+
     public long getSla() {
         return sla;
     }
-    
+
     public Throwable getException() {
         return exception;
     }

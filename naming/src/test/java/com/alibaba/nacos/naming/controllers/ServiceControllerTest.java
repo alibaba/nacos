@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.controllers;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.common.notify.Event;
@@ -27,10 +29,11 @@ import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -38,70 +41,64 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
-
 @RunWith(MockitoJUnitRunner.class)
 public class ServiceControllerTest extends BaseTest {
-    
-    @InjectMocks
-    private ServiceController serviceController;
-    
-    @Mock
-    private ServiceOperatorV2Impl serviceOperatorV2;
-    
-    @Mock
-    private SubscribeManager subscribeManager;
-    
+
+    @InjectMocks private ServiceController serviceController;
+
+    @Mock private ServiceOperatorV2Impl serviceOperatorV2;
+
+    @Mock private SubscribeManager subscribeManager;
+
     private SmartSubscriber subscriber;
-    
+
     private volatile Class<? extends Event> eventReceivedClass;
-    
+
     @Before
     public void before() {
         super.before();
-        subscriber = new SmartSubscriber() {
-            @Override
-            public List<Class<? extends Event>> subscribeTypes() {
-                List<Class<? extends Event>> result = new LinkedList<>();
-                result.add(UpdateServiceTraceEvent.class);
-                return result;
-            }
-            
-            @Override
-            public void onEvent(Event event) {
-                eventReceivedClass = event.getClass();
-            }
-        };
+        subscriber =
+                new SmartSubscriber() {
+                    @Override
+                    public List<Class<? extends Event>> subscribeTypes() {
+                        List<Class<? extends Event>> result = new LinkedList<>();
+                        result.add(UpdateServiceTraceEvent.class);
+                        return result;
+                    }
+
+                    @Override
+                    public void onEvent(Event event) {
+                        eventReceivedClass = event.getClass();
+                    }
+                };
         NotifyCenter.registerSubscriber(subscriber);
     }
-    
+
     @After
     public void tearDown() throws Exception {
         NotifyCenter.deregisterSubscriber(subscriber);
         NotifyCenter.deregisterPublisher(UpdateServiceTraceEvent.class);
         eventReceivedClass = null;
     }
-    
+
     @Test
     public void testList() throws Exception {
-        
-        Mockito.when(serviceOperatorV2.listService(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
-                .thenReturn(Collections.singletonList("DEFAULT_GROUP@@providers:com.alibaba.nacos.controller.test:1"));
-        
+
+        Mockito.when(
+                        serviceOperatorV2.listService(
+                                Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
+                .thenReturn(
+                        Collections.singletonList(
+                                "DEFAULT_GROUP@@providers:com.alibaba.nacos.controller.test:1"));
+
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter("pageNo", "1");
         servletRequest.addParameter("pageSize", "10");
-        
+
         ObjectNode objectNode = serviceController.list(servletRequest);
         Assert.assertEquals(1, objectNode.get("count").asInt());
     }
-    
+
     @Test
     public void testCreate() {
         try {
@@ -112,7 +109,7 @@ public class ServiceControllerTest extends BaseTest {
             Assert.fail(e.getMessage());
         }
     }
-    
+
     @Test
     public void testRemove() {
         try {
@@ -123,13 +120,14 @@ public class ServiceControllerTest extends BaseTest {
             Assert.fail(e.getMessage());
         }
     }
-    
+
     @Test
     public void testDetail() {
         try {
             ObjectNode result = Mockito.mock(ObjectNode.class);
-            Mockito.when(serviceOperatorV2.queryService(Mockito.anyString(), Mockito.anyString())).thenReturn(result);
-            
+            Mockito.when(serviceOperatorV2.queryService(Mockito.anyString(), Mockito.anyString()))
+                    .thenReturn(result);
+
             ObjectNode objectNode = serviceController.detail(TEST_NAMESPACE, TEST_SERVICE_NAME);
             Assert.assertEquals(result, objectNode);
         } catch (NacosException e) {
@@ -137,7 +135,7 @@ public class ServiceControllerTest extends BaseTest {
             Assert.fail(e.getMessage());
         }
     }
-    
+
     @Test
     public void testUpdate() throws Exception {
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
@@ -153,25 +151,30 @@ public class ServiceControllerTest extends BaseTest {
         TimeUnit.SECONDS.sleep(1);
         assertEquals(eventReceivedClass, UpdateServiceTraceEvent.class);
     }
-    
+
     @Test
     public void testSearchService() {
         try {
-            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
+            Mockito.when(
+                            serviceOperatorV2.searchServiceName(
+                                    Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(Collections.singletonList("result"));
-            
+
             ObjectNode objectNode = serviceController.searchService(TEST_NAMESPACE, "");
             Assert.assertEquals(1, objectNode.get("count").asInt());
         } catch (NacosException e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());
         }
-        
+
         try {
-            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
+            Mockito.when(
+                            serviceOperatorV2.searchServiceName(
+                                    Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(Arrays.asList("re1", "re2"));
-            Mockito.when(serviceOperatorV2.listAllNamespace()).thenReturn(Arrays.asList("re1", "re2"));
-            
+            Mockito.when(serviceOperatorV2.listAllNamespace())
+                    .thenReturn(Arrays.asList("re1", "re2"));
+
             ObjectNode objectNode = serviceController.searchService(null, "");
             Assert.assertEquals(4, objectNode.get("count").asInt());
         } catch (NacosException e) {
@@ -179,15 +182,17 @@ public class ServiceControllerTest extends BaseTest {
             Assert.fail(e.getMessage());
         }
     }
-    
+
     @Test
     public void testSubscribers() {
-        Mockito.when(subscribeManager.getSubscribers(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
+        Mockito.when(
+                        subscribeManager.getSubscribers(
+                                Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
                 .thenReturn(Collections.singletonList(Mockito.mock(Subscriber.class)));
-        
+
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME);
-        
+
         ObjectNode objectNode = serviceController.subscribers(servletRequest);
         Assert.assertEquals(1, objectNode.get("count").asInt());
     }

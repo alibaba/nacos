@@ -23,8 +23,9 @@ import com.alibaba.nacos.naming.interceptor.NacosNamingInterceptor;
  *
  * @author xiweng.yy
  */
-public abstract class AbstractBeatCheckInterceptor implements NacosNamingInterceptor<InstanceBeatCheckTask> {
-    
+public abstract class AbstractBeatCheckInterceptor
+        implements NacosNamingInterceptor<InstanceBeatCheckTask> {
+
     @Override
     public boolean isInterceptType(Class<?> type) {
         return InstanceBeatCheckTask.class.isAssignableFrom(type);

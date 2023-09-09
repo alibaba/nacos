@@ -16,23 +16,21 @@
 
 package com.alibaba.nacos.api.config.remote.response;
 
-import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ConfigChangeNotifyResponseTest extends BasedConfigResponseTest {
-    
+
     ConfigChangeNotifyResponse configChangeNotifyResponse;
-    
+
     @Before
     public void before() {
         configChangeNotifyResponse = new ConfigChangeNotifyResponse();
         requestId = injectResponseUuId(configChangeNotifyResponse);
     }
-    
+
     @Override
     @Test
     public void testSerializeSuccessResponse() throws JsonProcessingException {
@@ -41,11 +39,8 @@ public class ConfigChangeNotifyResponseTest extends BasedConfigResponseTest {
         assertTrue(json.contains("\"requestId\":\"" + requestId));
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.SUCCESS.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));
-    
     }
-    
+
     @Override
-    public void testSerializeFailResponse() throws JsonProcessingException {
-    
-    }
+    public void testSerializeFailResponse() throws JsonProcessingException {}
 }

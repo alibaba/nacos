@@ -22,13 +22,13 @@ package com.alibaba.nacos.config.server.service.dump.disk;
  * @author zunfei.lzf
  */
 public class ConfigDiskServiceFactory {
-    
+
     static ConfigDiskService configDiskService;
-    
+
     private static final String TYPE_RAW_DISK = "rawdisk";
-    
+
     private static final String TYPE_ROCKSDB = "rocksdb";
-    
+
     /**
      * get disk service.
      *
@@ -50,5 +50,4 @@ public class ConfigDiskServiceFactory {
         }
         return configDiskService;
     }
-    
 }

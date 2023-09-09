@@ -18,8 +18,6 @@
 package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
-import org.junit.Assert;
-import org.junit.Test;
 
 /**
  * {@link HealthCheckRequestHandler} unit test.
@@ -28,7 +26,7 @@ import org.junit.Test;
  * @date 2021-07-02 19:17
  */
 public class HealthCheckRequestHandlerTest {
-    
+
     @Test
     public void testHandle() {
         HealthCheckRequestHandler handler = new HealthCheckRequestHandler();

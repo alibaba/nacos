@@ -17,7 +17,6 @@
 package com.alibaba.nacos.consistency.serialize;
 
 import com.caucho.hessian.io.SerializerFactory;
-
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -54,7 +53,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @author xiweng.yy
  */
 public class NacosHessianSerializerFactory extends SerializerFactory {
-    
+
     NacosHessianSerializerFactory() {
         super();
         super.getClassFactory().setWhitelist(true);
@@ -64,7 +63,7 @@ public class NacosHessianSerializerFactory extends SerializerFactory {
         allowTime();
         super.getClassFactory().allow("com.alibaba.nacos.*");
     }
-    
+
     private void allowBasicType() {
         super.getClassFactory().allow(boolean.class.getCanonicalName());
         super.getClassFactory().allow(byte.class.getCanonicalName());
@@ -82,28 +81,28 @@ public class NacosHessianSerializerFactory extends SerializerFactory {
         super.getClassFactory().allow(Integer.class.getCanonicalName());
         super.getClassFactory().allow(Long.class.getCanonicalName());
         super.getClassFactory().allow(Short.class.getCanonicalName());
-        
+
         super.getClassFactory().allow(Number.class.getCanonicalName());
         super.getClassFactory().allow(Class.class.getCanonicalName());
         super.getClassFactory().allow(String.class.getCanonicalName());
     }
-    
+
     private void allowCollections() {
         super.getClassFactory().allow(List.class.getCanonicalName());
         super.getClassFactory().allow(ArrayList.class.getCanonicalName());
         super.getClassFactory().allow(LinkedList.class.getCanonicalName());
-        
+
         super.getClassFactory().allow(Set.class.getCanonicalName());
         super.getClassFactory().allow(HashSet.class.getCanonicalName());
         super.getClassFactory().allow(LinkedHashSet.class.getCanonicalName());
         super.getClassFactory().allow(TreeSet.class.getCanonicalName());
-        
+
         super.getClassFactory().allow(Map.class.getCanonicalName());
         super.getClassFactory().allow(HashMap.class.getCanonicalName());
         super.getClassFactory().allow(LinkedHashMap.class.getCanonicalName());
         super.getClassFactory().allow(TreeMap.class.getCanonicalName());
         super.getClassFactory().allow(WeakHashMap.class.getCanonicalName());
-        
+
         super.getClassFactory().allow("java.util.Arrays$ArrayList");
         super.getClassFactory().allow("java.util.Collections$EmptyList");
         super.getClassFactory().allow("java.util.Collections$EmptyMap");
@@ -119,19 +118,19 @@ public class NacosHessianSerializerFactory extends SerializerFactory {
         super.getClassFactory().allow("java.util.Collections$UnmodifiableSortedMap");
         super.getClassFactory().allow("java.util.Collections$UnmodifiableSortedSet");
     }
-    
+
     private void allowConcurrent() {
         super.getClassFactory().allow(AtomicBoolean.class.getCanonicalName());
         super.getClassFactory().allow(AtomicInteger.class.getCanonicalName());
         super.getClassFactory().allow(AtomicLong.class.getCanonicalName());
         super.getClassFactory().allow(AtomicReference.class.getCanonicalName());
-        
+
         super.getClassFactory().allow(ConcurrentMap.class.getCanonicalName());
         super.getClassFactory().allow(ConcurrentHashMap.class.getCanonicalName());
         super.getClassFactory().allow(ConcurrentSkipListMap.class.getCanonicalName());
         super.getClassFactory().allow(CopyOnWriteArrayList.class.getCanonicalName());
     }
-    
+
     private void allowTime() {
         super.getClassFactory().allow(SimpleDateFormat.class.getCanonicalName());
         super.getClassFactory().allow(DateTimeFormatter.class.getCanonicalName());

@@ -23,7 +23,6 @@ import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -31,10 +30,10 @@ import java.util.List;
  * The mysql implementation of ConfigTagsRelationMapper.
  *
  * @author hyx
- **/
+ */
+public class ConfigTagsRelationMapperByMySql extends AbstractMapper
+        implements ConfigTagsRelationMapper {
 
-public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements ConfigTagsRelationMapper {
-    
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -43,16 +42,16 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-        
+
         List<Object> paramList = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE ");
         final String sql =
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
                         + "config_tags_relation b ON a.id=b.id";
-        
+
         where.append(" a.tenant_id=? ");
         paramList.add(tenant);
-        
+
         if (StringUtils.isNotBlank(dataId)) {
             where.append(" AND a.data_id=? ");
             paramList.add(dataId);
@@ -78,10 +77,11 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
             paramList.add(tagArr[i]);
         }
         where.append(") ");
-        return new MapperResult(sql + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
+        return new MapperResult(
+                sql + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
                 paramList);
     }
-    
+
     @Override
     public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -90,13 +90,14 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-        
+
         List<Object> paramList = new ArrayList<>();
-        
+
         StringBuilder where = new StringBuilder(" WHERE ");
-        final String sqlFetchRows = "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content "
-                + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id ";
-        
+        final String sqlFetchRows =
+                "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content "
+                        + "FROM config_info a LEFT JOIN config_tags_relation b ON a.id=b.id ";
+
         where.append(" a.tenant_id LIKE ? ");
         paramList.add(tenant);
         if (!StringUtils.isBlank(dataId)) {
@@ -115,7 +116,7 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
             where.append(" AND a.content LIKE ? ");
             paramList.add(content);
         }
-        
+
         where.append(" AND b.tag_name IN (");
         for (int i = 0; i < tagArr.length; i++) {
             if (i != 0) {
@@ -125,10 +126,16 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
             paramList.add(tagArr[i]);
         }
         where.append(") ");
-        return new MapperResult(sqlFetchRows + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
+        return new MapperResult(
+                sqlFetchRows
+                        + where
+                        + " LIMIT "
+                        + context.getStartRow()
+                        + ","
+                        + context.getPageSize(),
                 paramList);
     }
-    
+
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;

@@ -22,10 +22,9 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
  * The tenant info mapper. If there is a new non-universal sql, you can add it here.
  *
  * @author hyx
- **/
-
+ */
 public interface TenantInfoMapper extends Mapper {
-    
+
     /**
      * 获取返回表名.
      *
@@ -34,5 +33,4 @@ public interface TenantInfoMapper extends Mapper {
     default String getTableName() {
         return TableConstant.TENANT_INFO;
     }
-
 }

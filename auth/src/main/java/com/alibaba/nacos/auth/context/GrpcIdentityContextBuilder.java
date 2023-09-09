@@ -22,7 +22,6 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -34,24 +33,24 @@ import java.util.Set;
  * @author Nacos
  */
 public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Request> {
-    
+
     private final AuthConfigs authConfigs;
-    
+
     public GrpcIdentityContextBuilder(AuthConfigs authConfigs) {
         this.authConfigs = authConfigs;
     }
-    
+
     /**
      * get identity context from grpc.
      *
      * @param request grpc request
      * @return IdentityContext request context
      */
-    
     @Override
     public IdentityContext build(Request request) {
-        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+        Optional<AuthPluginService> authPluginService =
+                AuthPluginManager.getInstance()
+                        .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         IdentityContext result = new IdentityContext();
         getRemoteIp(request, result);
         if (!authPluginService.isPresent()) {
@@ -66,8 +65,9 @@ public class GrpcIdentityContextBuilder implements IdentityContextBuilder<Reques
         }
         return result;
     }
-    
+
     private void getRemoteIp(Request request, IdentityContext result) {
-        result.setParameter(Constants.Identity.REMOTE_IP, request.getHeader(Constants.Identity.X_REAL_IP));
+        result.setParameter(
+                Constants.Identity.REMOTE_IP, request.getHeader(Constants.Identity.X_REAL_IP));
     }
 }

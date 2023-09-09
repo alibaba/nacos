@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.naming.cluster;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.consistency.ConsistencyService;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.stereotype.Service;
-
+import java.util.Optional;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.util.Optional;
+import org.springframework.stereotype.Service;
 
 /**
  * Detect and control the working status of local server.
@@ -34,47 +33,47 @@ import java.util.Optional;
  */
 @Service
 public class ServerStatusManager {
-    
+
     @Resource(name = "persistentConsistencyServiceDelegate")
     private ConsistencyService consistencyService;
-    
+
     private final SwitchDomain switchDomain;
-    
+
     private ServerStatus serverStatus = ServerStatus.STARTING;
-    
+
     public ServerStatusManager(SwitchDomain switchDomain) {
         this.switchDomain = switchDomain;
     }
-    
+
     @PostConstruct
     public void init() {
         GlobalExecutor.registerServerStatusUpdater(new ServerStatusUpdater());
     }
-    
+
     private void refreshServerStatus() {
-        
+
         if (StringUtils.isNotBlank(switchDomain.getOverriddenServerStatus())) {
             serverStatus = ServerStatus.valueOf(switchDomain.getOverriddenServerStatus());
             return;
         }
-        
+
         if (consistencyService.isAvailable()) {
             serverStatus = ServerStatus.UP;
         } else {
             serverStatus = ServerStatus.DOWN;
         }
     }
-    
+
     public ServerStatus getServerStatus() {
         return serverStatus;
     }
-    
+
     public Optional<String> getErrorMsg() {
         return consistencyService.getErrorMsg();
     }
-    
+
     public class ServerStatusUpdater implements Runnable {
-        
+
         @Override
         public void run() {
             refreshServerStatus();

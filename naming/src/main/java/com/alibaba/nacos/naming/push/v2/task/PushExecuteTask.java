@@ -31,7 +31,6 @@ import com.alibaba.nacos.naming.push.v2.PushConfig;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.hook.PushResult;
 import com.alibaba.nacos.naming.push.v2.hook.PushResultHookHolder;
-
 import java.util.Collection;
 
 /**
@@ -40,19 +39,20 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public class PushExecuteTask extends AbstractExecuteTask {
-    
+
     private final Service service;
-    
+
     private final PushDelayTaskExecuteEngine delayTaskEngine;
-    
+
     private final PushDelayTask delayTask;
-    
-    public PushExecuteTask(Service service, PushDelayTaskExecuteEngine delayTaskEngine, PushDelayTask delayTask) {
+
+    public PushExecuteTask(
+            Service service, PushDelayTaskExecuteEngine delayTaskEngine, PushDelayTask delayTask) {
         this.service = service;
         this.delayTaskEngine = delayTaskEngine;
         this.delayTask = delayTask;
     }
-    
+
     @Override
     public void run() {
         try {
@@ -69,48 +69,62 @@ public class PushExecuteTask extends AbstractExecuteTask {
                 if (subscriber == null) {
                     continue;
                 }
-                delayTaskEngine.getPushExecutor().doPushWithCallback(each, subscriber, wrapper,
-                        new ServicePushCallback(each, subscriber, wrapper.getOriginalData(), delayTask.isPushToAll()));
+                delayTaskEngine
+                        .getPushExecutor()
+                        .doPushWithCallback(
+                                each,
+                                subscriber,
+                                wrapper,
+                                new ServicePushCallback(
+                                        each,
+                                        subscriber,
+                                        wrapper.getOriginalData(),
+                                        delayTask.isPushToAll()));
             }
         } catch (Exception e) {
-            Loggers.PUSH.error("Push task for service" + service.getGroupedServiceName() + " execute failed ", e);
+            Loggers.PUSH.error(
+                    "Push task for service" + service.getGroupedServiceName() + " execute failed ",
+                    e);
             delayTaskEngine.addTask(service, new PushDelayTask(service, 1000L));
         }
     }
-    
+
     private PushDataWrapper generatePushData() {
         ServiceInfo serviceInfo = delayTaskEngine.getServiceStorage().getPushData(service);
-        ServiceMetadata serviceMetadata = delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
+        ServiceMetadata serviceMetadata =
+                delayTaskEngine.getMetadataManager().getServiceMetadata(service).orElse(null);
         return new PushDataWrapper(serviceMetadata, serviceInfo);
     }
-    
+
     private Collection<String> getTargetClientIds() {
-        return delayTask.isPushToAll() ? delayTaskEngine.getIndexesManager().getAllClientsSubscribeService(service)
+        return delayTask.isPushToAll()
+                ? delayTaskEngine.getIndexesManager().getAllClientsSubscribeService(service)
                 : delayTask.getTargetClients();
     }
-    
+
     private class ServicePushCallback implements NamingPushCallback {
-        
+
         private final String clientId;
-        
+
         private final Subscriber subscriber;
-        
+
         private final ServiceInfo serviceInfo;
-        
-        /**
-         * Record the push task execute start time.
-         */
+
+        /** Record the push task execute start time. */
         private final long executeStartTime;
-        
+
         private final boolean isPushToAll;
-        
+
         /**
-         * The actual pushed service info, the host list of service info may be changed by selector. Detail see
-         * implement of {@link com.alibaba.nacos.naming.push.v2.executor.PushExecutor}.
+         * The actual pushed service info, the host list of service info may be changed by selector.
+         * Detail see implement of {@link com.alibaba.nacos.naming.push.v2.executor.PushExecutor}.
          */
         private ServiceInfo actualServiceInfo;
-        
-        private ServicePushCallback(String clientId, Subscriber subscriber, ServiceInfo serviceInfo,
+
+        private ServicePushCallback(
+                String clientId,
+                Subscriber subscriber,
+                ServiceInfo serviceInfo,
                 boolean isPushToAll) {
             this.clientId = clientId;
             this.subscriber = subscriber;
@@ -119,12 +133,12 @@ public class PushExecuteTask extends AbstractExecuteTask {
             this.executeStartTime = System.currentTimeMillis();
             this.actualServiceInfo = serviceInfo;
         }
-        
+
         @Override
         public long getTimeout() {
             return PushConfig.getInstance().getPushTaskTimeout();
         }
-        
+
         @Override
         public void onSuccess() {
             long pushFinishTime = System.currentTimeMillis();
@@ -132,47 +146,84 @@ public class PushExecuteTask extends AbstractExecuteTask {
             long pushCostTimeForAll = pushFinishTime - delayTask.getLastProcessTime();
             long serviceLevelAgreementTime = pushFinishTime - service.getLastUpdatedTime();
             if (isPushToAll) {
-                Loggers.PUSH
-                        .info("[PUSH-SUCC] {}ms, all delay time {}ms, SLA {}ms, {}, originalSize={}, DataSize={}, target={}",
-                                pushCostTimeForNetWork, pushCostTimeForAll, serviceLevelAgreementTime, service,
-                                serviceInfo.getHosts().size(), actualServiceInfo.getHosts().size(), subscriber.getIp());
+                Loggers.PUSH.info(
+                        "[PUSH-SUCC] {}ms, all delay time {}ms, SLA {}ms, {}, originalSize={}, DataSize={}, target={}",
+                        pushCostTimeForNetWork,
+                        pushCostTimeForAll,
+                        serviceLevelAgreementTime,
+                        service,
+                        serviceInfo.getHosts().size(),
+                        actualServiceInfo.getHosts().size(),
+                        subscriber.getIp());
             } else {
-                Loggers.PUSH
-                        .info("[PUSH-SUCC] {}ms, all delay time {}ms for subscriber {}, {}, originalSize={}, DataSize={}",
-                                pushCostTimeForNetWork, pushCostTimeForAll, subscriber.getIp(), service,
-                                serviceInfo.getHosts().size(), actualServiceInfo.getHosts().size());
+                Loggers.PUSH.info(
+                        "[PUSH-SUCC] {}ms, all delay time {}ms for subscriber {}, {}, originalSize={}, DataSize={}",
+                        pushCostTimeForNetWork,
+                        pushCostTimeForAll,
+                        subscriber.getIp(),
+                        service,
+                        serviceInfo.getHosts().size(),
+                        actualServiceInfo.getHosts().size());
             }
-            PushResult result = PushResult
-                    .pushSuccess(service, clientId, actualServiceInfo, subscriber, pushCostTimeForNetWork,
-                            pushCostTimeForAll, serviceLevelAgreementTime, isPushToAll);
+            PushResult result =
+                    PushResult.pushSuccess(
+                            service,
+                            clientId,
+                            actualServiceInfo,
+                            subscriber,
+                            pushCostTimeForNetWork,
+                            pushCostTimeForAll,
+                            serviceLevelAgreementTime,
+                            isPushToAll);
             NotifyCenter.publishEvent(getPushServiceTraceEvent(pushFinishTime, result));
             PushResultHookHolder.getInstance().pushSuccess(result);
         }
-        
+
         @Override
         public void onFail(Throwable e) {
             long pushCostTime = System.currentTimeMillis() - executeStartTime;
-            Loggers.PUSH.error("[PUSH-FAIL] {}ms, {}, reason={}, target={}", pushCostTime, service, e.getMessage(),
+            Loggers.PUSH.error(
+                    "[PUSH-FAIL] {}ms, {}, reason={}, target={}",
+                    pushCostTime,
+                    service,
+                    e.getMessage(),
                     subscriber.getIp());
             if (!(e instanceof NoRequiredRetryException)) {
                 Loggers.PUSH.error("Reason detail: ", e);
-                delayTaskEngine.addTask(service,
-                        new PushDelayTask(service, PushConfig.getInstance().getPushTaskRetryDelay(), clientId));
+                delayTaskEngine.addTask(
+                        service,
+                        new PushDelayTask(
+                                service,
+                                PushConfig.getInstance().getPushTaskRetryDelay(),
+                                clientId));
             }
-            PushResult result = PushResult
-                    .pushFailed(service, clientId, actualServiceInfo, subscriber, pushCostTime, e, isPushToAll);
+            PushResult result =
+                    PushResult.pushFailed(
+                            service,
+                            clientId,
+                            actualServiceInfo,
+                            subscriber,
+                            pushCostTime,
+                            e,
+                            isPushToAll);
             PushResultHookHolder.getInstance().pushFailed(result);
         }
-        
+
         public void setActualServiceInfo(ServiceInfo actualServiceInfo) {
             this.actualServiceInfo = actualServiceInfo;
         }
-        
+
         private PushServiceTraceEvent getPushServiceTraceEvent(long eventTime, PushResult result) {
-            return new PushServiceTraceEvent(eventTime, result.getNetworkCost(), result.getAllCost(),
-                    result.getSla(), result.getSubscriber().getIp(), result.getService().getNamespace(),
-                    result.getService().getGroup(), result.getService().getName(), result.getData().getHosts().size());
+            return new PushServiceTraceEvent(
+                    eventTime,
+                    result.getNetworkCost(),
+                    result.getAllCost(),
+                    result.getSla(),
+                    result.getSubscriber().getIp(),
+                    result.getService().getNamespace(),
+                    result.getService().getGroup(),
+                    result.getService().getName(),
+                    result.getData().getHosts().size());
         }
-        
     }
 }

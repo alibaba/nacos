@@ -24,13 +24,9 @@ package com.alibaba.nacos.plugin.auth.impl.constant;
  * @since 1.2.0
  */
 public enum AuthSystemTypes {
-    
-    /**
-     * Nacos builtin auth system.
-     */
+
+    /** Nacos builtin auth system. */
     NACOS,
-    /**
-     * LDAP.
-     */
+    /** LDAP. */
     LDAP
 }

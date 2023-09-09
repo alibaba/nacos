@@ -26,23 +26,20 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class DistroTagGeneratorImpl implements DistroTagGenerator {
-    
+
     private final DistroTagGenerator ipPortTag = new DistroIpPortTagGenerator();
-    
-    public DistroTagGeneratorImpl() {
-    }
-    
+
+    public DistroTagGeneratorImpl() {}
+
     @Override
     public String getResponsibleTag(ReuseHttpServletRequest request) {
         return getTagGenerator().getResponsibleTag(request);
     }
-    
+
     /**
      * Get tag generator according to cluster member ability.
      *
-     * <p>
-     * If all member is upper than 2.x. Using {@link DistroIpPortTagGenerator}.
-     * </p>
+     * <p>If all member is upper than 2.x. Using {@link DistroIpPortTagGenerator}.
      *
      * @return actual tag generator
      */

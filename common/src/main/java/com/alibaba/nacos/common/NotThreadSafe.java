@@ -30,6 +30,4 @@ import java.lang.annotation.Target;
 @Documented
 @Target({ElementType.TYPE, ElementType.METHOD})
 @Retention(RetentionPolicy.SOURCE)
-public @interface NotThreadSafe {
-    
-}
+public @interface NotThreadSafe {}

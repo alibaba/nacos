@@ -23,17 +23,17 @@ package com.alibaba.nacos.api.remote;
  * @version $Id: AbstractRequestCallBack.java, v 0.1 2020年09月07日 3:30 PM liuzunfei Exp $
  */
 public abstract class AbstractRequestCallBack implements RequestCallBack {
-    
+
     long timeoutMills;
-    
+
     public AbstractRequestCallBack(long timeoutMill) {
         this.timeoutMills = timeoutMill;
     }
-    
+
     public AbstractRequestCallBack() {
         this(3000L);
     }
-    
+
     @Override
     public long getTimeout() {
         return timeoutMills;

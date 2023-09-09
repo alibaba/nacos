@@ -17,8 +17,6 @@
 package com.alibaba.nacos.config.server.remote;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +24,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.stereotype.Component;
 
 /**
  * config change listen context.
@@ -35,21 +34,18 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class ConfigChangeListenContext {
-    
-    /**
-     * groupKey-> connection set.
-     */
+
+    /** groupKey-> connection set. */
     private ConcurrentHashMap<String, HashSet<String>> groupKeyContext = new ConcurrentHashMap<>();
-    
-    /**
-     * connectionId-> group key set.
-     */
-    private ConcurrentHashMap<String, HashMap<String, String>> connectionIdContext = new ConcurrentHashMap<>();
-    
+
+    /** connectionId-> group key set. */
+    private ConcurrentHashMap<String, HashMap<String, String>> connectionIdContext =
+            new ConcurrentHashMap<>();
+
     /**
      * add listen.
      *
-     * @param groupKey     groupKey.
+     * @param groupKey groupKey.
      * @param connectionId connectionId.
      */
     public synchronized void addListen(String groupKey, String md5, String connectionId) {
@@ -60,7 +56,7 @@ public class ConfigChangeListenContext {
             listenClients = groupKeyContext.get(groupKey);
         }
         listenClients.add(connectionId);
-        
+
         // 2.add connectionIdContext
         HashMap<String, String> groupKeys = connectionIdContext.get(connectionId);
         if (groupKeys == null) {
@@ -68,18 +64,17 @@ public class ConfigChangeListenContext {
             groupKeys = connectionIdContext.get(connectionId);
         }
         groupKeys.put(groupKey, md5);
-        
     }
-    
+
     /**
      * remove listen context for connection id .
      *
-     * @param groupKey     groupKey.
+     * @param groupKey groupKey.
      * @param connectionId connection id.
      */
     public synchronized void removeListen(String groupKey, String connectionId) {
-        
-        //1. remove groupKeyContext
+
+        // 1. remove groupKeyContext
         Set<String> connectionIds = groupKeyContext.get(groupKey);
         if (connectionIds != null) {
             connectionIds.remove(connectionId);
@@ -87,14 +82,14 @@ public class ConfigChangeListenContext {
                 groupKeyContext.remove(groupKey);
             }
         }
-        
-        //2.remove connectionIdContext
+
+        // 2.remove connectionIdContext
         HashMap<String, String> groupKeys = connectionIdContext.get(connectionId);
         if (groupKeys != null) {
             groupKeys.remove(groupKey);
         }
     }
-    
+
     /**
      * get listeners of the group key.
      *
@@ -102,7 +97,7 @@ public class ConfigChangeListenContext {
      * @return the copy of listeners, may be return null.
      */
     public synchronized Set<String> getListeners(String groupKey) {
-        
+
         HashSet<String> strings = groupKeyContext.get(groupKey);
         if (CollectionUtils.isNotEmpty(strings)) {
             Set<String> listenConnections = new HashSet<>();
@@ -111,11 +106,11 @@ public class ConfigChangeListenContext {
         }
         return null;
     }
-    
+
     /**
      * copy collections.
      *
-     * @param src  may be modified concurrently
+     * @param src may be modified concurrently
      * @param dest dest collection
      */
     private void safeCopy(Collection src, Collection dest) {
@@ -124,16 +119,16 @@ public class ConfigChangeListenContext {
             dest.add(iterator.next());
         }
     }
-    
+
     /**
      * remove the context related to the connection id.
      *
      * @param connectionId connectionId.
      */
     public synchronized void clearContextForConnectionId(final String connectionId) {
-        
+
         Map<String, String> listenKeys = getListenKeys(connectionId);
-        
+
         if (listenKeys == null) {
             connectionIdContext.remove(connectionId);
             return;
@@ -149,11 +144,10 @@ public class ConfigChangeListenContext {
             } else {
                 groupKeyContext.remove(groupKey.getKey());
             }
-
         }
         connectionIdContext.remove(connectionId);
     }
-    
+
     /**
      * get listen keys.
      *
@@ -164,7 +158,7 @@ public class ConfigChangeListenContext {
         HashMap<String, String> stringStringHashMap = connectionIdContext.get(connectionId);
         return stringStringHashMap == null ? null : new HashMap<>(stringStringHashMap);
     }
-    
+
     /**
      * get md5.
      *
@@ -175,7 +169,7 @@ public class ConfigChangeListenContext {
         Map<String, String> groupKeyContexts = connectionIdContext.get(connectionId);
         return groupKeyContexts == null ? null : groupKeyContexts.get(groupKey);
     }
-    
+
     /**
      * get connection count.
      *
@@ -184,5 +178,4 @@ public class ConfigChangeListenContext {
     public int getConnectionCount() {
         return connectionIdContext.size();
     }
-    
 }

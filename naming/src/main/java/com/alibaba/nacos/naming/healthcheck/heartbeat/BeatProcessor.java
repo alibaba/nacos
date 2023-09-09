@@ -21,6 +21,4 @@ package com.alibaba.nacos.naming.healthcheck.heartbeat;
  *
  * @author xiweng.yy
  */
-public interface BeatProcessor extends Runnable {
-
-}
+public interface BeatProcessor extends Runnable {}

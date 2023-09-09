@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
-
 import java.util.Objects;
 
 /**
@@ -26,25 +25,25 @@ import java.util.Objects;
  * @author yangyi
  */
 public class Tcp extends AbstractHealthChecker {
-    
+
     public static final String TYPE = "TCP";
-    
+
     private static final long serialVersionUID = -9116042038157496294L;
-    
+
     public Tcp() {
         super(TYPE);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(TYPE);
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         return obj instanceof Tcp;
     }
-    
+
     @Override
     public Tcp clone() throws CloneNotSupportedException {
         return new Tcp();

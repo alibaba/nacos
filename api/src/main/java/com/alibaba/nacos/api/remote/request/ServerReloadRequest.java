@@ -23,11 +23,11 @@ package com.alibaba.nacos.api.remote.request;
  * @version $Id: ServerReloadRequest.java, v 0.1 2020年11月09日 4:35 PM liuzunfei Exp $
  */
 public class ServerReloadRequest extends InternalRequest {
-    
+
     int reloadCount = 0;
-    
+
     String reloadServer;
-    
+
     /**
      * Getter method for property <tt>reloadCount</tt>.
      *
@@ -36,7 +36,7 @@ public class ServerReloadRequest extends InternalRequest {
     public int getReloadCount() {
         return reloadCount;
     }
-    
+
     /**
      * Setter method for property <tt>reloadCount</tt>.
      *
@@ -45,11 +45,11 @@ public class ServerReloadRequest extends InternalRequest {
     public void setReloadCount(int reloadCount) {
         this.reloadCount = reloadCount;
     }
-    
+
     public String getReloadServer() {
         return reloadServer;
     }
-    
+
     public void setReloadServer(String reloadServer) {
         this.reloadServer = reloadServer;
     }

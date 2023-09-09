@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.sys.env;
 
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,35 +26,32 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
-
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
 @SpringBootTest(classes = EnvUtilWithConfigTest.class)
 public class EnvUtilWithConfigTest {
-    
+
     private static final int SETTING_PROCESSORS = 10;
-    
-    @Autowired
-    private Environment environment;
-    
+
+    @Autowired private Environment environment;
+
     @Before
     public void setUp() {
         EnvUtil.setEnvironment((ConfigurableEnvironment) environment);
     }
-    
+
     @Test
     public void testGetAvailableProcessors() {
         int actual = EnvUtil.getAvailableProcessors();
         assertEquals(SETTING_PROCESSORS, actual);
     }
-    
+
     @Test
     public void testGetAvailableProcessorsWithMultiple() {
         int actual = EnvUtil.getAvailableProcessors(2);
         assertEquals(SETTING_PROCESSORS * 2, actual);
     }
-    
+
     @Test
     public void testGetAvailableProcessorsWithScale() {
         int actual = EnvUtil.getAvailableProcessors(0.5);

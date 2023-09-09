@@ -27,19 +27,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author <a href="mailto:liuyixiao0821@gmail.com">liuyixiao</a>
  */
 public class TopnCounterMetricsContainer {
-    
-    /**
-     * dataId -> count.
-     */
+
+    /** dataId -> count. */
     private ConcurrentHashMap<String, AtomicInteger> dataCount;
-    
-    /**
-     * count -> node.
-     */
+
+    /** count -> node. */
     private ConcurrentHashMap<Integer, DoublyLinkedNode> specifiedCountDataIdSets;
-    
+
     private DoublyLinkedNode dummyHead;
-    
+
     public TopnCounterMetricsContainer() {
         dataCount = new ConcurrentHashMap<>();
         specifiedCountDataIdSets = new ConcurrentHashMap<>();
@@ -47,7 +43,7 @@ public class TopnCounterMetricsContainer {
         dummyHead.next = new DoublyLinkedNode(null, dummyHead, new ConcurrentHashSet<>(), 0);
         specifiedCountDataIdSets.put(0, dummyHead.next);
     }
-    
+
     public List<Pair<String, AtomicInteger>> getTopNCounter(int n) {
         List<Pair<String, AtomicInteger>> topnCounter = new LinkedList<>();
         DoublyLinkedNode curr = dummyHead;
@@ -63,7 +59,7 @@ public class TopnCounterMetricsContainer {
         }
         return topnCounter;
     }
-    
+
     /**
      * put(String dataId, 0).
      *
@@ -72,10 +68,10 @@ public class TopnCounterMetricsContainer {
     public void put(String dataId) {
         put(dataId, 0);
     }
-    
+
     /**
-     * put new data into container, if already exist, update it.
-     * this method could be slow (O(N)), most time use increment.
+     * put new data into container, if already exist, update it. this method could be slow (O(N)),
+     * most time use increment.
      *
      * @param dataId data name or data key.
      * @param count data count.
@@ -89,7 +85,7 @@ public class TopnCounterMetricsContainer {
         }
         insertIntoSpecifiedCountDataIdSets(dataId, count);
     }
-    
+
     /**
      * get data count by dataId.
      *
@@ -102,7 +98,7 @@ public class TopnCounterMetricsContainer {
         }
         return -1;
     }
-    
+
     /**
      * increment the count of dataId.
      *
@@ -118,7 +114,8 @@ public class TopnCounterMetricsContainer {
             insertIntoSpecifiedCountDataIdSets(dataId, prev);
         } else {
             // prev.count > newCount
-            DoublyLinkedNode newNode = new DoublyLinkedNode(prev.next, prev, new ConcurrentHashSet<>(), newCount);
+            DoublyLinkedNode newNode =
+                    new DoublyLinkedNode(prev.next, prev, new ConcurrentHashSet<>(), newCount);
             if (prev.next != null) {
                 prev.next.prev = newNode;
             }
@@ -127,7 +124,7 @@ public class TopnCounterMetricsContainer {
             specifiedCountDataIdSets.put(newCount, newNode);
         }
     }
-    
+
     /**
      * remove data.
      *
@@ -141,17 +138,15 @@ public class TopnCounterMetricsContainer {
         }
         return null;
     }
-    
-    /**
-     * remove all data.
-     */
+
+    /** remove all data. */
     public void removeAll() {
         for (String dataId : dataCount.keySet()) {
             removeFromSpecifiedCountDataIdSets(dataId);
         }
         dataCount.clear();
     }
-    
+
     private DoublyLinkedNode removeFromSpecifiedCountDataIdSets(String dataId) {
         int count = dataCount.get(dataId).get();
         DoublyLinkedNode node = specifiedCountDataIdSets.get(count);
@@ -166,7 +161,7 @@ public class TopnCounterMetricsContainer {
         }
         return node.prev;
     }
-    
+
     private void insertIntoSpecifiedCountDataIdSets(String dataId, int count) {
         if (specifiedCountDataIdSets.containsKey(count)) {
             specifiedCountDataIdSets.get(count).dataSet.add(dataId);
@@ -179,7 +174,8 @@ public class TopnCounterMetricsContainer {
                     prev = prev.next;
                 }
             }
-            DoublyLinkedNode newNode = new DoublyLinkedNode(prev.next, prev, new ConcurrentHashSet<>(), count);
+            DoublyLinkedNode newNode =
+                    new DoublyLinkedNode(prev.next, prev, new ConcurrentHashSet<>(), count);
             if (prev.next != null) {
                 prev.next.prev = newNode;
             }
@@ -188,26 +184,30 @@ public class TopnCounterMetricsContainer {
             specifiedCountDataIdSets.put(count, newNode);
         }
     }
-    
+
     private void insertIntoSpecifiedCountDataIdSets(String dataId, DoublyLinkedNode targetSet) {
         targetSet.dataSet.add(dataId);
     }
-    
+
     private boolean isDummyHead(DoublyLinkedNode node) {
         return node.count == -1;
     }
-    
+
     private class DoublyLinkedNode {
-        
+
         public DoublyLinkedNode next;
-        
+
         public DoublyLinkedNode prev;
-        
+
         public ConcurrentHashSet<String> dataSet;
-        
+
         public int count;
-        
-        public DoublyLinkedNode(DoublyLinkedNode next, DoublyLinkedNode prev, ConcurrentHashSet<String> dataSet, int count) {
+
+        public DoublyLinkedNode(
+                DoublyLinkedNode next,
+                DoublyLinkedNode prev,
+                ConcurrentHashSet<String> dataSet,
+                int count) {
             this.next = next;
             this.prev = prev;
             this.dataSet = dataSet;

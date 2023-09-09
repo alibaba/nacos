@@ -20,7 +20,7 @@ import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 
 public class ExceptionMockModuleStateBuilder implements ModuleStateBuilder {
-    
+
     @Override
     public ModuleState build() {
         throw new RuntimeException("test");

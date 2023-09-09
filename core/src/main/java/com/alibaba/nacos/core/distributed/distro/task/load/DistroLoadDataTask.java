@@ -26,7 +26,6 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -37,26 +36,29 @@ import java.util.concurrent.TimeUnit;
  * @author xiweng.yy
  */
 public class DistroLoadDataTask implements Runnable {
-    
+
     private final ServerMemberManager memberManager;
-    
+
     private final DistroComponentHolder distroComponentHolder;
-    
+
     private final DistroConfig distroConfig;
-    
+
     private final DistroCallback loadCallback;
-    
+
     private final Map<String, Boolean> loadCompletedMap;
-    
-    public DistroLoadDataTask(ServerMemberManager memberManager, DistroComponentHolder distroComponentHolder,
-            DistroConfig distroConfig, DistroCallback loadCallback) {
+
+    public DistroLoadDataTask(
+            ServerMemberManager memberManager,
+            DistroComponentHolder distroComponentHolder,
+            DistroConfig distroConfig,
+            DistroCallback loadCallback) {
         this.memberManager = memberManager;
         this.distroComponentHolder = distroComponentHolder;
         this.distroConfig = distroConfig;
         this.loadCallback = loadCallback;
         loadCompletedMap = new HashMap<>(1);
     }
-    
+
     @Override
     public void run() {
         try {
@@ -72,7 +74,7 @@ public class DistroLoadDataTask implements Runnable {
             Loggers.DISTRO.error("[DISTRO-INIT] load snapshot data failed. ", e);
         }
     }
-    
+
     private void load() throws Exception {
         while (memberManager.allMembersWithoutSelf().isEmpty()) {
             Loggers.DISTRO.info("[DISTRO-INIT] waiting server list init...");
@@ -88,42 +90,58 @@ public class DistroLoadDataTask implements Runnable {
             }
         }
     }
-    
+
     private boolean loadAllDataSnapshotFromRemote(String resourceType) {
-        DistroTransportAgent transportAgent = distroComponentHolder.findTransportAgent(resourceType);
+        DistroTransportAgent transportAgent =
+                distroComponentHolder.findTransportAgent(resourceType);
         DistroDataProcessor dataProcessor = distroComponentHolder.findDataProcessor(resourceType);
         if (null == transportAgent || null == dataProcessor) {
-            Loggers.DISTRO.warn("[DISTRO-INIT] Can't find component for type {}, transportAgent: {}, dataProcessor: {}",
-                    resourceType, transportAgent, dataProcessor);
+            Loggers.DISTRO.warn(
+                    "[DISTRO-INIT] Can't find component for type {}, transportAgent: {}, dataProcessor: {}",
+                    resourceType,
+                    transportAgent,
+                    dataProcessor);
             return false;
         }
         for (Member each : memberManager.allMembersWithoutSelf()) {
             long startTime = System.currentTimeMillis();
             try {
-                Loggers.DISTRO.info("[DISTRO-INIT] load snapshot {} from {}", resourceType, each.getAddress());
+                Loggers.DISTRO.info(
+                        "[DISTRO-INIT] load snapshot {} from {}", resourceType, each.getAddress());
                 DistroData distroData = transportAgent.getDatumSnapshot(each.getAddress());
-                Loggers.DISTRO.info("[DISTRO-INIT] it took {} ms to load snapshot {} from {} and snapshot size is {}.",
-                        System.currentTimeMillis() - startTime, resourceType, each.getAddress(),
+                Loggers.DISTRO.info(
+                        "[DISTRO-INIT] it took {} ms to load snapshot {} from {} and snapshot size is {}.",
+                        System.currentTimeMillis() - startTime,
+                        resourceType,
+                        each.getAddress(),
                         getDistroDataLength(distroData));
                 boolean result = dataProcessor.processSnapshot(distroData);
-                Loggers.DISTRO
-                        .info("[DISTRO-INIT] load snapshot {} from {} result: {}", resourceType, each.getAddress(),
-                                result);
+                Loggers.DISTRO.info(
+                        "[DISTRO-INIT] load snapshot {} from {} result: {}",
+                        resourceType,
+                        each.getAddress(),
+                        result);
                 if (result) {
                     distroComponentHolder.findDataStorage(resourceType).finishInitial();
                     return true;
                 }
             } catch (Exception e) {
-                Loggers.DISTRO.error("[DISTRO-INIT] load snapshot {} from {} failed.", resourceType, each.getAddress(), e);
+                Loggers.DISTRO.error(
+                        "[DISTRO-INIT] load snapshot {} from {} failed.",
+                        resourceType,
+                        each.getAddress(),
+                        e);
             }
         }
         return false;
     }
-    
+
     private static int getDistroDataLength(DistroData distroData) {
-        return distroData != null && distroData.getContent() != null ? distroData.getContent().length : 0;
+        return distroData != null && distroData.getContent() != null
+                ? distroData.getContent().length
+                : 0;
     }
-    
+
     private boolean checkCompleted() {
         if (distroComponentHolder.getDataStorageTypes().size() != loadCompletedMap.size()) {
             return false;

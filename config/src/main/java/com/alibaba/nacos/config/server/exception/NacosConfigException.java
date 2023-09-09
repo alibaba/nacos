@@ -22,23 +22,25 @@ package com.alibaba.nacos.config.server.exception;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class NacosConfigException extends RuntimeException {
-    
-    public NacosConfigException() {
-    }
-    
+
+    public NacosConfigException() {}
+
     public NacosConfigException(String message) {
         super(message);
     }
-    
+
     public NacosConfigException(String message, Throwable cause) {
         super(message, cause);
     }
-    
+
     public NacosConfigException(Throwable cause) {
         super(cause);
     }
-    
-    public NacosConfigException(String message, Throwable cause, boolean enableSuppression,
+
+    public NacosConfigException(
+            String message,
+            Throwable cause,
+            boolean enableSuppression,
             boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
     }

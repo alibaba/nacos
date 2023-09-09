@@ -17,9 +17,6 @@
 
 package com.alibaba.nacos.core.code.condition;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import static com.alibaba.nacos.sys.env.Constants.REQUEST_PATH_SEPARATOR;
 
 /**
@@ -29,10 +26,11 @@ import static com.alibaba.nacos.sys.env.Constants.REQUEST_PATH_SEPARATOR;
  * @date 2021-07-06 16:37
  */
 public class PathRequestConditionTest {
-    
+
     @Test
     public void testPathRequestCondition() {
-        PathRequestCondition pathRequestCondition = new PathRequestCondition("method" + REQUEST_PATH_SEPARATOR + "path");
+        PathRequestCondition pathRequestCondition =
+                new PathRequestCondition("method" + REQUEST_PATH_SEPARATOR + "path");
         Assert.assertTrue(pathRequestCondition.toString().contains("path"));
     }
 }

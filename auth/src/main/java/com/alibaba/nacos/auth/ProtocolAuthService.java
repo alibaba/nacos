@@ -28,27 +28,25 @@ import com.alibaba.nacos.plugin.auth.exception.AccessException;
  * @author xiweng.yy
  */
 public interface ProtocolAuthService<R> {
-    
-    /**
-     * Init protocol auth service.
-     */
+
+    /** Init protocol auth service. */
     void initialize();
-    
+
     /**
      * Judgement whether enable auth feature according to secured information.
-     * <p>
-     *     configuration authEnabled in {@link com.alibaba.nacos.auth.config.AuthConfigs} is the main switch.
-     *     If authEnabled is {@code false}, this method and other follow methods should not be called.
      *
-     *     This method is only for plugin to judge whether auth this {@link Secured}.
-     *     For example, plugins can only auth for write action or only for naming type request.
-     * </p>
+     * <p>configuration authEnabled in {@link com.alibaba.nacos.auth.config.AuthConfigs} is the main
+     * switch. If authEnabled is {@code false}, this method and other follow methods should not be
+     * called.
+     *
+     * <p>This method is only for plugin to judge whether auth this {@link Secured}. For example,
+     * plugins can only auth for write action or only for naming type request.
      *
      * @param secured secured information
      * @return {@code true} if enable auth, otherwise {@code false}
      */
     boolean enableAuth(Secured secured);
-    
+
     /**
      * Parse resource from protocol request and secured annotation.
      *
@@ -57,7 +55,7 @@ public interface ProtocolAuthService<R> {
      * @return resource
      */
     Resource parseResource(R request, Secured secured);
-    
+
     /**
      * Parse identity context from protocol request.
      *
@@ -65,24 +63,26 @@ public interface ProtocolAuthService<R> {
      * @return identity context
      */
     IdentityContext parseIdentity(R request);
-    
+
     /**
      * Validate identity whether is legal.
      *
      * @param identityContext identity context
-     * @param resource        resource
+     * @param resource resource
      * @return {@code true} if legal, otherwise {@code false}
      * @throws AccessException exception during validating
      */
-    boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
-    
+    boolean validateIdentity(IdentityContext identityContext, Resource resource)
+            throws AccessException;
+
     /**
      * Validate identity whether had permission for the resource and action.
      *
      * @param identityContext identity context
-     * @param permission      permission include resource and action
+     * @param permission permission include resource and action
      * @return {@code true} if legal, otherwise {@code false}
      * @throws AccessException exception during validating
      */
-    boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException;
+    boolean validateAuthority(IdentityContext identityContext, Permission permission)
+            throws AccessException;
 }

@@ -33,7 +33,7 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration
 public class NacosConfigConfiguration {
-    
+
     @Bean
     public FilterRegistrationBean<NacosWebFilter> nacosWebFilterRegistration() {
         FilterRegistrationBean<NacosWebFilter> registration = new FilterRegistrationBean<>();
@@ -43,12 +43,12 @@ public class NacosConfigConfiguration {
         registration.setOrder(1);
         return registration;
     }
-    
+
     @Bean
     public NacosWebFilter nacosWebFilter() {
         return new NacosWebFilter();
     }
-    
+
     @Conditional(ConditionDistributedEmbedStorage.class)
     @Bean
     public FilterRegistrationBean<CircuitFilter> transferToLeaderRegistration() {
@@ -59,16 +59,17 @@ public class NacosConfigConfiguration {
         registration.setOrder(6);
         return registration;
     }
-    
+
     @Conditional(ConditionDistributedEmbedStorage.class)
     @Bean
     public CircuitFilter transferToLeader() {
         return new CircuitFilter();
     }
-    
+
     @Bean
     public FilterRegistrationBean<ConfigParamCheckFilter> configParamCheckFilterRegistration() {
-        FilterRegistrationBean<ConfigParamCheckFilter> registration = new FilterRegistrationBean<>();
+        FilterRegistrationBean<ConfigParamCheckFilter> registration =
+                new FilterRegistrationBean<>();
         registration.setFilter(configParamCheckFilter());
         registration.addUrlPatterns("/v1/cs/*");
         registration.addUrlPatterns("/v2/cs/*");
@@ -76,7 +77,7 @@ public class NacosConfigConfiguration {
         registration.setOrder(8);
         return registration;
     }
-    
+
     @Bean
     public ConfigParamCheckFilter configParamCheckFilter() {
         return new ConfigParamCheckFilter();

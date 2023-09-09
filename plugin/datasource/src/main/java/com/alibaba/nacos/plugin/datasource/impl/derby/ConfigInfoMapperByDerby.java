@@ -25,7 +25,6 @@ import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,87 +34,113 @@ import java.util.List;
  * The derby implementation of ConfigInfoMapper.
  *
  * @author hyx
- **/
-
+ */
 public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInfoMapper {
-    
+
     @Override
     public MapperResult findConfigInfoByAppFetchRows(MapperContext context) {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
-        
+
         String sql =
                 "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND "
-                        + "app_name = ?" + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-                        + context.getPageSize() + " ROWS ONLY";
-        
+                        + "app_name = ?"
+                        + " OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY";
+
         return new MapperResult(sql, CollectionUtils.list(tenantId, appName));
     }
-    
+
     @Override
     public MapperResult getTenantIdList(MapperContext context) {
-        
+
         return new MapperResult(
-                "SELECT tenant_id FROM config_info WHERE tenant_id != '" + NamespaceUtil.getNamespaceDefaultId()
-                        + "' GROUP BY tenant_id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-                        + context.getPageSize() + " ROWS ONLY", Collections.emptyList());
+                "SELECT tenant_id FROM config_info WHERE tenant_id != '"
+                        + NamespaceUtil.getNamespaceDefaultId()
+                        + "' GROUP BY tenant_id OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY",
+                Collections.emptyList());
     }
-    
+
     @Override
     public MapperResult getGroupIdList(MapperContext context) {
-        
+
         return new MapperResult(
-                "SELECT group_id FROM config_info WHERE tenant_id ='" + NamespaceUtil.getNamespaceDefaultId()
-                        + "' GROUP BY group_id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-                        + context.getPageSize() + " ROWS ONLY", Collections.emptyList());
+                "SELECT group_id FROM config_info WHERE tenant_id ='"
+                        + NamespaceUtil.getNamespaceDefaultId()
+                        + "' GROUP BY group_id OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY",
+                Collections.emptyList());
     }
-    
+
     @Override
     public MapperResult findAllConfigKey(MapperContext context) {
-        
-        String sql = " SELECT data_id,group_id,app_name FROM "
-                + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET " + context.getStartRow()
-                + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY ) "
-                + "g, config_info t  WHERE g.id = t.id ";
-        return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID)));
+
+        String sql =
+                " SELECT data_id,group_id,app_name FROM "
+                        + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY ) "
+                        + "g, config_info t  WHERE g.id = t.id ";
+        return new MapperResult(
+                sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
-    
+
     @Override
     public MapperResult findAllConfigInfoBaseFetchRows(MapperContext context) {
-        
+
         return new MapperResult(
-                "SELECT t.id,data_id,group_id,content,md5 " + " FROM ( SELECT id FROM config_info ORDER BY id OFFSET "
-                        + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY )  "
-                        + " g, config_info t WHERE g.id = t.id ", Collections.emptyList());
+                "SELECT t.id,data_id,group_id,content,md5 "
+                        + " FROM ( SELECT id FROM config_info ORDER BY id OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY )  "
+                        + " g, config_info t WHERE g.id = t.id ",
+                Collections.emptyList());
     }
-    
+
     @Override
     public MapperResult findAllConfigInfoFragment(MapperContext context) {
-        
+
         return new MapperResult(
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info WHERE id > ? "
-                        + "ORDER BY id ASC OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-                        + context.getPageSize() + " ROWS ONLY",
+                        + "ORDER BY id ASC OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.ID)));
     }
-    
+
     @Override
     public MapperResult findChangeConfigFetchRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
-        
+
         final Timestamp startTime = (Timestamp) context.getWhereParameter(FieldConstant.START_TIME);
         final Timestamp endTime = (Timestamp) context.getWhereParameter(FieldConstant.END_TIME);
-        
+
         List<Object> paramList = new ArrayList<>();
-        
-        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM"
-                + " config_info WHERE ";
+
+        final String sqlFetchRows =
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM"
+                        + " config_info WHERE ";
         String where = " 1=1 ";
-        
+
         if (!StringUtils.isBlank(dataId)) {
             where += " AND data_id LIKE ? ";
             paramList.add(dataId);
@@ -124,12 +149,12 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
             where += " AND group_id LIKE ? ";
             paramList.add(group);
         }
-        
+
         if (!StringUtils.isBlank(tenant)) {
             where += " AND tenant_id = ? ";
             paramList.add(tenant);
         }
-        
+
         if (!StringUtils.isBlank(appName)) {
             where += " AND app_name = ? ";
             paramList.add(appName);
@@ -143,26 +168,38 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
             paramList.add(endTime);
         }
         return new MapperResult(
-                sqlFetchRows + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
-                        + " ROWS ONLY", paramList);
+                sqlFetchRows
+                        + where
+                        + " OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY",
+                paramList);
     }
-    
+
     @Override
     public MapperResult listGroupKeyMd5ByPageFetchRows(MapperContext context) {
-        
-        return new MapperResult(" SELECT t.id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified "
-                + "FROM ( SELECT id FROM config_info ORDER BY id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-                + context.getPageSize() + " ROWS ONLY ) g, config_info t WHERE g.id = t.id", Collections.emptyList());
+
+        return new MapperResult(
+                " SELECT t.id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified "
+                        + "FROM ( SELECT id FROM config_info ORDER BY id OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY ) g, config_info t WHERE g.id = t.id",
+                Collections.emptyList());
     }
-    
+
     @Override
     public MapperResult findConfigInfoBaseLikeFetchRows(MapperContext context) {
         final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
-        
+
         List<Object> paramList = new ArrayList<>();
-        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE ";
+        final String sqlFetchRows =
+                "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE ";
         String where = " 1=1 AND tenant_id='" + NamespaceUtil.getNamespaceDefaultId() + "' ";
         if (!StringUtils.isBlank(dataId)) {
             where += " AND data_id LIKE ? ";
@@ -177,10 +214,16 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
             paramList.add(tenant);
         }
         return new MapperResult(
-                sqlFetchRows + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
-                        + " ROWS ONLY", paramList);
+                sqlFetchRows
+                        + where
+                        + " OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY",
+                paramList);
     }
-    
+
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
@@ -188,10 +231,11 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
-        
+
         List<Object> paramList = new ArrayList<>();
-        
-        final String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type FROM config_info";
+
+        final String sql =
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,type FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
         paramList.add(tenantId);
@@ -203,7 +247,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
             where.append(" AND group_id=? ");
             paramList.add(group);
         }
-        
+
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND app_name=? ");
             paramList.add(appName);
@@ -213,31 +257,44 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
             paramList.add(content);
         }
         return new MapperResult(
-                sql + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
-                        + " ROWS ONLY", paramList);
+                sql
+                        + where
+                        + " OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY",
+                paramList);
     }
-    
+
     @Override
     public MapperResult findConfigInfoBaseByGroupFetchRows(MapperContext context) {
         return new MapperResult(
-                "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? " + "AND tenant_id=?" + " OFFSET "
-                        + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY",
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.GROUP_ID),
+                "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? "
+                        + "AND tenant_id=?"
+                        + " OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
+                        + " ROWS ONLY",
+                CollectionUtils.list(
+                        context.getWhereParameter(FieldConstant.GROUP_ID),
                         context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
-    
+
     @Override
     public MapperResult findConfigInfoLike4PageFetchRows(MapperContext context) {
-        
+
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
-        
+
         List<Object> paramList = new ArrayList<>();
-        
-        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info";
+
+        final String sqlFetchRows =
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id LIKE ? ");
         paramList.add(tenantId);
@@ -258,20 +315,28 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
             paramList.add(content);
         }
         String sql =
-                sqlFetchRows + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
+                sqlFetchRows
+                        + where
+                        + " OFFSET "
+                        + context.getStartRow()
+                        + " ROWS FETCH NEXT "
+                        + context.getPageSize()
                         + " ROWS ONLY";
         return new MapperResult(sql, paramList);
     }
-    
+
     @Override
     public MapperResult findAllConfigInfoFetchRows(MapperContext context) {
-        return new MapperResult(" SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
-                + " FROM ( SELECT id FROM config_info  WHERE tenant_id LIKE ? ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY )"
-                + " g, config_info t  WHERE g.id = t.id ",
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID), context.getStartRow(),
+        return new MapperResult(
+                " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
+                        + " FROM ( SELECT id FROM config_info  WHERE tenant_id LIKE ? ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY )"
+                        + " g, config_info t  WHERE g.id = t.id ",
+                CollectionUtils.list(
+                        context.getWhereParameter(FieldConstant.TENANT_ID),
+                        context.getStartRow(),
                         context.getPageSize()));
     }
-    
+
     @Override
     public String getDataSource() {
         return DataSourceConstant.DERBY;
@@ -282,8 +347,11 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
         String sql =
                 "SELECT id, data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info WHERE "
                         + "gmt_modified >= ? and id > ? order by id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
-                context.getWhereParameter(FieldConstant.LAST_MAX_ID),
-                context.getWhereParameter(FieldConstant.PAGE_SIZE)));
+        return new MapperResult(
+                sql,
+                CollectionUtils.list(
+                        context.getWhereParameter(FieldConstant.START_TIME),
+                        context.getWhereParameter(FieldConstant.LAST_MAX_ID),
+                        context.getWhereParameter(FieldConstant.PAGE_SIZE)));
     }
 }

@@ -28,41 +28,49 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
 public class InternetAddressUtil {
-    
-    private InternetAddressUtil() {
-    }
-    
-    public static final boolean PREFER_IPV6_ADDRESSES = Boolean.parseBoolean(
-            System.getProperty("java.net.preferIPv6Addresses"));
-    
+
+    private InternetAddressUtil() {}
+
+    public static final boolean PREFER_IPV6_ADDRESSES =
+            Boolean.parseBoolean(System.getProperty("java.net.preferIPv6Addresses"));
+
     public static final String IPV6_START_MARK = "[";
-    
+
     public static final String IPV6_END_MARK = "]";
-    
+
     public static final String ILLEGAL_IP_PREFIX = "illegal ip: ";
-    
+
     public static final String IP_PORT_SPLITER = ":";
-    
+
     public static final int SPLIT_IP_PORT_RESULT_LENGTH = 2;
-    
+
     public static final String PERCENT_SIGN_IN_IPV6 = "%";
-    
+
     public static final String LOCAL_HOST = "localhost";
-    
+
     private static final String LOCAL_HOST_IP_V4 = "127.0.0.1";
-    
+
     private static final String LOCAL_HOST_IP_V6 = "[::1]";
-    
+
     private static final String CHECK_OK = "ok";
-    
-    private static final Pattern DOMAIN_PATTERN = Pattern.compile(
-            "[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
-    
+
+    private static final Pattern DOMAIN_PATTERN =
+            Pattern.compile("[a-zA-Z0-9][-a-zA-Z0-9]{0,62}(\\.[a-zA-Z0-9][-a-zA-Z0-9]{0,62})+\\.?");
+
     private static final String IPV4_TUPLE = "(25[0-5]|2[0-4][0-9]|1[0-9][0-9]|[1-9][0-9]|[0-9])";
-    
-    private static final Pattern IPV4_PATTERN = Pattern.compile(
-            "(?<!\\d)" + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "\\." + IPV4_TUPLE + "(?!\\d)");
-    
+
+    private static final Pattern IPV4_PATTERN =
+            Pattern.compile(
+                    "(?<!\\d)"
+                            + IPV4_TUPLE
+                            + "\\."
+                            + IPV4_TUPLE
+                            + "\\."
+                            + IPV4_TUPLE
+                            + "\\."
+                            + IPV4_TUPLE
+                            + "(?!\\d)");
+
     /**
      * get localhost ip.
      *
@@ -74,7 +82,7 @@ public class InternetAddressUtil {
         }
         return LOCAL_HOST_IP_V4;
     }
-    
+
     /**
      * check whether the ip address is IPv4.
      *
@@ -84,7 +92,7 @@ public class InternetAddressUtil {
     public static boolean isIPv4(String addr) {
         return InetAddressValidator.isIPv4Address(addr);
     }
-    
+
     /**
      * check whether the ip address is IPv6.
      *
@@ -94,7 +102,7 @@ public class InternetAddressUtil {
     public static boolean isIPv6(String addr) {
         return InetAddressValidator.isIPv6Address(removeBrackets(addr));
     }
-    
+
     /**
      * check whether the str is ip address (IPv4 or IPv6).
      *
@@ -104,7 +112,7 @@ public class InternetAddressUtil {
     public static boolean isIP(String addr) {
         return isIPv4(addr) || isIPv6(addr);
     }
-    
+
     /**
      * Check if the address contains a port. 2020/9/3 14:53
      *
@@ -114,10 +122,10 @@ public class InternetAddressUtil {
     public static boolean containsPort(String address) {
         return splitIPPortStr(address).length == SPLIT_IP_PORT_RESULT_LENGTH;
     }
-    
+
     /**
-     * Split IP and port strings, support IPv4 and IPv6, IP in IPv6 must be enclosed with []. Illegal IP will get
-     * abnormal results.
+     * Split IP and port strings, support IPv4 and IPv6, IP in IPv6 must be enclosed with [].
+     * Illegal IP will get abnormal results.
      *
      * @param str ip and port string
      * @return java.lang.String[]
@@ -141,7 +149,7 @@ public class InternetAddressUtil {
         }
         return serverAddrArr;
     }
-    
+
     /**
      * Resolve the IP from the string containing the IP address.
      *
@@ -153,8 +161,8 @@ public class InternetAddressUtil {
             return "";
         }
         String result = "";
-        if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK) && StringUtils.containsIgnoreCase(str,
-                IPV6_END_MARK)) {
+        if (StringUtils.containsIgnoreCase(str, IPV6_START_MARK)
+                && StringUtils.containsIgnoreCase(str, IPV6_END_MARK)) {
             result = str.substring(str.indexOf(IPV6_START_MARK), (str.indexOf(IPV6_END_MARK) + 1));
             if (!isIPv6(result)) {
                 result = "";
@@ -167,7 +175,7 @@ public class InternetAddressUtil {
         }
         return result;
     }
-    
+
     /**
      * Check ips.
      *
@@ -175,9 +183,9 @@ public class InternetAddressUtil {
      * @return 'ok' if check passed, otherwise illegal ip
      */
     public static String checkIPs(String... ips) {
-        
+
         if (ips == null || ips.length == 0) {
-            
+
             return CHECK_OK;
         }
         // illegal response
@@ -188,14 +196,14 @@ public class InternetAddressUtil {
             }
             illegalResponse.append(ip).append(",");
         }
-        
+
         if (illegalResponse.length() == 0) {
             return CHECK_OK;
         }
-        
+
         return ILLEGAL_IP_PREFIX + illegalResponse.substring(0, illegalResponse.length() - 1);
     }
-    
+
     /**
      * Check whether checkIPs result is "ok".
      *
@@ -205,7 +213,7 @@ public class InternetAddressUtil {
     public static boolean checkOK(String checkIPsResult) {
         return CHECK_OK.equals(checkIPsResult);
     }
-    
+
     /**
      * remove brackets "[]".
      *
@@ -218,7 +226,7 @@ public class InternetAddressUtil {
         }
         return str.replaceAll("[\\[\\]]", "");
     }
-    
+
     /**
      * judge str is right domain.（Check only rule）.
      *
@@ -234,7 +242,7 @@ public class InternetAddressUtil {
         }
         return DOMAIN_PATTERN.matcher(str).matches();
     }
-    
+
     /**
      * convert ip address to int.
      *
@@ -248,7 +256,7 @@ public class InternetAddressUtil {
             throw new IllegalArgumentException(ip + " is invalid IP");
         }
     }
-    
+
     /**
      * convert byte array to int.
      *
@@ -262,7 +270,7 @@ public class InternetAddressUtil {
         addr |= ((bytes[0] << 24) & 0xFF000000);
         return addr;
     }
-    
+
     /**
      * convert ip address to byte array.
      *

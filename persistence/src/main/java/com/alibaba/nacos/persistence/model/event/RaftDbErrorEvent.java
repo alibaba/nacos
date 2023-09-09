@@ -24,18 +24,17 @@ import com.alibaba.nacos.common.notify.SlowEvent;
  * @author <a href="mailto:liaochunyhm@live.com">liaochuntao</a>
  */
 public class RaftDbErrorEvent extends SlowEvent {
-    
+
     private static final long serialVersionUID = 101591819161802336L;
-    
+
     private Throwable ex;
-    
-    public RaftDbErrorEvent() {
-    }
-    
+
+    public RaftDbErrorEvent() {}
+
     public RaftDbErrorEvent(Throwable ex) {
         this.ex = ex;
     }
-    
+
     public Throwable getEx() {
         return ex;
     }

@@ -23,21 +23,19 @@ package com.alibaba.nacos.api.remote.response;
  * @version $Id: ServerCheckResponse.java, v 0.1 2020年07月22日 8:37 PM liuzunfei Exp $
  */
 public class ServerCheckResponse extends Response {
-    
+
     private String connectionId;
-    
-    public ServerCheckResponse() {
-    
-    }
-    
+
+    public ServerCheckResponse() {}
+
     public ServerCheckResponse(String connectionId) {
         this.connectionId = connectionId;
     }
-    
+
     public String getConnectionId() {
         return connectionId;
     }
-    
+
     public void setConnectionId(String connectionId) {
         this.connectionId = connectionId;
     }

@@ -20,12 +20,11 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * RpcClientFactory.to support multi client for different modules of usage.
@@ -34,11 +33,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version $Id: RpcClientFactory.java, v 0.1 2020年07月14日 3:41 PM liuzunfei Exp $
  */
 public class RpcClientFactory {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
-    
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
+
     private static final Map<String, RpcClient> CLIENT_MAP = new ConcurrentHashMap<>();
-    
+
     /**
      * get all client.
      *
@@ -47,7 +47,7 @@ public class RpcClientFactory {
     public static Set<Map.Entry<String, RpcClient>> getAllClientEntries() {
         return CLIENT_MAP.entrySet();
     }
-    
+
     /**
      * shut down client.
      *
@@ -59,113 +59,154 @@ public class RpcClientFactory {
             rpcClient.shutdown();
         }
     }
-    
+
     public static RpcClient getClient(String clientName) {
         return CLIENT_MAP.get(clientName);
     }
-    
+
     /**
      * create a rpc client.
      *
-     * @param clientName     client name.
+     * @param clientName client name.
      * @param connectionType client type.
      * @return rpc client.
      */
-    public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
+    public static RpcClient createClient(
+            String clientName, ConnectionType connectionType, Map<String, String> labels) {
         return createClient(clientName, connectionType, null, null, labels);
     }
 
-    public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
-                                         RpcClientTlsConfig tlsConfig) {
+    public static RpcClient createClient(
+            String clientName,
+            ConnectionType connectionType,
+            Map<String, String> labels,
+            RpcClientTlsConfig tlsConfig) {
         return createClient(clientName, connectionType, null, null, labels, tlsConfig);
-
     }
 
-    public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer
-            threadPoolCoreSize,
-                                         Integer threadPoolMaxSize, Map<String, String> labels) {
-        return createClient(clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, null);
+    public static RpcClient createClient(
+            String clientName,
+            ConnectionType connectionType,
+            Integer threadPoolCoreSize,
+            Integer threadPoolMaxSize,
+            Map<String, String> labels) {
+        return createClient(
+                clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
 
     /**
      * create a rpc client.
      *
-     * @param clientName         client name.
-     * @param connectionType     client type.
+     * @param clientName client name.
+     * @param connectionType client type.
      * @param threadPoolCoreSize grpc thread pool core size
-     * @param threadPoolMaxSize  grpc thread pool max size
-     * @param tlsConfig          tlsconfig
+     * @param threadPoolMaxSize grpc thread pool max size
+     * @param tlsConfig tlsconfig
      * @return rpc client.
      */
-    public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
-                                         Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+    public static RpcClient createClient(
+            String clientName,
+            ConnectionType connectionType,
+            Integer threadPoolCoreSize,
+            Integer threadPoolMaxSize,
+            Map<String, String> labels,
+            RpcClientTlsConfig tlsConfig) {
 
         if (!ConnectionType.GRPC.equals(connectionType)) {
-            throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
+            throw new UnsupportedOperationException(
+                    "unsupported connection type :" + connectionType.getType());
         }
-        
-        return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
-            LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
-            try {
-                return new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
-            } catch (Throwable throwable) {
-                LOGGER.error("Error to init GrpcSdkClient for client name :" + clientName, throwable);
-                throw throwable;
-            }
-            
-        });
+
+        return CLIENT_MAP.computeIfAbsent(
+                clientName,
+                clientNameInner -> {
+                    LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
+                    try {
+                        return new GrpcSdkClient(
+                                clientNameInner,
+                                threadPoolCoreSize,
+                                threadPoolMaxSize,
+                                labels,
+                                tlsConfig);
+                    } catch (Throwable throwable) {
+                        LOGGER.error(
+                                "Error to init GrpcSdkClient for client name :" + clientName,
+                                throwable);
+                        throw throwable;
+                    }
+                });
     }
-    
+
     /**
      * create a rpc client.
      *
-     * @param clientName     client name.
+     * @param clientName client name.
      * @param connectionType client type.
      * @return rpc client.
      */
-    public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-                                                Map<String, String> labels) {
+    public static RpcClient createClusterClient(
+            String clientName, ConnectionType connectionType, Map<String, String> labels) {
         return createClusterClient(clientName, connectionType, null, null, labels);
     }
 
-    public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-                                                Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+    public static RpcClient createClusterClient(
+            String clientName,
+            ConnectionType connectionType,
+            Map<String, String> labels,
+            RpcClientTlsConfig tlsConfig) {
         return createClusterClient(clientName, connectionType, null, null, labels, tlsConfig);
     }
 
     /**
      * create a rpc client.
      *
-     * @param clientName         client name.
-     * @param connectionType     client type.
+     * @param clientName client name.
+     * @param connectionType client type.
      * @param threadPoolCoreSize grpc thread pool core size
-     * @param threadPoolMaxSize  grpc thread pool max size
+     * @param threadPoolMaxSize grpc thread pool max size
      * @return rpc client.
      */
-    public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-                                                Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
-        return createClusterClient(clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, null);
+    public static RpcClient createClusterClient(
+            String clientName,
+            ConnectionType connectionType,
+            Integer threadPoolCoreSize,
+            Integer threadPoolMaxSize,
+            Map<String, String> labels) {
+        return createClusterClient(
+                clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
 
     /**
      * createClusterClient.
+     *
      * @param clientName client name.
      * @param connectionType connectionType.
      * @param threadPoolCoreSize coreSize.
      * @param threadPoolMaxSize threadPoolSize.
-     * @param labels  tables.
+     * @param labels tables.
      * @param tlsConfig tlsConfig.
      * @return
      */
-
-    public static RpcClient createClusterClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
-                                                Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+    public static RpcClient createClusterClient(
+            String clientName,
+            ConnectionType connectionType,
+            Integer threadPoolCoreSize,
+            Integer threadPoolMaxSize,
+            Map<String, String> labels,
+            RpcClientTlsConfig tlsConfig) {
         if (!ConnectionType.GRPC.equals(connectionType)) {
-            throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
+            throw new UnsupportedOperationException(
+                    "unsupported connection type :" + connectionType.getType());
         }
 
-        return CLIENT_MAP.computeIfAbsent(clientName,
-                clientNameInner -> new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize,
-                        labels, tlsConfig));
+        return CLIENT_MAP.computeIfAbsent(
+                clientName,
+                clientNameInner ->
+                        new GrpcClusterClient(
+                                clientNameInner,
+                                threadPoolCoreSize,
+                                threadPoolMaxSize,
+                                labels,
+                                tlsConfig));
     }
 }

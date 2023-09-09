@@ -16,23 +16,21 @@
 
 package com.alibaba.nacos.api.config.remote.response;
 
-import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ConfigPublishResponseTest extends BasedConfigResponseTest {
-    
+
     ConfigPublishResponse configPublishResponse;
-    
+
     @Before
     public void before() {
         configPublishResponse = ConfigPublishResponse.buildSuccessResponse();
         requestId = injectResponseUuId(configPublishResponse);
     }
-    
+
     @Override
     @Test
     public void testSerializeSuccessResponse() throws JsonProcessingException {
@@ -42,11 +40,12 @@ public class ConfigPublishResponseTest extends BasedConfigResponseTest {
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.SUCCESS.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));
     }
-    
+
     @Override
     @Test
     public void testSerializeFailResponse() throws JsonProcessingException {
-        ConfigPublishResponse configPublishResponse = ConfigPublishResponse.buildFailResponse(500, "Fail");
+        ConfigPublishResponse configPublishResponse =
+                ConfigPublishResponse.buildFailResponse(500, "Fail");
         String json = mapper.writeValueAsString(configPublishResponse);
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.FAIL.getCode()));
         assertTrue(json.contains("\"errorCode\":500"));

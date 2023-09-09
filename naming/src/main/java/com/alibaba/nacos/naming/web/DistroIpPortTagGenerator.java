@@ -29,13 +29,13 @@ import com.alibaba.nacos.naming.healthcheck.RsInfo;
  * @author xiweng.yy
  */
 public class DistroIpPortTagGenerator implements DistroTagGenerator {
-    
+
     private static final String PARAMETER_BEAT = "beat";
-    
+
     private static final String PARAMETER_IP = "ip";
-    
+
     private static final String PARAMETER_PORT = "port";
-    
+
     @Override
     public String getResponsibleTag(ReuseHttpServletRequest request) {
         String ip = request.getParameter(PARAMETER_IP);

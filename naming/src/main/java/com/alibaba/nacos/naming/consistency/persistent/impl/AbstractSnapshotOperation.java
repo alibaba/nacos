@@ -20,9 +20,8 @@ import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.SnapshotOperation;
 import com.alibaba.nacos.consistency.snapshot.Writer;
 import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
-import com.alibaba.nacos.sys.utils.TimerContext;
 import com.alibaba.nacos.naming.misc.Loggers;
-
+import com.alibaba.nacos.sys.utils.TimerContext;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
@@ -33,34 +32,38 @@ import java.util.function.BiConsumer;
  * @author xiweng.yy
  */
 public abstract class AbstractSnapshotOperation implements SnapshotOperation {
-    
+
     protected static final String CHECK_SUM_KEY = "checksum";
-    
+
     private final ReentrantReadWriteLock.WriteLock writeLock;
-    
+
     public AbstractSnapshotOperation(ReentrantReadWriteLock lock) {
         this.writeLock = lock.writeLock();
     }
-    
+
     @Override
     public void onSnapshotSave(Writer writer, BiConsumer<Boolean, Throwable> callFinally) {
-        RaftExecutor.doSnapshot(() -> {
-            TimerContext.start(getSnapshotSaveTag());
-            final Lock lock = writeLock;
-            lock.lock();
-            try {
-                callFinally.accept(writeSnapshot(writer), null);
-            } catch (Throwable t) {
-                Loggers.RAFT.error("Fail to compress snapshot, path={}, file list={}.", writer.getPath(),
-                        writer.listFiles(), t);
-                callFinally.accept(false, t);
-            } finally {
-                lock.unlock();
-                TimerContext.end(getSnapshotSaveTag(), Loggers.RAFT);
-            }
-        });
+        RaftExecutor.doSnapshot(
+                () -> {
+                    TimerContext.start(getSnapshotSaveTag());
+                    final Lock lock = writeLock;
+                    lock.lock();
+                    try {
+                        callFinally.accept(writeSnapshot(writer), null);
+                    } catch (Throwable t) {
+                        Loggers.RAFT.error(
+                                "Fail to compress snapshot, path={}, file list={}.",
+                                writer.getPath(),
+                                writer.listFiles(),
+                                t);
+                        callFinally.accept(false, t);
+                    } finally {
+                        lock.unlock();
+                        TimerContext.end(getSnapshotSaveTag(), Loggers.RAFT);
+                    }
+                });
     }
-    
+
     @Override
     public boolean onSnapshotLoad(Reader reader) {
         TimerContext.start(getSnapshotLoadTag());
@@ -69,15 +72,18 @@ public abstract class AbstractSnapshotOperation implements SnapshotOperation {
         try {
             return readSnapshot(reader);
         } catch (final Throwable t) {
-            Loggers.RAFT
-                    .error("Fail to load snapshot, path={}, file list={}.", reader.getPath(), reader.listFiles(), t);
+            Loggers.RAFT.error(
+                    "Fail to load snapshot, path={}, file list={}.",
+                    reader.getPath(),
+                    reader.listFiles(),
+                    t);
             return false;
         } finally {
             lock.unlock();
             TimerContext.end(getSnapshotLoadTag(), Loggers.RAFT);
         }
     }
-    
+
     /**
      * Write snapshot.
      *
@@ -86,7 +92,7 @@ public abstract class AbstractSnapshotOperation implements SnapshotOperation {
      * @throws Exception any exception during writing
      */
     protected abstract boolean writeSnapshot(Writer writer) throws Exception;
-    
+
     /**
      * Read snapshot.
      *
@@ -95,14 +101,14 @@ public abstract class AbstractSnapshotOperation implements SnapshotOperation {
      * @throws Exception any exception during reading
      */
     protected abstract boolean readSnapshot(Reader reader) throws Exception;
-    
+
     /**
      * Get snapshot save tag. It will be used to see time metric time context.
      *
      * @return snapshot save tag
      */
     protected abstract String getSnapshotSaveTag();
-    
+
     /**
      * Get snapshot load tag. It will be used to see time metric time context.
      *

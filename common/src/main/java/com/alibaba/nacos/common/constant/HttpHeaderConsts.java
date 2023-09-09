@@ -22,7 +22,7 @@ package com.alibaba.nacos.common.constant;
  * @author ly
  */
 public interface HttpHeaderConsts {
-    
+
     String CLIENT_VERSION_HEADER = "Client-Version";
     String USER_AGENT_HEADER = "User-Agent";
     String REQUEST_SOURCE_HEADER = "Request-Source";
@@ -36,5 +36,4 @@ public interface HttpHeaderConsts {
     String REQUEST_MODULE = "Request-Module";
     String APP_FILED = "app";
     String CLIENT_IP = "clientIp";
-    
 }

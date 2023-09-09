@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class TimeoutUtilsTest {
-    
+
     @Test
     public void testAddTotalTime() {
         TimeoutUtils timeoutUtils = new TimeoutUtils(10, 1);
@@ -28,7 +25,7 @@ public class TimeoutUtilsTest {
         timeoutUtils.addTotalTime(1);
         Assert.assertEquals(1L, timeoutUtils.getTotalTime().get());
     }
-    
+
     @Test
     public void testIsTimeout() {
         TimeoutUtils timeoutUtils = new TimeoutUtils(10, 1);
@@ -38,7 +35,7 @@ public class TimeoutUtilsTest {
         timeoutUtils.addTotalTime(10);
         Assert.assertTrue(timeoutUtils.isTimeout());
     }
-    
+
     @Test
     public void testResetTotalTime() {
         TimeoutUtils timeoutUtils = new TimeoutUtils(10, -1);

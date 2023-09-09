@@ -18,13 +18,12 @@ package com.alibaba.nacos.plugin.trace;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Nacos trace event subscriber manager.
@@ -32,27 +31,30 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author xiweng.yy
  */
 public class NacosTracePluginManager {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosTracePluginManager.class);
-    
+
     private static final NacosTracePluginManager INSTANCE = new NacosTracePluginManager();
-    
+
     private final Map<String, NacosTraceSubscriber> traceSubscribers;
-    
+
     private NacosTracePluginManager() {
         this.traceSubscribers = new ConcurrentHashMap<>();
-        Collection<NacosTraceSubscriber> plugins = NacosServiceLoader.load(NacosTraceSubscriber.class);
+        Collection<NacosTraceSubscriber> plugins =
+                NacosServiceLoader.load(NacosTraceSubscriber.class);
         for (NacosTraceSubscriber each : plugins) {
             this.traceSubscribers.put(each.getName(), each);
-            LOGGER.info("[TracePluginManager] Load NacosTraceSubscriber({}) name({}) successfully.", each.getClass(),
+            LOGGER.info(
+                    "[TracePluginManager] Load NacosTraceSubscriber({}) name({}) successfully.",
+                    each.getClass(),
                     each.getName());
         }
     }
-    
+
     public static NacosTracePluginManager getInstance() {
         return INSTANCE;
     }
-    
+
     public Collection<NacosTraceSubscriber> getAllTraceSubscribers() {
         return new HashSet<>(traceSubscribers.values());
     }

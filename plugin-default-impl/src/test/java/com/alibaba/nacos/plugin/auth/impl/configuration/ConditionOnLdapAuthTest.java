@@ -17,9 +17,6 @@
 package com.alibaba.nacos.plugin.auth.impl.configuration;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -28,31 +25,26 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * ConditionOnLdapAuth test.
- * @ClassName: ConditionOnLdapAuthTest
- * @Author: ChenHao26
- * @Date: 2022/8/16 17:03
+ * ConditionOnLdapAuth test. @ClassName: ConditionOnLdapAuthTest @Author: ChenHao26 @Date: 2022/8/16
+ * 17:03
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ConditionOnLdapAuthTest {
-    
+
     private ConditionOnLdapAuth conditionOnLdapAuth;
-    
-    @Mock
-    private ConditionContext conditionContext;
-    
-    @Mock
-    private AnnotatedTypeMetadata annotatedTypeMetadata;
-    
-    @Mock
-    private static ConfigurableEnvironment environment;
-    
+
+    @Mock private ConditionContext conditionContext;
+
+    @Mock private AnnotatedTypeMetadata annotatedTypeMetadata;
+
+    @Mock private static ConfigurableEnvironment environment;
+
     @Before
     public void setup() {
         conditionOnLdapAuth = new ConditionOnLdapAuth();
         EnvUtil.setEnvironment(environment);
     }
-    
+
     @Test
     public void matches() {
         boolean matches = conditionOnLdapAuth.matches(conditionContext, annotatedTypeMetadata);

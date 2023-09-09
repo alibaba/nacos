@@ -22,15 +22,15 @@ package com.alibaba.nacos.api.config.filter;
  * @author Nacos
  */
 public interface IConfigRequest {
-    
+
     /**
      * put param.
      *
-     * @param key   key
+     * @param key key
      * @param value value
      */
     void putParameter(String key, Object value);
-    
+
     /**
      * get param.
      *
@@ -38,12 +38,11 @@ public interface IConfigRequest {
      * @return value
      */
     Object getParameter(String key);
-    
+
     /**
      * get config context.
      *
      * @return {@link IConfigContext}
      */
     IConfigContext getConfigContext();
-    
 }

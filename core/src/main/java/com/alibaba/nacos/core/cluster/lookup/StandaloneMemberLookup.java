@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.AbstractMemberLookup;
 import com.alibaba.nacos.core.cluster.MemberUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
-
 import java.util.Collections;
 
 /**
@@ -29,18 +28,16 @@ import java.util.Collections;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class StandaloneMemberLookup extends AbstractMemberLookup {
-    
+
     @Override
     public void doStart() {
         String url = EnvUtil.getLocalAddress();
         afterLookup(MemberUtil.readServerConf(Collections.singletonList(url)));
     }
-    
+
     @Override
-    protected void doDestroy() throws NacosException {
-    
-    }
-    
+    protected void doDestroy() throws NacosException {}
+
     @Override
     public boolean useAddressServer() {
         return false;

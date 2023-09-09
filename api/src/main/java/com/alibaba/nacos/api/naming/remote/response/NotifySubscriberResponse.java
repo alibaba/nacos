@@ -20,9 +20,8 @@ import com.alibaba.nacos.api.remote.response.Response;
 
 /**
  * response for notify service subscribe.
+ *
  * @author liuzunfei
  * @version $Id: NotifySubscriberResponse.java, v 0.1 2020年08月06日 5:28 PM liuzunfei Exp $
  */
-public class NotifySubscriberResponse extends Response {
-    
-}
+public class NotifySubscriberResponse extends Response {}

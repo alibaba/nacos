@@ -18,16 +18,13 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 
 public class ConcurrentDiskUtilTest {
-    
+
     @Test
     public void testReadAndWrite() throws IOException {
         File tempFile = File.createTempFile("aaa", "bbb");
@@ -38,7 +35,7 @@ public class ConcurrentDiskUtilTest {
         String actualContent = ConcurrentDiskUtil.getFileContent(fileName, charset);
         Assert.assertEquals(content, actualContent);
     }
-    
+
     @Test
     public void testReadAndWrite2() throws IOException {
         File tempFile = File.createTempFile("aaa", "bbb");
@@ -48,13 +45,12 @@ public class ConcurrentDiskUtilTest {
         String actualContent = ConcurrentDiskUtil.getFileContent(tempFile, charset);
         Assert.assertEquals(content, actualContent);
     }
-    
+
     @Test
     public void testByteBufferToString() throws IOException {
         String msg = "test buff to string";
         ByteBuffer buff = ByteBuffer.wrap(msg.getBytes(StandardCharsets.UTF_8));
         String actual = ConcurrentDiskUtil.byteBufferToString(buff, "UTF-8");
         Assert.assertEquals(msg, actual);
-        
     }
 }

@@ -29,19 +29,17 @@ import com.google.protobuf.Message;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ProtoMessageUtil {
-    
-    /**
-     * should be different from field tags of ReadRequest or WriteQuest.
-     */
+
+    /** should be different from field tags of ReadRequest or WriteQuest. */
     public static final int REQUEST_TYPE_FIELD_TAG = 7 << 3;
-    
+
     public static final int REQUEST_TYPE_READ = 1;
-    
+
     public static final int REQUEST_TYPE_WRITE = 2;
-    
+
     /**
-     * Converts the byte array to a specific Protobuf object.
-     * Internally, the protobuf new and old objects are compatible.
+     * Converts the byte array to a specific Protobuf object. Internally, the protobuf new and old
+     * objects are compatible.
      *
      * @param bytes An array of bytes
      * @return Message
@@ -59,23 +57,24 @@ public class ProtoMessageUtil {
             }
         } catch (Throwable ignore) {
         }
-        
+
         // old consistency entity, will be @Deprecated in future
         try {
             GetRequest request = GetRequest.parseFrom(bytes);
             return convertToReadRequest(request);
         } catch (Throwable ignore) {
         }
-        
+
         try {
             Log log = Log.parseFrom(bytes);
             return convertToWriteRequest(log);
         } catch (Throwable ignore) {
         }
-        
-        throw new ConsistencyException("The current array cannot be serialized to the corresponding object");
+
+        throw new ConsistencyException(
+                "The current array cannot be serialized to the corresponding object");
     }
-    
+
     /**
      * convert Log to WriteRequest.
      *
@@ -83,14 +82,16 @@ public class ProtoMessageUtil {
      * @return {@link WriteRequest}
      */
     public static WriteRequest convertToWriteRequest(Log log) {
-        return WriteRequest.newBuilder().setKey(log.getKey()).setGroup(log.getGroup())
+        return WriteRequest.newBuilder()
+                .setKey(log.getKey())
+                .setGroup(log.getGroup())
                 .setData(log.getData())
                 .setType(log.getType())
                 .setOperation(log.getOperation())
                 .putAllExtendInfo(log.getExtendInfoMap())
                 .build();
     }
-    
+
     /**
      * convert Log to ReadRequest.
      *

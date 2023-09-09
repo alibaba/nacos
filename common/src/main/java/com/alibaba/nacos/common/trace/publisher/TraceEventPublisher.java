@@ -22,15 +22,14 @@ import com.alibaba.nacos.common.notify.ShardedEventPublisher;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Event publisher for trace event.
@@ -41,11 +40,13 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
 
     private static final String THREAD_NAME = "trace.publisher-";
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.trace.publisher");
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger("com.alibaba.nacos.common.trace.publisher");
 
     private static final int DEFAULT_WAIT_TIME = 60;
 
-    private final Map<Class<? extends Event>, Set<Subscriber<? extends Event>>> subscribes = new ConcurrentHashMap<>();
+    private final Map<Class<? extends Event>, Set<Subscriber<? extends Event>>> subscribes =
+            new ConcurrentHashMap<>();
 
     private volatile boolean initialized = false;
 
@@ -91,10 +92,12 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
 
     @Override
     public void removeSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
-        subscribes.computeIfPresent(subscribeType, (inputType, subscribers) -> {
-            subscribers.remove(subscriber);
-            return subscribers.isEmpty() ? null : subscribers;
-        });
+        subscribes.computeIfPresent(
+                subscribeType,
+                (inputType, subscribers) -> {
+                    subscribers.remove(subscriber);
+                    return subscribers.isEmpty() ? null : subscribers;
+                });
     }
 
     @Override
@@ -102,7 +105,10 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
         checkIsStart();
         boolean success = this.queue.offer(event);
         if (!success) {
-            LOGGER.warn("Trace Event Publish failed, event : {}, publish queue size : {}", event, currentEventSize());
+            LOGGER.warn(
+                    "Trace Event Publish failed, event : {}, publish queue size : {}",
+                    event,
+                    currentEventSize());
         }
         return true;
     }
@@ -137,8 +143,10 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
             waitSubscriberForInit();
             handleEvents();
         } catch (Exception e) {
-            LOGGER.error("Trace Event Publisher {}, stop to handle event due to unexpected exception: ",
-                    this.publisherName, e);
+            LOGGER.error(
+                    "Trace Event Publisher {}, stop to handle event due to unexpected exception: ",
+                    this.publisherName,
+                    e);
         }
     }
 
@@ -159,7 +167,10 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
                 final Event event = queue.take();
                 handleEvent(event);
             } catch (InterruptedException e) {
-                LOGGER.warn("Trace Event Publisher {} take event from queue failed:", this.publisherName, e);
+                LOGGER.warn(
+                        "Trace Event Publisher {} take event from queue failed:",
+                        this.publisherName,
+                        e);
                 // set the interrupted flag
                 Thread.currentThread().interrupt();
             }
@@ -171,7 +182,8 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
         Set<Subscriber<? extends Event>> subscribers = subscribes.get(eventType);
         if (null == subscribers) {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug("[NotifyCenter] No subscribers for slow event {}", eventType.getName());
+                LOGGER.debug(
+                        "[NotifyCenter] No subscribers for slow event {}", eventType.getName());
             }
             return;
         }
@@ -187,7 +199,8 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
     }
 
     public String getStatus() {
-        return String.format("Publisher %-30s: shutdown=%5s, queue=%7d/%-7d", publisherName, shutdown,
-                currentEventSize(), queueMaxSize);
+        return String.format(
+                "Publisher %-30s: shutdown=%5s, queue=%7d/%-7d",
+                publisherName, shutdown, currentEventSize(), queueMaxSize);
     }
 }

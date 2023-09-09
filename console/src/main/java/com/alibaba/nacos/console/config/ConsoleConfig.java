@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.console.filter.XssFilter;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import java.time.ZoneId;
+import javax.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
@@ -28,9 +30,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
-
-import javax.annotation.PostConstruct;
-import java.time.ZoneId;
 
 /**
  * Console config.
@@ -43,16 +42,13 @@ import java.time.ZoneId;
 @EnableScheduling
 @PropertySource("/application.properties")
 public class ConsoleConfig {
-    
-    @Autowired
-    private ControllerMethodsCache methodsCache;
-    
+
+    @Autowired private ControllerMethodsCache methodsCache;
+
     @Value("${nacos.console.ui.enabled:true}")
     private boolean consoleUiEnabled;
-    
-    /**
-     * Init.
-     */
+
+    /** Init. */
     @PostConstruct
     public void init() {
         methodsCache.initClassMethod("com.alibaba.nacos.core.controller");
@@ -60,7 +56,7 @@ public class ConsoleConfig {
         methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");
         methodsCache.initClassMethod("com.alibaba.nacos.console.controller");
     }
-    
+
     @Bean
     public CorsFilter corsFilter() {
         CorsConfiguration config = new CorsConfiguration();
@@ -73,17 +69,18 @@ public class ConsoleConfig {
         source.registerCorsConfiguration("/**", config);
         return new CorsFilter(source);
     }
-    
+
     @Bean
     public XssFilter xssFilter() {
         return new XssFilter();
     }
-    
+
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer jacksonObjectMapperCustomization() {
-        return jacksonObjectMapperBuilder -> jacksonObjectMapperBuilder.timeZone(ZoneId.systemDefault().toString());
+        return jacksonObjectMapperBuilder ->
+                jacksonObjectMapperBuilder.timeZone(ZoneId.systemDefault().toString());
     }
-    
+
     public boolean isConsoleUiEnabled() {
         return consoleUiEnabled;
     }

@@ -20,9 +20,7 @@ import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
  * Event of server list changed for naming.
- * 
- * @author gengtuo.ygt
- * on 2021/6/7
+ *
+ * @author gengtuo.ygt on 2021/6/7
  */
-public class ServerListChangedEvent extends SlowEvent {
-}
+public class ServerListChangedEvent extends SlowEvent {}

@@ -25,15 +25,15 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
  * @version $Id: RemoteException.java, v 0.1 2020年07月22日 7:24 PM liuzunfei Exp $
  */
 public class RemoteException extends NacosRuntimeException {
-    
+
     public RemoteException(int errorCode) {
         super(errorCode);
     }
-    
+
     public RemoteException(int errorCode, String msg) {
         super(errorCode, msg);
     }
-    
+
     public RemoteException(int errorCode, Throwable throwable) {
         super(errorCode, throwable);
     }

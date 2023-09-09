@@ -16,41 +16,35 @@
 
 package com.alibaba.nacos.auth.config;
 
-import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.context.ConfigurableApplicationContext;
-
 import static com.alibaba.nacos.auth.config.AuthModuleStateBuilder.AUTH_ENABLED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.when;
 
+import com.alibaba.nacos.sys.module.ModuleState;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
+
 @RunWith(MockitoJUnitRunner.class)
 public class AuthModuleStateBuilderTest {
-    
-    @Mock
-    private ConfigurableApplicationContext context;
-    
-    @Mock
-    private AuthConfigs authConfigs;
-    
+
+    @Mock private ConfigurableApplicationContext context;
+
+    @Mock private AuthConfigs authConfigs;
+
     @Before
     public void setUp() throws Exception {
         when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
         ApplicationUtils.injectContext(context);
         when(authConfigs.getNacosAuthSystemType()).thenReturn("nacos");
     }
-    
+
     @After
-    public void tearDown() throws Exception {
-    }
-    
+    public void tearDown() throws Exception {}
+
     @Test
     public void testBuild() {
         ModuleState actual = new AuthModuleStateBuilder().build();

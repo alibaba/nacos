@@ -16,51 +16,47 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 public class MapUtilTest {
-    
+
     @Test
     public void testMap() {
         Map<Object, Object> map = new HashMap<Object, Object>();
-        
+
         MapUtil.putIfValNoNull(map, "key-1", null);
         Assert.assertFalse(map.containsKey("key-1"));
-        
+
         MapUtil.putIfValNoEmpty(map, "key-str", null);
         Assert.assertFalse(map.containsKey("key-str"));
-        
+
         MapUtil.putIfValNoEmpty(map, "key-str", "");
         Assert.assertFalse(map.containsKey("key-str"));
-        
+
         MapUtil.putIfValNoEmpty(map, "key-str", "1");
         Assert.assertTrue(map.containsKey("key-str"));
-        
+
         MapUtil.putIfValNoEmpty(map, "key-list", null);
         Assert.assertFalse(map.containsKey("key-list"));
-        
+
         MapUtil.putIfValNoEmpty(map, "key-list", Collections.emptyList());
         Assert.assertFalse(map.containsKey("key-list"));
-        
+
         MapUtil.putIfValNoEmpty(map, "key-list", Collections.singletonList(1));
         Assert.assertTrue(map.containsKey("key-list"));
-        
+
         MapUtil.putIfValNoEmpty(map, "key-map", null);
         Assert.assertFalse(map.containsKey("key-map"));
-        
+
         MapUtil.putIfValNoEmpty(map, "key-map", Collections.emptyMap());
         Assert.assertFalse(map.containsKey("key-map"));
-        
+
         Map<String, String> map1 = new HashMap<String, String>();
         map1.put("1123", "123");
-        
+
         MapUtil.putIfValNoEmpty(map, "key-map", map1);
         Assert.assertTrue(map.containsKey("key-map"));
     }
-    
 }

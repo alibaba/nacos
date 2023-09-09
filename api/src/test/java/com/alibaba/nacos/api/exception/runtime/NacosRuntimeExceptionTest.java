@@ -16,15 +16,14 @@
 
 package com.alibaba.nacos.api.exception.runtime;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.exception.NacosException;
+
 public class NacosRuntimeExceptionTest {
-    
+
     @Test
     public void testConstructorWithErrorCode() {
         NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM);
@@ -32,28 +31,31 @@ public class NacosRuntimeExceptionTest {
         assertNull(exception.getMessage());
         assertNull(exception.getCause());
     }
-    
+
     @Test
     public void testConstructorWithErrorCodeAndMsg() {
-        NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM, "test");
+        NacosRuntimeException exception =
+                new NacosRuntimeException(NacosException.INVALID_PARAM, "test");
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals("errCode: 400, errMsg: test ", exception.getMessage());
         assertNull(exception.getCause());
     }
-    
+
     @Test
     public void testConstructorWithErrorCodeAndCause() {
-        NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM,
-                new RuntimeException("test"));
+        NacosRuntimeException exception =
+                new NacosRuntimeException(
+                        NacosException.INVALID_PARAM, new RuntimeException("test"));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals("java.lang.RuntimeException: test", exception.getMessage());
         assertTrue(exception.getCause() instanceof RuntimeException);
     }
-    
+
     @Test
     public void testConstructorWithFull() {
-        NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM,
-                "test", new RuntimeException("cause test"));
+        NacosRuntimeException exception =
+                new NacosRuntimeException(
+                        NacosException.INVALID_PARAM, "test", new RuntimeException("cause test"));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals("errCode: 400, errMsg: test ", exception.getMessage());
         assertTrue(exception.getCause() instanceof RuntimeException);

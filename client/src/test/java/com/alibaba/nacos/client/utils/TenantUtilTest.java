@@ -18,18 +18,14 @@
 
 package com.alibaba.nacos.client.utils;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
-
 public class TenantUtilTest {
-    
+
     @After
     public void tearDown() {
         System.clearProperty("acm.namespace");
         System.clearProperty("ans.namespace");
     }
-    
+
     @Test
     public void testGetUserTenantForAcm() {
         String expect = "test";
@@ -37,7 +33,7 @@ public class TenantUtilTest {
         String actual = TenantUtil.getUserTenantForAcm();
         Assert.assertEquals(expect, actual);
     }
-    
+
     @Test
     public void testGetUserTenantForAns() {
         String expect = "test";
@@ -45,5 +41,4 @@ public class TenantUtilTest {
         String actual = TenantUtil.getUserTenantForAns();
         Assert.assertEquals(expect, actual);
     }
-    
 }

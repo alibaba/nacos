@@ -23,7 +23,7 @@ package com.alibaba.nacos.config.server.utils;
  * @version 1.0 2011/05/03
  */
 public class Protocol {
-    
+
     /**
      * fix the version number like 2.0.4(fix the version template like major.minor.bug-fix)
      *

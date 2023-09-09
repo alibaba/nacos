@@ -26,36 +26,39 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  * @author xiweng.yy
  */
 public class ClientConfig extends AbstractDynamicConfig {
-    
+
     private static final String NAMING_CLIENT = "NamingClient";
-    
+
     private static final ClientConfig INSTANCE = new ClientConfig();
-    
+
     private long clientExpiredTime = ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME;
-    
+
     private ClientConfig() {
         super(NAMING_CLIENT);
         resetConfig();
     }
-    
+
     public static ClientConfig getInstance() {
         return INSTANCE;
     }
-    
+
     public long getClientExpiredTime() {
         return clientExpiredTime;
     }
-    
+
     public void setClientExpiredTime(long clientExpiredTime) {
         this.clientExpiredTime = clientExpiredTime;
     }
-    
+
     @Override
     protected void getConfigFromEnv() {
-        clientExpiredTime = EnvUtil.getProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, Long.class,
-                ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME);
+        clientExpiredTime =
+                EnvUtil.getProperty(
+                        ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY,
+                        Long.class,
+                        ClientConstants.DEFAULT_CLIENT_EXPIRED_TIME);
     }
-    
+
     @Override
     protected String printConfig() {
         return "ClientConfig{" + "clientExpiredTime=" + clientExpiredTime + '}';

@@ -22,14 +22,13 @@ package com.alibaba.nacos.naming.interceptor;
  * @author xiweng.yy
  */
 public interface Interceptable {
-    
+
     /**
-     * If no {@link NacosNamingInterceptor} intercept this object, this method will be called to execute.
+     * If no {@link NacosNamingInterceptor} intercept this object, this method will be called to
+     * execute.
      */
     void passIntercept();
-    
-    /**
-     * If one {@link NacosNamingInterceptor} intercept this object, this method will be called.
-     */
+
+    /** If one {@link NacosNamingInterceptor} intercept this object, this method will be called. */
     void afterIntercept();
 }

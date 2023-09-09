@@ -21,6 +21,4 @@ package com.alibaba.nacos.plugin.control.ruleactivator;
  *
  * @author shiyiyue
  */
-public interface ExternalRuleStorage extends RuleStorage {
-
-}
+public interface ExternalRuleStorage extends RuleStorage {}

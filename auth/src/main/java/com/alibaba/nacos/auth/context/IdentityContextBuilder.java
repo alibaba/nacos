@@ -24,12 +24,12 @@ import com.alibaba.nacos.plugin.auth.api.IdentityContext;
  * @author wuyfee
  */
 public interface IdentityContextBuilder<T> {
-    
+
     /**
      * build identity context from request.
+     *
      * @param request user request
      * @return IdentityContext from request context
      */
     IdentityContext build(T request);
-    
 }

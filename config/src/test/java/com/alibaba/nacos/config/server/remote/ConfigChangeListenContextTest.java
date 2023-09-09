@@ -16,14 +16,10 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
-
 import java.util.Map;
 import java.util.Set;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigChangeListenContextTest {
@@ -60,10 +56,12 @@ public class ConfigChangeListenContextTest {
     @Test
     public void testClearContextForConnectionId() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId");
-        Map<String, String> connectionIdBefore = configChangeListenContext.getListenKeys("connectionId");
+        Map<String, String> connectionIdBefore =
+                configChangeListenContext.getListenKeys("connectionId");
         Assert.assertNotNull(connectionIdBefore);
         configChangeListenContext.clearContextForConnectionId("connectionId");
-        Map<String, String> connectionIdAfter = configChangeListenContext.getListenKeys("connectionId");
+        Map<String, String> connectionIdAfter =
+                configChangeListenContext.getListenKeys("connectionId");
         Assert.assertNull(connectionIdAfter);
     }
 
@@ -80,5 +78,4 @@ public class ConfigChangeListenContextTest {
         String listenKeyMd5 = configChangeListenContext.getListenKeyMd5("connectionId", "groupKey");
         Assert.assertEquals("md5", listenKeyMd5);
     }
-
 }

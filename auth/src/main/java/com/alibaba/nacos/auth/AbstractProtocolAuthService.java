@@ -27,7 +27,6 @@ import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
-
 import java.util.Optional;
 
 /**
@@ -38,45 +37,52 @@ import java.util.Optional;
  * @author xiweng.yy
  */
 public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthService<R> {
-    
+
     protected final AuthConfigs authConfigs;
-    
+
     protected AbstractProtocolAuthService(AuthConfigs authConfigs) {
         this.authConfigs = authConfigs;
     }
-    
+
     @Override
     public boolean enableAuth(Secured secured) {
-        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+        Optional<AuthPluginService> authPluginService =
+                AuthPluginManager.getInstance()
+                        .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().enableAuth(secured.action(), secured.signType());
         }
-        Loggers.AUTH.warn("Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
-                authConfigs.getNacosAuthSystemType(), Constants.Auth.NACOS_CORE_AUTH_ENABLED);
+        Loggers.AUTH.warn(
+                "Can't find auth plugin for type {}, please add plugin to classpath or set {} as false",
+                authConfigs.getNacosAuthSystemType(),
+                Constants.Auth.NACOS_CORE_AUTH_ENABLED);
         return false;
     }
-    
+
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
-        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+    public boolean validateIdentity(IdentityContext identityContext, Resource resource)
+            throws AccessException {
+        Optional<AuthPluginService> authPluginService =
+                AuthPluginManager.getInstance()
+                        .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateIdentity(identityContext, resource);
         }
         return true;
     }
-    
+
     @Override
-    public boolean validateAuthority(IdentityContext identityContext, Permission permission) throws AccessException {
-        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
-                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+    public boolean validateAuthority(IdentityContext identityContext, Permission permission)
+            throws AccessException {
+        Optional<AuthPluginService> authPluginService =
+                AuthPluginManager.getInstance()
+                        .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
             return authPluginService.get().validateAuthority(identityContext, permission);
         }
         return true;
     }
-    
+
     /**
      * Get resource from secured annotation specified resource.
      *
@@ -86,7 +92,7 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     protected Resource parseSpecifiedResource(Secured secured) {
         return new Resource(null, null, secured.resource(), SignType.SPECIFIED, null);
     }
-    
+
     /**
      * Parse resource by specified resource parser.
      *
@@ -98,8 +104,10 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
         try {
             return secured.parser().newInstance().parse(request, secured);
         } catch (Exception e) {
-            Loggers.AUTH.error("Use specified resource parser {} parse resource failed.",
-                    secured.parser().getCanonicalName(), e);
+            Loggers.AUTH.error(
+                    "Use specified resource parser {} parse resource failed.",
+                    secured.parser().getCanonicalName(),
+                    e);
             return Resource.EMPTY_RESOURCE;
         }
     }

@@ -22,14 +22,14 @@ package com.alibaba.nacos.client.auth.ram.identify;
  * @author Nacos
  */
 public interface SpasCredential {
-    
+
     /**
      * get AccessKey.
      *
      * @return AccessKey
      */
     String getAccessKey();
-    
+
     /**
      * get SecretKey.
      *

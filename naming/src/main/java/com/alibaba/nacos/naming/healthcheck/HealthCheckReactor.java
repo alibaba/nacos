@@ -21,7 +21,6 @@ import com.alibaba.nacos.naming.healthcheck.interceptor.HealthCheckTaskIntercept
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledFuture;
@@ -34,9 +33,9 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.ThreadPoolCreationRule")
 public class HealthCheckReactor {
-    
+
     private static Map<String, ScheduledFuture> futureMap = new ConcurrentHashMap<>();
-    
+
     /**
      * Schedule health check task for v2.
      *
@@ -45,9 +44,10 @@ public class HealthCheckReactor {
     public static void scheduleCheck(HealthCheckTaskV2 task) {
         task.setStartTime(System.currentTimeMillis());
         Runnable wrapperTask = new HealthCheckTaskInterceptWrapper(task);
-        GlobalExecutor.scheduleNamingHealth(wrapperTask, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
+        GlobalExecutor.scheduleNamingHealth(
+                wrapperTask, task.getCheckRtNormalized(), TimeUnit.MILLISECONDS);
     }
-    
+
     /**
      * Schedule client beat check task with a delay.
      *
@@ -55,12 +55,16 @@ public class HealthCheckReactor {
      */
     public static void scheduleCheck(BeatCheckTask task) {
         Runnable wrapperTask =
-                task instanceof NacosHealthCheckTask ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
+                task instanceof NacosHealthCheckTask
+                        ? new HealthCheckTaskInterceptWrapper((NacosHealthCheckTask) task)
                         : task;
-        futureMap.computeIfAbsent(task.taskKey(),
-                k -> GlobalExecutor.scheduleNamingHealth(wrapperTask, 5000, 5000, TimeUnit.MILLISECONDS));
+        futureMap.computeIfAbsent(
+                task.taskKey(),
+                k ->
+                        GlobalExecutor.scheduleNamingHealth(
+                                wrapperTask, 5000, 5000, TimeUnit.MILLISECONDS));
     }
-    
+
     /**
      * Cancel client beat check task.
      *
@@ -78,7 +82,7 @@ public class HealthCheckReactor {
             Loggers.EVT_LOG.error("[CANCEL-CHECK] cancel failed!", e);
         }
     }
-    
+
     /**
      * Schedule client beat check task without a delay.
      *

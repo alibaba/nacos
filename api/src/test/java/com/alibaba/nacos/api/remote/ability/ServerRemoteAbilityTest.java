@@ -16,44 +16,41 @@
 
 package com.alibaba.nacos.api.remote.ability;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 public class ServerRemoteAbilityTest {
-    
+
     private static ObjectMapper mapper;
-    
+
     private ServerRemoteAbility serverAbilities;
-    
+
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Before
     public void setUp() throws Exception {
         serverAbilities = new ServerRemoteAbility();
     }
-    
+
     @Test
     public void testSerialize() throws JsonProcessingException {
         serverAbilities = new ServerRemoteAbility();
         String json = mapper.writeValueAsString(serverAbilities);
         assertEquals("{\"supportRemoteConnection\":false,\"grpcReportEnabled\":true}", json);
     }
-    
+
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json = "{\"supportRemoteConnection\":true,\"grpcReportEnabled\":true}";
@@ -61,7 +58,7 @@ public class ServerRemoteAbilityTest {
         assertTrue(abilities.isSupportRemoteConnection());
         assertTrue(abilities.isGrpcReportEnabled());
     }
-    
+
     @Test
     public void testEqualsAndHashCode() {
         assertEquals(serverAbilities, serverAbilities);

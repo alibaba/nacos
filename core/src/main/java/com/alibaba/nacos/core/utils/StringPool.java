@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.utils;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,10 +28,13 @@ import java.util.concurrent.TimeUnit;
  * @version $Id: StringPool.java, v 0.1 2020年11月12日 3:05 PM liuzunfei Exp $
  */
 public class StringPool {
-    
-    private static Cache<String, String> groupKeyCache = CacheBuilder.newBuilder().maximumSize(5000000)
-            .expireAfterAccess(180, TimeUnit.SECONDS).build();
-    
+
+    private static Cache<String, String> groupKeyCache =
+            CacheBuilder.newBuilder()
+                    .maximumSize(5000000)
+                    .expireAfterAccess(180, TimeUnit.SECONDS)
+                    .build();
+
     /**
      * get singleton string value from the pool.
      *
@@ -48,16 +50,15 @@ public class StringPool {
             groupKeyCache.put(key, key);
             value = groupKeyCache.getIfPresent(key);
         }
-        
+
         return value == null ? key : value;
     }
-    
+
     public static long size() {
         return groupKeyCache.size();
     }
-    
+
     public static void remove(String key) {
         groupKeyCache.invalidate(key);
     }
-    
 }

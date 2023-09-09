@@ -16,19 +16,17 @@
 
 package com.alibaba.nacos.api.config.listener;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertNull;
 
 public class AbstractListenerTest {
-    
+
     @Test
     public void testGetExecutor() {
         // Default listener executor is null.
-        assertNull(new AbstractListener() {
-            @Override
-            public void receiveConfigInfo(String configInfo) {
-            }
-        }.getExecutor());
+        assertNull(
+                new AbstractListener() {
+                    @Override
+                    public void receiveConfigInfo(String configInfo) {}
+                }.getExecutor());
     }
 }

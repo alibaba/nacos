@@ -23,12 +23,11 @@ package com.alibaba.nacos.config.server.manager;
  */
 @SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public interface TaskManagerMBean {
-    
+
     /**
      * Get task info.
      *
      * @return info
      */
     String getTaskInfos();
-    
 }

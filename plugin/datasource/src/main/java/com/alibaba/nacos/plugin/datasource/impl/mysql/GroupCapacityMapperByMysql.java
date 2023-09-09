@@ -30,16 +30,18 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * @author lixiaoshuang
  */
 public class GroupCapacityMapperByMysql extends AbstractMapper implements GroupCapacityMapper {
-    
+
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
     }
-    
+
     @Override
     public MapperResult selectGroupInfoBySize(MapperContext context) {
         String sql = "SELECT id, group_id FROM group_capacity WHERE id > ? LIMIT ?";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
+        return new MapperResult(
+                sql,
+                CollectionUtils.list(
+                        context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
     }
 }
-

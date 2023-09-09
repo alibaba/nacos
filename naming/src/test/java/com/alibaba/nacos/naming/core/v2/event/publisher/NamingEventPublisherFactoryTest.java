@@ -16,49 +16,50 @@
 
 package com.alibaba.nacos.naming.core.v2.event.publisher;
 
-import com.alibaba.nacos.common.notify.EventPublisher;
-import com.alibaba.nacos.common.notify.NotifyCenter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.util.ReflectionUtils;
-
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+import com.alibaba.nacos.common.notify.EventPublisher;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.util.ReflectionUtils;
+
 public class NamingEventPublisherFactoryTest {
-    
+
     private Map<String, EventPublisher> originalEventPublisherMap;
-    
+
     @Before
     public void setUp() throws Exception {
         originalEventPublisherMap = new HashMap<>(NotifyCenter.getPublisherMap());
         NotifyCenter.getPublisherMap().clear();
         // Protect other unit test publisher affect this case.
-        Field field = ReflectionUtils.findField(NamingEventPublisherFactory.class, "publisher", Map.class);
+        Field field =
+                ReflectionUtils.findField(
+                        NamingEventPublisherFactory.class, "publisher", Map.class);
         field.setAccessible(true);
         Map map = (Map) field.get(NamingEventPublisherFactory.getInstance());
         map.clear();
     }
-    
+
     @After
     public void tearDown() throws Exception {
         NotifyCenter.getPublisherMap().clear();
         NotifyCenter.getPublisherMap().putAll(originalEventPublisherMap);
         originalEventPublisherMap = null;
     }
-    
+
     @Test
     public void testApply() {
         NamingEventPublisherFactory.getInstance().apply(TestEvent.TestEvent1.class, Byte.SIZE);
         NamingEventPublisherFactory.getInstance().apply(TestEvent.TestEvent2.class, Byte.SIZE);
         NamingEventPublisherFactory.getInstance().apply(TestEvent.class, Byte.SIZE);
-        String expectedStatus = "Naming event publisher statues:\n"
-                + "\tPublisher TestEvent                     : shutdown=false, queue=      0/8      \n";
-        assertThat(NamingEventPublisherFactory.getInstance().getAllPublisherStatues(), is(expectedStatus));
+        String expectedStatus =
+                "Naming event publisher statues:\n"
+                        + "\tPublisher TestEvent                     : shutdown=false, queue=      0/8      \n";
+        assertThat(
+                NamingEventPublisherFactory.getInstance().getAllPublisherStatues(),
+                is(expectedStatus));
     }
 }

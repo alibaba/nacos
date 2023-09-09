@@ -24,6 +24,4 @@ import com.alibaba.nacos.consistency.RequestProcessor;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @SuppressWarnings("all")
-public abstract class RequestProcessor4AP extends RequestProcessor {
-
-}
+public abstract class RequestProcessor4AP extends RequestProcessor {}

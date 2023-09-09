@@ -19,7 +19,6 @@ package com.alibaba.nacos.common.packagescan.resource;
 import com.alibaba.nacos.common.packagescan.util.ResourceUtils;
 import com.alibaba.nacos.common.utils.AbstractAssert;
 import com.alibaba.nacos.common.utils.StringUtils;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,10 +30,9 @@ import java.net.URL;
 import java.net.URLConnection;
 
 /**
- * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications
- * {@link Resource} implementation for {@code java.net.URL} locators.
- * Supports resolution as a {@code URL} and also as a {@code File} in
- * case of the {@code "file:"} protocol.
+ * Copy from https://github.com/spring-projects/spring-framework.git, with less modifications {@link
+ * Resource} implementation for {@code java.net.URL} locators. Supports resolution as a {@code URL}
+ * and also as a {@code File} in case of the {@code "file:"} protocol.
  *
  * @author Juergen Hoeller
  * @see URL
@@ -42,21 +40,13 @@ import java.net.URLConnection;
  */
 public class UrlResource extends AbstractFileResolvingResource {
 
-    /**
-     * Original URI, if available; used for URI and File access.
-     */
-
+    /** Original URI, if available; used for URI and File access. */
     private final URI uri;
 
-    /**
-     * Original URL, used for actual access.
-     */
+    /** Original URL, used for actual access. */
     private final URL url;
 
-    /**
-     * Cleaned URL (with normalized path), used for comparisons.
-     */
-
+    /** Cleaned URL (with normalized path), used for comparisons. */
     private volatile URL cleanedUrl;
 
     /**
@@ -104,10 +94,10 @@ public class UrlResource extends AbstractFileResolvingResource {
      *
      * <p>The given parts will automatically get encoded if necessary.
      *
-     * @param protocol the URL protocol to use (e.g. "jar" or "file" - without colon);
-     *                 also known as "scheme"
-     * @param location the location (e.g. the file path within that protocol);
-     *                 also known as "scheme-specific part"
+     * @param protocol the URL protocol to use (e.g. "jar" or "file" - without colon); also known as
+     *     "scheme"
+     * @param location the location (e.g. the file path within that protocol); also known as
+     *     "scheme-specific part"
      * @throws MalformedURLException if the given URL specification is not valid
      * @see URI#URI(String, String, String)
      */
@@ -120,16 +110,17 @@ public class UrlResource extends AbstractFileResolvingResource {
      *
      * <p>The given parts will automatically get encoded if necessary.
      *
-     * @param protocol the URL protocol to use (e.g. "jar" or "file" - without colon);
-     *                 also known as "scheme"
-     * @param location the location (e.g. the file path within that protocol);
-     *                 also known as "scheme-specific part"
-     * @param fragment the fragment within that location (e.g. anchor on an HTML page,
-     *                 as following after a "#" separator)
+     * @param protocol the URL protocol to use (e.g. "jar" or "file" - without colon); also known as
+     *     "scheme"
+     * @param location the location (e.g. the file path within that protocol); also known as
+     *     "scheme-specific part"
+     * @param fragment the fragment within that location (e.g. anchor on an HTML page, as following
+     *     after a "#" separator)
      * @throws MalformedURLException if the given URL specification is not valid
      * @see URI#URI(String, String, String)
      */
-    public UrlResource(String protocol, String location, String fragment) throws MalformedURLException {
+    public UrlResource(String protocol, String location, String fragment)
+            throws MalformedURLException {
         try {
             this.uri = new URI(protocol, location, fragment);
             this.url = this.uri.toURL();
@@ -143,7 +134,7 @@ public class UrlResource extends AbstractFileResolvingResource {
     /**
      * Determine a cleaned URL for the given original URL.
      *
-     * @param originalUrl  the original URL
+     * @param originalUrl the original URL
      * @param originalPath the original URL path
      * @return the cleaned URL (possibly the original URL as-is)
      * @see StringUtils#cleanPath
@@ -175,12 +166,11 @@ public class UrlResource extends AbstractFileResolvingResource {
         return cleanedUrl;
     }
 
-
     /**
      * This implementation opens an InputStream for the given URL.
      *
-     * <p>It sets the {@code useCaches} flag to {@code false},
-     * mainly to avoid jar file locking on Windows.
+     * <p>It sets the {@code useCaches} flag to {@code false}, mainly to avoid jar file locking on
+     * Windows.
      *
      * @see URL#openConnection()
      * @see URLConnection#setUseCaches(boolean)
@@ -201,18 +191,13 @@ public class UrlResource extends AbstractFileResolvingResource {
         }
     }
 
-    /**
-     * This implementation returns the underlying URL reference.
-     */
+    /** This implementation returns the underlying URL reference. */
     @Override
     public URL getUrl() {
         return this.url;
     }
 
-    /**
-     * This implementation returns the underlying URI directly,
-     * if possible.
-     */
+    /** This implementation returns the underlying URI directly, if possible. */
     @Override
     public URI getUri() throws IOException {
         if (this.uri != null) {
@@ -232,8 +217,8 @@ public class UrlResource extends AbstractFileResolvingResource {
     }
 
     /**
-     * This implementation returns a File reference for the underlying URL/URI,
-     * provided that it refers to a file in the file system.
+     * This implementation returns a File reference for the underlying URL/URI, provided that it
+     * refers to a file in the file system.
      *
      * @see ResourceUtils#getFile(URL, String)
      */
@@ -247,8 +232,8 @@ public class UrlResource extends AbstractFileResolvingResource {
     }
 
     /**
-     * This implementation creates a {@code UrlResource}, delegating to
-     * {@link #createRelativeUrl(String)} for adapting the relative path.
+     * This implementation creates a {@code UrlResource}, delegating to {@link
+     * #createRelativeUrl(String)} for adapting the relative path.
      *
      * @see #createRelativeUrl(String)
      */
@@ -258,9 +243,9 @@ public class UrlResource extends AbstractFileResolvingResource {
     }
 
     /**
-     * This delegate creates a {@code java.net.URL}, applying the given path
-     * relative to the path of the underlying URL of this resource descriptor.
-     * A leading slash will get dropped; a "#" symbol will get encoded.
+     * This delegate creates a {@code java.net.URL}, applying the given path relative to the path of
+     * the underlying URL of this resource descriptor. A leading slash will get dropped; a "#"
+     * symbol will get encoded.
      *
      * @see #createRelative(String)
      * @since 5.2
@@ -285,30 +270,23 @@ public class UrlResource extends AbstractFileResolvingResource {
         return StringUtils.getFilename(getCleanedUrl().getPath());
     }
 
-    /**
-     * This implementation returns a description that includes the URL.
-     */
+    /** This implementation returns a description that includes the URL. */
     @Override
     public String getDescription() {
         return "URL [" + this.url + "]";
     }
 
-
-    /**
-     * This implementation compares the underlying URL references.
-     */
+    /** This implementation compares the underlying URL references. */
     @Override
     public boolean equals(Object other) {
-        return (this == other || (other instanceof UrlResource
-                && getCleanedUrl().equals(((UrlResource) other).getCleanedUrl())));
+        return (this == other
+                || (other instanceof UrlResource
+                        && getCleanedUrl().equals(((UrlResource) other).getCleanedUrl())));
     }
 
-    /**
-     * This implementation returns the hash code of the underlying URL reference.
-     */
+    /** This implementation returns the hash code of the underlying URL reference. */
     @Override
     public int hashCode() {
         return getCleanedUrl().hashCode();
     }
-
 }

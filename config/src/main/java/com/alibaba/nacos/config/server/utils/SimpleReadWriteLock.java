@@ -22,16 +22,14 @@ package com.alibaba.nacos.config.server.utils;
  * @author Nacos
  */
 public class SimpleReadWriteLock {
-    
+
     /**
-     * Zero means no lock; Negative Numbers mean write locks; Positive Numbers mean read locks, and the numeric value
-     * represents the number of read locks.
+     * Zero means no lock; Negative Numbers mean write locks; Positive Numbers mean read locks, and
+     * the numeric value represents the number of read locks.
      */
     private int status = 0;
-    
-    /**
-     * Try read lock.
-     */
+
+    /** Try read lock. */
     public synchronized boolean tryReadLock() {
         if (isWriteLocked()) {
             return false;
@@ -40,10 +38,8 @@ public class SimpleReadWriteLock {
             return true;
         }
     }
-    
-    /**
-     * Release the read lock.
-     */
+
+    /** Release the read lock. */
     public synchronized void releaseReadLock() {
         // when status equals 0, it should not decrement to negative numbers
         if (status == 0) {
@@ -51,10 +47,8 @@ public class SimpleReadWriteLock {
         }
         status--;
     }
-    
-    /**
-     * Try write lock.
-     */
+
+    /** Try write lock. */
     public synchronized boolean tryWriteLock() {
         if (!isFree()) {
             return false;
@@ -63,17 +57,16 @@ public class SimpleReadWriteLock {
             return true;
         }
     }
-    
+
     public synchronized void releaseWriteLock() {
         status = 0;
     }
-    
+
     private boolean isWriteLocked() {
         return status < 0;
     }
-    
+
     private boolean isFree() {
         return status == 0;
     }
-
 }

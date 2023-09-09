@@ -23,42 +23,43 @@ import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.plugin.config.constants.ConfigChangeConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Configuration;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Configuration;
 
 /**
  * config change plugin configs.
  *
  * @author liyunfei
- **/
+ */
 @Configuration
 public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChangeConfigs.class);
-    
+
     private static final String PREFIX = ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX;
-    
+
     private Map<String, Properties> configPluginProperties = new HashMap<>();
-    
+
     public ConfigChangeConfigs() {
         NotifyCenter.registerSubscriber(this);
         refreshPluginProperties();
     }
-    
+
     private void refreshPluginProperties() {
         try {
             Map<String, Properties> newProperties = new HashMap<>(3);
-            Properties properties = PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
+            Properties properties =
+                    PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
             for (String each : properties.stringPropertyNames()) {
                 int typeIndex = each.indexOf('.');
                 String type = each.substring(0, typeIndex);
                 String subKey = each.substring(typeIndex + 1);
-                newProperties.computeIfAbsent(type, key -> new Properties())
+                newProperties
+                        .computeIfAbsent(type, key -> new Properties())
                         .setProperty(subKey, properties.getProperty(each));
             }
             configPluginProperties = newProperties;
@@ -66,7 +67,7 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
             LOGGER.warn("[ConfigChangeConfigs]Refresh config plugin properties failed ", e);
         }
     }
-    
+
     public Properties getPluginProperties(String configPluginType) {
         if (!configPluginProperties.containsKey(configPluginType)) {
             LOGGER.warn(
@@ -76,12 +77,12 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
         }
         return configPluginProperties.get(configPluginType);
     }
-    
+
     @Override
     public void onEvent(ServerConfigChangeEvent event) {
         refreshPluginProperties();
     }
-    
+
     @Override
     public Class<? extends Event> subscribeType() {
         return ServerConfigChangeEvent.class;

@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.core.v2.metadata;
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Map;
@@ -31,44 +30,47 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author xiweng.yy
  */
 public class ServiceMetadataSnapshotOperation extends AbstractMetadataSnapshotOperation {
-    
-    private static final String SNAPSHOT_SAVE = ServiceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE";
-    
-    private static final String SNAPSHOT_LOAD = ServiceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD";
-    
+
+    private static final String SNAPSHOT_SAVE =
+            ServiceMetadataSnapshotOperation.class.getSimpleName() + ".SAVE";
+
+    private static final String SNAPSHOT_LOAD =
+            ServiceMetadataSnapshotOperation.class.getSimpleName() + ".LOAD";
+
     private static final String SNAPSHOT_ARCHIVE = "service_metadata.zip";
-    
+
     private final NamingMetadataManager metadataManager;
-    
+
     private final Serializer serializer;
-    
-    public ServiceMetadataSnapshotOperation(NamingMetadataManager metadataManager, ReentrantReadWriteLock lock) {
+
+    public ServiceMetadataSnapshotOperation(
+            NamingMetadataManager metadataManager, ReentrantReadWriteLock lock) {
         super(lock);
         this.metadataManager = metadataManager;
         this.serializer = SerializeFactory.getDefault();
     }
-    
+
     @Override
     protected InputStream dumpSnapshot() {
         Map<Service, ServiceMetadata> snapshot = metadataManager.getServiceMetadataSnapshot();
         return new ByteArrayInputStream(serializer.serialize(snapshot));
     }
-    
+
     @Override
     protected void loadSnapshot(byte[] snapshotBytes) {
         metadataManager.loadServiceMetadataSnapshot(serializer.deserialize(snapshotBytes));
     }
-    
+
     @Override
     protected String getSnapshotArchive() {
         return SNAPSHOT_ARCHIVE;
     }
-    
+
     @Override
     protected String getSnapshotSaveTag() {
         return SNAPSHOT_SAVE;
     }
-    
+
     @Override
     protected String getSnapshotLoadTag() {
         return SNAPSHOT_LOAD;

@@ -17,51 +17,56 @@
 
 package com.alibaba.nacos.core.config;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.core.distributed.distro.DistroConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Map;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-
 /**
  * distro module state builder test.
+ *
  * @author 985492783@qq.com
  * @date 2023/4/7 23:51
  */
 public class DistroModuleStateBuilderTest {
-    
+
     private ConfigurableEnvironment environment;
-    
+
     @Before
     public void setUp() {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
     }
-    
+
     @Test
     public void testBuild() {
         ModuleState actual = new DistroModuleStateBuilder().build();
         Map<String, Object> states = actual.getStates();
         assertEquals(DistroConstants.DISTRO_MODULE, actual.getModuleName());
-        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS,
+        assertEquals(
+                DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS,
                 states.get(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS_STATE));
-        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS,
+        assertEquals(
+                DistroConstants.DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS,
                 states.get(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS_STATE));
-        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS,
+        assertEquals(
+                DistroConstants.DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS,
                 states.get(DistroConstants.DATA_SYNC_RETRY_DELAY_MILLISECONDS_STATE));
-        assertEquals(DistroConstants.DEFAULT_DATA_VERIFY_INTERVAL_MILLISECONDS,
+        assertEquals(
+                DistroConstants.DEFAULT_DATA_VERIFY_INTERVAL_MILLISECONDS,
                 states.get(DistroConstants.DATA_VERIFY_INTERVAL_MILLISECONDS_STATE));
-        assertEquals(DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS,
+        assertEquals(
+                DistroConstants.DEFAULT_DATA_VERIFY_TIMEOUT_MILLISECONDS,
                 states.get(DistroConstants.DATA_VERIFY_TIMEOUT_MILLISECONDS_STATE));
-        assertEquals(DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS,
+        assertEquals(
+                DistroConstants.DEFAULT_DATA_LOAD_RETRY_DELAY_MILLISECONDS,
                 states.get(DistroConstants.DATA_LOAD_RETRY_DELAY_MILLISECONDS_STATE));
-        assertEquals(DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS,
+        assertEquals(
+                DistroConstants.DEFAULT_DATA_LOAD_TIMEOUT_MILLISECONDS,
                 states.get(DistroConstants.DATA_LOAD_TIMEOUT_MILLISECONDS_STATE));
     }
 }

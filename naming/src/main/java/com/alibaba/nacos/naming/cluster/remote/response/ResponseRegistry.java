@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.cluster.remote.response;
 
 import com.alibaba.nacos.api.remote.Payload;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -27,15 +26,15 @@ import java.util.Set;
  * @author shiyiyue
  */
 public class ResponseRegistry {
-    
+
     private static Set<Class<? extends Payload>> payloads = getPayload();
-    
+
     private static Set<Class<? extends Payload>> getPayload() {
         HashSet<Class<? extends Payload>> payloads = new HashSet<>();
         payloads.add(DistroDataResponse.class);
         return payloads;
     }
-    
+
     public static final Set<Class<? extends Payload>> getPayloads() {
         return payloads;
     }

@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.naming;
 
+import static org.mockito.Mockito.doReturn;
+
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.UdpPushService;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Before;
-import org.junit.Rule;
+import java.lang.reflect.Field;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -32,55 +33,46 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
-import java.lang.reflect.Field;
-
-import static org.mockito.Mockito.doReturn;
-
 @RunWith(MockitoJUnitRunner.class)
 public abstract class BaseTest {
-    
+
     protected static final String TEST_CLUSTER_NAME = "test-cluster";
-    
+
     protected static final String TEST_SERVICE_NAME = "DEFAULT_GROUP@@test-service";
-    
+
     protected static final String TEST_GROUP_NAME = "test-group-name";
-    
+
     protected static final String TEST_NAMESPACE = "test-namespace";
-    
+
     protected static final String TEST_IP = "1.1.1.1";
-    
+
     protected static final String TEST_METADATA = "{\"label\":\"123\"}";
-    
-    protected static final String TEST_INSTANCE_INFO_LIST = "[{\"instanceId\":\"123\",\"ip\":\"1.1.1.1\","
-            + "\"port\":9870,\"weight\":2.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true"
-            + ",\"clusterName\":\"clusterName\",\"serviceName\":\"serviceName\",\"metadata\":{}}]";
-    
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-    
-    @Spy
-    protected ConfigurableApplicationContext context;
-    
-    @Mock
-    protected DistroMapper distroMapper;
-    
-    @Spy
-    protected SwitchDomain switchDomain;
-    
-    @Mock
-    protected UdpPushService pushService;
-    
-    @Spy
-    protected MockEnvironment environment;
-    
+
+    protected static final String TEST_INSTANCE_INFO_LIST =
+            "[{\"instanceId\":\"123\",\"ip\":\"1.1.1.1\","
+                    + "\"port\":9870,\"weight\":2.0,\"healthy\":true,\"enabled\":true,\"ephemeral\":true"
+                    + ",\"clusterName\":\"clusterName\",\"serviceName\":\"serviceName\",\"metadata\":{}}]";
+
+    @Rule public ExpectedException expectedException = ExpectedException.none();
+
+    @Spy protected ConfigurableApplicationContext context;
+
+    @Mock protected DistroMapper distroMapper;
+
+    @Spy protected SwitchDomain switchDomain;
+
+    @Mock protected UdpPushService pushService;
+
+    @Spy protected MockEnvironment environment;
+
     @Before
     public void before() {
         EnvUtil.setEnvironment(environment);
         ApplicationUtils.injectContext(context);
     }
-    
-    protected MockHttpServletRequestBuilder convert(Object simpleOb, MockHttpServletRequestBuilder builder)
-            throws IllegalAccessException {
+
+    protected MockHttpServletRequestBuilder convert(
+            Object simpleOb, MockHttpServletRequestBuilder builder) throws IllegalAccessException {
         Field[] declaredFields = simpleOb.getClass().getDeclaredFields();
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
@@ -88,15 +80,15 @@ public abstract class BaseTest {
         }
         return builder;
     }
-    
+
     protected void mockInjectPushServer() {
         doReturn(pushService).when(context).getBean(UdpPushService.class);
     }
-    
+
     protected void mockInjectSwitchDomain() {
         doReturn(switchDomain).when(context).getBean(SwitchDomain.class);
     }
-    
+
     protected void mockInjectDistroMapper() {
         doReturn(distroMapper).when(context).getBean(DistroMapper.class);
     }

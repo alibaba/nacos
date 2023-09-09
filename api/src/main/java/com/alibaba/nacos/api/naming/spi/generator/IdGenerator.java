@@ -22,7 +22,7 @@ package com.alibaba.nacos.api.naming.spi.generator;
  * @author xiweng.yy
  */
 public interface IdGenerator {
-    
+
     /**
      * Generate instance id.
      *

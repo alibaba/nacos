@@ -19,7 +19,7 @@ package com.alibaba.nacos.client.env.convert;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 class LongConverter extends AbstractPropertyConverter<Long> {
-    
+
     @Override
     Long convert(String property) {
         if (StringUtils.isEmpty(property)) {

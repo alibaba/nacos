@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 import com.alibaba.nacos.consistency.SerializeFactory;
 import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
@@ -30,64 +33,54 @@ import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.protobuf.ByteString;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.lang.reflect.Field;
+import java.util.List;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
-import java.lang.reflect.Field;
-import java.util.List;
-
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-
 @RunWith(MockitoJUnitRunner.class)
 public class ServiceMetadataProcessorTest {
-    
-    @Mock
-    private NamingMetadataManager namingMetadataManager;
-    
-    @Mock
-    private ProtocolManager protocolManager;
-    
-    @Mock
-    private ServiceStorage serviceStorage;
-    
-    @Mock
-    private CPProtocol cpProtocol;
-    
-    @Mock
-    private ConfigurableApplicationContext context;
-    
+
+    @Mock private NamingMetadataManager namingMetadataManager;
+
+    @Mock private ProtocolManager protocolManager;
+
+    @Mock private ServiceStorage serviceStorage;
+
+    @Mock private CPProtocol cpProtocol;
+
+    @Mock private ConfigurableApplicationContext context;
+
     private ServiceMetadataProcessor serviceMetadataProcessor;
-    
+
     @Before
     public void setUp() throws Exception {
         Mockito.when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         ApplicationUtils.injectContext(context);
-        
-        serviceMetadataProcessor = new ServiceMetadataProcessor(namingMetadataManager, protocolManager, serviceStorage);
+
+        serviceMetadataProcessor =
+                new ServiceMetadataProcessor(
+                        namingMetadataManager, protocolManager, serviceStorage);
     }
-    
+
     @Test
     public void testLoadSnapshotOperate() {
         List<SnapshotOperation> snapshotOperations = serviceMetadataProcessor.loadSnapshotOperate();
-        
+
         Assert.assertNotNull(snapshotOperations);
         Assert.assertEquals(snapshotOperations.size(), 1);
     }
-    
+
     @Test
     public void testOnRequest() {
         Response response = serviceMetadataProcessor.onRequest(ReadRequest.getDefaultInstance());
-        
+
         Assert.assertNull(response);
     }
-    
+
     @Test
     public void testOnApply() throws NoSuchFieldException, IllegalAccessException {
         WriteRequest defaultInstance = WriteRequest.getDefaultInstance();
@@ -95,7 +88,7 @@ public class ServiceMetadataProcessorTest {
         Field operation = writeRequestClass.getDeclaredField("operation_");
         operation.setAccessible(true);
         operation.set(defaultInstance, "ADD");
-        
+
         MetadataOperation<ServiceMetadata> metadataOperation = new MetadataOperation<>();
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         metadataOperation.setMetadata(serviceMetadata);
@@ -104,50 +97,54 @@ public class ServiceMetadataProcessorTest {
         metadataOperation.setGroup("group");
         Serializer aDefault = SerializeFactory.getDefault();
         ByteString bytes = ByteString.copyFrom(aDefault.serialize(metadataOperation));
-        
+
         Field data = writeRequestClass.getDeclaredField("data_");
         data.setAccessible(true);
         data.set(defaultInstance, bytes);
-        
+
         // ADD
         Response addResponse = serviceMetadataProcessor.onApply(defaultInstance);
-        
-        Service service = Service.newService(metadataOperation.getNamespace(), metadataOperation.getGroup(),
-                metadataOperation.getServiceName(), metadataOperation.getMetadata().isEphemeral());
+
+        Service service =
+                Service.newService(
+                        metadataOperation.getNamespace(),
+                        metadataOperation.getGroup(),
+                        metadataOperation.getServiceName(),
+                        metadataOperation.getMetadata().isEphemeral());
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         namingMetadataManager.updateServiceMetadata(singleton, metadataOperation.getMetadata());
-        
+
         Assert.assertTrue(addResponse.getSuccess());
         verify(namingMetadataManager).getServiceMetadata(service);
         verify(namingMetadataManager).updateServiceMetadata(service, serviceMetadata);
-        
+
         // CHANGE
         operation.set(defaultInstance, "CHANGE");
         Response changeResponse = serviceMetadataProcessor.onApply(defaultInstance);
-        
+
         Assert.assertTrue(changeResponse.getSuccess());
         verify(namingMetadataManager, times(2)).getServiceMetadata(service);
         verify(namingMetadataManager).updateServiceMetadata(service, serviceMetadata);
-        
+
         // DELETE
         operation.set(defaultInstance, "DELETE");
         Response deleteResponse = serviceMetadataProcessor.onApply(defaultInstance);
-        
+
         Assert.assertTrue(deleteResponse.getSuccess());
         verify(namingMetadataManager).removeServiceMetadata(service);
         verify(serviceStorage).removeData(service);
-        
+
         // VERIFY
         operation.set(defaultInstance, "VERIFY");
         Response otherResponse = serviceMetadataProcessor.onApply(defaultInstance);
-        
+
         Assert.assertFalse(otherResponse.getSuccess());
     }
-    
+
     @Test
     public void testGroup() {
         String group = serviceMetadataProcessor.group();
-        
+
         Assert.assertEquals(group, Constants.SERVICE_METADATA);
     }
 }

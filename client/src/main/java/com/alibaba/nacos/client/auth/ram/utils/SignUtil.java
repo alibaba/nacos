@@ -17,11 +17,10 @@
 package com.alibaba.nacos.client.auth.ram.utils;
 
 import com.alibaba.nacos.common.codec.Base64;
-
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Sign util.
@@ -30,27 +29,32 @@ import java.nio.charset.StandardCharsets;
  * @date 2019-01-22 10:20 PM
  */
 public class SignUtil {
-    
+
     private static final Charset UTF8 = StandardCharsets.UTF_8;
-    
+
     /**
      * Sign.
      *
      * @param data data
-     * @param key  key
+     * @param key key
      * @return signature
      * @throws Exception exception
      */
     public static String sign(String data, String key) throws Exception {
         try {
-            byte[] signature = sign(data.getBytes(UTF8), key.getBytes(UTF8), SignUtil.SigningAlgorithm.HmacSHA1);
+            byte[] signature =
+                    sign(
+                            data.getBytes(UTF8),
+                            key.getBytes(UTF8),
+                            SignUtil.SigningAlgorithm.HmacSHA1);
             return new String(Base64.encodeBase64(signature));
         } catch (Exception ex) {
             throw new Exception("Unable to calculate a request signature: " + ex.getMessage(), ex);
         }
     }
-    
-    private static byte[] sign(byte[] data, byte[] key, SignUtil.SigningAlgorithm algorithm) throws Exception {
+
+    private static byte[] sign(byte[] data, byte[] key, SignUtil.SigningAlgorithm algorithm)
+            throws Exception {
         try {
             Mac mac = Mac.getInstance(algorithm.toString());
             mac.init(new SecretKeySpec(key, algorithm.toString()));
@@ -59,12 +63,11 @@ public class SignUtil {
             throw new Exception("Unable to calculate a request signature: " + ex.getMessage(), ex);
         }
     }
-    
+
     public enum SigningAlgorithm {
         // Hmac SHA1 algorithm
         HmacSHA1;
-        
-        SigningAlgorithm() {
-        }
+
+        SigningAlgorithm() {}
     }
 }

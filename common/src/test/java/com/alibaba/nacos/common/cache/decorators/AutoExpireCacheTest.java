@@ -18,19 +18,17 @@ package com.alibaba.nacos.common.cache.decorators;
 
 import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
 /**
  * auto expire cache test.
+ *
  * @author zzq
  * @date 2021/8/1
  */
 public class AutoExpireCacheTest {
-    
+
     @Test
     public void testBasic() throws Exception {
         Cache cache = CacheBuilder.builder().expireNanos(10, TimeUnit.MINUTES).build();
@@ -49,7 +47,7 @@ public class AutoExpireCacheTest {
     @Test
     public void testExpire() throws Exception {
         Cache cache = CacheBuilder.builder().expireNanos(1, TimeUnit.SECONDS).build();
-        cache.put("a",  "a");
+        cache.put("a", "a");
         TimeUnit.SECONDS.sleep(2);
         Assert.assertNull(cache.get("a"));
     }

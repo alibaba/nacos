@@ -25,14 +25,13 @@ import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import javax.annotation.PostConstruct;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.stereotype.Component;
 
 /**
  * Distro mapper, judge which server response input service.
@@ -41,34 +40,33 @@ import java.util.List;
  */
 @Component("distroMapper")
 public class DistroMapper extends MemberChangeListener {
-    
+
     /**
-     * List of service nodes, you must ensure that the order of healthyList is the same for all nodes.
+     * List of service nodes, you must ensure that the order of healthyList is the same for all
+     * nodes.
      */
     private volatile List<String> healthyList = new ArrayList<>();
-    
+
     private final SwitchDomain switchDomain;
-    
+
     private final ServerMemberManager memberManager;
-    
+
     public DistroMapper(ServerMemberManager memberManager, SwitchDomain switchDomain) {
         this.memberManager = memberManager;
         this.switchDomain = switchDomain;
     }
-    
+
     public List<String> getHealthyList() {
         return healthyList;
     }
-    
-    /**
-     * init server list.
-     */
+
+    /** init server list. */
     @PostConstruct
     public void init() {
         NotifyCenter.registerSubscriber(this);
         this.healthyList = MemberUtil.simpleMembers(memberManager.allMembers());
     }
-    
+
     /**
      * Judge whether current server is responsible for input tag.
      *
@@ -77,27 +75,27 @@ public class DistroMapper extends MemberChangeListener {
      */
     public boolean responsible(String responsibleTag) {
         final List<String> servers = healthyList;
-        
+
         if (!switchDomain.isDistroEnabled() || EnvUtil.getStandaloneMode()) {
             return true;
         }
-        
+
         if (CollectionUtils.isEmpty(servers)) {
             // means distro config is not ready yet
             return false;
         }
-        
+
         String localAddress = EnvUtil.getLocalAddress();
         int index = servers.indexOf(localAddress);
         int lastIndex = servers.lastIndexOf(localAddress);
         if (lastIndex < 0 || index < 0) {
             return true;
         }
-        
+
         int target = distroHash(responsibleTag) % servers.size();
         return target >= index && target <= lastIndex;
     }
-    
+
     /**
      * Calculate which other server response input tag.
      *
@@ -106,37 +104,45 @@ public class DistroMapper extends MemberChangeListener {
      */
     public String mapSrv(String responsibleTag) {
         final List<String> servers = healthyList;
-        
+
         if (CollectionUtils.isEmpty(servers) || !switchDomain.isDistroEnabled()) {
             return EnvUtil.getLocalAddress();
         }
-        
+
         try {
             int index = distroHash(responsibleTag) % servers.size();
             return servers.get(index);
         } catch (Throwable e) {
-            Loggers.SRV_LOG
-                    .warn("[NACOS-DISTRO] distro mapper failed, return localhost: " + EnvUtil.getLocalAddress(), e);
+            Loggers.SRV_LOG.warn(
+                    "[NACOS-DISTRO] distro mapper failed, return localhost: "
+                            + EnvUtil.getLocalAddress(),
+                    e);
             return EnvUtil.getLocalAddress();
         }
     }
-    
+
     private int distroHash(String responsibleTag) {
         return Math.abs(responsibleTag.hashCode() % Integer.MAX_VALUE);
     }
-    
+
     @Override
     public void onEvent(MembersChangeEvent event) {
         // Here, the node list must be sorted to ensure that all nacos-server's
         // node list is in the same order
-        List<String> list = MemberUtil.simpleMembers(MemberUtil.selectTargetMembers(event.getMembers(),
-                member -> NodeState.UP.equals(member.getState()) || NodeState.SUSPICIOUS.equals(member.getState())));
+        List<String> list =
+                MemberUtil.simpleMembers(
+                        MemberUtil.selectTargetMembers(
+                                event.getMembers(),
+                                member ->
+                                        NodeState.UP.equals(member.getState())
+                                                || NodeState.SUSPICIOUS.equals(member.getState())));
         Collections.sort(list);
         Collection<String> old = healthyList;
         healthyList = Collections.unmodifiableList(list);
-        Loggers.SRV_LOG.info("[NACOS-DISTRO] healthy server list changed, old: {}, new: {}", old, healthyList);
+        Loggers.SRV_LOG.info(
+                "[NACOS-DISTRO] healthy server list changed, old: {}, new: {}", old, healthyList);
     }
-    
+
     @Override
     public boolean ignoreExpireEvent() {
         return true;

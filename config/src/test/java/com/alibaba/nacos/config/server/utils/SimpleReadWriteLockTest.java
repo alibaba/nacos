@@ -16,67 +16,66 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import org.junit.runner.RunWith;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 public class SimpleReadWriteLockTest {
-    
+
     @Test
     public void testDoubleReadLockByAllReleaseAndWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryReadLock());
         assertTrue(lock.tryReadLock());
-        
+
         lock.releaseReadLock();
         lock.releaseReadLock();
-        
+
         assertTrue(lock.tryWriteLock());
     }
-    
+
     @Test
     public void testAddWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryWriteLock());
         lock.releaseWriteLock();
     }
-    
+
     @Test
     public void testDoubleWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
-        
+
         assertTrue(lock.tryWriteLock());
         assertFalse(lock.tryWriteLock());
     }
-    
+
     @Test
     public void testFirstReadLockThenWriteLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
-        
+
         assertTrue(lock.tryReadLock());
         assertFalse(lock.tryWriteLock());
     }
-    
+
     @Test
     public void testFirstWriteLockThenReadLock() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
-        
+
         assertTrue(lock.tryWriteLock());
         assertFalse(lock.tryReadLock());
     }
-    
+
     @Test
     public void testDoubleReadLockAndOneReleaseOneFailed() {
         SimpleReadWriteLock lock = new SimpleReadWriteLock();
         assertTrue(lock.tryReadLock());
         assertTrue(lock.tryReadLock());
-        
+
         lock.releaseReadLock();
-        
+
         assertFalse(lock.tryWriteLock());
     }
 }

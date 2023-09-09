@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
+import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.USER_ROW_MAPPER;
+
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
@@ -23,17 +25,14 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
+import java.util.ArrayList;
+import java.util.List;
+import javax.annotation.PostConstruct;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import java.util.ArrayList;
-import java.util.List;
-
-import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManager.USER_ROW_MAPPER;
 
 /**
  * Implemetation of ExternalUserPersistServiceImpl.
@@ -43,16 +42,16 @@ import static com.alibaba.nacos.plugin.auth.impl.persistence.AuthRowMapperManage
 @Conditional(value = ConditionOnExternalStorage.class)
 @Component
 public class ExternalUserPersistServiceImpl implements UserPersistService {
-    
+
     private JdbcTemplate jt;
-    
+
     private static final String PATTERN_STR = "*";
-    
+
     @PostConstruct
     protected void init() {
         jt = DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
     }
-    
+
     /**
      * Execute create user operation.
      *
@@ -62,7 +61,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     @Override
     public void createUser(String username, String password) {
         String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
-        
+
         try {
             jt.update(sql, username, password, true);
         } catch (CannotGetJdbcConnectionException e) {
@@ -70,7 +69,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw e;
         }
     }
-    
+
     /**
      * Execute delete user operation.
      *
@@ -86,7 +85,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw e;
         }
     }
-    
+
     /**
      * Execute update user password operation.
      *
@@ -102,7 +101,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw e;
         }
     }
-    
+
     /**
      * Execute find user by username operation.
      *
@@ -124,26 +123,31 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw new RuntimeException(e);
         }
     }
-    
+
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
-        
+
         PaginationHelper<User> helper = createPaginationHelper();
-        
+
         String sqlCountRows = "SELECT count(*) FROM users ";
-        
+
         String sqlFetchRows = "SELECT username,password FROM users ";
-        
+
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
             where.append(" AND username = ? ");
             params.add(username);
         }
-        
+
         try {
-            Page<User> pageInfo = helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+            Page<User> pageInfo =
+                    helper.fetchPage(
+                            sqlCountRows + where,
+                            sqlFetchRows + where,
+                            params.toArray(),
+                            pageNo,
+                            pageSize,
                             USER_ROW_MAPPER);
             if (pageInfo == null) {
                 pageInfo = new Page<>();
@@ -156,36 +160,43 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             throw e;
         }
     }
-    
+
     @Override
     public List<String> findUserLikeUsername(String username) {
         String sql = "SELECT username FROM users WHERE username LIKE ?";
-        List<String> users = this.jt.queryForList(sql, new String[] {String.format("%%%s%%", username)}, String.class);
+        List<String> users =
+                this.jt.queryForList(
+                        sql, new String[] {String.format("%%%s%%", username)}, String.class);
         return users;
     }
-    
+
     @Override
     public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
         String sqlCountRows = "SELECT count(*) FROM users ";
         String sqlFetchRows = "SELECT username,password FROM users ";
-        
+
         StringBuilder where = new StringBuilder(" WHERE 1 = 1 ");
         List<String> params = new ArrayList<>();
         if (StringUtils.isNotBlank(username)) {
             where.append(" AND username LIKE ? ");
             params.add(generateLikeArgument(username));
         }
-        
+
         PaginationHelper<User> helper = createPaginationHelper();
         try {
-            return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
+            return helper.fetchPage(
+                    sqlCountRows + where,
+                    sqlFetchRows + where,
+                    params.toArray(),
+                    pageNo,
+                    pageSize,
                     USER_ROW_MAPPER);
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e.toString(), e);
             throw e;
         }
     }
-    
+
     @Override
     public String generateLikeArgument(String s) {
         String underscore = "_";
@@ -200,7 +211,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             return s;
         }
     }
-    
+
     @Override
     public <E> PaginationHelper<E> createPaginationHelper() {
         return new ExternalStoragePaginationHelperImpl<>(jt);

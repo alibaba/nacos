@@ -28,15 +28,13 @@ public class ClientRemoteAbility implements Serializable {
 
     private static final long serialVersionUID = -5794603724540260652L;
 
-    /**
-     * if support remote connection.
-     */
+    /** if support remote connection. */
     private boolean supportRemoteConnection;
-    
+
     public boolean isSupportRemoteConnection() {
         return this.supportRemoteConnection;
     }
-    
+
     public void setSupportRemoteConnection(boolean supportRemoteConnection) {
         this.supportRemoteConnection = supportRemoteConnection;
     }

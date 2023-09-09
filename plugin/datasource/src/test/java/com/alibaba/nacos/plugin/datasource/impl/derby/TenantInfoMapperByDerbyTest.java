@@ -18,25 +18,22 @@ package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 public class TenantInfoMapperByDerbyTest {
-    
+
     private TenantInfoMapperByDerby tenantInfoMapperByDerby;
-    
+
     @Before
     public void setUp() throws Exception {
         tenantInfoMapperByDerby = new TenantInfoMapperByDerby();
     }
-    
+
     @Test
     public void testGetTableName() {
         String tableName = tenantInfoMapperByDerby.getTableName();
         Assert.assertEquals(tableName, TableConstant.TENANT_INFO);
     }
-    
+
     @Test
     public void testGetDataSource() {
         String dataSource = tenantInfoMapperByDerby.getDataSource();

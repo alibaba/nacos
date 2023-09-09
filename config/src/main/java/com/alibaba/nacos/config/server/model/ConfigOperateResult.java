@@ -20,51 +20,49 @@ import java.io.Serializable;
 
 /**
  * config operation result.
+ *
  * @author shiyiyue
  */
 public class ConfigOperateResult implements Serializable {
-    
+
     boolean success = true;
-    
+
     private long id;
-    
+
     private long lastModified;
-    
+
     public ConfigOperateResult(long id, long lastModified) {
         this.id = id;
         this.lastModified = lastModified;
     }
-    
+
     public ConfigOperateResult(boolean success) {
         this.success = success;
     }
-    
-    public ConfigOperateResult() {
-    
-    }
-    
+
+    public ConfigOperateResult() {}
+
     public boolean isSuccess() {
         return success;
     }
-    
+
     public void setSuccess(boolean success) {
         this.success = success;
     }
-    
+
     public long getId() {
         return id;
     }
-    
+
     public void setId(long id) {
         this.id = id;
     }
-    
+
     public long getLastModified() {
         return lastModified;
     }
-    
+
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
-    
 }

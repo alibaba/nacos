@@ -24,8 +24,8 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.core.utils.StringPool;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -41,41 +41,46 @@ import org.springframework.stereotype.Component;
 @Component
 public class ConfigChangeBatchListenRequestHandler
         extends RequestHandler<ConfigBatchListenRequest, ConfigChangeBatchListenResponse> {
-    
-    @Autowired
-    private ConfigChangeListenContext configChangeListenContext;
-    
+
+    @Autowired private ConfigChangeListenContext configChangeListenContext;
+
     @Override
     @TpsControl(pointName = "ConfigListen")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ConfigChangeBatchListenResponse handle(ConfigBatchListenRequest configChangeListenRequest, RequestMeta meta)
+    public ConfigChangeBatchListenResponse handle(
+            ConfigBatchListenRequest configChangeListenRequest, RequestMeta meta)
             throws NacosException {
         String connectionId = StringPool.get(meta.getConnectionId());
         String tag = configChangeListenRequest.getHeader(Constants.VIPSERVER_TAG);
-        
-        ConfigChangeBatchListenResponse configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
-        for (ConfigBatchListenRequest.ConfigListenContext listenContext : configChangeListenRequest
-                .getConfigListenContexts()) {
-            String groupKey = GroupKey2
-                    .getKey(listenContext.getDataId(), listenContext.getGroup(), listenContext.getTenant());
+
+        ConfigChangeBatchListenResponse configChangeBatchListenResponse =
+                new ConfigChangeBatchListenResponse();
+        for (ConfigBatchListenRequest.ConfigListenContext listenContext :
+                configChangeListenRequest.getConfigListenContexts()) {
+            String groupKey =
+                    GroupKey2.getKey(
+                            listenContext.getDataId(),
+                            listenContext.getGroup(),
+                            listenContext.getTenant());
             groupKey = StringPool.get(groupKey);
-            
+
             String md5 = StringPool.get(listenContext.getMd5());
-            
+
             if (configChangeListenRequest.isListen()) {
                 configChangeListenContext.addListen(groupKey, md5, connectionId);
-                boolean isUptoDate = ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag);
+                boolean isUptoDate =
+                        ConfigCacheService.isUptodate(groupKey, md5, meta.getClientIp(), tag);
                 if (!isUptoDate) {
-                    configChangeBatchListenResponse.addChangeConfig(listenContext.getDataId(), listenContext.getGroup(),
+                    configChangeBatchListenResponse.addChangeConfig(
+                            listenContext.getDataId(),
+                            listenContext.getGroup(),
                             listenContext.getTenant());
                 }
             } else {
                 configChangeListenContext.removeListen(groupKey, connectionId);
             }
         }
-        
+
         return configChangeBatchListenResponse;
-        
     }
-    
 }

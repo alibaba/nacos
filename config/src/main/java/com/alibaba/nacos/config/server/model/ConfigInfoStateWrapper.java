@@ -24,53 +24,53 @@ import java.io.Serializable;
  * @author zunfei.lzf
  */
 public class ConfigInfoStateWrapper implements Serializable {
-    
+
     private long id;
-    
+
     private String dataId;
-    
+
     private String group;
-    
+
     private String tenant;
-    
+
     private long lastModified;
-    
+
     public long getId() {
         return id;
     }
-    
+
     public void setId(long id) {
         this.id = id;
     }
-    
+
     public String getDataId() {
         return dataId;
     }
-    
+
     public void setDataId(String dataId) {
         this.dataId = dataId;
     }
-    
+
     public String getGroup() {
         return group;
     }
-    
+
     public void setGroup(String group) {
         this.group = group;
     }
-    
+
     public long getLastModified() {
         return lastModified;
     }
-    
+
     public void setLastModified(long lastModified) {
         this.lastModified = lastModified;
     }
-    
+
     public String getTenant() {
         return tenant;
     }
-    
+
     public void setTenant(String tenant) {
         this.tenant = tenant;
     }

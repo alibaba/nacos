@@ -25,80 +25,81 @@ import com.alibaba.nacos.naming.healthcheck.heartbeat.ClientBeatCheckTaskV2;
 import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
 import com.alibaba.nacos.naming.misc.ClientConfig;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
-
 import java.util.Collection;
 
 /**
  * Nacos naming client based ip and port.
  *
- * <p>The client is bind to the ip and port users registered. It's a abstract content to simulate the tcp session
- * client.
+ * <p>The client is bind to the ip and port users registered. It's a abstract content to simulate
+ * the tcp session client.
  *
  * @author xiweng.yy
  */
 public class IpPortBasedClient extends AbstractClient {
-    
+
     public static final String ID_DELIMITER = "#";
-    
+
     private final String clientId;
-    
+
     private final boolean ephemeral;
-    
+
     private final String responsibleId;
-    
+
     private ClientBeatCheckTaskV2 beatCheckTask;
-    
+
     private HealthCheckTaskV2 healthCheckTaskV2;
-    
+
     public IpPortBasedClient(String clientId, boolean ephemeral) {
         this(clientId, ephemeral, null);
     }
-    
+
     public IpPortBasedClient(String clientId, boolean ephemeral, Long revision) {
         super(revision);
         this.ephemeral = ephemeral;
         this.clientId = clientId;
         this.responsibleId = getResponsibleTagFromId();
     }
-    
+
     private String getResponsibleTagFromId() {
         int index = clientId.indexOf(IpPortBasedClient.ID_DELIMITER);
         return clientId.substring(0, index);
     }
-    
+
     public static String getClientId(String address, boolean ephemeral) {
         return address + ID_DELIMITER + ephemeral;
     }
-    
+
     @Override
     public String getClientId() {
         return clientId;
     }
-    
+
     @Override
     public boolean isEphemeral() {
         return ephemeral;
     }
-    
+
     public String getResponsibleId() {
         return responsibleId;
     }
-    
+
     @Override
     public boolean addServiceInstance(Service service, InstancePublishInfo instancePublishInfo) {
         return super.addServiceInstance(service, parseToHealthCheckInstance(instancePublishInfo));
     }
-    
+
     @Override
     public boolean isExpire(long currentTime) {
-        return isEphemeral() && getAllPublishedService().isEmpty() && currentTime - getLastUpdatedTime() > ClientConfig
-                .getInstance().getClientExpiredTime();
+        return isEphemeral()
+                && getAllPublishedService().isEmpty()
+                && currentTime - getLastUpdatedTime()
+                        > ClientConfig.getInstance().getClientExpiredTime();
     }
-    
+
     public Collection<InstancePublishInfo> getAllInstancePublishInfo() {
         return publishers.values();
     }
-    
+
     @Override
     public void release() {
         super.release();
@@ -108,8 +109,9 @@ public class IpPortBasedClient extends AbstractClient {
             healthCheckTaskV2.setCancelled(true);
         }
     }
-    
-    private HealthCheckInstancePublishInfo parseToHealthCheckInstance(InstancePublishInfo instancePublishInfo) {
+
+    private HealthCheckInstancePublishInfo parseToHealthCheckInstance(
+            InstancePublishInfo instancePublishInfo) {
         HealthCheckInstancePublishInfo result;
         if (instancePublishInfo instanceof HealthCheckInstancePublishInfo) {
             result = (HealthCheckInstancePublishInfo) instancePublishInfo;
@@ -126,10 +128,8 @@ public class IpPortBasedClient extends AbstractClient {
         }
         return result;
     }
-    
-    /**
-     * Init client.
-     */
+
+    /** Init client. */
     public void init() {
         if (ephemeral) {
             beatCheckTask = new ClientBeatCheckTaskV2(this);
@@ -139,10 +139,8 @@ public class IpPortBasedClient extends AbstractClient {
             HealthCheckReactor.scheduleCheck(healthCheckTaskV2);
         }
     }
-    
-    /**
-     * Purely put instance into service without publish events.
-     */
+
+    /** Purely put instance into service without publish events. */
     public void putServiceInstance(Service service, InstancePublishInfo instance) {
         if (null == publishers.put(service, parseToHealthCheckInstance(instance))) {
             MetricsMonitor.incrementInstanceCount();

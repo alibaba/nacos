@@ -17,15 +17,14 @@
 package com.alibaba.nacos.sys.env;
 
 import com.alibaba.nacos.sys.utils.MethodUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * OperatingSystemBeanManager related.
@@ -36,12 +35,11 @@ public class OperatingSystemBeanManager {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(OperatingSystemBeanManager.class);
 
-    /**
-     * com.ibm for J9
-     * com.sun for HotSpot
-     */
-    private static final List<String> OPERATING_SYSTEM_BEAN_CLASS_NAMES = Arrays.asList(
-            "com.sun.management.OperatingSystemMXBean", "com.ibm.lang.management.OperatingSystemMXBean");
+    /** com.ibm for J9 com.sun for HotSpot */
+    private static final List<String> OPERATING_SYSTEM_BEAN_CLASS_NAMES =
+            Arrays.asList(
+                    "com.sun.management.OperatingSystemMXBean",
+                    "com.ibm.lang.management.OperatingSystemMXBean");
 
     private static final OperatingSystemMXBean OPERATING_SYSTEM_BEAN;
 
@@ -63,8 +61,10 @@ public class OperatingSystemBeanManager {
 
         Method totalPhysicalMem = deduceMethod("getTotalPhysicalMemorySize");
         // getTotalPhysicalMemory for ibm jdk 7.
-        TOTAL_PHYSICAL_MEM_METHOD = totalPhysicalMem != null ? totalPhysicalMem :
-                deduceMethod("getTotalPhysicalMemory");
+        TOTAL_PHYSICAL_MEM_METHOD =
+                totalPhysicalMem != null
+                        ? totalPhysicalMem
+                        : deduceMethod("getTotalPhysicalMemory");
 
         FREE_PHYSICAL_MEM_METHOD = deduceMethod("getFreePhysicalMemorySize");
     }
@@ -96,7 +96,9 @@ public class OperatingSystemBeanManager {
             try {
                 return Class.forName(className);
             } catch (ClassNotFoundException e) {
-                LOGGER.warn("[OperatingSystemBeanManager] Failed to load operating system bean class.", e);
+                LOGGER.warn(
+                        "[OperatingSystemBeanManager] Failed to load operating system bean class.",
+                        e);
             }
         }
         return null;

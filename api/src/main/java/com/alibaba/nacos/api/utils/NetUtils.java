@@ -29,17 +29,18 @@ import java.util.Enumeration;
  * @author xuanyin.zy
  */
 public class NetUtils {
-    
+
     private static final String CLIENT_LOCAL_IP_PROPERTY = "com.alibaba.nacos.client.local.ip";
-    
-    private static final String CLIENT_LOCAL_PREFER_HOSTNAME_PROPERTY = "com.alibaba.nacos.client.local.preferHostname";
-    
+
+    private static final String CLIENT_LOCAL_PREFER_HOSTNAME_PROPERTY =
+            "com.alibaba.nacos.client.local.preferHostname";
+
     private static final String LEGAL_LOCAL_IP_PROPERTY = "java.net.preferIPv6Addresses";
-    
+
     private static final String DEFAULT_SOLVE_FAILED_RETURN = "resolve_failed";
-    
+
     private static String localIp;
-    
+
     /**
      * Get local ip.
      *
@@ -55,20 +56,21 @@ public class NetUtils {
         localIp = getAddress();
         return localIp;
     }
-    
+
     private static String getAddress() {
         InetAddress inetAddress = findFirstNonLoopbackAddress();
         if (inetAddress == null) {
             return DEFAULT_SOLVE_FAILED_RETURN;
         }
-        
-        boolean preferHost = Boolean.parseBoolean(System.getProperty(CLIENT_LOCAL_PREFER_HOSTNAME_PROPERTY));
+
+        boolean preferHost =
+                Boolean.parseBoolean(System.getProperty(CLIENT_LOCAL_PREFER_HOSTNAME_PROPERTY));
         return preferHost ? inetAddress.getHostName() : inetAddress.getHostAddress();
     }
-    
+
     private static InetAddress findFirstNonLoopbackAddress() {
         InetAddress result = null;
-        
+
         try {
             int lowest = Integer.MAX_VALUE;
             for (Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
@@ -80,31 +82,32 @@ public class NetUtils {
                     } else {
                         continue;
                     }
-                    
-                    for (Enumeration<InetAddress> addrs = ifc.getInetAddresses(); addrs.hasMoreElements(); ) {
+
+                    for (Enumeration<InetAddress> addrs = ifc.getInetAddresses();
+                            addrs.hasMoreElements(); ) {
                         InetAddress address = addrs.nextElement();
-                        boolean isLegalIpVersion = Boolean.parseBoolean(System.getProperty(LEGAL_LOCAL_IP_PROPERTY))
-                                ? address instanceof Inet6Address : address instanceof Inet4Address;
+                        boolean isLegalIpVersion =
+                                Boolean.parseBoolean(System.getProperty(LEGAL_LOCAL_IP_PROPERTY))
+                                        ? address instanceof Inet6Address
+                                        : address instanceof Inet4Address;
                         if (isLegalIpVersion && !address.isLoopbackAddress()) {
                             result = address;
                         }
                     }
-                    
                 }
             }
         } catch (Exception ignore) {
         }
-        
+
         if (result != null) {
             return result;
         }
-        
+
         try {
             return InetAddress.getLocalHost();
         } catch (UnknownHostException ignore) {
         }
-        
+
         return null;
-        
     }
 }

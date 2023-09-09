@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.http.client.response;
 
 import com.alibaba.nacos.common.http.param.Header;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,14 +27,14 @@ import java.io.InputStream;
  * @author mai.jh
  */
 public interface HttpClientResponse extends Closeable {
-    
+
     /**
      * Return the headers of this message.
      *
      * @return a corresponding HttpHeaders object (never {@code null})
      */
     Header getHeaders();
-    
+
     /**
      * Return the body of the message as an input stream.
      *
@@ -43,7 +42,7 @@ public interface HttpClientResponse extends Closeable {
      * @throws IOException IOException
      */
     InputStream getBody() throws IOException;
-    
+
     /**
      * Return the HTTP status code.
      *
@@ -51,7 +50,7 @@ public interface HttpClientResponse extends Closeable {
      * @throws IOException IOException
      */
     int getStatusCode() throws IOException;
-    
+
     /**
      * Return the HTTP status text of the response.
      *
@@ -59,10 +58,8 @@ public interface HttpClientResponse extends Closeable {
      * @throws IOException IOException
      */
     String getStatusText() throws IOException;
-    
-    /**
-     * close response InputStream.
-     */
+
+    /** close response InputStream. */
     @Override
     void close();
 }

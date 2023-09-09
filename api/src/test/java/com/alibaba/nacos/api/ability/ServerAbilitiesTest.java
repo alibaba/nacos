@@ -16,37 +16,34 @@
 
 package com.alibaba.nacos.api.ability;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class ServerAbilitiesTest {
-    
+
     private static ObjectMapper mapper;
-    
+
     private ServerAbilities serverAbilities;
-    
+
     @BeforeClass
     public static void setUpBeforeClass() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Before
     public void setUp() throws Exception {
         serverAbilities = new ServerAbilities();
     }
-    
+
     @Test
     public void testSerialize() throws JsonProcessingException {
         serverAbilities = new ServerAbilities();
@@ -55,18 +52,19 @@ public class ServerAbilitiesTest {
         assertTrue(json.contains("\"configAbility\":{"));
         assertTrue(json.contains("\"namingAbility\":{"));
     }
-    
+
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"remoteAbility\":{\"supportRemoteConnection\":false},"
-                + "\"configAbility\":{\"supportRemoteMetrics\":false},\"namingAbility\":{\"supportDeltaPush\":false,"
-                + "\"supportRemoteMetric\":false}}";
+        String json =
+                "{\"remoteAbility\":{\"supportRemoteConnection\":false},"
+                        + "\"configAbility\":{\"supportRemoteMetrics\":false},\"namingAbility\":{\"supportDeltaPush\":false,"
+                        + "\"supportRemoteMetric\":false}}";
         ServerAbilities abilities = mapper.readValue(json, ServerAbilities.class);
         assertNotNull(abilities.getRemoteAbility());
         assertNotNull(abilities.getNamingAbility());
         assertNotNull(abilities.getConfigAbility());
     }
-    
+
     @Test
     public void testEqualsAndHashCode() {
         assertEquals(serverAbilities, serverAbilities);

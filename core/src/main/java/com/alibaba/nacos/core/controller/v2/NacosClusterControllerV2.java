@@ -32,6 +32,9 @@ import com.alibaba.nacos.core.service.NacosClusterOperationService;
 import com.alibaba.nacos.core.utils.Commons;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,10 +43,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.Locale;
 
 /**
  * Cluster communication interface v2.
@@ -54,51 +53,56 @@ import java.util.Locale;
 @RestController
 @RequestMapping(Commons.NACOS_CORE_CONTEXT_V2 + "/cluster")
 public class NacosClusterControllerV2 {
-    
+
     private final NacosClusterOperationService nacosClusterOperationService;
-    
+
     public NacosClusterControllerV2(NacosClusterOperationService nacosClusterOperationService) {
         this.nacosClusterOperationService = nacosClusterOperationService;
     }
-    
+
     @GetMapping(value = "/node/self")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin", signType = SignType.CONSOLE)
     public Result<Member> self() {
         return Result.success(nacosClusterOperationService.self());
     }
-    
+
     /**
      * The console displays the list of cluster members.
      *
      * @param address match address
-     * @param state   match state
+     * @param state match state
      * @return members that matches condition
      */
     @GetMapping(value = "/node/list")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin", signType = SignType.CONSOLE)
-    public Result<Collection<Member>> listNodes(@RequestParam(value = "address", required = false) String address,
-            @RequestParam(value = "state", required = false) String state) throws NacosException {
-        
+    public Result<Collection<Member>> listNodes(
+            @RequestParam(value = "address", required = false) String address,
+            @RequestParam(value = "state", required = false) String state)
+            throws NacosException {
+
         NodeState nodeState = null;
         if (StringUtils.isNoneBlank(state)) {
             try {
                 nodeState = NodeState.valueOf(state.toUpperCase(Locale.ROOT));
             } catch (IllegalArgumentException e) {
-                throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.ILLEGAL_STATE, "Illegal state: " + state);
+                throw new NacosApiException(
+                        HttpStatus.BAD_REQUEST.value(),
+                        ErrorCode.ILLEGAL_STATE,
+                        "Illegal state: " + state);
             }
         }
         return Result.success(nacosClusterOperationService.listNodes(address, nodeState));
     }
-    
+
     @GetMapping(value = "/node/self/health")
     @Secured(action = ActionTypes.READ, resource = "nacos/admin", signType = SignType.CONSOLE)
     public Result<String> selfHealth() {
         return Result.success(nacosClusterOperationService.selfHealth());
     }
-    
+
     // The client can get all the nacos node information in the current
     // cluster according to this interface
-    
+
     /**
      * Other nodes return their own metadata information.
      *
@@ -109,12 +113,14 @@ public class NacosClusterControllerV2 {
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
     public Result<Boolean> updateNodes(@RequestBody List<Member> nodes) throws NacosApiException {
         if (nodes == null || nodes.size() == 0) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+            throw new NacosApiException(
+                    HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.PARAMETER_MISSING,
                     "required parameter 'nodes' is missing");
         }
         return Result.success(nacosClusterOperationService.updateNodes(nodes));
     }
-    
+
     /**
      * Addressing mode switch.
      *
@@ -125,12 +131,14 @@ public class NacosClusterControllerV2 {
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
     public Result<Boolean> updateLookup(LookupUpdateRequest request) throws NacosException {
         if (request == null || request.getType() == null) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.PARAMETER_MISSING,
+            throw new NacosApiException(
+                    HttpStatus.BAD_REQUEST.value(),
+                    ErrorCode.PARAMETER_MISSING,
                     "required parameter 'type' is missing");
         }
         return Result.success(nacosClusterOperationService.updateLookup(request));
     }
-    
+
     /**
      * member leave.
      *
@@ -140,9 +148,9 @@ public class NacosClusterControllerV2 {
      */
     @DeleteMapping("/nodes")
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin", signType = SignType.CONSOLE)
-    public RestResult<Void> deleteNodes(@RequestParam("addresses") List<String> addresses) throws Exception {
-        return RestResultUtils.failed(405, null, "DELETE /v2/core/cluster/nodes API not allow to use temporarily.");
-        
+    public RestResult<Void> deleteNodes(@RequestParam("addresses") List<String> addresses)
+            throws Exception {
+        return RestResultUtils.failed(
+                405, null, "DELETE /v2/core/cluster/nodes API not allow to use temporarily.");
     }
-    
 }

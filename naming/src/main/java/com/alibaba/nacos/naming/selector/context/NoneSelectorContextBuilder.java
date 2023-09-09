@@ -19,25 +19,25 @@ package com.alibaba.nacos.naming.selector.context;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.context.SelectorContextBuilder;
-
 import java.util.List;
 
 /**
- * The {@link NoneSelectorContextBuilder} will return the provider as context for the {@link com.alibaba.nacos.api.selector.Selector}
- * which doesn't need any other resource.
+ * The {@link NoneSelectorContextBuilder} will return the provider as context for the {@link
+ * com.alibaba.nacos.api.selector.Selector} which doesn't need any other resource.
  *
  * @author chenglu
  * @date 2021-08-04 13:31
  */
-public class NoneSelectorContextBuilder<T extends Instance>  implements SelectorContextBuilder<List<T>, String, List<T>> {
-    
+public class NoneSelectorContextBuilder<T extends Instance>
+        implements SelectorContextBuilder<List<T>, String, List<T>> {
+
     private static final String CONTEXT_TYPE = "NONE";
-    
+
     @Override
     public List<T> build(String consumer, List<T> provider) {
         return provider;
     }
-    
+
     @Override
     public String getContextType() {
         return CONTEXT_TYPE;

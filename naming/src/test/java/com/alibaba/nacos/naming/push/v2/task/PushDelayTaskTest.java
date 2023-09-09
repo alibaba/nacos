@@ -16,41 +16,39 @@
 
 package com.alibaba.nacos.naming.push.v2.task;
 
-import com.alibaba.nacos.common.task.AbstractDelayTask;
-import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.concurrent.TimeUnit;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.common.task.AbstractDelayTask;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import java.util.concurrent.TimeUnit;
+
 /**
- * For Understand this test case, Please Read {@link com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine#addTask(Object,
+ * For Understand this test case, Please Read {@link
+ * com.alibaba.nacos.common.task.engine.NacosDelayTaskExecuteEngine#addTask(Object,
  * AbstractDelayTask)}.
  *
  * @author xiweng.yy
  */
 public class PushDelayTaskTest {
-    
+
     private final Service service = Service.newService("N", "G", "S");
-    
+
     private final String singleTargetClientId = "testClientId";
-    
+
     private PushDelayTask pushToAllTask;
-    
+
     private PushDelayTask singlePushTask;
-    
+
     @Before
     public void setUp() throws Exception {
         pushToAllTask = new PushDelayTask(service, 0L);
         singlePushTask = new PushDelayTask(service, 0L, singleTargetClientId);
     }
-    
+
     @Test
     public void testMergeAllToSingle() {
         PushDelayTask newTask = singlePushTask;
@@ -59,7 +57,7 @@ public class PushDelayTaskTest {
         assertTrue(newTask.isPushToAll());
         assertNull(newTask.getTargetClients());
     }
-    
+
     @Test
     public void testMergeSingleToAll() {
         PushDelayTask newTask = pushToAllTask;
@@ -68,7 +66,7 @@ public class PushDelayTaskTest {
         assertTrue(newTask.isPushToAll());
         assertNull(newTask.getTargetClients());
     }
-    
+
     @Test
     public void testMergeSingleToSingle() {
         PushDelayTask oldTask = singlePushTask;
@@ -81,7 +79,7 @@ public class PushDelayTaskTest {
         assertTrue(newTask.getTargetClients().contains(singleTargetClientId));
         assertTrue(newTask.getTargetClients().contains("newClient"));
     }
-    
+
     @Test
     public void testMergeAllToAll() throws InterruptedException {
         PushDelayTask oldTask = pushToAllTask;

@@ -33,17 +33,19 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * HealthControllerV2.
+ *
  * @author dongyafei
  * @date 2022/9/15
  */
 @NacosApi
 @RestController
-@RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
+@RequestMapping(
+        UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                + UtilsAndCommons.NACOS_NAMING_HEALTH_CONTEXT)
 public class HealthControllerV2 {
-    
-    @Autowired
-    private HealthOperatorV2Impl healthOperatorV2;
-    
+
+    @Autowired private HealthOperatorV2Impl healthOperatorV2;
+
     /**
      * Update health check for instance.
      *
@@ -55,13 +57,18 @@ public class HealthControllerV2 {
     @Secured(action = ActionTypes.WRITE)
     public Result<String> update(UpdateHealthForm updateHealthForm) throws NacosException {
         updateHealthForm.validate();
-        healthOperatorV2.updateHealthStatusForPersistentInstance(updateHealthForm.getNamespaceId(), buildCompositeServiceName(updateHealthForm),
-                updateHealthForm.getClusterName(), updateHealthForm.getIp(), updateHealthForm.getPort(),
+        healthOperatorV2.updateHealthStatusForPersistentInstance(
+                updateHealthForm.getNamespaceId(),
+                buildCompositeServiceName(updateHealthForm),
+                updateHealthForm.getClusterName(),
+                updateHealthForm.getIp(),
+                updateHealthForm.getPort(),
                 updateHealthForm.getHealthy());
         return Result.success("ok");
     }
-    
+
     private String buildCompositeServiceName(UpdateHealthForm updateHealthForm) {
-        return NamingUtils.getGroupedName(updateHealthForm.getServiceName(), updateHealthForm.getGroupName());
+        return NamingUtils.getGroupedName(
+                updateHealthForm.getServiceName(), updateHealthForm.getGroupName());
     }
 }

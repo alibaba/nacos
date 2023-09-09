@@ -25,21 +25,17 @@ import com.alibaba.nacos.core.remote.BaseRpcServer;
  * @version $Id: RequestFilters.java, v 0.1 2023年03月17日 12:00 PM liuzunfei Exp $
  */
 public interface SslContextChangeAware {
-    
+
     /**
      * init rpc server ssl context.
      *
      * @param baseRpcServer rpc server.
      */
     void init(BaseRpcServer baseRpcServer);
-    
-    /**
-     * do something on ssl context change.
-     */
+
+    /** do something on ssl context change. */
     void onSslContextChange();
-    
-    /**
-     * shutdown to clear context.
-     */
+
+    /** shutdown to clear context. */
     void shutdown();
 }

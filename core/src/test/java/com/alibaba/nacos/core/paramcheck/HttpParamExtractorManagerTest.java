@@ -20,18 +20,14 @@ import com.alibaba.nacos.common.utils.HttpMethod;
 import junit.framework.TestCase;
 import org.springframework.mock.web.MockHttpServletRequest;
 
-/**
- * The type Http param extractor manager test.
- */
+/** The type Http param extractor manager test. */
 public class HttpParamExtractorManagerTest extends TestCase {
-    
-    /**
-     * Test get instance.
-     */
+
+    /** Test get instance. */
     public void testGetInstance() {
         HttpParamExtractorManager paramExtractorManager = HttpParamExtractorManager.getInstance();
     }
-    
+
     /**
      * Test get extractor.
      *
@@ -42,7 +38,9 @@ public class HttpParamExtractorManagerTest extends TestCase {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRequestURI("/nacos/v1/ns/instance");
         request.setMethod(HttpMethod.POST);
-        AbstractHttpParamExtractor extractor = paramExtractorManager.getExtractor(request.getRequestURI(), request.getMethod(), "naming");
+        AbstractHttpParamExtractor extractor =
+                paramExtractorManager.getExtractor(
+                        request.getRequestURI(), request.getMethod(), "naming");
         extractor.extractParam(request);
     }
 }

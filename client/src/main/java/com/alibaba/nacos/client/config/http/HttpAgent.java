@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.lifecycle.Closeable;
-
 import java.util.Map;
 
 /**
@@ -28,78 +27,92 @@ import java.util.Map;
  * @author Nacos
  */
 public interface HttpAgent extends Closeable {
-    
+
     /**
      * start to get nacos ip list.
      *
      * @throws NacosException on get ip list error.
      */
     void start() throws NacosException;
-    
+
     /**
      * invoke http get method.
      *
-     * @param path          http path
-     * @param headers       http headers
-     * @param paramValues   http paramValues http
-     * @param encoding      http encode
+     * @param path http path
+     * @param headers http headers
+     * @param paramValues http paramValues http
+     * @param encoding http encode
      * @param readTimeoutMs http timeout
      * @return HttpResult http response
      * @throws Exception If an input or output exception occurred
      */
-    
-    HttpRestResult<String> httpGet(String path, Map<String, String> headers, Map<String, String> paramValues,
-            String encoding, long readTimeoutMs) throws Exception;
-    
+    HttpRestResult<String> httpGet(
+            String path,
+            Map<String, String> headers,
+            Map<String, String> paramValues,
+            String encoding,
+            long readTimeoutMs)
+            throws Exception;
+
     /**
      * invoke http post method.
      *
-     * @param path          http path
-     * @param headers       http headers
-     * @param paramValues   http paramValues http
-     * @param encoding      http encode
+     * @param path http path
+     * @param headers http headers
+     * @param paramValues http paramValues http
+     * @param encoding http encode
      * @param readTimeoutMs http timeout
      * @return HttpResult http response
      * @throws Exception If an input or output exception occurred
      */
-    HttpRestResult<String> httpPost(String path, Map<String, String> headers, Map<String, String> paramValues,
-            String encoding, long readTimeoutMs) throws Exception;
-    
+    HttpRestResult<String> httpPost(
+            String path,
+            Map<String, String> headers,
+            Map<String, String> paramValues,
+            String encoding,
+            long readTimeoutMs)
+            throws Exception;
+
     /**
      * invoke http delete method.
      *
-     * @param path          http path
-     * @param headers       http headers
-     * @param paramValues   http paramValues http
-     * @param encoding      http encode
+     * @param path http path
+     * @param headers http headers
+     * @param paramValues http paramValues http
+     * @param encoding http encode
      * @param readTimeoutMs http timeout
      * @return HttpResult http response
      * @throws Exception If an input or output exception occurred
      */
-    HttpRestResult<String> httpDelete(String path, Map<String, String> headers, Map<String, String> paramValues,
-            String encoding, long readTimeoutMs) throws Exception;
-    
+    HttpRestResult<String> httpDelete(
+            String path,
+            Map<String, String> headers,
+            Map<String, String> paramValues,
+            String encoding,
+            long readTimeoutMs)
+            throws Exception;
+
     /**
      * get name.
      *
      * @return String
      */
     String getName();
-    
+
     /**
      * get namespace.
      *
      * @return String
      */
     String getNamespace();
-    
+
     /**
      * get tenant.
      *
      * @return String
      */
     String getTenant();
-    
+
     /**
      * get encode.
      *

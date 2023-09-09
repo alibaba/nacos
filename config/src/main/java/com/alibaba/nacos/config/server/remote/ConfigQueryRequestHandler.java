@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
+import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
+import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
+
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -41,14 +45,9 @@ import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
-import org.springframework.stereotype.Component;
-
 import java.io.PrintWriter;
 import java.net.URLEncoder;
-
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
-import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
-import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
+import org.springframework.stereotype.Component;
 
 /**
  * ConfigQueryRequestHandler.
@@ -57,38 +56,42 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_H
  * @version $Id: ConfigQueryRequestHandler.java, v 0.1 2020年07月14日 9:54 AM liuzunfei Exp $
  */
 @Component
-public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest, ConfigQueryResponse> {
-    
+public class ConfigQueryRequestHandler
+        extends RequestHandler<ConfigQueryRequest, ConfigQueryResponse> {
+
     private static final int TRY_GET_LOCK_TIMES = 9;
-    
+
     private final ConfigInfoPersistService configInfoPersistService;
-    
+
     private final ConfigInfoTagPersistService configInfoTagPersistService;
-    
+
     private final ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
-    public ConfigQueryRequestHandler(ConfigInfoPersistService configInfoPersistService,
+
+    public ConfigQueryRequestHandler(
+            ConfigInfoPersistService configInfoPersistService,
             ConfigInfoTagPersistService configInfoTagPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService) {
         this.configInfoPersistService = configInfoPersistService;
         this.configInfoTagPersistService = configInfoTagPersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
     }
-    
+
     @Override
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
-        
+    public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta)
+            throws NacosException {
+
         try {
             return getContext(request, meta, request.isNotify());
         } catch (Exception e) {
-            return ConfigQueryResponse.buildFailResponse(ResponseCode.FAIL.getCode(), e.getMessage());
+            return ConfigQueryResponse.buildFailResponse(
+                    ResponseCode.FAIL.getCode(), e.getMessage());
         }
-        
     }
-    
-    private ConfigQueryResponse getContext(ConfigQueryRequest configQueryRequest, RequestMeta meta, boolean notify)
+
+    private ConfigQueryResponse getContext(
+            ConfigQueryRequest configQueryRequest, RequestMeta meta, boolean notify)
             throws Exception {
         String dataId = configQueryRequest.getDataId();
         String group = configQueryRequest.getGroup();
@@ -96,16 +99,20 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         String clientIp = meta.getClientIp();
         String tag = configQueryRequest.getTag();
         ConfigQueryResponse response = new ConfigQueryResponse();
-        
-        final String groupKey = GroupKey2.getKey(configQueryRequest.getDataId(), configQueryRequest.getGroup(),
-                configQueryRequest.getTenant());
-        
-        String autoTag = configQueryRequest.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
-        
+
+        final String groupKey =
+                GroupKey2.getKey(
+                        configQueryRequest.getDataId(),
+                        configQueryRequest.getGroup(),
+                        configQueryRequest.getTenant());
+
+        String autoTag =
+                configQueryRequest.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
+
         String requestIpApp = meta.getLabels().get(CLIENT_APPNAME_HEADER);
-        
+
         String acceptCharset = ENCODE_UTF8;
-        
+
         int lockResult = tryConfigReadLock(groupKey);
         String pullEvent = ConfigTraceService.PULL_EVENT;
         boolean isBeta = false;
@@ -116,8 +123,10 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 long lastModified = 0L;
                 CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
                 if (cacheItem != null) {
-                    if (cacheItem.isBeta() && cacheItem.getIps4Beta() != null && cacheItem.getIps4Beta()
-                            .contains(clientIp) && cacheItem.getConfigCacheBeta() != null) {
+                    if (cacheItem.isBeta()
+                            && cacheItem.getIps4Beta() != null
+                            && cacheItem.getIps4Beta().contains(clientIp)
+                            && cacheItem.getConfigCacheBeta() != null) {
                         isBeta = true;
                     }
                     String configType = cacheItem.getType();
@@ -130,9 +139,13 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     md5 = cacheItem.getConfigCacheBeta().getMd5(acceptCharset);
                     lastModified = cacheItem.getConfigCacheBeta().getLastModifiedTs();
                     if (PropertyUtil.isDirectRead()) {
-                        configInfoBase = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
+                        configInfoBase =
+                                configInfoBetaPersistService.findConfigInfo4Beta(
+                                        dataId, group, tenant);
                     } else {
-                        content = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
+                        content =
+                                ConfigDiskServiceFactory.getInstance()
+                                        .getBetaContent(dataId, group, tenant);
                     }
                     pullEvent = ConfigTraceService.PULL_EVENT_BETA;
                     response.setBeta(true);
@@ -144,40 +157,58 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                                 lastModified = cacheItem.getTagLastModified(autoTag);
                             }
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant,
-                                        autoTag);
+                                configInfoBase =
+                                        configInfoTagPersistService.findConfigInfo4Tag(
+                                                dataId, group, tenant, autoTag);
                             } else {
-                                content = ConfigDiskServiceFactory.getInstance()
-                                        .getTagContent(dataId, group, tenant, autoTag);
+                                content =
+                                        ConfigDiskServiceFactory.getInstance()
+                                                .getTagContent(dataId, group, tenant, autoTag);
                             }
                             pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
                             response.setTag(URLEncoder.encode(autoTag, ENCODE_UTF8));
-                            
+
                         } else {
                             md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
                             lastModified = cacheItem.getConfigCache().getLastModifiedTs();
-                            
+
                             if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
+                                configInfoBase =
+                                        configInfoPersistService.findConfigInfo(
+                                                dataId, group, tenant);
                             } else {
-                                content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
+                                content =
+                                        ConfigDiskServiceFactory.getInstance()
+                                                .getContent(dataId, group, tenant);
                             }
                             pullEvent = ConfigTraceService.PULL_EVENT;
                             if (configInfoBase == null && content == null) {
                                 // FIXME CacheItem
-                                // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
-                                        ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, false, "grpc");
-                                
+                                // No longer exists. It is impossible to simply calculate the push
+                                // delayed. Here, simply record it as - 1.
+                                ConfigTraceService.logPullEvent(
+                                        dataId,
+                                        group,
+                                        tenant,
+                                        requestIpApp,
+                                        -1,
+                                        pullEvent,
+                                        ConfigTraceService.PULL_TYPE_NOTFOUND,
+                                        -1,
+                                        clientIp,
+                                        false,
+                                        "grpc");
+
                                 // pullLog.info("[client-get] clientIp={}, {},
                                 // no data",
                                 // new Object[]{clientIp, groupKey});
-                                
-                                response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
+
+                                response.setErrorInfo(
+                                        ConfigQueryResponse.CONFIG_NOT_FOUND,
+                                        "config data not exist");
                                 return response;
                             }
                             isSli = true;
-                            
                         }
                     } else {
                         if (cacheItem != null) {
@@ -185,39 +216,55 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             lastModified = cacheItem.getTagLastModified(tag);
                         }
                         if (PropertyUtil.isDirectRead()) {
-                            configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
+                            configInfoBase =
+                                    configInfoTagPersistService.findConfigInfo4Tag(
+                                            dataId, group, tenant, tag);
                         } else {
-                            content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
+                            content =
+                                    ConfigDiskServiceFactory.getInstance()
+                                            .getTagContent(dataId, group, tenant, tag);
                         }
                         response.setTag(tag);
                         pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
                         if (configInfoBase == null && content == null) {
                             // FIXME CacheItem
-                            // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
-                                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, false, "grpc");
-                            
+                            // No longer exists. It is impossible to simply calculate the push
+                            // delayed. Here, simply record it as - 1.
+                            ConfigTraceService.logPullEvent(
+                                    dataId,
+                                    group,
+                                    tenant,
+                                    requestIpApp,
+                                    -1,
+                                    pullEvent,
+                                    ConfigTraceService.PULL_TYPE_NOTFOUND,
+                                    -1,
+                                    clientIp,
+                                    false,
+                                    "grpc");
+
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
                             // new Object[]{clientIp, groupKey});
-                            
-                            response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
+
+                            response.setErrorInfo(
+                                    ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                             return response;
-                            
                         }
                     }
                 }
-                
+
                 response.setMd5(md5);
-                String encryptedDataKey = getEncryptedDataKey(tag, clientIp, cacheItem, isBeta, autoTag);
+                String encryptedDataKey =
+                        getEncryptedDataKey(tag, clientIp, cacheItem, isBeta, autoTag);
                 response.setEncryptedDataKey(encryptedDataKey);
                 if (PropertyUtil.isDirectRead()) {
                     response.setLastModified(lastModified);
                     response.setContent(configInfoBase.getContent());
                     response.setResultCode(ResponseCode.SUCCESS.getCode());
-                    
+
                 } else {
-                    //read from file
+                    // read from file
                     try {
                         response.setContent(content);
                         response.setLastModified(lastModified);
@@ -227,43 +274,76 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                         return response;
                     }
                 }
-                
-                LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp, md5, TimeUtils.getCurrentTimeStr());
-                
+
+                LogUtil.PULL_CHECK_LOG.warn(
+                        "{}|{}|{}|{}", groupKey, clientIp, md5, TimeUtils.getCurrentTimeStr());
+
                 final long delayed = System.currentTimeMillis() - lastModified;
-                
+
                 if (notify) {
-                    
-                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
-                            ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "grpc");
+
+                    ConfigTraceService.logPullEvent(
+                            dataId,
+                            group,
+                            tenant,
+                            requestIpApp,
+                            lastModified,
+                            pullEvent,
+                            ConfigTraceService.PULL_TYPE_OK,
+                            delayed,
+                            clientIp,
+                            notify,
+                            "grpc");
                 } else {
-                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
-                            ConfigTraceService.PULL_TYPE_OK, System.currentTimeMillis(), clientIp, notify, "grpc");
+                    ConfigTraceService.logPullEvent(
+                            dataId,
+                            group,
+                            tenant,
+                            requestIpApp,
+                            lastModified,
+                            pullEvent,
+                            ConfigTraceService.PULL_TYPE_OK,
+                            System.currentTimeMillis(),
+                            clientIp,
+                            notify,
+                            "grpc");
                 }
             } finally {
                 releaseConfigReadLock(groupKey);
             }
         } else if (lockResult == 0) {
-            
-            // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
-                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, notify, "grpc");
+
+            // FIXME CacheItem No longer exists. It is impossible to simply calculate the push
+            // delayed. Here, simply record it as - 1.
+            ConfigTraceService.logPullEvent(
+                    dataId,
+                    group,
+                    tenant,
+                    requestIpApp,
+                    -1,
+                    pullEvent,
+                    ConfigTraceService.PULL_TYPE_NOTFOUND,
+                    -1,
+                    clientIp,
+                    notify,
+                    "grpc");
             response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
-            
+
         } else {
             PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
-            response.setErrorInfo(ConfigQueryResponse.CONFIG_QUERY_CONFLICT,
+            response.setErrorInfo(
+                    ConfigQueryResponse.CONFIG_QUERY_CONFLICT,
                     "requested file is being modified, please try later.");
         }
         return response;
     }
-    
-    private String getEncryptedDataKey(String tag, String clientIp, CacheItem cacheItem, boolean isBeta,
-            String autoTag) {
+
+    private String getEncryptedDataKey(
+            String tag, String clientIp, CacheItem cacheItem, boolean isBeta, String autoTag) {
         if (cacheItem == null) {
             return null;
         }
-        
+
         String encryptedDataKey = null;
         if (isBeta && cacheItem.getConfigCacheBeta() != null) {
             encryptedDataKey = cacheItem.getConfigCacheBeta().getEncryptedDataKey();
@@ -271,7 +351,8 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
             if (StringUtils.isBlank(tag)) {
                 if (isUseTag(cacheItem, autoTag)) {
                     encryptedDataKey = cacheItem.getTagEncryptedDataKey(autoTag);
-                } else if (cacheItem.isBatch && cacheItem.delimiter >= InternetAddressUtil.ipToInt(clientIp)
+                } else if (cacheItem.isBatch
+                        && cacheItem.delimiter >= InternetAddressUtil.ipToInt(clientIp)
                         && cacheItem.getConfigCacheBatch() != null) {
                     // batch
                     encryptedDataKey = cacheItem.getConfigCacheBatch().getEncryptedDataKey();
@@ -282,33 +363,33 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
             }
         }
-        
+
         return encryptedDataKey;
     }
-    
+
     private static void releaseConfigReadLock(String groupKey) {
         ConfigCacheService.releaseReadLock(groupKey);
     }
-    
+
     private static int tryConfigReadLock(String groupKey) {
-        
+
         // Lock failed by default.
         int lockResult = -1;
-        
+
         // Try to get lock times, max value: 10;
         for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
             lockResult = ConfigCacheService.tryReadLock(groupKey);
-            
+
             // The data is non-existent.
             if (0 == lockResult) {
                 break;
             }
-            
+
             // Success
             if (lockResult > 0) {
                 break;
             }
-            
+
             // Retry.
             if (i > 0) {
                 try {
@@ -318,13 +399,13 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 }
             }
         }
-        
+
         return lockResult;
     }
-    
+
     private static boolean isUseTag(CacheItem cacheItem, String tag) {
-        return StringUtils.isNotBlank(tag) && cacheItem.getConfigCacheTags() != null && cacheItem.getConfigCacheTags()
-                .containsKey(tag);
+        return StringUtils.isNotBlank(tag)
+                && cacheItem.getConfigCacheTags() != null
+                && cacheItem.getConfigCacheTags().containsKey(tag);
     }
-    
 }

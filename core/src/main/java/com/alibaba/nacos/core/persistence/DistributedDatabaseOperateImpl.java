@@ -59,17 +59,6 @@ import com.alibaba.nacos.persistence.repository.embedded.sql.SelectRequest;
 import com.alibaba.nacos.persistence.utils.PersistenceExecutor;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.google.protobuf.ByteString;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Conditional;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.jdbc.BadSqlGrammarException;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionTemplate;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -83,6 +72,16 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Conditional;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.jdbc.BadSqlGrammarException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Distributed Database Operate.
@@ -144,91 +143,103 @@ import java.util.stream.Collectors;
 @Conditional(ConditionDistributedEmbedStorage.class)
 @Component
 @SuppressWarnings({"unchecked"})
-public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implements BaseDatabaseOperate {
-    
-    private static final Logger LOGGER = LoggerFactory.getLogger(DistributedDatabaseOperateImpl.class);
-    
-    /**
-     * The data import operation is dedicated key, which ACTS as an identifier.
-     */
+public class DistributedDatabaseOperateImpl extends RequestProcessor4CP
+        implements BaseDatabaseOperate {
+
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(DistributedDatabaseOperateImpl.class);
+
+    /** The data import operation is dedicated key, which ACTS as an identifier. */
     private static final String DATA_IMPORT_KEY = "00--0-data_import-0--00";
-    
+
     private final ServerMemberManager memberManager;
-    
+
     private CPProtocol protocol;
-    
+
     private LocalDataSourceServiceImpl dataSourceService;
-    
+
     private JdbcTemplate jdbcTemplate;
-    
+
     private TransactionTemplate transactionTemplate;
-    
+
     private final Serializer serializer = SerializeFactory.getDefault();
-    
+
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    
+
     private final ReentrantReadWriteLock.ReadLock readLock = lock.readLock();
-    
+
     private final ReentrantReadWriteLock.WriteLock writeLock = lock.writeLock();
-    
-    public DistributedDatabaseOperateImpl(ServerMemberManager memberManager, ProtocolManager protocolManager)
-            throws Exception {
+
+    public DistributedDatabaseOperateImpl(
+            ServerMemberManager memberManager, ProtocolManager protocolManager) throws Exception {
         this.memberManager = memberManager;
         this.protocol = protocolManager.getCpProtocol();
         init();
     }
-    
+
     protected void init() throws Exception {
-        
-        this.dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource.getInstance().getDataSource();
-        
+
+        this.dataSourceService =
+                (LocalDataSourceServiceImpl) DynamicDataSource.getInstance().getDataSource();
+
         // Because in Raft + Derby mode, ensuring data consistency depends on the Raft's
         // log playback and snapshot recovery capabilities, and the last data must be cleared
         this.dataSourceService.cleanAndReopenDerby();
-        
+
         this.jdbcTemplate = dataSourceService.getJdbcTemplate();
         this.transactionTemplate = dataSourceService.getTransactionTemplate();
-        
+
         // Registers a Derby Raft state machine failure event for node degradation processing
         NotifyCenter.registerToSharePublisher(RaftDbErrorEvent.class);
         // Register the snapshot load event
         NotifyCenter.registerToSharePublisher(DerbyLoadEvent.class);
-        
-        NotifyCenter.registerSubscriber(new Subscriber<RaftDbErrorEvent>() {
-            @Override
-            public void onEvent(RaftDbErrorEvent event) {
-                dataSourceService.setHealthStatus("DOWN");
-            }
-            
-            @Override
-            public Class<? extends Event> subscribeType() {
-                return RaftDbErrorEvent.class;
-            }
-        });
-        
+
+        NotifyCenter.registerSubscriber(
+                new Subscriber<RaftDbErrorEvent>() {
+                    @Override
+                    public void onEvent(RaftDbErrorEvent event) {
+                        dataSourceService.setHealthStatus("DOWN");
+                    }
+
+                    @Override
+                    public Class<? extends Event> subscribeType() {
+                        return RaftDbErrorEvent.class;
+                    }
+                });
+
         this.protocol.addRequestProcessors(Collections.singletonList(this));
         LOGGER.info("use DistributedTransactionServicesImpl");
     }
-    
+
     @JustForTest
     public void mockConsistencyProtocol(CPProtocol protocol) {
         this.protocol = protocol;
     }
-    
+
     @Override
     public <R> R queryOne(String sql, Class<R> cls) {
         try {
             LoggerUtils.printIfDebugEnabled(LOGGER, "queryOne info : sql : {}", sql);
-            
-            byte[] data = serializer.serialize(
-                    SelectRequest.builder().queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS).sql(sql)
-                            .className(cls.getCanonicalName()).build());
-            
-            final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
-            Response response = innerRead(
-                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+
+            byte[] data =
+                    serializer.serialize(
+                            SelectRequest.builder()
+                                    .queryType(QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS)
+                                    .sql(sql)
+                                    .className(cls.getCanonicalName())
+                                    .build());
+
+            final boolean blockRead =
+                    EmbeddedStorageContextHolder.containsExtendInfo(
+                            PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+            Response response =
+                    innerRead(
+                            ReadRequest.newBuilder()
+                                    .setGroup(group())
+                                    .setData(ByteString.copyFrom(data))
+                                    .build(),
+                            blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), cls);
             }
@@ -238,21 +249,33 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public <R> R queryOne(String sql, Object[] args, Class<R> cls) {
         try {
-            LoggerUtils.printIfDebugEnabled(LOGGER, "queryOne info : sql : {}, args : {}", sql, args);
-            
-            byte[] data = serializer.serialize(
-                    SelectRequest.builder().queryType(QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS).sql(sql).args(args)
-                            .className(cls.getCanonicalName()).build());
-            
-            final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
-            Response response = innerRead(
-                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+            LoggerUtils.printIfDebugEnabled(
+                    LOGGER, "queryOne info : sql : {}, args : {}", sql, args);
+
+            byte[] data =
+                    serializer.serialize(
+                            SelectRequest.builder()
+                                    .queryType(QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS)
+                                    .sql(sql)
+                                    .args(args)
+                                    .className(cls.getCanonicalName())
+                                    .build());
+
+            final boolean blockRead =
+                    EmbeddedStorageContextHolder.containsExtendInfo(
+                            PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+            Response response =
+                    innerRead(
+                            ReadRequest.newBuilder()
+                                    .setGroup(group())
+                                    .setData(ByteString.copyFrom(data))
+                                    .build(),
+                            blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), cls);
             }
@@ -262,23 +285,36 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public <R> R queryOne(String sql, Object[] args, RowMapper<R> mapper) {
         try {
-            LoggerUtils.printIfDebugEnabled(LOGGER, "queryOne info : sql : {}, args : {}", sql, args);
-            
-            byte[] data = serializer.serialize(
-                    SelectRequest.builder().queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS).sql(sql).args(args)
-                            .className(mapper.getClass().getCanonicalName()).build());
-            
-            final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
-            Response response = innerRead(
-                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+            LoggerUtils.printIfDebugEnabled(
+                    LOGGER, "queryOne info : sql : {}, args : {}", sql, args);
+
+            byte[] data =
+                    serializer.serialize(
+                            SelectRequest.builder()
+                                    .queryType(QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS)
+                                    .sql(sql)
+                                    .args(args)
+                                    .className(mapper.getClass().getCanonicalName())
+                                    .build());
+
+            final boolean blockRead =
+                    EmbeddedStorageContextHolder.containsExtendInfo(
+                            PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+            Response response =
+                    innerRead(
+                            ReadRequest.newBuilder()
+                                    .setGroup(group())
+                                    .setData(ByteString.copyFrom(data))
+                                    .build(),
+                            blockRead);
             if (response.getSuccess()) {
-                return serializer.deserialize(response.getData().toByteArray(),
+                return serializer.deserialize(
+                        response.getData().toByteArray(),
                         ClassUtils.resolveGenericTypeByInterface(mapper.getClass()));
             }
             throw new NJdbcException(response.getErrMsg(), response.getErrMsg());
@@ -287,21 +323,33 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public <R> List<R> queryMany(String sql, Object[] args, RowMapper<R> mapper) {
         try {
-            LoggerUtils.printIfDebugEnabled(LOGGER, "queryMany info : sql : {}, args : {}", sql, args);
-            
-            byte[] data = serializer.serialize(
-                    SelectRequest.builder().queryType(QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS).sql(sql).args(args)
-                            .className(mapper.getClass().getCanonicalName()).build());
-            
-            final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
-            Response response = innerRead(
-                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+            LoggerUtils.printIfDebugEnabled(
+                    LOGGER, "queryMany info : sql : {}, args : {}", sql, args);
+
+            byte[] data =
+                    serializer.serialize(
+                            SelectRequest.builder()
+                                    .queryType(QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS)
+                                    .sql(sql)
+                                    .args(args)
+                                    .className(mapper.getClass().getCanonicalName())
+                                    .build());
+
+            final boolean blockRead =
+                    EmbeddedStorageContextHolder.containsExtendInfo(
+                            PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+            Response response =
+                    innerRead(
+                            ReadRequest.newBuilder()
+                                    .setGroup(group())
+                                    .setData(ByteString.copyFrom(data))
+                                    .build(),
+                            blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), List.class);
             }
@@ -311,21 +359,33 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public <R> List<R> queryMany(String sql, Object[] args, Class<R> rClass) {
         try {
-            LoggerUtils.printIfDebugEnabled(LOGGER, "queryMany info : sql : {}, args : {}", sql, args);
-            
-            byte[] data = serializer.serialize(
-                    SelectRequest.builder().queryType(QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS).sql(sql).args(args)
-                            .className(rClass.getCanonicalName()).build());
-            
-            final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
-            Response response = innerRead(
-                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+            LoggerUtils.printIfDebugEnabled(
+                    LOGGER, "queryMany info : sql : {}, args : {}", sql, args);
+
+            byte[] data =
+                    serializer.serialize(
+                            SelectRequest.builder()
+                                    .queryType(QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS)
+                                    .sql(sql)
+                                    .args(args)
+                                    .className(rClass.getCanonicalName())
+                                    .build());
+
+            final boolean blockRead =
+                    EmbeddedStorageContextHolder.containsExtendInfo(
+                            PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+            Response response =
+                    innerRead(
+                            ReadRequest.newBuilder()
+                                    .setGroup(group())
+                                    .setData(ByteString.copyFrom(data))
+                                    .build(),
+                            blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), List.class);
             }
@@ -335,21 +395,32 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public List<Map<String, Object>> queryMany(String sql, Object[] args) {
         try {
-            LoggerUtils.printIfDebugEnabled(LOGGER, "queryMany info : sql : {}, args : {}", sql, args);
-            
-            byte[] data = serializer.serialize(
-                    SelectRequest.builder().queryType(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS).sql(sql).args(args)
-                            .build());
-            
-            final boolean blockRead = EmbeddedStorageContextHolder
-                    .containsExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
-            
-            Response response = innerRead(
-                    ReadRequest.newBuilder().setGroup(group()).setData(ByteString.copyFrom(data)).build(), blockRead);
+            LoggerUtils.printIfDebugEnabled(
+                    LOGGER, "queryMany info : sql : {}, args : {}", sql, args);
+
+            byte[] data =
+                    serializer.serialize(
+                            SelectRequest.builder()
+                                    .queryType(QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS)
+                                    .sql(sql)
+                                    .args(args)
+                                    .build());
+
+            final boolean blockRead =
+                    EmbeddedStorageContextHolder.containsExtendInfo(
+                            PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA);
+
+            Response response =
+                    innerRead(
+                            ReadRequest.newBuilder()
+                                    .setGroup(group())
+                                    .setData(ByteString.copyFrom(data))
+                                    .build(),
+                            blockRead);
             if (response.getSuccess()) {
                 return serializer.deserialize(response.getData().toByteArray(), List.class);
             }
@@ -359,11 +430,12 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     /**
-     * In some business situations, you need to avoid the timeout issue, so blockRead is used to determine this.
+     * In some business situations, you need to avoid the timeout issue, so blockRead is used to
+     * determine this.
      *
-     * @param request   {@link ReadRequest}
+     * @param request {@link ReadRequest}
      * @param blockRead is async read operation
      * @return {@link Response}
      * @throws Exception Exception
@@ -374,65 +446,86 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         }
         return protocol.getData(request);
     }
-    
+
     @Override
     public CompletableFuture<RestResult<String>> dataImport(File file) {
-        return CompletableFuture.supplyAsync(() -> {
-            try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(file)) {
-                int batchSize = 1000;
-                List<String> batchUpdate = new ArrayList<>(batchSize);
-                List<CompletableFuture<Response>> futures = new ArrayList<>();
-                while (iterator.hasNext()) {
-                    String sql = iterator.next();
-                    if (StringUtils.isNotBlank(sql)) {
-                        batchUpdate.add(sql);
+        return CompletableFuture.supplyAsync(
+                () -> {
+                    try (DiskUtils.LineIterator iterator = DiskUtils.lineIterator(file)) {
+                        int batchSize = 1000;
+                        List<String> batchUpdate = new ArrayList<>(batchSize);
+                        List<CompletableFuture<Response>> futures = new ArrayList<>();
+                        while (iterator.hasNext()) {
+                            String sql = iterator.next();
+                            if (StringUtils.isNotBlank(sql)) {
+                                batchUpdate.add(sql);
+                            }
+                            boolean submit = batchUpdate.size() == batchSize || !iterator.hasNext();
+                            if (submit) {
+                                List<ModifyRequest> requests =
+                                        batchUpdate.stream()
+                                                .map(ModifyRequest::new)
+                                                .collect(Collectors.toList());
+                                CompletableFuture<Response> future =
+                                        protocol.writeAsync(
+                                                WriteRequest.newBuilder()
+                                                        .setGroup(group())
+                                                        .setData(
+                                                                ByteString.copyFrom(
+                                                                        serializer.serialize(
+                                                                                requests)))
+                                                        .putExtendInfo(
+                                                                DATA_IMPORT_KEY,
+                                                                Boolean.TRUE.toString())
+                                                        .build());
+                                futures.add(future);
+                                batchUpdate.clear();
+                            }
+                        }
+                        CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
+                        for (CompletableFuture<Response> future : futures) {
+                            Response response = future.get();
+                            if (!response.getSuccess()) {
+                                return RestResultUtils.failed(response.getErrMsg());
+                            }
+                        }
+                        return RestResultUtils.success();
+                    } catch (Throwable ex) {
+                        LOGGER.error("data import has error :", ex);
+                        return RestResultUtils.failed(ex.getMessage());
                     }
-                    boolean submit = batchUpdate.size() == batchSize || !iterator.hasNext();
-                    if (submit) {
-                        List<ModifyRequest> requests = batchUpdate.stream().map(ModifyRequest::new)
-                                .collect(Collectors.toList());
-                        CompletableFuture<Response> future = protocol.writeAsync(
-                                WriteRequest.newBuilder().setGroup(group())
-                                        .setData(ByteString.copyFrom(serializer.serialize(requests)))
-                                        .putExtendInfo(DATA_IMPORT_KEY, Boolean.TRUE.toString()).build());
-                        futures.add(future);
-                        batchUpdate.clear();
-                    }
-                }
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-                for (CompletableFuture<Response> future : futures) {
-                    Response response = future.get();
-                    if (!response.getSuccess()) {
-                        return RestResultUtils.failed(response.getErrMsg());
-                    }
-                }
-                return RestResultUtils.success();
-            } catch (Throwable ex) {
-                LOGGER.error("data import has error :", ex);
-                return RestResultUtils.failed(ex.getMessage());
-            }
-        });
+                });
     }
-    
+
     @Override
     public Boolean update(List<ModifyRequest> sqlContext, BiConsumer<Boolean, Throwable> consumer) {
         try {
-            
+
             // Since the SQL parameter is Object[], in order to ensure that the types of
             // array elements are not lost, the serialization here is done using the java-specific
             // serialization framework, rather than continuing with the protobuff
-            
+
             LoggerUtils.printIfDebugEnabled(LOGGER, "modifyRequests info : {}", sqlContext);
-            
+
             // {timestamp}-{group}-{ip:port}-{signature}
-            
+
             final String key =
-                    System.currentTimeMillis() + "-" + group() + "-" + memberManager.getSelf().getAddress() + "-"
-                            + MD5Utils.md5Hex(sqlContext.toString(), PersistenceConstant.DEFAULT_ENCODE);
-            WriteRequest request = WriteRequest.newBuilder().setGroup(group()).setKey(key)
-                    .setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
-                    .putAllExtendInfo(EmbeddedStorageContextHolder.getCurrentExtendInfo())
-                    .setType(sqlContext.getClass().getCanonicalName()).build();
+                    System.currentTimeMillis()
+                            + "-"
+                            + group()
+                            + "-"
+                            + memberManager.getSelf().getAddress()
+                            + "-"
+                            + MD5Utils.md5Hex(
+                                    sqlContext.toString(), PersistenceConstant.DEFAULT_ENCODE);
+            WriteRequest request =
+                    WriteRequest.newBuilder()
+                            .setGroup(group())
+                            .setKey(key)
+                            .setData(ByteString.copyFrom(serializer.serialize(sqlContext)))
+                            .putAllExtendInfo(EmbeddedStorageContextHolder.getCurrentExtendInfo())
+                            .setType(sqlContext.getClass().getCanonicalName())
+                            .build();
             if (Objects.isNull(consumer)) {
                 Response response = this.protocol.write(request);
                 if (response.getSuccess()) {
@@ -441,11 +534,22 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                 LOGGER.error("execute sql modify operation failed : {}", response.getErrMsg());
                 return false;
             } else {
-                this.protocol.writeAsync(request).whenComplete((BiConsumer<Response, Throwable>) (response, ex) -> {
-                    String errMsg = Objects.isNull(ex) ? response.getErrMsg() : ExceptionUtil.getCause(ex).getMessage();
-                    consumer.accept(response.getSuccess(),
-                            StringUtils.isBlank(errMsg) ? null : new NJdbcException(errMsg));
-                });
+                this.protocol
+                        .writeAsync(request)
+                        .whenComplete(
+                                (BiConsumer<Response, Throwable>)
+                                        (response, ex) -> {
+                                            String errMsg =
+                                                    Objects.isNull(ex)
+                                                            ? response.getErrMsg()
+                                                            : ExceptionUtil.getCause(ex)
+                                                                    .getMessage();
+                                            consumer.accept(
+                                                    response.getSuccess(),
+                                                    StringUtils.isBlank(errMsg)
+                                                            ? null
+                                                            : new NJdbcException(errMsg));
+                                        });
             }
             return true;
         } catch (TimeoutException e) {
@@ -456,12 +560,12 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.toString());
         }
     }
-    
+
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
         return Collections.singletonList(new DerbySnapshotOperation(writeLock));
     }
-    
+
     @SuppressWarnings("all")
     @Override
     public Response onRequest(final ReadRequest request) {
@@ -469,46 +573,81 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         readLock.lock();
         Object data;
         try {
-            selectRequest = serializer.deserialize(request.getData().toByteArray(), SelectRequest.class);
-            LoggerUtils.printIfDebugEnabled(LOGGER, "getData info : selectRequest : {}", selectRequest);
-            final RowMapper<Object> mapper = RowMapperManager.getRowMapper(selectRequest.getClassName());
+            selectRequest =
+                    serializer.deserialize(request.getData().toByteArray(), SelectRequest.class);
+            LoggerUtils.printIfDebugEnabled(
+                    LOGGER, "getData info : selectRequest : {}", selectRequest);
+            final RowMapper<Object> mapper =
+                    RowMapperManager.getRowMapper(selectRequest.getClassName());
             final byte type = selectRequest.getQueryType();
             switch (type) {
                 case QueryType.QUERY_ONE_WITH_MAPPER_WITH_ARGS:
-                    data = queryOne(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(), mapper);
+                    data =
+                            queryOne(
+                                    jdbcTemplate,
+                                    selectRequest.getSql(),
+                                    selectRequest.getArgs(),
+                                    mapper);
                     break;
                 case QueryType.QUERY_ONE_NO_MAPPER_NO_ARGS:
-                    data = queryOne(jdbcTemplate, selectRequest.getSql(),
-                            ClassUtils.findClassByName(selectRequest.getClassName()));
+                    data =
+                            queryOne(
+                                    jdbcTemplate,
+                                    selectRequest.getSql(),
+                                    ClassUtils.findClassByName(selectRequest.getClassName()));
                     break;
                 case QueryType.QUERY_ONE_NO_MAPPER_WITH_ARGS:
-                    data = queryOne(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
-                            ClassUtils.findClassByName(selectRequest.getClassName()));
+                    data =
+                            queryOne(
+                                    jdbcTemplate,
+                                    selectRequest.getSql(),
+                                    selectRequest.getArgs(),
+                                    ClassUtils.findClassByName(selectRequest.getClassName()));
                     break;
                 case QueryType.QUERY_MANY_WITH_MAPPER_WITH_ARGS:
-                    data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(), mapper);
+                    data =
+                            queryMany(
+                                    jdbcTemplate,
+                                    selectRequest.getSql(),
+                                    selectRequest.getArgs(),
+                                    mapper);
                     break;
                 case QueryType.QUERY_MANY_WITH_LIST_WITH_ARGS:
                     data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs());
                     break;
                 case QueryType.QUERY_MANY_NO_MAPPER_WITH_ARGS:
-                    data = queryMany(jdbcTemplate, selectRequest.getSql(), selectRequest.getArgs(),
-                            ClassUtils.findClassByName(selectRequest.getClassName()));
+                    data =
+                            queryMany(
+                                    jdbcTemplate,
+                                    selectRequest.getSql(),
+                                    selectRequest.getArgs(),
+                                    ClassUtils.findClassByName(selectRequest.getClassName()));
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported data query categories");
             }
-            ByteString bytes = data == null ? ByteString.EMPTY : ByteString.copyFrom(serializer.serialize(data));
+            ByteString bytes =
+                    data == null
+                            ? ByteString.EMPTY
+                            : ByteString.copyFrom(serializer.serialize(data));
             return Response.newBuilder().setSuccess(true).setData(bytes).build();
         } catch (Exception e) {
-            LOGGER.error("There was an error querying the data, request : {}, error : {}", selectRequest, e.toString());
-            return Response.newBuilder().setSuccess(false)
-                    .setErrMsg(ClassUtils.getSimplaName(e) + ":" + ExceptionUtil.getCause(e).getMessage()).build();
+            LOGGER.error(
+                    "There was an error querying the data, request : {}, error : {}",
+                    selectRequest,
+                    e.toString());
+            return Response.newBuilder()
+                    .setSuccess(false)
+                    .setErrMsg(
+                            ClassUtils.getSimplaName(e)
+                                    + ":"
+                                    + ExceptionUtil.getCause(e).getMessage())
+                    .build();
         } finally {
             readLock.unlock();
         }
     }
-    
+
     @Override
     public Response onApply(WriteRequest log) {
         LoggerUtils.printIfDebugEnabled(LOGGER, "onApply info : log : {}", log);
@@ -517,7 +656,8 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
         final Lock lock = readLock;
         lock.lock();
         try {
-            List<ModifyRequest> sqlContext = serializer.deserialize(byteString.toByteArray(), List.class);
+            List<ModifyRequest> sqlContext =
+                    serializer.deserialize(byteString.toByteArray(), List.class);
             boolean isOk = false;
             if (log.containsExtendInfo(DATA_IMPORT_KEY)) {
                 isOk = doDataImport(jdbcTemplate, sqlContext);
@@ -527,15 +667,17 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
                 // If there is additional information, post processing
                 // Put into the asynchronous thread pool for processing to avoid blocking the
                 // normal execution of the state machine
-                PersistenceExecutor.executeEmbeddedDump(() -> {
-                    for (EmbeddedApplyHook each : EmbeddedApplyHookHolder.getInstance().getAllHooks()) {
-                        each.afterApply(log);
-                    }
-                });
+                PersistenceExecutor.executeEmbeddedDump(
+                        () -> {
+                            for (EmbeddedApplyHook each :
+                                    EmbeddedApplyHookHolder.getInstance().getAllHooks()) {
+                                each.afterApply(log);
+                            }
+                        });
             }
-            
+
             return Response.newBuilder().setSuccess(isOk).build();
-            
+
             // We do not believe that an error caused by a problem with an SQL error
             // should trigger the stop operation of the raft state machine
         } catch (BadSqlGrammarException | DataIntegrityViolationException e) {
@@ -549,13 +691,13 @@ public class DistributedDatabaseOperateImpl extends RequestProcessor4CP implemen
             lock.unlock();
         }
     }
-    
+
     @Override
     public void onError(Throwable throwable) {
         // Trigger reversion strategy
         NotifyCenter.publishEvent(new RaftDbErrorEvent(throwable));
     }
-    
+
     @Override
     public String group() {
         return PersistenceConstant.CONFIG_MODEL_RAFT_GROUP;

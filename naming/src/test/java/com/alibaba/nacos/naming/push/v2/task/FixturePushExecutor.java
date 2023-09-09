@@ -21,17 +21,19 @@ import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
 
 public class FixturePushExecutor implements PushExecutor {
-    
+
     private boolean shouldSuccess = true;
-    
+
     private Throwable failedException;
-    
+
     @Override
-    public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {
-    }
-    
+    public void doPush(String clientId, Subscriber subscriber, PushDataWrapper data) {}
+
     @Override
-    public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
+    public void doPushWithCallback(
+            String clientId,
+            Subscriber subscriber,
+            PushDataWrapper data,
             NamingPushCallback callBack) {
         if (shouldSuccess) {
             callBack.onSuccess();
@@ -39,11 +41,11 @@ public class FixturePushExecutor implements PushExecutor {
             callBack.onFail(failedException);
         }
     }
-    
+
     public void setShouldSuccess(boolean shouldSuccess) {
         this.shouldSuccess = shouldSuccess;
     }
-    
+
     public void setFailedException(Throwable failedException) {
         this.failedException = failedException;
     }

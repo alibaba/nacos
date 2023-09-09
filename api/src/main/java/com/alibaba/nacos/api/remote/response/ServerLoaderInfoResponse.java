@@ -26,19 +26,19 @@ import java.util.Map;
  * @version $Id: ServerLoaderInfoResponse.java, v 0.1 2020年09月03日 2:46 PM liuzunfei Exp $
  */
 public class ServerLoaderInfoResponse extends Response {
-    
+
     String address;
-    
+
     Map<String, String> loaderMetrics = new HashMap<>();
-    
+
     public String getMetricsValue(String key) {
         return loaderMetrics.get(key);
     }
-    
+
     public void putMetricsValue(String key, String value) {
         this.loaderMetrics.put(key, value);
     }
-    
+
     /**
      * Getter method for property <tt>loaderMetrics</tt>.
      *
@@ -47,7 +47,7 @@ public class ServerLoaderInfoResponse extends Response {
     public Map<String, String> getLoaderMetrics() {
         return loaderMetrics;
     }
-    
+
     /**
      * Setter method for property <tt>loaderMetrics</tt>.
      *

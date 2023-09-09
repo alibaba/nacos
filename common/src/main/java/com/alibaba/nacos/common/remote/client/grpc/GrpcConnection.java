@@ -33,12 +33,11 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
-import org.checkerframework.checker.nullness.qual.Nullable;
-
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 /**
  * gRPC connection.
@@ -47,26 +46,22 @@ import java.util.concurrent.TimeoutException;
  * @version $Id: GrpcConnection.java, v 0.1 2020年08月09日 1:36 PM liuzunfei Exp $
  */
 public class GrpcConnection extends Connection {
-    
-    /**
-     * grpc channel.
-     */
+
+    /** grpc channel. */
     protected ManagedChannel channel;
-    
+
     Executor executor;
-    
-    /**
-     * stub to send request.
-     */
+
+    /** stub to send request. */
     protected RequestGrpc.RequestFutureStub grpcFutureServiceStub;
-    
+
     protected StreamObserver<Payload> payloadStreamObserver;
-    
+
     public GrpcConnection(RpcClient.ServerInfo serverInfo, Executor executor) {
         super(serverInfo);
         this.executor = executor;
     }
-    
+
     @Override
     public Response request(Request request, long timeouts) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request);
@@ -81,22 +76,22 @@ public class GrpcConnection extends Connection {
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, e);
         }
-        
+
         return (Response) GrpcUtils.parse(grpcResponse);
     }
-    
+
     @Override
     public RequestFuture requestFuture(Request request) throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request);
-        
+
         final ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
         return new RequestFuture() {
-            
+
             @Override
             public boolean isDone() {
                 return requestFuture.isDone();
             }
-            
+
             @Override
             public Response get() throws Exception {
                 Payload grpcResponse = requestFuture.get();
@@ -106,7 +101,7 @@ public class GrpcConnection extends Connection {
                 }
                 return response;
             }
-            
+
             @Override
             public Response get(long timeout) throws Exception {
                 Payload grpcResponse = requestFuture.get(timeout, TimeUnit.MILLISECONDS);
@@ -118,74 +113,90 @@ public class GrpcConnection extends Connection {
             }
         };
     }
-    
+
     public void sendResponse(Response response) {
         Payload convert = GrpcUtils.convert(response);
         payloadStreamObserver.onNext(convert);
     }
-    
+
     public void sendRequest(Request request) {
         Payload convert = GrpcUtils.convert(request);
         payloadStreamObserver.onNext(convert);
     }
-    
+
     @Override
-    public void asyncRequest(Request request, final RequestCallBack requestCallBack) throws NacosException {
+    public void asyncRequest(Request request, final RequestCallBack requestCallBack)
+            throws NacosException {
         Payload grpcRequest = GrpcUtils.convert(request);
         ListenableFuture<Payload> requestFuture = grpcFutureServiceStub.request(grpcRequest);
-        
-        //set callback .
-        Futures.addCallback(requestFuture, new FutureCallback<Payload>() {
-            @Override
-            public void onSuccess(@Nullable Payload grpcResponse) {
-                Response response = (Response) GrpcUtils.parse(grpcResponse);
-                
-                if (response != null) {
-                    if (response instanceof ErrorResponse) {
-                        requestCallBack.onException(new NacosException(response.getErrorCode(), response.getMessage()));
-                    } else {
-                        requestCallBack.onResponse(response);
+
+        // set callback .
+        Futures.addCallback(
+                requestFuture,
+                new FutureCallback<Payload>() {
+                    @Override
+                    public void onSuccess(@Nullable Payload grpcResponse) {
+                        Response response = (Response) GrpcUtils.parse(grpcResponse);
+
+                        if (response != null) {
+                            if (response instanceof ErrorResponse) {
+                                requestCallBack.onException(
+                                        new NacosException(
+                                                response.getErrorCode(), response.getMessage()));
+                            } else {
+                                requestCallBack.onResponse(response);
+                            }
+                        } else {
+                            requestCallBack.onException(
+                                    new NacosException(
+                                            ResponseCode.FAIL.getCode(), "response is null"));
+                        }
                     }
-                } else {
-                    requestCallBack.onException(new NacosException(ResponseCode.FAIL.getCode(), "response is null"));
-                }
-            }
-            
-            @Override
-            public void onFailure(Throwable throwable) {
-                if (throwable instanceof CancellationException) {
-                    requestCallBack.onException(
-                            new TimeoutException("Timeout after " + requestCallBack.getTimeout() + " milliseconds."));
-                } else {
-                    requestCallBack.onException(throwable);
-                }
-            }
-        }, requestCallBack.getExecutor() != null ? requestCallBack.getExecutor() : this.executor);
+
+                    @Override
+                    public void onFailure(Throwable throwable) {
+                        if (throwable instanceof CancellationException) {
+                            requestCallBack.onException(
+                                    new TimeoutException(
+                                            "Timeout after "
+                                                    + requestCallBack.getTimeout()
+                                                    + " milliseconds."));
+                        } else {
+                            requestCallBack.onException(throwable);
+                        }
+                    }
+                },
+                requestCallBack.getExecutor() != null
+                        ? requestCallBack.getExecutor()
+                        : this.executor);
         // set timeout future.
-        ListenableFuture<Payload> payloadListenableFuture = Futures.withTimeout(requestFuture,
-                requestCallBack.getTimeout(), TimeUnit.MILLISECONDS, RpcScheduledExecutor.TIMEOUT_SCHEDULER);
-        
+        ListenableFuture<Payload> payloadListenableFuture =
+                Futures.withTimeout(
+                        requestFuture,
+                        requestCallBack.getTimeout(),
+                        TimeUnit.MILLISECONDS,
+                        RpcScheduledExecutor.TIMEOUT_SCHEDULER);
     }
-    
+
     @Override
     public void close() {
         if (this.payloadStreamObserver != null) {
             try {
                 payloadStreamObserver.onCompleted();
             } catch (Throwable throwable) {
-                //ignore.
+                // ignore.
             }
         }
-        
+
         if (this.channel != null && !channel.isShutdown()) {
             try {
                 this.channel.shutdownNow();
             } catch (Throwable throwable) {
-                //ignore.
+                // ignore.
             }
         }
     }
-    
+
     /**
      * Getter method for property <tt>channel</tt>.
      *
@@ -194,7 +205,7 @@ public class GrpcConnection extends Connection {
     public ManagedChannel getChannel() {
         return channel;
     }
-    
+
     /**
      * Setter method for property <tt>channel</tt>.
      *
@@ -203,7 +214,7 @@ public class GrpcConnection extends Connection {
     public void setChannel(ManagedChannel channel) {
         this.channel = channel;
     }
-    
+
     /**
      * Getter method for property <tt>grpcFutureServiceStub</tt>.
      *
@@ -212,7 +223,7 @@ public class GrpcConnection extends Connection {
     public RequestGrpc.RequestFutureStub getGrpcFutureServiceStub() {
         return grpcFutureServiceStub;
     }
-    
+
     /**
      * Setter method for property <tt>grpcFutureServiceStub</tt>.
      *
@@ -221,7 +232,7 @@ public class GrpcConnection extends Connection {
     public void setGrpcFutureServiceStub(RequestGrpc.RequestFutureStub grpcFutureServiceStub) {
         this.grpcFutureServiceStub = grpcFutureServiceStub;
     }
-    
+
     /**
      * Getter method for property <tt>payloadStreamObserver</tt>.
      *
@@ -230,7 +241,7 @@ public class GrpcConnection extends Connection {
     public StreamObserver<Payload> getPayloadStreamObserver() {
         return payloadStreamObserver;
     }
-    
+
     /**
      * Setter method for property <tt>payloadStreamObserver</tt>.
      *

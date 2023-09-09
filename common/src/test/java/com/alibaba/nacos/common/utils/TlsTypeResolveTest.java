@@ -17,8 +17,6 @@
 package com.alibaba.nacos.common.utils;
 
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class TlsTypeResolveTest {
 
@@ -36,6 +34,5 @@ public class TlsTypeResolveTest {
 
         SslProvider anySsl = TlsTypeResolve.getSslProvider("anySSL");
         Assert.assertEquals(SslProvider.OPENSSL, anySsl);
-
     }
 }

@@ -15,20 +15,19 @@
   ~ limitations under the License.
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>nacos-all</artifactId>
         <groupId>com.alibaba.nacos</groupId>
+        <artifactId>nacos-all</artifactId>
         <version>${revision}</version>
     </parent>
-    
-    <modelVersion>4.0.0</modelVersion>
     <artifactId>nacos-istio</artifactId>
     <packaging>jar</packaging>
-    
+
     <name>nacos-istio ${project.version}</name>
-    <url>https://nacos.io</url>
-    
+
     <dependencies>
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -50,7 +49,7 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-core</artifactId>
         </dependency>
-        
+
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-netty-shaded</artifactId>
@@ -77,16 +76,8 @@
             <version>0.1.27</version>
         </dependency>
     </dependencies>
-    
 
     <build>
-        <extensions>
-            <extension>
-                <groupId>kr.motd.maven</groupId>
-                <artifactId>os-maven-plugin</artifactId>
-                <version>1.5.0.Final</version>
-            </extension>
-        </extensions>
         <plugins>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
@@ -138,5 +129,13 @@
                 </executions>
             </plugin>
         </plugins>
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.5.0.Final</version>
+            </extension>
+        </extensions>
     </build>
+    <url>https://nacos.io</url>
 </project>

@@ -22,20 +22,20 @@ package com.alibaba.nacos.core.cluster.health;
  * @author xiweng.yy
  */
 public class ReadinessResult {
-    
+
     private final boolean success;
-    
+
     private final String resultMessage;
-    
+
     public ReadinessResult(boolean success, String resultMessage) {
         this.success = success;
         this.resultMessage = resultMessage;
     }
-    
+
     public boolean isSuccess() {
         return success;
     }
-    
+
     public String getResultMessage() {
         return resultMessage;
     }

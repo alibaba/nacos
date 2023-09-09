@@ -18,11 +18,10 @@ package com.alibaba.nacos.core.namespace.repository;
 
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
 import com.alibaba.nacos.persistence.repository.RowMapperManager;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.stereotype.Component;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
 
 /**
  * Namespace row mapper injector.
@@ -31,22 +30,22 @@ import java.sql.SQLException;
  */
 @Component
 public class NamespaceRowMapperInjector {
-    
+
     public static final RowMapper<TenantInfo> TENANT_INFO_ROW_MAPPER = new TenantInfoRowMapper();
-    
+
     public NamespaceRowMapperInjector() {
         injectNamespaceRowMapper();
     }
-    
+
     private void injectNamespaceRowMapper() {
         // TENANT_INFO_ROW_MAPPER
-        RowMapperManager
-                .registerRowMapper(NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER.getClass().getCanonicalName(),
-                        NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER.getClass().getCanonicalName(),
+                NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER);
     }
-    
+
     public static final class TenantInfoRowMapper implements RowMapper<TenantInfo> {
-        
+
         @Override
         public TenantInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             TenantInfo info = new TenantInfo();

@@ -23,16 +23,13 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import org.junit.Assert;
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * {@link BatchInstanceRequestHandler} unit tests.
@@ -42,13 +39,11 @@ import java.util.List;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class BatchInstanceRequestHandlerTest {
-    
-    @InjectMocks
-    private BatchInstanceRequestHandler batchInstanceRequestHandler;
-    
-    @Mock
-    private EphemeralClientOperationServiceImpl clientOperationService;
-    
+
+    @InjectMocks private BatchInstanceRequestHandler batchInstanceRequestHandler;
+
+    @Mock private EphemeralClientOperationServiceImpl clientOperationService;
+
     @Test
     public void testHandle() throws NacosException {
         BatchInstanceRequest batchInstanceRequest = new BatchInstanceRequest();
@@ -61,7 +56,8 @@ public class BatchInstanceRequestHandlerTest {
         batchInstanceRequest.setInstances(instanceList);
         RequestMeta requestMeta = new RequestMeta();
         batchInstanceRequestHandler.handle(batchInstanceRequest, requestMeta);
-        Mockito.verify(clientOperationService).batchRegisterInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
+        Mockito.verify(clientOperationService)
+                .batchRegisterInstance(Mockito.any(), Mockito.any(), Mockito.anyString());
         batchInstanceRequest.setType("google");
         try {
             batchInstanceRequestHandler.handle(batchInstanceRequest, requestMeta);

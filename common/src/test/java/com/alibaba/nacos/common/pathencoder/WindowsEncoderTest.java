@@ -17,18 +17,14 @@
 package com.alibaba.nacos.common.pathencoder;
 
 import com.alibaba.nacos.common.pathencoder.impl.WindowsEncoder;
-import junit.framework.TestCase;
-import org.junit.Assert;
-
 import java.nio.charset.Charset;
+import junit.framework.TestCase;
 
 public class WindowsEncoderTest extends TestCase {
 
     WindowsEncoder windowsEncoder = new WindowsEncoder();
 
-    /**
-     * test encode.
-     */
+    /** test encode. */
     public void testEncode() {
         String charset = Charset.defaultCharset().name();
         String case1 = "aaaadsaknkf";
@@ -60,9 +56,7 @@ public class WindowsEncoderTest extends TestCase {
         Assert.assertEquals(windowsEncoder.encode(case12, charset), "aaaa%A6%dsa%A6%%A1%%A1%knkf");
     }
 
-    /**
-     * test decode.
-     */
+    /** test decode. */
     public void testDecode() {
         String charset = Charset.defaultCharset().name();
         String case1 = "aaaadsaknkf";
@@ -94,9 +88,7 @@ public class WindowsEncoderTest extends TestCase {
         Assert.assertEquals(windowsEncoder.decode(case12, charset), "aaaa\"dsa\"\\\\knkf");
     }
 
-    /**
-     * test needEncode.
-     */
+    /** test needEncode. */
     public void testNeedEncode() {
         String case1 = "aaaadsaknkf";
         // / : ? " < > | \

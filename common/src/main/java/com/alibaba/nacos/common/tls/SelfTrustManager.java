@@ -17,13 +17,6 @@
 package com.alibaba.nacos.common.tls;
 
 import com.alibaba.nacos.common.utils.IoUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -32,6 +25,12 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A TrustManager tool returns the specified TrustManager.
@@ -39,31 +38,34 @@ import java.util.Collection;
  * @author wangwei
  */
 public final class SelfTrustManager {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(SelfTrustManager.class);
-    
+
     @SuppressWarnings("checkstyle:WhitespaceAround")
-    static TrustManager[] trustAll = new TrustManager[] {new X509TrustManager() {
-        
-        @Override
-        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        }
-        
-        @Override
-        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        }
-        
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return null;
-        }
-    }};
-    
+    static TrustManager[] trustAll =
+            new TrustManager[] {
+                new X509TrustManager() {
+
+                    @Override
+                    public void checkClientTrusted(X509Certificate[] x509Certificates, String s)
+                            throws CertificateException {}
+
+                    @Override
+                    public void checkServerTrusted(X509Certificate[] x509Certificates, String s)
+                            throws CertificateException {}
+
+                    @Override
+                    public X509Certificate[] getAcceptedIssuers() {
+                        return null;
+                    }
+                }
+            };
+
     /**
-     * Returns the result of calling {@link #buildSecureTrustManager} if {@code needAuth} is enable and {@code
-     * trustCertPath} exists. Returns the {@link #trustAll} otherwise.
+     * Returns the result of calling {@link #buildSecureTrustManager} if {@code needAuth} is enable
+     * and {@code trustCertPath} exists. Returns the {@link #trustAll} otherwise.
      *
-     * @param needAuth      whether need client auth
+     * @param needAuth whether need client auth
      * @param trustCertPath trust certificate path
      * @return Array of {@link TrustManager }
      */
@@ -79,27 +81,29 @@ public final class SelfTrustManager {
             return trustAll;
         }
     }
-    
-    private static TrustManager[] buildSecureTrustManager(String trustCertPath) throws SSLException {
+
+    private static TrustManager[] buildSecureTrustManager(String trustCertPath)
+            throws SSLException {
         TrustManagerFactory selfTmf;
         InputStream in = null;
-        
+
         try {
             String algorithm = TrustManagerFactory.getDefaultAlgorithm();
             selfTmf = TrustManagerFactory.getInstance(algorithm);
-            
+
             KeyStore trustKeyStore = KeyStore.getInstance("JKS");
             trustKeyStore.load(null, null);
-            
+
             in = new FileInputStream(trustCertPath);
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
-            
-            Collection<X509Certificate> certs = (Collection<X509Certificate>) cf.generateCertificates(in);
+
+            Collection<X509Certificate> certs =
+                    (Collection<X509Certificate>) cf.generateCertificates(in);
             int count = 0;
             for (Certificate cert : certs) {
                 trustKeyStore.setCertificateEntry("cert-" + (count++), cert);
             }
-            
+
             selfTmf.init(trustKeyStore);
             return selfTmf.getTrustManagers();
         } catch (Exception e) {

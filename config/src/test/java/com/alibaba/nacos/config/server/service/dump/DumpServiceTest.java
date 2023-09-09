@@ -17,8 +17,6 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -32,17 +30,18 @@ import org.springframework.test.util.ReflectionTestUtils;
 @SpringBootApplication(scanBasePackages = "com.alibaba.nacos")
 @WebAppConfiguration
 public class DumpServiceTest {
-    
-    @Autowired
-    DumpService service;
-    
+
+    @Autowired DumpService service;
+
     @BeforeClass
     public static void setUp() {
-        
-        ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", null);
-        ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", null);
+
+        ReflectionTestUtils.setField(
+                DynamicDataSource.getInstance(), "localDataSourceService", null);
+        ReflectionTestUtils.setField(
+                DynamicDataSource.getInstance(), "basicDataSourceService", null);
     }
-    
+
     @Test
     public void init() throws Throwable {
         service.init();

@@ -16,43 +16,38 @@
 
 package com.alibaba.nacos.common.cache.builder;
 
-import org.junit.Rule;
-import org.junit.Test;
+import java.util.concurrent.TimeUnit;
 import org.junit.rules.ExpectedException;
 
-import java.util.concurrent.TimeUnit;
-
 public class CacheBuilderTest {
-    
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
-    
+
+    @Rule public ExpectedException exception = ExpectedException.none();
+
     @Test
     public void testNegativeDuration() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("duration cannot be negative");
         CacheBuilder.builder().expireNanos(-1, TimeUnit.MINUTES).build();
     }
-    
+
     @Test
     public void testNullTimeUnit() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("unit cannot be null");
         CacheBuilder.builder().expireNanos(500, null).build();
     }
-    
+
     @Test
     public void testNegativeMaximumSize() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("size cannot be negative");
         CacheBuilder.builder().maximumSize(-1).build();
     }
-    
+
     @Test
     public void testNegativeInitializeCapacity() {
         exception.expect(IllegalArgumentException.class);
         exception.expectMessage("initializeCapacity cannot be negative");
         CacheBuilder.builder().initializeCapacity(-1).build();
     }
-    
 }

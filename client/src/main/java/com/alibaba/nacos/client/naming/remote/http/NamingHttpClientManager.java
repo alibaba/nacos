@@ -16,6 +16,10 @@
 
 package com.alibaba.nacos.client.naming.remote.http;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
@@ -27,68 +31,69 @@ import com.alibaba.nacos.common.tls.TlsSystemConfig;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import org.slf4j.Logger;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
-import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
-import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
-
 /**
  * http Manager.
  *
  * @author mai.jh
  */
 public class NamingHttpClientManager implements Closeable {
-    
-    private static final int READ_TIME_OUT_MILLIS = Integer
-            .getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
-    
-    private static final int CON_TIME_OUT_MILLIS = Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
-    
+
+    private static final int READ_TIME_OUT_MILLIS =
+            Integer.getInteger("com.alibaba.nacos.client.naming.rtimeout", 50000);
+
+    private static final int CON_TIME_OUT_MILLIS =
+            Integer.getInteger("com.alibaba.nacos.client.naming.ctimeout", 3000);
+
     private static final boolean ENABLE_HTTPS = Boolean.getBoolean(TlsSystemConfig.TLS_ENABLE);
-    
+
     private static final int MAX_REDIRECTS = 5;
-    
+
     private static final HttpClientFactory HTTP_CLIENT_FACTORY = new NamingHttpClientFactory();
-    
+
     private static class NamingHttpClientManagerInstance {
-        
+
         private static final NamingHttpClientManager INSTANCE = new NamingHttpClientManager();
     }
-    
+
     public static NamingHttpClientManager getInstance() {
         return NamingHttpClientManagerInstance.INSTANCE;
     }
-    
+
     public String getPrefix() {
         if (ENABLE_HTTPS) {
             return HTTPS_PREFIX;
         }
         return HTTP_PREFIX;
     }
-    
+
     public NacosRestTemplate getNacosRestTemplate() {
         return HttpClientBeanHolder.getNacosRestTemplate(HTTP_CLIENT_FACTORY);
     }
-    
+
     @Override
     public void shutdown() throws NacosException {
         NAMING_LOGGER.warn("[NamingHttpClientManager] Start destroying NacosRestTemplate");
         try {
             HttpClientBeanHolder.shutdownNacostSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
-            NAMING_LOGGER.error("[NamingHttpClientManager] An exception occurred when the HTTP client was closed : {}",
+            NAMING_LOGGER.error(
+                    "[NamingHttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
         }
         NAMING_LOGGER.warn("[NamingHttpClientManager] Destruction of the end");
     }
-    
+
     private static class NamingHttpClientFactory extends AbstractHttpClientFactory {
-        
+
         @Override
         protected HttpClientConfig buildHttpClientConfig() {
-            return HttpClientConfig.builder().setConTimeOutMillis(CON_TIME_OUT_MILLIS)
-                    .setReadTimeOutMillis(READ_TIME_OUT_MILLIS).setMaxRedirects(MAX_REDIRECTS).build();
+            return HttpClientConfig.builder()
+                    .setConTimeOutMillis(CON_TIME_OUT_MILLIS)
+                    .setReadTimeOutMillis(READ_TIME_OUT_MILLIS)
+                    .setMaxRedirects(MAX_REDIRECTS)
+                    .build();
         }
-        
+
         @Override
         protected Logger assignLogger() {
             return NAMING_LOGGER;

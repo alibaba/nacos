@@ -28,20 +28,22 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
  * The derby implementation of TenantCapacityMapper.
  *
  * @author hyx
- **/
-
+ */
 public class TenantCapacityMapperByDerby extends AbstractMapper implements TenantCapacityMapper {
-    
+
     @Override
     public String getDataSource() {
         return DataSourceConstant.DERBY;
     }
-    
+
     @Override
     public MapperResult getCapacityList4CorrectUsage(MapperContext context) {
-        String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
-        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
-                context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
+        String sql =
+                "SELECT id, tenant_id FROM tenant_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+        return new MapperResult(
+                sql,
+                CollectionUtils.list(
+                        context.getWhereParameter(FieldConstant.ID),
+                        context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
-    
 }

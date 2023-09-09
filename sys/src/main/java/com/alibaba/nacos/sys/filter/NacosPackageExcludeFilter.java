@@ -24,18 +24,19 @@ import java.util.Set;
  * @author xiweng.yy
  */
 public interface NacosPackageExcludeFilter {
-    
+
     /**
      * Get the responsible module package prefix of filter.
      *
      * @return package prefix
      */
     String getResponsiblePackagePrefix();
-    
+
     /**
-     * According the class name and annotations to judge whether the class should be excluded by spring bean.
+     * According the class name and annotations to judge whether the class should be excluded by
+     * spring bean.
      *
-     * @param className       name of this class
+     * @param className name of this class
      * @param annotationNames annotations of this class
      * @return {@code true} if should be excluded, otherwise {@code false}
      */

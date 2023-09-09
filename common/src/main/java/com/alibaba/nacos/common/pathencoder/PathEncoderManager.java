@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.pathencoder;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-
 import java.nio.charset.Charset;
 import java.util.Collection;
 
@@ -28,14 +27,10 @@ import java.util.Collection;
  */
 public class PathEncoderManager {
 
-    /**
-     * singleton.
-     */
+    /** singleton. */
     private static final PathEncoderManager INSTANCE = new PathEncoderManager();
 
-    /**
-     * encoder.
-     */
+    /** encoder. */
     private PathEncoder targetEncoder = null;
 
     private PathEncoderManager() {
@@ -56,7 +51,7 @@ public class PathEncoderManager {
     /**
      * encode path if necessary.
      *
-     * @param path    origin path
+     * @param path origin path
      * @param charset charset of origin path
      * @return encoded path
      */
@@ -83,7 +78,7 @@ public class PathEncoderManager {
     /**
      * decode path.
      *
-     * @param path    encoded path
+     * @param path encoded path
      * @param charset charset of encoded path
      * @return origin path
      */
@@ -115,5 +110,4 @@ public class PathEncoderManager {
     public static PathEncoderManager getInstance() {
         return INSTANCE;
     }
-
 }

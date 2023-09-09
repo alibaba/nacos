@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
 import org.slf4j.Logger;
 
 public class TraceLogUtilTest {

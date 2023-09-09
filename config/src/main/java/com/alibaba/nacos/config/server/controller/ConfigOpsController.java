@@ -17,22 +17,26 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
-import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
+import com.alibaba.nacos.persistence.model.event.DerbyImportEvent;
+import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -45,11 +49,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletResponse;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-
 /**
  * Manage controllers.
  *
@@ -58,37 +57,42 @@ import java.util.Objects;
 @RestController
 @RequestMapping(Constants.OPS_CONTROLLER_PATH)
 public class ConfigOpsController {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpsController.class);
-    
+
     private final DumpService dumpService;
-    
+
     public ConfigOpsController(DumpService dumpService) {
         this.dumpService = dumpService;
     }
-    
-    /**
-     * Manually trigger dump of a local configuration file.
-     */
+
+    /** Manually trigger dump of a local configuration file. */
     @PostMapping(value = "/localCache")
-    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Secured(
+            resource = Constants.OPS_CONTROLLER_PATH,
+            action = ActionTypes.WRITE,
+            signType = SignType.CONSOLE)
     public String updateLocalCacheFromStore() {
         LOGGER.info("start to dump all data from store.");
         dumpService.dumpAll();
         LOGGER.info("finish to dump all data from store.");
         return HttpServletResponse.SC_OK + "";
     }
-    
+
     @PutMapping(value = "/log")
-    @Secured(resource = Constants.OPS_CONTROLLER_PATH, action = ActionTypes.WRITE, signType = SignType.CONSOLE)
+    @Secured(
+            resource = Constants.OPS_CONTROLLER_PATH,
+            action = ActionTypes.WRITE,
+            signType = SignType.CONSOLE)
     public String setLogLevel(@RequestParam String logName, @RequestParam String logLevel) {
         LogUtil.setLogLevel(logName, logLevel);
         return HttpServletResponse.SC_OK + "";
     }
-    
+
     /**
-     * // TODO In a future release, the front page should appear operable The interface to the Derby operations query
-     * can only run select statements and is a direct query to the native Derby database without any additional logic.
+     * // TODO In a future release, the front page should appear operable The interface to the Derby
+     * operations query can only run select statements and is a direct query to the native Derby
+     * database without any additional logic.
      *
      * @param sql The query
      * @return {@link RestResult}
@@ -103,8 +107,8 @@ public class ConfigOpsController {
             if (!DatasourceConfiguration.isEmbeddedStorage()) {
                 return RestResultUtils.failed("The current storage mode is not Derby");
             }
-            LocalDataSourceServiceImpl dataSourceService = (LocalDataSourceServiceImpl) DynamicDataSource
-                    .getInstance().getDataSource();
+            LocalDataSourceServiceImpl dataSourceService =
+                    (LocalDataSourceServiceImpl) DynamicDataSource.getInstance().getDataSource();
             if (StringUtils.startsWithIgnoreCase(sql, selectSign)) {
                 if (!StringUtils.containsIgnoreCase(sql, limitSign)) {
                     sql += limit;
@@ -118,37 +122,46 @@ public class ConfigOpsController {
             return RestResultUtils.failed(e.getMessage());
         }
     }
-    
+
     /**
-     * // TODO the front page should appear operable The external data source is imported into derby.
+     * // TODO the front page should appear operable The external data source is imported into
+     * derby.
      *
-     * <p>mysqldump --defaults-file="XXX" --host=0.0.0.0 --protocol=tcp --user=XXX --extended-insert=FALSE \
-     * --complete-insert=TRUE \ --skip-triggers --no-create-info --skip-column-statistics "{SCHEMA}" "{TABLE_NAME}"
+     * <p>mysqldump --defaults-file="XXX" --host=0.0.0.0 --protocol=tcp --user=XXX
+     * --extended-insert=FALSE \ --complete-insert=TRUE \ --skip-triggers --no-create-info
+     * --skip-column-statistics "{SCHEMA}" "{TABLE_NAME}"
      *
      * @param multipartFile {@link MultipartFile}
      * @return {@link DeferredResult}
      */
     @PostMapping(value = "/data/removal")
     @Secured(action = ActionTypes.WRITE, resource = "nacos/admin")
-    public DeferredResult<RestResult<String>> importDerby(@RequestParam(value = "file") MultipartFile multipartFile) {
+    public DeferredResult<RestResult<String>> importDerby(
+            @RequestParam(value = "file") MultipartFile multipartFile) {
         DeferredResult<RestResult<String>> response = new DeferredResult<>();
         if (!DatasourceConfiguration.isEmbeddedStorage()) {
             response.setResult(RestResultUtils.failed("Limited to embedded storage mode"));
             return response;
         }
         DatabaseOperate databaseOperate = ApplicationUtils.getBean(DatabaseOperate.class);
-        WebUtils.onFileUpload(multipartFile, file -> {
-            NotifyCenter.publishEvent(new DerbyImportEvent(false));
-            databaseOperate.dataImport(file).whenComplete((result, ex) -> {
-                NotifyCenter.publishEvent(new DerbyImportEvent(true));
-                if (Objects.nonNull(ex)) {
-                    response.setResult(RestResultUtils.failed(ex.getMessage()));
-                    return;
-                }
-                response.setResult(result);
-            });
-        }, response);
+        WebUtils.onFileUpload(
+                multipartFile,
+                file -> {
+                    NotifyCenter.publishEvent(new DerbyImportEvent(false));
+                    databaseOperate
+                            .dataImport(file)
+                            .whenComplete(
+                                    (result, ex) -> {
+                                        NotifyCenter.publishEvent(new DerbyImportEvent(true));
+                                        if (Objects.nonNull(ex)) {
+                                            response.setResult(
+                                                    RestResultUtils.failed(ex.getMessage()));
+                                            return;
+                                        }
+                                        response.setResult(result);
+                                    });
+                },
+                response);
         return response;
     }
-    
 }

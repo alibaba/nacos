@@ -16,18 +16,16 @@
 
 package com.alibaba.nacos.api.config.remote.response;
 
-import com.alibaba.nacos.api.remote.response.ResponseCode;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.fasterxml.jackson.core.JsonProcessingException;
+
 public class ConfigQueryResponseTest extends BasedConfigResponseTest {
-    
+
     ConfigQueryResponse configQueryResponse;
-    
+
     @Before
     public void before() {
         configQueryResponse = ConfigQueryResponse.buildSuccessResponse("success");
@@ -38,7 +36,7 @@ public class ConfigQueryResponseTest extends BasedConfigResponseTest {
         configQueryResponse.setTag(TAG);
         requestId = injectResponseUuId(configQueryResponse);
     }
-    
+
     @Override
     @Test
     public void testSerializeSuccessResponse() throws JsonProcessingException {
@@ -52,24 +50,26 @@ public class ConfigQueryResponseTest extends BasedConfigResponseTest {
         assertTrue(json.contains("\"contentType\":\"text\""));
         assertTrue(json.contains("\"lastModified\":1111111"));
     }
-    
+
     @Override
     @Test
     public void testSerializeFailResponse() throws JsonProcessingException {
-        ConfigQueryResponse configQueryResponse = ConfigQueryResponse.buildFailResponse(500, "Fail");
+        ConfigQueryResponse configQueryResponse =
+                ConfigQueryResponse.buildFailResponse(500, "Fail");
         String json = mapper.writeValueAsString(configQueryResponse);
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.FAIL.getCode()));
         assertTrue(json.contains("\"errorCode\":500"));
         assertTrue(json.contains("\"message\":\"Fail\""));
         assertTrue(json.contains("\"success\":false"));
     }
-    
+
     @Override
     @Test
     public void testDeserialize() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"2239753e-e682-441c-83cf-fb8129ca68a4\","
-                + "\"content\":\"success\",\"encryptedDataKey\":\"encryptedKey\",\"contentType\":\"text\",\"md5\":\"test_MD5\","
-                + "\"lastModified\":1111111,\"tag\":\"tag\",\"beta\":false,\"success\":true}\n";
+        String json =
+                "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"2239753e-e682-441c-83cf-fb8129ca68a4\","
+                        + "\"content\":\"success\",\"encryptedDataKey\":\"encryptedKey\",\"contentType\":\"text\",\"md5\":\"test_MD5\","
+                        + "\"lastModified\":1111111,\"tag\":\"tag\",\"beta\":false,\"success\":true}\n";
         ConfigQueryResponse actual = mapper.readValue(json, ConfigQueryResponse.class);
         assertTrue(actual.isSuccess());
         assertEquals(ResponseCode.SUCCESS.getCode(), actual.getResultCode());

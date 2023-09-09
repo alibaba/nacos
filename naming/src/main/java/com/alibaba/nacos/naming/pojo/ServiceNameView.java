@@ -24,23 +24,23 @@ import java.util.Collection;
  * @author xiweng.yy
  */
 public class ServiceNameView {
-    
+
     private int count;
-    
+
     private Collection<String> services;
-    
+
     public int getCount() {
         return count;
     }
-    
+
     public void setCount(int count) {
         this.count = count;
     }
-    
+
     public Collection<String> getServices() {
         return services;
     }
-    
+
     public void setServices(Collection<String> services) {
         this.services = services;
     }

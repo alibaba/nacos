@@ -16,35 +16,32 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+
 public class DefaultTlsProtocolNegotiatorBuilderTest {
-    
+
     private DefaultTlsProtocolNegotiatorBuilder builder;
-    
+
     @Before
     public void setUp() throws Exception {
         builder = new DefaultTlsProtocolNegotiatorBuilder();
     }
-    
+
     @After
     public void tearDown() throws Exception {
         RpcServerTlsConfig.getInstance().setEnableTls(false);
         RpcServerTlsConfig.getInstance().setCertChainFile(null);
         RpcServerTlsConfig.getInstance().setCertPrivateKey(null);
     }
-    
+
     @Test
     public void testBuildDisabled() {
         assertNull(builder.build());
     }
-    
+
     @Test
     public void testBuildEnabled() {
         RpcServerTlsConfig.getInstance().setEnableTls(true);

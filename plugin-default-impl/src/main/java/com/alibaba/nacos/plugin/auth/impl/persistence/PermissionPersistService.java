@@ -59,7 +59,7 @@ public interface PermissionPersistService {
     Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize);
 
     String generateLikeArgument(String s);
-    
+
     /**
      * create Pagination utils.
      *

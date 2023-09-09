@@ -22,17 +22,12 @@ import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.Collections;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
-
-import java.util.Collections;
 
 /**
  * {@link EmptyServiceAutoCleanerV2} unit test.
@@ -42,44 +37,43 @@ import java.util.Collections;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class EmptyServiceAutoCleanerV2Test {
-    
-    @Mock
-    private ClientServiceIndexesManager clientServiceIndexesManager;
-    
-    @Mock
-    private ServiceStorage serviceStorage;
-    
+
+    @Mock private ClientServiceIndexesManager clientServiceIndexesManager;
+
+    @Mock private ServiceStorage serviceStorage;
+
     private EmptyServiceAutoCleanerV2 emptyServiceAutoCleanerV2;
-    
-    @Mock
-    private Service service;
-    
+
+    @Mock private Service service;
+
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
-        emptyServiceAutoCleanerV2 = new EmptyServiceAutoCleanerV2(clientServiceIndexesManager, serviceStorage);
+        emptyServiceAutoCleanerV2 =
+                new EmptyServiceAutoCleanerV2(clientServiceIndexesManager, serviceStorage);
         Mockito.when(service.getNamespace()).thenReturn("public");
         ServiceManager serviceManager = ServiceManager.getInstance();
         serviceManager.getSingleton(service);
     }
-    
+
     @After
     public void tearDown() {
         ServiceManager.getInstance().removeSingleton(service);
     }
-    
+
     @Test
     public void testGetType() {
         Assert.assertEquals("emptyService", emptyServiceAutoCleanerV2.getType());
     }
-    
+
     @Test
     public void testDoClean() {
         try {
-            Mockito.when(clientServiceIndexesManager.getAllClientsRegisteredService(Mockito.any())).thenReturn(Collections.emptyList());
-            
+            Mockito.when(clientServiceIndexesManager.getAllClientsRegisteredService(Mockito.any()))
+                    .thenReturn(Collections.emptyList());
+
             Mockito.when(service.getLastUpdatedTime()).thenReturn(0L);
-            
+
             emptyServiceAutoCleanerV2.doClean();
         } catch (Exception e) {
             e.printStackTrace();

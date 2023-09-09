@@ -22,16 +22,10 @@ package com.alibaba.nacos.api.config;
  * @author rushsky518
  */
 public enum PropertyChangeType {
-    /**
-     * add.
-     */
+    /** add. */
     ADDED,
-    /**
-     * modified.
-     */
+    /** modified. */
     MODIFIED,
-    /**
-     * deleted.
-     */
+    /** deleted. */
     DELETED
 }

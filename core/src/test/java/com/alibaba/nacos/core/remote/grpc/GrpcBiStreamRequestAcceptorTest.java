@@ -38,18 +38,13 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.grpc.testing.GrpcCleanupRule;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import java.io.IOException;
+import java.util.UUID;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import java.io.IOException;
-import java.util.UUID;
 
 /**
  * {@link GrpcBiStreamRequestAcceptor} unit test.
@@ -59,73 +54,97 @@ import java.util.UUID;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class GrpcBiStreamRequestAcceptorTest {
-    
-    @Rule
-    public GrpcCleanupRule grpcCleanupRule = new GrpcCleanupRule();
-    
+
+    @Rule public GrpcCleanupRule grpcCleanupRule = new GrpcCleanupRule();
+
     public BiRequestStreamGrpc.BiRequestStreamStub streamStub;
-    
-    @Mock
-    private ConnectionManager connectionManager;
-    
-    @InjectMocks
-    private GrpcBiStreamRequestAcceptor acceptor;
-    
+
+    @Mock private ConnectionManager connectionManager;
+
+    @InjectMocks private GrpcBiStreamRequestAcceptor acceptor;
+
     private StreamObserver<Payload> payloadStreamObserver;
-    
+
     private String connectId = UUID.randomUUID().toString();
-    
+
     private String requestId = UUID.randomUUID().toString();
-    
+
     @Before
     public void setUp() throws IOException {
         PayloadRegistry.init();
         String serverName = InProcessServerBuilder.generateName();
         String remoteIp = "127.0.0.1";
-        Server mockServer = InProcessServerBuilder
-                .forName(serverName).directExecutor().addService(acceptor)
-                .intercept(new ServerInterceptor() {
-                    @Override
-                    public <R, S> ServerCall.Listener<R> interceptCall(ServerCall<R, S> serverCall, Metadata metadata,
-                            ServerCallHandler<R, S> serverCallHandler) {
-                        Context ctx = Context.current().withValue(GrpcServerConstants.CONTEXT_KEY_CONN_ID, UUID.randomUUID().toString())
-                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_LOCAL_PORT, 1234)
-                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_PORT, 8948)
-                                .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_IP, remoteIp);
-                        return Contexts.interceptCall(ctx, serverCall, metadata, serverCallHandler);
-                    }
-                })
-                .build();
+        Server mockServer =
+                InProcessServerBuilder.forName(serverName)
+                        .directExecutor()
+                        .addService(acceptor)
+                        .intercept(
+                                new ServerInterceptor() {
+                                    @Override
+                                    public <R, S> ServerCall.Listener<R> interceptCall(
+                                            ServerCall<R, S> serverCall,
+                                            Metadata metadata,
+                                            ServerCallHandler<R, S> serverCallHandler) {
+                                        Context ctx =
+                                                Context.current()
+                                                        .withValue(
+                                                                GrpcServerConstants
+                                                                        .CONTEXT_KEY_CONN_ID,
+                                                                UUID.randomUUID().toString())
+                                                        .withValue(
+                                                                GrpcServerConstants
+                                                                        .CONTEXT_KEY_CONN_LOCAL_PORT,
+                                                                1234)
+                                                        .withValue(
+                                                                GrpcServerConstants
+                                                                        .CONTEXT_KEY_CONN_REMOTE_PORT,
+                                                                8948)
+                                                        .withValue(
+                                                                GrpcServerConstants
+                                                                        .CONTEXT_KEY_CONN_REMOTE_IP,
+                                                                remoteIp);
+                                        return Contexts.interceptCall(
+                                                ctx, serverCall, metadata, serverCallHandler);
+                                    }
+                                })
+                        .build();
         grpcCleanupRule.register(mockServer.start());
-        streamStub = BiRequestStreamGrpc.newStub(grpcCleanupRule.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+        streamStub =
+                BiRequestStreamGrpc.newStub(
+                        grpcCleanupRule.register(
+                                InProcessChannelBuilder.forName(serverName)
+                                        .directExecutor()
+                                        .build()));
         Mockito.doReturn(true).when(connectionManager).traced(Mockito.any());
     }
-    
+
     @Test
     public void testConnectionSetupRequest() {
-        StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
-            @Override
-            public void onNext(Payload payload) {
-                System.out.println("Receive data from server, data: " + payload);
-                Assert.assertNotNull(payload);
-                ConnectResetRequest connectResetRequest = (ConnectResetRequest) GrpcUtils.parse(payload);
-                Response response = new ConnectResetResponse();
-                response.setRequestId(connectResetRequest.getRequestId());
-                Payload res = GrpcUtils.convert(response);
-                payloadStreamObserver.onNext(res);
-                payloadStreamObserver.onCompleted();
-            }
-    
-            @Override
-            public void onError(Throwable throwable) {
-                Assert.fail(throwable.getMessage());
-            }
-    
-            @Override
-            public void onCompleted() {
-                System.out.println("complete");
-            }
-        };
+        StreamObserver<Payload> streamObserver =
+                new StreamObserver<Payload>() {
+                    @Override
+                    public void onNext(Payload payload) {
+                        System.out.println("Receive data from server, data: " + payload);
+                        Assert.assertNotNull(payload);
+                        ConnectResetRequest connectResetRequest =
+                                (ConnectResetRequest) GrpcUtils.parse(payload);
+                        Response response = new ConnectResetResponse();
+                        response.setRequestId(connectResetRequest.getRequestId());
+                        Payload res = GrpcUtils.convert(response);
+                        payloadStreamObserver.onNext(res);
+                        payloadStreamObserver.onCompleted();
+                    }
+
+                    @Override
+                    public void onError(Throwable throwable) {
+                        Assert.fail(throwable.getMessage());
+                    }
+
+                    @Override
+                    public void onCompleted() {
+                        System.out.println("complete");
+                    }
+                };
         payloadStreamObserver = streamStub.requestBiStream(streamObserver);
         RequestMeta metadata = new RequestMeta();
         metadata.setClientIp("127.0.0.1");

@@ -25,16 +25,16 @@ import static com.alibaba.nacos.api.common.Constants.Remote.INTERNAL_MODULE;
  * @version $Id: ConnectResetRequest.java, v 0.1 2020年07月15日 11:11 AM liuzunfei Exp $
  */
 public class ConnectResetRequest extends ServerRequest {
-    
+
     String serverIp;
-    
+
     String serverPort;
-    
+
     @Override
     public String getModule() {
         return INTERNAL_MODULE;
     }
-    
+
     /**
      * Getter method for property <tt>serverIp</tt>.
      *
@@ -43,7 +43,7 @@ public class ConnectResetRequest extends ServerRequest {
     public String getServerIp() {
         return serverIp;
     }
-    
+
     /**
      * Setter method for property <tt>serverIp</tt>.
      *
@@ -52,7 +52,7 @@ public class ConnectResetRequest extends ServerRequest {
     public void setServerIp(String serverIp) {
         this.serverIp = serverIp;
     }
-    
+
     /**
      * Getter method for property <tt>serverPort</tt>.
      *
@@ -61,7 +61,7 @@ public class ConnectResetRequest extends ServerRequest {
     public String getServerPort() {
         return serverPort;
     }
-    
+
     /**
      * Setter method for property <tt>serverPort</tt>.
      *

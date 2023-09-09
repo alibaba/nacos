@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.core.v2.client;
 
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
-
 import java.io.Serializable;
 import java.util.List;
 
@@ -28,27 +27,30 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class ClientSyncData implements Serializable {
-    
+
     private static final long serialVersionUID = -5141768777704539562L;
-    
+
     private String clientId;
-    
+
     private ClientAttributes attributes;
-    
+
     private List<String> namespaces;
-    
+
     private List<String> groupNames;
-    
+
     private List<String> serviceNames;
-    
+
     private List<InstancePublishInfo> instancePublishInfos;
-    
+
     private BatchInstanceData batchInstanceData;
-    
-    public ClientSyncData() {
-    }
-    
-    public ClientSyncData(String clientId, List<String> namespaces, List<String> groupNames, List<String> serviceNames,
+
+    public ClientSyncData() {}
+
+    public ClientSyncData(
+            String clientId,
+            List<String> namespaces,
+            List<String> groupNames,
+            List<String> serviceNames,
             List<InstancePublishInfo> instancePublishInfos,
             BatchInstanceData batchInstanceData) {
         this.clientId = clientId;
@@ -59,59 +61,59 @@ public class ClientSyncData implements Serializable {
         this.batchInstanceData = batchInstanceData;
         this.attributes = new ClientAttributes();
     }
-    
+
     public String getClientId() {
         return clientId;
     }
-    
+
     public void setClientId(String clientId) {
         this.clientId = clientId;
     }
-    
+
     public List<String> getNamespaces() {
         return namespaces;
     }
-    
+
     public void setNamespaces(List<String> namespaces) {
         this.namespaces = namespaces;
     }
-    
+
     public List<String> getGroupNames() {
         return groupNames;
     }
-    
+
     public void setGroupNames(List<String> groupNames) {
         this.groupNames = groupNames;
     }
-    
+
     public List<String> getServiceNames() {
         return serviceNames;
     }
-    
+
     public void setServiceNames(List<String> serviceNames) {
         this.serviceNames = serviceNames;
     }
-    
+
     public List<InstancePublishInfo> getInstancePublishInfos() {
         return instancePublishInfos;
     }
-    
+
     public void setInstancePublishInfos(List<InstancePublishInfo> instancePublishInfos) {
         this.instancePublishInfos = instancePublishInfos;
     }
-    
+
     public ClientAttributes getAttributes() {
         return attributes;
     }
-    
+
     public void setAttributes(ClientAttributes attributes) {
         this.attributes = attributes;
     }
-    
+
     public BatchInstanceData getBatchInstanceData() {
         return batchInstanceData;
     }
-    
+
     public void setBatchInstanceData(BatchInstanceData batchInstanceData) {
         this.batchInstanceData = batchInstanceData;
     }

@@ -18,32 +18,31 @@ package com.alibaba.nacos.naming.consistency;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.pojo.Record;
-
 import java.util.Optional;
 
 /**
  * Consistence service for all implementations to derive.
  *
- * <p>We announce this consistency service to decouple the specific consistency implementation with business logic.
- * User should not be aware of what consistency protocol is being used.
+ * <p>We announce this consistency service to decouple the specific consistency implementation with
+ * business logic. User should not be aware of what consistency protocol is being used.
  *
- * <p>In this way, we also provide space for user to extend the underlying consistency protocols, as long as they obey
- * our consistency baseline.
+ * <p>In this way, we also provide space for user to extend the underlying consistency protocols, as
+ * long as they obey our consistency baseline.
  *
  * @author nkorange
  * @since 1.0.0
  */
 public interface ConsistencyService {
-    
+
     /**
      * Put a data related to a key to Nacos cluster.
      *
-     * @param key   key of data, this key should be globally unique
+     * @param key key of data, this key should be globally unique
      * @param value value of data
      * @throws NacosException nacos exception
      */
     void put(String key, Record value) throws NacosException;
-    
+
     /**
      * Remove a data from Nacos cluster.
      *
@@ -51,7 +50,7 @@ public interface ConsistencyService {
      * @throws NacosException nacos exception
      */
     void remove(String key) throws NacosException;
-    
+
     /**
      * Get a data from Nacos cluster.
      *
@@ -60,32 +59,32 @@ public interface ConsistencyService {
      * @throws NacosException nacos exception
      */
     Datum get(String key) throws NacosException;
-    
+
     /**
      * Listen for changes of a data.
      *
-     * @param key      key of data
+     * @param key key of data
      * @param listener callback of data change
      * @throws NacosException nacos exception
      */
     void listen(String key, RecordListener listener) throws NacosException;
-    
+
     /**
      * Cancel listening of a data.
      *
-     * @param key      key of data
+     * @param key key of data
      * @param listener callback of data change
      * @throws NacosException nacos exception
      */
     void unListen(String key, RecordListener listener) throws NacosException;
-    
+
     /**
      * Get the error message of the consistency protocol.
      *
      * @return the consistency protocol error message.
      */
     Optional<String> getErrorMsg();
-    
+
     /**
      * Tell the status of this consistency service.
      *

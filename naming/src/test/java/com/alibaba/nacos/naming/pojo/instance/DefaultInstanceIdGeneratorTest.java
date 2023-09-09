@@ -16,16 +16,15 @@
 
 package com.alibaba.nacos.naming.pojo.instance;
 
-import org.junit.Test;
-
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
 public class DefaultInstanceIdGeneratorTest {
-    
+
     @Test
     public void testGenerateInstanceId() {
-        DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator("service", "cluster", "1.1.1.1", 1000);
+        DefaultInstanceIdGenerator idGenerator =
+                new DefaultInstanceIdGenerator("service", "cluster", "1.1.1.1", 1000);
         assertThat(idGenerator.generateInstanceId(), is("1.1.1.1#1000#cluster#service"));
     }
 }

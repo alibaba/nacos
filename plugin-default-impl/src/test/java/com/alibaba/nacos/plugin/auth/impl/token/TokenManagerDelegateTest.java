@@ -16,22 +16,18 @@
 
 package com.alibaba.nacos.plugin.auth.impl.token;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.token.impl.CachedJwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.token.impl.JwtTokenManager;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import java.lang.reflect.Field;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.security.core.Authentication;
-
-import java.lang.reflect.Field;
-
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
 /**
  * TokenManagerDelegateTest.
@@ -40,21 +36,17 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class TokenManagerDelegateTest {
-    
+
     private TokenManagerDelegate tokenManagerDelegate;
-    
-    @Mock
-    private CachedJwtTokenManager cachedJwtTokenManager;
-    
-    @Mock
-    private JwtTokenManager jwtTokenManager;
-    
-    @Mock
-    private Authentication authentication;
-    
-    @Mock
-    private NacosUser user;
-    
+
+    @Mock private CachedJwtTokenManager cachedJwtTokenManager;
+
+    @Mock private JwtTokenManager jwtTokenManager;
+
+    @Mock private Authentication authentication;
+
+    @Mock private NacosUser user;
+
     @Before
     public void setUp() throws Exception {
         tokenManagerDelegate = new TokenManagerDelegate();
@@ -68,43 +60,44 @@ public class TokenManagerDelegateTest {
         when(cachedJwtTokenManager.createToken(anyString())).thenReturn("token");
         when(cachedJwtTokenManager.createToken(authentication)).thenReturn("token");
     }
-    
+
     @Test
     public void testCreateToken1() throws AccessException {
         Assert.assertEquals("token", tokenManagerDelegate.createToken(authentication));
     }
-    
+
     @Test
     public void testCreateToken2() throws AccessException {
         Assert.assertEquals("token", tokenManagerDelegate.createToken("nacos"));
     }
-    
+
     @Test
     public void testGetAuthentication() throws AccessException {
         Assert.assertNotNull(tokenManagerDelegate.getAuthentication("token"));
     }
-    
+
     @Test
     public void testValidateToken() throws AccessException {
         tokenManagerDelegate.validateToken("token");
     }
-    
+
     @Test
     public void testParseToken() throws AccessException {
         Assert.assertNotNull(tokenManagerDelegate.parseToken("token"));
     }
-    
+
     @Test
     public void testGetTokenTtlInSeconds() throws AccessException {
         Assert.assertTrue(tokenManagerDelegate.getTokenTtlInSeconds("token") > 0);
     }
-    
+
     @Test
     public void testGetTokenValidityInSeconds() throws AccessException {
         Assert.assertTrue(tokenManagerDelegate.getTokenValidityInSeconds() > 0);
     }
-    
-    private void injectObject(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {
+
+    private void injectObject(String fieldName, Object value)
+            throws NoSuchFieldException, IllegalAccessException {
         Field field = TokenManagerDelegate.class.getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(tokenManagerDelegate, value);

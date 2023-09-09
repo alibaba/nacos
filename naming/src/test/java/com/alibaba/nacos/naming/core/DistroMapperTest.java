@@ -16,45 +16,41 @@
 
 package com.alibaba.nacos.naming.core;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.HashSet;
+import java.util.concurrent.ConcurrentSkipListMap;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.StandardEnvironment;
 
-import java.util.HashSet;
-import java.util.concurrent.ConcurrentSkipListMap;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 @RunWith(MockitoJUnitRunner.class)
 public class DistroMapperTest {
-    
+
     private DistroMapper distroMapper;
-    
-    @Mock
-    private ServerMemberManager memberManager;
-    
+
+    @Mock private ServerMemberManager memberManager;
+
     private SwitchDomain switchDomain;
-    
+
     private String serviceName = "com.taobao.service";
-    
+
     private String ip1 = "1.1.1.1";
-    
+
     private String ip2 = "2.2.2.2";
-    
+
     private String ip3 = "3.3.3.3";
-    
+
     private String ip4 = "4.4.4.4";
-    
+
     private int port = 8848;
-    
+
     @Before
     public void setUp() {
         ConcurrentSkipListMap<String, Member> serverList = new ConcurrentSkipListMap<>();
@@ -64,17 +60,19 @@ public class DistroMapperTest {
         serverList.put(ip2, Member.builder().ip(ip2).port(port).build());
         serverList.put(ip3, Member.builder().ip(ip3).port(port).build());
         EnvUtil.setLocalAddress(ip4);
-        serverList.put(EnvUtil.getLocalAddress(), Member.builder().ip(EnvUtil.getLocalAddress()).port(port).build());
+        serverList.put(
+                EnvUtil.getLocalAddress(),
+                Member.builder().ip(EnvUtil.getLocalAddress()).port(port).build());
         HashSet<Member> set = new HashSet<>(serverList.values());
         switchDomain = new SwitchDomain();
         distroMapper = new DistroMapper(memberManager, switchDomain);
     }
-    
+
     @Test
     public void testResponsible() {
         assertTrue(distroMapper.responsible(serviceName));
     }
-    
+
     @Test
     public void testMapSrv() {
         String server = distroMapper.mapSrv(serviceName);

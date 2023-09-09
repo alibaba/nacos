@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.ArrayList;
 
 /**
@@ -27,30 +24,32 @@ import java.util.ArrayList;
  * @author <a href="mailto:jifeng.sun@outlook.com">sunjifeng</a>
  */
 public class ConvertUtilsTest {
-    
+
     @Test
     public void testToInt() {
         // ConvertUtils.toInt(String)
         Assert.assertEquals(0, ConvertUtils.toInt("0"));
         Assert.assertEquals(-1, ConvertUtils.toInt("-1"));
         Assert.assertEquals(10, ConvertUtils.toInt("10"));
-        Assert.assertEquals(Integer.MAX_VALUE, ConvertUtils.toInt(String.valueOf(Integer.MAX_VALUE)));
-        Assert.assertEquals(Integer.MIN_VALUE, ConvertUtils.toInt(String.valueOf(Integer.MIN_VALUE)));
+        Assert.assertEquals(
+                Integer.MAX_VALUE, ConvertUtils.toInt(String.valueOf(Integer.MAX_VALUE)));
+        Assert.assertEquals(
+                Integer.MIN_VALUE, ConvertUtils.toInt(String.valueOf(Integer.MIN_VALUE)));
         Assert.assertEquals(0, ConvertUtils.toInt("notIntValue"));
-        
+
         // ConvertUtils.toInt(String, Integer)
         Assert.assertEquals(0, ConvertUtils.toInt("0", 100));
         Assert.assertEquals(100, ConvertUtils.toInt(null, 100));
         Assert.assertEquals(100, ConvertUtils.toInt("null", 100));
         Assert.assertEquals(100, ConvertUtils.toInt("notIntValue", 100));
     }
-    
+
     @Test
     public void testToLong() {
         // ConvertUtils.toLong(Object)
         Assert.assertEquals(0L, ConvertUtils.toLong(new ArrayList<>()));
         Assert.assertEquals(10L, ConvertUtils.toLong((Object) 10L));
-        
+
         // ConvertUtils.toLong(String)
         Assert.assertEquals(0L, ConvertUtils.toLong("0"));
         Assert.assertEquals(-1L, ConvertUtils.toLong("-1"));
@@ -58,14 +57,14 @@ public class ConvertUtilsTest {
         Assert.assertEquals(Long.MAX_VALUE, ConvertUtils.toLong(String.valueOf(Long.MAX_VALUE)));
         Assert.assertEquals(Long.MIN_VALUE, ConvertUtils.toLong(String.valueOf(Long.MIN_VALUE)));
         Assert.assertEquals(0L, ConvertUtils.toLong("notIntValue"));
-        
+
         // ConvertUtils.toLong(String, Integer)
         Assert.assertEquals(0L, ConvertUtils.toLong("0", 100L));
         Assert.assertEquals(100L, ConvertUtils.toLong(null, 100L));
         Assert.assertEquals(100L, ConvertUtils.toLong("null", 100L));
         Assert.assertEquals(100L, ConvertUtils.toLong("notIntValue", 100L));
     }
-    
+
     @Test
     public void testToBoolean() {
         // ConvertUtils.toBoolean(String)
@@ -77,14 +76,14 @@ public class ConvertUtilsTest {
         Assert.assertFalse(ConvertUtils.toBoolean("FALSE"));
         Assert.assertFalse(ConvertUtils.toBoolean(null));
         Assert.assertFalse(ConvertUtils.toBoolean("notBoolean"));
-        
+
         // ConvertUtils.toBoolean(String, boolean)
         Assert.assertFalse(ConvertUtils.toBoolean("", false));
         Assert.assertFalse(ConvertUtils.toBoolean(null, false));
         Assert.assertFalse(ConvertUtils.toBoolean("notBoolean", false));
         Assert.assertTrue(ConvertUtils.toBoolean("true", false));
     }
-    
+
     @Test
     public void testToBooleanObject() {
         Assert.assertTrue(ConvertUtils.toBooleanObject("T"));
@@ -96,7 +95,7 @@ public class ConvertUtilsTest {
         Assert.assertFalse(ConvertUtils.toBooleanObject("n"));
         Assert.assertFalse(ConvertUtils.toBooleanObject("N"));
         Assert.assertNull(ConvertUtils.toBooleanObject("a"));
-        
+
         Assert.assertTrue(ConvertUtils.toBooleanObject("on"));
         Assert.assertTrue(ConvertUtils.toBooleanObject("oN"));
         Assert.assertTrue(ConvertUtils.toBooleanObject("On"));
@@ -111,7 +110,7 @@ public class ConvertUtilsTest {
         Assert.assertNull(ConvertUtils.toBooleanObject("na"));
         Assert.assertNull(ConvertUtils.toBooleanObject("aO"));
         Assert.assertNull(ConvertUtils.toBooleanObject("ao"));
-        
+
         Assert.assertFalse(ConvertUtils.toBooleanObject("off"));
         Assert.assertFalse(ConvertUtils.toBooleanObject("ofF"));
         Assert.assertFalse(ConvertUtils.toBooleanObject("oFf"));
@@ -153,7 +152,7 @@ public class ConvertUtilsTest {
         Assert.assertNull(ConvertUtils.toBooleanObject("ofa"));
         Assert.assertNull(ConvertUtils.toBooleanObject("OFa"));
         Assert.assertNull(ConvertUtils.toBooleanObject("oFa"));
-        
+
         Assert.assertTrue(ConvertUtils.toBooleanObject("true"));
         Assert.assertTrue(ConvertUtils.toBooleanObject("truE"));
         Assert.assertTrue(ConvertUtils.toBooleanObject("trUe"));
@@ -202,7 +201,7 @@ public class ConvertUtilsTest {
         Assert.assertNull(ConvertUtils.toBooleanObject("TrUX"));
         Assert.assertNull(ConvertUtils.toBooleanObject("TRuX"));
         Assert.assertNull(ConvertUtils.toBooleanObject("TRUX"));
-        
+
         Assert.assertFalse(ConvertUtils.toBooleanObject("false"));
         Assert.assertFalse(ConvertUtils.toBooleanObject("falsE"));
         Assert.assertFalse(ConvertUtils.toBooleanObject("falSe"));
@@ -315,7 +314,7 @@ public class ConvertUtilsTest {
         Assert.assertNull(ConvertUtils.toBooleanObject("FAlSX"));
         Assert.assertNull(ConvertUtils.toBooleanObject("FALsX"));
         Assert.assertNull(ConvertUtils.toBooleanObject("FALSX"));
-        
+
         Assert.assertNull(ConvertUtils.toBooleanObject(null));
     }
 }

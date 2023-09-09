@@ -23,28 +23,16 @@ package com.alibaba.nacos.api.selector;
  * @since 0.7.0
  */
 public enum SelectorType {
-    /**
-     * not match any type.
-     */
+    /** not match any type. */
     unknown,
-    /**
-     * not filter out any entity.
-     */
+    /** not filter out any entity. */
     none,
-    /**
-     * select by label.
-     */
+    /** select by label. */
     label,
-    /**
-     * select by cluster.
-     */
+    /** select by cluster. */
     cluster,
-    /**
-     * select by health state.
-     */
+    /** select by health state. */
     health,
-    /**
-     * select by enable state.
-     */
+    /** select by enable state. */
     enable
 }

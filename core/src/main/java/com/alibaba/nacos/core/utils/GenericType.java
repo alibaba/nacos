@@ -17,7 +17,6 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.utils.Preconditions;
-
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -28,27 +27,26 @@ import java.lang.reflect.TypeVariable;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class GenericType<T> {
-    
+
     private static final long serialVersionUID = -2103808581228167629L;
-    
+
     private final Type runtimeType;
-    
+
     final Type capture() {
         Type superclass = getClass().getGenericSuperclass();
-        Preconditions.checkArgument(superclass instanceof ParameterizedType, "%s isn't parameterized", superclass);
+        Preconditions.checkArgument(
+                superclass instanceof ParameterizedType, "%s isn't parameterized", superclass);
         return ((ParameterizedType) superclass).getActualTypeArguments()[0];
     }
-    
+
     protected GenericType() {
         this.runtimeType = capture();
         if (runtimeType instanceof TypeVariable) {
             throw new IllegalArgumentException("runtimeType must be ParameterizedType Class");
         }
     }
-    
-    /**
-     * Returns the represented type.
-     */
+
+    /** Returns the represented type. */
     public final Type getType() {
         return runtimeType;
     }

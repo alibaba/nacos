@@ -25,73 +25,65 @@ import com.alibaba.nacos.naming.core.v2.client.Client;
  * @author xiweng.yy
  */
 public class ClientEvent extends Event {
-    
+
     private static final long serialVersionUID = -8211818115593181708L;
-    
+
     private final Client client;
-    
+
     public ClientEvent(Client client) {
         this.client = client;
     }
-    
+
     public Client getClient() {
         return client;
     }
-    
-    /**
-     * Client changed event. Happened when {@code Client} add or remove service.
-     */
+
+    /** Client changed event. Happened when {@code Client} add or remove service. */
     public static class ClientChangedEvent extends ClientEvent {
-        
+
         private static final long serialVersionUID = 6440402443724824673L;
-        
+
         public ClientChangedEvent(Client client) {
             super(client);
         }
-        
     }
-    
-    /**
-     * Client disconnect event. Happened when {@code Client} disconnect with server.
-     */
+
+    /** Client disconnect event. Happened when {@code Client} disconnect with server. */
     public static class ClientDisconnectEvent extends ClientEvent {
-        
+
         private static final long serialVersionUID = 370348024867174101L;
-        
+
         private boolean isNative;
-    
+
         public boolean isNative() {
             return isNative;
         }
-    
+
         public ClientDisconnectEvent(Client client, boolean isNative) {
             super(client);
             this.isNative = isNative;
         }
-        
     }
-    
-    /**
-     * Client add event. Happened when verify failed.
-     */
+
+    /** Client add event. Happened when verify failed. */
     public static class ClientVerifyFailedEvent extends ClientEvent {
-    
+
         private static final long serialVersionUID = 2023951686223780851L;
-    
+
         private final String clientId;
-        
+
         private final String targetServer;
-        
+
         public ClientVerifyFailedEvent(String clientId, String targetServer) {
             super(null);
             this.clientId = clientId;
             this.targetServer = targetServer;
         }
-        
+
         public String getClientId() {
             return clientId;
         }
-        
+
         public String getTargetServer() {
             return targetServer;
         }

@@ -24,24 +24,24 @@ import com.alibaba.nacos.api.naming.spi.generator.IdGenerator;
  * @author xiweng.yy
  */
 public class DefaultInstanceIdGenerator implements IdGenerator {
-    
+
     public static final String ID_DELIMITER = "#";
-    
+
     private final String serviceName;
-    
+
     private final String clusterName;
-    
+
     private final String ip;
-    
+
     private final int port;
-    
+
     public DefaultInstanceIdGenerator(String serviceName, String clusterName, String ip, int port) {
         this.serviceName = serviceName;
         this.clusterName = clusterName;
         this.ip = ip;
         this.port = port;
     }
-    
+
     @Override
     public String generateInstanceId() {
         return ip + ID_DELIMITER + port + ID_DELIMITER + clusterName + ID_DELIMITER + serviceName;

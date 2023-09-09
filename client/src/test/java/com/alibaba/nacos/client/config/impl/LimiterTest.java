@@ -16,15 +16,12 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class LimiterTest {
-    
+
     @Test
     public void testIsLimit() {
         String keyId = "a";
-        //For initiating.
+        // For initiating.
         Assert.assertFalse(Limiter.isLimit(keyId));
         long start = System.currentTimeMillis();
         for (int j = 0; j < 5; j++) {

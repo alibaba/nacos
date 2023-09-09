@@ -26,11 +26,11 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
  * @version $Id: ConfigRemoveResponse.java, v 0.1 2020年07月16日 4:59 PM liuzunfei Exp $
  */
 public class ConfigRemoveResponse extends Response {
-    
+
     public ConfigRemoveResponse() {
         super();
     }
-    
+
     /**
      * Build success response.
      *
@@ -39,7 +39,7 @@ public class ConfigRemoveResponse extends Response {
     public static ConfigRemoveResponse buildSuccessResponse() {
         return new ConfigRemoveResponse();
     }
-    
+
     /**
      * Build fail response.
      *

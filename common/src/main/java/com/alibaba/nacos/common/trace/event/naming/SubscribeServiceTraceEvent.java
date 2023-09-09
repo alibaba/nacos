@@ -18,21 +18,31 @@ package com.alibaba.nacos.common.trace.event.naming;
 
 /**
  * Naming subscribe service trace event.
+ *
  * @author yanda
  */
 public class SubscribeServiceTraceEvent extends NamingTraceEvent {
-    
+
     private static final long serialVersionUID = -8856834879168816801L;
-    
+
     private final String clientIp;
-    
+
     public String getClientIp() {
         return clientIp;
     }
-    
-    public SubscribeServiceTraceEvent(long eventTime, String clientIp, String serviceNamespace,
-            String serviceGroup, String serviceName) {
-        super("SUBSCRIBE_SERVICE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+
+    public SubscribeServiceTraceEvent(
+            long eventTime,
+            String clientIp,
+            String serviceNamespace,
+            String serviceGroup,
+            String serviceName) {
+        super(
+                "SUBSCRIBE_SERVICE_TRACE_EVENT",
+                eventTime,
+                serviceNamespace,
+                serviceGroup,
+                serviceName);
         this.clientIp = clientIp;
     }
 }

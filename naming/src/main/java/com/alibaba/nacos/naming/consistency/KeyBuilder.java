@@ -25,19 +25,19 @@ import com.alibaba.nacos.naming.misc.UtilsAndCommons;
  * @since 1.0.0
  */
 public class KeyBuilder {
-    
+
     public static final String NAMESPACE_KEY_CONNECTOR = "##";
-    
+
     public static final String SERVICE_META_KEY_PREFIX = "com.alibaba.nacos.naming.domains.meta.";
-    
+
     public static String buildServiceMetaKey(String namespaceId, String serviceName) {
         return SERVICE_META_KEY_PREFIX + namespaceId + NAMESPACE_KEY_CONNECTOR + serviceName;
     }
-    
+
     public static String getSwitchDomainKey() {
         return SERVICE_META_KEY_PREFIX + UtilsAndCommons.SWITCH_DOMAIN_NAME;
     }
-    
+
     public static boolean matchSwitchKey(String key) {
         return key.endsWith(UtilsAndCommons.SWITCH_DOMAIN_NAME);
     }

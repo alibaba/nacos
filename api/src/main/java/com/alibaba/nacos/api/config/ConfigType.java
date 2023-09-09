@@ -17,7 +17,6 @@
 package com.alibaba.nacos.api.config;
 
 import com.alibaba.nacos.api.utils.StringUtils;
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,71 +24,55 @@ import java.util.Map;
  * Config data type.
  *
  * @author liaochuntao
- **/
+ */
 public enum ConfigType {
-    
-    /**
-     * config type is "properties".
-     */
+
+    /** config type is "properties". */
     PROPERTIES("properties"),
-    
-    /**
-     * config type is "xml".
-     */
+
+    /** config type is "xml". */
     XML("xml"),
-    
-    /**
-     * config type is "json".
-     */
+
+    /** config type is "json". */
     JSON("json"),
-    
-    /**
-     * config type is "text".
-     */
+
+    /** config type is "text". */
     TEXT("text"),
-    
-    /**
-     * config type is "html".
-     */
+
+    /** config type is "html". */
     HTML("html"),
-    
-    /**
-     * config type is "yaml".
-     */
+
+    /** config type is "yaml". */
     YAML("yaml"),
-    
-    /**
-     * config type is "toml".
-     */
+
+    /** config type is "toml". */
     TOML("toml"),
-    
-    /**
-     * not a real type.
-     */
+
+    /** not a real type. */
     UNSET("unset");
-    
+
     private final String type;
-    
+
     private static final Map<String, ConfigType> LOCAL_MAP = new HashMap<>();
-    
+
     static {
         for (ConfigType configType : values()) {
             LOCAL_MAP.put(configType.getType(), configType);
         }
     }
-    
+
     ConfigType(String type) {
         this.type = type;
     }
-    
+
     public String getType() {
         return type;
     }
-    
+
     public static ConfigType getDefaultType() {
         return TEXT;
     }
-    
+
     /**
      * check input type is valid.
      *

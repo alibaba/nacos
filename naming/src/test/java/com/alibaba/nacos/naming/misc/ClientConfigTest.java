@@ -16,48 +16,47 @@
 
 package com.alibaba.nacos.naming.misc;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.mock.env.MockEnvironment;
-
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.Assert.assertEquals;
+import org.springframework.mock.env.MockEnvironment;
 
 public class ClientConfigTest {
-    
+
     private static final long EXPIRED_TIME = 10000L;
-    
+
     private ClientConfig clientConfig;
-    
+
     private MockEnvironment mockEnvironment;
-    
+
     @Before
     public void setUp() throws Exception {
         mockEnvironment = new MockEnvironment();
         EnvUtil.setEnvironment(mockEnvironment);
         clientConfig = ClientConfig.getInstance();
     }
-    
+
     @Test
     public void testUpgradeConfig() throws InterruptedException {
-        mockEnvironment.setProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, String.valueOf(EXPIRED_TIME));
+        mockEnvironment.setProperty(
+                ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, String.valueOf(EXPIRED_TIME));
         NotifyCenter.publishEvent(ServerConfigChangeEvent.newEvent());
         TimeUnit.SECONDS.sleep(1);
         assertEquals(EXPIRED_TIME, clientConfig.getClientExpiredTime());
     }
-    
+
     @Test
     public void testInitConfigFormEnv()
-            throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
-        mockEnvironment.setProperty(ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, String.valueOf(EXPIRED_TIME));
+            throws NoSuchMethodException, InvocationTargetException, InstantiationException,
+                    IllegalAccessException {
+        mockEnvironment.setProperty(
+                ClientConstants.CLIENT_EXPIRED_TIME_CONFIG_KEY, String.valueOf(EXPIRED_TIME));
         Constructor<ClientConfig> declaredConstructor = ClientConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         ClientConfig clientConfig = declaredConstructor.newInstance();

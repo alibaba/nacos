@@ -22,7 +22,7 @@ package com.alibaba.nacos.api.config.filter;
  * @author Nacos
  */
 public interface IConfigContext {
-    
+
     /**
      * Get context param by key.
      *
@@ -30,11 +30,11 @@ public interface IConfigContext {
      * @return context
      */
     Object getParameter(String key);
-    
+
     /**
      * Set context param.
      *
-     * @param key   key
+     * @param key key
      * @param value value
      */
     void setParameter(String key, Object value);

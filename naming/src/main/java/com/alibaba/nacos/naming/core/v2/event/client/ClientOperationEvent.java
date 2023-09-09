@@ -26,92 +26,84 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
  * @author xiweng.yy
  */
 public class ClientOperationEvent extends Event {
-    
+
     private static final long serialVersionUID = -4582413232902517619L;
-    
+
     private final String clientId;
-    
+
     private final Service service;
-    
+
     public ClientOperationEvent(String clientId, Service service) {
         this.clientId = clientId;
         this.service = service;
     }
-    
+
     public String getClientId() {
         return clientId;
     }
-    
+
     public Service getService() {
         return service;
     }
-    
-    /**
-     * Client register service event.
-     */
+
+    /** Client register service event. */
     public static class ClientRegisterServiceEvent extends ClientOperationEvent {
-        
+
         private static final long serialVersionUID = 3412396514440368087L;
-        
+
         public ClientRegisterServiceEvent(Service service, String clientId) {
             super(clientId, service);
         }
     }
-    
-    /**
-     * Client deregister service event.
-     */
+
+    /** Client deregister service event. */
     public static class ClientDeregisterServiceEvent extends ClientOperationEvent {
-        
+
         private static final long serialVersionUID = -4518919987813223120L;
-        
+
         public ClientDeregisterServiceEvent(Service service, String clientId) {
             super(clientId, service);
         }
     }
-    
-    /**
-     * Client subscribe service event.
-     */
+
+    /** Client subscribe service event. */
     public static class ClientSubscribeServiceEvent extends ClientOperationEvent {
-        
+
         private static final long serialVersionUID = -4518919987813223120L;
-        
+
         public ClientSubscribeServiceEvent(Service service, String clientId) {
             super(clientId, service);
         }
     }
-    
-    /**
-     * Client unsubscribe service event.
-     */
+
+    /** Client unsubscribe service event. */
     public static class ClientUnsubscribeServiceEvent extends ClientOperationEvent {
-        
+
         private static final long serialVersionUID = -4518919987813223120L;
-        
+
         public ClientUnsubscribeServiceEvent(Service service, String clientId) {
             super(clientId, service);
         }
     }
-    
+
     public static class ClientReleaseEvent extends ClientOperationEvent {
-    
+
         private static final long serialVersionUID = -281486927726245701L;
-    
+
         private final Client client;
-        
+
         private final boolean isNative;
-        
+
         public ClientReleaseEvent(Client client, boolean isNative) {
             super(client.getClientId(), null);
             this.client = client;
             this.isNative = isNative;
         }
-    
+
         public Client getClient() {
             return client;
         }
-    
+
         public boolean isNative() {
             return isNative;
         }

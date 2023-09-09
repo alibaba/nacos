@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mockStatic;
+
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
@@ -23,41 +26,40 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.HealthCheckRequestHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.MockedStatic;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.mockStatic;
-
 @RunWith(SpringJUnit4ClassRunner.class)
 public class RemoteParamCheckFilterTest {
-    
+
     private static RemoteParamCheckFilter remoteParamCheckFilter;
-    
+
     private static MockedStatic<EnvUtil> envUtilMockedStatic;
-    
+
     @BeforeClass
     public static void init() {
         envUtilMockedStatic = mockStatic(EnvUtil.class);
-        envUtilMockedStatic.when(
-                () -> EnvUtil.getProperty("nacos.core.param.check.enabled", Boolean.class, true))
+        envUtilMockedStatic
+                .when(
+                        () ->
+                                EnvUtil.getProperty(
+                                        "nacos.core.param.check.enabled", Boolean.class, true))
                 .thenReturn(Boolean.TRUE);
-        envUtilMockedStatic.when(
-                () -> EnvUtil.getProperty("nacos.core.param.check.checker", String.class, "default")
-        ).thenReturn("default");
+        envUtilMockedStatic
+                .when(
+                        () ->
+                                EnvUtil.getProperty(
+                                        "nacos.core.param.check.checker", String.class, "default"))
+                .thenReturn("default");
         remoteParamCheckFilter = new RemoteParamCheckFilter();
-        
     }
-    
+
     @AfterClass
     public static void close() {
         envUtilMockedStatic.close();
     }
-    
+
     @Test
     public void filter() {
         Instance instance = new Instance();
@@ -70,19 +72,29 @@ public class RemoteParamCheckFilterTest {
         instanceRequest.setServiceName("test");
         Response response = null;
         try {
-            response = remoteParamCheckFilter.filter(instanceRequest, new RequestMeta(), HealthCheckRequestHandler.class);
+            response =
+                    remoteParamCheckFilter.filter(
+                            instanceRequest, new RequestMeta(), HealthCheckRequestHandler.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        assertEquals(response.getMessage(), "Param check invalid:Param 'port' is illegal, the value should be between 0 and 65535");
-        
+        assertEquals(
+                response.getMessage(),
+                "Param check invalid:Param 'port' is illegal, the value should be between 0 and 65535");
+
         BatchInstanceRequest batchInstanceRequest = new BatchInstanceRequest();
         batchInstanceRequest.setServiceName("test@@@@");
         try {
-            response = remoteParamCheckFilter.filter(batchInstanceRequest, new RequestMeta(), HealthCheckRequestHandler.class);
+            response =
+                    remoteParamCheckFilter.filter(
+                            batchInstanceRequest,
+                            new RequestMeta(),
+                            HealthCheckRequestHandler.class);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        assertEquals(response.getMessage(), "Param check invalid:Param 'serviceName' is illegal, illegal characters should not appear in the param.");
+        assertEquals(
+                response.getMessage(),
+                "Param check invalid:Param 'serviceName' is illegal, illegal characters should not appear in the param.");
     }
 }

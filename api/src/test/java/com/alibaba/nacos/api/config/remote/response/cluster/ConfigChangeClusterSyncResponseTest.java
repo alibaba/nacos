@@ -16,24 +16,22 @@
 
 package com.alibaba.nacos.api.config.remote.response.cluster;
 
+import static org.junit.Assert.assertTrue;
+
 import com.alibaba.nacos.api.config.remote.response.BasedConfigResponseTest;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 public class ConfigChangeClusterSyncResponseTest extends BasedConfigResponseTest {
-    
+
     ConfigChangeClusterSyncResponse configChangeClusterSyncResponse;
-    
+
     @Before
     public void before() {
         configChangeClusterSyncResponse = new ConfigChangeClusterSyncResponse();
         requestId = injectResponseUuId(configChangeClusterSyncResponse);
     }
-    
+
     @Override
     @Test
     public void testSerializeSuccessResponse() throws JsonProcessingException {
@@ -43,9 +41,7 @@ public class ConfigChangeClusterSyncResponseTest extends BasedConfigResponseTest
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.SUCCESS.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));
     }
-    
+
     @Override
-    public void testSerializeFailResponse() throws JsonProcessingException {
-    
-    }
+    public void testSerializeFailResponse() throws JsonProcessingException {}
 }

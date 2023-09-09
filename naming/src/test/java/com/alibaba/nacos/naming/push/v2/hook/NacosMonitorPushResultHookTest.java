@@ -16,23 +16,20 @@
 
 package com.alibaba.nacos.naming.push.v2.hook;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Before;
-import org.junit.Test;
+import java.util.ArrayList;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
-
-import java.util.ArrayList;
-
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.when;
 
 /**
  * test for NacosMonitorPushResultHook.
@@ -41,26 +38,21 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class NacosMonitorPushResultHookTest {
-    
-    @Mock
-    private PushResult pushResult;
-    
-    @Mock
-    private Subscriber subscriber;
-    
-    @Mock
-    private TpsControlManager tpsControlManager;
-    
-    @Mock
-    private ConfigurableApplicationContext context;
-    
-    @Mock
-    private Instance instance;
-    
+
+    @Mock private PushResult pushResult;
+
+    @Mock private Subscriber subscriber;
+
+    @Mock private TpsControlManager tpsControlManager;
+
+    @Mock private ConfigurableApplicationContext context;
+
+    @Mock private Instance instance;
+
     private final ServiceInfo serviceInfo = new ServiceInfo("name", "cluster");
-    
+
     private final long allCost = 100L;
-    
+
     @Before
     public void setUp() {
         MetricsMonitor.resetAll();
@@ -74,7 +66,7 @@ public class NacosMonitorPushResultHookTest {
         ApplicationUtils.injectContext(context);
         when(context.getBean(TpsControlManager.class)).thenReturn(tpsControlManager);
     }
-    
+
     @Test
     public void testPushSuccessForEmptyPush() {
         new NacosMonitorPushResultHook().pushSuccess(pushResult);
@@ -82,7 +74,7 @@ public class NacosMonitorPushResultHookTest {
         assertEquals(1, MetricsMonitor.getEmptyPushMonitor().get());
         assertEquals(allCost, MetricsMonitor.getMaxPushCostMonitor().get());
     }
-    
+
     @Test
     public void testPushSuccessForNoEmptyPush() {
         ArrayList<Instance> hosts = new ArrayList<>();
@@ -93,7 +85,7 @@ public class NacosMonitorPushResultHookTest {
         assertEquals(0, MetricsMonitor.getEmptyPushMonitor().get());
         assertEquals(allCost, MetricsMonitor.getMaxPushCostMonitor().get());
     }
-    
+
     @Test
     public void testPushFailed() {
         new NacosMonitorPushResultHook().pushFailed(pushResult);

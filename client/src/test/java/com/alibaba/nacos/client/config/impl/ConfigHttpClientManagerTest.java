@@ -18,31 +18,28 @@ package com.alibaba.nacos.client.config.impl;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class ConfigHttpClientManagerTest {
-    
+
     @Test
     public void test() {
         final ConfigHttpClientManager instance1 = ConfigHttpClientManager.getInstance();
         final ConfigHttpClientManager instance2 = ConfigHttpClientManager.getInstance();
-        
+
         Assert.assertEquals(instance1, instance2);
-    
+
         final NacosRestTemplate nacosRestTemplate = instance1.getNacosRestTemplate();
         Assert.assertNotNull(nacosRestTemplate);
-    
+
         final int time1 = instance1.getConnectTimeoutOrDefault(10);
         Assert.assertEquals(1000, time1);
         final int time2 = instance1.getConnectTimeoutOrDefault(2000);
         Assert.assertEquals(2000, time2);
-    
+
         try {
             instance1.shutdown();
         } catch (NacosException e) {
             Assert.fail();
         }
     }
-
 }

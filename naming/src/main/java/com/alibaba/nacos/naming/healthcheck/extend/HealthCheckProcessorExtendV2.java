@@ -18,12 +18,11 @@ package com.alibaba.nacos.naming.healthcheck.extend;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import org.springframework.stereotype.Component;
 
 /**
  * Health Check Processor Extend V2.
@@ -33,7 +32,8 @@ import java.util.Set;
 @Component
 public class HealthCheckProcessorExtendV2 extends AbstractHealthCheckProcessorExtend {
 
-    private final Collection<HealthCheckProcessorV2> processors = NacosServiceLoader.load(HealthCheckProcessorV2.class);
+    private final Collection<HealthCheckProcessorV2> processors =
+            NacosServiceLoader.load(HealthCheckProcessorV2.class);
 
     @Override
     public Set<String> addProcessor(Set<String> origin) {
@@ -44,10 +44,13 @@ public class HealthCheckProcessorExtendV2 extends AbstractHealthCheckProcessorEx
             String type = processor.getType();
             if (processorType.contains(type)) {
                 throw new RuntimeException(
-                        "More than one processor of the same type was found : [type=\"" + type + "\"]");
+                        "More than one processor of the same type was found : [type=\""
+                                + type
+                                + "\"]");
             }
             processorType.add(type);
-            registry.registerSingleton(lowerFirstChar(processor.getClass().getSimpleName()), processor);
+            registry.registerSingleton(
+                    lowerFirstChar(processor.getClass().getSimpleName()), processor);
         }
         return processorType;
     }

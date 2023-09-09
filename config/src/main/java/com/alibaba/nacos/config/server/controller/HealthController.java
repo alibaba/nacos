@@ -17,16 +17,15 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.utils.InetUtils;
+import java.util.Map;
+import javax.annotation.PostConstruct;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.annotation.PostConstruct;
-import java.util.Map;
 
 /**
  * Health service.
@@ -36,35 +35,39 @@ import java.util.Map;
 @RestController
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
 public class HealthController {
-    
+
     private DataSourceService dataSourceService;
-    
+
     private static final String HEALTH_UP = "UP";
-    
+
     private static final String HEALTH_DOWN = "DOWN";
-    
+
     private static final String HEALTH_WARN = "WARN";
-    
+
     private final ServerMemberManager memberManager;
-    
+
     public HealthController(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
-    
+
     @PostConstruct
     public void init() {
         dataSourceService = DynamicDataSource.getInstance().getDataSource();
     }
-    
+
     @GetMapping
     public String getHealth() {
         // TODO UP DOWN WARN
         StringBuilder sb = new StringBuilder();
         String dbStatus = dataSourceService.getHealth();
         boolean addressServerHealthy = isAddressServerHealthy();
-        if (dbStatus.contains(HEALTH_UP) && addressServerHealthy && ServerMemberManager.isInIpList()) {
+        if (dbStatus.contains(HEALTH_UP)
+                && addressServerHealthy
+                && ServerMemberManager.isInIpList()) {
             sb.append(HEALTH_UP);
-        } else if (dbStatus.contains(HEALTH_WARN) && addressServerHealthy && ServerMemberManager.isInIpList()) {
+        } else if (dbStatus.contains(HEALTH_WARN)
+                && addressServerHealthy
+                && ServerMemberManager.isInIpList()) {
             sb.append("WARN:");
             sb.append("slave db (").append(dbStatus.split(":")[1]).append(") down. ");
         } else {
@@ -72,23 +75,24 @@ public class HealthController {
             if (dbStatus.contains(HEALTH_DOWN)) {
                 sb.append("master db (").append(dbStatus.split(":")[1]).append(") down. ");
             }
-        
+
             if (!addressServerHealthy) {
                 sb.append("address server down. ");
             }
             if (!ServerMemberManager.isInIpList()) {
-                sb.append("server ip ").append(InetUtils.getSelfIP())
+                sb.append("server ip ")
+                        .append(InetUtils.getSelfIP())
                         .append(" is not in the serverList of address server. ");
             }
         }
-    
+
         return sb.toString();
     }
-    
+
     private boolean isAddressServerHealthy() {
         Map<String, Object> info = memberManager.getLookup().info();
-        return info != null && info.get("addressServerHealth") != null && Boolean
-                .parseBoolean(info.get("addressServerHealth").toString());
+        return info != null
+                && info.get("addressServerHealth") != null
+                && Boolean.parseBoolean(info.get("addressServerHealth").toString());
     }
-    
 }

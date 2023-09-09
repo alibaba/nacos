@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.core.ability;
 
-import com.alibaba.nacos.api.ability.ServerAbilities;
-import org.junit.Test;
-
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import com.alibaba.nacos.api.ability.ServerAbilities;
+
 public class RemoteAbilityInitializerTest {
-    
+
     @Test
     public void testInitialize() {
         RemoteAbilityInitializer initializer = new RemoteAbilityInitializer();

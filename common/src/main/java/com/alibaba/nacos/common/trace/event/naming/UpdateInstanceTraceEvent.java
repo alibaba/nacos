@@ -25,40 +25,51 @@ import java.util.Map;
  * @date 2023/8/31
  */
 public class UpdateInstanceTraceEvent extends NamingTraceEvent {
-    
+
     private static final long serialVersionUID = -6995370254824508523L;
-    
+
     private final Map<String, String> metadata;
-    
+
     private final String clientIp;
-    
+
     private final String instanceIp;
-    
+
     private final int instancePort;
-    
+
     public String getClientIp() {
         return clientIp;
     }
-    
+
     public String getInstanceIp() {
         return instanceIp;
     }
-    
+
     public int getInstancePort() {
         return instancePort;
     }
-    
+
     public String toInetAddr() {
         return instanceIp + ":" + instancePort;
     }
-    
-    public UpdateInstanceTraceEvent(long eventTime, String clientIp, String serviceNamespace, String serviceGroup,
-            String serviceName, String instanceIp, int instancePort, Map<String, String> metadata) {
-        super("UPDATE_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+
+    public UpdateInstanceTraceEvent(
+            long eventTime,
+            String clientIp,
+            String serviceNamespace,
+            String serviceGroup,
+            String serviceName,
+            String instanceIp,
+            int instancePort,
+            Map<String, String> metadata) {
+        super(
+                "UPDATE_INSTANCE_TRACE_EVENT",
+                eventTime,
+                serviceNamespace,
+                serviceGroup,
+                serviceName);
         this.clientIp = clientIp;
         this.instanceIp = instanceIp;
         this.instancePort = instancePort;
         this.metadata = metadata;
     }
-    
 }

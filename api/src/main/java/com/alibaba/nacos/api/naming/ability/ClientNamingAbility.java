@@ -29,21 +29,21 @@ public class ClientNamingAbility implements Serializable {
     private static final long serialVersionUID = 7643941846828882862L;
 
     private boolean supportDeltaPush;
-    
+
     private boolean supportRemoteMetric;
-    
+
     public boolean isSupportDeltaPush() {
         return supportDeltaPush;
     }
-    
+
     public void setSupportDeltaPush(boolean supportDeltaPush) {
         this.supportDeltaPush = supportDeltaPush;
     }
-    
+
     public boolean isSupportRemoteMetric() {
         return supportRemoteMetric;
     }
-    
+
     public void setSupportRemoteMetric(boolean supportRemoteMetric) {
         this.supportRemoteMetric = supportRemoteMetric;
     }

@@ -28,49 +28,53 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author xiweng.yy
  */
 public class DistroRecordsHolder {
-    
+
     private static final DistroRecordsHolder INSTANCE = new DistroRecordsHolder();
-    
+
     private final ConcurrentMap<String, DistroRecord> distroRecords;
-    
+
     private DistroRecordsHolder() {
         distroRecords = new ConcurrentHashMap<>();
     }
-    
+
     public static DistroRecordsHolder getInstance() {
         return INSTANCE;
     }
-    
+
     public Optional<DistroRecord> getRecordIfExist(String type) {
         return Optional.ofNullable(distroRecords.get(type));
     }
-    
+
     public DistroRecord getRecord(String type) {
         distroRecords.computeIfAbsent(type, s -> new DistroRecord(type));
         return distroRecords.get(type);
     }
-    
+
     public long getTotalSyncCount() {
         final AtomicLong result = new AtomicLong();
-        distroRecords.forEach((s, distroRecord) -> result.addAndGet(distroRecord.getTotalSyncCount()));
+        distroRecords.forEach(
+                (s, distroRecord) -> result.addAndGet(distroRecord.getTotalSyncCount()));
         return result.get();
     }
-    
+
     public long getSuccessfulSyncCount() {
         final AtomicLong result = new AtomicLong();
-        distroRecords.forEach((s, distroRecord) -> result.addAndGet(distroRecord.getSuccessfulSyncCount()));
+        distroRecords.forEach(
+                (s, distroRecord) -> result.addAndGet(distroRecord.getSuccessfulSyncCount()));
         return result.get();
     }
-    
+
     public long getFailedSyncCount() {
         final AtomicLong result = new AtomicLong();
-        distroRecords.forEach((s, distroRecord) -> result.addAndGet(distroRecord.getFailedSyncCount()));
+        distroRecords.forEach(
+                (s, distroRecord) -> result.addAndGet(distroRecord.getFailedSyncCount()));
         return result.get();
     }
-    
+
     public int getFailedVerifyCount() {
         final AtomicInteger result = new AtomicInteger();
-        distroRecords.forEach((s, distroRecord) -> result.addAndGet(distroRecord.getFailedVerifyCount()));
+        distroRecords.forEach(
+                (s, distroRecord) -> result.addAndGet(distroRecord.getFailedVerifyCount()));
         return result.get();
     }
 }

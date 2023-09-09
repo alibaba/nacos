@@ -16,30 +16,27 @@
 
 package com.alibaba.nacos.plugin.auth.api;
 
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class IdentityContextTest {
-    
+
     private static final String TEST = "test";
-    
+
     private IdentityContext identityContext;
-    
+
     @Before
     public void setUp() throws Exception {
         identityContext = new IdentityContext();
     }
-    
+
     @Test
     public void testGetParameter() {
         assertNull(identityContext.getParameter(TEST));
         identityContext.setParameter(TEST, TEST);
         assertEquals(TEST, identityContext.getParameter(TEST));
     }
-    
+
     @Test
     public void testGetParameterWithDefaultValue() {
         assertEquals(TEST, identityContext.getParameter(TEST, TEST));
@@ -48,7 +45,7 @@ public class IdentityContextTest {
         long actual = identityContext.getParameter(TEST, 1L);
         assertEquals(1L, actual);
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testGetParameterWithNullDefaultValue() {
         identityContext.getParameter(TEST, null);

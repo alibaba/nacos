@@ -18,11 +18,8 @@
 
 package com.alibaba.nacos.client.auth.ram.identify;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class CredentialsTest {
-    
+
     @Test
     public void testGetter() {
         // given
@@ -35,48 +32,48 @@ public class CredentialsTest {
         Assert.assertEquals(sk, credentials.getSecretKey());
         Assert.assertEquals(tenantId, credentials.getTenantId());
     }
-    
+
     @Test
     public void testSetter() {
-        //given
+        // given
         String ak = "ak";
         String sk = "sk";
         String tenantId = "100";
         Credentials credentials = new Credentials();
-        //when
+        // when
         credentials.setAccessKey(ak);
         credentials.setSecretKey(sk);
         credentials.setTenantId(tenantId);
-        //then
+        // then
         Assert.assertEquals(ak, credentials.getAccessKey());
         Assert.assertEquals(sk, credentials.getSecretKey());
         Assert.assertEquals(tenantId, credentials.getTenantId());
     }
-    
+
     @Test
     public void testValid() {
-        //given
+        // given
         String ak = "ak";
         String sk = "sk";
         String tenantId = "100";
         Credentials credentials = new Credentials(ak, sk, tenantId);
-        //when
+        // when
         boolean actual = credentials.valid();
-        //then
+        // then
         Assert.assertTrue(actual);
     }
-    
+
     @Test
     public void testIdentical() {
-        //given
+        // given
         String ak = "ak";
         String sk = "sk";
         String tenantId = "100";
         Credentials credentials1 = new Credentials(ak, sk, "101");
         Credentials credentials2 = new Credentials(ak, sk, "100");
-        //then
+        // then
         boolean actual = credentials1.identical(credentials2);
-        //then
+        // then
         Assert.assertTrue(actual);
     }
 }

@@ -24,39 +24,39 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * @author xiweng.yy
  */
 public class RamContext {
-    
+
     private String accessKey;
-    
+
     private String secretKey;
-    
+
     private String ramRoleName;
-    
+
     public String getAccessKey() {
         return accessKey;
     }
-    
+
     public void setAccessKey(String accessKey) {
         this.accessKey = accessKey;
     }
-    
+
     public String getSecretKey() {
         return secretKey;
     }
-    
+
     public void setSecretKey(String secretKey) {
         this.secretKey = secretKey;
     }
-    
+
     public String getRamRoleName() {
         return ramRoleName;
     }
-    
+
     public void setRamRoleName(String ramRoleName) {
         this.ramRoleName = ramRoleName;
     }
-    
+
     public boolean validate() {
-        return StringUtils.isNotBlank(ramRoleName) || StringUtils.isNotBlank(accessKey) && StringUtils
-                .isNotBlank(secretKey);
+        return StringUtils.isNotBlank(ramRoleName)
+                || StringUtils.isNotBlank(accessKey) && StringUtils.isNotBlank(secretKey);
     }
 }

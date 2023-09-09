@@ -20,6 +20,7 @@ import java.util.concurrent.Callable;
 
 /**
  * Cache method collection definition.
+ *
  * @author zzq
  * @date 2021/7/30
  */
@@ -27,42 +28,47 @@ public interface Cache<K, V> {
 
     /**
      * Cache a pair of key value. If the key value already exists, the value will be overwritten.
+     *
      * @param key cache key
      * @param val cache value
      */
     void put(K key, V val);
-    
+
     /**
      * Take the corresponding value from the cache according to the cache key.
+     *
      * @param key cache key
      * @return cache value
      */
     V get(K key);
-    
+
     /**
-     * Get the value in the cache according to the primary key, and put it into the cache after processing by the function.
+     * Get the value in the cache according to the primary key, and put it into the cache after
+     * processing by the function.
+     *
      * @param key cache key
      * @param call a function, the return value of the function will be updated to the cache
      * @return cache value
      * @throws Exception callable function interface throw exception
      */
     V get(K key, Callable<? extends V> call) throws Exception;
-    
+
     /**
-     * Take the corresponding value from the cache according to the cache key, and remove this record from the cache.
+     * Take the corresponding value from the cache according to the cache key, and remove this
+     * record from the cache.
+     *
      * @param key cache key
      * @return cache value
      */
     V remove(K key);
-    
-    /**
-     * Clear the entire cache.
-     */
+
+    /** Clear the entire cache. */
     void clear();
-    
+
     /**
      * Returns the number of key-value pairs in the cache.
-     * @return  number of key-value pairs
+     *
+     * @return number of key-value pairs
      */
     int getSize();
 }

@@ -27,11 +27,11 @@ import java.util.concurrent.ThreadLocalRandom;
  * @author alibaba
  */
 public class Chooser<K, T> {
-    
+
     private final K uniqueKey;
-    
+
     private volatile Ref<T> ref;
-    
+
     /**
      * Random get one item.
      *
@@ -47,7 +47,7 @@ public class Chooser<K, T> {
         }
         return items.get(ThreadLocalRandom.current().nextInt(items.size()));
     }
-    
+
     /**
      * Random get one item with weight.
      *
@@ -62,42 +62,43 @@ public class Chooser<K, T> {
         } else {
             return ref.items.get(index);
         }
-        
+
         if (index < ref.weights.length) {
             if (random < ref.weights[index]) {
                 return ref.items.get(index);
             }
         }
-        
+
         if (ref.weights.length == 0) {
-            throw new IllegalStateException("Cumulative Weight wrong , the array length is equal to 0.");
+            throw new IllegalStateException(
+                    "Cumulative Weight wrong , the array length is equal to 0.");
         }
-        
+
         /* This should never happen, but it ensures we will return a correct
          * object in case there is some floating point inequality problem
          * wrt the cumulative probabilities. */
         return ref.items.get(ref.items.size() - 1);
     }
-    
+
     public Chooser(K uniqueKey) {
         this(uniqueKey, new ArrayList<Pair<T>>());
     }
-    
+
     public Chooser(K uniqueKey, List<Pair<T>> pairs) {
         Ref<T> ref = new Ref<>(pairs);
         ref.refresh();
         this.uniqueKey = uniqueKey;
         this.ref = ref;
     }
-    
+
     public K getUniqueKey() {
         return uniqueKey;
     }
-    
+
     public Ref<T> getRef() {
         return ref;
     }
-    
+
     /**
      * refresh items.
      *
@@ -109,37 +110,35 @@ public class Chooser<K, T> {
         newRef.poller = this.ref.poller.refresh(newRef.items);
         this.ref = newRef;
     }
-    
+
     public class Ref<T> {
-        
+
         private List<Pair<T>> itemsWithWeight = new ArrayList<>();
-        
+
         private final List<T> items = new ArrayList<>();
-        
+
         private Poller<T> poller = new GenericPoller<>(items);
-        
+
         private double[] weights;
-        
+
         public Ref(List<Pair<T>> itemsWithWeight) {
             if (itemsWithWeight != null) {
                 this.itemsWithWeight = itemsWithWeight;
             }
         }
-        
-        /**
-         * Refresh.
-         */
+
+        /** Refresh. */
         public void refresh() {
             double originWeightSum = 0;
             int size = 0;
             for (Pair<T> item : itemsWithWeight) {
-                
+
                 double weight = item.weight();
-                //ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
+                // ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
                 if (weight <= 0) {
                     continue;
                 }
-                
+
                 items.add(item.item());
                 if (Double.isInfinite(weight)) {
                     weight = 10000.0D;
@@ -150,37 +149,37 @@ public class Chooser<K, T> {
                 originWeightSum += weight;
                 size++;
             }
-            
+
             weights = new double[size];
             double exactWeight;
             double randomRange = 0D;
             int index = 0;
             for (Pair<T> item : itemsWithWeight) {
                 double singleWeight = item.weight();
-                //ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
+                // ignore item which weight is zero.see test_randomWithWeight_weight0 in ChooserTest
                 if (singleWeight <= 0) {
                     continue;
                 }
-                
+
                 exactWeight = singleWeight / originWeightSum;
                 weights[index] = randomRange + exactWeight;
                 randomRange = weights[index++];
             }
-            
+
             double doublePrecisionDelta = 0.0001;
-            
+
             if (index == 0 || (Math.abs(weights[index - 1] - 1) < doublePrecisionDelta)) {
                 return;
             }
             throw new IllegalStateException(
                     "Cumulative Weight calculate wrong , the sum of probabilities does not equals 1.");
         }
-        
+
         @Override
         public int hashCode() {
             return itemsWithWeight.hashCode();
         }
-        
+
         @SuppressWarnings("unchecked")
         @Override
         public boolean equals(Object other) {
@@ -193,7 +192,9 @@ public class Chooser<K, T> {
             if (getClass() != other.getClass()) {
                 return false;
             }
-            if (!(other.getClass().getGenericInterfaces()[0].equals(this.getClass().getGenericInterfaces()[0]))) {
+            if (!(other.getClass()
+                    .getGenericInterfaces()[0]
+                    .equals(this.getClass().getGenericInterfaces()[0]))) {
                 return false;
             }
             Ref<T> otherRef = (Ref<T>) other;
@@ -208,12 +209,12 @@ public class Chooser<K, T> {
             }
         }
     }
-    
+
     @Override
     public int hashCode() {
         return uniqueKey.hashCode();
     }
-    
+
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -225,7 +226,7 @@ public class Chooser<K, T> {
         if (getClass() != other.getClass()) {
             return false;
         }
-        
+
         Chooser otherChooser = (Chooser) other;
         if (this.uniqueKey == null) {
             if (otherChooser.getUniqueKey() != null) {
@@ -237,9 +238,8 @@ public class Chooser<K, T> {
             } else if (!this.uniqueKey.equals(otherChooser.getUniqueKey())) {
                 return false;
             }
-            
         }
-        
+
         if (this.ref == null) {
             return otherChooser.getRef() == null;
         } else {

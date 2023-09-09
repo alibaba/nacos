@@ -23,7 +23,6 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecord;
 import com.alibaba.nacos.core.distributed.distro.monitor.DistroRecordsHolder;
 import com.alibaba.nacos.core.utils.Loggers;
-
 import java.util.List;
 
 /**
@@ -32,23 +31,26 @@ import java.util.List;
  * @author xiweng.yy
  */
 public class DistroVerifyExecuteTask extends AbstractExecuteTask {
-    
+
     private final DistroTransportAgent transportAgent;
-    
+
     private final List<DistroData> verifyData;
-    
+
     private final String targetServer;
-    
+
     private final String resourceType;
-    
-    public DistroVerifyExecuteTask(DistroTransportAgent transportAgent, List<DistroData> verifyData,
-            String targetServer, String resourceType) {
+
+    public DistroVerifyExecuteTask(
+            DistroTransportAgent transportAgent,
+            List<DistroData> verifyData,
+            String targetServer,
+            String resourceType) {
         this.transportAgent = transportAgent;
         this.verifyData = verifyData;
         this.targetServer = targetServer;
         this.resourceType = resourceType;
     }
-    
+
     @Override
     public void run() {
         for (DistroData each : verifyData) {
@@ -59,37 +61,45 @@ public class DistroVerifyExecuteTask extends AbstractExecuteTask {
                     doSyncVerifyData(each);
                 }
             } catch (Exception e) {
-                Loggers.DISTRO
-                        .error("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType, targetServer, e);
+                Loggers.DISTRO.error(
+                        "[DISTRO-FAILED] verify data for type {} to {} failed.",
+                        resourceType,
+                        targetServer,
+                        e);
             }
         }
     }
-    
+
     private void doSyncVerifyDataWithCallback(DistroData data) {
         transportAgent.syncVerifyData(data, targetServer, new DistroVerifyCallback());
     }
-    
+
     private void doSyncVerifyData(DistroData data) {
         transportAgent.syncVerifyData(data, targetServer);
     }
-    
+
     private class DistroVerifyCallback implements DistroCallback {
-        
+
         @Override
         public void onSuccess() {
             if (Loggers.DISTRO.isDebugEnabled()) {
-                Loggers.DISTRO.debug("[DISTRO] verify data for type {} to {} success", resourceType, targetServer);
+                Loggers.DISTRO.debug(
+                        "[DISTRO] verify data for type {} to {} success",
+                        resourceType,
+                        targetServer);
             }
         }
-        
+
         @Override
         public void onFailed(Throwable throwable) {
             DistroRecord distroRecord = DistroRecordsHolder.getInstance().getRecord(resourceType);
             distroRecord.verifyFail();
             if (Loggers.DISTRO.isDebugEnabled()) {
-                Loggers.DISTRO
-                        .debug("[DISTRO-FAILED] verify data for type {} to {} failed.", resourceType, targetServer,
-                                throwable);
+                Loggers.DISTRO.debug(
+                        "[DISTRO-FAILED] verify data for type {} to {} failed.",
+                        resourceType,
+                        targetServer,
+                        throwable);
             }
         }
     }

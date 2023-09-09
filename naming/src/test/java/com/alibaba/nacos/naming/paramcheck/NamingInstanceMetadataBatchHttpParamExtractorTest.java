@@ -16,14 +16,13 @@
 
 package com.alibaba.nacos.naming.paramcheck;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
-import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * The type Naming instance metadata batch http param extractor test.
@@ -31,14 +30,21 @@ import static org.junit.Assert.assertEquals;
  * @author zhuoguang
  */
 public class NamingInstanceMetadataBatchHttpParamExtractorTest {
-    
+
     @Test
     public void extractParamAndCheck() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/nacos" + UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/metadata/batch");
+        request.setRequestURI(
+                "/nacos"
+                        + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
+                        + "/metadata/batch");
         request.setMethod(HttpMethod.PUT);
         HttpParamExtractorManager manager = HttpParamExtractorManager.getInstance();
-        AbstractHttpParamExtractor extractor = manager.getExtractor(request.getRequestURI(), request.getMethod(), "naming");
-        assertEquals(NamingInstanceMetadataBatchHttpParamExtractor.class.getSimpleName(), extractor.getClass().getSimpleName());
+        AbstractHttpParamExtractor extractor =
+                manager.getExtractor(request.getRequestURI(), request.getMethod(), "naming");
+        assertEquals(
+                NamingInstanceMetadataBatchHttpParamExtractor.class.getSimpleName(),
+                extractor.getClass().getSimpleName());
     }
 }

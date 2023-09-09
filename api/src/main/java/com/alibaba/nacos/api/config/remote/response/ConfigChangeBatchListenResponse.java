@@ -18,7 +18,6 @@ package com.alibaba.nacos.api.config.remote.response;
 
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,17 +28,16 @@ import java.util.List;
  * @version $Id: ConfigChangeBatchListenResponse.java, v 0.1 2020年07月14日 3:07 PM liuzunfei Exp $
  */
 public class ConfigChangeBatchListenResponse extends Response {
-    
+
     List<ConfigContext> changedConfigs = new ArrayList<>();
-    
-    public ConfigChangeBatchListenResponse() {
-    }
-    
+
+    public ConfigChangeBatchListenResponse() {}
+
     /**
      * add changed config.
      *
      * @param dataId dataId.
-     * @param group  group.
+     * @param group group.
      * @param tenant tenant.
      */
     public void addChangeConfig(String dataId, String group, String tenant) {
@@ -49,7 +47,7 @@ public class ConfigChangeBatchListenResponse extends Response {
         configContext.tenant = tenant;
         changedConfigs.add(configContext);
     }
-    
+
     /**
      * Getter method for property <tt>changedConfigs</tt>.
      *
@@ -58,7 +56,7 @@ public class ConfigChangeBatchListenResponse extends Response {
     public List<ConfigContext> getChangedConfigs() {
         return changedConfigs;
     }
-    
+
     /**
      * Setter method for property <tt>changedConfigs</tt>.
      *
@@ -67,7 +65,7 @@ public class ConfigChangeBatchListenResponse extends Response {
     public void setChangedConfigs(List<ConfigContext> changedConfigs) {
         this.changedConfigs = changedConfigs;
     }
-    
+
     /**
      * build fail response.
      *
@@ -80,19 +78,17 @@ public class ConfigChangeBatchListenResponse extends Response {
         response.setMessage(errorMessage);
         return response;
     }
-    
+
     public static class ConfigContext {
-        
+
         String group;
-        
+
         String dataId;
-        
+
         String tenant;
-        
-        public ConfigContext() {
-        
-        }
-        
+
+        public ConfigContext() {}
+
         /**
          * Getter method for property <tt>groupId</tt>.
          *
@@ -101,7 +97,7 @@ public class ConfigChangeBatchListenResponse extends Response {
         public String getGroup() {
             return group;
         }
-        
+
         /**
          * Setter method for property <tt>groupId</tt>.
          *
@@ -110,7 +106,7 @@ public class ConfigChangeBatchListenResponse extends Response {
         public void setGroup(String group) {
             this.group = group;
         }
-        
+
         /**
          * Getter method for property <tt>dataId</tt>.
          *
@@ -119,7 +115,7 @@ public class ConfigChangeBatchListenResponse extends Response {
         public String getDataId() {
             return dataId;
         }
-        
+
         /**
          * Setter method for property <tt>dataId</tt>.
          *
@@ -128,7 +124,7 @@ public class ConfigChangeBatchListenResponse extends Response {
         public void setDataId(String dataId) {
             this.dataId = dataId;
         }
-        
+
         /**
          * Getter method for property <tt>tenant</tt>.
          *
@@ -137,7 +133,7 @@ public class ConfigChangeBatchListenResponse extends Response {
         public String getTenant() {
             return tenant;
         }
-        
+
         /**
          * Setter method for property <tt>tenant</tt>.
          *
@@ -146,12 +142,20 @@ public class ConfigChangeBatchListenResponse extends Response {
         public void setTenant(String tenant) {
             this.tenant = tenant;
         }
-        
+
         @Override
         public String toString() {
-            return "ConfigContext{" + "group='" + group + '\'' + ", dataId='" + dataId + '\'' + ", tenant='" + tenant
-                    + '\'' + '}';
+            return "ConfigContext{"
+                    + "group='"
+                    + group
+                    + '\''
+                    + ", dataId='"
+                    + dataId
+                    + '\''
+                    + ", tenant='"
+                    + tenant
+                    + '\''
+                    + '}';
         }
     }
-    
 }

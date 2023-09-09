@@ -18,7 +18,6 @@ package com.alibaba.nacos.core.remote;
 
 import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.alibaba.nacos.api.remote.Requester;
-
 import java.util.Map;
 
 /**
@@ -29,29 +28,29 @@ import java.util.Map;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class Connection implements Requester {
-    
+
     private boolean traced = false;
-    
+
     private ClientAbilities abilities;
-    
+
     private final ConnectionMeta metaInfo;
-    
+
     public Connection(ConnectionMeta metaInfo) {
         this.metaInfo = metaInfo;
     }
-    
+
     public Map<String, String> getLabels() {
         return metaInfo.getLabels();
     }
-    
+
     public boolean isTraced() {
         return traced;
     }
-    
+
     public void setTraced(boolean traced) {
         this.traced = traced;
     }
-    
+
     /**
      * get abilities.
      *
@@ -60,7 +59,7 @@ public abstract class Connection implements Requester {
     public ClientAbilities getAbilities() {
         return abilities;
     }
-    
+
     /**
      * set abilities.
      *
@@ -69,21 +68,19 @@ public abstract class Connection implements Requester {
     public void setAbilities(ClientAbilities abilities) {
         this.abilities = abilities;
     }
-    
+
     /**
      * check is connected.
      *
      * @return if connection or not,check the inner connection is active.
      */
     public abstract boolean isConnected();
-    
-    /**
-     * Update last Active Time to now.
-     */
+
+    /** Update last Active Time to now. */
     public void freshActiveTime() {
         metaInfo.setLastActiveTime(System.currentTimeMillis());
     }
-    
+
     /**
      * Getter method for property <tt>metaInfo</tt>.
      *
@@ -92,10 +89,16 @@ public abstract class Connection implements Requester {
     public ConnectionMeta getMetaInfo() {
         return metaInfo;
     }
-    
+
     @Override
     public String toString() {
-        return "Connection{" + "traced=" + traced + ", abilities=" + abilities + ", metaInfo=" + metaInfo + '}';
+        return "Connection{"
+                + "traced="
+                + traced
+                + ", abilities="
+                + abilities
+                + ", metaInfo="
+                + metaInfo
+                + '}';
     }
 }
-

@@ -24,40 +24,39 @@ import com.alibaba.nacos.core.cluster.NodeState;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.model.request.LookupUpdateRequest;
 import com.alibaba.nacos.core.utils.Loggers;
-import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import org.springframework.stereotype.Service;
 
 /**
  * NacosClusterOperationService.
+ *
  * @author dongyafei
  * @date 2022/8/15
  */
 @Service
 public class NacosClusterOperationService {
-    
+
     private final ServerMemberManager memberManager;
-    
+
     public NacosClusterOperationService(ServerMemberManager memberManager) {
         this.memberManager = memberManager;
     }
-    
+
     public Member self() {
         return memberManager.getSelf();
     }
-    
-    /**
-     * The console displays the list of cluster members.
-     */
+
+    /** The console displays the list of cluster members. */
     public Collection<Member> listNodes(String address, NodeState nodeState) throws NacosException {
-        
+
         Collection<Member> members = memberManager.allMembers();
         Collection<Member> result = new ArrayList<>();
-        
+
         for (Member member : members) {
-            if (StringUtils.isNoneBlank(address) && !StringUtils.startsWith(member.getAddress(), address)) {
+            if (StringUtils.isNoneBlank(address)
+                    && !StringUtils.startsWith(member.getAddress(), address)) {
                 continue;
             }
             if (nodeState != null && member.getState() != nodeState) {
@@ -67,40 +66,36 @@ public class NacosClusterOperationService {
         }
         return result;
     }
-    
-    /**
-     * cluster members information update.
-     */
+
+    /** cluster members information update. */
     public Boolean updateNodes(List<Member> nodes) {
         for (Member node : nodes) {
             if (!node.check()) {
-                LoggerUtils.printIfWarnEnabled(Loggers.CLUSTER, "node information is illegal, ignore node: {}", node);
+                LoggerUtils.printIfWarnEnabled(
+                        Loggers.CLUSTER, "node information is illegal, ignore node: {}", node);
                 continue;
             }
-            
+
             LoggerUtils.printIfDebugEnabled(Loggers.CLUSTER, "node state updating, node: {}", node);
             node.setState(NodeState.UP);
             node.setFailAccessCnt(0);
-            
+
             boolean update = memberManager.update(node);
             if (!update) {
-                LoggerUtils.printIfErrorEnabled(Loggers.CLUSTER, "node state update failed, node: {}", node);
+                LoggerUtils.printIfErrorEnabled(
+                        Loggers.CLUSTER, "node state update failed, node: {}", node);
             }
         }
         return true;
     }
-    
-    /**
-     * Addressing mode switch.
-     */
+
+    /** Addressing mode switch. */
     public Boolean updateLookup(LookupUpdateRequest request) throws NacosException {
         memberManager.switchLookup(request.getType());
         return true;
     }
-    
-    /**
-     * query health of current node.
-     */
+
+    /** query health of current node. */
     public String selfHealth() {
         return memberManager.getSelf().getState().name();
     }

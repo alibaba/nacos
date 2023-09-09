@@ -35,32 +35,41 @@ import org.springframework.stereotype.Component;
  * @author <a href="mailto:chenhao26@xiaomi.com">chenhao26</a>
  */
 @Component("batchInstanceRequestHandler")
-public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceRequest, BatchInstanceResponse> {
-    
+public class BatchInstanceRequestHandler
+        extends RequestHandler<BatchInstanceRequest, BatchInstanceResponse> {
+
     private final EphemeralClientOperationServiceImpl clientOperationService;
-    
+
     public BatchInstanceRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
         this.clientOperationService = clientOperationService;
     }
-    
+
     @Override
     @Secured(action = ActionTypes.WRITE)
-    public BatchInstanceResponse handle(BatchInstanceRequest request, RequestMeta meta) throws NacosException {
-        Service service = Service.newService(request.getNamespace(), request.getGroupName(), request.getServiceName(),
-                true);
-        InstanceUtil.batchSetInstanceIdIfEmpty(request.getInstances(), service.getGroupedServiceName());
+    public BatchInstanceResponse handle(BatchInstanceRequest request, RequestMeta meta)
+            throws NacosException {
+        Service service =
+                Service.newService(
+                        request.getNamespace(),
+                        request.getGroupName(),
+                        request.getServiceName(),
+                        true);
+        InstanceUtil.batchSetInstanceIdIfEmpty(
+                request.getInstances(), service.getGroupedServiceName());
         switch (request.getType()) {
             case NamingRemoteConstants.BATCH_REGISTER_INSTANCE:
                 return batchRegisterInstance(service, request, meta);
             default:
-                throw new NacosException(NacosException.INVALID_PARAM,
+                throw new NacosException(
+                        NacosException.INVALID_PARAM,
                         String.format("Unsupported request type %s", request.getType()));
         }
     }
-    
-    private BatchInstanceResponse batchRegisterInstance(Service service, BatchInstanceRequest request,
-            RequestMeta meta) {
-        clientOperationService.batchRegisterInstance(service, request.getInstances(), meta.getConnectionId());
+
+    private BatchInstanceResponse batchRegisterInstance(
+            Service service, BatchInstanceRequest request, RequestMeta meta) {
+        clientOperationService.batchRegisterInstance(
+                service, request.getInstances(), meta.getConnectionId());
         return new BatchInstanceResponse(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
     }
 }

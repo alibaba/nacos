@@ -28,38 +28,40 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
  * @author xiweng.yy
  */
 public class DistroSyncDeleteTask extends AbstractDistroExecuteTask {
-    
+
     private static final DataOperation OPERATION = DataOperation.DELETE;
-    
+
     public DistroSyncDeleteTask(DistroKey distroKey, DistroComponentHolder distroComponentHolder) {
         super(distroKey, distroComponentHolder);
     }
-    
+
     @Override
     protected DataOperation getDataOperation() {
         return OPERATION;
     }
-    
+
     @Override
     protected boolean doExecute() {
         String type = getDistroKey().getResourceType();
         DistroData distroData = new DistroData();
         distroData.setDistroKey(getDistroKey());
         distroData.setType(OPERATION);
-        return getDistroComponentHolder().findTransportAgent(type)
+        return getDistroComponentHolder()
+                .findTransportAgent(type)
                 .syncData(distroData, getDistroKey().getTargetServer());
     }
-    
+
     @Override
     protected void doExecuteWithCallback(DistroCallback callback) {
         String type = getDistroKey().getResourceType();
         DistroData distroData = new DistroData();
         distroData.setDistroKey(getDistroKey());
         distroData.setType(OPERATION);
-        getDistroComponentHolder().findTransportAgent(type)
+        getDistroComponentHolder()
+                .findTransportAgent(type)
                 .syncData(distroData, getDistroKey().getTargetServer(), callback);
     }
-    
+
     @Override
     public String toString() {
         return "DistroSyncDeleteTask for " + getDistroKey().toString();

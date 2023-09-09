@@ -18,17 +18,15 @@
 
 package com.alibaba.nacos.naming.cluster.remote.request;
 
-import com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
+import com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest;
+
 public class AbstractClusterRequestTest {
-    
+
     @Test
     public void getModule() {
-        AbstractClusterRequest request = new AbstractClusterRequest() {
-        };
+        AbstractClusterRequest request = new AbstractClusterRequest() {};
         String actual = request.getModule();
         assertEquals("cluster", actual);
     }

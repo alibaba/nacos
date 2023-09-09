@@ -23,13 +23,12 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
 /**
- * Judge whether to user StandaloneEmbedStorage by condition.
- * When embeddedStorage==false.
+ * Judge whether to user StandaloneEmbedStorage by condition. When embeddedStorage==false.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class ConditionStandaloneEmbedStorage implements Condition {
-    
+
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
         return DatasourceConfiguration.isEmbeddedStorage() && EnvUtil.getStandaloneMode();

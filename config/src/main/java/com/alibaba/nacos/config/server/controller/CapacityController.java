@@ -17,19 +17,18 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
-import com.alibaba.nacos.common.utils.StringUtils;
+import javax.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.PostMapping;
-
-import javax.servlet.http.HttpServletResponse;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Capacity Management.
@@ -39,29 +38,32 @@ import javax.servlet.http.HttpServletResponse;
 @RestController
 @RequestMapping(Constants.CAPACITY_CONTROLLER_PATH)
 public class CapacityController {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityController.class);
-    
+
     private final CapacityService capacityService;
-    
+
     private static final int STATUS200 = 200;
-    
+
     private static final int STATUS400 = 400;
-    
+
     private static final int STATUS500 = 500;
-    
+
     public CapacityController(CapacityService capacityService) {
         this.capacityService = capacityService;
     }
-    
+
     @GetMapping
-    public RestResult<Capacity> getCapacity(HttpServletResponse response, @RequestParam(required = false) String group,
+    public RestResult<Capacity> getCapacity(
+            HttpServletResponse response,
+            @RequestParam(required = false) String group,
             @RequestParam(required = false) String tenant) {
         if (group == null && tenant == null) {
             RestResult<Capacity> restResult = new RestResult<>();
             response.setStatus(STATUS400);
             restResult.setCode(STATUS400);
-            restResult.setMessage("The parameter group and tenant cannot be empty at the same time");
+            restResult.setMessage(
+                    "The parameter group and tenant cannot be empty at the same time");
             return restResult;
         }
         if (group == null && StringUtils.isBlank(tenant)) {
@@ -77,7 +79,10 @@ public class CapacityController {
             restResult.setCode(STATUS200);
             Capacity capacity = capacityService.getCapacityWithDefault(group, tenant);
             if (capacity == null) {
-                LOGGER.warn("[getCapacity] capacity not exist，need init group: {}, tenant: {}", group, tenant);
+                LOGGER.warn(
+                        "[getCapacity] capacity not exist，need init group: {}, tenant: {}",
+                        group,
+                        tenant);
                 capacityService.initCapacity(group, tenant);
                 capacity = capacityService.getCapacityWithDefault(group, tenant);
             }
@@ -92,20 +97,26 @@ public class CapacityController {
         }
         return restResult;
     }
-    
+
     /**
-     * Modify group or capacity of tenant, and init record when capacity information are still initial.
+     * Modify group or capacity of tenant, and init record when capacity information are still
+     * initial.
      */
     @PostMapping
-    public RestResult<Boolean> updateCapacity(HttpServletResponse response,
-            @RequestParam(required = false) String group, @RequestParam(required = false) String tenant,
-            @RequestParam(required = false) Integer quota, @RequestParam(required = false) Integer maxSize,
-            @RequestParam(required = false) Integer maxAggrCount, @RequestParam(required = false) Integer maxAggrSize) {
+    public RestResult<Boolean> updateCapacity(
+            HttpServletResponse response,
+            @RequestParam(required = false) String group,
+            @RequestParam(required = false) String tenant,
+            @RequestParam(required = false) Integer quota,
+            @RequestParam(required = false) Integer maxSize,
+            @RequestParam(required = false) Integer maxAggrCount,
+            @RequestParam(required = false) Integer maxAggrSize) {
         if (StringUtils.isBlank(group) && StringUtils.isBlank(tenant)) {
             capacityService.initAllCapacity();
             RestResult<Boolean> restResult = new RestResult<>();
             setFailResult(response, restResult, STATUS400);
-            restResult.setMessage("The parameter group and tenant cannot be empty at the same time");
+            restResult.setMessage(
+                    "The parameter group and tenant cannot be empty at the same time");
             return restResult;
         }
         if (quota == null && maxSize == null && maxAggrCount == null && maxAggrSize == null) {
@@ -131,19 +142,22 @@ public class CapacityController {
             return restResult;
         }
         try {
-            boolean insertOrUpdateResult = capacityService
-                    .insertOrUpdateCapacity(group, tenant, quota, maxSize, maxAggrCount, maxAggrSize);
+            boolean insertOrUpdateResult =
+                    capacityService.insertOrUpdateCapacity(
+                            group, tenant, quota, maxSize, maxAggrCount, maxAggrSize);
             if (insertOrUpdateResult) {
                 setSuccessResult(response, restResult);
                 restResult.setMessage(
-                        String.format("successfully updated the capacity information configuration of %s to %s",
+                        String.format(
+                                "successfully updated the capacity information configuration of %s to %s",
                                 targetFieldName, targetFieldValue));
                 return restResult;
             }
             setFailResult(response, restResult, STATUS500);
             restResult.setMessage(
-                    String.format("failed updated the capacity information configuration of %s to %s", targetFieldName,
-                            targetFieldValue));
+                    String.format(
+                            "failed updated the capacity information configuration of %s to %s",
+                            targetFieldName, targetFieldValue));
             return restResult;
         } catch (Exception e) {
             LOGGER.error("[updateCapacity] ", e);
@@ -152,13 +166,14 @@ public class CapacityController {
             return restResult;
         }
     }
-    
-    private void setFailResult(HttpServletResponse response, RestResult<Boolean> restResult, int statusCode) {
+
+    private void setFailResult(
+            HttpServletResponse response, RestResult<Boolean> restResult, int statusCode) {
         response.setStatus(statusCode);
         restResult.setCode(statusCode);
         restResult.setData(false);
     }
-    
+
     private void setSuccessResult(HttpServletResponse response, RestResult<Boolean> restResult) {
         response.setStatus(STATUS200);
         restResult.setCode(STATUS200);

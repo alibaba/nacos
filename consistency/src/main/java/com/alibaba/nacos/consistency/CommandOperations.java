@@ -18,7 +18,6 @@ package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
-
 import java.util.Map;
 
 /**
@@ -27,7 +26,7 @@ import java.util.Map;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public interface CommandOperations {
-    
+
     /**
      * Operation and maintenance interface operation entry.
      *
@@ -37,5 +36,4 @@ public interface CommandOperations {
     default RestResult<String> execute(Map<String, String> commands) {
         return RestResultUtils.success();
     }
-    
 }

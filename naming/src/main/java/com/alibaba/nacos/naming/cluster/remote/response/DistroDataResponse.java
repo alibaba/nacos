@@ -25,13 +25,13 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
  * @author xiweng.yy
  */
 public class DistroDataResponse extends Response {
-    
+
     private DistroData distroData;
-    
+
     public DistroData getDistroData() {
         return distroData;
     }
-    
+
     public void setDistroData(DistroData distroData) {
         this.distroData = distroData;
     }

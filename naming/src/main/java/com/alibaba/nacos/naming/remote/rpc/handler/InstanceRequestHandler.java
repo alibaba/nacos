@@ -40,18 +40,23 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class InstanceRequestHandler extends RequestHandler<InstanceRequest, InstanceResponse> {
-    
+
     private final EphemeralClientOperationServiceImpl clientOperationService;
-    
+
     public InstanceRequestHandler(EphemeralClientOperationServiceImpl clientOperationService) {
         this.clientOperationService = clientOperationService;
     }
-    
+
     @Override
     @Secured(action = ActionTypes.WRITE)
-    public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
-        Service service = Service
-                .newService(request.getNamespace(), request.getGroupName(), request.getServiceName(), true);
+    public InstanceResponse handle(InstanceRequest request, RequestMeta meta)
+            throws NacosException {
+        Service service =
+                Service.newService(
+                        request.getNamespace(),
+                        request.getGroupName(),
+                        request.getServiceName(),
+                        true);
         InstanceUtil.setInstanceIdIfEmpty(request.getInstance(), service.getGroupedServiceName());
         switch (request.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
@@ -59,26 +64,44 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
             case NamingRemoteConstants.DE_REGISTER_INSTANCE:
                 return deregisterInstance(service, request, meta);
             default:
-                throw new NacosException(NacosException.INVALID_PARAM,
+                throw new NacosException(
+                        NacosException.INVALID_PARAM,
                         String.format("Unsupported request type %s", request.getType()));
         }
     }
-    
-    private InstanceResponse registerInstance(Service service, InstanceRequest request, RequestMeta meta)
-            throws NacosException {
-        clientOperationService.registerInstance(service, request.getInstance(), meta.getConnectionId());
-        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
-                meta.getClientIp(), true, service.getNamespace(), service.getGroup(), service.getName(),
-                request.getInstance().getIp(), request.getInstance().getPort()));
+
+    private InstanceResponse registerInstance(
+            Service service, InstanceRequest request, RequestMeta meta) throws NacosException {
+        clientOperationService.registerInstance(
+                service, request.getInstance(), meta.getConnectionId());
+        NotifyCenter.publishEvent(
+                new RegisterInstanceTraceEvent(
+                        System.currentTimeMillis(),
+                        meta.getClientIp(),
+                        true,
+                        service.getNamespace(),
+                        service.getGroup(),
+                        service.getName(),
+                        request.getInstance().getIp(),
+                        request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
     }
-    
-    private InstanceResponse deregisterInstance(Service service, InstanceRequest request, RequestMeta meta) {
-        clientOperationService.deregisterInstance(service, request.getInstance(), meta.getConnectionId());
-        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
-                meta.getClientIp(), true, DeregisterInstanceReason.REQUEST, service.getNamespace(),
-                service.getGroup(), service.getName(), request.getInstance().getIp(), request.getInstance().getPort()));
+
+    private InstanceResponse deregisterInstance(
+            Service service, InstanceRequest request, RequestMeta meta) {
+        clientOperationService.deregisterInstance(
+                service, request.getInstance(), meta.getConnectionId());
+        NotifyCenter.publishEvent(
+                new DeregisterInstanceTraceEvent(
+                        System.currentTimeMillis(),
+                        meta.getClientIp(),
+                        true,
+                        DeregisterInstanceReason.REQUEST,
+                        service.getNamespace(),
+                        service.getGroup(),
+                        service.getName(),
+                        request.getInstance().getIp(),
+                        request.getInstance().getPort()));
         return new InstanceResponse(NamingRemoteConstants.DE_REGISTER_INSTANCE);
     }
-    
 }

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.naming.core;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Patch object for instance update. To save which variables will be update by {@link
@@ -26,67 +26,67 @@ import java.util.Map;
  * @author xiweng.yy
  */
 public class InstancePatchObject {
-    
+
     private final String cluster;
-    
+
     private final String ip;
-    
+
     private final int port;
-    
+
     private Map<String, String> metadata;
-    
+
     private Double weight;
-    
+
     private Boolean healthy;
-    
+
     private Boolean enabled;
-    
+
     public InstancePatchObject(String cluster, String ip, int port) {
         this.cluster = cluster;
         this.ip = ip;
         this.port = port;
     }
-    
+
     public String getCluster() {
         return cluster;
     }
-    
+
     public String getIp() {
         return ip;
     }
-    
+
     public int getPort() {
         return port;
     }
-    
+
     public Map<String, String> getMetadata() {
         return metadata;
     }
-    
+
     public void setMetadata(Map<String, String> metadata) {
         this.metadata = metadata;
     }
-    
+
     public Double getWeight() {
         return weight;
     }
-    
+
     public void setWeight(Double weight) {
         this.weight = weight;
     }
-    
+
     public Boolean getHealthy() {
         return healthy;
     }
-    
+
     public void setHealthy(Boolean healthy) {
         this.healthy = healthy;
     }
-    
+
     public Boolean getEnabled() {
         return enabled;
     }
-    
+
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }

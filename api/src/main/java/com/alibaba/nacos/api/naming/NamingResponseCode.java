@@ -27,15 +27,10 @@ import com.alibaba.nacos.api.common.ResponseCode;
  * @author 1.2.0
  */
 public class NamingResponseCode extends ResponseCode {
-    
-    /**
-     * The requested resource is not found.
-     */
+
+    /** The requested resource is not found. */
     public static final int RESOURCE_NOT_FOUND = 20404;
-    
-    /**
-     * Stop or no need to retry.
-     */
+
+    /** Stop or no need to retry. */
     public static final int NO_NEED_RETRY = 21600;
-    
 }

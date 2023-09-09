@@ -16,14 +16,12 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.assertEquals;
-
 public class GrpcConstantsTest {
-    
+
     @Test
     public void testGetRpcParams() {
         Class clazz = GrpcConstants.class;
@@ -31,8 +29,8 @@ public class GrpcConstantsTest {
         int i = 0;
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
-            if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    GrpcConstants.GRpcConfigLabel.class)) {
+            if (declaredField.getType().equals(String.class)
+                    && null != declaredField.getAnnotation(GrpcConstants.GRpcConfigLabel.class)) {
                 i++;
             }
         }

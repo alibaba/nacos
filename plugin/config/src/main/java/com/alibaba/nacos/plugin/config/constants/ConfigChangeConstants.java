@@ -22,15 +22,11 @@ package com.alibaba.nacos.plugin.config.constants;
  * @author liyunfei
  */
 public class ConfigChangeConstants {
-    
-    public static final String NACOS_CORE_CONFIG_PLUGIN_PREFIX = "nacos.core.config.plugin.";
-    
-    public static final String PLUGIN_PROPERTIES = "pluginProperties";
-    
-    /**
-     * The actual config method args.
-     */
-    public static final String ORIGINAL_ARGS = "originalArgs";
-    
-}
 
+    public static final String NACOS_CORE_CONFIG_PLUGIN_PREFIX = "nacos.core.config.plugin.";
+
+    public static final String PLUGIN_PROPERTIES = "pluginProperties";
+
+    /** The actual config method args. */
+    public static final String ORIGINAL_ARGS = "originalArgs";
+}

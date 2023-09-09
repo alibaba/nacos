@@ -16,42 +16,41 @@
 
 package com.alibaba.nacos.api.remote.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class EmptyContentResponseTest {
-    
-    private static final String COMMON_JSON = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"success\":true}";
-    
-    private static final String TO_STRING = "Response{resultCode=200, errorCode=0, message='null', requestId='1'}";
-    
+
+    private static final String COMMON_JSON =
+            "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"success\":true}";
+
+    private static final String TO_STRING =
+            "Response{resultCode=200, errorCode=0, message='null', requestId='1'}";
+
     ObjectMapper mapper = new ObjectMapper();
-    
+
     @Before
     public void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Test
     public void testSetErrorInfo() {
-        Response response = new Response() {
-        };
+        Response response = new Response() {};
         response.setErrorInfo(ResponseCode.FAIL.getCode(), ResponseCode.FAIL.getDesc());
         assertEquals(ResponseCode.FAIL.getCode(), response.getErrorCode());
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(ResponseCode.FAIL.getDesc(), response.getMessage());
     }
-    
+
     @Test
     public void testClientDetectionResponse() throws JsonProcessingException {
         ClientDetectionResponse response = new ClientDetectionResponse();
@@ -61,7 +60,7 @@ public class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, ClientDetectionResponse.class);
         assertCommonResponse(response);
     }
-    
+
     @Test
     public void testConnectResetResponse() throws JsonProcessingException {
         ConnectResetResponse response = new ConnectResetResponse();
@@ -71,7 +70,7 @@ public class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, ConnectResetResponse.class);
         assertCommonResponse(response);
     }
-    
+
     @Test
     public void testHealthCheckResponse() throws JsonProcessingException {
         HealthCheckResponse response = new HealthCheckResponse();
@@ -81,7 +80,7 @@ public class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, HealthCheckResponse.class);
         assertCommonResponse(response);
     }
-    
+
     @Test
     public void testServerReloadResponse() throws JsonProcessingException {
         ServerReloadResponse response = new ServerReloadResponse();
@@ -91,7 +90,7 @@ public class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, ServerReloadResponse.class);
         assertCommonResponse(response);
     }
-    
+
     private void assertCommonResponse(Response response) {
         assertTrue(response.isSuccess());
         assertNull(response.getMessage());
@@ -100,7 +99,7 @@ public class EmptyContentResponseTest {
         assertEquals("1", response.getRequestId());
         assertEquals(TO_STRING, response.toString());
     }
-    
+
     private void assertCommonResponseJson(String actualJson) {
         assertTrue(actualJson.contains("\"requestId\":\"1\""));
         assertTrue(actualJson.contains("\"success\":true"));

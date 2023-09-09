@@ -17,10 +17,6 @@
 
 package com.alibaba.nacos.consistency.snapshot;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 /**
  * {@link LocalFileMeta} unit test.
  *
@@ -28,14 +24,14 @@ import org.junit.Test;
  * @date 2021-07-27 18:43
  */
 public class LocalFileMetaTest {
-    
+
     private LocalFileMeta fileMeta;
-    
+
     @Before
     public void setUp() {
         fileMeta = new LocalFileMeta();
     }
-    
+
     @Test
     public void testAppendAndGet() {
         fileMeta.append("key", "value");

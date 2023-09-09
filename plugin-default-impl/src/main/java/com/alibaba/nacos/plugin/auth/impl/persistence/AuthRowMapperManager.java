@@ -17,10 +17,9 @@
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.persistence.repository.RowMapperManager;
-import org.springframework.jdbc.core.RowMapper;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import org.springframework.jdbc.core.RowMapper;
 
 /**
  * Auth plugin row mapper manager.
@@ -28,26 +27,29 @@ import java.sql.SQLException;
  * @author xiweng.yy
  */
 public class AuthRowMapperManager {
-    
+
     public static final RowMapper<User> USER_ROW_MAPPER = new UserRowMapper();
-    
+
     public static final RoleInfoRowMapper ROLE_INFO_ROW_MAPPER = new RoleInfoRowMapper();
-    
+
     public static final PermissionRowMapper PERMISSION_ROW_MAPPER = new PermissionRowMapper();
-    
+
     static {
         // USER_ROW_MAPPER
-        RowMapperManager.registerRowMapper(USER_ROW_MAPPER.getClass().getCanonicalName(), USER_ROW_MAPPER);
-    
+        RowMapperManager.registerRowMapper(
+                USER_ROW_MAPPER.getClass().getCanonicalName(), USER_ROW_MAPPER);
+
         // ROLE_INFO_ROW_MAPPER
-        RowMapperManager.registerRowMapper(ROLE_INFO_ROW_MAPPER.getClass().getCanonicalName(), ROLE_INFO_ROW_MAPPER);
-        
+        RowMapperManager.registerRowMapper(
+                ROLE_INFO_ROW_MAPPER.getClass().getCanonicalName(), ROLE_INFO_ROW_MAPPER);
+
         // PERMISSION_ROW_MAPPER
-        RowMapperManager.registerRowMapper(PERMISSION_ROW_MAPPER.getClass().getCanonicalName(), PERMISSION_ROW_MAPPER);
+        RowMapperManager.registerRowMapper(
+                PERMISSION_ROW_MAPPER.getClass().getCanonicalName(), PERMISSION_ROW_MAPPER);
     }
-    
+
     public static final class UserRowMapper implements RowMapper<User> {
-        
+
         @Override
         public User mapRow(ResultSet rs, int rowNum) throws SQLException {
             User user = new User();
@@ -56,9 +58,9 @@ public class AuthRowMapperManager {
             return user;
         }
     }
-    
+
     public static final class RoleInfoRowMapper implements RowMapper<RoleInfo> {
-        
+
         @Override
         public RoleInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             RoleInfo roleInfo = new RoleInfo();
@@ -67,9 +69,9 @@ public class AuthRowMapperManager {
             return roleInfo;
         }
     }
-    
+
     public static final class PermissionRowMapper implements RowMapper<PermissionInfo> {
-        
+
         @Override
         public PermissionInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             PermissionInfo info = new PermissionInfo();

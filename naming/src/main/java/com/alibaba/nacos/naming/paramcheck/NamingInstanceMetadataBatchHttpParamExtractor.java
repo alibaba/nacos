@@ -25,10 +25,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.core.type.TypeReference;
-
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * Naming instance metadata batch http param extractor.
@@ -36,26 +35,39 @@ import java.util.List;
  * @author zhuoguang
  */
 public class NamingInstanceMetadataBatchHttpParamExtractor extends AbstractHttpParamExtractor {
-    
+
     @Override
     public void init() {
-        addTargetRequest(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/metadata/batch",
+        addTargetRequest(
+                UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
+                        + "/metadata/batch",
                 HttpMethod.PUT);
-        addTargetRequest(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/metadata/batch",
+        addTargetRequest(
+                UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
+                        + "/metadata/batch",
                 HttpMethod.DELETE);
-        addTargetRequest(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/metadata/batch",
+        addTargetRequest(
+                UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
+                        + "/metadata/batch",
                 HttpMethod.PUT);
-        addTargetRequest(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/metadata/batch",
+        addTargetRequest(
+                UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
+                        + "/metadata/batch",
                 HttpMethod.DELETE);
     }
-    
+
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
         ParamInfo paramInfo = new ParamInfo();
         String serviceName = request.getParameter("serviceName");
         String groupName = request.getParameter("groupName");
         String groupServiceName = serviceName;
-        if (StringUtils.isNotBlank(groupServiceName) && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
+        if (StringUtils.isNotBlank(groupServiceName)
+                && groupServiceName.contains(Constants.SERVICE_INFO_SPLITER)) {
             String[] splits = groupServiceName.split(Constants.SERVICE_INFO_SPLITER, 2);
             groupName = splits[0];
             serviceName = splits[1];
@@ -66,11 +78,11 @@ public class NamingInstanceMetadataBatchHttpParamExtractor extends AbstractHttpP
         paramInfo.setMetadata(UtilsAndCommons.parseMetadata(request.getParameter("metadata")));
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
-        
+
         String instances = request.getParameter("instances");
         if (StringUtils.isNotBlank(instances)) {
-            List<Instance> targetInstances = JacksonUtils.toObj(instances, new TypeReference<List<Instance>>() {
-            });
+            List<Instance> targetInstances =
+                    JacksonUtils.toObj(instances, new TypeReference<List<Instance>>() {});
             for (Instance instance : targetInstances) {
                 ParamInfo instanceParamInfo = new ParamInfo();
                 instanceParamInfo.setIp(instance.getIp());

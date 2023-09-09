@@ -25,9 +25,6 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistS
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -35,25 +32,25 @@ import org.springframework.core.env.StandardEnvironment;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigPublishRequestHandlerTest {
-    
+
     private ConfigPublishRequestHandler configPublishRequestHandler;
-    
-    @Mock
-    private ConfigInfoPersistService configInfoPersistService;
-    
-    @Mock
-    private ConfigInfoTagPersistService configInfoTagPersistService;
-    
-    @Mock
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
+
+    @Mock private ConfigInfoPersistService configInfoPersistService;
+
+    @Mock private ConfigInfoTagPersistService configInfoTagPersistService;
+
+    @Mock private ConfigInfoBetaPersistService configInfoBetaPersistService;
+
     @Before
     public void setUp() {
-        configPublishRequestHandler = new ConfigPublishRequestHandler(configInfoPersistService,
-                configInfoTagPersistService, configInfoBetaPersistService);
+        configPublishRequestHandler =
+                new ConfigPublishRequestHandler(
+                        configInfoPersistService,
+                        configInfoTagPersistService,
+                        configInfoBetaPersistService);
         EnvUtil.setEnvironment(new StandardEnvironment());
     }
-    
+
     @Test
     public void testHandle() throws NacosException {
         ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
@@ -62,7 +59,8 @@ public class ConfigPublishRequestHandlerTest {
         configPublishRequest.setContent("content");
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
-        ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
+        ConfigPublishResponse response =
+                configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         Assert.assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
     }
 }

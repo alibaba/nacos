@@ -16,28 +16,25 @@
 
 package com.alibaba.nacos.api.cmdb.pojo;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 public class EntityTest {
-    
+
     ObjectMapper mapper = new ObjectMapper();
-    
+
     @Before
     public void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Test
     public void testSerialization() throws JsonProcessingException {
         Entity entity = new Entity();
@@ -49,10 +46,11 @@ public class EntityTest {
         assertTrue(actual.contains("\"name\":\"test-entity\""));
         assertTrue(actual.contains("\"labels\":{\"test-label-key\":\"test-label-value\"}"));
     }
-    
+
     @Test
     public void testDeserialization() throws JsonProcessingException {
-        String json = "{\"type\":\"service\",\"name\":\"test-entity\",\"labels\":{\"test-label-key\":\"test-label-value\"}}";
+        String json =
+                "{\"type\":\"service\",\"name\":\"test-entity\",\"labels\":{\"test-label-key\":\"test-label-value\"}}";
         Entity entity = mapper.readValue(json, Entity.class);
         assertEquals("test-entity", entity.getName());
         assertEquals(PreservedEntityTypes.service.name(), entity.getType());

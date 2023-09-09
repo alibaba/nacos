@@ -17,45 +17,45 @@
 
 package com.alibaba.nacos.api.selector;
 
+import static com.alibaba.nacos.api.common.Constants.Naming.CMDB_CONTEXT_TYPE;
+
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.context.CmdbContext;
-
 import java.util.List;
 
-import static com.alibaba.nacos.api.common.Constants.Naming.CMDB_CONTEXT_TYPE;
-
 /**
- * {@link AbstractCmdbSelector} will provide one default implement of {@link Selector}, users can implement it to use the {@link CmdbContext}.
- * And return the result as default subclass of {@link Instance}.
+ * {@link AbstractCmdbSelector} will provide one default implement of {@link Selector}, users can
+ * implement it to use the {@link CmdbContext}. And return the result as default subclass of {@link
+ * Instance}.
  *
  * @author chenglu
  * @date 2021-07-09 21:29
  */
-public abstract class AbstractCmdbSelector<T extends Instance> implements Selector<List<T>, CmdbContext<T>, String> {
-    
+public abstract class AbstractCmdbSelector<T extends Instance>
+        implements Selector<List<T>, CmdbContext<T>, String> {
+
     private static final long serialVersionUID = 56587385358330901L;
-    
-    /**
-     * the labels expression.
-     */
+
+    /** the labels expression. */
     protected String expression;
-    
+
     public String getExpression() {
         return expression;
     }
-    
+
     public void setExpression(String expression) {
         this.expression = expression;
     }
-    
+
     @Override
-    public Selector<List<T>, CmdbContext<T>, String> parse(String expression) throws NacosException {
+    public Selector<List<T>, CmdbContext<T>, String> parse(String expression)
+            throws NacosException {
         this.expression = expression;
         doParse(expression);
         return this;
     }
-    
+
     /**
      * The real parse logic implement by sub class.
      *
@@ -63,12 +63,12 @@ public abstract class AbstractCmdbSelector<T extends Instance> implements Select
      * @throws NacosException parse failed exception.
      */
     protected abstract void doParse(String expression) throws NacosException;
-    
+
     @Override
     public List<T> select(CmdbContext<T> context) {
         return doSelect(context);
     }
-    
+
     /**
      * The real select implement by subclass.
      *
@@ -76,7 +76,7 @@ public abstract class AbstractCmdbSelector<T extends Instance> implements Select
      * @return the select result.
      */
     protected abstract List<T> doSelect(CmdbContext<T> context);
-    
+
     @Override
     public String getContextType() {
         return CMDB_CONTEXT_TYPE;

@@ -27,13 +27,13 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author shiyiyue
  */
 public class LocalSimpleCountRateCounter extends RateCounter {
-    
+
     private static final int DEFAULT_RECORD_SIZE = 10;
-    
+
     long startTime = System.currentTimeMillis();
-    
+
     private List<TpsSlot> slotList;
-    
+
     public LocalSimpleCountRateCounter(String name, TimeUnit period) {
         super(name, period);
         slotList = new ArrayList<>(DEFAULT_RECORD_SIZE);
@@ -41,7 +41,7 @@ public class LocalSimpleCountRateCounter extends RateCounter {
             slotList.add(new TpsSlot());
         }
         long now = System.currentTimeMillis();
-        
+
         if (period == TimeUnit.SECONDS) {
             startTime = RateCounter.getTrimMillsOfSecond(now);
         } else if (period == TimeUnit.MINUTES) {
@@ -49,11 +49,11 @@ public class LocalSimpleCountRateCounter extends RateCounter {
         } else if (period == TimeUnit.HOURS) {
             startTime = RateCounter.getTrimMillsOfHour(now);
         } else {
-            //second default
+            // second default
             getTrimMillsOfSecond(now);
         }
     }
-    
+
     @Override
     public long add(long timestamp, long count) {
         return createSlotIfAbsent(timestamp).countHolder.count.addAndGet(count);
@@ -63,12 +63,12 @@ public class LocalSimpleCountRateCounter extends RateCounter {
         AtomicLong currentCount = createSlotIfAbsent(timestamp).countHolder.count;
         currentCount.addAndGet(count * -1);
     }
-    
+
     public long getCount(long timestamp) {
         TpsSlot point = getPoint(timestamp);
         return point == null ? 0L : point.countHolder.count.longValue();
     }
-    
+
     /**
      * get slot of the timestamp second,read only ,return nul if not exist.
      *
@@ -77,8 +77,9 @@ public class LocalSimpleCountRateCounter extends RateCounter {
      */
     private TpsSlot getPoint(long timeStamp) {
         long distance = timeStamp - startTime;
-        long diff = (distance < 0 ? distance + getPeriod().toMillis(1) * DEFAULT_RECORD_SIZE : distance) / getPeriod()
-                .toMillis(1);
+        long diff =
+                (distance < 0 ? distance + getPeriod().toMillis(1) * DEFAULT_RECORD_SIZE : distance)
+                        / getPeriod().toMillis(1);
         long currentWindowTime = startTime + diff * getPeriod().toMillis(1);
         int index = (int) diff % DEFAULT_RECORD_SIZE;
         TpsSlot tpsSlot = slotList.get(index);
@@ -87,7 +88,7 @@ public class LocalSimpleCountRateCounter extends RateCounter {
         }
         return tpsSlot;
     }
-    
+
     /**
      * get slot of the timestamp second,create if not exist.
      *
@@ -96,9 +97,10 @@ public class LocalSimpleCountRateCounter extends RateCounter {
      */
     public TpsSlot createSlotIfAbsent(long timeStamp) {
         long distance = timeStamp - startTime;
-        
-        long diff = (distance < 0 ? distance + getPeriod().toMillis(1) * DEFAULT_RECORD_SIZE : distance) / getPeriod()
-                .toMillis(1);
+
+        long diff =
+                (distance < 0 ? distance + getPeriod().toMillis(1) * DEFAULT_RECORD_SIZE : distance)
+                        / getPeriod().toMillis(1);
         long currentWindowTime = startTime + diff * getPeriod().toMillis(1);
         int index = (int) diff % DEFAULT_RECORD_SIZE;
         TpsSlot tpsSlot = slotList.get(index);
@@ -107,13 +109,13 @@ public class LocalSimpleCountRateCounter extends RateCounter {
         }
         return slotList.get(index);
     }
-    
+
     static class TpsSlot {
-        
+
         long time = 0L;
-        
+
         private SlotCountHolder countHolder = new SlotCountHolder();
-        
+
         public void reset(long second) {
             synchronized (this) {
                 if (this.time != second) {
@@ -123,20 +125,19 @@ public class LocalSimpleCountRateCounter extends RateCounter {
                 }
             }
         }
-        
+
         @Override
         public String toString() {
             return "TpsSlot{" + "time=" + time + ", countHolder=" + countHolder + '}';
         }
-        
     }
-    
+
     static class SlotCountHolder {
-        
+
         AtomicLong count = new AtomicLong();
-        
+
         AtomicLong interceptedCount = new AtomicLong();
-        
+
         @Override
         public String toString() {
             return "{" + count + "|" + interceptedCount + '}';

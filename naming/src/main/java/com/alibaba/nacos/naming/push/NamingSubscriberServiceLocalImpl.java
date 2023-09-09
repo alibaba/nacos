@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.push;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NamingSubscriberServiceV2Impl;
-
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -30,28 +29,30 @@ import java.util.HashSet;
  */
 @org.springframework.stereotype.Service
 public class NamingSubscriberServiceLocalImpl implements NamingSubscriberService {
-    
+
     private final NamingSubscriberServiceV2Impl namingSubscriberServiceV2;
-    
-    public NamingSubscriberServiceLocalImpl(NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
+
+    public NamingSubscriberServiceLocalImpl(
+            NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
         this.namingSubscriberServiceV2 = namingSubscriberServiceV2;
     }
-    
+
     @Override
     public Collection<Subscriber> getSubscribers(String namespaceId, String serviceName) {
         return new HashSet<>(namingSubscriberServiceV2.getSubscribers(namespaceId, serviceName));
     }
-    
+
     @Override
     public Collection<Subscriber> getSubscribers(Service service) {
         return new HashSet<>(namingSubscriberServiceV2.getSubscribers(service));
     }
-    
+
     @Override
     public Collection<Subscriber> getFuzzySubscribers(String namespaceId, String serviceName) {
-        return new HashSet<>(namingSubscriberServiceV2.getFuzzySubscribers(namespaceId, serviceName));
+        return new HashSet<>(
+                namingSubscriberServiceV2.getFuzzySubscribers(namespaceId, serviceName));
     }
-    
+
     @Override
     public Collection<Subscriber> getFuzzySubscribers(Service service) {
         return new HashSet<>(namingSubscriberServiceV2.getFuzzySubscribers(service));

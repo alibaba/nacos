@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.utils;
 
 import com.alibaba.nacos.api.common.Constants;
-
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -47,9 +46,8 @@ import java.util.zip.GZIPOutputStream;
  */
 public class IoUtils {
 
-    private IoUtils() {
-    }
-    
+    private IoUtils() {}
+
     /**
      * Try decompress by GZIP from stream.
      *
@@ -63,7 +61,7 @@ public class IoUtils {
             return out.toByteArray();
         }
     }
-    
+
     /**
      * Try decompress by GZIP from byte array.
      *
@@ -81,11 +79,11 @@ public class IoUtils {
             return out.toByteArray();
         }
     }
-    
+
     /**
      * Try compress by GZIP for string.
      *
-     * @param str      strings to be compressed.
+     * @param str strings to be compressed.
      * @param encoding encoding.
      * @return byte[]
      */
@@ -101,26 +99,29 @@ public class IoUtils {
         }
         return out.toByteArray();
     }
-    
+
     private static BufferedReader toBufferedReader(Reader reader) {
-        return reader instanceof BufferedReader ? (BufferedReader) reader : new BufferedReader(reader);
+        return reader instanceof BufferedReader
+                ? (BufferedReader) reader
+                : new BufferedReader(reader);
     }
-    
+
     /**
      * Write string to a file.
      *
-     * @param file     file
-     * @param data     string
+     * @param file file
+     * @param data string
      * @param encoding encoding of string
      * @throws IOException io exception
      */
-    public static void writeStringToFile(File file, String data, String encoding) throws IOException {
+    public static void writeStringToFile(File file, String data, String encoding)
+            throws IOException {
         try (OutputStream os = new FileOutputStream(file)) {
             os.write(data.getBytes(encoding));
             os.flush();
         }
     }
-    
+
     /**
      * Read lines.
      *
@@ -143,11 +144,11 @@ public class IoUtils {
         }
         return list;
     }
-    
+
     /**
      * To string from stream.
      *
-     * @param input    stream
+     * @param input stream
      * @param encoding charset of stream
      * @return string
      * @throws IOException io exception
@@ -156,10 +157,11 @@ public class IoUtils {
         if (input == null) {
             return StringUtils.EMPTY;
         }
-        return (null == encoding) ? toString(new InputStreamReader(input, Constants.ENCODE))
+        return (null == encoding)
+                ? toString(new InputStreamReader(input, Constants.ENCODE))
                 : toString(new InputStreamReader(input, encoding));
     }
-    
+
     /**
      * To string from reader.
      *
@@ -172,11 +174,11 @@ public class IoUtils {
         copy(reader, sw);
         return sw.toString();
     }
-    
+
     /**
      * Copy data.
      *
-     * @param input  source
+     * @param input source
      * @param output target
      * @return copy size
      * @throws IOException io exception
@@ -190,11 +192,11 @@ public class IoUtils {
         }
         return count;
     }
-    
+
     /**
      * Copy data.
      *
-     * @param input  source
+     * @param input source
      * @param output target
      * @return copy size
      * @throws IOException io exception
@@ -205,13 +207,13 @@ public class IoUtils {
         int totalBytes = 0;
         while ((bytesRead = input.read(buffer)) != -1) {
             output.write(buffer, 0, bytesRead);
-            
+
             totalBytes += bytesRead;
         }
-        
+
         return totalBytes;
     }
-    
+
     /**
      * Delete file or dir.
      *
@@ -226,7 +228,7 @@ public class IoUtils {
         if (fileOrDir == null) {
             return;
         }
-        
+
         if (fileOrDir.isDirectory()) {
             cleanDirectory(fileOrDir);
         } else {
@@ -238,7 +240,7 @@ public class IoUtils {
             }
         }
     }
-    
+
     /**
      * 清理目录下的内容. Clean content under directory.
      *
@@ -250,18 +252,18 @@ public class IoUtils {
             String message = directory + " does not exist";
             throw new IllegalArgumentException(message);
         }
-        
+
         if (!directory.isDirectory()) {
             String message = directory + " is not a directory";
             throw new IllegalArgumentException(message);
         }
-        
+
         File[] files = directory.listFiles();
         // null if security restricted
         if (files == null) {
             throw new IOException("Failed to list contents of " + directory);
         }
-        
+
         IOException exception = null;
         for (File file : files) {
             try {
@@ -270,12 +272,12 @@ public class IoUtils {
                 exception = ioe;
             }
         }
-        
+
         if (null != exception) {
             throw exception;
         }
     }
-    
+
     /**
      * Copy File.
      *
@@ -300,7 +302,7 @@ public class IoUtils {
             sc.transferTo(0, sc.size(), tc);
         }
     }
-    
+
     /**
      * Judge whether is Gzip stream.
      *
@@ -308,15 +310,15 @@ public class IoUtils {
      * @return true if is gzip, otherwise false
      */
     public static boolean isGzipStream(byte[] bytes) {
-        
+
         int minByteArraySize = 2;
         if (bytes == null || bytes.length < minByteArraySize) {
             return false;
         }
-        
+
         return GZIPInputStream.GZIP_MAGIC == ((bytes[1] << 8 | bytes[0]) & 0xFFFF);
     }
-    
+
     /**
      * Close http connection quietly.
      *
@@ -330,7 +332,7 @@ public class IoUtils {
             }
         }
     }
-    
+
     /**
      * Close closable object quietly.
      *
@@ -344,9 +346,8 @@ public class IoUtils {
         } catch (IOException ignored) {
         }
     }
-    
+
     public static void closeQuietly(Closeable... closeable) {
         Arrays.stream(closeable).forEach(IoUtils::closeQuietly);
     }
 }
-

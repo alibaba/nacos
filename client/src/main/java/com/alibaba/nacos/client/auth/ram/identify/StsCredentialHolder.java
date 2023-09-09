@@ -33,20 +33,19 @@ import org.slf4j.Logger;
  * @author xiweng.yy
  */
 public class StsCredentialHolder {
-    
+
     private static final Logger LOGGER = LogUtils.logger(StsCredentialHolder.class);
-    
+
     private static final StsCredentialHolder INSTANCE = new StsCredentialHolder();
-    
+
     private StsCredential stsCredential;
-    
-    private StsCredentialHolder() {
-    }
-    
+
+    private StsCredentialHolder() {}
+
     public static StsCredentialHolder getInstance() {
         return INSTANCE;
     }
-    
+
     /**
      * Get Sts Credential.
      *
@@ -57,20 +56,23 @@ public class StsCredentialHolder {
         if (cacheSecurityCredentials && stsCredential != null) {
             long currentTime = System.currentTimeMillis();
             long expirationTime = stsCredential.getExpiration().getTime();
-            int timeToRefreshInMillisecond = StsConfig.getInstance().getTimeToRefreshInMillisecond();
+            int timeToRefreshInMillisecond =
+                    StsConfig.getInstance().getTimeToRefreshInMillisecond();
             if (expirationTime - currentTime > timeToRefreshInMillisecond) {
                 return stsCredential;
             }
         }
         String stsResponse = getStsResponse();
-        stsCredential = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {
-        });
-        LOGGER.info("[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
-                stsCredential.getCode(), stsCredential.getAccessKeyId(), stsCredential.getLastUpdated(),
+        stsCredential = JacksonUtils.toObj(stsResponse, new TypeReference<StsCredential>() {});
+        LOGGER.info(
+                "[getSTSCredential] code:{}, accessKeyId:{}, lastUpdated:{}, expiration:{}",
+                stsCredential.getCode(),
+                stsCredential.getAccessKeyId(),
+                stsCredential.getLastUpdated(),
                 stsCredential.getExpiration());
         return stsCredential;
     }
-    
+
     private static String getStsResponse() {
         String securityCredentials = StsConfig.getInstance().getSecurityCredentials();
         if (securityCredentials != null) {
@@ -78,16 +80,23 @@ public class StsCredentialHolder {
         }
         String securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
         try {
-            HttpRestResult<String> result = ConfigHttpClientManager.getInstance().getNacosRestTemplate()
-                    .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
-            
+            HttpRestResult<String> result =
+                    ConfigHttpClientManager.getInstance()
+                            .getNacosRestTemplate()
+                            .get(securityCredentialsUrl, Header.EMPTY, Query.EMPTY, String.class);
+
             if (!result.ok()) {
                 LOGGER.error(
                         "can not get security credentials, securityCredentialsUrl: {}, responseCode: {}, response: {}",
-                        securityCredentialsUrl, result.getCode(), result.getMessage());
-                throw new NacosRuntimeException(NacosException.SERVER_ERROR,
-                        "can not get security credentials, responseCode: " + result.getCode() + ", response: " + result
-                                .getMessage());
+                        securityCredentialsUrl,
+                        result.getCode(),
+                        result.getMessage());
+                throw new NacosRuntimeException(
+                        NacosException.SERVER_ERROR,
+                        "can not get security credentials, responseCode: "
+                                + result.getCode()
+                                + ", response: "
+                                + result.getMessage());
             }
             return result.getData();
         } catch (Exception e) {

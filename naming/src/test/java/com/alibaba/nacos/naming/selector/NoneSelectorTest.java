@@ -18,9 +18,6 @@
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -31,7 +28,7 @@ import java.util.List;
  * @date 2021-08-05 19:47
  */
 public class NoneSelectorTest {
-    
+
     @Test
     public void testSelect() {
         NoneSelector<Instance> noneSelector = new NoneSelector<>();

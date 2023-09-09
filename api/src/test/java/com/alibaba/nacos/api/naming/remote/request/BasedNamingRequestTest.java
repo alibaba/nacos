@@ -16,45 +16,44 @@
 
 package com.alibaba.nacos.api.naming.remote.request;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
-
 import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public abstract class BasedNamingRequestTest {
-    
+
     protected static final String SERVICE = "service";
-    
+
     protected static final String GROUP = "group";
-    
+
     protected static final String NAMESPACE = "namespace";
-    
+
     protected static ObjectMapper mapper;
-    
+
     @BeforeClass
     public static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     protected void injectNamingRequestBasedInfo(AbstractNamingRequest request) {
         request.setServiceName(SERVICE);
         request.setGroupName(GROUP);
         request.setNamespace(NAMESPACE);
     }
-    
+
     protected void checkNamingRequestBasedInfo(AbstractNamingRequest request) {
         assertEquals(SERVICE, request.getServiceName());
         assertEquals(GROUP, request.getGroupName());
         assertEquals(NAMESPACE, request.getNamespace());
         assertEquals(NAMING_MODULE, request.getModule());
     }
-    
+
     protected void checkSerializeBasedInfo(String json) {
         assertTrue(json.contains("\"serviceName\":\"" + SERVICE + "\""));
         assertTrue(json.contains("\"groupName\":\"" + GROUP + "\""));

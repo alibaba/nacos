@@ -24,15 +24,15 @@ import java.util.concurrent.TimeUnit;
  * @author shiyiyue
  */
 public class LocalSimpleCountRuleBarrier extends SimpleCountRuleBarrier {
-    
+
     public LocalSimpleCountRuleBarrier(String pointName, String ruleName, TimeUnit period) {
         super(pointName, ruleName, period);
     }
-    
+
     public RateCounter createSimpleCounter(String name, TimeUnit period) {
         return new LocalSimpleCountRateCounter(name, period);
     }
-    
+
     @Override
     public String getBarrierName() {
         return "localsimplecount";

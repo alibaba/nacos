@@ -25,12 +25,10 @@ import java.util.Map;
  * @author Wuyfee
  */
 public class IdentityContext {
-    
-    /**
-     * get context from request.
-     */
+
+    /** get context from request. */
     private final Map<String, Object> param = new HashMap<>();
-    
+
     /**
      * get key from context.
      *
@@ -40,13 +38,14 @@ public class IdentityContext {
     public Object getParameter(String key) {
         return param.get(key);
     }
-    
+
     /**
      * Get identity by key.
      *
-     * @param key          identity name
-     * @param defaultValue default value when the value is {@code null} or the value is not expected class type
-     * @param <T>          classes type of identity value
+     * @param key identity name
+     * @param defaultValue default value when the value is {@code null} or the value is not expected
+     *     class type
+     * @param <T> classes type of identity value
      * @return identity value
      */
     public <T> T getParameter(String key, T defaultValue) {
@@ -64,11 +63,11 @@ public class IdentityContext {
             return defaultValue;
         }
     }
-    
+
     /**
      * put key and value to param.
      *
-     * @param key   key of request
+     * @param key key of request
      * @param value value of request's key
      */
     public void setParameter(String key, Object value) {

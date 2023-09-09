@@ -16,16 +16,12 @@
 
 package com.alibaba.nacos.config.server.configuration;
 
+import static org.junit.Assert.assertEquals;
+
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.mock.env.MockEnvironment;
-
 import java.lang.reflect.Constructor;
-
-import static org.junit.Assert.assertEquals;
+import org.springframework.mock.env.MockEnvironment;
 
 /**
  * Nacos config common configs test.
@@ -33,42 +29,43 @@ import static org.junit.Assert.assertEquals;
  * @author blake.qiu
  */
 public class ConfigCommonConfigTest {
-    
+
     private ConfigCommonConfig commonConfig;
-    
+
     private MockEnvironment environment;
-    
+
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         commonConfig = ConfigCommonConfig.getInstance();
     }
-    
+
     @Test
     public void getMaxPushRetryTimes() {
         assertEquals(50, commonConfig.getMaxPushRetryTimes());
     }
-    
+
     @Test
     public void setMaxPushRetryTimes() {
         commonConfig.setMaxPushRetryTimes(100);
         assertEquals(100, commonConfig.getMaxPushRetryTimes());
     }
-    
+
     @Test
     public void testUpgradeFromEvent() {
         environment.setProperty("nacos.config.push.maxRetryTime", "100");
         commonConfig.onEvent(ServerConfigChangeEvent.newEvent());
         assertEquals(100, commonConfig.getMaxPushRetryTimes());
     }
-    
+
     @Test
     public void testInitConfigFormEnv() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         environment.setProperty("nacos.config.push.maxRetryTime", "6");
-        Constructor<ConfigCommonConfig> declaredConstructor = ConfigCommonConfig.class.getDeclaredConstructor();
+        Constructor<ConfigCommonConfig> declaredConstructor =
+                ConfigCommonConfig.class.getDeclaredConstructor();
         declaredConstructor.setAccessible(true);
         ConfigCommonConfig configCommonConfig = declaredConstructor.newInstance();
         Assert.assertEquals(6, configCommonConfig.getMaxPushRetryTimes());

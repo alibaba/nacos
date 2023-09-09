@@ -26,16 +26,16 @@ import com.alibaba.nacos.naming.healthcheck.v2.HealthCheckTaskV2;
  * @author nkorange
  */
 public interface HealthCheckProcessorV2 {
-    
+
     /**
      * Run check task for service.
      *
-     * @param task     health check task v2
-     * @param service  service of current process
+     * @param task health check task v2
+     * @param service service of current process
      * @param metadata cluster metadata of current process
      */
     void process(HealthCheckTaskV2 task, Service service, ClusterMetadata metadata);
-    
+
     /**
      * Get check task type, refer to enum HealthCheckType.
      *

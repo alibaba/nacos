@@ -20,49 +20,63 @@ import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 
 /**
  * Naming deregister instance trace event.
+ *
  * @author yanda
  */
 public class DeregisterInstanceTraceEvent extends NamingTraceEvent {
-    
+
     private static final long serialVersionUID = 3850573686472190256L;
-    
+
     private final String clientIp;
-    
+
     private final boolean rpc;
-    
+
     private String instanceIp;
-    
+
     private int instancePort;
-    
+
     public final DeregisterInstanceReason reason;
-    
+
     public String getClientIp() {
         return clientIp;
     }
-    
+
     public boolean isRpc() {
         return rpc;
     }
-    
+
     public String getInstanceIp() {
         return instanceIp;
     }
-    
+
     public int getInstancePort() {
         return instancePort;
     }
-    
+
     public String toInetAddr() {
         return instanceIp + ":" + instancePort;
     }
-    
+
     public DeregisterInstanceReason getReason() {
         return reason;
     }
-    
-    public DeregisterInstanceTraceEvent(long eventTime, String clientIp, boolean rpc, DeregisterInstanceReason reason,
-            String serviceNamespace, String serviceGroup, String serviceName, String instanceIp, int instancePort) {
-        super("DEREGISTER_INSTANCE_TRACE_EVENT", eventTime, serviceNamespace, serviceGroup, serviceName);
+
+    public DeregisterInstanceTraceEvent(
+            long eventTime,
+            String clientIp,
+            boolean rpc,
+            DeregisterInstanceReason reason,
+            String serviceNamespace,
+            String serviceGroup,
+            String serviceName,
+            String instanceIp,
+            int instancePort) {
+        super(
+                "DEREGISTER_INSTANCE_TRACE_EVENT",
+                eventTime,
+                serviceNamespace,
+                serviceGroup,
+                serviceName);
         this.clientIp = clientIp;
         this.reason = reason;
         this.rpc = rpc;

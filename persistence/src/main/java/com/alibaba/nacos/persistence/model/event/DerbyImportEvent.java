@@ -24,15 +24,15 @@ import com.alibaba.nacos.common.notify.SlowEvent;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class DerbyImportEvent extends SlowEvent {
-    
+
     private static final long serialVersionUID = 3299565864352399053L;
-    
+
     private final boolean finished;
-    
+
     public DerbyImportEvent(boolean finished) {
         this.finished = finished;
     }
-    
+
     public boolean isFinished() {
         return finished;
     }

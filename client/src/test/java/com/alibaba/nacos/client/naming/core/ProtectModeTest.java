@@ -16,17 +16,14 @@
 
 package com.alibaba.nacos.client.naming.core;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class ProtectModeTest {
-    
+
     @Test
     public void testProtectThresholdDefault() {
         final ProtectMode protectMode = new ProtectMode();
         Assert.assertEquals(0.8f, protectMode.getProtectThreshold(), 0.01f);
     }
-    
+
     @Test
     public void testSetProtectThreshold() {
         final ProtectMode protectMode = new ProtectMode();

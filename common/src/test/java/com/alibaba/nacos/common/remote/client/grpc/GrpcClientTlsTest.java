@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import org.junit.Test;
-
 import static org.mockito.Mockito.when;
 
 public class GrpcClientTlsTest extends GrpcClientTest {
@@ -27,42 +25,47 @@ public class GrpcClientTlsTest extends GrpcClientTest {
 
         when(tlsConfig.getEnableTls()).thenReturn(true);
         when(tlsConfig.getTrustCollectionCertFile()).thenReturn("ca-cert.pem");
-        when(tlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384");
+        when(tlsConfig.getCiphers())
+                .thenReturn("ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384");
         when(tlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
         when(clientConfig.name()).thenReturn("testClient");
         when(clientConfig.tlsConfig()).thenReturn(tlsConfig);
 
-        grpcClient = new GrpcClient(clientConfig) {
-            @Override
-            public int rpcPortOffset() {
-                return 1000;
-            }
-        };
+        grpcClient =
+                new GrpcClient(clientConfig) {
+                    @Override
+                    public int rpcPortOffset() {
+                        return 1000;
+                    }
+                };
     }
 
     @Test
     public void testGrpcEnableTlsAndTrustAll() throws Exception {
         when(tlsConfig.getEnableTls()).thenReturn(true);
         when(tlsConfig.getTrustCollectionCertFile()).thenReturn("ca-cert.pem");
-        when(tlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384");
+        when(tlsConfig.getCiphers())
+                .thenReturn("ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384");
         when(tlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
         when(tlsConfig.getTrustAll()).thenReturn(true);
         when(clientConfig.name()).thenReturn("testClient");
         when(clientConfig.tlsConfig()).thenReturn(tlsConfig);
 
-        grpcClient = new GrpcClient(clientConfig) {
-            @Override
-            public int rpcPortOffset() {
-                return 1000;
-            }
-        };
+        grpcClient =
+                new GrpcClient(clientConfig) {
+                    @Override
+                    public int rpcPortOffset() {
+                        return 1000;
+                    }
+                };
     }
 
     @Test
     public void testGrpcEnableTlsAndEnableMutualAuth() throws Exception {
         when(tlsConfig.getEnableTls()).thenReturn(true);
         when(tlsConfig.getTrustCollectionCertFile()).thenReturn("ca-cert.pem");
-        when(tlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384");
+        when(tlsConfig.getCiphers())
+                .thenReturn("ECDHE-RSA-AES128-GCM-SHA256", "ECDHE-RSA-AES256-GCM-SHA384");
         when(tlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
         when(tlsConfig.getTrustAll()).thenReturn(true);
         when(tlsConfig.getMutualAuthEnable()).thenReturn(true);
@@ -71,11 +74,12 @@ public class GrpcClientTlsTest extends GrpcClientTest {
         when(tlsConfig.getCertPrivateKey()).thenReturn("client-key.pem");
         when(clientConfig.name()).thenReturn("testClient");
         when(clientConfig.tlsConfig()).thenReturn(tlsConfig);
-        grpcClient = new GrpcClient(clientConfig) {
-            @Override
-            public int rpcPortOffset() {
-                return 1000;
-            }
-        };
+        grpcClient =
+                new GrpcClient(clientConfig) {
+                    @Override
+                    public int rpcPortOffset() {
+                        return 1000;
+                    }
+                };
     }
 }

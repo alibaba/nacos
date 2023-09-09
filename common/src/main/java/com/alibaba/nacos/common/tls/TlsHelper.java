@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.common.tls;
 
-import javax.net.ssl.SSLContext;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import javax.net.ssl.SSLContext;
 
 /**
  * Utils for build {@link SSLContext}.
@@ -26,6 +26,7 @@ import java.security.NoSuchAlgorithmException;
  * <p>Currently only supports client-side
  *
  * <h3>Making your client support TLS without authentication</h3>
+ *
  * <pre>
  * System.setProperty({@link TlsSystemConfig#TLS_ENABLE}, "true");
  * </pre>
@@ -42,24 +43,28 @@ import java.security.NoSuchAlgorithmException;
  * @date 2020/8/19 2:59 PM
  */
 public final class TlsHelper {
-    
+
     /**
      * Returns a {@link org.apache.http.ssl.SSLContexts}.
      *
-     * <p>For example</p>
-     * <code>HttpsURLConnection.setDefaultSSLSocketFactory(TlsHelper.buildSslContext(true).getSocketFactory());</code>
+     * <p>For example <code>
+     * HttpsURLConnection.setDefaultSSLSocketFactory(TlsHelper.buildSslContext(true).getSocketFactory());
+     * </code>
      *
      * @param forClient whether for client
      * @return {@link SSLContext}
      * @throws NoSuchAlgorithmException Not support the specified algorithm
-     * @throws KeyManagementException   KeyManagement exception
+     * @throws KeyManagementException KeyManagement exception
      */
     public static SSLContext buildSslContext(boolean forClient)
             throws NoSuchAlgorithmException, KeyManagementException {
-        
+
         SSLContext sslcontext = SSLContext.getInstance("TLS");
-        sslcontext.init(null, SelfTrustManager
-                        .trustManager(TlsSystemConfig.tlsClientAuthServer, TlsSystemConfig.tlsClientTrustCertPath),
+        sslcontext.init(
+                null,
+                SelfTrustManager.trustManager(
+                        TlsSystemConfig.tlsClientAuthServer,
+                        TlsSystemConfig.tlsClientTrustCertPath),
                 new java.security.SecureRandom());
         return sslcontext;
     }

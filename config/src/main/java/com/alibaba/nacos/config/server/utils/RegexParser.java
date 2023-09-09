@@ -17,21 +17,21 @@
 package com.alibaba.nacos.config.server.utils;
 
 /**
- * Generic classes for wildcard characters, decisions, and standard canonical transformations that can be supported by
- * ConfigCenter.
+ * Generic classes for wildcard characters, decisions, and standard canonical transformations that
+ * can be supported by ConfigCenter.
  *
  * @author tianhu E-mail:
  */
 public class RegexParser {
-    
+
     private static final char QUESTION_MARK = '?';
-    
+
     /**
-     * Replace input string non-regular special characters with standard regular expression strings; Replace '*' with
-     * '.* '? 'is replaced by '{n}', n is the number of consecutive ?; Other special characters that are not alphabetic
-     * or numeric are preceded by '\'.
+     * Replace input string non-regular special characters with standard regular expression strings;
+     * Replace '*' with '.* '? 'is replaced by '{n}', n is the number of consecutive ?; Other
+     * special characters that are not alphabetic or numeric are preceded by '\'.
      *
-     * @param regex  The expression to be formatted
+     * @param regex The expression to be formatted
      * @return format content.
      */
     public static String regexFormat(String regex) {
@@ -66,25 +66,24 @@ public class RegexParser {
         result.append('$');
         return result.toString();
     }
-    
+
     public static boolean containsWildcard(String regex) {
         return (regex.contains("?") || regex.contains("*"));
     }
-    
+
     private static Boolean isAsciiAlphanumeric(final char ch) {
-        return  isAsciiAlphaUpper(ch) || isAsciiAlphaLower(ch) || isAsciiNumeric(ch);
+        return isAsciiAlphaUpper(ch) || isAsciiAlphaLower(ch) || isAsciiNumeric(ch);
     }
-    
+
     private static Boolean isAsciiNumeric(final char ch) {
         return ch >= '0' && ch <= '9';
     }
-    
+
     private static Boolean isAsciiAlphaUpper(final char ch) {
         return ch >= 'A' && ch <= 'Z';
     }
-    
+
     private static Boolean isAsciiAlphaLower(final char ch) {
         return ch >= 'a' && ch <= 'z';
     }
-    
 }

@@ -17,16 +17,12 @@
 package com.alibaba.nacos.common.pathencoder;
 
 import com.alibaba.nacos.common.pathencoder.impl.WindowsEncoder;
-import junit.framework.TestCase;
-import org.junit.Assert;
-
 import java.lang.reflect.Field;
+import junit.framework.TestCase;
 
 public class PathEncoderManagerTest extends TestCase {
 
-    /**
-     * test expose method.
-     */
+    /** test expose method. */
     public void test() throws Exception {
         // load static
         PathEncoderManager instance = PathEncoderManager.getInstance();
@@ -48,5 +44,4 @@ public class PathEncoderManagerTest extends TestCase {
         // set origin
         targetEncoder.set(instance, origin);
     }
-
 }

@@ -17,32 +17,34 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.yaml.snakeyaml.constructor.ConstructorException;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.yaml.snakeyaml.constructor.ConstructorException;
 
 public class YamlParserUtilTest {
-    
+
     private static final String CONFIG_METADATA_STRING =
-            "metadata:\n" + "- dataId: testData1\n" + "  group: testGroup1\n" + "  type: text\n"
-                    + "- appName: testAppName\n" + "  dataId: testData2\n" + "  desc: test desc\n"
-                    + "  group: testGroup2\n" + "  type: yaml\n";
-    
+            "metadata:\n"
+                    + "- dataId: testData1\n"
+                    + "  group: testGroup1\n"
+                    + "  type: text\n"
+                    + "- appName: testAppName\n"
+                    + "  dataId: testData2\n"
+                    + "  desc: test desc\n"
+                    + "  group: testGroup2\n"
+                    + "  type: yaml\n";
+
     private ConfigMetadata.ConfigExportItem item1;
-    
+
     private ConfigMetadata.ConfigExportItem item2;
-    
+
     @Before
     public void setUp() {
         item1 = new ConfigMetadata.ConfigExportItem();
         item1.setDataId("testData1");
         item1.setGroup("testGroup1");
         item1.setType("text");
-        
+
         item2 = new ConfigMetadata.ConfigExportItem();
         item2.setDataId("testData2");
         item2.setGroup("testGroup2");
@@ -50,7 +52,7 @@ public class YamlParserUtilTest {
         item2.setAppName("testAppName");
         item2.setDesc("test desc");
     }
-    
+
     @Test
     public void testDumpObject() {
         ConfigMetadata configMetadata = new ConfigMetadata();
@@ -58,16 +60,17 @@ public class YamlParserUtilTest {
         configMetadataItems.add(item1);
         configMetadataItems.add(item2);
         configMetadata.setMetadata(configMetadataItems);
-        
+
         String parseString = YamlParserUtil.dumpObject(configMetadata);
         Assert.assertEquals(CONFIG_METADATA_STRING, parseString);
     }
-    
+
     @Test
     public void testLoadObject() {
-        ConfigMetadata configMetadata = YamlParserUtil.loadObject(CONFIG_METADATA_STRING, ConfigMetadata.class);
+        ConfigMetadata configMetadata =
+                YamlParserUtil.loadObject(CONFIG_METADATA_STRING, ConfigMetadata.class);
         Assert.assertNotNull(configMetadata);
-        
+
         List<ConfigMetadata.ConfigExportItem> metadataList = configMetadata.getMetadata();
         Assert.assertNotNull(metadataList);
         Assert.assertEquals(metadataList.size(), 2);
@@ -76,20 +79,20 @@ public class YamlParserUtilTest {
         Assert.assertEquals(configExportItem1, item1);
         Assert.assertEquals(configExportItem2, item2);
     }
-    
+
     @Test(expected = ConstructorException.class)
     public void testNotSupportType() {
         YamlParserUtil.loadObject("name: test", YamlTest.class);
     }
-    
+
     private static class YamlTest {
-        
+
         private String name;
-        
+
         public String getName() {
             return name;
         }
-        
+
         public void setName(String name) {
             this.name = name;
         }

@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.core.v2.pojo;
 
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
-
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -29,72 +28,71 @@ import java.util.Objects;
  * @author xiweng.yy
  */
 public class InstancePublishInfo implements Serializable {
-    
+
     private static final long serialVersionUID = -74988890439616025L;
-    
+
     private String ip;
-    
+
     private int port;
-    
+
     private boolean healthy;
-    
+
     private String cluster;
-    
+
     private Map<String, Object> extendDatum;
-    
-    public InstancePublishInfo() {
-    }
-    
+
+    public InstancePublishInfo() {}
+
     public InstancePublishInfo(String ip, int port) {
         this.ip = ip;
         this.port = port;
         extendDatum = new HashMap<>(1);
     }
-    
+
     public void setIp(String ip) {
         this.ip = ip;
     }
-    
+
     public String getIp() {
         return ip;
     }
-    
+
     public void setPort(int port) {
         this.port = port;
     }
-    
+
     public int getPort() {
         return port;
     }
-    
+
     public void setCluster(String cluster) {
         this.cluster = cluster;
     }
-    
+
     public String getCluster() {
         return cluster;
     }
-    
+
     public Map<String, Object> getExtendDatum() {
         return extendDatum;
     }
-    
+
     public void setExtendDatum(Map<String, Object> extendDatum) {
         this.extendDatum = extendDatum;
     }
-    
+
     public boolean isHealthy() {
         return healthy;
     }
-    
+
     public void setHealthy(boolean healthy) {
         this.healthy = healthy;
     }
-    
+
     public String getMetadataId() {
         return genMetadataId(ip, port, cluster);
     }
-    
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -104,26 +102,38 @@ public class InstancePublishInfo implements Serializable {
             return false;
         }
         InstancePublishInfo that = (InstancePublishInfo) o;
-        return port == that.port && healthy == that.healthy && Objects.equals(ip, that.ip) && Objects
-                .equals(extendDatum, that.extendDatum);
+        return port == that.port
+                && healthy == that.healthy
+                && Objects.equals(ip, that.ip)
+                && Objects.equals(extendDatum, that.extendDatum);
     }
-    
+
     @Override
     public int hashCode() {
         return Objects.hash(ip, port, extendDatum, healthy);
     }
-    
+
     @Override
     public String toString() {
         return "InstancePublishInfo{"
-                + "ip='" + ip + '\''
-                + ", port=" + port
-                + ", healthy=" + healthy
-                + ", cluster='" + cluster + '\''
+                + "ip='"
+                + ip
+                + '\''
+                + ", port="
+                + port
+                + ", healthy="
+                + healthy
+                + ", cluster='"
+                + cluster
+                + '\''
                 + '}';
     }
-    
+
     public static String genMetadataId(String ip, int port, String cluster) {
-        return ip + InternetAddressUtil.IP_PORT_SPLITER + port + InternetAddressUtil.IP_PORT_SPLITER + cluster;
+        return ip
+                + InternetAddressUtil.IP_PORT_SPLITER
+                + port
+                + InternetAddressUtil.IP_PORT_SPLITER
+                + cluster;
     }
 }

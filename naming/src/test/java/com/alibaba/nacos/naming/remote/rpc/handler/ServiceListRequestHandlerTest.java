@@ -23,10 +23,6 @@ import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * {@link ServiceListRequestHandler} unit tests.
@@ -35,20 +31,20 @@ import org.junit.Test;
  * @date 2021-09-17 20:59
  */
 public class ServiceListRequestHandlerTest {
-    
+
     private Service service;
-    
+
     @Before
     public void setUp() {
         service = Service.newService("A", "B", "C");
         ServiceManager.getInstance().getSingleton(service);
     }
-    
+
     @After
     public void tearDown() {
         ServiceManager.getInstance().removeSingleton(service);
     }
-    
+
     @Test
     public void testHandle() throws NacosException {
         ServiceListRequest serviceListRequest = new ServiceListRequest();
@@ -57,7 +53,8 @@ public class ServiceListRequestHandlerTest {
         serviceListRequest.setPageSize(10);
         serviceListRequest.setGroupName("B");
         ServiceListRequestHandler serviceListRequestHandler = new ServiceListRequestHandler();
-        ServiceListResponse serviceListResponse = serviceListRequestHandler.handle(serviceListRequest, new RequestMeta());
+        ServiceListResponse serviceListResponse =
+                serviceListRequestHandler.handle(serviceListRequest, new RequestMeta());
         Assert.assertEquals(serviceListResponse.getCount(), 1);
         Assert.assertTrue(serviceListResponse.getServiceNames().contains("C"));
     }

@@ -18,9 +18,6 @@ package com.alibaba.nacos.common.cache.impl;
 
 import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
-import org.junit.Assert;
-import org.junit.Test;
-
 import java.util.stream.IntStream;
 
 public class SimpleCacheTest {
@@ -40,5 +37,4 @@ public class SimpleCacheTest {
         cache.clear();
         Assert.assertEquals(0, cache.getSize());
     }
-    
 }

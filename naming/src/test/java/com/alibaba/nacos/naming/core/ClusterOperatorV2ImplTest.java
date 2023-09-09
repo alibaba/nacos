@@ -16,32 +16,29 @@
 
 package com.alibaba.nacos.naming.core;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.verify;
+
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.verify;
-
 @RunWith(MockitoJUnitRunner.class)
 public class ClusterOperatorV2ImplTest extends TestCase {
-    
+
     private ClusterOperatorV2Impl clusterOperatorV2Impl;
-    
-    @Mock
-    private NamingMetadataOperateService metadataOperateServiceMock;
-    
+
+    @Mock private NamingMetadataOperateService metadataOperateServiceMock;
+
     private ClusterMetadata clusterMetadata;
-    
+
     @Before
     public void setUp() throws Exception {
         super.setUp();
@@ -50,11 +47,11 @@ public class ClusterOperatorV2ImplTest extends TestCase {
         clusterOperatorV2Impl = new ClusterOperatorV2Impl(metadataOperateServiceMock);
         clusterMetadata = new ClusterMetadata();
     }
-    
+
     @Test
     public void testUpdateClusterMetadata() throws NacosException {
-        clusterOperatorV2Impl
-                .updateClusterMetadata("namespace_test", "group_test@@name_test", "clusterName_test", clusterMetadata);
+        clusterOperatorV2Impl.updateClusterMetadata(
+                "namespace_test", "group_test@@name_test", "clusterName_test", clusterMetadata);
         verify(metadataOperateServiceMock)
                 .addClusterMetadata(any(Service.class), anyString(), any(ClusterMetadata.class));
     }

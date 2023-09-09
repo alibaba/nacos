@@ -22,49 +22,48 @@ package com.alibaba.nacos.naming.constants;
  * @author lixiaoshuang
  */
 public class FieldsConstants {
-    
+
     public static final String NAME = "name";
-    
+
     public static final String PROTECT_THRESHOLD = "protectThreshold";
-    
+
     public static final String GROUP_NAME = "groupName";
-    
+
     public static final String SELECTOR = "selector";
-    
+
     public static final String METADATA = "metadata";
-    
+
     public static final String SERVICE = "service";
-    
+
     public static final String CLUSTERS = "clusters";
-    
+
     public static final String SERVICE_LIST = "serviceList";
-    
+
     public static final String COUNT = "count";
-    
+
     public static final String NAME_SPACE_ID = "namespaceId";
-    
+
     public static final String NAME_SPACE = "namespace";
-    
+
     public static final String HEALTH_CHECKER = "healthChecker";
-    
+
     public static final String IP = "ip";
-    
+
     public static final String PORT = "port";
-    
+
     public static final String CLUSTER_NAME = "clusterName";
-    
+
     public static final String SERVICE_NAME = "serviceName";
-    
+
     public static final String EPHEMERAL = "ephemeral";
-    
+
     public static final String STATUSES = "statuses";
-    
+
     public static final String CLIENT_IP = "clientIP";
-    
+
     public static final String SERVICE_STATUS = "serverStatus";
-    
+
     public static final String ENCODING = "encoding";
-    
+
     public static final String NOFIX = "nofix";
-    
 }

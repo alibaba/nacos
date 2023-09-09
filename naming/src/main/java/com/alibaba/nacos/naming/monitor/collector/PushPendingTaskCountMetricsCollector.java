@@ -19,11 +19,10 @@ package com.alibaba.nacos.naming.monitor.collector;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.push.v2.NamingSubscriberServiceV2Impl;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 /**
  * pending push task metrics collector.
@@ -32,19 +31,30 @@ import java.util.concurrent.TimeUnit;
  */
 @Service
 public class PushPendingTaskCountMetricsCollector {
-    
+
     private static final long DELAY_SECONDS = 2;
-    
-    private static ScheduledExecutorService executorService = ExecutorFactory.newSingleScheduledExecutorService(r -> {
-        Thread thread = new Thread(r, "nacos.naming.monitor.PushPendingTaskCountMetricsCollector");
-        thread.setDaemon(true);
-        return thread;
-    });
-    
+
+    private static ScheduledExecutorService executorService =
+            ExecutorFactory.newSingleScheduledExecutorService(
+                    r -> {
+                        Thread thread =
+                                new Thread(
+                                        r,
+                                        "nacos.naming.monitor.PushPendingTaskCountMetricsCollector");
+                        thread.setDaemon(true);
+                        return thread;
+                    });
+
     @Autowired
-    public PushPendingTaskCountMetricsCollector(NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
-        executorService.scheduleWithFixedDelay(() -> {
-            MetricsMonitor.getPushPendingTaskCount().set(namingSubscriberServiceV2.getPushPendingTaskCount());
-        }, DELAY_SECONDS, DELAY_SECONDS, TimeUnit.SECONDS);
+    public PushPendingTaskCountMetricsCollector(
+            NamingSubscriberServiceV2Impl namingSubscriberServiceV2) {
+        executorService.scheduleWithFixedDelay(
+                () -> {
+                    MetricsMonitor.getPushPendingTaskCount()
+                            .set(namingSubscriberServiceV2.getPushPendingTaskCount());
+                },
+                DELAY_SECONDS,
+                DELAY_SECONDS,
+                TimeUnit.SECONDS);
     }
 }

@@ -17,11 +17,9 @@
 package com.alibaba.nacos.client.logging.log4j2;
 
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import org.junit.Assert;
-import org.junit.Test;
 
 public class NacosClientPropertiesLookupTest {
-    
+
     @Test
     public void testLookUp() {
         NacosClientProperties.PROTOTYPE.setProperty("test.nacos.logging.lookup", "true");
@@ -29,5 +27,4 @@ public class NacosClientPropertiesLookupTest {
         final String actual = nacosClientPropertiesLookup.lookup("test.nacos.logging.lookup");
         Assert.assertEquals("true", actual);
     }
-    
 }

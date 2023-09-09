@@ -26,7 +26,7 @@ import com.alibaba.nacos.sys.env.EnvUtil;
  * @author lixiaoshuang
  */
 public class DatasourcePlatformUtil {
-    
+
     /**
      * get datasource platform.
      *
@@ -34,9 +34,13 @@ public class DatasourcePlatformUtil {
      * @return
      */
     public static String getDatasourcePlatform(String defaultPlatform) {
-        String platform = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, defaultPlatform);
+        String platform =
+                EnvUtil.getProperty(
+                        PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, defaultPlatform);
         if (StringUtils.isBlank(platform)) {
-            platform = EnvUtil.getProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, defaultPlatform);
+            platform =
+                    EnvUtil.getProperty(
+                            PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, defaultPlatform);
         }
         return platform;
     }

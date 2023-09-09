@@ -17,11 +17,10 @@
 package com.alibaba.nacos.common.http.client.response;
 
 import com.alibaba.nacos.common.http.param.Header;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.utils.HttpClientUtils;
-
 import java.io.IOException;
 import java.io.InputStream;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.utils.HttpClientUtils;
 
 /**
  * ApacheClientHttpResponse implementation {@link HttpClientResponse}.
@@ -29,25 +28,25 @@ import java.io.InputStream;
  * @author mai.jh
  */
 public class DefaultClientHttpResponse implements HttpClientResponse {
-    
+
     private HttpResponse response;
-    
+
     private Header responseHeader;
-    
+
     public DefaultClientHttpResponse(HttpResponse response) {
         this.response = response;
     }
-    
+
     @Override
     public int getStatusCode() {
         return this.response.getStatusLine().getStatusCode();
     }
-    
+
     @Override
     public String getStatusText() {
         return this.response.getStatusLine().getReasonPhrase();
     }
-    
+
     @Override
     public Header getHeaders() {
         if (this.responseHeader == null) {
@@ -59,12 +58,12 @@ public class DefaultClientHttpResponse implements HttpClientResponse {
         }
         return this.responseHeader;
     }
-    
+
     @Override
     public InputStream getBody() throws IOException {
         return response.getEntity().getContent();
     }
-    
+
     @Override
     public void close() {
         try {

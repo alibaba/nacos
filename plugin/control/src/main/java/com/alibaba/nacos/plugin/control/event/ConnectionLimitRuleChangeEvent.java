@@ -19,21 +19,22 @@ package com.alibaba.nacos.plugin.control.event;
 import com.alibaba.nacos.common.notify.Event;
 
 /**
- *  connection limit rule change event.
- *  @author zunfei.lzf
+ * connection limit rule change event.
+ *
+ * @author zunfei.lzf
  */
 public class ConnectionLimitRuleChangeEvent extends Event {
-    
+
     private boolean external;
-    
+
     public ConnectionLimitRuleChangeEvent(boolean external) {
         this.external = external;
     }
-    
+
     public boolean isExternal() {
         return external;
     }
-    
+
     public void setExternal(boolean external) {
         this.external = external;
     }

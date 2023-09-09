@@ -22,17 +22,17 @@ package com.alibaba.nacos.core.distributed.distro.exception;
  * @author xiweng.yy
  */
 public class DistroException extends RuntimeException {
-    
+
     private static final long serialVersionUID = 1711141952413139786L;
-    
+
     public DistroException(String message) {
         super(message);
     }
-    
+
     public DistroException(String message, Throwable cause) {
         super(message, cause);
     }
-    
+
     @Override
     public String getMessage() {
         return "[DISTRO-EXCEPTION]" + super.getMessage();

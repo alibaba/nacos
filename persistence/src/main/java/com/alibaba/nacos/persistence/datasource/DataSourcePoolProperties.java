@@ -17,34 +17,33 @@
 package com.alibaba.nacos.persistence.datasource;
 
 import com.zaxxer.hikari.HikariDataSource;
+import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.bind.Bindable;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.core.env.Environment;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * DataSource pool properties.
  *
- * <p>Nacos server use HikariCP as the datasource pool. So the basic pool properties will based on {@link
- * com.zaxxer.hikari.HikariDataSource}.
+ * <p>Nacos server use HikariCP as the datasource pool. So the basic pool properties will based on
+ * {@link com.zaxxer.hikari.HikariDataSource}.
  *
  * @author xiweng.yy
  */
 public class DataSourcePoolProperties {
-    
+
     public static final long DEFAULT_CONNECTION_TIMEOUT = TimeUnit.SECONDS.toMillis(3L);
-    
+
     public static final long DEFAULT_VALIDATION_TIMEOUT = TimeUnit.SECONDS.toMillis(10L);
 
     public static final long DEFAULT_IDLE_TIMEOUT = TimeUnit.MINUTES.toMillis(10L);
-    
+
     public static final int DEFAULT_MAX_POOL_SIZE = 20;
-    
+
     public static final int DEFAULT_MINIMUM_IDLE = 2;
-    
+
     private final HikariDataSource dataSource;
-    
+
     private DataSourcePoolProperties() {
         dataSource = new HikariDataSource();
         dataSource.setIdleTimeout(DEFAULT_IDLE_TIMEOUT);
@@ -53,7 +52,7 @@ public class DataSourcePoolProperties {
         dataSource.setMaximumPoolSize(DEFAULT_MAX_POOL_SIZE);
         dataSource.setMinimumIdle(DEFAULT_MINIMUM_IDLE);
     }
-    
+
     /**
      * Build new Hikari config.
      *
@@ -64,23 +63,23 @@ public class DataSourcePoolProperties {
         Binder.get(environment).bind("db.pool.config", Bindable.ofInstance(result.getDataSource()));
         return result;
     }
-    
+
     public void setDriverClassName(final String driverClassName) {
         dataSource.setDriverClassName(driverClassName);
     }
-    
+
     public void setJdbcUrl(final String jdbcUrl) {
         dataSource.setJdbcUrl(jdbcUrl);
     }
-    
+
     public void setUsername(final String username) {
         dataSource.setUsername(username);
     }
-    
+
     public void setPassword(final String password) {
         dataSource.setPassword(password);
     }
-    
+
     public HikariDataSource getDataSource() {
         return dataSource;
     }

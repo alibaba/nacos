@@ -24,7 +24,7 @@ import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
  * @author xiweng.yy
  */
 public interface DistroTagGenerator {
-    
+
     /**
      * Get responsible tag from http request.
      *

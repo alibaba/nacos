@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
 import java.util.ConcurrentModificationException;
 import java.util.HashSet;
 import java.util.Random;
@@ -25,17 +23,15 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
- * ConcurrentHashSet Test.
- * @ClassName: ConcurrentHashSetTest
- * @Author: ChenHao26
- * @Date: 2022/8/22 11:21
+ * ConcurrentHashSet Test. @ClassName: ConcurrentHashSetTest @Author: ChenHao26 @Date: 2022/8/22
+ * 11:21
  */
 public class ConcurrentHashSetTest {
-    
+
     @Test
     public void testBasicOps() {
         Set<Integer> set = new ConcurrentHashSet<>();
-        
+
         // addition
         Assert.assertTrue(set.add(0));
         Assert.assertTrue(set.add(1));
@@ -43,26 +39,26 @@ public class ConcurrentHashSetTest {
         Assert.assertTrue(set.contains(1));
         Assert.assertFalse(set.contains(-1));
         Assert.assertEquals(2, set.size());
-        
+
         // iter
         for (int i : set) {
             Assert.assertTrue(i == 0 || i == 1);
         }
-        
+
         // removal
         Assert.assertTrue(set.remove(0));
         Assert.assertFalse(set.remove(0));
         Assert.assertFalse(set.contains(0));
         Assert.assertTrue(set.contains(1));
         Assert.assertEquals(1, set.size());
-    
+
         // clear
         Assert.assertFalse(set.isEmpty());
         set.clear();
         Assert.assertEquals(0, set.size());
         Assert.assertTrue(set.isEmpty());
     }
-    
+
     @Test
     public void testMultiThread() throws Exception {
         int count = 5;
@@ -76,9 +72,10 @@ public class ConcurrentHashSetTest {
             count--;
         }
         Assert.assertTrue(hashSetChecker.hasConcurrentError());
-    
+
         count = 5;
-        SetMultiThreadChecker concurrentSetChecker = new SetMultiThreadChecker(new ConcurrentHashSet<>());
+        SetMultiThreadChecker concurrentSetChecker =
+                new SetMultiThreadChecker(new ConcurrentHashSet<>());
         concurrentSetChecker.start();
         while (!concurrentSetChecker.hasConcurrentError() && concurrentSetChecker.isRunning()) {
             TimeUnit.SECONDS.sleep(1);
@@ -89,15 +86,15 @@ public class ConcurrentHashSetTest {
         }
         Assert.assertFalse(concurrentSetChecker.hasConcurrentError());
     }
-    
+
     static class SetMultiThreadChecker {
-    
+
         private final AddDataThread addThread;
-        
+
         private final DeleteDataThread deleteThread;
-    
+
         private final IteratorThread iteratorThread;
-    
+
         public SetMultiThreadChecker(Set<Integer> setToCheck) {
             for (int i = 0; i < 1000; i++) {
                 setToCheck.add(i);
@@ -106,53 +103,54 @@ public class ConcurrentHashSetTest {
             this.deleteThread = new DeleteDataThread(setToCheck);
             this.iteratorThread = new IteratorThread(setToCheck);
         }
-        
+
         public void start() {
             new Thread(addThread).start();
             new Thread(deleteThread).start();
             new Thread(iteratorThread).start();
         }
-        
+
         public boolean hasConcurrentError() {
-            return addThread.hasConcurrentError() || deleteThread.hasConcurrentError() || iteratorThread.hasConcurrentError();
+            return addThread.hasConcurrentError()
+                    || deleteThread.hasConcurrentError()
+                    || iteratorThread.hasConcurrentError();
         }
-        
+
         public boolean isRunning() {
             return addThread.isRunning() || deleteThread.isRunning() || iteratorThread.isRunning();
         }
-    
+
         public void stop() {
             addThread.stop();
             deleteThread.stop();
             iteratorThread.stop();
         }
-        
     }
-    
+
     abstract static class ConcurrentCheckThread implements Runnable {
-    
+
         protected final Set<Integer> hashSet;
-    
+
         protected boolean concurrentError = false;
-        
+
         protected boolean finish = false;
-    
+
         public ConcurrentCheckThread(Set<Integer> hashSet) {
             this.hashSet = hashSet;
         }
-    
+
         public boolean hasConcurrentError() {
             return concurrentError;
         }
-        
+
         public void stop() {
             finish = true;
         }
-    
+
         public boolean isRunning() {
             return !finish;
         }
-    
+
         @Override
         public void run() {
             try {
@@ -165,46 +163,44 @@ public class ConcurrentHashSetTest {
                 finish = true;
             }
         }
-    
+
         protected abstract void process();
     }
-    
-    //add data thread
+
+    // add data thread
     static class AddDataThread extends ConcurrentCheckThread implements Runnable {
-    
+
         public AddDataThread(Set<Integer> hashSet) {
             super(hashSet);
         }
-    
+
         @Override
         protected void process() {
             int random = new Random().nextInt(1000);
             hashSet.add(random);
         }
-        
     }
-    
+
     // delete data thread
     static class DeleteDataThread extends ConcurrentCheckThread implements Runnable {
-    
+
         public DeleteDataThread(Set<Integer> hashSet) {
             super(hashSet);
         }
-    
+
         @Override
         protected void process() {
             int random = new Random().nextInt(1000);
             hashSet.remove(random);
         }
-        
     }
-    
+
     static class IteratorThread extends ConcurrentCheckThread implements Runnable {
-    
+
         public IteratorThread(Set<Integer> hashSet) {
             super(hashSet);
         }
-    
+
         @Override
         public void run() {
             System.out.println("start -- hashSet.size() : " + hashSet.size());
@@ -223,9 +219,8 @@ public class ConcurrentHashSetTest {
             System.out.println("finished at " + f);
             System.out.println("end -- hashSet.size() : " + hashSet.size());
         }
-    
+
         @Override
-        protected void process() {
-        }
+        protected void process() {}
     }
 }

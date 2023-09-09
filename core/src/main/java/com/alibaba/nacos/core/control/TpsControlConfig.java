@@ -25,9 +25,10 @@ package com.alibaba.nacos.core.control;
  * @version $Id: TpsControlManager.java, v 0.1 2021年01月12日 12:38 PM liuzunfei Exp $
  */
 public class TpsControlConfig {
-    
+
     /**
      * tps control is enabled.
+     *
      * @return true/false.
      */
     public static final boolean isTpsControlEnabled() {

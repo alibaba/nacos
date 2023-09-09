@@ -29,12 +29,12 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class RpcAckCallbackInitorOrCleaner extends ClientConnectionEventListener {
-    
+
     @Override
     public void clientConnected(Connection connect) {
         RpcAckCallbackSynchronizer.initContextIfNecessary(connect.getMetaInfo().getConnectionId());
     }
-    
+
     @Override
     public void clientDisConnected(Connection connect) {
         RpcAckCallbackSynchronizer.clearContext(connect.getMetaInfo().getConnectionId());

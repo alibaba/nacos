@@ -19,7 +19,6 @@
 package com.alibaba.nacos.core.control.http;
 
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
-
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -29,15 +28,15 @@ import javax.servlet.http.HttpServletRequest;
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class HttpTpsCheckRequestParser {
-    
+
     public HttpTpsCheckRequestParser() {
         registerParser();
     }
-    
+
     public void registerParser() {
         HttpTpsCheckRequestParserRegistry.register(this);
     }
-    
+
     /**
      * parse tps check request.
      *
@@ -45,19 +44,18 @@ public abstract class HttpTpsCheckRequestParser {
      * @return
      */
     public abstract TpsCheckRequest parse(HttpServletRequest httpServletRequest);
-    
+
     /**
      * get point name.
      *
      * @return
      */
     public abstract String getPointName();
-    
+
     /**
      * get name.
      *
      * @return
      */
     public abstract String getName();
-    
 }

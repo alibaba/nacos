@@ -20,23 +20,20 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.AbstractClientAuthService;
-
 import java.util.Properties;
 
 public class MockClientAuthService extends AbstractClientAuthService {
-    
+
     @Override
     public Boolean login(Properties properties) {
         return true;
     }
-    
+
     @Override
     public LoginIdentityContext getLoginIdentityContext(RequestResource resource) {
         return null;
     }
-    
+
     @Override
-    public void shutdown() throws NacosException {
-    
-    }
+    public void shutdown() throws NacosException {}
 }

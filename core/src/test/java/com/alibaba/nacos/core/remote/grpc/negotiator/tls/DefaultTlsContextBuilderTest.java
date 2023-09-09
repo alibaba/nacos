@@ -18,17 +18,14 @@ package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
 
 public class DefaultTlsContextBuilderTest {
-    
+
     @Before
     public void setUp() throws Exception {
         RpcServerTlsConfig.getInstance().setEnableTls(true);
     }
-    
+
     @After
     public void tearDown() throws Exception {
         RpcServerTlsConfig.getInstance().setEnableTls(false);
@@ -41,12 +38,12 @@ public class DefaultTlsContextBuilderTest {
         RpcServerTlsConfig.getInstance().setTrustCollectionCertFile(null);
         RpcServerTlsConfig.getInstance().setSslProvider("");
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testGetSslContextIllegal() {
         DefaultTlsContextBuilder.getSslContext(RpcServerTlsConfig.getInstance());
     }
-    
+
     @Test
     public void testGetSslContextWithoutMutual() {
         RpcServerTlsConfig grpcServerConfig = RpcServerTlsConfig.getInstance();
@@ -56,7 +53,7 @@ public class DefaultTlsContextBuilderTest {
         grpcServerConfig.setCertChainFile("test-server-cert.pem");
         DefaultTlsContextBuilder.getSslContext(RpcServerTlsConfig.getInstance());
     }
-    
+
     @Test
     public void testGetSslContextWithMutual() {
         RpcServerTlsConfig grpcServerConfig = RpcServerTlsConfig.getInstance();
@@ -68,7 +65,7 @@ public class DefaultTlsContextBuilderTest {
         grpcServerConfig.setCertChainFile("test-server-cert.pem");
         DefaultTlsContextBuilder.getSslContext(RpcServerTlsConfig.getInstance());
     }
-    
+
     @Test
     public void testGetSslContextWithMutualAndPart() {
         RpcServerTlsConfig grpcServerConfig = RpcServerTlsConfig.getInstance();
@@ -80,7 +77,7 @@ public class DefaultTlsContextBuilderTest {
         grpcServerConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         DefaultTlsContextBuilder.getSslContext(RpcServerTlsConfig.getInstance());
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testGetSslContextWithMutualAndPartIllegal() {
         RpcServerTlsConfig grpcServerConfig = RpcServerTlsConfig.getInstance();
@@ -91,7 +88,7 @@ public class DefaultTlsContextBuilderTest {
         grpcServerConfig.setCertChainFile("test-server-cert.pem");
         DefaultTlsContextBuilder.getSslContext(RpcServerTlsConfig.getInstance());
     }
-    
+
     @Test(expected = NacosRuntimeException.class)
     public void testGetSslContextForNonExistFile() {
         RpcServerTlsConfig grpcServerConfig = RpcServerTlsConfig.getInstance();

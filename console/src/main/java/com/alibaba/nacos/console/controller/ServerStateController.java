@@ -22,14 +22,13 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import com.alibaba.nacos.sys.utils.DiskUtils;
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.io.File;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Server state controller.
@@ -39,11 +38,11 @@ import java.util.Map;
 @RestController
 @RequestMapping("/v1/console/server")
 public class ServerStateController {
-    
+
     private static final String ANNOUNCEMENT_FILE = "announcement.conf";
-    
+
     private static final String GUIDE_FILE = "console-guide.conf";
-    
+
     /**
      * Get server state of current server.
      *
@@ -57,7 +56,7 @@ public class ServerStateController {
         }
         return ResponseEntity.ok().body(serverState);
     }
-    
+
     @GetMapping("/announcement")
     public RestResult<String> getAnnouncement() {
         File announcementFile = new File(EnvUtil.getConfPath(), ANNOUNCEMENT_FILE);
@@ -67,7 +66,7 @@ public class ServerStateController {
         }
         return RestResultUtils.success(announcement);
     }
-    
+
     @GetMapping("/guide")
     public RestResult<String> getConsoleUiGuide() {
         File guideFile = new File(EnvUtil.getConfPath(), GUIDE_FILE);

@@ -25,14 +25,13 @@ import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
+import java.util.HashMap;
+import java.util.Map;
 import org.springframework.ui.ModelMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Config longpolling.
@@ -42,23 +41,28 @@ import java.util.Map;
 @RestController
 @RequestMapping(Constants.LISTENER_CONTROLLER_PATH)
 public class ListenerController {
-    
+
     private final ConfigSubService configSubService;
-    
+
     public ListenerController(ConfigSubService configSubService) {
         this.configSubService = configSubService;
     }
-    
-    /**
-     * Get subscribe information from client side.
-     */
+
+    /** Get subscribe information from client side. */
     @GetMapping
-    @Secured(resource = Constants.LISTENER_CONTROLLER_PATH, action = ActionTypes.READ, signType = SignType.CONFIG)
-    public GroupkeyListenserStatus getAllSubClientConfigByIp(@RequestParam("ip") String ip,
+    @Secured(
+            resource = Constants.LISTENER_CONTROLLER_PATH,
+            action = ActionTypes.READ,
+            signType = SignType.CONFIG)
+    public GroupkeyListenserStatus getAllSubClientConfigByIp(
+            @RequestParam("ip") String ip,
             @RequestParam(value = "all", required = false) boolean all,
             @RequestParam(value = "tenant", required = false) String tenant,
-            @RequestParam(value = "sampleTime", required = false, defaultValue = "1") int sampleTime, ModelMap modelMap) {
-        SampleResult collectSampleResult = configSubService.getCollectSampleResultByIp(ip, sampleTime);
+            @RequestParam(value = "sampleTime", required = false, defaultValue = "1")
+                    int sampleTime,
+            ModelMap modelMap) {
+        SampleResult collectSampleResult =
+                configSubService.getCollectSampleResultByIp(ip, sampleTime);
         GroupkeyListenserStatus gls = new GroupkeyListenserStatus();
         gls.setCollectStatus(200);
         Map<String, String> configMd5Status = new HashMap<>(100);
@@ -84,6 +88,4 @@ public class ListenerController {
         gls.setLisentersGroupkeyStatus(configMd5Status);
         return gls;
     }
-    
 }
-

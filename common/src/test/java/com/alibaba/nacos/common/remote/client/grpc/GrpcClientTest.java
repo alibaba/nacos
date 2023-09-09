@@ -16,24 +16,19 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
+
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import io.grpc.ManagedChannel;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
-
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.concurrent.TimeUnit;
-
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 @RunWith(MockitoJUnitRunner.class)
 public class GrpcClientTest {
@@ -54,41 +49,50 @@ public class GrpcClientTest {
     @Mock(lenient = true)
     protected GrpcClientConfig clientConfig;
 
-    protected void init() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    protected void init()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         when(clientConfig.channelKeepAlive()).thenReturn(6 * 60 * 1000);
         when(clientConfig.channelKeepAliveTimeout()).thenReturn(TimeUnit.SECONDS.toMillis(20L));
         RpcClient.ServerInfo serverInfo = spy(new RpcClient.ServerInfo("10.10.10.10", 8848));
-        createNewManagedChannelMethod = GrpcClient.class.getDeclaredMethod("createNewManagedChannel", String.class,
-                int.class);
+        createNewManagedChannelMethod =
+                GrpcClient.class.getDeclaredMethod(
+                        "createNewManagedChannel", String.class, int.class);
         createNewManagedChannelMethod.setAccessible(true);
         int port = serverInfo.getServerPort() + grpcClient.rpcPortOffset();
-        managedChannel = (ManagedChannel) createNewManagedChannelMethod.invoke(grpcClient, serverInfo.getServerIp(),
-                port);
+        managedChannel =
+                (ManagedChannel)
+                        createNewManagedChannelMethod.invoke(
+                                grpcClient, serverInfo.getServerIp(), port);
     }
 
     @Before
     public void setUp() throws Exception {
         when(clientConfig.name()).thenReturn("testClient");
-        grpcClient = spy(new GrpcClient(clientConfig) {
-            @Override
-            public int rpcPortOffset() {
-                return 1000;
-            }
-        });
+        grpcClient =
+                spy(
+                        new GrpcClient(clientConfig) {
+                            @Override
+                            public int rpcPortOffset() {
+                                return 1000;
+                            }
+                        });
         when(clientConfig.tlsConfig()).thenReturn(tlsConfig);
 
         init();
     }
 
     @Test
-    public void testCreateNewManagedChannel() throws InvocationTargetException, IllegalAccessException {
+    public void testCreateNewManagedChannel()
+            throws InvocationTargetException, IllegalAccessException {
         GrpcConnection grpcConnection = new GrpcConnection(serverInfo, null);
         grpcConnection.setChannel(managedChannel);
     }
 
     @Test
-    public void createNewChannelStub() throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
-        createNewChannelStubMethod = GrpcClient.class.getDeclaredMethod("createNewChannelStub", ManagedChannel.class);
+    public void createNewChannelStub()
+            throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+        createNewChannelStubMethod =
+                GrpcClient.class.getDeclaredMethod("createNewChannelStub", ManagedChannel.class);
         createNewChannelStubMethod.setAccessible(true);
         Object invoke = createNewChannelStubMethod.invoke(grpcClient, managedChannel);
         Assert.assertTrue(invoke instanceof RequestGrpc.RequestFutureStub);
@@ -98,5 +102,4 @@ public class GrpcClientTest {
     public void close() {
         managedChannel.shutdownNow();
     }
-
 }

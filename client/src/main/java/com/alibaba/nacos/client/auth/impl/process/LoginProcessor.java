@@ -32,5 +32,4 @@ public interface LoginProcessor {
      * @return login identity context.
      */
     LoginIdentityContext getResponse(Properties properties);
-    
 }

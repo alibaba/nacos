@@ -17,9 +17,6 @@
 
 package com.alibaba.nacos.core.code.condition;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 /**
@@ -29,27 +26,29 @@ import org.springframework.mock.web.MockHttpServletRequest;
  * @date 2021-07-06 11:56
  */
 public class ParamRequestConditionTest {
-    
+
     private ParamRequestCondition paramRequestCondition;
-    
+
     @Before
     public void setUp() {
         paramRequestCondition = new ParamRequestCondition("test=1244");
     }
-    
+
     @Test
     public void testGetExpressions() {
         Assert.assertEquals(1, paramRequestCondition.getExpressions().size());
     }
-    
+
     @Test
     public void testGetMatchingCondition() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        ParamRequestCondition paramRequestCondition1 = paramRequestCondition.getMatchingCondition(request);
+        ParamRequestCondition paramRequestCondition1 =
+                paramRequestCondition.getMatchingCondition(request);
         Assert.assertNull(paramRequestCondition1);
-        
+
         request.setParameter("test", "1244");
-        ParamRequestCondition paramRequestCondition2 = paramRequestCondition.getMatchingCondition(request);
+        ParamRequestCondition paramRequestCondition2 =
+                paramRequestCondition.getMatchingCondition(request);
         Assert.assertNotNull(paramRequestCondition2);
     }
 }

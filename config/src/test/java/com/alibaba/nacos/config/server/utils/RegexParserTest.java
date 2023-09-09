@@ -16,11 +16,8 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 public class RegexParserTest {
-    
+
     @Test
     public void testRegexFormat() {
         try {
@@ -29,10 +26,10 @@ public class RegexParserTest {
         } catch (NullPointerException e) {
             System.out.println(e.toString());
         }
-        
+
         Assert.assertEquals("^test.*\\!.{1}xxxx$", RegexParser.regexFormat("test*!?xxxx"));
     }
-    
+
     @Test
     public void testContainsWildcard() {
         Assert.assertFalse(RegexParser.containsWildcard("test"));

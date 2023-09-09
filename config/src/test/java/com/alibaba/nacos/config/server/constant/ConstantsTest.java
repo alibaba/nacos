@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.config.server.constant;
 
-import org.junit.Assert;
-import org.junit.Test;
-
 import static com.alibaba.nacos.config.server.constant.Constants.CAPACITY_CONTROLLER_PATH;
 import static com.alibaba.nacos.config.server.constant.Constants.COMMUNICATION_CONTROLLER_PATH;
 import static com.alibaba.nacos.config.server.constant.Constants.CONFIG_CONTROLLER_PATH;
@@ -31,10 +28,10 @@ import static com.alibaba.nacos.config.server.constant.Constants.OPS_CONTROLLER_
 import static com.alibaba.nacos.config.server.constant.Constants.RECV_WAIT_TIMEOUT;
 
 public class ConstantsTest {
-    
+
     @Test
     public void testControllerPathsDefaultValues() {
-        
+
         Assert.assertEquals("/v1/cs/ops", OPS_CONTROLLER_PATH);
         Assert.assertEquals("/v1/cs/capacity", CAPACITY_CONTROLLER_PATH);
         Assert.assertEquals("/v1/cs/communication", COMMUNICATION_CONTROLLER_PATH);
@@ -45,10 +42,10 @@ public class ConstantsTest {
         Assert.assertEquals("/v1/cs/namespaces", NAMESPACE_CONTROLLER_PATH);
         Assert.assertEquals("/v1/cs/metrics", METRICS_CONTROLLER_PATH);
     }
-    
+
     @Test
     public void testRecvWaitTimeoutDefaultValue() {
-        
+
         Assert.assertEquals(10000, RECV_WAIT_TIMEOUT);
     }
 }

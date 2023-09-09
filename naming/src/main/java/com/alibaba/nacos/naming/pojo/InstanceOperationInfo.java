@@ -17,7 +17,6 @@
 package com.alibaba.nacos.naming.pojo;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-
 import java.util.List;
 
 /**
@@ -27,41 +26,37 @@ import java.util.List;
  * @since 1.4.0
  */
 public class InstanceOperationInfo {
-    
-    public InstanceOperationInfo() {
-    }
-    
-    public InstanceOperationInfo(String serviceName, String consistencyType, List<? extends Instance> instances) {
+
+    public InstanceOperationInfo() {}
+
+    public InstanceOperationInfo(
+            String serviceName, String consistencyType, List<? extends Instance> instances) {
         this.serviceName = serviceName;
         this.consistencyType = consistencyType;
         this.instances = instances;
     }
-    
-    /**
-     * serverName.
-     */
+
+    /** serverName. */
     private String serviceName;
-    
+
     /**
-     * consistencyType. it helps to operate all instances from consistencyService, value = ephemeral or persist.
+     * consistencyType. it helps to operate all instances from consistencyService, value = ephemeral
+     * or persist.
      */
     private String consistencyType;
-    
-    /**
-     * instances which need operate.
-     */
+
+    /** instances which need operate. */
     private List<? extends Instance> instances;
-    
+
     public String getServiceName() {
         return serviceName;
     }
-    
+
     public String getConsistencyType() {
         return consistencyType;
     }
-    
+
     public List<? extends Instance> getInstances() {
         return instances;
     }
-    
 }

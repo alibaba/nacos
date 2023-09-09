@@ -27,25 +27,29 @@ import org.slf4j.LoggerFactory;
  * @since 1.2.0
  */
 public class Loggers {
-    
+
     public static final Logger AUTH = LoggerFactory.getLogger("com.alibaba.nacos.core.auth");
-    
+
     public static final Logger CORE = LoggerFactory.getLogger("com.alibaba.nacos.core");
-    
-    public static final Logger RAFT = LoggerFactory.getLogger("com.alibaba.nacos.core.protocol.raft");
-    
-    public static final Logger DISTRO = LoggerFactory.getLogger("com.alibaba.nacos.core.protocol.distro");
-    
+
+    public static final Logger RAFT =
+            LoggerFactory.getLogger("com.alibaba.nacos.core.protocol.raft");
+
+    public static final Logger DISTRO =
+            LoggerFactory.getLogger("com.alibaba.nacos.core.protocol.distro");
+
     public static final Logger CLUSTER = LoggerFactory.getLogger("com.alibaba.nacos.core.cluster");
-    
+
     public static final Logger REMOTE = LoggerFactory.getLogger("com.alibaba.nacos.core.remote");
-    
-    public static final Logger REMOTE_PUSH = LoggerFactory.getLogger("com.alibaba.nacos.core.remote.push");
-    
-    public static final Logger REMOTE_DIGEST = LoggerFactory.getLogger("com.alibaba.nacos.core.remote.digest");
-    
+
+    public static final Logger REMOTE_PUSH =
+            LoggerFactory.getLogger("com.alibaba.nacos.core.remote.push");
+
+    public static final Logger REMOTE_DIGEST =
+            LoggerFactory.getLogger("com.alibaba.nacos.core.remote.digest");
+
     public static void setLogLevel(String logName, String level) {
-        
+
         switch (logName) {
             case "core-auth":
                 ((ch.qos.logback.classic.Logger) AUTH).setLevel(Level.valueOf(level));
@@ -65,6 +69,5 @@ public class Loggers {
             default:
                 break;
         }
-        
     }
 }

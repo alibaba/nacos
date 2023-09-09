@@ -24,11 +24,10 @@ import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 /**
  * request handler to handle server loader info.
@@ -37,23 +36,24 @@ import java.util.Map;
  * @version $Id: ServerLoaderInfoRequestHandler.java, v 0.1 2020年09月03日 2:51 PM liuzunfei Exp $
  */
 @Component
-public class ServerLoaderInfoRequestHandler extends RequestHandler<ServerLoaderInfoRequest, ServerLoaderInfoResponse> {
-    
-    @Autowired
-    private ConnectionManager connectionManager;
-    
+public class ServerLoaderInfoRequestHandler
+        extends RequestHandler<ServerLoaderInfoRequest, ServerLoaderInfoResponse> {
+
+    @Autowired private ConnectionManager connectionManager;
+
     @Override
-    public ServerLoaderInfoResponse handle(ServerLoaderInfoRequest request, RequestMeta meta) throws NacosException {
+    public ServerLoaderInfoResponse handle(ServerLoaderInfoRequest request, RequestMeta meta)
+            throws NacosException {
         ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
-        serverLoaderInfoResponse.putMetricsValue("conCount", String.valueOf(connectionManager.currentClientsCount()));
+        serverLoaderInfoResponse.putMetricsValue(
+                "conCount", String.valueOf(connectionManager.currentClientsCount()));
         Map<String, String> filter = new HashMap<>(2);
         filter.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
-        serverLoaderInfoResponse
-                .putMetricsValue("sdkConCount", String.valueOf(connectionManager.currentClientsCount(filter)));
+        serverLoaderInfoResponse.putMetricsValue(
+                "sdkConCount", String.valueOf(connectionManager.currentClientsCount(filter)));
         serverLoaderInfoResponse.putMetricsValue("load", String.valueOf(EnvUtil.getLoad()));
         serverLoaderInfoResponse.putMetricsValue("cpu", String.valueOf(EnvUtil.getCpu()));
-        
+
         return serverLoaderInfoResponse;
     }
-    
 }

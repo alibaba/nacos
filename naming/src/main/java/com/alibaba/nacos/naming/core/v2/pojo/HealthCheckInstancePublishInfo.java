@@ -18,7 +18,6 @@ package com.alibaba.nacos.naming.core.v2.pojo;
 
 import com.alibaba.nacos.naming.healthcheck.HealthCheckStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -27,57 +26,56 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author xiweng.yy
  */
 public class HealthCheckInstancePublishInfo extends InstancePublishInfo {
-    
+
     private static final long serialVersionUID = 5424801693490263492L;
-    
+
     private long lastHeartBeatTime = System.currentTimeMillis();
-    
+
     private HealthCheckStatus healthCheckStatus;
-    
-    public HealthCheckInstancePublishInfo() {
-    }
-    
+
+    public HealthCheckInstancePublishInfo() {}
+
     public HealthCheckInstancePublishInfo(String ip, int port) {
         super(ip, port);
     }
-    
+
     public long getLastHeartBeatTime() {
         return lastHeartBeatTime;
     }
-    
+
     public void setLastHeartBeatTime(long lastHeartBeatTime) {
         this.lastHeartBeatTime = lastHeartBeatTime;
     }
-    
+
     public void initHealthCheck() {
         healthCheckStatus = new HealthCheckStatus();
     }
-    
+
     public boolean tryStartCheck() {
         return healthCheckStatus.isBeingChecked.compareAndSet(false, true);
     }
-    
+
     public void finishCheck() {
         healthCheckStatus.isBeingChecked.set(false);
     }
-    
+
     public void resetOkCount() {
         healthCheckStatus.checkOkCount.set(0);
     }
-    
+
     public void resetFailCount() {
         healthCheckStatus.checkFailCount.set(0);
     }
-    
+
     public void setCheckRt(long checkRt) {
         healthCheckStatus.checkRt = checkRt;
     }
-    
+
     @JsonIgnore
     public AtomicInteger getOkCount() {
         return healthCheckStatus.checkOkCount;
     }
-    
+
     @JsonIgnore
     public AtomicInteger getFailCount() {
         return healthCheckStatus.checkFailCount;

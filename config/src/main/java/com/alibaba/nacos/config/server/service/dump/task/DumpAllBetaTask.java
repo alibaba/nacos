@@ -25,10 +25,9 @@ import com.alibaba.nacos.common.task.AbstractDelayTask;
  * @date 2020/7/5 12:19 PM
  */
 public class DumpAllBetaTask extends AbstractDelayTask {
-    
+
     @Override
-    public void merge(AbstractDelayTask task) {
-    }
-    
+    public void merge(AbstractDelayTask task) {}
+
     public static final String TASK_ID = "dumpAllBetaConfigTask";
 }

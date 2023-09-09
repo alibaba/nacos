@@ -21,11 +21,10 @@ import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
-
-import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * ConfigListener http param extractor.
@@ -33,16 +32,16 @@ import java.util.List;
  * @author zhuoguang
  */
 public class ConfigListenerHttpParamExtractor extends AbstractHttpParamExtractor {
-    
+
     static final char WORD_SEPARATOR_CHAR = (char) 2;
-    
+
     static final char LINE_SEPARATOR_CHAR = (char) 1;
-    
+
     @Override
     public void init() {
         addTargetRequest(Constants.CONFIG_CONTROLLER_PATH + "/listener", HttpMethod.POST);
     }
-    
+
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();

@@ -19,14 +19,13 @@ package com.alibaba.nacos.naming.healthcheck.extend;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.AbstractHealthChecker;
 import com.alibaba.nacos.api.naming.pojo.healthcheck.HealthCheckType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * Health check extend provider.
@@ -35,37 +34,41 @@ import java.util.Set;
  */
 @Component
 public class HealthCheckExtendProvider {
-    
+
     private static final Logger LOGGER = LoggerFactory.getLogger(HealthCheckExtendProvider.class);
 
-    private final Collection<AbstractHealthChecker> checkers = NacosServiceLoader.load(AbstractHealthChecker.class);
+    private final Collection<AbstractHealthChecker> checkers =
+            NacosServiceLoader.load(AbstractHealthChecker.class);
 
     private AbstractHealthCheckProcessorExtend healthCheckProcessorExtend;
 
-    public void setHealthCheckProcessorExtend(AbstractHealthCheckProcessorExtend healthCheckProcessorExtend) {
+    public void setHealthCheckProcessorExtend(
+            AbstractHealthCheckProcessorExtend healthCheckProcessorExtend) {
         this.healthCheckProcessorExtend = healthCheckProcessorExtend;
     }
 
     public void init() {
         loadExtend();
     }
-    
+
     private void loadExtend() {
         Iterator<AbstractHealthChecker> healthCheckerIt = checkers.iterator();
-        
+
         Set<String> origin = new HashSet<>();
         for (HealthCheckType type : HealthCheckType.values()) {
             origin.add(type.name());
         }
         Set<String> processorType = healthCheckProcessorExtend.addProcessor(origin);
         Set<String> healthCheckerType = new HashSet<>(origin);
-        
+
         while (healthCheckerIt.hasNext()) {
             AbstractHealthChecker checker = healthCheckerIt.next();
             String type = checker.getType();
             if (healthCheckerType.contains(type)) {
                 throw new RuntimeException(
-                        "More than one healthChecker of the same type was found : [type=\"" + type + "\"]");
+                        "More than one healthChecker of the same type was found : [type=\""
+                                + type
+                                + "\"]");
             }
             healthCheckerType.add(type);
             HealthCheckType.registerHealthChecker(checker.getType(), checker.getClass());
