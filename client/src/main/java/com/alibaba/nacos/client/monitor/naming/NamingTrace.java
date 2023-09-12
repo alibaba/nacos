@@ -43,7 +43,7 @@ public class NamingTrace {
     private static final String NACOS_CLIENT_VERSION_ATTRIBUTE = "nacos.client.version";
     
     public static Span getClientNamingRpcSpan(String rpcType) {
-        String spanName = NACOS_CLIENT_NAMING_RPC_SPAN + "/" + rpcType;
+        String spanName = NACOS_CLIENT_NAMING_RPC_SPAN + "/" + rpcType.toUpperCase();
         return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
                 .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
     }
@@ -55,7 +55,7 @@ public class NamingTrace {
      * @return the OpenTelemetry span
      */
     public static Span getClientNamingHttpSpan(String method) {
-        String spanName = NACOS_CLIENT_NAMING_HTTP_SPAN + "/" + method;
+        String spanName = NACOS_CLIENT_NAMING_HTTP_SPAN + "/" + method.toUpperCase();
         return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
                 .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
     }

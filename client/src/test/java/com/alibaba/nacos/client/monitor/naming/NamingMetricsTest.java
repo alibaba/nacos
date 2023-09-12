@@ -20,6 +20,7 @@ package com.alibaba.nacos.client.monitor.naming;
 
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.common.utils.HttpMethod;
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Timer;
 import org.junit.AfterClass;
@@ -122,6 +123,18 @@ public class NamingMetricsTest {
     }
     
     @Test
+    public void testServerRequestHandleCounter() {
+        NamingMetrics.incServerRequestHandleCounter();
+        String meterName = NamingMetrics.getCounterMeterName();
+        
+        MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
+            Counter counter = r.find(meterName).tags("module", moduleName, "name", "serverRequestHandle").counter();
+            Assert.assertNotNull(counter);
+            Assert.assertEquals(1, (int) counter.count());
+        });
+    }
+    
+    @Test
     public void testNamingRequestTimer() {
         long testCase = 222L;
         NamingMetrics.recordNamingRequestTimer(HttpMethod.GET, "/testNamingRequest", "NA", testCase);
@@ -139,16 +152,30 @@ public class NamingMetricsTest {
     @Test
     public void testRpcCostDurationTimer() {
         long testCase = 333L;
-        NamingMetrics.recordRpcCostDurationTimer("GRPC", "127.0.0.1", "200", testCase);
+        NamingMetrics.recordRpcCostDurationTimer("grpc", "127.0.0.1", "200", testCase);
         String meterName = NamingMetrics.getTimerMeterName();
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Timer timer = r.find(meterName)
-                    .tags("module", moduleName, "name", "rpcCostDuration", "connectionType", "GRPC", "currentServer",
+                    .tags("module", moduleName, "name", "rpcCostDuration", "connectionType", "grpc", "currentServer",
                             "127.0.0.1", "rpcResultCode", "200").timer();
             Assert.assertNotNull(timer);
             Assert.assertEquals(testCase, (long) timer.totalTime(TimeUnit.MILLISECONDS));
         });
     }
     
+    @Test
+    public void testHandleServerRequestCostDurationTimer() {
+        long testCase = 444L;
+        NamingMetrics.recordHandleServerRequestCostDurationTimer("testRequestType", testCase);
+        String meterName = NamingMetrics.getTimerMeterName();
+        
+        MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
+            Timer timer = r.find(meterName)
+                    .tags("module", moduleName, "name", "handleServerRequestCostDuration", "requestType",
+                            "testRequestType").timer();
+            Assert.assertNotNull(timer);
+            Assert.assertEquals(testCase, (long) timer.totalTime(TimeUnit.MILLISECONDS));
+        });
+    }
 }

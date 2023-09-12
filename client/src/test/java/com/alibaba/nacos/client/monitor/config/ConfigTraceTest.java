@@ -77,7 +77,7 @@ public class ConfigTraceTest {
             
             Assert.assertEquals(attributes.get(testKey), "test.value");
             Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.rpc.GRPC");
+            Assert.assertEquals(spanData.getName(), "nacos.client.config.rpc/GRPC");
         }
     }
     
@@ -93,7 +93,7 @@ public class ConfigTraceTest {
             
             Assert.assertEquals(attributes.get(testKey), "test.value");
             Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.http.GET");
+            Assert.assertEquals(spanData.getName(), "nacos.client.config.http/GET");
         }
     }
     
@@ -109,7 +109,7 @@ public class ConfigTraceTest {
             
             Assert.assertEquals(attributes.get(testKey), "test.value");
             Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.service.test");
+            Assert.assertEquals(spanData.getName(), "nacos.client.config.service/test");
         }
     }
     
@@ -125,7 +125,7 @@ public class ConfigTraceTest {
             
             Assert.assertEquals(attributes.get(testKey), "test.value");
             Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.worker.test");
+            Assert.assertEquals(spanData.getName(), "nacos.client.config.worker/test");
         }
     }
     

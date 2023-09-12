@@ -194,6 +194,18 @@ public class ConfigMetricsTest {
     }
     
     @Test
+    public void testServerRequestHandleCounter() {
+        ConfigMetrics.incServerRequestHandleCounter();
+        String meterName = ConfigMetrics.getCounterMeterName();
+        
+        MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
+            Counter counter = r.find(meterName).tags("module", moduleName, "name", "serverRequestHandle").counter();
+            Assert.assertNotNull(counter);
+            Assert.assertEquals(1, (int) counter.count());
+        });
+    }
+    
+    @Test
     public void testConfigRequestTimer() {
         long testCase = 111L;
         ConfigMetrics.recordConfigRequestTimer(HttpMethod.GET, "/testConfigRequest", "NA", testCase);
@@ -227,13 +239,28 @@ public class ConfigMetricsTest {
     @Test
     public void testRpcCostDurationTimer() {
         long testCase = 333L;
-        ConfigMetrics.recordRpcCostDurationTimer("GRPC", "127.0.0.1", "200", testCase);
+        ConfigMetrics.recordRpcCostDurationTimer("grpc", "127.0.0.1", "200", testCase);
         String meterName = ConfigMetrics.getTimerMeterName();
         
         MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
             Timer timer = r.find(meterName)
-                    .tags("module", moduleName, "name", "rpcCostDuration", "connectionType", "GRPC", "currentServer",
+                    .tags("module", moduleName, "name", "rpcCostDuration", "connectionType", "grpc", "currentServer",
                             "127.0.0.1", "rpcResultCode", "200").timer();
+            Assert.assertNotNull(timer);
+            Assert.assertEquals(testCase, (long) timer.totalTime(TimeUnit.MILLISECONDS));
+        });
+    }
+    
+    @Test
+    public void testHandleServerRequestCostDurationTimer() {
+        long testCase = 444L;
+        ConfigMetrics.recordHandleServerRequestCostDurationTimer("testRequestType", testCase);
+        String meterName = ConfigMetrics.getTimerMeterName();
+        
+        MetricsMonitor.getNacosMeterRegistry().getRegistries().forEach(r -> {
+            Timer timer = r.find(meterName)
+                    .tags("module", moduleName, "name", "handleServerRequestCostDuration", "requestType",
+                            "testRequestType").timer();
             Assert.assertNotNull(timer);
             Assert.assertEquals(testCase, (long) timer.totalTime(TimeUnit.MILLISECONDS));
         });

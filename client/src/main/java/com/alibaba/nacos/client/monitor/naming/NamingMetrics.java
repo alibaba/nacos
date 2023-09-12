@@ -49,6 +49,8 @@ public class NamingMetrics {
     
     private static final String COMMON_METER_NAME = "nacos.client.naming.common";
     
+    private static final String COUNTER_METER_NAME = "nacos.client.naming.counter";
+    
     private static final String TIMER_METER_NAME = "nacos.client.naming.timer";
     
     /**
@@ -149,7 +151,7 @@ public class NamingMetrics {
     // ------------------------ Counters ------------------------
     
     private static final Counter SERVER_REQUEST_HANDLE_COUNTER = MetricsMonitor.getNacosMeterRegistry()
-            .counter(COMMON_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "serverRequestHandle"));
+            .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "serverRequestHandle"));
     
     /**
      * Increment the value of <tt>SERVER_REQUEST_HANDLE_SUCCESS_COUNTER</tt> counter. This metric is to record the
@@ -231,6 +233,10 @@ public class NamingMetrics {
     
     public static String getCommonMeterName() {
         return COMMON_METER_NAME;
+    }
+    
+    public static String getCounterMeterName() {
+        return COUNTER_METER_NAME;
     }
     
     public static String getTimerMeterName() {
