@@ -30,7 +30,7 @@ import io.opentelemetry.api.trace.SpanKind;
  */
 public class ConfigTrace {
     
-    private static final String NACOS_CLIENT_CONFIG_BASE_SPAN = "nacos.client.config";
+    private static final String NACOS_CLIENT_CONFIG_BASE_SPAN = "Nacos.client.config";
     
     private static final String NACOS_CLIENT_CONFIG_RPC_SPAN = NACOS_CLIENT_CONFIG_BASE_SPAN + ".rpc";
     

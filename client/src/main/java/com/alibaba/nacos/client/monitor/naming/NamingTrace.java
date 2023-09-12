@@ -30,7 +30,7 @@ import io.opentelemetry.api.trace.SpanKind;
  */
 public class NamingTrace {
     
-    private static final String NACOS_CLIENT_NAMING_BASE_SPAN = "nacos.client.naming";
+    private static final String NACOS_CLIENT_NAMING_BASE_SPAN = "Nacos.client.naming";
     
     private static final String NACOS_CLIENT_NAMING_RPC_SPAN = NACOS_CLIENT_NAMING_BASE_SPAN + ".rpc";
     
