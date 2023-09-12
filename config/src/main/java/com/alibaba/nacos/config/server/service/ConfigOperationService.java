@@ -23,8 +23,8 @@ import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
-import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
+import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -91,32 +91,68 @@ public class ConfigOperationService {
         
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(encryptedDataKey);
-        ConfigOperateResult configOperateResult = null;
+        ConfigOperateResult configOperateResult;
         
         String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
         
         if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
             if (StringUtils.isBlank(configForm.getTag())) {
-                configOperateResult = configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(),
-                        configForm.getSrcUser(), configInfo, configAdvanceInfo);
+                if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
+                    configOperateResult = configInfoPersistService.insertOrUpdateCas(configRequestInfo.getSrcIp(),
+                            configForm.getSrcUser(), configInfo, configAdvanceInfo);
+                    if (!configOperateResult.isSuccess()) {
+                        LOGGER.warn(
+                                "[cas-publish-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
+                                configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
+                        throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                ErrorCode.RESOURCE_CONFLICT, "Cas publish fail, server md5 may have changed.");
+                    }
+                } else {
+                    configOperateResult = configInfoPersistService.insertOrUpdate(configRequestInfo.getSrcIp(),
+                            configForm.getSrcUser(), configInfo, configAdvanceInfo);
+                }
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
                                 configForm.getNamespaceId(), configOperateResult.getLastModified()));
             } else {
+                if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
+                    configOperateResult = configInfoTagPersistService.insertOrUpdateTagCas(configInfo,
+                            configForm.getTag(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
+                    if (!configOperateResult.isSuccess()) {
+                        LOGGER.warn(
+                                "[cas-publish-tag-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
+                                configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
+                        throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                                ErrorCode.RESOURCE_CONFLICT,
+                                "Cas publish tag config fail, server md5 may have changed.");
+                    }
+                } else {
+                    configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
+                            configRequestInfo.getSrcIp(), configForm.getSrcUser());
+                }
                 persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + configForm.getTag();
-                configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, configForm.getTag(),
-                        configRequestInfo.getSrcIp(), configForm.getSrcUser());
                 ConfigChangePublisher.notifyConfigChange(
                         new ConfigDataChangeEvent(false, configForm.getDataId(), configForm.getGroup(),
                                 configForm.getNamespaceId(), configForm.getTag(),
                                 configOperateResult.getLastModified()));
             }
         } else {
-            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_BETA;
-            
             // beta publish
-            configOperateResult = configInfoBetaPersistService.insertOrUpdateBeta(configInfo,
-                    configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
+            if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
+                configOperateResult = configInfoBetaPersistService.insertOrUpdateBetaCas(configInfo,
+                        configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
+                if (!configOperateResult.isSuccess()) {
+                    LOGGER.warn(
+                            "[cas-publish-beta-config-fail] srcIp = {}, dataId= {}, casMd5 = {}, msg = server md5 may have changed.",
+                            configRequestInfo.getSrcIp(), configForm.getDataId(), configRequestInfo.getCasMd5());
+                    throw new NacosApiException(HttpStatus.INTERNAL_SERVER_ERROR.value(), ErrorCode.RESOURCE_CONFLICT,
+                            "Cas publish beta config fail, server md5 may have changed.");
+                }
+            } else {
+                configOperateResult = configInfoBetaPersistService.insertOrUpdateBeta(configInfo,
+                        configRequestInfo.getBetaIps(), configRequestInfo.getSrcIp(), configForm.getSrcUser());
+            }
+            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_BETA;
             ConfigChangePublisher.notifyConfigChange(
                     new ConfigDataChangeEvent(true, configForm.getDataId(), configForm.getGroup(),
                             configForm.getNamespaceId(), configOperateResult.getLastModified()));
@@ -124,7 +160,6 @@ public class ConfigOperationService {
         ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configRequestInfo.getRequestIpApp(), configOperateResult.getLastModified(),
                 InetUtils.getSelfIP(), persistEvent, ConfigTraceService.PERSISTENCE_TYPE_PUB, configForm.getContent());
-        
         return true;
     }
     
