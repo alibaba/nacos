@@ -30,8 +30,8 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.NamingMetrics;
-import com.alibaba.nacos.client.monitor.NamingTrace;
+import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
+import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
@@ -56,6 +56,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.apache.http.HttpStatus;
 
 import java.util.Collections;
@@ -704,8 +705,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 }
                 
                 if (span.isRecording()) {
-                    span.setAttribute("request.url", url);
-                    span.setAttribute("response.code", restResult.getCode());
+                    span.setAttribute(SemanticAttributes.HTTP_METHOD, method.toUpperCase());
+                    span.setAttribute(SemanticAttributes.HTTP_URL, url);
+                    span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, restResult.getCode());
                 }
             } catch (Throwable e) {
                 span.recordException(e);

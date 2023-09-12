@@ -41,8 +41,8 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.NamingMetrics;
-import com.alibaba.nacos.client.monitor.NamingTrace;
+import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
+import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
@@ -66,6 +66,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -624,9 +625,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 }
                 
                 if (span.isRecording()) {
-                    span.setAttribute("connection.type", rpcClient.getConnectionType().getType());
+                    span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType());
                     span.setAttribute("server.address", rpcClient.getCurrentServer().getAddress());
-                    span.setAttribute("response.code", String.valueOf(response.getResultCode()));
+                    span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, response.getResultCode());
                 }
                 
             } catch (NacosException e) {

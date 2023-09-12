@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.monitor.ConfigMetrics;
+import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
 import com.alibaba.nacos.common.http.HttpRestResult;
 
 import java.net.HttpURLConnection;

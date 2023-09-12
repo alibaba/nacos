@@ -42,8 +42,8 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.ConfigMetrics;
-import com.alibaba.nacos.client.monitor.ConfigTrace;
+import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
+import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
@@ -74,6 +74,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -158,28 +159,7 @@ public class ClientWorker implements Closeable {
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
         
-        CacheData cache;
-        Span addListenerCacheSpan = ConfigTrace.getClientConfigWorkerSpan("addListenerCache");
-        try (Scope ignored = addListenerCacheSpan.makeCurrent()) {
-            
-            cache = addCacheDataIfAbsent(dataId, group);
-            
-            if (addListenerCacheSpan.isRecording()) {
-                addListenerCacheSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addListeners()");
-                addListenerCacheSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                addListenerCacheSpan.setAttribute("data.id", dataId);
-                addListenerCacheSpan.setAttribute("group", group);
-            }
-            
-        } catch (Throwable e) {
-            addListenerCacheSpan.recordException(e);
-            addListenerCacheSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            addListenerCacheSpan.end();
-        }
+        CacheData cache = addCacheDataIfAbsent(dataId, group);
         
         synchronized (cache) {
             
@@ -206,28 +186,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache;
-        Span addTenantListenerCacheSpan = ConfigTrace.getClientConfigWorkerSpan("addTenantListenerCache");
-        try (Scope ignored = addTenantListenerCacheSpan.makeCurrent()) {
-            
-            cache = addCacheDataIfAbsent(dataId, group, tenant);
-            
-            if (addTenantListenerCacheSpan.isRecording()) {
-                addTenantListenerCacheSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListeners()");
-                addTenantListenerCacheSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                addTenantListenerCacheSpan.setAttribute("data.id", dataId);
-                addTenantListenerCacheSpan.setAttribute("group", group);
-            }
-            
-        } catch (Throwable e) {
-            addTenantListenerCacheSpan.recordException(e);
-            addTenantListenerCacheSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            addTenantListenerCacheSpan.end();
-        }
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             for (Listener listener : listeners) {
@@ -255,30 +214,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache;
-        Span addTenantListenersWithContentCacheSpan = ConfigTrace.getClientConfigWorkerSpan(
-                "addTenantListenersWithContentCache");
-        try (Scope ignored = addTenantListenersWithContentCacheSpan.makeCurrent()) {
-            
-            cache = addCacheDataIfAbsent(dataId, group, tenant);
-            
-            if (addTenantListenersWithContentCacheSpan.isRecording()) {
-                addTenantListenersWithContentCacheSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListenersWithContent()");
-                addTenantListenersWithContentCacheSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                addTenantListenersWithContentCacheSpan.setAttribute("data.id", dataId);
-                addTenantListenersWithContentCacheSpan.setAttribute("group", group);
-                addTenantListenersWithContentCacheSpan.setAttribute("content", content);
-            }
-            
-        } catch (Throwable e) {
-            addTenantListenersWithContentCacheSpan.recordException(e);
-            addTenantListenersWithContentCacheSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            addTenantListenersWithContentCacheSpan.end();
-        }
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             cache.setEncryptedDataKey(encryptedDataKey);
@@ -303,28 +239,7 @@ public class ClientWorker implements Closeable {
     public void removeListener(String dataId, String group, Listener listener) {
         group = blank2defaultGroup(group);
         
-        CacheData cache;
-        Span removeListenerSpan = ConfigTrace.getClientConfigWorkerSpan("removeListenerCache");
-        try (Scope ignored = removeListenerSpan.makeCurrent()) {
-            
-            cache = getCache(dataId, group);
-            
-            if (removeListenerSpan.isRecording()) {
-                removeListenerSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeListener()");
-                removeListenerSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
-                removeListenerSpan.setAttribute("data.id", dataId);
-                removeListenerSpan.setAttribute("group", group);
-            }
-            
-        } catch (Throwable e) {
-            removeListenerSpan.recordException(e);
-            removeListenerSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            removeListenerSpan.end();
-        }
+        CacheData cache = getCache(dataId, group);
         
         if (null != cache) {
             synchronized (cache) {
@@ -350,28 +265,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache;
-        Span removeTenantListenerSpan = ConfigTrace.getClientConfigWorkerSpan("removeTenantListenerCache");
-        try (Scope ignored = removeTenantListenerSpan.makeCurrent()) {
-            
-            cache = getCache(dataId, group, tenant);
-            
-            if (removeTenantListenerSpan.isRecording()) {
-                removeTenantListenerSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeTenantListener()");
-                removeTenantListenerSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
-                removeTenantListenerSpan.setAttribute("data.id", dataId);
-                removeTenantListenerSpan.setAttribute("group", group);
-            }
-            
-        } catch (Throwable e) {
-            removeTenantListenerSpan.recordException(e);
-            removeTenantListenerSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            removeTenantListenerSpan.end();
-        }
+        CacheData cache = getCache(dataId, group, tenant);
         
         if (null != cache) {
             synchronized (cache) {
@@ -771,6 +665,7 @@ public class ClientWorker implements Closeable {
              */
             rpcClientInner.registerServerRequestHandler((request) -> {
                 if (request instanceof ConfigChangeNotifyRequest) {
+                    final long start = System.currentTimeMillis();
                     ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
                     LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
                             rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
@@ -787,6 +682,9 @@ public class ClientWorker implements Closeable {
                         }
                         
                     }
+                    ConfigMetrics.incServerRequestHandleCounter();
+                    ConfigMetrics.recordHandleServerRequestCostDurationTimer(
+                            ConfigChangeNotifyRequest.class.getSimpleName(), System.currentTimeMillis() - start);
                     return new ConfigChangeNotifyResponse();
                 }
                 return null;
@@ -794,8 +692,12 @@ public class ClientWorker implements Closeable {
             
             rpcClientInner.registerServerRequestHandler((request) -> {
                 if (request instanceof ClientConfigMetricRequest) {
+                    final long start = System.currentTimeMillis();
                     ClientConfigMetricResponse response = new ClientConfigMetricResponse();
                     response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
+                    ConfigMetrics.incServerRequestHandleCounter();
+                    ConfigMetrics.recordHandleServerRequestCostDurationTimer(
+                            ClientConfigMetricRequest.class.getSimpleName(), System.currentTimeMillis() - start);
                     return response;
                 }
                 return null;
@@ -1285,9 +1187,10 @@ public class ClientWorker implements Closeable {
                 }
                 
                 if (span.isRecording()) {
-                    span.setAttribute("connection.type", rpcClientInner.getConnectionType().getType());
+                    span.setAttribute(SemanticAttributes.RPC_SYSTEM,
+                            rpcClientInner.getConnectionType().getType().toLowerCase());
                     span.setAttribute("server.address", rpcClientInner.getCurrentServer().getAddress());
-                    span.setAttribute("response.code", String.valueOf(rpcResponse.getResultCode()));
+                    span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, rpcResponse.getResultCode());
                 }
             } catch (NacosException e) {
                 span.recordException(e);

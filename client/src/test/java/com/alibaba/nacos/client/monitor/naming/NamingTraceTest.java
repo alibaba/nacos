@@ -16,8 +16,9 @@
  *
  */
 
-package com.alibaba.nacos.client.monitor;
+package com.alibaba.nacos.client.monitor.naming;
 
+import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;

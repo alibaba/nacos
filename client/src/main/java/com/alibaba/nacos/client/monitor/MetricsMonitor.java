@@ -19,8 +19,10 @@
 package com.alibaba.nacos.client.monitor;
 
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
+import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.Metrics;
@@ -30,6 +32,7 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.micrometer.registry.otlp.OtlpConfig;
 import io.micrometer.registry.otlp.OtlpMeterRegistry;
+import org.slf4j.Logger;
 
 /**
  * Unified management of Micrometer registry.
@@ -37,6 +40,8 @@ import io.micrometer.registry.otlp.OtlpMeterRegistry;
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
 public class MetricsMonitor {
+    
+    private static final Logger LOGGER = LogUtils.logger(MetricsMonitor.class);
     
     /**
      * Directly use the <tt> globalRegistry </tt> of Micrometer.
@@ -83,6 +88,12 @@ public class MetricsMonitor {
             PrometheusMeterRegistry prometheusMeterRegistry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
             prometheusMeterRegistry.config().commonTags("nacos.client.version", VersionUtils.getFullClientVersion());
             nacosMeterRegistry.add(prometheusMeterRegistry);
+            
+            LoggerUtils.printIfInfoEnabled(LOGGER,
+                    "[Nacos Client Metrics] MetricsMonitor initialized. OpenTelemetry metrics exporter is {}.",
+                    isOtelEnable() ? "enabled" : "disabled");
+        } else {
+            LoggerUtils.printIfInfoEnabled(LOGGER, "[Nacos Client Metrics] MetricsMonitor is disabled.");
         }
     }
     

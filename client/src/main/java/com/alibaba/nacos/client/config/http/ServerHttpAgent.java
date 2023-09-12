@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.ConfigMetrics;
-import com.alibaba.nacos.client.monitor.ConfigTrace;
+import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
+import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -37,6 +37,7 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
@@ -98,8 +99,9 @@ public class ServerHttpAgent implements HttpAgent {
                     }
                     
                     if (span.isRecording()) {
-                        span.setAttribute("request.url", getUrl(currentServerAddr, path));
-                        span.setAttribute("response.code", result.getCode());
+                        span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
+                        span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
+                        span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, result.getCode());
                     }
                 } catch (Throwable e) {
                     span.recordException(e);
@@ -182,8 +184,9 @@ public class ServerHttpAgent implements HttpAgent {
                     }
                     
                     if (span.isRecording()) {
-                        span.setAttribute("request.url", getUrl(currentServerAddr, path));
-                        span.setAttribute("response.code", result.getCode());
+                        span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.POST);
+                        span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
+                        span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, result.getCode());
                     }
                 } catch (Throwable e) {
                     span.recordException(e);
@@ -266,8 +269,9 @@ public class ServerHttpAgent implements HttpAgent {
                     }
                     
                     if (span.isRecording()) {
-                        span.setAttribute("request.url", getUrl(currentServerAddr, path));
-                        span.setAttribute("response.code", result.getCode());
+                        span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.DELETE);
+                        span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
+                        span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, result.getCode());
                     }
                 } catch (Throwable e) {
                     span.recordException(e);

@@ -16,12 +16,12 @@
  *
  */
 
-package com.alibaba.nacos.client.monitor;
+package com.alibaba.nacos.client.monitor.config;
 
-import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.client.naming.NacosNamingService;
+import com.alibaba.nacos.client.monitor.TraceMonitor;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
@@ -33,6 +33,7 @@ import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.BatchSpanProcessor;
 import io.opentelemetry.semconv.resource.attributes.ResourceAttributes;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -40,7 +41,7 @@ import org.junit.Test;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-public class NamingTraceToJaegerTest {
+public class ConfigTraceToJaegerTest {
     
     private static final String JAEGER_ENDPOINT = "http://localhost:4317";
     
@@ -49,15 +50,14 @@ public class NamingTraceToJaegerTest {
         TraceMonitor.setTracer(initOpenTelemetry());
     }
     
-    private NacosNamingService client;
+    private NacosConfigService nacosConfigService;
     
     @Before
     public void mock() throws Exception {
-        Properties prop = new Properties();
+        final Properties properties = new Properties();
         // set your own nacos server address
-        prop.setProperty("serverAddr", "1.1.1.1:8848");
-        prop.put(PropertyKeyConst.NAMESPACE, "test");
-        client = new NacosNamingService(prop);
+        properties.put("serverAddr", "1.1.1.1:8848");
+        nacosConfigService = new NacosConfigService(properties);
     }
     
     @After
@@ -66,19 +66,21 @@ public class NamingTraceToJaegerTest {
     }
     
     @Test
-    public void testNamingJaeger() throws NacosException {
-        //given
-        String serviceName = "service1";
-        String ip = "1.1.1.1";
-        int port = 10000;
-        //when
-        Span testSpan = TraceMonitor.getTracer().spanBuilder("nacos.client.naming.test").startSpan();
+    public void testConfigJaeger() throws NacosException {
+        final String dataId = "1";
+        final String group = "2";
+        final int timeout = 3000;
+        Span testSpan = TraceMonitor.getTracer().spanBuilder("nacos.client.config.test").startSpan();
+        String config;
+        boolean b;
         try (Scope ignored = testSpan.makeCurrent()) {
-            client.registerInstance(serviceName, ip, port);
-            client.selectInstances(serviceName, true, false);
+            config = nacosConfigService.getConfig(dataId, group, timeout);
+            b = nacosConfigService.removeConfig(dataId, group);
         } finally {
             testSpan.end();
         }
+        Assert.assertNull(config);
+        Assert.assertTrue(b);
     }
     
     /**

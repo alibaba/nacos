@@ -34,7 +34,7 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.ConfigTrace;
+import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
@@ -136,29 +136,7 @@ public class NacosConfigService implements ConfigService {
         String content = configResponse.getContent();
         String encryptedDataKey = configResponse.getEncryptedDataKey();
         
-        Span addListenerSpan = ConfigTrace.getClientConfigServiceSpan("addTenantListeners");
-        try (Scope ignored = addListenerSpan.makeCurrent()) {
-            
-            worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, Arrays.asList(listener));
-            
-            if (addListenerSpan.isRecording()) {
-                addListenerSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.NacosConfigService.getConfigAndSignListener()");
-                addListenerSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListenersWithContent()");
-                addListenerSpan.setAttribute("agent.name", worker.getAgentName());
-                addListenerSpan.setAttribute("data.id", dataId);
-                addListenerSpan.setAttribute("group", group);
-                addListenerSpan.setAttribute("server.response.content", content);
-            }
-            
-        } catch (NacosException e) {
-            addListenerSpan.recordException(e);
-            addListenerSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            addListenerSpan.end();
-        }
+        worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, Arrays.asList(listener));
         
         // get a decryptContent, fix https://github.com/alibaba/nacos/issues/7039
         ConfigResponse cr = new ConfigResponse();
@@ -172,30 +150,7 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void addListener(String dataId, String group, Listener listener) throws NacosException {
-        
-        Span addListenerSpan = ConfigTrace.getClientConfigServiceSpan("addListener");
-        try (Scope ignored = addListenerSpan.makeCurrent()) {
-            
-            worker.addTenantListeners(dataId, group, Arrays.asList(listener));
-            
-            if (addListenerSpan.isRecording()) {
-                addListenerSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.NacosConfigService.addListener()");
-                addListenerSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListeners()");
-                addListenerSpan.setAttribute("agent.name", worker.getAgentName());
-                addListenerSpan.setAttribute("data.id", dataId);
-                addListenerSpan.setAttribute("group", group);
-            }
-            
-        } catch (NacosException e) {
-            addListenerSpan.recordException(e);
-            addListenerSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            addListenerSpan.end();
-        }
-        
+        worker.addTenantListeners(dataId, group, Arrays.asList(listener));
     }
     
     @Override
@@ -227,29 +182,7 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void removeListener(String dataId, String group, Listener listener) {
-        Span removeListenerSpan = ConfigTrace.getClientConfigServiceSpan("removeListener");
-        try (Scope ignored = removeListenerSpan.makeCurrent()) {
-            
-            worker.removeTenantListener(dataId, group, listener);
-            
-            if (removeListenerSpan.isRecording()) {
-                removeListenerSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.NacosConfigService.removeListener()");
-                removeListenerSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeTenantListener()");
-                removeListenerSpan.setAttribute("agent.name", worker.getAgentName());
-                removeListenerSpan.setAttribute("data.id", dataId);
-                removeListenerSpan.setAttribute("group", group);
-            }
-            
-        } catch (Throwable e) {
-            removeListenerSpan.recordException(e);
-            removeListenerSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            removeListenerSpan.end();
-        }
-        
+        worker.removeTenantListener(dataId, group, listener);
     }
     
     private String getConfigInner(String tenant, String dataId, String group, long timeoutMs) throws NacosException {

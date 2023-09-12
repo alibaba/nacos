@@ -16,8 +16,9 @@
  *
  */
 
-package com.alibaba.nacos.client.monitor;
+package com.alibaba.nacos.client.monitor.naming;
 
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Timer;

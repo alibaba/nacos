@@ -16,9 +16,10 @@
  *
  */
 
-package com.alibaba.nacos.client.monitor;
+package com.alibaba.nacos.client.monitor.config;
 
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Tags;
@@ -155,6 +156,9 @@ public class ConfigMetrics {
     private static final Counter REMOVE_FAILED_COUNTER = MetricsMonitor.getNacosMeterRegistry()
             .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "removeFailed"));
     
+    private static final Counter SERVER_REQUEST_HANDLE_COUNTER = MetricsMonitor.getNacosMeterRegistry()
+            .counter(COUNTER_METER_NAME, Tags.of("module", METRIC_MODULE_NAME, "name", "serverRequestHandle"));
+    
     /**
      * Increment the value of <tt>SYNC_WITH_SERVER_COUNTER</tt> counter. This metric is to record the number of sync
      * times between client and server.
@@ -225,6 +229,16 @@ public class ConfigMetrics {
         }
     }
     
+    /**
+     * Increment the value of <tt>SERVER_REQUEST_HANDLE_SUCCESS_COUNTER</tt> counter. This metric is to record the
+     * number of handled requests from Nacos server.
+     */
+    public static void incServerRequestHandleCounter() {
+        if (isEnable()) {
+            SERVER_REQUEST_HANDLE_COUNTER.increment();
+        }
+    }
+    
     // ------------------------ Timers ------------------------
     
     // For evey meter, Micrometer will generate an id (key) by its name, description and tags.
@@ -280,6 +294,20 @@ public class ConfigMetrics {
                             Tags.of("module", METRIC_MODULE_NAME, "connectionType", connectionType, "currentServer",
                                     currentServer, "rpcResultCode", rpcResultCode, "name", "rpcCostDuration"))
                     .record(duration, TimeUnit.MILLISECONDS);
+        }
+    }
+    
+    /**
+     * Record the duration of a server request on the client.
+     *
+     * @param requestType request type, using getSimpleName() of the request class normally
+     * @param duration    request duration, unit: ms
+     */
+    public static void recordHandleServerRequestCostDurationTimer(String requestType, long duration) {
+        if (isEnable()) {
+            MetricsMonitor.getNacosMeterRegistry().timer(TIMER_METER_NAME,
+                    Tags.of("module", METRIC_MODULE_NAME, "requestType", requestType, "name",
+                            "handleServerRequestCostDuration")).record(duration, TimeUnit.MILLISECONDS);
         }
     }
     
