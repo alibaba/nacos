@@ -75,9 +75,9 @@ public class NamingTraceTest {
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.naming.rpc.GRPC");
+            Assert.assertEquals("test.value", attributes.get(testKey));
+            Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
+            Assert.assertEquals("Nacos.client.naming.rpc/GRPC", spanData.getName());
         }
     }
     
@@ -91,9 +91,9 @@ public class NamingTraceTest {
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.naming.http.GET");
+            Assert.assertEquals("test.value", attributes.get(testKey));
+            Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
+            Assert.assertEquals("Nacos.client.naming.http/GET", spanData.getName());
         }
     }
     
@@ -107,9 +107,9 @@ public class NamingTraceTest {
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.naming.service.test");
+            Assert.assertEquals("test.value", attributes.get(testKey));
+            Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
+            Assert.assertEquals("Nacos.client.naming.service/test", spanData.getName());
         }
     }
     
@@ -123,9 +123,9 @@ public class NamingTraceTest {
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.naming.worker.test");
+            Assert.assertEquals("test.value", attributes.get(testKey));
+            Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
+            Assert.assertEquals("Nacos.client.naming.worker/test", spanData.getName());
         }
     }
     

@@ -75,9 +75,9 @@ public class ConfigTraceTest {
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.rpc/GRPC");
+            Assert.assertEquals("test.value", attributes.get(testKey));
+            Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
+            Assert.assertEquals("Nacos.client.config.rpc/GRPC", spanData.getName());
         }
     }
     
@@ -91,9 +91,9 @@ public class ConfigTraceTest {
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.http/GET");
+            Assert.assertEquals("test.value", attributes.get(testKey));
+            Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
+            Assert.assertEquals("Nacos.client.config.http/GET", spanData.getName());
         }
     }
     
@@ -107,9 +107,9 @@ public class ConfigTraceTest {
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.service/test");
+            Assert.assertEquals("test.value", attributes.get(testKey));
+            Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
+            Assert.assertEquals("Nacos.client.config.service/test", spanData.getName());
         }
     }
     
@@ -123,9 +123,9 @@ public class ConfigTraceTest {
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
-            Assert.assertEquals(attributes.get(testKey), "test.value");
-            Assert.assertEquals(attributes.get(versionKey), VersionUtils.getFullClientVersion());
-            Assert.assertEquals(spanData.getName(), "nacos.client.config.worker/test");
+            Assert.assertEquals("test.value", attributes.get(testKey));
+            Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
+            Assert.assertEquals("Nacos.client.config.worker/test", spanData.getName());
         }
     }
     
