@@ -21,8 +21,12 @@ import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
+import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
 
 /**
  * Naming push request handler.
@@ -41,8 +45,29 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
     public Response requestReply(Request request) {
         if (request instanceof NotifySubscriberRequest) {
             long start = System.currentTimeMillis();
-            NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
-            serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());
+            
+            // Trace
+            Span span = NamingTrace.getClientNamingWorkerSpan("handleNotifySubscriberRequest");
+            try (Scope ignored = span.makeCurrent()) {
+                
+                NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
+                serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());
+                
+                if (span.isRecording()) {
+                    span.setAttribute("function.current.name",
+                            "com.alibaba.nacos.client.naming.remote.gprc.NamingPushRequestHandler.requestReply()");
+                    span.setAttribute("request.id", request.getRequestId());
+                }
+                
+            } catch (Throwable e) {
+                span.recordException(e);
+                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                throw e;
+            } finally {
+                span.end();
+            }
+            
+            // Metrics
             NamingMetrics.incServerRequestHandleCounter();
             NamingMetrics.recordHandleServerRequestCostDurationTimer(NamingPushRequestHandler.class.getSimpleName(),
                     System.currentTimeMillis() - start);

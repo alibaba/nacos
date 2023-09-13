@@ -773,25 +773,51 @@ public class ClientWorker implements Closeable {
             rpcClientInner.registerServerRequestHandler((request) -> {
                 if (request instanceof ConfigChangeNotifyRequest) {
                     final long start = System.currentTimeMillis();
-                    ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
-                    LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
-                            rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
-                            configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
-                    String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
-                            configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
                     
-                    CacheData cacheData = cacheMap.get().get(groupKey);
-                    if (cacheData != null) {
-                        synchronized (cacheData) {
-                            cacheData.getReceiveNotifyChanged().set(true);
-                            cacheData.setConsistentWithServer(false);
-                            notifyListenConfig();
+                    // trace
+                    Span span = ConfigTrace.getClientConfigWorkerSpan("handleConfigChangeNotifyRequest");
+                    try (Scope ignored = span.makeCurrent()) {
+                        
+                        ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
+                        LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
+                                rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
+                                configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                        String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
+                                configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                        
+                        CacheData cacheData = cacheMap.get().get(groupKey);
+                        if (cacheData != null) {
+                            synchronized (cacheData) {
+                                cacheData.getReceiveNotifyChanged().set(true);
+                                cacheData.setConsistentWithServer(false);
+                                notifyListenConfig();
+                            }
+                            
                         }
                         
+                        if (span.isRecording()) {
+                            span.setAttribute("function.current.name",
+                                    "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.initRpcClientHandler()");
+                            span.setAttribute("rpc.client.name", rpcClientInner.getName());
+                            span.setAttribute("request.id", configChangeNotifyRequest.getRequestId());
+                            span.setAttribute("request.data.id", configChangeNotifyRequest.getDataId());
+                            span.setAttribute("request.group", configChangeNotifyRequest.getGroup());
+                            span.setAttribute("request.tenant", configChangeNotifyRequest.getTenant());
+                        }
+                        
+                    } catch (Throwable e) {
+                        span.recordException(e);
+                        span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                        throw e;
+                    } finally {
+                        span.end();
                     }
+                    
+                    // metrics
                     ConfigMetrics.incServerRequestHandleCounter();
                     ConfigMetrics.recordHandleServerRequestCostDurationTimer(
                             ConfigChangeNotifyRequest.class.getSimpleName(), System.currentTimeMillis() - start);
+                    
                     return new ConfigChangeNotifyResponse();
                 }
                 return null;
@@ -800,8 +826,31 @@ public class ClientWorker implements Closeable {
             rpcClientInner.registerServerRequestHandler((request) -> {
                 if (request instanceof ClientConfigMetricRequest) {
                     final long start = System.currentTimeMillis();
-                    ClientConfigMetricResponse response = new ClientConfigMetricResponse();
-                    response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
+                    
+                    // trace
+                    ClientConfigMetricResponse response;
+                    Span span = ConfigTrace.getClientConfigWorkerSpan("handleClientConfigMetricRequest");
+                    try (Scope ignored = span.makeCurrent()) {
+                        
+                        response = new ClientConfigMetricResponse();
+                        response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
+                        
+                        if (span.isRecording()) {
+                            span.setAttribute("function.current.name",
+                                    "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.initRpcClientHandler()");
+                            span.setAttribute("rpc.client.name", rpcClientInner.getName());
+                            span.setAttribute("request.id", request.getRequestId());
+                        }
+                        
+                    } catch (Throwable e) {
+                        span.recordException(e);
+                        span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                        throw e;
+                    } finally {
+                        span.end();
+                    }
+                    
+                    // metrics
                     ConfigMetrics.incServerRequestHandleCounter();
                     ConfigMetrics.recordHandleServerRequestCostDurationTimer(
                             ClientConfigMetricRequest.class.getSimpleName(), System.currentTimeMillis() - start);
