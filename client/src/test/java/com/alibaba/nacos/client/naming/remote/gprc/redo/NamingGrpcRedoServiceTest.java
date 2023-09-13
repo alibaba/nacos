@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc.redo;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
@@ -29,8 +31,10 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 
@@ -54,15 +58,52 @@ public class NamingGrpcRedoServiceTest {
     
     @Before
     public void setUp() throws Exception {
-        redoService = new NamingGrpcRedoService(clientProxy);
-        ScheduledExecutorService redoExecutor = (ScheduledExecutorService) ReflectUtils
-                .getFieldValue(redoService, "redoExecutor");
+        Properties prop = new Properties();
+        NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        redoService = new NamingGrpcRedoService(clientProxy, nacosClientProperties);
+        ScheduledExecutorService redoExecutor = (ScheduledExecutorService) ReflectUtils.getFieldValue(redoService,
+                "redoExecutor");
         redoExecutor.shutdownNow();
     }
     
     @After
     public void tearDown() throws Exception {
         redoService.shutdown();
+    }
+    
+    @Test
+    public void testDefaultConfig() throws Exception {
+        Field redoThreadCountField = NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
+        redoThreadCountField.setAccessible(true);
+        
+        Field redoDelayTimeField = NamingGrpcRedoService.class.getDeclaredField("redoDelayTime");
+        redoDelayTimeField.setAccessible(true);
+        
+        Long redoDelayTimeValue = (Long) redoDelayTimeField.get(redoService);
+        Integer redoThreadCountValue = (Integer) redoThreadCountField.get(redoService);
+        
+        assertEquals(new Long(3000L), redoDelayTimeValue);
+        assertEquals(new Integer(1), redoThreadCountValue);
+    }
+    
+    @Test
+    public void testCustomConfig() throws Exception {
+        Field redoThreadCountField = NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
+        redoThreadCountField.setAccessible(true);
+        
+        Field redoDelayTimeField = NamingGrpcRedoService.class.getDeclaredField("redoDelayTime");
+        redoDelayTimeField.setAccessible(true);
+        
+        Properties prop = new Properties();
+        prop.setProperty(PropertyKeyConst.REDO_DELAY_TIME, "4000");
+        prop.setProperty(PropertyKeyConst.REDO_DELAY_THREAD_COUNT, "2");
+        NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        
+        NamingGrpcRedoService redoService = new NamingGrpcRedoService(clientProxy, nacosClientProperties);
+        Long redoDelayTimeValue = (Long) redoDelayTimeField.get(redoService);
+        Integer redoThreadCountValue = (Integer) redoThreadCountField.get(redoService);
+        assertEquals(new Long(4000L), redoDelayTimeValue);
+        assertEquals(new Integer(2), redoThreadCountValue);
     }
     
     @Test
@@ -113,7 +154,8 @@ public class NamingGrpcRedoServiceTest {
         instanceList.add(instance);
         redoService.cacheInstanceForRedo(SERVICE, GROUP, instanceList);
         assertFalse(registeredInstances.isEmpty());
-        BatchInstanceRedoData actual = (BatchInstanceRedoData) registeredInstances.entrySet().iterator().next().getValue();
+        BatchInstanceRedoData actual = (BatchInstanceRedoData) registeredInstances.entrySet().iterator().next()
+                .getValue();
         assertEquals(SERVICE, actual.getServiceName());
         assertEquals(GROUP, actual.getGroupName());
         assertEquals(instanceList, actual.getInstances());
