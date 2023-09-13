@@ -72,7 +72,7 @@ public class NamingGrpcRedoServiceTest {
     }
     
     @Test
-    public void testDefaultConfig() throws Exception {
+    public void testDefaultProperties() throws Exception {
         Field redoThreadCountField = NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
         redoThreadCountField.setAccessible(true);
         
@@ -82,28 +82,29 @@ public class NamingGrpcRedoServiceTest {
         Long redoDelayTimeValue = (Long) redoDelayTimeField.get(redoService);
         Integer redoThreadCountValue = (Integer) redoThreadCountField.get(redoService);
         
-        assertEquals(new Long(3000L), redoDelayTimeValue);
-        assertEquals(new Integer(1), redoThreadCountValue);
+        assertEquals(Long.valueOf(3000L), redoDelayTimeValue);
+        assertEquals(Integer.valueOf(1), redoThreadCountValue);
     }
     
     @Test
-    public void testCustomConfig() throws Exception {
-        Field redoThreadCountField = NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
-        redoThreadCountField.setAccessible(true);
-        
-        Field redoDelayTimeField = NamingGrpcRedoService.class.getDeclaredField("redoDelayTime");
-        redoDelayTimeField.setAccessible(true);
-        
+    public void testCustomProperties() throws Exception {
         Properties prop = new Properties();
         prop.setProperty(PropertyKeyConst.REDO_DELAY_TIME, "4000");
         prop.setProperty(PropertyKeyConst.REDO_DELAY_THREAD_COUNT, "2");
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         
         NamingGrpcRedoService redoService = new NamingGrpcRedoService(clientProxy, nacosClientProperties);
+    
+        Field redoThreadCountField = NamingGrpcRedoService.class.getDeclaredField("redoThreadCount");
+        redoThreadCountField.setAccessible(true);
+    
+        Field redoDelayTimeField = NamingGrpcRedoService.class.getDeclaredField("redoDelayTime");
+        redoDelayTimeField.setAccessible(true);
+        
         Long redoDelayTimeValue = (Long) redoDelayTimeField.get(redoService);
         Integer redoThreadCountValue = (Integer) redoThreadCountField.get(redoService);
-        assertEquals(new Long(4000L), redoDelayTimeValue);
-        assertEquals(new Integer(2), redoThreadCountValue);
+        assertEquals(Long.valueOf(4000L), redoDelayTimeValue);
+        assertEquals(Integer.valueOf(2), redoThreadCountValue);
     }
     
     @Test

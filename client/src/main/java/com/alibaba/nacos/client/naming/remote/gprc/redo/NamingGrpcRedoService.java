@@ -63,13 +63,13 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     private volatile boolean connected = false;
     
     public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy, NacosClientProperties properties) {
-        setConfig(properties);
+        setProperties(properties);
         this.redoExecutor = new ScheduledThreadPoolExecutor(redoThreadCount, new NameThreadFactory(REDO_THREAD_NAME));
         this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this), redoDelayTime, redoDelayTime,
                 TimeUnit.MILLISECONDS);
     }
     
-    private void setConfig(NacosClientProperties properties) {
+    private void setProperties(NacosClientProperties properties) {
         redoDelayTime = properties.getLong(PropertyKeyConst.REDO_DELAY_TIME, Constants.DEFAULT_REDO_DELAY_TIME);
         redoThreadCount = properties.getInteger(PropertyKeyConst.REDO_DELAY_THREAD_COUNT,
                 Constants.DEFAULT_REDO_THREAD_COUNT);
