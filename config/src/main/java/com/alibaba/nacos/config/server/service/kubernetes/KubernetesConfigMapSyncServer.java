@@ -285,7 +285,7 @@ public class KubernetesConfigMapSyncServer {
         configForm.setSrcUser(ConfigMapSyncConfig.SRC_USER);
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configRequestInfo.setSrcIp(truncateURL(srcIp));
+        configRequestInfo.setSrcIp(truncateUrl(srcIp));
         
         configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKey);
     }
@@ -334,7 +334,10 @@ public class KubernetesConfigMapSyncServer {
         }
     }
     
-    public String truncateURL(String url) {
+    /**
+     * truncateUrl in 20 characters.
+     */
+    public String truncateUrl(String url) {
         URI uri = null;
         try {
             uri = new URI(url);
