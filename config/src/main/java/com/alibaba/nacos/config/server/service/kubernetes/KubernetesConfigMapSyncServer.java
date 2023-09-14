@@ -26,6 +26,8 @@ import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
+import com.alibaba.nacos.core.namespace.model.Namespace;
+import com.alibaba.nacos.core.service.NamespaceOperationService;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -48,8 +50,14 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.io.FileReader;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * ConfigMap synchronization server.
@@ -72,6 +80,9 @@ public class KubernetesConfigMapSyncServer {
     private ConfigOperationService configOperationService;
     
     @Autowired
+    private NamespaceOperationService namespaceOperationService;
+    
+    @Autowired
     @Qualifier("embeddedConfigInfoPersistServiceImpl")
     private ConfigInfoPersistService configInfoPersistService;
     
@@ -81,19 +92,16 @@ public class KubernetesConfigMapSyncServer {
     @PostConstruct
     public void start() throws IOException {
         if (!configMapSyncConfig.isEnabled()) {
-            Loggers.MAIN.info("The configMap-sync is disabled.");
+            Loggers.MAIN.info("[{}] is disabled.", "configMap-sync");
             return;
         }
-        Loggers.MAIN.info("Starting configMap-sync ...");
+        Loggers.MAIN.info("[{}] starting...", "configMap-sync");
         startWatchConfigMap();
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                Loggers.MAIN.info("Stopping configMap-sync ...");
-                KubernetesConfigMapSyncServer.this.stop();
-                Loggers.MAIN.info("ConfigMap-sync stopped...");
-            }
-        });
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            Loggers.MAIN.info("[{}] stopping...", "configMap-sync");
+            KubernetesConfigMapSyncServer.this.stop();
+            Loggers.MAIN.info("[{}] stopped.", "configMap-sync");
+        }));
     }
     
     /**
@@ -116,11 +124,14 @@ public class KubernetesConfigMapSyncServer {
      */
     public void startWatchConfigMap() throws IOException {
         ApiClient apiClient;
-        CoreV1Api coreV1Api = new CoreV1Api();
+        CoreV1Api coreV1Api;
         if (configMapSyncConfig.isOutsideCluster()) {
-            Loggers.MAIN.debug("Use outside cluster Apiclient.");
+            Loggers.MAIN.info("[{}] use outside cluster Apiclient.", "configMap-sync");
             apiClient = getOutsideApiClient();
+            coreV1Api = new CoreV1Api(apiClient);
         } else {
+            Loggers.MAIN.info("[{}] use local cluster Apiclient.", "configMap-sync");
+            coreV1Api = new CoreV1Api();
             apiClient = coreV1Api.getApiClient();
         }
         OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().readTimeout(Duration.ZERO).build();
@@ -137,7 +148,7 @@ public class KubernetesConfigMapSyncServer {
                 if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
                     return;
                 }
-                Loggers.MAIN.info("Adding configMap...");
+                Loggers.MAIN.info("[{}] adding configMap...", "configMap-sync");
                 ConfigInfo configInfo = configMapToNacosConfigInfo(obj);
                 String srcIp = apiClient.getBasePath();
                 
@@ -151,7 +162,8 @@ public class KubernetesConfigMapSyncServer {
             @Override
             public void onUpdate(V1ConfigMap oldObj, V1ConfigMap newObj) {
                 Loggers.MAIN.info(
-                        "Update configMap " + oldObj.getMetadata().getName() + " to " + newObj.getMetadata().getName());
+                        "[{}] update configMap " + oldObj.getMetadata().getName() + " to " + newObj.getMetadata()
+                                .getName(), "configMap-sync");
                 compareConfigMaps(oldObj, newObj);
                 ConfigInfo configInfo = configMapToNacosConfigInfo(newObj);
                 String srcIp = apiClient.getBasePath();
@@ -167,7 +179,7 @@ public class KubernetesConfigMapSyncServer {
                 if (obj == null || obj.getMetadata() == null || obj.getData() == null) {
                     return;
                 }
-                Loggers.MAIN.info("Delete configMap " + obj.getMetadata().getName());
+                Loggers.MAIN.info("[{}] delete configMap " + obj.getMetadata().getName(), "configMap-sync");
                 String srcIp = apiClient.getBasePath();
                 deleteConfigMap(obj, srcIp);
             }
@@ -192,7 +204,7 @@ public class KubernetesConfigMapSyncServer {
             // 比较两个 JsonObject，找出哪些字段发生了变化
             compareJsonObjects(previousObj, currentObj);
         } else {
-            Loggers.MAIN.error("Element is not json.");
+            Loggers.MAIN.error("[{}] Element is not json.", "configMap-sync");
         }
     }
     
@@ -204,18 +216,18 @@ public class KubernetesConfigMapSyncServer {
     private void compareJsonObjects(JsonObject previousObj, JsonObject currentObj) {
         for (String key : previousObj.keySet()) {
             if (!currentObj.has(key)) {
-                Loggers.MAIN.info("Field " + key + " removed.");
+                Loggers.MAIN.info("[{}] Field " + key + " removed.", "configMap-sync");
             } else if (!previousObj.get(key).equals(currentObj.get(key))) {
-                Loggers.MAIN.info("Field " + key + " changed.");
-                Loggers.MAIN.info("Previous value: " + previousObj.get(key));
-                Loggers.MAIN.info("Current value: " + currentObj.get(key));
+                Loggers.MAIN.info("[{}] Field " + key + " changed.", "configMap-sync");
+                Loggers.MAIN.info("[{}] Previous value: " + previousObj.get(key), "configMap-sync");
+                Loggers.MAIN.info("[{}] Current value: " + currentObj.get(key), "configMap-sync");
             }
         }
         
         for (String key : currentObj.keySet()) {
             if (!previousObj.has(key)) {
-                Loggers.MAIN.info("Field " + key + " added.");
-                Loggers.MAIN.info("Current value: " + currentObj.get(key));
+                Loggers.MAIN.info("[{}] Field " + key + " added.", "configMap-sync");
+                Loggers.MAIN.info("[{}] Current value: " + currentObj.get(key), "configMap-sync");
             }
         }
     }
@@ -226,7 +238,7 @@ public class KubernetesConfigMapSyncServer {
      * @return nacos configInfo
      */
     public ConfigInfo configMapToNacosConfigInfo(V1ConfigMap configMap) {
-        Loggers.MAIN.info("Converting configMap to nacos ConfigInfo...");
+        Loggers.MAIN.info("[{}] Converting configMap to nacos ConfigInfo...", "configMap-sync");
         String dataId = configMap.getMetadata().getName();
         String group = ConfigMapSyncConfig.K8S_GROUP;
         String tenant = configMap.getMetadata().getNamespace();
@@ -244,10 +256,18 @@ public class KubernetesConfigMapSyncServer {
      * @throws NacosException nacos exception
      */
     public void publishConfigMap(V1ConfigMap configMap, String srcIp) throws NacosException {
-        Loggers.MAIN.info("Converting configMap to nacos ConfigForm...");
-        final ConfigForm configForm = new ConfigForm();
+        Loggers.MAIN.info("[{}] Converting configMap to nacos ConfigForm...", "configMap-sync");
         
-        String namespaceId = configMap.getMetadata().getNamespace();
+        final ConfigForm configForm = new ConfigForm();
+        String configMapNamespace = configMap.getMetadata().getNamespace();
+        List<Namespace> namespaceList = namespaceOperationService.getNamespaceList();
+        String randomNamespace = UUID.randomUUID().toString();
+        Optional<Namespace> matchingNamespace = namespaceList.stream()
+                .filter(namespace -> Objects.equals(namespace.getNamespaceShowName(), configMapNamespace)).findFirst();
+        if (!matchingNamespace.isPresent()) {
+            namespaceOperationService.createNamespace(randomNamespace, configMapNamespace, "");
+        }
+        String namespaceId = matchingNamespace.map(Namespace::getNamespace).orElse(randomNamespace);
         String dataId = configMap.getMetadata().getName();
         String content = getContent(configMap.getData());
         String group = ConfigMapSyncConfig.K8S_GROUP;
@@ -265,7 +285,7 @@ public class KubernetesConfigMapSyncServer {
         configForm.setSrcUser(ConfigMapSyncConfig.SRC_USER);
         
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
-        configRequestInfo.setSrcIp(srcIp);
+        configRequestInfo.setSrcIp(truncateURL(srcIp));
         
         configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKey);
     }
@@ -278,7 +298,14 @@ public class KubernetesConfigMapSyncServer {
     public void deleteConfigMap(V1ConfigMap configMap, String clientIp) {
         String dataId = configMap.getMetadata().getName();
         String group = ConfigMapSyncConfig.K8S_GROUP;
-        String namespaceId = configMap.getMetadata().getNamespace();
+        String configMapNamespace = configMap.getMetadata().getNamespace();
+        List<Namespace> namespaceList = namespaceOperationService.getNamespaceList();
+        Optional<Namespace> first = namespaceList.stream()
+                .filter(namespace -> Objects.equals(namespace.getNamespaceShowName(), configMapNamespace)).findFirst();
+        if (!first.isPresent()) {
+            throw new RuntimeException("Not found namespace " + configMapNamespace + " in nacos.");
+        }
+        String namespaceId = first.get().getNamespace();
         String srcUser = ConfigMapSyncConfig.SRC_USER;
         configOperationService.deleteConfig(dataId, group, namespaceId, null, clientIp, srcUser);
     }
@@ -305,5 +332,18 @@ public class KubernetesConfigMapSyncServer {
         if (factory != null) {
             factory.stopAllRegisteredInformers();
         }
+    }
+    
+    public String truncateURL(String url) {
+        URI uri = null;
+        try {
+            uri = new URI(url);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+            return url;
+        }
+        String protocol = uri.getScheme();
+        String ip = uri.getHost();
+        return protocol + "://" + ip;
     }
 }
