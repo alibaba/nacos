@@ -40,7 +40,7 @@ import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Properties;
 
 /**
@@ -105,7 +105,8 @@ public class NacosConfigService implements ConfigService {
                 .queryConfig(dataId, group, worker.getAgent().getTenant(), timeoutMs, false);
         String content = configResponse.getContent();
         String encryptedDataKey = configResponse.getEncryptedDataKey();
-        worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, Arrays.asList(listener));
+        worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey,
+                Collections.singletonList(listener));
         
         // get a decryptContent, fix https://github.com/alibaba/nacos/issues/7039
         ConfigResponse cr = new ConfigResponse();
@@ -119,7 +120,7 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void addListener(String dataId, String group, Listener listener) throws NacosException {
-        worker.addTenantListeners(dataId, group, Arrays.asList(listener));
+        worker.addTenantListeners(dataId, group, Collections.singletonList(listener));
     }
     
     @Override
