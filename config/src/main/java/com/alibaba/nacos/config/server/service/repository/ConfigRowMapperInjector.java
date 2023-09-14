@@ -78,7 +78,7 @@ public class ConfigRowMapperInjector {
     static {
         injectConfigRowMapper();
     }
-
+    
     public ConfigRowMapperInjector() {
     }
 

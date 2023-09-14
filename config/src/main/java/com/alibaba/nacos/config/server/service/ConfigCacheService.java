@@ -34,8 +34,6 @@ import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,15 +54,13 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
  */
 public class ConfigCacheService {
     
-    static final Logger LOGGER = LoggerFactory.getLogger(ConfigCacheService.class);
-    
     private static final String NO_SPACE_CN = "设备上没有空间";
     
     private static final String NO_SPACE_EN = "No space left on device";
     
-    private static final String DISK_QUATA_CN = "超出磁盘限额";
+    private static final String DISK_QUOTA_CN = "超出磁盘限额";
     
-    private static final String DISK_QUATA_EN = "Disk quota exceeded";
+    private static final String DISK_QUOTA_EN = "Disk quota exceeded";
     
     /**
      * groupKey -> cacheItem.
@@ -165,8 +161,8 @@ public class ConfigCacheService {
             DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe);
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUATA_CN)
-                        || errMsg.contains(DISK_QUATA_EN)) {
+                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUOTA_CN)
+                        || errMsg.contains(DISK_QUOTA_EN)) {
                     // Protect from disk full.
                     FATAL_LOG.error("Local Disk Full,Exit", ioe);
                     System.exit(0);
@@ -242,7 +238,7 @@ public class ConfigCacheService {
                 if (!PropertyUtil.isDirectRead()) {
                     DUMP_LOG.info(
                             "[dump-beta] md5 changed, update md5 in local disk cache. groupKey={}, newMd5={}, oldMd5={}",
-                            new Object[] {groupKey, md5, localContentBetaMd5});
+                            groupKey, md5, localContentBetaMd5);
                     
                     ConfigDiskServiceFactory.getInstance().saveBetaToDisk(dataId, group, tenant, content);
                 } else {
@@ -254,23 +250,23 @@ public class ConfigCacheService {
             boolean ipListChanged = !betaIpList.equals(ConfigCacheService.getBetaIps(groupKey));
             if (md5Changed) {
                 DUMP_LOG.info(
-                        "[dump-beta] md5 changed, update md5 & iplist & timestamp in jvm cache. groupKey={}, newMd5={}, oldMd5={}，lastModifiedTs={}",
-                        new Object[] {groupKey, md5, localContentBetaMd5, lastModifiedTs});
+                        "[dump-beta] md5 changed, update md5 & ip list & timestamp in jvm cache. groupKey={}, newMd5={}, oldMd5={}，lastModifiedTs={}",
+                        groupKey, md5, localContentBetaMd5, lastModifiedTs);
                 updateBetaMd5(groupKey, md5, betaIpList, lastModifiedTs, encryptedDataKey);
             } else if (ipListChanged) {
                 DUMP_LOG.warn("[dump-beta] ip list changed, update ip list & timestamp in jvm cache. groupKey={},"
-                                + " newIpList={}, oldIpList={}，lastModifiedTs={}",
-                        new Object[] {groupKey, betaIpList, ConfigCacheService.getBetaIps(groupKey), lastModifiedTs});
+                                + " newIpList={}, oldIpList={}，lastModifiedTs={}", groupKey, betaIpList,
+                        ConfigCacheService.getBetaIps(groupKey), lastModifiedTs);
                 updateBetaIpList(groupKey, betaIpList, lastModifiedTs);
             } else if (timestampUpdated) {
                 DUMP_LOG.warn(
                         "[dump-beta] timestamp changed, update timestamp in jvm cache. groupKey={}, newLastModifiedTs={}, oldLastModifiedTs={}",
-                        new Object[] {groupKey, lastModifiedTs, ConfigCacheService.getBetaLastModifiedTs(groupKey)});
+                        groupKey, lastModifiedTs, ConfigCacheService.getBetaLastModifiedTs(groupKey));
                 updateBetaTimeStamp(groupKey, lastModifiedTs);
             } else {
                 DUMP_LOG.warn(
                         "[dump-beta-ignore] ignore to save jvm cache, md5 & ip list & timestamp no changed. groupKey={}",
-                        new Object[] {groupKey});
+                        groupKey);
             }
             return true;
         } catch (IOException ioe) {
@@ -334,13 +330,13 @@ public class ConfigCacheService {
             if (md5Changed) {
                 DUMP_LOG.warn(
                         "[dump-tag] md5 changed, update local jvm cache, groupKey={},tag={}, newMd5={},oldMd5={},lastModifiedTs={}",
-                        new Object[] {groupKey, tag, md5, localContentTagMd5, lastModifiedTs});
+                        groupKey, tag, md5, localContentTagMd5, lastModifiedTs);
                 updateTagMd5(groupKey, tag, md5, lastModifiedTs, encryptedDataKey4Tag);
             } else if (timestampChanged) {
                 DUMP_LOG.warn(
                         "[dump-tag] timestamp changed, update last modified in local jvm cache, groupKey={},tag={},"
-                                + "tagLastModifiedTs={},oldTagLastModifiedTs={}",
-                        new Object[] {groupKey, tag, lastModifiedTs, localTagLastModifiedTs});
+                                + "tagLastModifiedTs={},oldTagLastModifiedTs={}", groupKey, tag, lastModifiedTs,
+                        localTagLastModifiedTs);
                 updateTagTimeStamp(groupKey, tag, lastModifiedTs);
                 
             } else {
@@ -469,20 +465,20 @@ public class ConfigCacheService {
         String switchContent = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(SwitchService.SWITCH_META_DATAID,
+                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(SwitchService.SWITCH_META_DATA_ID,
                         "DEFAULT_GROUP");
                 if (config != null) {
                     switchContent = config.getContent();
                 }
             } else {
-                switchContent = DiskUtil.getConfig(SwitchService.SWITCH_META_DATAID, "DEFAULT_GROUP",
+                switchContent = DiskUtil.getConfig(SwitchService.SWITCH_META_DATA_ID, "DEFAULT_GROUP",
                         StringUtils.EMPTY);
             }
             if (switchContent != null) {
                 SwitchService.load(switchContent);
             }
         } catch (IOException e) {
-            DUMP_LOG.error("reload fail:" + SwitchService.SWITCH_META_DATAID, e);
+            DUMP_LOG.error("reload fail:" + SwitchService.SWITCH_META_DATA_ID, e);
         }
     }
     
@@ -492,7 +488,7 @@ public class ConfigCacheService {
      * @return return diff result list.
      */
     public static List<String> checkMd5() {
-        List<String> diffList = new ArrayList<String>();
+        List<String> diffList = new ArrayList<>();
         long startTime = System.currentTimeMillis();
         for (Entry<String/* groupKey */, CacheItem> entry : CACHE.entrySet()) {
             String groupKey = entry.getKey();
@@ -765,7 +761,7 @@ public class ConfigCacheService {
      */
     public static List<String> getBetaIps(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
-        return (null != item) ? item.getIps4Beta() : Collections.<String>emptyList();
+        return (null != item) ? item.getIps4Beta() : Collections.emptyList();
     }
     
     public static long getBetaLastModifiedTs(String groupKey) {
