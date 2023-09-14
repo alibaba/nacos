@@ -39,7 +39,7 @@ import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.client.selector.SelectorFactory;
+import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
-import static com.alibaba.nacos.client.selector.SelectorFactory.getUniqueClusterString;
+import static com.alibaba.nacos.client.naming.selector.NamingSelectorFactory.getUniqueClusterString;
 
 /**
  * Nacos Naming Service.
@@ -404,7 +404,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        NamingSelector clusterSelector = SelectorFactory.newClusterSelector(clusters);
+        NamingSelector clusterSelector = NamingSelectorFactory.newClusterSelector(clusters);
         doSubscribe(serviceName, groupName, getUniqueClusterString(clusters), clusterSelector, listener);
     }
     
@@ -443,7 +443,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
-        NamingSelector clusterSelector = SelectorFactory.newClusterSelector(clusters);
+        NamingSelector clusterSelector = NamingSelectorFactory.newClusterSelector(clusters);
         unsubscribe(serviceName, groupName, clusterSelector, listener);
     }
     
