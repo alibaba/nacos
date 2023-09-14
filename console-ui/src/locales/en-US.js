@@ -294,7 +294,7 @@ const I18N_CONF = {
     successfulEntry: 'Successful Entry',
     unprocessedEntry: 'Unprocessed Entry',
     pubNoData: 'No results found.',
-    configurationManagement8: 'configuration management',
+    configurationManagement8: 'Configuration Management',
     queryResults: 'Found',
     articleMeetRequirements: 'configuration items',
     fuzzydMode: 'Default fuzzy query mode',
