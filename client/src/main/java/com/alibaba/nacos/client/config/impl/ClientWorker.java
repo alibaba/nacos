@@ -153,14 +153,15 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
         synchronized (cache) {
-            
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
             cache.setDiscard(false);
             cache.setConsistentWithServer(false);
+            // ensure cache present in cacheMap
+            String key = GroupKey.getKey(dataId, group);
+            putCacheIfAbsent(key, cache);
             agent.notifyListenConfig();
-            
         }
     }
     
@@ -183,6 +184,9 @@ public class ClientWorker implements Closeable {
             }
             cache.setDiscard(false);
             cache.setConsistentWithServer(false);
+            // ensure cache present in cacheMap
+            String key = GroupKey.getKeyTenant(dataId, group, tenant);
+            putCacheIfAbsent(key, cache);
             agent.notifyListenConfig();
         }
         
@@ -211,6 +215,9 @@ public class ClientWorker implements Closeable {
             }
             cache.setDiscard(false);
             cache.setConsistentWithServer(false);
+            // ensure cache present in cacheMap
+            String key = GroupKey.getKeyTenant(dataId, group, tenant);
+            putCacheIfAbsent(key, cache);
             agent.notifyListenConfig();
         }
         
@@ -399,6 +406,20 @@ public class ClientWorker implements Closeable {
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
         
         return cache;
+    }
+    
+    /**
+     * Put cache if absent.
+     *
+     * @param key   groupKey
+     * @param cache cache
+     */
+    private void putCacheIfAbsent(String key, CacheData cache) {
+        synchronized (cacheMap) {
+            Map<String, CacheData> copy = new HashMap<>(this.cacheMap.get());
+            copy.putIfAbsent(key, cache);
+            cacheMap.set(copy);
+        }
     }
     
     private void increaseTaskIdCount(int taskId) {
