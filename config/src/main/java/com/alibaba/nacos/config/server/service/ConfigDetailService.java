@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.constant.PropertiesConstant;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
@@ -88,13 +89,9 @@ public class ConfigDetailService {
      */
     private void initWorker() {
         this.eventLinkedBlockingQueue = new LinkedBlockingQueue<>(maxCapacity);
-        
-        clientEventExecutor = new ScheduledThreadPoolExecutor(maxThread, r -> {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.config.search.worker");
-            t.setDaemon(true);
-            return t;
-        });
+    
+        clientEventExecutor = new ScheduledThreadPoolExecutor(maxThread,
+                new NameThreadFactory("com.alibaba.nacos.config.search.worker"));
         
         for (int i = 0; i < maxThread; i++) {
             clientEventExecutor.submit(() -> {

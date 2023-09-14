@@ -48,6 +48,7 @@ import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -154,14 +155,16 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
         synchronized (cache) {
-            
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
             cache.setDiscard(false);
             cache.setConsistentWithServer(false);
+            // ensure cache present in cacheMap
+            if (getCache(dataId, group) != cache) {
+                putCacheIfAbsent(GroupKey.getKey(dataId, group), cache);
+            }
             agent.notifyListenConfig();
-            
         }
     }
     
@@ -184,6 +187,10 @@ public class ClientWorker implements Closeable {
             }
             cache.setDiscard(false);
             cache.setConsistentWithServer(false);
+            // ensure cache present in cacheMap
+            if (getCache(dataId, group, tenant) != cache) {
+                putCacheIfAbsent(GroupKey.getKeyTenant(dataId, group, tenant), cache);
+            }
             agent.notifyListenConfig();
         }
         
@@ -212,6 +219,10 @@ public class ClientWorker implements Closeable {
             }
             cache.setDiscard(false);
             cache.setConsistentWithServer(false);
+            // ensure cache present in cacheMap
+            if (getCache(dataId, group, tenant) != cache) {
+                putCacheIfAbsent(GroupKey.getKeyTenant(dataId, group, tenant), cache);
+            }
             agent.notifyListenConfig();
         }
         
@@ -402,6 +413,20 @@ public class ClientWorker implements Closeable {
         return cache;
     }
     
+    /**
+     * Put cache if absent.
+     *
+     * @param key   groupKey
+     * @param cache cache
+     */
+    private void putCacheIfAbsent(String key, CacheData cache) {
+        synchronized (cacheMap) {
+            Map<String, CacheData> copy = new HashMap<>(this.cacheMap.get());
+            copy.putIfAbsent(key, cache);
+            cacheMap.set(copy);
+        }
+    }
+    
     private void increaseTaskIdCount(int taskId) {
         taskIdCacheCountList.get(taskId).incrementAndGet();
     }
@@ -454,12 +479,7 @@ public class ClientWorker implements Closeable {
         agent = new ConfigRpcTransportClient(properties, serverListManager);
         int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Math.max(count, MIN_THREAD_NUM),
-                r -> {
-                    Thread t = new Thread(r);
-                    t.setName("com.alibaba.nacos.client.Worker");
-                    t.setDaemon(true);
-                    return t;
-                });
+                new NameThreadFactory("com.alibaba.nacos.client.Worker"));
         agent.setExecutor(executorService);
         agent.start();
         
