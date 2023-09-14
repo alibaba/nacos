@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.persistence.repository.embedded;
 
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
@@ -88,7 +89,7 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         
         // fill the sql Page args
         String fetchSql = sqlFetchRows;
-        if (!fetchSql.contains("OFFSET")) {
+        if (!fetchSql.contains(PersistenceConstant.OFFSET)) {
             fetchSql += " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
             Object[] newArgs = Arrays.copyOf(args, args.length + 2);
             newArgs[args.length] = (pageNo - 1) * pageSize;
