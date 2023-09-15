@@ -360,6 +360,7 @@ const I18N_CONF = {
     delSuccessMsg: '删除成功',
     cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
     authFail: '权限认证失败',
+    copyNamespaceID: '复制命名空间ID',
   },
   NewConfig: {
     newListingMain: '新建配置',
@@ -664,6 +665,9 @@ const I18N_CONF = {
     writeOnly: '只写',
     readWrite: '读写',
   },
+  Components: {
+      copySuccessfully: '复制成功！',
+  }
 };
 
 export default I18N_CONF;

@@ -109,6 +109,7 @@ class ConfigurationManagement extends React.Component {
       tenant: true,
       nownamespace_id: window.nownamespace || '',
       nownamespace_name: window.namespaceShowName || '',
+      nownamespace_desc: window.namespaceDesc || '',
       selectedRecord: [],
       selectedKeys: [],
       hasdash: false,
@@ -512,10 +513,11 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
-  setNowNameSpace(name, id) {
+  setNowNameSpace(name, id, desc) {
     this.setState({
       nownamespace_name: name,
       nownamespace_id: id,
+      nownamespace_desc: desc,
     });
   }
 
@@ -1146,7 +1148,9 @@ class ConfigurationManagement extends React.Component {
             <div style={{ display: this.inApp ? 'none' : 'block' }}>
               <PageTitle
                 title={locale.configurationManagement8}
-                desc={this.state.nownamespace_id}
+                desc={this.state.nownamespace_desc}
+                namespaceId={this.state.nownamespace_id}
+                namespaceName={this.state.nownamespace_name}
                 nameSpace
               />
               <RegionGroup
@@ -1310,22 +1314,6 @@ class ConfigurationManagement extends React.Component {
                   />
                 </Form.Item>
               </Form>
-              <div style={{ position: 'absolute', right: 10, top: 0 }}>
-                <Icon
-                  type="add"
-                  size="medium"
-                  style={{
-                    color: 'black',
-                    marginRight: 0,
-                    verticalAlign: 'middle',
-                    cursor: 'pointer',
-                    backgroundColor: '#eee',
-                    border: '1px solid #ddd',
-                    padding: '3px 6px',
-                  }}
-                  onClick={this.chooseEnv.bind(this)}
-                />
-              </div>
             </div>
             <QueryResult total={configurations.totalCount} />
 
