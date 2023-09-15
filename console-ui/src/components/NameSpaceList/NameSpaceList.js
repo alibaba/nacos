@@ -85,7 +85,7 @@ class NameSpaceList extends React.Component {
   /**
    切换namespace
    * */
-  changeNameSpace(ns, nsName) {
+  changeNameSpace(ns, nsName, nsDesc) {
     localStorage.setItem('namespace', ns);
     this.setnamespace(ns || '');
     setParams({
@@ -94,9 +94,10 @@ class NameSpaceList extends React.Component {
     });
     window.nownamespace = ns;
     window.namespaceShowName = nsName;
+    window.namespaceDesc = nsDesc;
 
     this.calleeParent(true);
-    this.props.setNowNameSpace && this.props.setNowNameSpace(nsName, ns);
+    this.props.setNowNameSpace && this.props.setNowNameSpace(nsName, ns, nsDesc);
   }
 
   calleeParent(needclean = false) {
@@ -136,17 +137,21 @@ class NameSpaceList extends React.Component {
     window.namespaceList = data;
     window.nownamespace = nownamespace;
     let namespaceShowName = '';
+    let namespaceDesc = '';
     for (let i = 0; i < data.length; i++) {
       if (data[i].namespace === nownamespace) {
         ({ namespaceShowName } = data[i]);
+        ({ namespaceDesc } = data[i]);
         break;
       }
     }
     window.namespaceShowName = namespaceShowName;
+    window.namespaceDesc = namespaceDesc;
     setParams('namespace', nownamespace || '');
     localStorage.setItem('namespace', nownamespace);
     // setParams('namespaceShowName', namespaceShowName);
-    this.props.setNowNameSpace && this.props.setNowNameSpace(namespaceShowName, nownamespace);
+    this.props.setNowNameSpace &&
+      this.props.setNowNameSpace(namespaceShowName, nownamespace, namespaceDesc);
     this.setState({
       nownamespace,
       namespaceList: data,
@@ -172,7 +177,12 @@ class NameSpaceList extends React.Component {
           {index === 0 ? '' : <span style={{ marginRight: 8, color: '#999' }}>|</span>}
           <span
             style={style}
-            onClick={this.changeNameSpace.bind(this, obj.namespace, obj.namespaceShowName)}
+            onClick={this.changeNameSpace.bind(
+              this,
+              obj.namespace,
+              obj.namespaceShowName,
+              obj.namespaceDesc
+            )}
             key={index}
           >
             {obj.namespaceShowName}

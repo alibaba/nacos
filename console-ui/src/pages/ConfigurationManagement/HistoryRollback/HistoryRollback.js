@@ -32,6 +32,7 @@ import { getParams, setParams, request } from '@/globalLib';
 import './index.scss';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import QueryResult from '../../../components/QueryResult';
+import PageTitle from '../../../components/PageTitle';
 
 @ConfigProvider.config
 class HistoryRollback extends React.Component {
@@ -314,7 +315,15 @@ class HistoryRollback extends React.Component {
     });
   }
 
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId, nowNamespaceDesc) =>
+    this.setState({
+      nowNamespaceName,
+      nowNamespaceId,
+      nowNamespaceDesc,
+    });
+
   render() {
+    const { nowNamespaceName, nowNamespaceId, nowNamespaceDesc } = this.state;
     const { locale = {} } = this.props;
     const { init } = this.field;
     this.init = init;
@@ -327,8 +336,15 @@ class HistoryRollback extends React.Component {
           tip="Loading..."
           color="#333"
         >
+          <PageTitle
+            title={locale.toConfigure}
+            desc={nowNamespaceDesc}
+            namespaceId={nowNamespaceId}
+            namespaceName={nowNamespaceName}
+            nameSpace
+          />
           <RegionGroup
-            left={locale.toConfigure}
+            setNowNameSpace={this.setNowNameSpace}
             namespaceCallBack={this.cleanAndGetData.bind(this)}
           />
           <div>

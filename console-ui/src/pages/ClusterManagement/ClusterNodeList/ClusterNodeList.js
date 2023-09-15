@@ -183,7 +183,7 @@ class ClusterNodeList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <PageTitle title={clusterNodeList} desc={nowNamespaceId} nameSpace />
+          <PageTitle title={clusterNodeList} />
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>
