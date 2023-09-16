@@ -26,6 +26,11 @@ import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager;
 import com.alibaba.nacos.client.security.SecurityProxy;
 
 import java.util.Properties;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import static com.alibaba.nacos.client.constant.Constants.Security.SECURITY_INFO_REFRESH_INTERVAL_MILLS;
 
 /**
  * nacos lock Service.
@@ -40,13 +45,31 @@ public class NacosLockService implements LockService {
     
     private final LockGrpcClient lockGrpcClient;
     
+    private final SecurityProxy securityProxy;
+    
+    private ScheduledExecutorService executorService;
+    
     public NacosLockService(Properties properties) throws NacosException {
         this.properties = properties;
         NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         ServerListManager serverListManager = new ServerListManager(properties);
-        SecurityProxy securityProxy = new SecurityProxy(serverListManager.getServerList(),
+        this.securityProxy = new SecurityProxy(serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
+        initSecurityProxy(nacosClientProperties);
         this.lockGrpcClient = new LockGrpcClient(nacosClientProperties, serverListManager, securityProxy);
+    }
+    
+    private void initSecurityProxy(NacosClientProperties properties) {
+        this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
+            Thread t = new Thread(r);
+            t.setName("com.alibaba.nacos.client.lock.security");
+            t.setDaemon(true);
+            return t;
+        });
+        final Properties nacosClientPropertiesView = properties.asProperties();
+        this.securityProxy.login(nacosClientPropertiesView);
+        this.executorService.scheduleWithFixedDelay(() -> securityProxy.login(nacosClientPropertiesView), 0,
+                SECURITY_INFO_REFRESH_INTERVAL_MILLS, TimeUnit.MILLISECONDS);
     }
     
     @Override

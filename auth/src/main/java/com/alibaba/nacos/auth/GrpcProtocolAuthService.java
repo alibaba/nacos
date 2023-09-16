@@ -18,6 +18,7 @@ package com.alibaba.nacos.auth;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.parser.grpc.LockGrpcResourceParser;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.auth.config.AuthConfigs;
@@ -53,6 +54,7 @@ public class GrpcProtocolAuthService extends AbstractProtocolAuthService<Request
     public void initialize() {
         resourceParserMap.put(SignType.NAMING, new NamingGrpcResourceParser());
         resourceParserMap.put(SignType.CONFIG, new ConfigGrpcResourceParser());
+        resourceParserMap.put(SignType.LOCK, new LockGrpcResourceParser());
     }
     
     @Override
