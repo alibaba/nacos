@@ -20,8 +20,8 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.constant.Constants;
@@ -58,6 +58,8 @@ public class NacosRoleServiceImpl {
     
     private static final int DEFAULT_PAGE_NO = 1;
     
+    private static final Set<String> WHITE_PERMISSION = new HashSet<>();
+    
     @Autowired
     private AuthConfigs authConfigs;
     
@@ -75,6 +77,11 @@ public class NacosRoleServiceImpl {
     private volatile Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
     
     private volatile Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
+    
+    static {
+        WHITE_PERMISSION.add(AuthConstants.UPDATE_PASSWORD_ENTRY_POINT);
+        WHITE_PERMISSION.add(AuthConstants.LOCK_OPERATOR_POINT);
+    }
     
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
@@ -120,8 +127,8 @@ public class NacosRoleServiceImpl {
      * @return true if granted, false otherwise
      */
     public boolean hasPermission(NacosUser nacosUser, Permission permission) {
-        //update password
-        if (AuthConstants.UPDATE_PASSWORD_ENTRY_POINT.equals(permission.getResource().getName())) {
+        //white permission
+        if (WHITE_PERMISSION.contains(permission.getResource().getName())) {
             return true;
         }
         
