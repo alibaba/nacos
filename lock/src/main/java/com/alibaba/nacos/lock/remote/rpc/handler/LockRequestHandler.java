@@ -26,6 +26,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.lock.service.LockOperationService;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
+import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -49,7 +50,7 @@ public class LockRequestHandler extends RequestHandler<LockOperationRequest, Loc
     }
     
     @Override
-    @Secured(action = ActionTypes.WRITE)
+    @Secured(action = ActionTypes.WRITE, signType = SignType.LOCK)
     public LockOperationResponse handle(LockOperationRequest request, RequestMeta meta) throws NacosException {
         Boolean lock = null;
         LOGGER.info("request: {}, instance: {}", request.getLockOperationEnum(), request.getLockInstance());

@@ -43,31 +43,33 @@ import java.util.UUID;
 
 /**
  * lock grpc client.
+ *
  * @author 985492783@qq.com
  * @description LockGrpcClient
  * @date 2023/6/28 17:35
  */
 public class LockGrpcClient extends AbstractLockClient {
+    
     private final String uuid;
     
     private final Long requestTimeout;
     
     private final RpcClient rpcClient;
     
-    public LockGrpcClient(NacosClientProperties properties,
-            ServerListFactory serverListFactory, SecurityProxy securityProxy) throws NacosException {
+    public LockGrpcClient(NacosClientProperties properties, ServerListFactory serverListFactory,
+            SecurityProxy securityProxy) throws NacosException {
         super(securityProxy);
         this.uuid = UUID.randomUUID().toString();
         this.requestTimeout = Long.parseLong(properties.getProperty(PropertyConstants.LOCK_REQUEST_TIMEOUT, "-1"));
         Map<String, String> labels = new HashMap<>();
         labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
-        labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_NAMING);
+        labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_LOCK);
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
                 RpcClientTlsConfig.properties(properties.asProperties()));
         start(serverListFactory);
     }
-
+    
     private void start(ServerListFactory serverListFactory) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.start();
@@ -99,6 +101,7 @@ public class LockGrpcClient extends AbstractLockClient {
     private <T extends Response> T requestToServer(AbstractLockRequest request, Class<T> responseClass)
             throws NacosException {
         try {
+            request.putAllHeader(getSecurityHeaders());
             Response response =
                     requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
