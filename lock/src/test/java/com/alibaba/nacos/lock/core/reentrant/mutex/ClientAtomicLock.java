@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.lock.core.reentrant.mutex;
 
-import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
+import com.alibaba.nacos.lock.model.LockInfo;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -41,20 +41,17 @@ public class ClientAtomicLock extends AbstractAtomicLock {
     }
     
     @Override
-    public Boolean tryLock(LockInstance instance) {
-        String nacosClientId = (String) instance.getParams().get("nacosClientId");
+    public Boolean tryLock(LockInfo lockInfo) {
+        String nacosClientId = (String) lockInfo.getParams().get("nacosClientId");
         if (nacosClientId == null) {
             return false;
         }
-        if (state.compareAndSet(EMPTY, nacosClientId) || state.get().equals(nacosClientId)) {
-            return true;
-        }
-        return false;
+        return state.compareAndSet(EMPTY, nacosClientId) || state.get().equals(nacosClientId);
     }
     
     @Override
-    public Boolean unLock(LockInstance instance) {
-        String nacosClientId = (String) instance.getParams().get("nacosClientId");
+    public Boolean unLock(LockInfo lockInfo) {
+        String nacosClientId = (String) lockInfo.getParams().get("nacosClientId");
         return state.compareAndSet(nacosClientId, EMPTY);
     }
     

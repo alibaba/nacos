@@ -34,27 +34,27 @@ public class LockInstance implements Serializable {
     
     private String key;
     
-    private Long expireTimestamp;
+    private Long expiredTime;
     
     private Map<String, ? extends Serializable> params;
     
     private String lockType;
     
-    public LockInstance(String key, Long expireTimestamp, String lockType) {
+    public LockInstance(String key, Long expiredTime, String lockType) {
         this.key = key;
-        this.expireTimestamp = expireTimestamp;
+        this.expiredTime = expiredTime;
         this.lockType = lockType;
     }
     
     public LockInstance() {
     }
     
-    public long getExpireTimestamp() {
-        return expireTimestamp;
+    public Long getExpiredTime() {
+        return expiredTime;
     }
     
-    public void setExpireTimestamp(long expireTimestamp) {
-        this.expireTimestamp = expireTimestamp;
+    public void setExpiredTime(Long expiredTime) {
+        this.expiredTime = expiredTime;
     }
     
     public String getKey() {

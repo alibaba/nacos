@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.lock.core.reentrant;
 
-import com.alibaba.nacos.api.lock.model.LockInstance;
+import com.alibaba.nacos.lock.model.LockInfo;
 
 /**
  * Atomic Lock Service.
@@ -30,18 +30,18 @@ public interface AtomicLockService {
     /**
      * try lock with expireTime.
      *
-     * @param instance request Lock
+     * @param lockInfo request Lock
      * @return boolean
      */
-    Boolean tryLock(LockInstance instance);
+    Boolean tryLock(LockInfo lockInfo);
     
     /**
      * release lock.
      *
-     * @param instance instance
+     * @param lockInfo instance
      * @return boolean
      */
-    Boolean unLock(LockInstance instance);
+    Boolean unLock(LockInfo lockInfo);
     
     /**
      * return is auto expire.

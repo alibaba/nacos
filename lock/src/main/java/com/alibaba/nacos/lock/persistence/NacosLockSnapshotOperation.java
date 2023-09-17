@@ -26,7 +26,7 @@ import com.alibaba.nacos.core.distributed.raft.utils.RaftExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
-import com.alibaba.nacos.lock.core.reentrant.LockKey;
+import com.alibaba.nacos.lock.model.LockKey;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.TimerContext;
 import com.alipay.sofa.jraft.util.CRC64;

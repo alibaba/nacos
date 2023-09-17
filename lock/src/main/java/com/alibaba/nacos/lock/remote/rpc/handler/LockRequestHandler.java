@@ -25,7 +25,6 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.lock.service.LockOperationService;
-import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

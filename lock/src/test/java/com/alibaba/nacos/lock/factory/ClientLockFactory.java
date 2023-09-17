@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.lock.factory;
 
-import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
 import com.alibaba.nacos.lock.core.reentrant.mutex.ClientAtomicLock;
+import com.alibaba.nacos.lock.model.LockInfo;
 
 /**
  * create clientLock.
@@ -40,11 +40,7 @@ public class ClientLockFactory implements LockFactory {
         return new ClientAtomicLock(key);
     }
     
-    public static class ClinetLockInstance extends LockInstance {
-        
-        @Override
-        public String getLockType() {
-            return TYPE;
-        }
+    public static class ClientLockInstance extends LockInfo {
+    
     }
 }

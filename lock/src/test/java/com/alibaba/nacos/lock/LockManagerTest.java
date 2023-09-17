@@ -17,11 +17,12 @@
 package com.alibaba.nacos.lock;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.core.reentrant.mutex.ClientAtomicLock;
 import com.alibaba.nacos.lock.factory.ClientLockFactory;
 import com.alibaba.nacos.lock.factory.LockFactory;
+import com.alibaba.nacos.lock.model.LockInfo;
+import com.alibaba.nacos.lock.model.LockKey;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -43,32 +44,33 @@ public class LockManagerTest {
     public void testLockManagerError() {
         String emptyType = "testLockFactory_lock";
         Assert.assertThrows(NacosRuntimeException.class, () -> {
-            lockManager.getMutexLock(emptyType, "key");
+            lockManager.getMutexLock(new LockKey(emptyType, "key"));
         });
     }
     
     @Test
     public void testLockFactory() throws NoSuchFieldException, IllegalAccessException {
         Field factoryMap = NacosLockManager.class.getDeclaredField("factoryMap");
+        factoryMap.setAccessible(true);
         Map<String, LockFactory> map = (Map<String, LockFactory>) factoryMap.get(lockManager);
         Assert.assertEquals(map.size(), 2);
     }
     
     @Test
     public void testClientLockFactory() {
-        AtomicLockService key = lockManager.getMutexLock(ClientLockFactory.TYPE, "key");
-        Assert.assertEquals(key.getClass(), ClientAtomicLock.class);
-        Assert.assertEquals(key.getKey(), "key");
+        AtomicLockService lock = lockManager.getMutexLock(new LockKey(ClientLockFactory.TYPE, "key"));
+        Assert.assertEquals(lock.getClass(), ClientAtomicLock.class);
+        Assert.assertEquals(lock.getKey(), "key");
         
-        LockInstance lockInstance = new ClientLockFactory.ClinetLockInstance();
-        lockInstance.setParams(new HashMap() {
+        LockInfo lockInfo = new ClientLockFactory.ClientLockInstance();
+        lockInfo.setParams(new HashMap() {
             {
                 put("nacosClientId", "123456");
             }
         });
         
-        Assert.assertTrue(key.tryLock(lockInstance));
-        Assert.assertTrue(key.tryLock(lockInstance));
-        Assert.assertTrue(key.unLock(lockInstance));
+        Assert.assertTrue(lock.tryLock(lockInfo));
+        Assert.assertTrue(lock.tryLock(lockInfo));
+        Assert.assertTrue(lock.unLock(lockInfo));
     }
 }

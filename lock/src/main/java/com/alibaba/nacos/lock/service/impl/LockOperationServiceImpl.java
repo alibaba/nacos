@@ -33,6 +33,8 @@ import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.constant.Constants;
 import com.alibaba.nacos.lock.constant.PropertiesConstant;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
+import com.alibaba.nacos.lock.model.LockInfo;
+import com.alibaba.nacos.lock.model.LockKey;
 import com.alibaba.nacos.lock.persistence.NacosLockSnapshotOperation;
 import com.alibaba.nacos.lock.raft.request.MutexLockRequest;
 import com.alibaba.nacos.lock.service.LockOperationService;
@@ -111,27 +113,31 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     }
     
     private Boolean releaseLock(MutexLockRequest request) {
-        LockInstance lockInstance = request.getLockInstance();
-        AtomicLockService mutexLock = lockManager.getMutexLock(lockInstance.getLockType(), lockInstance.getKey());
-        return mutexLock.unLock(request.getLockInstance());
+        LockInfo lockInfo = request.getLockInfo();
+        AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
+        return mutexLock.unLock(lockInfo);
     }
     
     private Boolean acquireLock(MutexLockRequest request) {
-        LockInstance lockInstance = request.getLockInstance();
-        AtomicLockService mutexLock = lockManager.getMutexLock(lockInstance.getLockType(), lockInstance.getKey());
-        return mutexLock.tryLock(request.getLockInstance());
+        LockInfo lockInfo = request.getLockInfo();
+        AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
+        return mutexLock.tryLock(lockInfo);
     }
     
     @Override
     public Boolean lock(LockInstance lockInstance) {
-        MutexLockRequest request = new MutexLockRequest();
-        long expireTimestamp = lockInstance.getExpireTimestamp();
-        if (expireTimestamp <= 0) {
-            lockInstance.setExpireTimestamp(defaultExpireTime + getNowTimestamp());
+        final MutexLockRequest request = new MutexLockRequest();
+        final LockInfo lockInfo = new LockInfo();
+        lockInfo.setKey(new LockKey(lockInstance.getLockType(), lockInstance.getKey()));
+        lockInfo.setParams(lockInstance.getParams());
+        
+        long expiredTime = lockInstance.getExpiredTime();
+        if (expiredTime < 0) {
+            lockInfo.setEndTime(defaultExpireTime + getNowTimestamp());
         } else {
-            lockInstance.setExpireTimestamp(Math.min(maxExpireTime, expireTimestamp) + getNowTimestamp());
+            lockInfo.setEndTime(Math.min(maxExpireTime, expiredTime) + getNowTimestamp());
         }
-        request.setLockInstance(lockInstance);
+        request.setLockInfo(lockInfo);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
                 .setData(ByteString.copyFrom(serializer.serialize(request)))
                 .setOperation(LockOperationEnum.ACQUIRE.name()).build();
@@ -151,7 +157,10 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     @Override
     public Boolean unLock(LockInstance lockInstance) {
         MutexLockRequest request = new MutexLockRequest();
-        request.setLockInstance(lockInstance);
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setKey(new LockKey(lockInstance.getLockType(), lockInstance.getKey()));
+        lockInfo.setParams(lockInstance.getParams());
+        request.setLockInfo(lockInfo);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(group())
                 .setData(ByteString.copyFrom(serializer.serialize(request)))
                 .setOperation(LockOperationEnum.RELEASE.name()).build();

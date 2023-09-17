@@ -28,6 +28,8 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.constant.PropertiesConstant;
 import com.alibaba.nacos.lock.core.reentrant.mutex.MutexAtomicLock;
+import com.alibaba.nacos.lock.model.LockInfo;
+import com.alibaba.nacos.lock.model.LockKey;
 import com.alibaba.nacos.lock.raft.request.MutexLockRequest;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
@@ -103,10 +105,9 @@ public class LockOperationServiceImplTest {
         Mockito.when(cpProtocol.write(Mockito.any())).thenAnswer((i) -> {
             WriteRequest request = i.getArgument(0);
             MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
-            LockInstance lockInstance = mutexLockRequest.getLockInstance();
-            Assert.assertEquals(lockInstance.getLockType(), LockConstants.NACOS_LOCK_TYPE);
-            Assert.assertEquals(lockInstance.getExpireTimestamp(),
-                    timestamp + PropertiesConstant.DEFAULT_AUTO_EXPIRE_TIME);
+            LockInfo lockInfo = mutexLockRequest.getLockInfo();
+            Assert.assertEquals(lockInfo.getKey().getLockType(), LockConstants.NACOS_LOCK_TYPE);
+            Assert.assertEquals((long) lockInfo.getEndTime(), timestamp + PropertiesConstant.DEFAULT_AUTO_EXPIRE_TIME);
             
             return getResponse();
         });
@@ -123,9 +124,9 @@ public class LockOperationServiceImplTest {
         Mockito.when(cpProtocol.write(Mockito.any())).thenAnswer((i) -> {
             WriteRequest request = i.getArgument(0);
             MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
-            LockInstance lockInstance = mutexLockRequest.getLockInstance();
-            Assert.assertEquals(lockInstance.getLockType(), LockConstants.NACOS_LOCK_TYPE);
-            Assert.assertEquals(lockInstance.getExpireTimestamp(), timestamp + 1_000L);
+            LockInfo lockInfo = mutexLockRequest.getLockInfo();
+            Assert.assertEquals(lockInfo.getKey().getLockType(), LockConstants.NACOS_LOCK_TYPE);
+            Assert.assertEquals((long) lockInfo.getEndTime(), timestamp + 1_000L);
             
             return getResponse();
         });
@@ -142,9 +143,9 @@ public class LockOperationServiceImplTest {
         Mockito.when(cpProtocol.write(Mockito.any())).thenAnswer((i) -> {
             WriteRequest request = i.getArgument(0);
             MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
-            LockInstance lockInstance = mutexLockRequest.getLockInstance();
-            Assert.assertEquals(lockInstance.getLockType(), LockConstants.NACOS_LOCK_TYPE);
-            Assert.assertEquals(lockInstance.getExpireTimestamp(), timestamp + PropertiesConstant.MAX_AUTO_EXPIRE_TIME);
+            LockInfo lockInfo = mutexLockRequest.getLockInfo();
+            Assert.assertEquals(lockInfo.getKey().getLockType(), LockConstants.NACOS_LOCK_TYPE);
+            Assert.assertEquals((long) lockInfo.getEndTime(), timestamp + PropertiesConstant.MAX_AUTO_EXPIRE_TIME);
             
             return getResponse();
         });
@@ -156,7 +157,7 @@ public class LockOperationServiceImplTest {
     @Test
     public void testOnApply() {
         buildService();
-        Mockito.when(lockManager.getMutexLock(LockConstants.NACOS_LOCK_TYPE, "key"))
+        Mockito.when(lockManager.getMutexLock(new LockKey(LockConstants.NACOS_LOCK_TYPE, "key")))
                 .thenReturn(new MutexAtomicLock("key"));
         
         WriteRequest request = getRequest(LockOperationEnum.ACQUIRE);
@@ -167,7 +168,10 @@ public class LockOperationServiceImplTest {
     
     public WriteRequest getRequest(LockOperationEnum lockOperationEnum) {
         MutexLockRequest mutexLockRequest = new MutexLockRequest();
-        mutexLockRequest.setLockInstance(new LockInstance("key", 1L, LockConstants.NACOS_LOCK_TYPE));
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setEndTime(1L + System.currentTimeMillis());
+        lockInfo.setKey(new LockKey(LockConstants.NACOS_LOCK_TYPE, "key"));
+        mutexLockRequest.setLockInfo(lockInfo);
         WriteRequest writeRequest = WriteRequest.newBuilder().setGroup(lockOperationService.group())
                 .setData(ByteString.copyFrom(serializer.serialize(mutexLockRequest)))
                 .setOperation(lockOperationEnum.name()).build();
