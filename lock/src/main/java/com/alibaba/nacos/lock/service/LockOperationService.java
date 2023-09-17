@@ -29,17 +29,17 @@ public interface LockOperationService {
     /**
      * get lock operator.
      *
-     * @param instance instance
+     * @param lockInstance lockInstance
      * @return boolean
      */
-    Boolean lock(LockInstance instance);
+    Boolean lock(LockInstance lockInstance);
     
     /**
      * unLock.
      *
-     * @param instance instance
+     * @param lockInstance lockInstance
      * @return Boolean
      */
-    Boolean unLock(LockInstance instance);
+    Boolean unLock(LockInstance lockInstance);
     
 }

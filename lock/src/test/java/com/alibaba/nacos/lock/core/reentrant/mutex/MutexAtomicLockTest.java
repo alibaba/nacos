@@ -17,9 +17,10 @@
 package com.alibaba.nacos.lock.core.reentrant.mutex;
 
 import com.alibaba.nacos.api.lock.common.LockConstants;
-import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
+import com.alibaba.nacos.lock.model.LockInfo;
+import com.alibaba.nacos.lock.model.LockKey;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -41,27 +42,27 @@ public class MutexAtomicLockTest {
     
     @Test
     public void testLockAndUnlock() {
-        Mockito.when(lockManager.getMutexLock(Mockito.any(), Mockito.any())).thenReturn(new MutexAtomicLock("key"));
-        AtomicLockService lock = lockManager.getMutexLock("key", LockConstants.NACOS_LOCK_TYPE);
-        LockInstance lockInstance = new LockInstance();
-        lockInstance.setExpireTimestamp(System.currentTimeMillis() + 2_000_000);
-        Assert.assertTrue(lock.tryLock(lockInstance));
-        Assert.assertTrue(lock.unLock(lockInstance));
+        Mockito.when(lockManager.getMutexLock(Mockito.any())).thenReturn(new MutexAtomicLock("key"));
+        AtomicLockService lock = lockManager.getMutexLock(new LockKey(LockConstants.NACOS_LOCK_TYPE, "key"));
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setEndTime(System.currentTimeMillis() + 2_000_000);
+        Assert.assertTrue(lock.tryLock(lockInfo));
+        Assert.assertTrue(lock.unLock(lockInfo));
     }
     
     @Test
     public void testAutoExpire() {
-        Mockito.when(lockManager.getMutexLock(LockConstants.NACOS_LOCK_TYPE, "key"))
+        Mockito.when(lockManager.getMutexLock(Mockito.any()))
                 .thenReturn(new MutexAtomicLock("key"));
-        AtomicLockService lock = lockManager.getMutexLock(LockConstants.NACOS_LOCK_TYPE, "key");
+        AtomicLockService lock = lockManager.getMutexLock(new LockKey(LockConstants.NACOS_LOCK_TYPE, "key"));
         
-        LockInstance lockInstance = new LockInstance();
-        lockInstance.setExpireTimestamp(System.currentTimeMillis() - 2_000_000);
-        Assert.assertTrue(lock.tryLock(lockInstance));
+        LockInfo lockInfo = new LockInfo();
+        lockInfo.setEndTime(System.currentTimeMillis() - 2_000_000);
+        Assert.assertTrue(lock.tryLock(lockInfo));
         Assert.assertTrue(lock.autoExpire());
         
-        LockInstance lockInstanceAuto = new LockInstance();
-        lockInstanceAuto.setExpireTimestamp(System.currentTimeMillis() + 2_000_000);
+        LockInfo lockInstanceAuto = new LockInfo();
+        lockInstanceAuto.setEndTime(System.currentTimeMillis() + 2_000_000);
         Assert.assertTrue(lock.tryLock(lockInstanceAuto));
     }
     

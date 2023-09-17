@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.lock.raft.request;
 
-import com.alibaba.nacos.api.lock.model.LockInstance;
+import com.alibaba.nacos.lock.model.LockInfo;
 
 import java.io.Serializable;
 
@@ -30,13 +30,13 @@ public class MutexLockRequest implements Serializable {
     
     private static final long serialVersionUID = -925543547156890549L;
     
-    private LockInstance lockInstance;
+    private LockInfo lockInfo;
     
-    public LockInstance getLockInstance() {
-        return lockInstance;
+    public LockInfo getLockInfo() {
+        return lockInfo;
     }
     
-    public void setLockInstance(LockInstance lockInstance) {
-        this.lockInstance = lockInstance;
+    public void setLockInfo(LockInfo lockInfo) {
+        this.lockInfo = lockInfo;
     }
 }

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.lock.core.reentrant.mutex;
 
-import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.lock.core.reentrant.AbstractAtomicLock;
+import com.alibaba.nacos.lock.model.LockInfo;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -36,7 +36,7 @@ public class MutexAtomicLock extends AbstractAtomicLock {
     
     private final AtomicInteger state;
     
-    private Long expireTimestamp;
+    private Long expiredTimestamp;
     
     public MutexAtomicLock(String key) {
         super(key);
@@ -44,23 +44,23 @@ public class MutexAtomicLock extends AbstractAtomicLock {
     }
     
     @Override
-    public Boolean tryLock(LockInstance instance) {
-        Long expireTimestamp = instance.getExpireTimestamp();
+    public Boolean tryLock(LockInfo lockInfo) {
+        Long endTime = lockInfo.getEndTime();
         if (state.compareAndSet(EMPTY, FULL) || autoExpire()) {
-            this.expireTimestamp = expireTimestamp;
+            this.expiredTimestamp = endTime;
             return true;
         }
         return false;
     }
     
     @Override
-    public Boolean unLock(LockInstance instance) {
+    public Boolean unLock(LockInfo lockInfo) {
         return state.compareAndSet(FULL, EMPTY);
     }
     
     @Override
     public Boolean autoExpire() {
-        return System.currentTimeMillis() >= this.expireTimestamp;
+        return System.currentTimeMillis() >= this.expiredTimestamp;
     }
     
 }

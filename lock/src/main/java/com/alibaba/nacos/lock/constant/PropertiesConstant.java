@@ -28,7 +28,7 @@ public class PropertiesConstant {
     
     public static final String MAX_AUTO_EXPIRE = "nacos.lock.max_expire_time";
     
-    public static final long DEFAULT_AUTO_EXPIRE_TIME = 30_000;
+    public static final Long DEFAULT_AUTO_EXPIRE_TIME = 30_000L;
     
-    public static final long MAX_AUTO_EXPIRE_TIME = 1800_000;
+    public static final Long MAX_AUTO_EXPIRE_TIME = 1800_000L;
 }

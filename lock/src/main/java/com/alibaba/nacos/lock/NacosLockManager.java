@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
-import com.alibaba.nacos.lock.core.reentrant.LockKey;
 import com.alibaba.nacos.lock.factory.LockFactory;
+import com.alibaba.nacos.lock.model.LockKey;
 import org.springframework.stereotype.Service;
 
 import java.util.Collection;
@@ -49,9 +49,11 @@ public class NacosLockManager implements LockManager {
     }
     
     @Override
-    public AtomicLockService getMutexLock(String lockType, String key) {
-        LockKey lockKey = new LockKey(lockType, key);
-        if (!factoryMap.containsKey(lockType)) {
+    public AtomicLockService getMutexLock(LockKey lockKey) {
+        if (lockKey == null || lockKey.getLockType() == null || lockKey.getKey() == null) {
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR);
+        }
+        if (!factoryMap.containsKey(lockKey.getLockType())) {
             throw new NacosRuntimeException(NacosException.SERVER_ERROR);
         }
         return atomicLockMap.computeIfAbsent(lockKey, lock -> {

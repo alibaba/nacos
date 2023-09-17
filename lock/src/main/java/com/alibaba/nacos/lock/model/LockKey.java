@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.lock.core.reentrant;
+package com.alibaba.nacos.lock.model;
 
 import java.io.Serializable;
 import java.util.Objects;
