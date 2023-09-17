@@ -774,6 +774,22 @@ public class NacosNamingServiceTest {
     }
     
     @Test
+    public void testSubscribe5() throws NacosException {
+        String serviceName = "service1";
+        String groupName = "group1";
+        EventListener listener = event -> {
+        
+        };
+        //when
+        client.subscribe(serviceName, groupName, NamingSelectorFactory.HEALTHY_SELECTOR, listener);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(serviceName, groupName,
+                Constants.NULL,  NamingSelectorFactory.HEALTHY_SELECTOR, listener);
+        //then
+        verify(changeNotifier, times(1)).registerListener(groupName, serviceName, wrapper);
+        verify(proxy, times(1)).subscribe(serviceName, groupName, Constants.NULL);
+    }
+    
+    @Test
     public void testUnSubscribe1() throws NacosException {
         //given
         String serviceName = "service1";
@@ -842,6 +858,25 @@ public class NacosNamingServiceTest {
         //when
         client.unsubscribe(serviceName, groupName, clusterList, listener);
         NamingSelectorWrapper wrapper = new NamingSelectorWrapper(NamingSelectorFactory.newClusterSelector(clusterList),
+                listener);
+        //then
+        verify(changeNotifier, times(1)).deregisterListener(groupName, serviceName, wrapper);
+        verify(proxy, times(1)).unsubscribe(serviceName, groupName, Constants.NULL);
+    }
+    
+    @Test
+    public void testUnSubscribe5() throws NacosException {
+        //given
+        String serviceName = "service1";
+        String groupName = "group1";
+        EventListener listener = event -> {
+        
+        };
+        when(changeNotifier.isSubscribed(serviceName, groupName)).thenReturn(false);
+    
+        //when
+        client.unsubscribe(serviceName, groupName, NamingSelectorFactory.HEALTHY_SELECTOR, listener);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(NamingSelectorFactory.HEALTHY_SELECTOR,
                 listener);
         //then
         verify(changeNotifier, times(1)).deregisterListener(groupName, serviceName, wrapper);

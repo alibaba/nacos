@@ -101,7 +101,7 @@ public final class NamingSelectorFactory {
      * @param regex regular expression of IP
      * @return IP selector
      */
-    public static NamingSelector newIPSelector(String regex) {
+    public static NamingSelector newIpSelector(String regex) {
         if (regex == null) {
             throw new IllegalArgumentException("The parameter 'regex' cannot be null.");
         }
@@ -234,7 +234,6 @@ public final class NamingSelectorFactory {
             }
         };
     }
-    
     
     public static String getUniqueClusterString(Collection<String> cluster) {
         TreeSet<String> treeSet = new TreeSet<>(cluster);

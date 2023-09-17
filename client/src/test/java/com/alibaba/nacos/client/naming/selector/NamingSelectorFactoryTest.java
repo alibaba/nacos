@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.naming.selector;
 
-import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.selector.NamingContext;
 import com.alibaba.nacos.api.naming.selector.NamingResult;
@@ -72,7 +71,7 @@ public class NamingSelectorFactoryTest {
     }
     
     @Test
-    public void testNewIPSelector() {
+    public void testNewIpSelector() {
         Instance ins1 = new Instance();
         ins1.setIp("172.18.137.120");
         Instance ins2 = new Instance();
@@ -83,7 +82,7 @@ public class NamingSelectorFactoryTest {
         NamingContext namingContext = mock(NamingContext.class);
         when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
         
-        NamingSelector ipSelector = NamingSelectorFactory.newIPSelector("^172\\.18\\.137.*");
+        NamingSelector ipSelector = NamingSelectorFactory.newIpSelector("^172\\.18\\.137.*");
         NamingResult result = ipSelector.select(namingContext);
         List<Instance> list = result.getResult();
         
@@ -141,6 +140,42 @@ public class NamingSelectorFactoryTest {
         assertEquals(2, result.size());
         assertEquals(ins1, result.get(0));
         assertEquals(ins2, result.get(1));
+    }
+    
+    @Test
+    public void testHealthSelector() {
+        Instance ins1 = new Instance();
+        Instance ins2 = new Instance();
+        Instance ins3 = new Instance();
+        ins3.setHealthy(false);
+        
+        NamingContext namingContext = mock(NamingContext.class);
+        when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
+        
+        List<Instance> result = NamingSelectorFactory.HEALTHY_SELECTOR.select(namingContext).getResult();
+        
+        assertEquals(2, result.size());
+        assertTrue(result.contains(ins1));
+        assertTrue(result.contains(ins2));
+        assertTrue(result.get(0).isHealthy());
+        assertTrue(result.get(1).isHealthy());
+    }
+    
+    @Test
+    public void testEmptySelector() {
+        Instance ins1 = new Instance();
+        Instance ins2 = new Instance();
+        Instance ins3 = new Instance();
+        
+        NamingContext namingContext = mock(NamingContext.class);
+        when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
+        
+        List<Instance> result = NamingSelectorFactory.EMPTY_SELECTOR.select(namingContext).getResult();
+        
+        assertEquals(3, result.size());
+        assertTrue(result.contains(ins1));
+        assertTrue(result.contains(ins2));
+        assertTrue(result.contains(ins3));
     }
     
     @Test
@@ -232,5 +267,4 @@ public class NamingSelectorFactoryTest {
         assertEquals(1, result.size());
         assertEquals(ins2, result.get(0));
     }
-    
 }

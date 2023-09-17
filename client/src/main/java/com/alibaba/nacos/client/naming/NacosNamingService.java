@@ -409,6 +409,11 @@ public class NacosNamingService implements NamingService {
     }
     
     @Override
+    public void subscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException {
+        subscribe(serviceName, Constants.DEFAULT_GROUP, selector, listener);
+    }
+    
+    @Override
     public void subscribe(String serviceName, String groupName, NamingSelector selector, EventListener listener)
             throws NacosException {
         doSubscribe(serviceName, groupName, Constants.NULL, selector, listener);
@@ -445,6 +450,11 @@ public class NacosNamingService implements NamingService {
             throws NacosException {
         NamingSelector clusterSelector = NamingSelectorFactory.newClusterSelector(clusters);
         unsubscribe(serviceName, groupName, clusterSelector, listener);
+    }
+    
+    @Override
+    public void unsubscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException {
+        unsubscribe(serviceName, Constants.DEFAULT_GROUP, selector, listener);
     }
     
     @Override
