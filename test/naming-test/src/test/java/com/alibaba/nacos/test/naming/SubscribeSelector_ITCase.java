@@ -24,7 +24,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
-import com.alibaba.nacos.client.naming.selector.DefaultNamingSelector;
+import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,7 +47,8 @@ public class SubscribeSelector_ITCase extends NamingBase {
     
     private NamingService naming;
     
-    private NamingSelector selector = new DefaultNamingSelector(instance -> instance.getIp().startsWith("172.18.137"));
+    private NamingSelector selector = NamingSelectorFactory.newCustomSelector(
+            instance -> instance.getIp().startsWith("172.18.137"));
     
     @LocalServerPort
     private int port;
