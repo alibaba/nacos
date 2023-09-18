@@ -360,7 +360,7 @@ public class Subscribe_ITCase extends NamingBase {
         });
         
         int i = 0;
-        while (count.get() <= 1) {
+        while (count.get() < 2) {
             Thread.sleep(1000L);
             if (i++ > 10) {
                 Assert.fail();
