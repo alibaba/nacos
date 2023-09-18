@@ -42,6 +42,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
@@ -160,26 +161,28 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         
         CacheData cache;
-        Span addListenerCacheSpan = ConfigTrace.getClientConfigWorkerSpan("addListenerCache");
-        try (Scope ignored = addListenerCacheSpan.makeCurrent()) {
+        Span span = ConfigTrace.getClientConfigWorkerSpan("addListenerCache");
+        try (Scope ignored = span.makeCurrent()) {
+            
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.addListeners()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
+                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span.setAttribute(NacosSemanticAttributes.TENANT, getAgent().getTenant());
+                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+            }
             
             cache = addCacheDataIfAbsent(dataId, group);
             
-            if (addListenerCacheSpan.isRecording()) {
-                addListenerCacheSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addListeners()");
-                addListenerCacheSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                addListenerCacheSpan.setAttribute("data.id", dataId);
-                addListenerCacheSpan.setAttribute("group", group);
-            }
-            
         } catch (Throwable e) {
-            addListenerCacheSpan.recordException(e);
-            addListenerCacheSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            addListenerCacheSpan.end();
+            span.end();
         }
         
         synchronized (cache) {
@@ -208,26 +211,28 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         
         CacheData cache;
-        Span addTenantListenerCacheSpan = ConfigTrace.getClientConfigWorkerSpan("addTenantListenerCache");
-        try (Scope ignored = addTenantListenerCacheSpan.makeCurrent()) {
+        Span span = ConfigTrace.getClientConfigWorkerSpan("addTenantListenerCache");
+        try (Scope ignored = span.makeCurrent()) {
+            
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListeners()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
+                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+            }
             
             cache = addCacheDataIfAbsent(dataId, group, tenant);
             
-            if (addTenantListenerCacheSpan.isRecording()) {
-                addTenantListenerCacheSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListeners()");
-                addTenantListenerCacheSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                addTenantListenerCacheSpan.setAttribute("data.id", dataId);
-                addTenantListenerCacheSpan.setAttribute("group", group);
-            }
-            
         } catch (Throwable e) {
-            addTenantListenerCacheSpan.recordException(e);
-            addTenantListenerCacheSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            addTenantListenerCacheSpan.end();
+            span.end();
         }
         
         synchronized (cache) {
@@ -257,28 +262,29 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         
         CacheData cache;
-        Span addTenantListenersWithContentCacheSpan = ConfigTrace.getClientConfigWorkerSpan(
-                "addTenantListenersWithContentCache");
-        try (Scope ignored = addTenantListenersWithContentCacheSpan.makeCurrent()) {
+        Span span = ConfigTrace.getClientConfigWorkerSpan("addTenantListenersWithContentCache");
+        try (Scope ignored = span.makeCurrent()) {
+            
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListenersWithContent()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
+                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+                span.setAttribute(NacosSemanticAttributes.CONTENT, content);
+            }
             
             cache = addCacheDataIfAbsent(dataId, group, tenant);
             
-            if (addTenantListenersWithContentCacheSpan.isRecording()) {
-                addTenantListenersWithContentCacheSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListenersWithContent()");
-                addTenantListenersWithContentCacheSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                addTenantListenersWithContentCacheSpan.setAttribute("data.id", dataId);
-                addTenantListenersWithContentCacheSpan.setAttribute("group", group);
-                addTenantListenersWithContentCacheSpan.setAttribute("content", content);
-            }
-            
         } catch (Throwable e) {
-            addTenantListenersWithContentCacheSpan.recordException(e);
-            addTenantListenersWithContentCacheSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            addTenantListenersWithContentCacheSpan.end();
+            span.end();
         }
         
         synchronized (cache) {
@@ -305,26 +311,28 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         
         CacheData cache;
-        Span removeListenerSpan = ConfigTrace.getClientConfigWorkerSpan("removeListenerCache");
-        try (Scope ignored = removeListenerSpan.makeCurrent()) {
+        Span span = ConfigTrace.getClientConfigWorkerSpan("removeListenerCache");
+        try (Scope ignored = span.makeCurrent()) {
+            
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeListener()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
+                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span.setAttribute(NacosSemanticAttributes.TENANT, getAgent().getTenant());
+                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+            }
             
             cache = getCache(dataId, group);
             
-            if (removeListenerSpan.isRecording()) {
-                removeListenerSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeListener()");
-                removeListenerSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
-                removeListenerSpan.setAttribute("data.id", dataId);
-                removeListenerSpan.setAttribute("group", group);
-            }
-            
         } catch (Throwable e) {
-            removeListenerSpan.recordException(e);
-            removeListenerSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            removeListenerSpan.end();
+            span.end();
         }
         
         if (null != cache) {
@@ -352,26 +360,28 @@ public class ClientWorker implements Closeable {
         String tenant = agent.getTenant();
         
         CacheData cache;
-        Span removeTenantListenerSpan = ConfigTrace.getClientConfigWorkerSpan("removeTenantListenerCache");
-        try (Scope ignored = removeTenantListenerSpan.makeCurrent()) {
+        Span span = ConfigTrace.getClientConfigWorkerSpan("removeTenantListenerCache");
+        try (Scope ignored = span.makeCurrent()) {
+            
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeTenantListener()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
+                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+            }
             
             cache = getCache(dataId, group, tenant);
             
-            if (removeTenantListenerSpan.isRecording()) {
-                removeTenantListenerSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeTenantListener()");
-                removeTenantListenerSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
-                removeTenantListenerSpan.setAttribute("data.id", dataId);
-                removeTenantListenerSpan.setAttribute("group", group);
-            }
-            
         } catch (Throwable e) {
-            removeTenantListenerSpan.recordException(e);
-            removeTenantListenerSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            removeTenantListenerSpan.end();
+            span.end();
         }
         
         if (null != cache) {
@@ -775,8 +785,16 @@ public class ClientWorker implements Closeable {
                     final long start = System.currentTimeMillis();
                     
                     // trace
-                    Span span = ConfigTrace.getClientConfigWorkerSpan("handleConfigChangeNotifyRequest");
+                    Span span = ConfigTrace.getClientConfigWorkerSpan("handleConfigChangeNotifyRequestFromServer");
                     try (Scope ignored = span.makeCurrent()) {
+                        
+                        if (span.isRecording()) {
+                            span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                                    "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.initRpcClientHandler()");
+                            span.setAttribute(NacosSemanticAttributes.RPC_CLIENT_NAME, rpcClientInner.getName());
+                            span.setAttribute(NacosSemanticAttributes.TENANT, getTenant());
+                            span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getName());
+                        }
                         
                         ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
                         LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
@@ -784,6 +802,17 @@ public class ClientWorker implements Closeable {
                                 configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
                         String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
                                 configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                        
+                        if (span.isRecording()) {
+                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_ID,
+                                    configChangeNotifyRequest.getRequestId());
+                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_DATA_ID,
+                                    configChangeNotifyRequest.getDataId());
+                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_GROUP,
+                                    configChangeNotifyRequest.getGroup());
+                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_TENANT,
+                                    configChangeNotifyRequest.getTenant());
+                        }
                         
                         CacheData cacheData = cacheMap.get().get(groupKey);
                         if (cacheData != null) {
@@ -793,16 +822,6 @@ public class ClientWorker implements Closeable {
                                 notifyListenConfig();
                             }
                             
-                        }
-                        
-                        if (span.isRecording()) {
-                            span.setAttribute("function.current.name",
-                                    "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.initRpcClientHandler()");
-                            span.setAttribute("rpc.client.name", rpcClientInner.getName());
-                            span.setAttribute("request.id", configChangeNotifyRequest.getRequestId());
-                            span.setAttribute("request.data.id", configChangeNotifyRequest.getDataId());
-                            span.setAttribute("request.group", configChangeNotifyRequest.getGroup());
-                            span.setAttribute("request.tenant", configChangeNotifyRequest.getTenant());
                         }
                         
                     } catch (Throwable e) {
@@ -829,17 +848,25 @@ public class ClientWorker implements Closeable {
                     
                     // trace
                     ClientConfigMetricResponse response;
-                    Span span = ConfigTrace.getClientConfigWorkerSpan("handleClientConfigMetricRequest");
+                    Span span = ConfigTrace.getClientConfigWorkerSpan("handleClientConfigMetricRequestFromServer");
                     try (Scope ignored = span.makeCurrent()) {
+                        
+                        if (span.isRecording()) {
+                            span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                                    "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.initRpcClientHandler()");
+                            span.setAttribute(NacosSemanticAttributes.RPC_CLIENT_NAME, rpcClientInner.getName());
+                            span.setAttribute(NacosSemanticAttributes.TENANT, getTenant());
+                            span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getName());
+                        }
                         
                         response = new ClientConfigMetricResponse();
                         response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
                         
                         if (span.isRecording()) {
-                            span.setAttribute("function.current.name",
-                                    "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.initRpcClientHandler()");
-                            span.setAttribute("rpc.client.name", rpcClientInner.getName());
-                            span.setAttribute("request.id", request.getRequestId());
+                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_ID,
+                                    request.getRequestId());
+                            span.setAttribute(NacosSemanticAttributes.CONTENT,
+                                    "metrics size: " + response.getMetrics().size());
                         }
                         
                     } catch (Throwable e) {
@@ -1242,28 +1269,35 @@ public class ClientWorker implements Closeable {
             }
             
             ConfigQueryResponse response;
-            Span queryConfigRequestSpan = ConfigTrace.getClientConfigWorkerSpan("queryConfigRequest");
-            try (Scope ignored = queryConfigRequestSpan.makeCurrent()) {
+            Span span = ConfigTrace.getClientConfigWorkerSpan("queryConfigRequest");
+            try (Scope ignored = span.makeCurrent()) {
+                
+                if (span.isRecording()) {
+                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.queryConfig()");
+                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
+                    span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                    span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                    span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                    span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+                    span.setAttribute(NacosSemanticAttributes.TIMEOUT_MS, readTimeouts);
+                }
                 
                 response = (ConfigQueryResponse) requestProxy(rpcClient, request, readTimeouts);
                 
-                if (queryConfigRequestSpan.isRecording()) {
-                    queryConfigRequestSpan.setAttribute("function.current.name",
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.queryConfig()");
-                    queryConfigRequestSpan.setAttribute("function.called.name",
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
-                    queryConfigRequestSpan.setAttribute("data.id", dataId);
-                    queryConfigRequestSpan.setAttribute("group", group);
-                    queryConfigRequestSpan.setAttribute("tenant", tenant);
-                    queryConfigRequestSpan.setAttribute("timeout.ms", readTimeouts);
+                if (response.isSuccess()) {
+                    span.setStatus(StatusCode.OK);
+                } else {
+                    span.setStatus(StatusCode.ERROR, response.getErrorCode() + ": " + response.getMessage());
                 }
                 
             } catch (NacosException e) {
-                queryConfigRequestSpan.recordException(e);
-                queryConfigRequestSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                span.recordException(e);
+                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
                 throw e;
             } finally {
-                queryConfigRequestSpan.end();
+                span.end();
             }
             
             ConfigResponse configResponse = new ConfigResponse();
@@ -1335,6 +1369,10 @@ public class ClientWorker implements Closeable {
                 
                 TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
                         .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM,
+                        rpcClientInner.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
+                        rpcClientInner.getCurrentServer().getAddress());
                 
                 rpcResponse = rpcClientInner.request(request, timeoutMills);
                 
@@ -1343,9 +1381,6 @@ public class ClientWorker implements Closeable {
                 }
                 
                 if (span.isRecording()) {
-                    span.setAttribute(SemanticAttributes.RPC_SYSTEM,
-                            rpcClientInner.getConnectionType().getType().toLowerCase());
-                    span.setAttribute("server.address", rpcClientInner.getCurrentServer().getAddress());
                     span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, rpcResponse.getResultCode());
                 }
             } catch (NacosException e) {
@@ -1404,29 +1439,36 @@ public class ClientWorker implements Closeable {
                 request.putAdditionalParam(ENCRYPTED_DATA_KEY_PARAM, encryptedDataKey == null ? "" : encryptedDataKey);
                 
                 ConfigPublishResponse response;
-                Span publishConfigRequestSpan = ConfigTrace.getClientConfigWorkerSpan("publishConfigRequest");
-                try (Scope ignored = publishConfigRequestSpan.makeCurrent()) {
+                Span span = ConfigTrace.getClientConfigWorkerSpan("publishConfigRequest");
+                try (Scope ignored = span.makeCurrent()) {
+                    
+                    if (span.isRecording()) {
+                        span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                                "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.publishConfig()");
+                        span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                                "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
+                        span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                        span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                        span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                        span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+                        span.setAttribute(NacosSemanticAttributes.APPLICATION_NAME, appName);
+                        span.setAttribute(NacosSemanticAttributes.CONTENT, content);
+                    }
                     
                     response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
                     
-                    if (publishConfigRequestSpan.isRecording()) {
-                        publishConfigRequestSpan.setAttribute("function.current.name",
-                                "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.publishConfig()");
-                        publishConfigRequestSpan.setAttribute("function.called.name",
-                                "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
-                        publishConfigRequestSpan.setAttribute("data.id", dataId);
-                        publishConfigRequestSpan.setAttribute("group", group);
-                        publishConfigRequestSpan.setAttribute("tenant", tenant);
-                        publishConfigRequestSpan.setAttribute("app.name", appName);
-                        publishConfigRequestSpan.setAttribute("content", content);
+                    if (response.isSuccess()) {
+                        span.setStatus(StatusCode.OK);
+                    } else {
+                        span.setStatus(StatusCode.ERROR, response.getErrorCode() + ": " + response.getMessage());
                     }
                     
                 } catch (NacosException e) {
-                    publishConfigRequestSpan.recordException(e);
-                    publishConfigRequestSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                    span.recordException(e);
+                    span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
                     throw e;
                 } finally {
-                    publishConfigRequestSpan.end();
+                    span.end();
                 }
                 
                 if (!response.isSuccess()) {
@@ -1453,28 +1495,35 @@ public class ClientWorker implements Closeable {
             ConfigRemoveRequest request = new ConfigRemoveRequest(dataId, group, tenant, tag);
             
             ConfigRemoveResponse response;
-            Span removeConfigRequestSpan = ConfigTrace.getClientConfigWorkerSpan("removeConfigRequest");
-            try (Scope ignored = removeConfigRequestSpan.makeCurrent()) {
+            Span span = ConfigTrace.getClientConfigWorkerSpan("removeConfigRequest");
+            try (Scope ignored = span.makeCurrent()) {
+                
+                if (span.isRecording()) {
+                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.removeConfig()");
+                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
+                    span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                    span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                    span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                    span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+                    span.setAttribute(NacosSemanticAttributes.TAG, tag);
+                }
                 
                 response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
                 
-                if (removeConfigRequestSpan.isRecording()) {
-                    removeConfigRequestSpan.setAttribute("function.current.name",
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.removeConfig()");
-                    removeConfigRequestSpan.setAttribute("function.called.name",
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
-                    removeConfigRequestSpan.setAttribute("data.id", dataId);
-                    removeConfigRequestSpan.setAttribute("group", group);
-                    removeConfigRequestSpan.setAttribute("tenant", tenant);
-                    removeConfigRequestSpan.setAttribute("tag", tag);
+                if (response.isSuccess()) {
+                    span.setStatus(StatusCode.OK);
+                } else {
+                    span.setStatus(StatusCode.ERROR, response.getErrorCode() + ": " + response.getMessage());
                 }
                 
             } catch (NacosException e) {
-                removeConfigRequestSpan.recordException(e);
-                removeConfigRequestSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                span.recordException(e);
+                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
                 throw e;
             } finally {
-                removeConfigRequestSpan.end();
+                span.end();
             }
             
             if (response.isSuccess()) {

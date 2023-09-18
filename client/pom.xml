@@ -38,7 +38,7 @@
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-bom</artifactId>
-                <version>1.29.0</version>
+                <version>${io.opentelemetry.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -158,7 +158,7 @@
         <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-semconv</artifactId>
-            <version>1.29.0-alpha</version>
+            <version>${io.opentelemetry.version}-alpha</version>
         </dependency>
     
     </dependencies>
