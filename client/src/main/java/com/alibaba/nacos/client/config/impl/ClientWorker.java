@@ -1378,6 +1378,8 @@ public class ClientWorker implements Closeable {
                 
                 if (rpcResponse.isSuccess()) {
                     span.setStatus(StatusCode.OK);
+                } else {
+                    span.setStatus(StatusCode.ERROR, rpcResponse.getErrorCode() + ": " + rpcResponse.getMessage());
                 }
                 
                 if (span.isRecording()) {

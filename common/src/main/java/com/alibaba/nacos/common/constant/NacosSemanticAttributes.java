@@ -25,13 +25,15 @@ import io.opentelemetry.api.common.AttributeKey;
  **/
 public final class NacosSemanticAttributes {
     
-    public static final AttributeKey<String> SERVER_ADDRESS = AttributeKey.stringKey("nacos.server.address");
-    
     public static final AttributeKey<String> FUNCTION_CURRENT_NAME = AttributeKey.stringKey(
             "nacos.function.current.name");
     
     public static final AttributeKey<String> FUNCTION_CALLED_NAME = AttributeKey.stringKey(
             "nacos.function.called.name");
+    
+    public static final AttributeKey<String> SERVICE_NAME = AttributeKey.stringKey("nacos.service.name");
+    
+    public static final AttributeKey<String> SERVER_ADDRESS = AttributeKey.stringKey("nacos.server.address");
     
     public static final AttributeKey<String> CONTENT = AttributeKey.stringKey("nacos.content");
     
@@ -45,11 +47,23 @@ public final class NacosSemanticAttributes {
     
     public static final AttributeKey<String> TENANT = AttributeKey.stringKey("nacos.tenant");
     
+    public static final AttributeKey<String> INSTANCE = AttributeKey.stringKey("nacos.instance");
+    
+    public static final AttributeKey<String> CLUSTER = AttributeKey.stringKey("nacos.cluster");
+    
+    public static final AttributeKey<String> EVENT = AttributeKey.stringKey("nacos.event");
+    
     public static final AttributeKey<String> TAG = AttributeKey.stringKey("nacos.tag");
     
     public static final AttributeKey<String> APPLICATION_NAME = AttributeKey.stringKey("nacos.application.name");
     
+    public static final AttributeKey<Long> PAGE_NO = AttributeKey.longKey("nacos.page.no");
+    
+    public static final AttributeKey<Long> PAGE_SIZE = AttributeKey.longKey("nacos.page.size");
+    
     public static final AttributeKey<String> RPC_CLIENT_NAME = AttributeKey.stringKey("nacos.rpc.client.name");
+    
+    public static final AttributeKey<Boolean> SUBSCRIBE = AttributeKey.booleanKey("nacos.subscribe");
     
     public static final AttributeKey<Long> TIMEOUT_MS = AttributeKey.longKey("nacos.timeout.ms");
     
@@ -62,6 +76,8 @@ public final class NacosSemanticAttributes {
         public static final AttributeKey<String> REQUEST_GROUP = AttributeKey.stringKey("nacos.request.group");
         
         public static final AttributeKey<String> REQUEST_TENANT = AttributeKey.stringKey("nacos.request.tenant");
+        
+        public static final AttributeKey<String> REQUEST_RESULT = AttributeKey.stringKey("nacos.request.result");
         
     }
     

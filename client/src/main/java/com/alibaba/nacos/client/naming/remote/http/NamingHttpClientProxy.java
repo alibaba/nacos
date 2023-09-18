@@ -40,6 +40,7 @@ import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -161,20 +162,20 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("registerService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.registerService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.POST);
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.INSTANCE, instance.toString());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.POST);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.registerService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                span.setAttribute("client.protocol", "http");
-                span.setAttribute("http.method", HttpMethod.POST);
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instances", instance.toString());
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -216,20 +217,20 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("deregisterService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.deregisterService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.DELETE);
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.INSTANCE, instance.toString());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.DELETE);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.deregisterService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                span.setAttribute("client.protocol", "http");
-                span.setAttribute("http.method", HttpMethod.DELETE);
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instances", instance.toString());
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -260,20 +261,20 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("updateInstance");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.updateInstance()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.PUT);
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.INSTANCE, instance.toString());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.PUT);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.updateInstance()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                span.setAttribute("client.protocol", "http");
-                span.setAttribute("http.method", HttpMethod.PUT);
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instances", instance.toString());
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -299,21 +300,23 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("queryInstancesOfService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.queryInstancesOfService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.CLUSTER, clusters);
+                span.setAttribute(SemanticAttributes.NET_HOST_PORT, udpPort);
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             result = reqApi(UtilAndComs.nacosUrlBase + "/instance/list", params, HttpMethod.GET);
             
             if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.queryInstancesOfService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                span.setAttribute("client.protocol", "http");
-                span.setAttribute("http.method", HttpMethod.GET);
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("clusters", clusters);
-                span.setAttribute("udp.port", udpPort);
-                span.setAttribute("request.result", result);
-                span.setAttribute("namespace", namespaceId);
+                span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_RESULT, result);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -342,19 +345,21 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("queryService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.queryService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.GET);
             
             if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.queryService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                span.setAttribute("client.protocol", "http");
-                span.setAttribute("http.method", HttpMethod.GET);
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("request.result", result);
-                span.setAttribute("namespace", namespaceId);
+                span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_RESULT, result);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -383,19 +388,19 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("createService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.createService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.POST);
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, service.getName());
+                span.setAttribute(NacosSemanticAttributes.GROUP, service.getGroupName());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.POST);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.createService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                span.setAttribute("client.protocol", "http");
-                span.setAttribute("http.method", HttpMethod.POST);
-                span.setAttribute("service.name", service.getName());
-                span.setAttribute("group.name", service.getGroupName());
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -420,19 +425,21 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("deleteService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.deleteService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.DELETE);
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.DELETE);
             
             if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.deleteService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                span.setAttribute("client.protocol", "http");
-                span.setAttribute("http.method", HttpMethod.DELETE);
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("request.result", result);
-                span.setAttribute("namespace", namespaceId);
+                span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_RESULT, result);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -460,19 +467,19 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("updateService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.updateService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.PUT);
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, service.getName());
+                span.setAttribute(NacosSemanticAttributes.GROUP, service.getGroupName());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.PUT);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.updateService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                span.setAttribute("client.protocol", "http");
-                span.setAttribute("http.method", HttpMethod.PUT);
-                span.setAttribute("service.name", service.getName());
-                span.setAttribute("group.name", service.getGroupName());
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -491,20 +498,24 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             Span span = NamingTrace.getClientNamingWorkerSpan("serverHealthy");
             try (Scope ignored = span.makeCurrent()) {
                 
+                if (span.isRecording()) {
+                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                            "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.serverHealthy()");
+                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                            "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                    span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
+                    span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+                }
+                
                 String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<>(8),
                         HttpMethod.GET);
                 JsonNode json = JacksonUtils.toObj(result);
                 serverStatus = json.get("status").asText();
                 
-                if (span.isRecording()) {
-                    span.setAttribute("function.current.name",
-                            "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.serverHealthy()");
-                    span.setAttribute("function.called.name",
-                            "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                    span.setAttribute("client.protocol", "http");
-                    span.setAttribute("http.method", HttpMethod.GET);
-                    span.setAttribute("server.healthy", "UP".equals(serverStatus));
-                    span.setAttribute("namespace", namespaceId);
+                if ("UP".equals(serverStatus)) {
+                    span.setStatus(StatusCode.OK);
+                } else {
+                    span.setStatus(StatusCode.ERROR, "Server status: " + serverStatus);
                 }
             } finally {
                 span.end();
@@ -543,19 +554,22 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("getServiceList");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.getServiceList()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
+                span.setAttribute(NacosSemanticAttributes.PAGE_NO, pageNo);
+                span.setAttribute(NacosSemanticAttributes.PAGE_SIZE, pageSize);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             result = reqApi(UtilAndComs.nacosUrlBase + "/service/list", params, HttpMethod.GET);
             
             if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.getServiceList()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy.reqApi()");
-                span.setAttribute("client.protocol", "http");
-                span.setAttribute("http.method", HttpMethod.GET);
-                span.setAttribute("page.number", pageNo);
-                span.setAttribute("page.size", pageSize);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("namespace", namespaceId);
+                span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_RESULT, result);
             }
         } catch (Throwable e) {
             span.recordException(e);
@@ -694,6 +708,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 
                 TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
                         .inject(Context.current(), header, TraceMonitor.getHttpContextSetter());
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, method.toUpperCase());
+                span.setAttribute(SemanticAttributes.HTTP_URL, url);
                 
                 restResult = nacosRestTemplate.exchangeForm(url, header, Query.newInstance().initParams(params), body,
                         method, String.class);
@@ -701,12 +717,10 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 if (restResult.ok()) {
                     span.setStatus(StatusCode.OK);
                 } else {
-                    span.setStatus(StatusCode.ERROR, String.valueOf(restResult.getCode()));
+                    span.setStatus(StatusCode.ERROR, restResult.getCode() + ": " + restResult.getMessage());
                 }
                 
                 if (span.isRecording()) {
-                    span.setAttribute(SemanticAttributes.HTTP_METHOD, method.toUpperCase());
-                    span.setAttribute(SemanticAttributes.HTTP_URL, url);
                     span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, restResult.getCode());
                 }
             } catch (Throwable e) {

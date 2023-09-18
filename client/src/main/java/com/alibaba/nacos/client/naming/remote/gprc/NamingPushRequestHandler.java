@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.StatusCode;
@@ -47,17 +48,17 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
             long start = System.currentTimeMillis();
             
             // Trace
-            Span span = NamingTrace.getClientNamingWorkerSpan("handleNotifySubscriberRequest");
+            Span span = NamingTrace.getClientNamingWorkerSpan("handleNotifySubscriberRequestFromServer");
             try (Scope ignored = span.makeCurrent()) {
+                
+                if (span.isRecording()) {
+                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                            "com.alibaba.nacos.client.naming.remote.gprc.NamingPushRequestHandler.requestReply()");
+                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_ID, request.getRequestId());
+                }
                 
                 NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
                 serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());
-                
-                if (span.isRecording()) {
-                    span.setAttribute("function.current.name",
-                            "com.alibaba.nacos.client.naming.remote.gprc.NamingPushRequestHandler.requestReply()");
-                    span.setAttribute("request.id", request.getRequestId());
-                }
                 
             } catch (Throwable e) {
                 span.recordException(e);

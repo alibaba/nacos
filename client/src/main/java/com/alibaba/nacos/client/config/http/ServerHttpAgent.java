@@ -96,7 +96,7 @@ public class ServerHttpAgent implements HttpAgent {
                             String.class);
                     
                     if (isFail(result)) {
-                        span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
+                        span.setStatus(StatusCode.ERROR, result.getCode() + ": " + result.getMessage());
                     } else {
                         span.setStatus(StatusCode.OK);
                     }
@@ -182,7 +182,7 @@ public class ServerHttpAgent implements HttpAgent {
                             paramValues, String.class);
                     
                     if (isFail(result)) {
-                        span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
+                        span.setStatus(StatusCode.ERROR, result.getCode() + ": " + result.getMessage());
                     } else {
                         span.setStatus(StatusCode.OK);
                     }
@@ -268,7 +268,7 @@ public class ServerHttpAgent implements HttpAgent {
                             String.class);
                     
                     if (isFail(result)) {
-                        span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
+                        span.setStatus(StatusCode.ERROR, result.getCode() + ": " + result.getMessage());
                     } else {
                         span.setStatus(StatusCode.OK);
                     }

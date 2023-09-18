@@ -52,6 +52,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoDa
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
@@ -126,18 +127,19 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("onServerListChangedEvent");
         try (Scope ignored = span.makeCurrent()) {
             
-            rpcClient.onServerListChange();
-            
             span.addEvent("onServerListChangedEvent");
             if (span.isRecording()) {
-                span.setAttribute("function.current.name",
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
                         "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.onEvent()");
-                span.setAttribute("function.called.name",
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
                         "com.alibaba.nacos.common.remote.client.RpcClient.onServerListChange()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("event", event.toString());
-                span.setAttribute("namespace", namespaceId);
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.EVENT, event.toString());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
             }
+            
+            rpcClient.onServerListChange();
+            
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -196,6 +198,18 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("getRetainInstance");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.getRetainInstance()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService.getRegisteredInstancesByKey()");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.INSTANCE, StringUtils.join(instances, ", "));
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             instanceRedoData = redoService.getRegisteredInstancesByKey(combinedServiceName);
             if (!(instanceRedoData instanceof BatchInstanceRedoData)) {
                 throw new NacosException(NacosException.INVALID_PARAM, String.format(
@@ -203,17 +217,6 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                         instances));
             }
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.getRetainInstance()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService.getRegisteredInstancesByKey()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instances", StringUtils.join(instances, ", "));
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -257,20 +260,21 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("doBatchRegisterService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doBatchRegisterService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.INSTANCE, StringUtils.join(instances, ", "));
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             requestToServer(request, BatchInstanceResponse.class);
             redoService.instanceRegistered(serviceName, groupName);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doBatchRegisterService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instances", StringUtils.join(instances, ", "));
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -296,20 +300,21 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("doRegisterService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doRegisterService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.INSTANCE, instance.toString());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             requestToServer(request, Response.class);
             redoService.instanceRegistered(serviceName, groupName);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doRegisterService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instances", instance.toString());
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -343,20 +348,21 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("doDeregisterService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doDeregisterService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.INSTANCE, instance.toString());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             requestToServer(request, Response.class);
             redoService.instanceDeregistered(serviceName, groupName);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doRegisterService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instances", instance.toString());
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -384,20 +390,21 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("queryInstancesOfService");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.queryInstancesOfService()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.CLUSTER, clusters);
+                span.setAttribute(SemanticAttributes.NET_HOST_PORT, udpPort);
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             response = requestToServer(request, QueryServiceResponse.class);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.queryInstancesOfService()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("clusters", clusters);
-                span.setAttribute("udp.port", udpPort);
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -443,19 +450,20 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("getServiceList");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.getServiceList()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.PAGE_NO, pageNo);
+                span.setAttribute(NacosSemanticAttributes.PAGE_SIZE, pageSize);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             response = requestToServer(request, ServiceListResponse.class);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.getServiceList()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("page.number", pageNo);
-                span.setAttribute("page.size", pageSize);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("namespace", namespaceId);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -496,19 +504,21 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("doSubscribe");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doSubscribe()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.CLUSTER, clusters);
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             response = requestToServer(request, SubscribeServiceResponse.class);
             redoService.subscriberRegistered(serviceName, groupName, clusters);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doSubscribe()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("clusters", clusters);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -550,19 +560,21 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("doUnsubscribe");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doUnsubscribe()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, serviceName);
+                span.setAttribute(NacosSemanticAttributes.GROUP, groupName);
+                span.setAttribute(NacosSemanticAttributes.CLUSTER, clusters);
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             requestToServer(request, SubscribeServiceResponse.class);
             redoService.removeSubscriberForRedo(serviceName, groupName, clusters);
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.doUnsubscribe()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.requestToServer()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("clusters", clusters);
-            }
         } catch (Throwable e) {
             span.recordException(e);
             span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
@@ -580,17 +592,23 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         Span span = NamingTrace.getClientNamingWorkerSpan("serverHealthy");
         try (Scope ignored = span.makeCurrent()) {
             
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.serverHealthy()");
+                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                        "com.alibaba.nacos.common.remote.client.RpcClient.isRunning()");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
             result = rpcClient.isRunning();
             
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.serverHealthy()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.common.remote.client.RpcClient.isRunning()");
-                span.setAttribute("client.protocol", "grpc");
-                span.setAttribute("server.healthy", result);
-                span.setAttribute("namespace", namespaceId);
+            if (result) {
+                span.setStatus(StatusCode.OK);
+            } else {
+                span.setStatus(StatusCode.ERROR, "Server is not healthy");
             }
+            
         } finally {
             span.end();
         }
@@ -611,6 +629,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 
                 TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
                         .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS, rpcClient.getCurrentServer().getAddress());
                 
                 response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
                 
@@ -618,17 +638,14 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                     if (ResponseCode.SUCCESS.getCode() == response.getResultCode()) {
                         span.setStatus(StatusCode.OK);
                     } else {
-                        span.setStatus(StatusCode.ERROR, String.valueOf(response.getResultCode()));
+                        span.setStatus(StatusCode.ERROR, response.getErrorCode() + ": " + response.getMessage());
+                    }
+                    
+                    if (span.isRecording()) {
+                        span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, response.getResultCode());
                     }
                 } else {
                     span.setStatus(StatusCode.ERROR, "Server return unexpected response");
-                }
-                
-                if (span.isRecording()) {
-                    span.setAttribute(SemanticAttributes.RPC_SYSTEM,
-                            rpcClient.getConnectionType().getType().toLowerCase());
-                    span.setAttribute("server.address", rpcClient.getCurrentServer().getAddress());
-                    span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, response.getResultCode());
                 }
                 
             } catch (NacosException e) {
