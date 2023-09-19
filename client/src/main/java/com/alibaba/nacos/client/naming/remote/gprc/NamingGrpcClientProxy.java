@@ -241,7 +241,6 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         redoService.instanceRegistered(serviceName, groupName);
     }
     
-    
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
