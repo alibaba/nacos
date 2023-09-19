@@ -60,7 +60,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /**
- * ConfigMap synchronization server.
+ * ConfigMap's synchronization server.
  *
  * @author wangyixing
  */
@@ -310,7 +310,7 @@ public class KubernetesConfigMapSyncServer {
         configOperationService.deleteConfig(dataId, group, namespaceId, null, clientIp, srcUser);
     }
     
-    public String getContent(Map<String, String> dataMap) {
+    private String getContent(Map<String, String> dataMap) {
         StringBuilder contentBuilder = new StringBuilder();
         for (Map.Entry<String, String> entry : dataMap.entrySet()) {
             String key = entry.getKey();
@@ -337,7 +337,7 @@ public class KubernetesConfigMapSyncServer {
     /**
      * truncateUrl in 20 characters.
      */
-    public String truncateUrl(String url) {
+    private String truncateUrl(String url) {
         URI uri = null;
         try {
             uri = new URI(url);

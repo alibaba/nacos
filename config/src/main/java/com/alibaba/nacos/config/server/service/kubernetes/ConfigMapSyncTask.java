@@ -18,18 +18,24 @@
 
 package com.alibaba.nacos.config.server.service.kubernetes;
 
-import com.alibaba.nacos.api.NacosFactory;
-import com.alibaba.nacos.api.config.ConfigService;
-import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import okhttp3.OkHttpClient;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.io.IOException;
+import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * ConfigMap synchronization task.
@@ -39,18 +45,35 @@ import java.io.IOException;
 @Component
 public class ConfigMapSyncTask {
     
-    private final CoreV1Api coreV1Api;
+    private CoreV1Api coreV1Api;
     
-    private final ApiClient apiClient;
+    private ApiClient apiClient;
     
-    private final ConfigService nacosConfigService;
+    @Autowired
+    @Qualifier("embeddedConfigInfoPersistServiceImpl")
+    private ConfigInfoPersistService configInfoPersistService;
     
-    public ConfigMapSyncTask() throws IOException, NacosException {
-        coreV1Api = new CoreV1Api();
-        apiClient = coreV1Api.getApiClient();
-        OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().build();
+    @Autowired
+    private ConfigMapSyncConfig configMapSyncConfig;
+
+    @Autowired
+    private KubernetesConfigMapSyncServer kubernetesConfigMapSyncServer;
+    
+    /**
+     * Initialize ConfigMapSyncTask.
+     * @throws IOException getOutsideApiClient failed
+     */
+    @PostConstruct
+    public void init() throws IOException {
+        if (configMapSyncConfig.isOutsideCluster()) {
+            apiClient = kubernetesConfigMapSyncServer.getOutsideApiClient();
+            coreV1Api = new CoreV1Api(apiClient);
+        } else {
+            coreV1Api = new CoreV1Api();
+            apiClient = coreV1Api.getApiClient();
+        }
+        OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().readTimeout(Duration.ZERO).build();
         apiClient.setHttpClient(httpClient);
-        nacosConfigService = NacosFactory.createConfigService(apiClient.getBasePath());
     }
     
     /**
@@ -59,20 +82,70 @@ public class ConfigMapSyncTask {
     @Scheduled(fixedDelay = 3600000)
     public void checkAndSyncConfigMaps() {
         try {
-            V1ConfigMapList configMapList = (V1ConfigMapList) coreV1Api.listConfigMapForAllNamespacesCall(null, null,
-                    null, null, null, null, null, null, null, null, null);
-            for (V1ConfigMap configMap : configMapList.getItems()) {
-                String dataId = configMap.getMetadata().getName();
+            List<V1ConfigMap> configMapList = coreV1Api.listConfigMapForAllNamespaces(null, null, null, null, null,
+                    null, null, null, null, null).getItems();
+            for (V1ConfigMap configMap : configMapList) {
+                String dataId = Objects.requireNonNull(configMap.getMetadata()).getName();
                 String group = "K8S_GROUP";
-                String content = configMap.getData().toString();
-                if (nacosConfigService.getConfig(dataId, group, 1000).isEmpty()) {
-                    Loggers.MAIN.info("find config missed.");
-                    nacosConfigService.publishConfig(dataId, group, content);
+                String namespace = configMap.getMetadata().getNamespace();
+                String content = Objects.requireNonNull(configMap.getData()).toString();
+                ConfigInfoWrapper configInfo = configInfoPersistService.findConfigInfo(dataId, group, namespace);
+                if (configInfo == null) {
+                    Loggers.MAIN.info("[{}] find a missed config.", "configMap-sync");
+                    kubernetesConfigMapSyncServer.publishConfigMap(configMap, apiClient.getBasePath());
+                } else {
+                    if (!compareContent(content, configInfo.getContent())) {
+                        Loggers.MAIN.info("[{}] find content difference.", "configMap-sync");
+                        kubernetesConfigMapSyncServer.publishConfigMap(configMap, apiClient.getBasePath());
+                    }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        
+    }
+    
+    /**
+     * Convert and compare configMap and nacos content.
+     * @param configMapContent configMap's content
+     * @param nacosContent nacos's content
+     * @return whether contents are equal.
+     */
+    private Boolean compareContent(String configMapContent, String nacosContent) {
+        configMapContent = configMapContent.substring(1, configMapContent.length() - 1);
+        Map<String, String> configMapPair = contentToMap(configMapContent);
+        nacosContent = nacosContent.replace("\n", ", ");
+        Map<String, String> nacosPair = contentToMap(nacosContent);
+        return configMapPair.equals(nacosPair);
+    }
+    
+    private Map<String, String> contentToMap(String content) {
+        String[] pairs = content.split(", ");
+        Map<String, String> hashMap = new HashMap<>();
+        String currentKey = null;
+        for (String pair : pairs) {
+            if (isPair(pair)) {
+                String[] keyValue = pair.replace("\n", "").split("=", 2);
+                assert keyValue.length == 2;
+                hashMap.put(keyValue[0], keyValue[1]);
+                currentKey = keyValue[0];
+            } else {
+                hashMap.put(currentKey, hashMap.get(currentKey) + pair);
+            }
+        }
+        return hashMap;
+    }
+    
+    private boolean isPair(String line) {
+        if (line == null) {
+            return false;
+        }
+        String newLine = line;
+        boolean containsDoubleEqual = line.contains("==");
+        if (containsDoubleEqual) {
+            newLine = line.replace("==", "");
+        }
+        boolean containsEqual = newLine.contains("=");
+        return containsEqual;
     }
 }
