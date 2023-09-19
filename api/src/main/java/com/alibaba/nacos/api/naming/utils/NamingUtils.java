@@ -175,6 +175,103 @@ public class NamingUtils {
         }
     }
     
+    public static String getPatternWithNamespace(final String namespaceId, final String groupedPattern) {
+        if (StringUtils.isBlank(namespaceId)) {
+            throw new IllegalArgumentException("Param 'namespaceId' is illegal, namespaceId is blank");
+        }
+        if (StringUtils.isBlank(groupedPattern)) {
+            throw new IllegalArgumentException("Param 'groupedPattern' is illegal, groupedPattern is blank");
+        }
+        final String resultGroupedPattern = namespaceId + Constants.NAMESPACE_ID_SPLITER + groupedPattern;
+        return resultGroupedPattern.intern();
+    }
+    
+    public static String getNamespaceFromPattern(String completedPattern) {
+        if (StringUtils.isBlank(completedPattern)) {
+            return StringUtils.EMPTY;
+        }
+        if (!completedPattern.contains(Constants.NAMESPACE_ID_SPLITER)) {
+            return Constants.DEFAULT_NAMESPACE_ID;
+        }
+        return completedPattern.split(Constants.NAMESPACE_ID_SPLITER)[0];
+    }
+    
+    public static String getPatternRemovedNamespace(String completedPattern) {
+        if (StringUtils.isBlank(completedPattern)) {
+            return StringUtils.EMPTY;
+        }
+        if (!completedPattern.contains(Constants.NAMESPACE_ID_SPLITER)) {
+            return completedPattern;
+        }
+        return completedPattern.split(Constants.NAMESPACE_ID_SPLITER)[1];
+    }
+    
+    /**
+     * Get the Pattern subscribed to under this NamespaceId.
+     * @param namespaceId name space id
+     * @param completedPattern a set of all watch pattern(with namespace id)
+     * @return filtered pattern set
+     */
+    public static Set<String> filterPatternWithNamespace(String namespaceId, Set<String> completedPattern) {
+        Set<String> patterns = new HashSet<>();
+        for (String each : completedPattern) {
+            String eachId = getNamespaceFromPattern(each);
+            if (namespaceId.equals(eachId)) {
+                patterns.add(getPatternRemovedNamespace(each));
+            }
+        }
+        return patterns;
+    }
+    
+    /**
+     * Returns a combined string with matchPattern and matchType.
+     * @param matchPattern a match pattern. Such as a 'serviceNamePrefix'
+     * @param matchType The match type want to use
+     * @return 'matchPattern##matchType'
+     */
+    public static String getGroupedPattern(final String matchPattern, final String matchType) {
+        if (StringUtils.isBlank(matchPattern) && !matchType.equals(Constants.WatchMatchRule.MATCH_ALL)) {
+            throw new IllegalArgumentException("Param 'matchPattern' is illegal, matchPattern is blank");
+        }
+        if (StringUtils.isBlank(matchType)) {
+            throw new IllegalArgumentException("Param 'matchType' is illegal, matchType is blank");
+        } else if (matchType.equals(Constants.WatchMatchRule.MATCH_ALL)) {
+            return Constants.WatchMatchRule.MATCH_ALL;
+        }
+        final String resultGroupedName = matchPattern + Constants.MATCH_PATTERN_SPLITER + matchType;
+        return resultGroupedName.intern();
+    }
+    
+    /**
+     *  Given a Pattern, return the string to be used for the match.
+     * @param groupedPattern a grouped pattern (match string ## match type)
+     * @return the string to be used for the match.
+     */
+    public static String getMatchName(String groupedPattern) {
+        if (StringUtils.isBlank(groupedPattern)) {
+            return StringUtils.EMPTY;
+        }
+        if (!groupedPattern.contains(Constants.MATCH_PATTERN_SPLITER)) {
+            return groupedPattern;
+        }
+        return groupedPattern.split(Constants.MATCH_PATTERN_SPLITER)[0];
+    }
+    
+    /**
+     * Given a Pattern, return the matching rule type.
+     * @param groupedPattern a grouped pattern (match string ## match type)
+     * @return the matching rule type.
+     */
+    public static String getMatchRule(String groupedPattern) {
+        if (StringUtils.isBlank(groupedPattern)) {
+            return StringUtils.EMPTY;
+        }
+        if (!groupedPattern.contains(Constants.MATCH_PATTERN_SPLITER)) {
+            return Constants.WatchMatchRule.MATCH_ALL;
+        }
+        return groupedPattern.split(Constants.MATCH_PATTERN_SPLITER)[1];
+    }
+    
     /**
      * Check string is a number or not.
      *
