@@ -35,7 +35,7 @@ public class MetricsMonitor {
             .register();
     
     private static final Counter NACOS_CLIENT_REGISTER_FAILED_TOTAL = Counter.build()
-            .name("nacos_client_register_failed_total")
+            .name("nacos_client_register_failed_total").help("nacos_client_register_failed_total")
             .labelNames("namespace", "group", "service_name", "err_code", "err_type").register();
     
     public static Gauge.Child getServiceInfoMapSizeMonitor() {
