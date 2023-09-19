@@ -241,7 +241,7 @@ public class Constants {
     }
     
     /**
-     * The constants in Watch Pattern Match Rule directory.
+     * The constants in config directory.
      */
     public static class WatchMatchRule {
         
@@ -251,9 +251,6 @@ public class Constants {
         
     }
     
-    /**
-     * The constants in Watch Notify Event directory.
-     */
     public static class WatchEventType {
         
         public static final String ADD_SERVICE = "ADD_SERVICE";
