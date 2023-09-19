@@ -33,6 +33,10 @@ public class MetricsMonitor {
             .labelNames("module", "method", "url", "code").name("nacos_client_request").help("nacos_client_request")
             .register();
     
+    private static final Gauge NACOS_REGISTER_STATUS_MONITOR = Gauge.build()
+            .name("nacos_client_register_status_monitor").help("nacos_client_register_status_monitor")
+            .labelNames("service_name", "instance_id", "protocol", "register_type").register();
+    
     public static Gauge.Child getServiceInfoMapSizeMonitor() {
         return NACOS_MONITOR.labels("naming", "serviceInfoMapSize");
     }
@@ -51,6 +55,11 @@ public class MetricsMonitor {
     
     public static Histogram.Child getNamingRequestMonitor(String method, String url, String code) {
         return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("naming", method, url, code);
+    }
+    
+    public static Gauge.Child getClientRegisterStatusMonitor(String serviceName, String instanceId, String protocol,
+            String registerType) {
+        return NACOS_REGISTER_STATUS_MONITOR.labels(serviceName, instanceId, protocol, registerType);
     }
 }
 

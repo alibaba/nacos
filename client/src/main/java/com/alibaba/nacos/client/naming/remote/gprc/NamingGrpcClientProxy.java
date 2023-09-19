@@ -41,6 +41,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -63,6 +64,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -199,8 +201,32 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             throws NacosException {
         BatchInstanceRequest request = new BatchInstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.BATCH_REGISTER_INSTANCE, instances);
-        requestToServer(request, BatchInstanceResponse.class);
+        Exception exception = null;
+        try {
+            requestToServer(request, BatchInstanceResponse.class);
+        } catch (NacosException e) {
+            exception = e;
+            throw e;
+        } finally {
+            recordBatchRegistrationMetrics(request, exception);
+        }
         redoService.instanceRegistered(serviceName, groupName);
+    }
+    
+    /**
+     * Records batch registration metrics for a group of service instances.
+     *
+     * @param request   The batch instance registration request.
+     * @param exception The exception, if any, that was caught during batch registration; null if no exception
+     *                  occurred.
+     */
+    private void recordBatchRegistrationMetrics(BatchInstanceRequest request, Exception exception) {
+        double metricValue = (Objects.isNull(exception)) ? 1.0 : 0.0;
+        for (Instance instance : request.getInstances()) {
+            MetricsMonitor.getClientRegisterStatusMonitor(instance.getServiceName(), instance.getInstanceId(),
+                            RemoteConstants.REMOTE_PROTOCOL_GRPC, RemoteConstants.INSTANCE_BATCH_REGISTER_TYPE)
+                    .set(metricValue);
+        }
     }
     
     /**
@@ -214,8 +240,29 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void doRegisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
-        requestToServer(request, Response.class);
+        Exception exception = null;
+        try {
+            requestToServer(request, Response.class);
+        } catch (NacosException e) {
+            exception = e;
+            throw e;
+        } finally {
+            recordRegistrationMetrics(request, exception);
+        }
         redoService.instanceRegistered(serviceName, groupName);
+    }
+    
+    /**
+     * Records registration metrics for a service instance.
+     *
+     * @param request   The instance registration request.
+     * @param exception The exception, if any, that was caught during registration; null if no exception occurred.
+     */
+    private void recordRegistrationMetrics(InstanceRequest request, Exception exception) {
+        double metricValue = (Objects.isNull(exception)) ? 1.0 : 0.0;
+        Instance instance = request.getInstance();
+        MetricsMonitor.getClientRegisterStatusMonitor(instance.getServiceName(), instance.getInstanceId(),
+                RemoteConstants.REMOTE_PROTOCOL_GRPC, RemoteConstants.INSTANCE_NORMAL_REGISTER_TYPE).set(metricValue);
     }
     
     @Override
