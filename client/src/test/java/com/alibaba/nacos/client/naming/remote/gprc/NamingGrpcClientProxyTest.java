@@ -123,6 +123,8 @@ public class NamingGrpcClientProxyTest {
     
     private Instance instance;
     
+    private Instance instance2;
+    
     private String uuid;
     
     @Rule
@@ -144,7 +146,7 @@ public class NamingGrpcClientProxyTest {
         uuidField.setAccessible(true);
         uuid = (String) uuidField.get(client);
         
-        Assert.assertTrue(RpcClientFactory.getClient(uuid) != null);
+        Assert.assertNotNull(RpcClientFactory.getClient(uuid));
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
         ((RpcClient) rpcClientField.get(client)).shutdown();
@@ -156,6 +158,10 @@ public class NamingGrpcClientProxyTest {
         instance.setServiceName(SERVICE_NAME);
         instance.setIp("1.1.1.1");
         instance.setPort(1111);
+        instance2 = new Instance();
+        instance2.setServiceName(SERVICE_NAME);
+        instance2.setIp("1.1.1.2");
+        instance2.setPort(1111);
     }
     
     @After
@@ -187,7 +193,7 @@ public class NamingGrpcClientProxyTest {
         try {
             client.registerService(SERVICE_NAME, GROUP_NAME, instance);
         } catch (NacosException ex) {
-            Assert.assertEquals(null, ex.getCause());
+            Assert.assertNull(ex.getCause());
             
             throw ex;
         }
@@ -227,7 +233,7 @@ public class NamingGrpcClientProxyTest {
             List<Instance> instanceList = new ArrayList<>();
             instance.setHealthy(true);
             instanceList.add(instance);
-            instanceList.add(new Instance());
+            instanceList.add(instance2);
             client.batchRegisterService(SERVICE_NAME, GROUP_NAME, instanceList);
         } catch (Exception ignored) {
         }
@@ -306,7 +312,7 @@ public class NamingGrpcClientProxyTest {
             List<Instance> instanceList = new ArrayList<>();
             instance.setHealthy(true);
             instanceList.add(instance);
-            instanceList.add(new Instance());
+            instanceList.add(instance2);
             client.batchRegisterService(SERVICE_NAME, GROUP_NAME, instanceList);
         } catch (Exception ignored) {
         }
@@ -435,7 +441,7 @@ public class NamingGrpcClientProxyTest {
     @Test
     public void testShutdown() throws Exception {
         client.shutdown();
-        Assert.assertTrue(RpcClientFactory.getClient(uuid) == null);
+        Assert.assertNull(RpcClientFactory.getClient(uuid));
         //verify(this.rpcClient, times(1)).shutdown();
     }
     

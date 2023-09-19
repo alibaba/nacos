@@ -223,9 +223,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private void recordBatchRegistrationMetrics(BatchInstanceRequest request, Exception exception) {
         double metricValue = (Objects.isNull(exception)) ? 1.0 : 0.0;
         for (Instance instance : request.getInstances()) {
-            MetricsMonitor.getClientRegisterStatusMonitor(instance.getServiceName(), instance.getInstanceId(),
-                            RemoteConstants.REMOTE_PROTOCOL_GRPC, RemoteConstants.INSTANCE_BATCH_REGISTER_TYPE)
-                    .set(metricValue);
+            MetricsMonitor.getClientRegisterStatusMonitor(instance.getServiceName(), instance.getIp(),
+                    Integer.toString(instance.getPort()), RemoteConstants.REMOTE_PROTOCOL_GRPC,
+                    RemoteConstants.INSTANCE_BATCH_REGISTER_TYPE).set(metricValue);
         }
     }
     
@@ -261,8 +261,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private void recordRegistrationMetrics(InstanceRequest request, Exception exception) {
         double metricValue = (Objects.isNull(exception)) ? 1.0 : 0.0;
         Instance instance = request.getInstance();
-        MetricsMonitor.getClientRegisterStatusMonitor(instance.getServiceName(), instance.getInstanceId(),
-                RemoteConstants.REMOTE_PROTOCOL_GRPC, RemoteConstants.INSTANCE_NORMAL_REGISTER_TYPE).set(metricValue);
+        MetricsMonitor.getClientRegisterStatusMonitor(instance.getServiceName(), instance.getIp(),
+                Integer.toString(instance.getPort()), RemoteConstants.REMOTE_PROTOCOL_GRPC,
+                RemoteConstants.INSTANCE_NORMAL_REGISTER_TYPE).set(metricValue);
     }
     
     @Override
