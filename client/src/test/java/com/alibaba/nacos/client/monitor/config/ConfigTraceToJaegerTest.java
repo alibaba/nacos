@@ -56,7 +56,7 @@ public class ConfigTraceToJaegerTest {
     public void mock() throws Exception {
         final Properties properties = new Properties();
         // set your own nacos server address
-        properties.put("serverAddr", "10.3.242.223:8848");
+        properties.put("serverAddr", "1.1.1.1:8848");
         nacosConfigService = new NacosConfigService(properties);
     }
     
