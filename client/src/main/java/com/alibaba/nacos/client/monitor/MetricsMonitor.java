@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.monitor;
 
+import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Histogram;
 
@@ -33,9 +34,9 @@ public class MetricsMonitor {
             .labelNames("module", "method", "url", "code").name("nacos_client_request").help("nacos_client_request")
             .register();
     
-    private static final Gauge NACOS_REGISTER_STATUS_MONITOR = Gauge.build()
-            .name("nacos_client_register_status_monitor").help("nacos_client_register_status_monitor")
-            .labelNames("service_name", "address", "protocol", "register_type").register();
+    private static final Counter NACOS_CLIENT_REGISTER_FAILED_TOTAL = Counter.build()
+            .name("nacos_client_register_failed_total")
+            .labelNames("namespace", "group", "service_name", "err_code", "err_type").register();
     
     public static Gauge.Child getServiceInfoMapSizeMonitor() {
         return NACOS_MONITOR.labels("naming", "serviceInfoMapSize");
@@ -57,9 +58,9 @@ public class MetricsMonitor {
         return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("naming", method, url, code);
     }
     
-    public static Gauge.Child getClientRegisterStatusMonitor(String serviceName, String ip, String port,
-            String protocol, String registerType) {
-        return NACOS_REGISTER_STATUS_MONITOR.labels(serviceName, ip + ":" + port, protocol, registerType);
+    public static Counter.Child getClientRegisterStatusMonitor(String namespace, String group, String serviceName,
+            String errCode, String errType) {
+        return NACOS_CLIENT_REGISTER_FAILED_TOTAL.labels(namespace, group, serviceName, errCode, errType);
     }
 }
 

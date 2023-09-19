@@ -64,7 +64,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -201,32 +200,25 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             throws NacosException {
         BatchInstanceRequest request = new BatchInstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.BATCH_REGISTER_INSTANCE, instances);
-        Exception exception = null;
         try {
             requestToServer(request, BatchInstanceResponse.class);
         } catch (NacosException e) {
-            exception = e;
+            recordRegistrationMetrics(request, e);
             throw e;
-        } finally {
-            recordBatchRegistrationMetrics(request, exception);
         }
         redoService.instanceRegistered(serviceName, groupName);
     }
     
     /**
-     * Records batch registration metrics for a group of service instances.
+     * Records registration metrics for a service instance.
      *
-     * @param request   The batch instance registration request.
-     * @param exception The exception, if any, that was caught during batch registration; null if no exception
-     *                  occurred.
+     * @param request   Base Class for Registration Requests.
+     * @param exception The NacosException encountered during the registration process.
      */
-    private void recordBatchRegistrationMetrics(BatchInstanceRequest request, Exception exception) {
-        double metricValue = (Objects.isNull(exception)) ? 1.0 : 0.0;
-        for (Instance instance : request.getInstances()) {
-            MetricsMonitor.getClientRegisterStatusMonitor(instance.getServiceName(), instance.getIp(),
-                    Integer.toString(instance.getPort()), RemoteConstants.REMOTE_PROTOCOL_GRPC,
-                    RemoteConstants.INSTANCE_BATCH_REGISTER_TYPE).set(metricValue);
-        }
+    private void recordRegistrationMetrics(AbstractNamingRequest request, NacosException exception) {
+        MetricsMonitor.getClientRegisterStatusMonitor(request.getServiceName(), request.getGroupName(),
+                        request.getServiceName(), String.valueOf(exception.getErrCode()), exception.getClass().getSimpleName())
+                .inc();
     }
     
     /**
@@ -240,31 +232,15 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void doRegisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
-        Exception exception = null;
         try {
             requestToServer(request, Response.class);
         } catch (NacosException e) {
-            exception = e;
+            recordRegistrationMetrics(request, e);
             throw e;
-        } finally {
-            recordRegistrationMetrics(request, exception);
         }
         redoService.instanceRegistered(serviceName, groupName);
     }
     
-    /**
-     * Records registration metrics for a service instance.
-     *
-     * @param request   The instance registration request.
-     * @param exception The exception, if any, that was caught during registration; null if no exception occurred.
-     */
-    private void recordRegistrationMetrics(InstanceRequest request, Exception exception) {
-        double metricValue = (Objects.isNull(exception)) ? 1.0 : 0.0;
-        Instance instance = request.getInstance();
-        MetricsMonitor.getClientRegisterStatusMonitor(instance.getServiceName(), instance.getIp(),
-                Integer.toString(instance.getPort()), RemoteConstants.REMOTE_PROTOCOL_GRPC,
-                RemoteConstants.INSTANCE_NORMAL_REGISTER_TYPE).set(metricValue);
-    }
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {

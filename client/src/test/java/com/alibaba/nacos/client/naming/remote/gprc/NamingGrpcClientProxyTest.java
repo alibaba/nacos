@@ -123,8 +123,6 @@ public class NamingGrpcClientProxyTest {
     
     private Instance instance;
     
-    private Instance instance2;
-    
     private String uuid;
     
     @Rule
@@ -145,7 +143,7 @@ public class NamingGrpcClientProxyTest {
         Field uuidField = NamingGrpcClientProxy.class.getDeclaredField("uuid");
         uuidField.setAccessible(true);
         uuid = (String) uuidField.get(client);
-        
+    
         Assert.assertNotNull(RpcClientFactory.getClient(uuid));
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
@@ -158,10 +156,6 @@ public class NamingGrpcClientProxyTest {
         instance.setServiceName(SERVICE_NAME);
         instance.setIp("1.1.1.1");
         instance.setPort(1111);
-        instance2 = new Instance();
-        instance2.setServiceName(SERVICE_NAME);
-        instance2.setIp("1.1.1.2");
-        instance2.setPort(1111);
     }
     
     @After
@@ -233,7 +227,7 @@ public class NamingGrpcClientProxyTest {
             List<Instance> instanceList = new ArrayList<>();
             instance.setHealthy(true);
             instanceList.add(instance);
-            instanceList.add(instance2);
+            instanceList.add(new Instance());
             client.batchRegisterService(SERVICE_NAME, GROUP_NAME, instanceList);
         } catch (Exception ignored) {
         }
@@ -312,7 +306,7 @@ public class NamingGrpcClientProxyTest {
             List<Instance> instanceList = new ArrayList<>();
             instance.setHealthy(true);
             instanceList.add(instance);
-            instanceList.add(instance2);
+            instanceList.add(new Instance());
             client.batchRegisterService(SERVICE_NAME, GROUP_NAME, instanceList);
         } catch (Exception ignored) {
         }
