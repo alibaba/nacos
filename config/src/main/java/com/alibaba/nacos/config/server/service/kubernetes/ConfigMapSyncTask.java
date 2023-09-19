@@ -121,7 +121,7 @@ public class ConfigMapSyncTask {
     
     private Map<String, String> contentToMap(String content) {
         String[] pairs = content.split(", ");
-        Map<String, String> hashMap = new HashMap<>();
+        Map<String, String> hashMap = new HashMap<>(pairs.length);
         String currentKey = null;
         for (String pair : pairs) {
             if (isPair(pair)) {
