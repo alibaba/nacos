@@ -38,10 +38,4 @@ public class RemoteConstants {
     public static final String LABEL_MODULE_CONFIG = "config";
     
     public static final String LABEL_MODULE_NAMING = "naming";
-    
-    public static final String REMOTE_PROTOCOL_GRPC = "grpc";
-    
-    public static final String INSTANCE_BATCH_REGISTER_TYPE = "batch";
-    
-    public static final String INSTANCE_NORMAL_REGISTER_TYPE = "normal";
 }
