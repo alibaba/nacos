@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.NamingService;
+import com.alibaba.nacos.api.naming.listener.AbstractWatchEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -28,9 +29,12 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.cache.WatchServiceListHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
+import com.alibaba.nacos.client.naming.event.WatchNotifyEvent;
+import com.alibaba.nacos.client.naming.event.WatchServiceChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
@@ -69,7 +73,11 @@ public class NacosNamingService implements NamingService {
     
     private ServiceInfoHolder serviceInfoHolder;
     
+    private WatchServiceListHolder watchServiceListHolder;
+    
     private InstancesChangeNotifier changeNotifier;
+    
+    private WatchServiceChangeNotifier watchServiceChangeNotifier;
     
     private NamingClientProxy clientProxy;
     
@@ -98,8 +106,14 @@ public class NacosNamingService implements NamingService {
         this.changeNotifier = new InstancesChangeNotifier(this.notifierEventScope);
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(changeNotifier);
+        this.watchServiceChangeNotifier = new WatchServiceChangeNotifier(this.notifierEventScope);
+        NotifyCenter.registerToPublisher(WatchNotifyEvent.class, 16384);
+        NotifyCenter.registerSubscriber(watchServiceChangeNotifier);
+        
         this.serviceInfoHolder = new ServiceInfoHolder(namespace, this.notifierEventScope, nacosClientProperties);
-        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, nacosClientProperties, changeNotifier);
+        this.watchServiceListHolder = new WatchServiceListHolder(this.notifierEventScope, nacosClientProperties);
+        this.clientProxy = new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, watchServiceListHolder,
+                nacosClientProperties, changeNotifier);
     }
     
     private void initLogName(NacosClientProperties properties) {
@@ -427,6 +441,53 @@ public class NacosNamingService implements NamingService {
         changeNotifier.deregisterListener(groupName, serviceName, clustersString, listener);
         if (!changeNotifier.isSubscribed(groupName, serviceName, clustersString)) {
             clientProxy.unsubscribe(serviceName, groupName, clustersString);
+        }
+    }
+    
+    @Override
+    public void fuzzyWatch(String fixedGroupName, AbstractWatchEventListener listener) throws NacosException {
+        // pattern e.g. DEFAULT_GROUP@@MATCH_ALL
+        doFuzzyWatch(Constants.WatchMatchRule.MATCH_ALL, fixedGroupName, listener);
+    }
+    
+    @Override
+    public void fuzzyWatch(String serviceNamePattern, String fixedGroupName,
+            AbstractWatchEventListener listener) throws NacosException {
+        // only support prefix match right now
+        // pattern e.g. DEFAULT_GROUP@@nacos.test##MATCH_PREFIX
+        String serviceNamePrefixPattern = NamingUtils.getGroupedPattern(serviceNamePattern, Constants.WatchMatchRule.MATCH_PREFIX);
+        doFuzzyWatch(serviceNamePrefixPattern, fixedGroupName, listener);
+    }
+    
+    private void doFuzzyWatch(String serviceNamePattern, String groupNamePattern,
+            AbstractWatchEventListener listener) throws NacosException {
+        if (null == listener) {
+            return;
+        }
+        String uuid = UUID.randomUUID().toString();
+        listener.setUuid(uuid);
+        watchServiceChangeNotifier.registerWatchListener(serviceNamePattern, groupNamePattern, listener);
+        clientProxy.fuzzyWatch(serviceNamePattern, groupNamePattern, uuid);
+    }
+    
+    @Override
+    public void cancelFuzzyWatch(String fixedGroupName, AbstractWatchEventListener listener) throws NacosException {
+        doCancelFuzzyWatch(Constants.WatchMatchRule.MATCH_ALL, fixedGroupName, listener);
+    }
+    
+    @Override
+    public void cancelFuzzyWatch(String serviceNamePattern, String fixedGroupName, AbstractWatchEventListener listener) throws NacosException {
+        String serviceNamePrefixPattern =  NamingUtils.getGroupedPattern(serviceNamePattern, Constants.WatchMatchRule.MATCH_PREFIX);
+        doCancelFuzzyWatch(serviceNamePrefixPattern, fixedGroupName, listener);
+    }
+    
+    private void doCancelFuzzyWatch(String serviceNamePattern, String groupNamePattern, AbstractWatchEventListener listener) throws NacosException {
+        if (null == listener) {
+            return;
+        }
+        watchServiceChangeNotifier.deregisterWatchListener(serviceNamePattern, groupNamePattern, listener);
+        if (!watchServiceChangeNotifier.isWatched(serviceNamePattern, groupNamePattern)) {
+            clientProxy.cancelFuzzyWatch(serviceNamePattern, groupNamePattern);
         }
     }
     

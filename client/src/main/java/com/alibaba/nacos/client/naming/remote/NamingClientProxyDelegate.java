@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.cache.WatchServiceListHolder;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.core.ServiceInfoUpdateService;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
@@ -57,6 +58,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     private final ServiceInfoHolder serviceInfoHolder;
     
+    private final WatchServiceListHolder watchServiceListHolder;
+    
     private final NamingHttpClientProxy httpClientProxy;
     
     private final NamingGrpcClientProxy grpcClientProxy;
@@ -65,18 +68,19 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     private ScheduledExecutorService executorService;
     
-    public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder, NacosClientProperties properties,
-            InstancesChangeNotifier changeNotifier) throws NacosException {
+    public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder, WatchServiceListHolder watchServiceListHolder,
+            NacosClientProperties properties, InstancesChangeNotifier changeNotifier) throws NacosException {
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
         this.serverListManager = new ServerListManager(properties, namespace);
         this.serviceInfoHolder = serviceInfoHolder;
+        this.watchServiceListHolder = watchServiceListHolder;
         this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
         this.httpClientProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties);
         this.grpcClientProxy = new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties,
-                serviceInfoHolder);
+                serviceInfoHolder, watchServiceListHolder);
     }
     
     private void initSecurityProxy(NacosClientProperties properties) {
@@ -187,6 +191,31 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public boolean isSubscribed(String serviceName, String groupName, String clusters) throws NacosException {
         return grpcClientProxy.isSubscribed(serviceName, groupName, clusters);
+    }
+    
+    @Override
+    public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String uuid) throws NacosException {
+        NAMING_LOGGER.info("[WATCH] serviceNamePattern:{}, groupNamePattern:{}", serviceNamePattern, groupNamePattern);
+        if (!watchServiceListHolder.containsPatternMatchCache(serviceNamePattern, groupNamePattern)
+                || !isFuzzyWatched(serviceNamePattern, groupNamePattern)) {
+            watchServiceListHolder.addPatternMatchCache(serviceNamePattern, groupNamePattern);
+            grpcClientProxy.fuzzyWatch(serviceNamePattern, groupNamePattern, "");
+        } else {
+            watchServiceListHolder.duplicateWatchInit(serviceNamePattern, groupNamePattern, uuid);
+        }
+    }
+    
+    @Override
+    public boolean isFuzzyWatched(String serviceNamePattern, String groupNamePattern) {
+        return grpcClientProxy.isFuzzyWatched(serviceNamePattern, groupNamePattern);
+    }
+    
+    @Override
+    public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
+        NAMING_LOGGER
+                .debug("[CANCEL-WATCH] serviceNamePattern:{}, groupNamePattern:{} ", serviceNamePattern, groupNamePattern);
+        watchServiceListHolder.removePatternMatchCache(serviceNamePattern, groupNamePattern);
+        grpcClientProxy.cancelFuzzyWatch(serviceNamePattern, groupNamePattern);
     }
     
     @Override

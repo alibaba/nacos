@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
+import com.alibaba.nacos.api.naming.remote.request.AbstractWatchNotifyRequest;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
+import com.alibaba.nacos.api.naming.remote.response.NotifyWatcherResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.cache.WatchServiceListHolder;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 
 /**
@@ -32,8 +35,11 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
     
     private final ServiceInfoHolder serviceInfoHolder;
     
-    public NamingPushRequestHandler(ServiceInfoHolder serviceInfoHolder) {
+    private final WatchServiceListHolder watchServiceListHolder;
+    
+    public NamingPushRequestHandler(ServiceInfoHolder serviceInfoHolder, WatchServiceListHolder watchServiceListHolder) {
         this.serviceInfoHolder = serviceInfoHolder;
+        this.watchServiceListHolder = watchServiceListHolder;
     }
     
     @Override
@@ -42,6 +48,10 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
             NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
             serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());
             return new NotifySubscriberResponse();
+        } else if (request instanceof AbstractWatchNotifyRequest) {
+            AbstractWatchNotifyRequest notifyRequest = (AbstractWatchNotifyRequest) request;
+            watchServiceListHolder.processServiceChange(notifyRequest);
+            return new NotifyWatcherResponse();
         }
         return null;
     }
