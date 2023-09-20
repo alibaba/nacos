@@ -24,7 +24,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
-import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
+import com.alibaba.nacos.client.naming.selector.DefaultNamingSelector;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -174,8 +174,7 @@ public class Unsubscribe_ITCase {
             }
         };
         
-        NamingSelector selector = NamingSelectorFactory.newCustomSelector(
-                instance -> instance.getIp().startsWith("127.0.0"));
+        NamingSelector selector = new DefaultNamingSelector(instance -> instance.getIp().startsWith("127.0.0"));
         
         naming.subscribe(serviceName, selector, listener);
         

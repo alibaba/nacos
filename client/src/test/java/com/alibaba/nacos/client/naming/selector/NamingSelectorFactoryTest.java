@@ -26,8 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
-import java.util.function.Predicate;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -176,95 +174,5 @@ public class NamingSelectorFactoryTest {
         assertTrue(result.contains(ins1));
         assertTrue(result.contains(ins2));
         assertTrue(result.contains(ins3));
-    }
-    
-    @Test
-    public void testNewCustomSelector() {
-        Instance ins1 = new Instance();
-        ins1.setClusterName("a");
-        Instance ins2 = new Instance();
-        ins2.setIp("127.0.0.1");
-        Instance ins3 = new Instance();
-        
-        NamingContext namingContext = mock(NamingContext.class);
-        when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
-        
-        Predicate<Instance> filter = instance -> Objects.equals(instance.getClusterName(), "a") || Objects.equals(
-                instance.getIp(), "127.0.0.1");
-        
-        NamingSelector customSelector = NamingSelectorFactory.newCustomSelector(filter);
-        List<Instance> result = customSelector.select(namingContext).getResult();
-        
-        assertEquals(2, result.size());
-        assertEquals(ins1, result.get(0));
-        assertEquals(ins2, result.get(1));
-    }
-    
-    @Test
-    public void testNewInterSelector() {
-        Instance ins1 = new Instance();
-        ins1.setClusterName("a");
-        Instance ins2 = new Instance();
-        ins2.setClusterName("b");
-        Instance ins3 = new Instance();
-        ins3.setClusterName("c");
-        
-        NamingSelector selector1 = NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "b"));
-        NamingSelector selector2 = NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "c"));
-        
-        NamingContext namingContext = mock(NamingContext.class);
-        when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
-        
-        NamingSelector interSelector = NamingSelectorFactory.newInterSelector(selector1, selector2);
-        List<Instance> result = interSelector.select(namingContext).getResult();
-        
-        assertEquals(1, result.size());
-        assertEquals(ins1, result.get(0));
-    }
-    
-    @Test
-    public void testNewUnionSelector() {
-        Instance ins1 = new Instance();
-        ins1.setClusterName("a");
-        Instance ins2 = new Instance();
-        ins2.setClusterName("b");
-        Instance ins3 = new Instance();
-        ins3.setClusterName("c");
-        
-        NamingSelector selector1 = NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "b"));
-        NamingSelector selector2 = NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "c"));
-        
-        NamingContext namingContext = mock(NamingContext.class);
-        when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
-        
-        NamingSelector unionSelector = NamingSelectorFactory.newUnionSelector(selector1, selector2);
-        List<Instance> result = unionSelector.select(namingContext).getResult();
-        
-        assertEquals(3, result.size());
-        assertTrue(result.contains(ins1));
-        assertTrue(result.contains(ins2));
-        assertTrue(result.contains(ins3));
-    }
-    
-    @Test
-    public void testNewDiffSelector() {
-        Instance ins1 = new Instance();
-        ins1.setClusterName("a");
-        Instance ins2 = new Instance();
-        ins2.setClusterName("b");
-        Instance ins3 = new Instance();
-        ins3.setClusterName("c");
-        
-        NamingSelector selector1 = NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "b"));
-        NamingSelector selector2 = NamingSelectorFactory.newClusterSelector(Arrays.asList("a", "c"));
-        
-        NamingContext namingContext = mock(NamingContext.class);
-        when(namingContext.getInstances()).thenReturn(Arrays.asList(ins1, ins2, ins3));
-        
-        NamingSelector diffSelector = NamingSelectorFactory.newDiffSelector(selector1, selector2);
-        List<Instance> result = diffSelector.select(namingContext).getResult();
-        
-        assertEquals(1, result.size());
-        assertEquals(ins2, result.get(0));
     }
 }

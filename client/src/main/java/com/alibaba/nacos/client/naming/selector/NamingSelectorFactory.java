@@ -17,16 +17,12 @@
 package com.alibaba.nacos.client.naming.selector;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.api.naming.selector.NamingContext;
-import com.alibaba.nacos.api.naming.selector.NamingResult;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -144,95 +140,6 @@ public final class NamingSelectorFactory {
             }
         }
         return new DefaultNamingSelector(filter);
-    }
-    
-    /**
-     * Create a custom selector.
-     *
-     * @param filter Filter condition
-     * @return custom selector
-     */
-    public static NamingSelector newCustomSelector(Predicate<Instance> filter) {
-        if (filter == null) {
-            throw new IllegalArgumentException("The parameter 'filter' cannot be null.");
-        }
-        return new DefaultNamingSelector(filter);
-    }
-    
-    /**
-     * Combine multiple selectors and take the intersection of the selected results.
-     *
-     * @param selectors Combined selectors
-     * @return intersection selector
-     */
-    public static NamingSelector newInterSelector(NamingSelector... selectors) {
-        if (selectors == null) {
-            throw new IllegalArgumentException("The parameter 'selectors' cannot be null.");
-        }
-        return new NamingSelector() {
-            @Override
-            public NamingResult select(NamingContext context) {
-                Set<Instance> set = new HashSet<>(context.getInstances());
-                for (NamingSelector selector : selectors) {
-                    NamingResult result = selector.select(context);
-                    set.retainAll(result.getResult());
-                }
-                List<Instance> list = new ArrayList<>(set);
-                return () -> list;
-            }
-        };
-    }
-    
-    /**
-     * Combine multiple selectors and take the union of the selected results.
-     *
-     * @param selectors Combined selectors
-     * @return union selector
-     */
-    public static NamingSelector newUnionSelector(NamingSelector... selectors) {
-        if (selectors == null) {
-            throw new IllegalArgumentException("The parameter 'selectors' cannot be null.");
-        }
-        return new NamingSelector() {
-            @Override
-            public NamingResult select(NamingContext context) {
-                Set<Instance> set = new HashSet<>();
-                for (NamingSelector selector : selectors) {
-                    NamingResult result = selector.select(context);
-                    set.addAll(result.getResult());
-                }
-                List<Instance> list = new ArrayList<>(set);
-                return () -> list;
-            }
-        };
-    }
-    
-    /**
-     * Combine multiple selectors and take the difference set of selected results.
-     *
-     * @param original original selector
-     * @param exclude  excluded selector
-     * @return difference selector
-     */
-    public static NamingSelector newDiffSelector(NamingSelector original, NamingSelector... exclude) {
-        if (original == null) {
-            throw new IllegalArgumentException("The parameter 'original' cannot be null.");
-        }
-        if (exclude == null) {
-            throw new IllegalArgumentException("The parameter 'exclude' cannot be null.");
-        }
-        return new NamingSelector() {
-            @Override
-            public NamingResult select(NamingContext context) {
-                Set<Instance> set = new HashSet<>(original.select(context).getResult());
-                for (NamingSelector selector : exclude) {
-                    NamingResult result = selector.select(context);
-                    result.getResult().forEach(set::remove);
-                }
-                List<Instance> list = new ArrayList<>(set);
-                return () -> list;
-            }
-        };
     }
     
     public static String getUniqueClusterString(Collection<String> cluster) {
