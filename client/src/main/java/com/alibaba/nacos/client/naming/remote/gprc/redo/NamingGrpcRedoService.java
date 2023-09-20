@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.data.WatcherRedoData;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
@@ -35,6 +36,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Naming client gprc redo service.
@@ -57,6 +59,8 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     private final ConcurrentMap<String, InstanceRedoData> registeredInstances = new ConcurrentHashMap<>();
     
     private final ConcurrentMap<String, SubscriberRedoData> subscribes = new ConcurrentHashMap<>();
+    
+    private final ConcurrentMap<String, WatcherRedoData> watcher = new ConcurrentHashMap<>();
     
     private final ScheduledExecutorService redoExecutor;
     
@@ -87,6 +91,9 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
         }
         synchronized (subscribes) {
             subscribes.values().forEach(subscriberRedoData -> subscriberRedoData.setRegistered(false));
+        }
+        synchronized (watcher) {
+            watcher.values().forEach(watcherRedoData -> watcherRedoData.setRegistered(false));
         }
         LogUtils.NAMING_LOGGER.warn("mark to redo completed");
     }
@@ -301,6 +308,95 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
             }
         }
         return result;
+    }
+    
+    /**
+     * Cache watcher for redo.
+     *
+     * @param serviceNamePattern service name pattern
+     * @param groupNamePattern group name pattern
+     */
+    public void cacheWatcherForRedo(String serviceNamePattern, String groupNamePattern) {
+        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
+        WatcherRedoData redoData = WatcherRedoData.build(serviceNamePattern, groupNamePattern);
+        synchronized (watcher) {
+            watcher.put(key, redoData);
+        }
+    }
+    
+    /**
+     * Watcher register successfully, mark registered status as {@code true}.
+     *
+     * @param serviceNamePattern service name pattern
+     * @param groupNamePattern group name pattern
+     */
+    public void watcherRegistered(String serviceNamePattern, String groupNamePattern) {
+        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
+        synchronized (watcher) {
+            WatcherRedoData redoData = watcher.get(key);
+            if (null != redoData) {
+                redoData.setRegistered(true);
+            }
+        }
+    }
+    
+    /**
+     * Watcher deregister, mark unregistering status as {@code true}.
+     *
+     * @param serviceNamePattern service name pattern
+     * @param groupNamePattern group name pattern
+     */
+    public void watcherDeregister(String serviceNamePattern, String groupNamePattern) {
+        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
+        synchronized (watcher) {
+            WatcherRedoData redoData = watcher.get(key);
+            if (null != redoData) {
+                redoData.setUnregistering(true);
+                redoData.setExpectedRegistered(false);
+            }
+        }
+    }
+    
+    /**
+     * Remove watcher for redo.
+     *
+     * @param serviceNamePattern service name pattern
+     * @param groupNamePattern group name pattern
+     */
+    public void removeWatcherForRedo(String serviceNamePattern, String groupNamePattern) {
+        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
+        synchronized (watcher) {
+            WatcherRedoData redoData = watcher.get(key);
+            if (null != redoData && !redoData.isExpectedRegistered()) {
+                watcher.remove(key);
+            }
+        }
+    }
+    
+    /**
+     * Judge watcher has registered to server.
+     *
+     * @param serviceNamePattern service name pattern
+     * @param groupNamePattern group name pattern
+     * @return {@code true} if watched, otherwise {@code false}
+     */
+    public boolean isWatcherRegistered(String serviceNamePattern, String groupNamePattern) {
+        String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
+        synchronized (watcher) {
+            WatcherRedoData redoData = watcher.get(key);
+            return null != redoData && redoData.isRegistered();
+        }
+    }
+    
+    /**
+     * Find all watcher redo data which need do redo.
+     *
+     * @return set of {@code WatcherRedoData} need to do redo.
+     */
+    public Set<WatcherRedoData> findWatcherRedoData() {
+        return watcher.values().stream()
+                .filter(WatcherRedoData::isNeedRedo)
+                .collect(Collectors.toSet());
     }
     
     /**
