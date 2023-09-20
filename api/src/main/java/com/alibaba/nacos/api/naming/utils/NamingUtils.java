@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.utils.StringUtils;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -270,6 +271,75 @@ public class NamingUtils {
             return Constants.WatchMatchRule.MATCH_ALL;
         }
         return groupedPattern.split(Constants.MATCH_PATTERN_SPLITER)[1];
+    }
+    
+    /**
+     * Given a service, and a list of watched patterns, return the patterns that the service can match.
+     *
+     * @param serviceName service Name
+     * @param groupName group Name
+     * @param watchPattern a list of completed watch patterns
+     * @return the patterns list that the service can match.
+     */
+    public static Set<String> getServiceMatchedPatterns(String serviceName, String groupName, Collection<String> watchPattern) {
+        if (watchPattern == null || watchPattern.isEmpty()) {
+            return new HashSet<>(1);
+        }
+        Set<String> matchedPatternList = new HashSet<>();
+        for (String eachPattern : watchPattern) {
+            if (isMatchPattern(serviceName, groupName, getServiceName(eachPattern), getGroupName(eachPattern))) {
+                matchedPatternList.add(eachPattern);
+            }
+        }
+        return matchedPatternList;
+    }
+    
+    /**
+     * Given a list of service's name, and a pattern to watch, return the services that can match the pattern.
+     *
+     * @param servicesList a list of service's name
+     * @param serviceNamePattern service name Pattern
+     * @param groupNamePattern group name Pattern
+     * @return the patterns list that the service can match.
+     */
+    public static Set<String> getPatternMatchedServices(Collection<String> servicesList, String serviceNamePattern,
+            String groupNamePattern) {
+        if (servicesList == null || servicesList.isEmpty()) {
+            return new HashSet<>(1);
+        }
+        Set<String> matchList = new HashSet<>();
+        for (String eachService : servicesList) {
+            if (isMatchPattern(getServiceName(eachService), getGroupName(eachService), serviceNamePattern, groupNamePattern)) {
+                matchList.add(eachService);
+            }
+        }
+        return matchList;
+    }
+    
+    /**
+     * Given a service name and a pattern to match, determine whether it can match.
+     *
+     * @param serviceName service name to judge
+     * @param groupName group name to judge
+     * @param serviceNamePattern service name Pattern
+     * @param groupNamePattern group name Pattern
+     * @return matching result
+     */
+    public static boolean isMatchPattern(String serviceName, String groupName, String serviceNamePattern, String groupNamePattern) {
+        String serviceMatchName = getMatchName(serviceNamePattern);
+        String serviceMatchType = getMatchRule(serviceNamePattern);
+        // Only support prefix match or all match right now
+        // Only support fixed group name right now
+        if (serviceMatchType.equals(Constants.WatchMatchRule.MATCH_ALL)) {
+            return groupName.equals(groupNamePattern);
+        } else if (serviceMatchType.equals(Constants.WatchMatchRule.MATCH_PREFIX)) {
+            return prefixMatchWithFixedGroupName(serviceName, serviceMatchName, groupName, getMatchName(groupNamePattern));
+        }
+        return false;
+    }
+    
+    private static boolean prefixMatchWithFixedGroupName(String serviceName, String serviceNamePrefix, String groupName, String fixedGroupName) {
+        return groupName.equals(fixedGroupName) && serviceName.startsWith(serviceNamePrefix);
     }
     
     /**
