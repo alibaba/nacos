@@ -73,7 +73,7 @@ public class WatchServiceListHolder {
             WatchNotifyChangeRequest notifyChangeRequest = (WatchNotifyChangeRequest) request;
             Collection<String> matchedPattern = NamingUtils.getServiceMatchedPatterns(notifyChangeRequest.getServiceName(),
                     notifyChangeRequest.getGroupName(),  patternMatchMap.keySet());
-            Service service = new Service(notifyChangeRequest.getServiceName(), notifyChangeRequest.getGroupName());
+            Service service = new Service(notifyChangeRequest.getServiceName(), notifyChangeRequest.getServiceName());
             String serviceChangeType = request.getServiceChangedType();
             
             switch (serviceChangeType) {
