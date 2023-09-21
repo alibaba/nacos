@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.plugin.control.tps;
 
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -95,7 +98,11 @@ public abstract class RuleBarrier {
     }
     
     public String getLimitMsg() {
-        return String.format("[Period:%s,MaxCount:%s]", period, maxCount);
+        Map<String, String> limitMsg = new HashMap<>(3);
+        limitMsg.put("deniedType", "point");
+        limitMsg.put("period", period.toString());
+        limitMsg.put("limitCount", String.valueOf(maxCount));
+        return JacksonUtils.toJson(limitMsg);
     }
     
     /**

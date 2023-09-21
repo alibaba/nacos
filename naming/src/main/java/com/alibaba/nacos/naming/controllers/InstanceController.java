@@ -31,6 +31,7 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.InstanceOperator;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
@@ -100,6 +101,7 @@ public class InstanceController {
      */
     @CanDistro
     @PostMapping
+    @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE)
     public String register(HttpServletRequest request) throws Exception {
         
@@ -127,6 +129,7 @@ public class InstanceController {
      */
     @CanDistro
     @DeleteMapping
+    @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
     @Secured(action = ActionTypes.WRITE)
     public String deregister(HttpServletRequest request) throws Exception {
         Instance instance = HttpRequestInstanceBuilder.newBuilder()
@@ -151,6 +154,7 @@ public class InstanceController {
      */
     @CanDistro
     @PutMapping
+    @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
     @Secured(action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);
@@ -175,6 +179,7 @@ public class InstanceController {
      */
     @CanDistro
     @PutMapping(value = "/metadata/batch")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
     public ObjectNode batchUpdateInstanceMetadata(HttpServletRequest request) throws Exception {
         final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -208,6 +213,7 @@ public class InstanceController {
      */
     @CanDistro
     @DeleteMapping("/metadata/batch")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
     public ObjectNode batchDeleteInstanceMetadata(HttpServletRequest request) throws Exception {
         final String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID,
@@ -303,6 +309,7 @@ public class InstanceController {
      * @throws Exception any error during list
      */
     @GetMapping("/list")
+    @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ)
     public Object list(HttpServletRequest request) throws Exception {
         
@@ -330,6 +337,7 @@ public class InstanceController {
      * @throws Exception any error during get
      */
     @GetMapping
+    @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
     @Secured(action = ActionTypes.READ)
     public ObjectNode detail(HttpServletRequest request) throws Exception {
         
@@ -363,6 +371,7 @@ public class InstanceController {
      */
     @CanDistro
     @PutMapping("/beat")
+    @TpsControl(pointName = "HttpHealthCheck", name = "HttpHealthCheck")
     @Secured(action = ActionTypes.WRITE)
     public ObjectNode beat(HttpServletRequest request) throws Exception {
         

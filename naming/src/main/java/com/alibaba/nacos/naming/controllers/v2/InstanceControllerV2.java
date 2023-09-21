@@ -36,6 +36,7 @@ import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
@@ -97,6 +98,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PostMapping
+    @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE)
     public Result<String> register(InstanceForm instanceForm) throws NacosException {
         // check param
@@ -118,6 +120,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @DeleteMapping
+    @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
     @Secured(action = ActionTypes.WRITE)
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
@@ -138,6 +141,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PutMapping
+    @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
     @Secured(action = ActionTypes.WRITE)
     public Result<String> update(InstanceForm instanceForm) throws NacosException {
         // check param
@@ -159,6 +163,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PutMapping(value = "/metadata/batch")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
     public Result<InstanceMetadataBatchOperationVo> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
@@ -181,6 +186,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @DeleteMapping("/metadata/batch")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
     public Result<InstanceMetadataBatchOperationVo> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
@@ -272,6 +278,7 @@ public class InstanceControllerV2 {
      * @param clientVersion [header] clientVersion
      */
     @GetMapping("/list")
+    @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ)
     public Result<ServiceInfo> list(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
@@ -306,6 +313,7 @@ public class InstanceControllerV2 {
      * @throws NacosException any error during get
      */
     @GetMapping
+    @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
     @Secured(action = ActionTypes.READ)
     public Result<InstanceDetailInfoVo> detail(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
@@ -344,6 +352,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PutMapping("/beat")
+    @TpsControl(pointName = "HttpHealthCheck", name = "HttpHealthCheck")
     @Secured(action = ActionTypes.WRITE)
     public ObjectNode beat(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(defaultValue = StringUtils.EMPTY) String ip,
