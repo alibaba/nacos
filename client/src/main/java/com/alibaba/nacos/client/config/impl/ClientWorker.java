@@ -43,8 +43,6 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
-import com.alibaba.nacos.client.monitor.config.ConfigTrace;
-import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
@@ -70,11 +68,6 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -159,28 +152,7 @@ public class ClientWorker implements Closeable {
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
         
-        CacheData cache;
-        Span addListenerCacheSpan = ConfigTrace.getClientConfigWorkerSpan("addListenerCache");
-        try (Scope ignored = addListenerCacheSpan.makeCurrent()) {
-            
-            cache = addCacheDataIfAbsent(dataId, group);
-            
-            if (addListenerCacheSpan.isRecording()) {
-                addListenerCacheSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addListeners()");
-                addListenerCacheSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                addListenerCacheSpan.setAttribute("data.id", dataId);
-                addListenerCacheSpan.setAttribute("group", group);
-            }
-            
-        } catch (Throwable e) {
-            addListenerCacheSpan.recordException(e);
-            addListenerCacheSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            addListenerCacheSpan.end();
-        }
+        CacheData cache = addCacheDataIfAbsent(dataId, group);
         
         synchronized (cache) {
             
@@ -207,28 +179,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache;
-        Span addTenantListenerCacheSpan = ConfigTrace.getClientConfigWorkerSpan("addTenantListenerCache");
-        try (Scope ignored = addTenantListenerCacheSpan.makeCurrent()) {
-            
-            cache = addCacheDataIfAbsent(dataId, group, tenant);
-            
-            if (addTenantListenerCacheSpan.isRecording()) {
-                addTenantListenerCacheSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListeners()");
-                addTenantListenerCacheSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                addTenantListenerCacheSpan.setAttribute("data.id", dataId);
-                addTenantListenerCacheSpan.setAttribute("group", group);
-            }
-            
-        } catch (Throwable e) {
-            addTenantListenerCacheSpan.recordException(e);
-            addTenantListenerCacheSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            addTenantListenerCacheSpan.end();
-        }
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             for (Listener listener : listeners) {
@@ -256,30 +207,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache;
-        Span addTenantListenersWithContentCacheSpan = ConfigTrace.getClientConfigWorkerSpan(
-                "addTenantListenersWithContentCache");
-        try (Scope ignored = addTenantListenersWithContentCacheSpan.makeCurrent()) {
-            
-            cache = addCacheDataIfAbsent(dataId, group, tenant);
-            
-            if (addTenantListenersWithContentCacheSpan.isRecording()) {
-                addTenantListenersWithContentCacheSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListenersWithContent()");
-                addTenantListenersWithContentCacheSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                addTenantListenersWithContentCacheSpan.setAttribute("data.id", dataId);
-                addTenantListenersWithContentCacheSpan.setAttribute("group", group);
-                addTenantListenersWithContentCacheSpan.setAttribute("content", content);
-            }
-            
-        } catch (Throwable e) {
-            addTenantListenersWithContentCacheSpan.recordException(e);
-            addTenantListenersWithContentCacheSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            addTenantListenersWithContentCacheSpan.end();
-        }
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             cache.setEncryptedDataKey(encryptedDataKey);
@@ -304,28 +232,7 @@ public class ClientWorker implements Closeable {
     public void removeListener(String dataId, String group, Listener listener) {
         group = blank2defaultGroup(group);
         
-        CacheData cache;
-        Span removeListenerSpan = ConfigTrace.getClientConfigWorkerSpan("removeListenerCache");
-        try (Scope ignored = removeListenerSpan.makeCurrent()) {
-            
-            cache = getCache(dataId, group);
-            
-            if (removeListenerSpan.isRecording()) {
-                removeListenerSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeListener()");
-                removeListenerSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
-                removeListenerSpan.setAttribute("data.id", dataId);
-                removeListenerSpan.setAttribute("group", group);
-            }
-            
-        } catch (Throwable e) {
-            removeListenerSpan.recordException(e);
-            removeListenerSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            removeListenerSpan.end();
-        }
+        CacheData cache = getCache(dataId, group);
         
         if (null != cache) {
             synchronized (cache) {
@@ -351,28 +258,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache;
-        Span removeTenantListenerSpan = ConfigTrace.getClientConfigWorkerSpan("removeTenantListenerCache");
-        try (Scope ignored = removeTenantListenerSpan.makeCurrent()) {
-            
-            cache = getCache(dataId, group, tenant);
-            
-            if (removeTenantListenerSpan.isRecording()) {
-                removeTenantListenerSpan.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeTenantListener()");
-                removeTenantListenerSpan.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
-                removeTenantListenerSpan.setAttribute("data.id", dataId);
-                removeTenantListenerSpan.setAttribute("group", group);
-            }
-            
-        } catch (Throwable e) {
-            removeTenantListenerSpan.recordException(e);
-            removeTenantListenerSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            removeTenantListenerSpan.end();
-        }
+        CacheData cache = getCache(dataId, group, tenant);
         
         if (null != cache) {
             synchronized (cache) {
@@ -1192,30 +1078,7 @@ public class ClientWorker implements Closeable {
                 }
             }
             
-            ConfigQueryResponse response;
-            Span queryConfigRequestSpan = ConfigTrace.getClientConfigWorkerSpan("queryConfigRequest");
-            try (Scope ignored = queryConfigRequestSpan.makeCurrent()) {
-                
-                response = (ConfigQueryResponse) requestProxy(rpcClient, request, readTimeouts);
-                
-                if (queryConfigRequestSpan.isRecording()) {
-                    queryConfigRequestSpan.setAttribute("function.current.name",
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.queryConfig()");
-                    queryConfigRequestSpan.setAttribute("function.called.name",
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
-                    queryConfigRequestSpan.setAttribute("data.id", dataId);
-                    queryConfigRequestSpan.setAttribute("group", group);
-                    queryConfigRequestSpan.setAttribute("tenant", tenant);
-                    queryConfigRequestSpan.setAttribute("timeout.ms", readTimeouts);
-                }
-                
-            } catch (NacosException e) {
-                queryConfigRequestSpan.recordException(e);
-                queryConfigRequestSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                throw e;
-            } finally {
-                queryConfigRequestSpan.end();
-            }
+            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(rpcClient, request, readTimeouts);
             
             ConfigResponse configResponse = new ConfigResponse();
             if (response.isSuccess()) {
@@ -1279,33 +1142,9 @@ public class ClientWorker implements Closeable {
             }
             
             Response rpcResponse;
-            // Trace
-            Span span = ConfigTrace.getClientConfigRpcSpan("GRPC");
             long start = System.currentTimeMillis();
-            try (Scope ignored = span.makeCurrent()) {
-                
-                TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
-                        .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
-                
-                rpcResponse = rpcClientInner.request(request, timeoutMills);
-                
-                if (rpcResponse.isSuccess()) {
-                    span.setStatus(StatusCode.OK);
-                }
-                
-                if (span.isRecording()) {
-                    span.setAttribute(SemanticAttributes.RPC_SYSTEM,
-                            rpcClientInner.getConnectionType().getType().toLowerCase());
-                    span.setAttribute("server.address", rpcClientInner.getCurrentServer().getAddress());
-                    span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, rpcResponse.getResultCode());
-                }
-            } catch (NacosException e) {
-                span.recordException(e);
-                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                throw e;
-            } finally {
-                span.end();
-            }
+            rpcResponse = rpcClientInner.request(request, timeoutMills);
+            
             long cost = System.currentTimeMillis() - start;
             // Metrics
             ConfigMetrics.recordRpcCostDurationTimer(rpcClientInner.getConnectionType().getType(),
@@ -1354,31 +1193,7 @@ public class ClientWorker implements Closeable {
                 request.putAdditionalParam(TYPE_PARAM, type);
                 request.putAdditionalParam(ENCRYPTED_DATA_KEY_PARAM, encryptedDataKey == null ? "" : encryptedDataKey);
                 
-                ConfigPublishResponse response;
-                Span publishConfigRequestSpan = ConfigTrace.getClientConfigWorkerSpan("publishConfigRequest");
-                try (Scope ignored = publishConfigRequestSpan.makeCurrent()) {
-                    
-                    response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
-                    
-                    if (publishConfigRequestSpan.isRecording()) {
-                        publishConfigRequestSpan.setAttribute("function.current.name",
-                                "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.publishConfig()");
-                        publishConfigRequestSpan.setAttribute("function.called.name",
-                                "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
-                        publishConfigRequestSpan.setAttribute("data.id", dataId);
-                        publishConfigRequestSpan.setAttribute("group", group);
-                        publishConfigRequestSpan.setAttribute("tenant", tenant);
-                        publishConfigRequestSpan.setAttribute("app.name", appName);
-                        publishConfigRequestSpan.setAttribute("content", content);
-                    }
-                    
-                } catch (NacosException e) {
-                    publishConfigRequestSpan.recordException(e);
-                    publishConfigRequestSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                    throw e;
-                } finally {
-                    publishConfigRequestSpan.end();
-                }
+                ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
                 
                 if (!response.isSuccess()) {
                     LOGGER.warn("[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
@@ -1403,30 +1218,7 @@ public class ClientWorker implements Closeable {
         public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
             ConfigRemoveRequest request = new ConfigRemoveRequest(dataId, group, tenant, tag);
             
-            ConfigRemoveResponse response;
-            Span removeConfigRequestSpan = ConfigTrace.getClientConfigWorkerSpan("removeConfigRequest");
-            try (Scope ignored = removeConfigRequestSpan.makeCurrent()) {
-                
-                response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
-                
-                if (removeConfigRequestSpan.isRecording()) {
-                    removeConfigRequestSpan.setAttribute("function.current.name",
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.removeConfig()");
-                    removeConfigRequestSpan.setAttribute("function.called.name",
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
-                    removeConfigRequestSpan.setAttribute("data.id", dataId);
-                    removeConfigRequestSpan.setAttribute("group", group);
-                    removeConfigRequestSpan.setAttribute("tenant", tenant);
-                    removeConfigRequestSpan.setAttribute("tag", tag);
-                }
-                
-            } catch (NacosException e) {
-                removeConfigRequestSpan.recordException(e);
-                removeConfigRequestSpan.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                throw e;
-            } finally {
-                removeConfigRequestSpan.end();
-            }
+            ConfigRemoveResponse response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
             
             if (response.isSuccess()) {
                 ConfigMetrics.incRemoveSuccessCounter();

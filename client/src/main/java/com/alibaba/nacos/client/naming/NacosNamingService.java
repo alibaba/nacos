@@ -27,7 +27,6 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
@@ -40,9 +39,6 @@ import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.context.Scope;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -145,90 +141,21 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
-        
-        Span span = NamingTrace.getClientNamingServiceSpan("registerInstance");
-        try (Scope ignored = span.makeCurrent()) {
-            clientProxy.registerService(serviceName, groupName, instance);
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.registerInstance()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.NamingClientProxy.registerService()");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instance", instance.toString());
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-        
+        clientProxy.registerService(serviceName, groupName, instance);
     }
     
     @Override
     public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
             throws NacosException {
         NamingUtils.batchCheckInstanceIsLegal(instances);
-        
-        Span span = NamingTrace.getClientNamingServiceSpan("batchRegisterInstance");
-        try (Scope ignored = span.makeCurrent()) {
-            clientProxy.batchRegisterService(serviceName, groupName, instances);
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.batchRegisterInstance()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.NamingClientProxy.batchRegisterService()");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instances", StringUtils.join(instances, ", "));
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-        
+        clientProxy.batchRegisterService(serviceName, groupName, instances);
     }
     
     @Override
     public void batchDeregisterInstance(String serviceName, String groupName, List<Instance> instances)
             throws NacosException {
         NamingUtils.batchCheckInstanceIsLegal(instances);
-        
-        Span span = NamingTrace.getClientNamingServiceSpan("batchDeregisterInstance");
-        try (Scope ignored = span.makeCurrent()) {
-            clientProxy.batchDeregisterService(serviceName, groupName, instances);
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.batchDeregisterInstance()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.NamingClientProxy.batchDeregisterService()");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instances", StringUtils.join(instances, ", "));
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-        
+        clientProxy.batchDeregisterService(serviceName, groupName, instances);
     }
     
     @Override
@@ -263,30 +190,7 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        
-        Span span = NamingTrace.getClientNamingServiceSpan("deregisterInstance");
-        try (Scope ignored = span.makeCurrent()) {
-            clientProxy.deregisterService(serviceName, groupName, instance);
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.deregisterInstance()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.NamingClientProxy.deregisterService()");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("instance", instance.toString());
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-        
+        clientProxy.deregisterService(serviceName, groupName, instance);
     }
     
     @Override
@@ -333,35 +237,13 @@ public class NacosNamingService implements NamingService {
         ServiceInfo serviceInfo;
         String clusterString = StringUtils.join(clusters, ",");
         
-        Span span = NamingTrace.getClientNamingServiceSpan("getAllInstances");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (subscribe) {
-                serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
-                if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
-                    serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
-                }
-            } else {
-                serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
+        if (subscribe) {
+            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
+            if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
+                serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
             }
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.getAllInstances()");
-                span.setAttribute("function.called.name", "multiple");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("clusters", clusterString);
-                span.setAttribute("subscribe", subscribe);
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
+        } else {
+            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
         }
         
         List<Instance> list;
@@ -418,35 +300,13 @@ public class NacosNamingService implements NamingService {
         ServiceInfo serviceInfo;
         String clusterString = StringUtils.join(clusters, ",");
         
-        Span span = NamingTrace.getClientNamingServiceSpan("selectInstances");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (subscribe) {
-                serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
-                if (null == serviceInfo) {
-                    serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
-                }
-            } else {
-                serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
+        if (subscribe) {
+            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
+            if (null == serviceInfo) {
+                serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
             }
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.selectInstances()");
-                span.setAttribute("function.called.name", "multiple");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("clusters", clusterString);
-                span.setAttribute("subscribe", subscribe);
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
+        } else {
+            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
         }
         
         return selectInstances(serviceInfo, healthy);
@@ -513,35 +373,13 @@ public class NacosNamingService implements NamingService {
         ServiceInfo serviceInfo;
         String clusterString = StringUtils.join(clusters, ",");
         
-        Span span = NamingTrace.getClientNamingServiceSpan("selectOneHealthyInstance");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (subscribe) {
-                serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
-                if (null == serviceInfo) {
-                    serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
-                }
-            } else {
-                serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
+        if (subscribe) {
+            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
+            if (null == serviceInfo) {
+                serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
             }
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.selectOneHealthyInstance()");
-                span.setAttribute("function.called.name", "multiple");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("clusters", clusterString);
-                span.setAttribute("subscribe", subscribe);
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
+        } else {
+            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, 0, false);
         }
         
         return Balancer.RandomByWeight.selectHost(serviceInfo);
@@ -569,32 +407,8 @@ public class NacosNamingService implements NamingService {
             return;
         }
         String clusterString = StringUtils.join(clusters, ",");
-        
-        Span span = NamingTrace.getClientNamingServiceSpan("subscribe");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            changeNotifier.registerListener(groupName, serviceName, clusterString, listener);
-            clientProxy.subscribe(serviceName, groupName, clusterString);
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.subscribe()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.NamingClientProxy.subscribe()");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("clusters", clusterString);
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-        
+        changeNotifier.registerListener(groupName, serviceName, clusterString, listener);
+        clientProxy.subscribe(serviceName, groupName, clusterString);
     }
     
     @Override
@@ -616,34 +430,10 @@ public class NacosNamingService implements NamingService {
     public void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException {
         String clustersString = StringUtils.join(clusters, ",");
-        
-        Span span = NamingTrace.getClientNamingServiceSpan("unsubscribe");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            changeNotifier.deregisterListener(groupName, serviceName, clustersString, listener);
-            if (!changeNotifier.isSubscribed(groupName, serviceName, clustersString)) {
-                clientProxy.unsubscribe(serviceName, groupName, clustersString);
-            }
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.unsubscribe()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.NamingClientProxy.unsubscribe()");
-                span.setAttribute("service.name", serviceName);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("clusters", clustersString);
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
+        changeNotifier.deregisterListener(groupName, serviceName, clustersString, listener);
+        if (!changeNotifier.isSubscribed(groupName, serviceName, clustersString)) {
+            clientProxy.unsubscribe(serviceName, groupName, clustersString);
         }
-        
     }
     
     @Override
@@ -665,33 +455,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public ListView<String> getServicesOfServer(int pageNo, int pageSize, String groupName, AbstractSelector selector)
             throws NacosException {
-        ListView<String> result;
-        
-        Span span = NamingTrace.getClientNamingServiceSpan("getServicesOfServer");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            result = clientProxy.getServiceList(pageNo, pageSize, groupName, selector);
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.getServicesOfServer()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.NamingClientProxy.getServiceList()");
-                span.setAttribute("page.number", pageNo);
-                span.setAttribute("page.size", pageSize);
-                span.setAttribute("group.name", groupName);
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-        
-        return result;
+        return clientProxy.getServiceList(pageNo, pageSize, groupName, selector);
     }
     
     @Override
@@ -701,35 +465,7 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public String getServerStatus() {
-        boolean result;
-        
-        Span span = NamingTrace.getClientNamingServiceSpan("getServerStatus");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            result = clientProxy.serverHealthy();
-            
-            if (result) {
-                span.setStatus(StatusCode.OK, "Server is up");
-            } else {
-                span.setStatus(StatusCode.ERROR, "Server is down");
-            }
-            
-            if (span.isRecording()) {
-                span.setAttribute("function.current.name",
-                        "com.alibaba.nacos.client.naming.NacosNamingService.getServerStatus()");
-                span.setAttribute("function.called.name",
-                        "com.alibaba.nacos.client.naming.remote.NamingClientProxy.serverHealthy()");
-                span.setAttribute("namespace", namespace);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-        
+        boolean result = clientProxy.serverHealthy();
         return result ? UP : DOWN;
     }
     

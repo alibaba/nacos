@@ -21,8 +21,6 @@ import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
-import com.alibaba.nacos.client.monitor.config.ConfigTrace;
-import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
@@ -33,11 +31,6 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.HttpMethod;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.context.Context;
-import io.opentelemetry.context.Scope;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.slf4j.Logger;
 
 import java.net.ConnectException;
@@ -82,34 +75,8 @@ public class ServerHttpAgent implements HttpAgent {
                 }
                 Query query = Query.newInstance().initParams(paramValues);
                 
-                HttpRestResult<String> result;
-                Span span = ConfigTrace.getClientConfigHttpSpan(HttpMethod.GET);
-                try (Scope ignored = span.makeCurrent()) {
-                    
-                    TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
-                            .inject(Context.current(), newHeaders, TraceMonitor.getHttpContextSetter());
-                    
-                    result = NACOS_RESTTEMPLATE.get(getUrl(currentServerAddr, path), httpConfig, newHeaders, query,
-                            String.class);
-                    
-                    if (isFail(result)) {
-                        span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
-                    } else {
-                        span.setStatus(StatusCode.OK);
-                    }
-                    
-                    if (span.isRecording()) {
-                        span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
-                        span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
-                        span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, result.getCode());
-                    }
-                } catch (Throwable e) {
-                    span.recordException(e);
-                    span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                    throw e;
-                } finally {
-                    span.end();
-                }
+                HttpRestResult<String> result = NACOS_RESTTEMPLATE.get(getUrl(currentServerAddr, path), httpConfig,
+                        newHeaders, query, String.class);
                 
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
@@ -167,34 +134,8 @@ public class ServerHttpAgent implements HttpAgent {
                     newHeaders.addAll(headers);
                 }
                 
-                HttpRestResult<String> result;
-                Span span = ConfigTrace.getClientConfigHttpSpan(HttpMethod.POST);
-                try (Scope ignored = span.makeCurrent()) {
-                    
-                    TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
-                            .inject(Context.current(), newHeaders, TraceMonitor.getHttpContextSetter());
-                    
-                    result = NACOS_RESTTEMPLATE.postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders,
-                            paramValues, String.class);
-                    
-                    if (isFail(result)) {
-                        span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
-                    } else {
-                        span.setStatus(StatusCode.OK);
-                    }
-                    
-                    if (span.isRecording()) {
-                        span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.POST);
-                        span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
-                        span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, result.getCode());
-                    }
-                } catch (Throwable e) {
-                    span.recordException(e);
-                    span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                    throw e;
-                } finally {
-                    span.end();
-                }
+                HttpRestResult<String> result = NACOS_RESTTEMPLATE.postForm(getUrl(currentServerAddr, path), httpConfig,
+                        newHeaders, paramValues, String.class);
                 
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}", currentServerAddr,
@@ -252,34 +193,8 @@ public class ServerHttpAgent implements HttpAgent {
                 }
                 Query query = Query.newInstance().initParams(paramValues);
                 
-                HttpRestResult<String> result;
-                Span span = ConfigTrace.getClientConfigHttpSpan(HttpMethod.DELETE);
-                try (Scope ignored = span.makeCurrent()) {
-                    
-                    TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
-                            .inject(Context.current(), newHeaders, TraceMonitor.getHttpContextSetter());
-                    
-                    result = NACOS_RESTTEMPLATE.delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, query,
-                            String.class);
-                    
-                    if (isFail(result)) {
-                        span.setStatus(StatusCode.ERROR, String.valueOf(result.getCode()));
-                    } else {
-                        span.setStatus(StatusCode.OK);
-                    }
-                    
-                    if (span.isRecording()) {
-                        span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.DELETE);
-                        span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
-                        span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, result.getCode());
-                    }
-                } catch (Throwable e) {
-                    span.recordException(e);
-                    span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                    throw e;
-                } finally {
-                    span.end();
-                }
+                HttpRestResult<String> result = NACOS_RESTTEMPLATE.delete(getUrl(currentServerAddr, path), httpConfig,
+                        newHeaders, query, String.class);
                 
                 if (isFail(result)) {
                     LOGGER.error("[NACOS ConnectException] currentServerAddr: {}, httpCode: {}",
