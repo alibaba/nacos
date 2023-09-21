@@ -88,9 +88,10 @@ public class ServerHttpAgent implements HttpAgent {
                     
                     TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
                             .inject(Context.current(), newHeaders, TraceMonitor.getHttpContextSetter());
-                    
-                    span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
-                    span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
+                    if (span.isRecording()) {
+                        span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
+                        span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
+                    }
                     
                     result = NACOS_RESTTEMPLATE.get(getUrl(currentServerAddr, path), httpConfig, newHeaders, query,
                             String.class);
@@ -175,8 +176,10 @@ public class ServerHttpAgent implements HttpAgent {
                     TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
                             .inject(Context.current(), newHeaders, TraceMonitor.getHttpContextSetter());
                     
-                    span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.POST);
-                    span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
+                    if (span.isRecording()) {
+                        span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.POST);
+                        span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
+                    }
                     
                     result = NACOS_RESTTEMPLATE.postForm(getUrl(currentServerAddr, path), httpConfig, newHeaders,
                             paramValues, String.class);
@@ -261,8 +264,10 @@ public class ServerHttpAgent implements HttpAgent {
                     TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
                             .inject(Context.current(), newHeaders, TraceMonitor.getHttpContextSetter());
                     
-                    span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.DELETE);
-                    span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
+                    if (span.isRecording()) {
+                        span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.DELETE);
+                        span.setAttribute(SemanticAttributes.HTTP_URL, getUrl(currentServerAddr, path));
+                    }
                     
                     result = NACOS_RESTTEMPLATE.delete(getUrl(currentServerAddr, path), httpConfig, newHeaders, query,
                             String.class);
