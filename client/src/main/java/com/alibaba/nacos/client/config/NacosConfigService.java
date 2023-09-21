@@ -35,6 +35,7 @@ import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.PreInitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -75,6 +76,7 @@ public class NacosConfigService implements ConfigService {
     private final ConfigFilterChainManager configFilterChainManager;
     
     public NacosConfigService(Properties properties) throws NacosException {
+        PreInitUtils.asyncPreLoadCostComponent();
         ValidatorUtils.checkInitParam(properties);
         String encodeTmp = properties.getProperty(PropertyKeyConst.ENCODE);
         if (StringUtils.isBlank(encodeTmp)) {
