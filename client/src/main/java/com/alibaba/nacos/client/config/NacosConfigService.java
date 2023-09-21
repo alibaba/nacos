@@ -407,12 +407,12 @@ public class NacosConfigService implements ConfigService {
             content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
             
             if (content != null) {
-                span0.setStatus(StatusCode.OK, "get snapshot ok");
-                if (span0.isRecording()) {
-                    span0.setAttribute(NacosSemanticAttributes.CONTENT, content);
+                span3.setStatus(StatusCode.OK, "get snapshot ok");
+                if (span3.isRecording()) {
+                    span3.setAttribute(NacosSemanticAttributes.CONTENT, content);
                 }
             } else {
-                span0.setStatus(StatusCode.ERROR, "get snapshot failed");
+                span3.setStatus(StatusCode.ERROR, "get snapshot failed");
             }
             
         } catch (Throwable e) {

@@ -18,8 +18,6 @@
 
 package com.alibaba.nacos.common.constant;
 
-import io.opentelemetry.api.common.AttributeKey;
-
 /**
  * Nacos semantic attributes. Used to define the attributes of the OpenTelemetry trace span.
  *
@@ -27,59 +25,57 @@ import io.opentelemetry.api.common.AttributeKey;
  **/
 public final class NacosSemanticAttributes {
     
-    public static final AttributeKey<String> FUNCTION_CURRENT_NAME = AttributeKey.stringKey(
-            "nacos.function.current.name");
+    public static final String FUNCTION_CURRENT_NAME = "nacos.function.current.name";
     
-    public static final AttributeKey<String> FUNCTION_CALLED_NAME = AttributeKey.stringKey(
-            "nacos.function.called.name");
+    public static final String FUNCTION_CALLED_NAME = "nacos.function.called.name";
     
-    public static final AttributeKey<String> SERVICE_NAME = AttributeKey.stringKey("nacos.service.name");
+    public static final String SERVICE_NAME = "nacos.service.name";
     
-    public static final AttributeKey<String> SERVER_ADDRESS = AttributeKey.stringKey("nacos.server.address");
+    public static final String SERVER_ADDRESS = "nacos.server.address";
     
-    public static final AttributeKey<String> CONTENT = AttributeKey.stringKey("nacos.content");
+    public static final String CONTENT = "nacos.content";
     
-    public static final AttributeKey<String> NAMESPACE = AttributeKey.stringKey("nacos.namespace");
+    public static final String NAMESPACE = "nacos.namespace";
     
-    public static final AttributeKey<String> AGENT_NAME = AttributeKey.stringKey("nacos.agent.name");
+    public static final String AGENT_NAME = "nacos.agent.name";
     
-    public static final AttributeKey<String> DATA_ID = AttributeKey.stringKey("nacos.data.id");
+    public static final String DATA_ID = "nacos.data.id";
     
-    public static final AttributeKey<String> GROUP = AttributeKey.stringKey("nacos.group");
+    public static final String GROUP = "nacos.group";
     
-    public static final AttributeKey<String> TENANT = AttributeKey.stringKey("nacos.tenant");
+    public static final String TENANT = "nacos.tenant";
     
-    public static final AttributeKey<String> INSTANCE = AttributeKey.stringKey("nacos.instance");
+    public static final String INSTANCE = "nacos.instance";
     
-    public static final AttributeKey<String> CLUSTER = AttributeKey.stringKey("nacos.cluster");
+    public static final String CLUSTER = "nacos.cluster";
     
-    public static final AttributeKey<String> EVENT = AttributeKey.stringKey("nacos.event");
+    public static final String EVENT = "nacos.event";
     
-    public static final AttributeKey<String> TAG = AttributeKey.stringKey("nacos.tag");
+    public static final String TAG = "nacos.tag";
     
-    public static final AttributeKey<String> APPLICATION_NAME = AttributeKey.stringKey("nacos.application.name");
+    public static final String APPLICATION_NAME = "nacos.application.name";
     
-    public static final AttributeKey<Long> PAGE_NO = AttributeKey.longKey("nacos.page.no");
+    public static final String PAGE_NO = "nacos.page.no";
     
-    public static final AttributeKey<Long> PAGE_SIZE = AttributeKey.longKey("nacos.page.size");
+    public static final String PAGE_SIZE = "nacos.page.size";
     
-    public static final AttributeKey<String> RPC_CLIENT_NAME = AttributeKey.stringKey("nacos.rpc.client.name");
+    public static final String RPC_CLIENT_NAME = "nacos.rpc.client.name";
     
-    public static final AttributeKey<Boolean> SUBSCRIBE = AttributeKey.booleanKey("nacos.subscribe");
+    public static final String SUBSCRIBE = "nacos.subscribe";
     
-    public static final AttributeKey<Long> TIMEOUT_MS = AttributeKey.longKey("nacos.timeout.ms");
+    public static final String TIMEOUT_MS = "nacos.timeout.ms";
     
     public static final class RequestAttributes {
         
-        public static final AttributeKey<String> REQUEST_ID = AttributeKey.stringKey("nacos.request.id");
+        public static final String REQUEST_ID = "nacos.request.id";
         
-        public static final AttributeKey<String> REQUEST_DATA_ID = AttributeKey.stringKey("nacos.request.data.id");
+        public static final String REQUEST_DATA_ID = "nacos.request.data.id";
         
-        public static final AttributeKey<String> REQUEST_GROUP = AttributeKey.stringKey("nacos.request.group");
+        public static final String REQUEST_GROUP = "nacos.request.group";
         
-        public static final AttributeKey<String> REQUEST_TENANT = AttributeKey.stringKey("nacos.request.tenant");
+        public static final String REQUEST_TENANT = "nacos.request.tenant";
         
-        public static final AttributeKey<String> REQUEST_RESULT = AttributeKey.stringKey("nacos.request.result");
+        public static final String REQUEST_RESULT = "nacos.request.result";
         
     }
     

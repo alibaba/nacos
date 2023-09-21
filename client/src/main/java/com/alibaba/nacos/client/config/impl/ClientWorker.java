@@ -695,7 +695,7 @@ public class ClientWorker implements Closeable {
     /**
      * check if it has any connectable server endpoint.
      *
-     * @return true: that means has atleast one connected rpc client. flase: that means does not have any connected rpc
+     * @return true: that means has at least one connected rpc client. false: that means does not have any connected rpc
      * client.
      */
     public boolean isHealthServer() {
