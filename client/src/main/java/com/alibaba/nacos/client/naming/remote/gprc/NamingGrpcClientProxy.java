@@ -629,8 +629,13 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 
                 TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
                         .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
-                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
-                span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS, rpcClient.getCurrentServer().getAddress());
+                
+                if (span.isRecording()) {
+                    span.setAttribute(SemanticAttributes.RPC_SYSTEM,
+                            rpcClient.getConnectionType().getType().toLowerCase());
+                    span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
+                            rpcClient.getCurrentServer().getAddress());
+                }
                 
                 response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
                 

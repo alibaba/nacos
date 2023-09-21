@@ -22,6 +22,8 @@ import io.opentelemetry.api.common.AttributeKey;
 
 /**
  * Nacos semantic attributes. Used to define the attributes of the OpenTelemetry trace span.
+ *
+ * @author <a href="https://github.com/FAWC438">FAWC438</a>
  **/
 public final class NacosSemanticAttributes {
     

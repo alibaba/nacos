@@ -492,6 +492,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public boolean serverHealthy() {
+        String serverUpFlag = "UP";
         
         try {
             String serverStatus;
@@ -512,7 +513,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 JsonNode json = JacksonUtils.toObj(result);
                 serverStatus = json.get("status").asText();
                 
-                if ("UP".equals(serverStatus)) {
+                if (serverUpFlag.equals(serverStatus)) {
                     span.setStatus(StatusCode.OK);
                 } else {
                     span.setStatus(StatusCode.ERROR, "Server status: " + serverStatus);
@@ -521,7 +522,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 span.end();
             }
             
-            return "UP".equals(serverStatus);
+            return serverUpFlag.equals(serverStatus);
         } catch (Exception e) {
             return false;
         }
@@ -708,8 +709,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
                 
                 TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
                         .inject(Context.current(), header, TraceMonitor.getHttpContextSetter());
-                span.setAttribute(SemanticAttributes.HTTP_METHOD, method.toUpperCase());
-                span.setAttribute(SemanticAttributes.HTTP_URL, url);
+                
+                if (span.isRecording()) {
+                    span.setAttribute(SemanticAttributes.HTTP_METHOD, method.toUpperCase());
+                    span.setAttribute(SemanticAttributes.HTTP_URL, url);
+                }
                 
                 restResult = nacosRestTemplate.exchangeForm(url, header, Query.newInstance().initParams(params), body,
                         method, String.class);
