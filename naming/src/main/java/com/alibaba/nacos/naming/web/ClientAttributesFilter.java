@@ -64,13 +64,17 @@ public class ClientAttributesFilter implements Filter {
         HttpServletRequest request = (HttpServletRequest) servletRequest;
         try {
             try {
-                if ((UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                if (((UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
                         + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT).equals(request.getRequestURI())
+                        || (UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT).equals(request.getRequestURI()))
                         && request.getMethod().equals(HttpMethod.POST)) {
                     //register
                     ClientAttributes requestClientAttributes = getClientAttributes(request);
                     threadLocalClientAttributes.set(requestClientAttributes);
                 } else if ((UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.NACOS_NAMING_CONTEXT
+                        + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + BEAT_URI).equals(request.getRequestURI())
+                        || (UtilsAndCommons.NACOS_SERVER_CONTEXT + UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2
                         + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + BEAT_URI).equals(request.getRequestURI())) {
                     //beat
                     String ip = WebUtils.optional(request, IP, StringUtils.EMPTY);
