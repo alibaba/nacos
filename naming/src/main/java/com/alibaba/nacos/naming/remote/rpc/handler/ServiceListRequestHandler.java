@@ -44,7 +44,7 @@ import java.util.Objects;
 public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest, ServiceListResponse> {
     
     @Override
-    @TpsControl(pointName = "RemoteNamingServiceListQuery",name = "RemoteNamingServiceListQuery")
+    @TpsControl(pointName = "RemoteNamingServiceListQuery", name = "RemoteNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
     public ServiceListResponse handle(ServiceListRequest request, RequestMeta meta) throws NacosException {
         Collection<Service> serviceSet = ServiceManager.getInstance().getSingletons(request.getNamespace());

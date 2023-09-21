@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public abstract class RuleBarrier {
     }
     
     public String getLimitMsg() {
-        Map<String, String> limitMsg = new HashMap<>();
+        Map<String, String> limitMsg = new HashMap<>(3);
         limitMsg.put("deniedType", "point");
         limitMsg.put("period", period.toString());
         limitMsg.put("limitCount", String.valueOf(maxCount));
