@@ -32,19 +32,6 @@
     <url>https://nacos.io</url>
     <description>Nacos client pom.xml file</description>
     
-    <!--  Manage the version of libraries in OpenTelemetry  -->
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-bom</artifactId>
-                <version>1.29.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-    
     <dependencies>
         
         <dependency>
