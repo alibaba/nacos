@@ -65,7 +65,7 @@ import java.util.UUID;
  * @author wangyixing
  */
 @Service
-public class KubernetesConfigMapSyncServer {
+public class KubernetesConfigMapSyncServer implements ConfigMapSyncService {
     
     private Gson gson = new Gson();
     
