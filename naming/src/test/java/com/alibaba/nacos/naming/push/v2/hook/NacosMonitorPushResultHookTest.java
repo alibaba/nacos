@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +29,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.ArrayList;
 
@@ -63,6 +65,7 @@ public class NacosMonitorPushResultHookTest {
     
     @Before
     public void setUp() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         MetricsMonitor.resetAll();
         serviceInfo.setHosts(new ArrayList<>());
         subscriber.setIp("0.0.0.0");
