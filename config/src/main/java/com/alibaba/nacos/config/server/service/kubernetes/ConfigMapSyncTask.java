@@ -57,7 +57,7 @@ public class ConfigMapSyncTask {
     private ConfigMapSyncConfig configMapSyncConfig;
 
     @Autowired
-    private KubernetesConfigMapSyncServer kubernetesConfigMapSyncServer;
+    private ConfigMapSyncServiceImpl configMapSyncService;
     
     /**
      * Initialize ConfigMapSyncTask.
@@ -66,7 +66,7 @@ public class ConfigMapSyncTask {
     @PostConstruct
     public void init() throws IOException {
         if (configMapSyncConfig.isOutsideCluster()) {
-            apiClient = kubernetesConfigMapSyncServer.getOutsideApiClient();
+            apiClient = configMapSyncService.getOutsideApiClient();
             coreV1Api = new CoreV1Api(apiClient);
         } else {
             coreV1Api = new CoreV1Api();
@@ -92,11 +92,11 @@ public class ConfigMapSyncTask {
                 ConfigInfoWrapper configInfo = configInfoPersistService.findConfigInfo(dataId, group, namespace);
                 if (configInfo == null) {
                     Loggers.MAIN.info("[{}] find a missed config.", "configMap-sync");
-                    kubernetesConfigMapSyncServer.publishConfigMap(configMap, apiClient.getBasePath());
+                    configMapSyncService.publishConfigMap(configMap, apiClient.getBasePath());
                 } else {
                     if (!compareContent(content, configInfo.getContent())) {
                         Loggers.MAIN.info("[{}] find content difference.", "configMap-sync");
-                        kubernetesConfigMapSyncServer.publishConfigMap(configMap, apiClient.getBasePath());
+                        configMapSyncService.publishConfigMap(configMap, apiClient.getBasePath());
                     }
                 }
             }
@@ -145,7 +145,6 @@ public class ConfigMapSyncTask {
         if (containsDoubleEqual) {
             newLine = line.replace("==", "");
         }
-        boolean containsEqual = newLine.contains("=");
-        return containsEqual;
+        return newLine.contains("=");
     }
 }

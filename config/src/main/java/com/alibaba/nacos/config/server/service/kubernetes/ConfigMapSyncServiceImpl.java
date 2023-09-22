@@ -65,7 +65,7 @@ import java.util.UUID;
  * @author wangyixing
  */
 @Service
-public class KubernetesConfigMapSyncServer implements ConfigMapSyncService {
+public class ConfigMapSyncServiceImpl implements ConfigMapSyncService {
     
     private Gson gson = new Gson();
     
@@ -99,7 +99,7 @@ public class KubernetesConfigMapSyncServer implements ConfigMapSyncService {
         startWatchConfigMap();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Loggers.MAIN.info("[{}] stopping...", "configMap-sync");
-            KubernetesConfigMapSyncServer.this.stop();
+            ConfigMapSyncServiceImpl.this.stop();
             Loggers.MAIN.info("[{}] stopped.", "configMap-sync");
         }));
     }

@@ -23,11 +23,31 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 
 import java.io.IOException;
 
+/**
+ * ConfigMap synchronize service.
+ *
+ * @author wangyixing
+ */
 public interface ConfigMapSyncService {
     
+    /**
+     * publish k8s configMap.
+     * @param configMap configMap entry
+     * @param srcIp client's Ip
+     * @throws NacosException exception
+     */
     void publishConfigMap(V1ConfigMap configMap, String srcIp) throws NacosException;
     
+    /**
+     * delete k8s configMap.
+     * @param configMap configMap entry
+     * @param clientIp client's Ip
+     */
     void deleteConfigMap(V1ConfigMap configMap, String clientIp);
     
+    /**
+     * start watch function.
+     * @throws IOException exception
+     */
     void startWatchConfigMap() throws IOException;
 }
