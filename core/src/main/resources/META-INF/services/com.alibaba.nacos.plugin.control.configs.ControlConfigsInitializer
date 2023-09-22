@@ -14,5 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.plugin.auth.impl.NacosAuthPluginService
-com.alibaba.nacos.plugin.auth.impl.LdapAuthPluginService
+com.alibaba.nacos.core.control.SpringValueConfigsInitializer

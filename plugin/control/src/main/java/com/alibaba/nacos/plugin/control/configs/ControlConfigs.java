@@ -50,39 +50,13 @@ public class ControlConfigs {
         ControlConfigs.instance = instance;
     }
     
-    private String tpsBarrierCreator = "nacos";
-    
-    private String tpsRuleBarrierCreator = "nacos";
-    
     private String connectionRuntimeEjector = "nacos";
     
-    private String connectionManager = "nacos";
-    
-    private String tpsManager = "nacos";
-    
     private String ruleExternalStorage = "";
-    
-    private String ruleParser = "nacos";
     
     private String localRuleStorageBaseDir = "";
     
     private String controlManagerType = "";
-    
-    public String getTpsBarrierCreator() {
-        return tpsBarrierCreator;
-    }
-    
-    public void setTpsBarrierCreator(String tpsBarrierCreator) {
-        this.tpsBarrierCreator = tpsBarrierCreator;
-    }
-    
-    public String getTpsRuleBarrierCreator() {
-        return tpsRuleBarrierCreator;
-    }
-    
-    public void setTpsRuleBarrierCreator(String tpsRuleBarrierCreator) {
-        this.tpsRuleBarrierCreator = tpsRuleBarrierCreator;
-    }
     
     public String getRuleExternalStorage() {
         return ruleExternalStorage;
@@ -92,36 +66,12 @@ public class ControlConfigs {
         this.ruleExternalStorage = ruleExternalStorage;
     }
     
-    public String getRuleParser() {
-        return ruleParser;
-    }
-    
-    public void setRuleParser(String ruleParser) {
-        this.ruleParser = ruleParser;
-    }
-    
-    public String getConnectionManager() {
-        return connectionManager;
-    }
-    
-    public void setConnectionManager(String connectionManager) {
-        this.connectionManager = connectionManager;
-    }
-    
     public String getConnectionRuntimeEjector() {
         return connectionRuntimeEjector;
     }
     
     public void setConnectionRuntimeEjector(String connectionRuntimeEjector) {
         this.connectionRuntimeEjector = connectionRuntimeEjector;
-    }
-    
-    public String getTpsManager() {
-        return tpsManager;
-    }
-    
-    public void setTpsManager(String tpsManager) {
-        this.tpsManager = tpsManager;
     }
     
     public String getLocalRuleStorageBaseDir() {
