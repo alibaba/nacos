@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 1999-2021 Alibaba Group Holding Ltd.
+  ~ Copyright 1999-2023 Alibaba Group Holding Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -19,19 +19,24 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>nacos-all</artifactId>
+        <artifactId>nacos-plugin-default-impl</artifactId>
         <groupId>com.alibaba.nacos</groupId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     
-    <artifactId>nacos-plugin-default-impl</artifactId>
-    <packaging>pom</packaging>
-    <name>nacos-plugin-default-impl ${project.version}</name>
-    <url>https://nacos.io</url>
-    <modules>
-        <module>nacos-default-control-plugin</module>
-        <module>nacos-default-auth-plugin</module>
-        <module>nacos-default-plugin-all</module>
-    </modules>
+    <artifactId>nacos-default-plugin-all</artifactId>
+    <dependencies>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>default-auth-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>default-control-plugin</artifactId>
+            <version>${revision}</version>
+        </dependency>
+    </dependencies>
+
 </project>

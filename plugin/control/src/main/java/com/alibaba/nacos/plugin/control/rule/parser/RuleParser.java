@@ -23,5 +23,11 @@ package com.alibaba.nacos.plugin.control.rule.parser;
  */
 public interface RuleParser<R> {
     
+    /**
+     * Parse control rule.
+     *
+     * @param ruleContent rule raw string
+     * @return target rule
+     */
     R parseRule(String ruleContent);
 }

@@ -77,7 +77,7 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
         }
         
         if (user == null) {
-            throw new UsernameNotFoundException(username);
+            throw new UsernameNotFoundException(String.format("User %s not found", username));
         }
         return new NacosUserDetails(user);
     }

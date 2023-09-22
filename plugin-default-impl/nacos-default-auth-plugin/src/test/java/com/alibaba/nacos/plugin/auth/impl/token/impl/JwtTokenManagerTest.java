@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,10 +50,10 @@ public class JwtTokenManagerTest {
         when(authConfigs.isAuthEnabled()).thenReturn(true);
         MockEnvironment mockEnvironment = new MockEnvironment();
         mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Base64.getEncoder().encodeToString(
-                "SecretKey0123$567890$234567890123456789012345678901234567890123456789".getBytes(
-                        StandardCharsets.UTF_8)));
-        mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,
-                AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
+                "SecretKey0123$567890$234567890123456789012345678901234567890123456789"
+                        .getBytes(StandardCharsets.UTF_8)));
+        mockEnvironment
+                .setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
         
         EnvUtil.setEnvironment(mockEnvironment);
         jwtTokenManager = new JwtTokenManager(authConfigs);
@@ -73,8 +73,8 @@ public class JwtTokenManagerTest {
         MockEnvironment mockEnvironment = new MockEnvironment();
         mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY,
                 Base64.getEncoder().encodeToString(secretKey.getBytes(StandardCharsets.UTF_8)));
-        mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,
-                AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
+        mockEnvironment
+                .setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
         
         EnvUtil.setEnvironment(mockEnvironment);
         
@@ -119,8 +119,8 @@ public class JwtTokenManagerTest {
         MockEnvironment mockEnvironment = new MockEnvironment();
         mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY,
                 Base64.getEncoder().encodeToString(secretKey.getBytes(StandardCharsets.UTF_8)));
-        mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,
-                AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
+        mockEnvironment
+                .setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
         
         EnvUtil.setEnvironment(mockEnvironment);
         

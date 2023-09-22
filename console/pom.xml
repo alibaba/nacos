@@ -41,7 +41,7 @@
     
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-plugin-default-impl</artifactId>
+            <artifactId>nacos-default-plugin-all</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

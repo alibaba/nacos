@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.junit.Test;
  * @date 2023/8/8
  */
 public class Base64DecodeTest {
+    
     @Test
     public void testStandardDecode() {
         String origin = "aGVsbG8sbmFjb3MhdGVzdEJhc2U2NGVuY29kZQ==";
@@ -33,7 +34,7 @@ public class Base64DecodeTest {
         byte[] decodeOrigin = Base64Decode.decode(origin);
         Assert.assertArrayEquals(decodeOrigin, expectDecodeOrigin.getBytes());
     }
-
+    
     @Test
     public void testNotStandardDecode() {
         String notStandardOrigin = "SecretKey012345678901234567890123456789012345678901234567890123456789";
