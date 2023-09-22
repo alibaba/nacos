@@ -34,9 +34,9 @@ public class MetricsMonitor {
             .labelNames("module", "method", "url", "code").name("nacos_client_request").help("nacos_client_request")
             .register();
     
-    private static final Counter NACOS_CLIENT_REGISTER_FAILED_TOTAL = Counter.build()
-            .name("nacos_client_register_failed_total").help("nacos_client_register_failed_total")
-            .labelNames("namespace", "group", "service_name", "err_code", "err_type").register();
+    private static final Counter NACOS_CLIENT_NAMING_REQUEST_FAILED_TOTAL = Counter.build()
+            .name("nacos_client_naming_request_failed_total").help("nacos_client_naming_request_failed_total")
+            .labelNames("req_class", "res_status", "res_code", "err_class").register();
     
     public static Gauge.Child getServiceInfoMapSizeMonitor() {
         return NACOS_MONITOR.labels("naming", "serviceInfoMapSize");
@@ -58,9 +58,9 @@ public class MetricsMonitor {
         return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("naming", method, url, code);
     }
     
-    public static Counter.Child getClientRegisterStatusMonitor(String namespace, String group, String serviceName,
-            String errCode, String errType) {
-        return NACOS_CLIENT_REGISTER_FAILED_TOTAL.labels(namespace, group, serviceName, errCode, errType);
+    public static Counter.Child getClientNamingRequestFailedMonitor(String reqClass, String resStatus, String resCode,
+            String errClass) {
+        return NACOS_CLIENT_NAMING_REQUEST_FAILED_TOTAL.labels(reqClass, resStatus, resCode, errClass);
     }
 }
 

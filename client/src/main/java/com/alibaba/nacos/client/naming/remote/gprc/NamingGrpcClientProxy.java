@@ -64,6 +64,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -200,25 +201,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             throws NacosException {
         BatchInstanceRequest request = new BatchInstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.BATCH_REGISTER_INSTANCE, instances);
-        try {
-            requestToServer(request, BatchInstanceResponse.class);
-        } catch (NacosException e) {
-            recordRegistrationMetrics(request, e);
-            throw e;
-        }
+        requestToServer(request, BatchInstanceResponse.class);
         redoService.instanceRegistered(serviceName, groupName);
-    }
-    
-    /**
-     * Records registration metrics for a service instance.
-     *
-     * @param request   Base Class for Registration Requests.
-     * @param exception The NacosException encountered during the registration process.
-     */
-    private void recordRegistrationMetrics(AbstractNamingRequest request, NacosException exception) {
-        MetricsMonitor.getClientRegisterStatusMonitor(request.getServiceName(), request.getGroupName(),
-                        request.getServiceName(), String.valueOf(exception.getErrCode()), exception.getClass().getSimpleName())
-                .inc();
     }
     
     /**
@@ -232,12 +216,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void doRegisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
-        try {
-            requestToServer(request, Response.class);
-        } catch (NacosException e) {
-            recordRegistrationMetrics(request, e);
-            throw e;
-        }
+        requestToServer(request, Response.class);
         redoService.instanceRegistered(serviceName, groupName);
     }
     
@@ -388,11 +367,11 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
             throws NacosException {
+        Response response = null;
         try {
             request.putAllHeader(
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
-            Response response =
-                    requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }
@@ -402,11 +381,34 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             NAMING_LOGGER.error("Server return unexpected response '{}', expected response should be '{}'",
                     response.getClass().getName(), responseClass.getName());
         } catch (NacosException e) {
+            recordRequestFailedMetrics(request, e, response);
             throw e;
         } catch (Exception e) {
-            throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
+            NacosException nacosException = new NacosException(NacosException.SERVER_ERROR,
+                    "Request nacos server failed: ", e);
+            recordRequestFailedMetrics(request, nacosException, response);
+            throw nacosException;
         }
         throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
+    }
+    
+    /**
+     * Records registration metrics for a service instance.
+     *
+     * @param request   The registration request object.
+     * @param exception The NacosException encountered during the registration process, or null if registration was
+     *                  successful.
+     * @param response  The response object containing registration result information, or null if registration failed.
+     */
+    private void recordRequestFailedMetrics(AbstractNamingRequest request, NacosException exception,
+            Response response) {
+        if (Objects.isNull(response)) {
+            MetricsMonitor.getClientNamingRequestFailedMonitor(request.getClass().getSimpleName(), null, null,
+                    exception.getClass().getSimpleName()).inc();
+        } else {
+            MetricsMonitor.getClientNamingRequestFailedMonitor(request.getClass().getSimpleName(),
+                    String.valueOf(response.getResultCode()), String.valueOf(response.getErrorCode()), null).inc();
+        }
     }
     
     @Override
