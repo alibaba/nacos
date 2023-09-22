@@ -491,7 +491,17 @@ public interface NamingService {
      */
     void subscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException;
-
+    
+    /**
+     * Subscribe service to receive events of instances alteration.
+     *
+     * @param serviceName name of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void subscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
+    
     /**
      * Subscribe service to receive events of instances alteration.
      *
@@ -544,7 +554,17 @@ public interface NamingService {
      */
     void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException;
-
+    
+    /**
+     * Unsubscribe event listener of service.
+     *
+     * @param serviceName name of service
+     * @param selector    selector of instances
+     * @param listener    event listener
+     * @throws NacosException nacos exception
+     */
+    void unsubscribe(String serviceName, NamingSelector selector, EventListener listener) throws NacosException;
+    
     /**
      * Unsubscribe event listener of service.
      *

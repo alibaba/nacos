@@ -30,19 +30,25 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author lideyou
  */
 public class SelectorManager<S extends AbstractSelectorWrapper<?, ?, ?>> {
+    
     Map<String, Set<S>> selectorMap = new ConcurrentHashMap<>();
-
+    
     /**
      * Add a selectorWrapper to subId.
      *
-     * @param subId    subscription id
-     * @param selector selector wrapper
+     * @param subId   subscription id
+     * @param wrapper selector wrapper
      */
-    public void addSelectorWrapper(String subId, S selector) {
-        Set<S> selectors = selectorMap.computeIfAbsent(subId, key -> new ConcurrentHashSet<>());
-        selectors.add(selector);
+    public void addSelectorWrapper(String subId, S wrapper) {
+        selectorMap.compute(subId, (k, v) -> {
+            if (v == null) {
+                v = new ConcurrentHashSet<>();
+            }
+            v.add(wrapper);
+            return v;
+        });
     }
-
+    
     /**
      * Get all SelectorWrappers by id.
      *
@@ -52,24 +58,20 @@ public class SelectorManager<S extends AbstractSelectorWrapper<?, ?, ?>> {
     public Set<S> getSelectorWrappers(String subId) {
         return selectorMap.get(subId);
     }
-
+    
     /**
      * Remove a SelectorWrapper by id.
      *
-     * @param subId    subscription id
-     * @param selector selector wrapper
+     * @param subId   subscription id
+     * @param wrapper selector wrapper
      */
-    public void removeSelectorWrapper(String subId, S selector) {
-        Set<S> selectors = selectorMap.get(subId);
-        if (selectors == null) {
-            return;
-        }
-        selectors.remove(selector);
-        if (CollectionUtils.isEmpty(selectors)) {
-            selectorMap.remove(subId);
-        }
+    public void removeSelectorWrapper(String subId, S wrapper) {
+        selectorMap.computeIfPresent(subId, (k, v) -> {
+            v.remove(wrapper);
+            return v.isEmpty() ? null : v;
+        });
     }
-
+    
     /**
      * Remove a subscription by id.
      *
@@ -78,7 +80,7 @@ public class SelectorManager<S extends AbstractSelectorWrapper<?, ?, ?>> {
     public void removeSubscription(String subId) {
         selectorMap.remove(subId);
     }
-
+    
     /**
      * Get all subscriptions.
      *
@@ -87,7 +89,7 @@ public class SelectorManager<S extends AbstractSelectorWrapper<?, ?, ?>> {
     public Set<String> getSubscriptions() {
         return selectorMap.keySet();
     }
-
+    
     /**
      * Determine whether subId is subscribed.
      *

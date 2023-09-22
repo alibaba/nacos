@@ -21,7 +21,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
-import com.alibaba.nacos.client.selector.SelectorFactory;
+import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -44,7 +44,7 @@ public class InstancesChangeNotifierTest {
         List<String> clusters = Collections.singletonList(clusterStr);
         InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
         EventListener listener = Mockito.mock(EventListener.class);
-        NamingSelector selector = SelectorFactory.newClusterSelector(clusters);
+        NamingSelector selector = NamingSelectorFactory.newClusterSelector(clusters);
         NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector,
                 listener);
         instancesChangeNotifier.registerListener(group, name, wrapper);
@@ -71,7 +71,7 @@ public class InstancesChangeNotifierTest {
         List<String> clusters = Collections.singletonList(clusterStr);
         InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
         EventListener listener = Mockito.mock(EventListener.class);
-        NamingSelector selector = SelectorFactory.newClusterSelector(clusters);
+        NamingSelector selector = NamingSelectorFactory.newClusterSelector(clusters);
         NamingSelectorWrapper wrapper = new NamingSelectorWrapper(selector, listener);
         instancesChangeNotifier.registerListener(group, name, wrapper);
         List<ServiceInfo> subscribeServices = instancesChangeNotifier.getSubscribeServices();
@@ -92,7 +92,7 @@ public class InstancesChangeNotifierTest {
         List<String> clusters = Collections.singletonList(clusterStr);
         InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
         EventListener listener = Mockito.mock(EventListener.class);
-        NamingSelector selector = SelectorFactory.newClusterSelector(clusters);
+        NamingSelector selector = NamingSelectorFactory.newClusterSelector(clusters);
         Assert.assertFalse(instancesChangeNotifier.isSubscribed(group, name));
     
         NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector,
@@ -109,7 +109,7 @@ public class InstancesChangeNotifierTest {
         String clusterStr = "c";
         List<String> clusters = Collections.singletonList(clusterStr);
         InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
-        NamingSelector selector = SelectorFactory.newClusterSelector(clusters);
+        NamingSelector selector = NamingSelectorFactory.newClusterSelector(clusters);
         EventListener listener = Mockito.mock(EventListener.class);
     
         NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector,
