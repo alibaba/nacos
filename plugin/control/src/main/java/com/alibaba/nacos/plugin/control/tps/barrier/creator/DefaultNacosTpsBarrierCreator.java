@@ -1,6 +1,5 @@
 /*
- *
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +12,27 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.alibaba.nacos.core.control;
+package com.alibaba.nacos.plugin.control.tps.barrier.creator;
+
+import com.alibaba.nacos.plugin.control.tps.barrier.TpsBarrier;
+import com.alibaba.nacos.plugin.control.tps.barrier.DefaultNacosTpsBarrier;
 
 /**
- * tps control manager.
+ * default nacos tps barrier creator.
  *
- * @author liuzunfei
- * @version $Id: TpsControlManager.java, v 0.1 2021年01月12日 12:38 PM liuzunfei Exp $
+ * @author shiyiyue
  */
-public class TpsControlConfig {
+public class DefaultNacosTpsBarrierCreator implements TpsBarrierCreator {
     
-    /**
-     * tps control is enabled.
-     * @return true/false.
-     */
-    public static boolean isTpsControlEnabled() {
-        return true;
+    @Override
+    public String getName() {
+        return "nacos";
+    }
+    
+    @Override
+    public TpsBarrier createTpsBarrier(String pointName) {
+        return new DefaultNacosTpsBarrier(pointName);
     }
 }

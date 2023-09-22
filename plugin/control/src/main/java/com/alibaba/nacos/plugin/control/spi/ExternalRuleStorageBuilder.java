@@ -1,6 +1,5 @@
 /*
- *
- * Copyright 1999-2021 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +12,30 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.alibaba.nacos.core.control;
+package com.alibaba.nacos.plugin.control.spi;
+
+import com.alibaba.nacos.plugin.control.rule.storage.ExternalRuleStorage;
 
 /**
- * tps control manager.
+ * Nacos control plugin external rule storage builder SPI.
  *
- * @author liuzunfei
- * @version $Id: TpsControlManager.java, v 0.1 2021年01月12日 12:38 PM liuzunfei Exp $
+ * @author xiweng.yy
  */
-public class TpsControlConfig {
+public interface ExternalRuleStorageBuilder {
     
     /**
-     * tps control is enabled.
-     * @return true/false.
+     * Get plugin name.
+     *
+     * @return name of plugin
      */
-    public static boolean isTpsControlEnabled() {
-        return true;
-    }
+    String getName();
+    
+    /**
+     * Build {@link ExternalRuleStorage} implementation for current plugin if necessary.
+     *
+     * @return ExternalRuleStorage implementation
+     */
+    ExternalRuleStorage buildExternalRuleStorage();
 }

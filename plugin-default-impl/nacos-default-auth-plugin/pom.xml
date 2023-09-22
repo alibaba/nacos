@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 1999-2020 Alibaba Group Holding Ltd.
+  ~ Copyright 1999-2023 Alibaba Group Holding Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -19,24 +19,40 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>nacos-plugin</artifactId>
+        <artifactId>nacos-plugin-default-impl</artifactId>
         <groupId>com.alibaba.nacos</groupId>
         <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     
-    
-    <artifactId>nacos-control-plugin</artifactId>
-    <name>nacos-control-plugin ${project.version}</name>
-    <url>https://nacos.io</url>
+    <artifactId>default-auth-plugin</artifactId>
+    <name>nacos-default-auth-plugin ${project.version}</name>
     
     <dependencies>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-auth-plugin</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-common</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-sys</artifactId>
             <scope>provided</scope>
         </dependency>
-    
+        
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-config</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        
+        <dependency>
+            <groupId>org.springframework.ldap</groupId>
+            <artifactId>spring-ldap-core</artifactId>
+        </dependency>
     </dependencies>
-
 </project>

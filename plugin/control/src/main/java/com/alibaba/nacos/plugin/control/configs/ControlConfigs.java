@@ -66,6 +66,8 @@ public class ControlConfigs {
     
     private String localRuleStorageBaseDir = "";
     
+    private String controlManagerType = "";
+    
     public String getTpsBarrierCreator() {
         return tpsBarrierCreator;
     }
@@ -128,5 +130,13 @@ public class ControlConfigs {
     
     public void setLocalRuleStorageBaseDir(String localRuleStorageBaseDir) {
         this.localRuleStorageBaseDir = localRuleStorageBaseDir;
+    }
+    
+    public String getControlManagerType() {
+        return controlManagerType;
+    }
+    
+    public void setControlManagerType(String controlManagerType) {
+        this.controlManagerType = controlManagerType;
     }
 }
