@@ -403,11 +403,11 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private void recordRequestFailedMetrics(AbstractNamingRequest request, NacosException exception,
             Response response) {
         if (Objects.isNull(response)) {
-            MetricsMonitor.getClientNamingRequestFailedMonitor(request.getClass().getSimpleName(), null, null,
+            MetricsMonitor.getClientNamingRequestFailedMonitor(request.getClass().getSimpleName(), "none", "none",
                     exception.getClass().getSimpleName()).inc();
         } else {
             MetricsMonitor.getClientNamingRequestFailedMonitor(request.getClass().getSimpleName(),
-                    String.valueOf(response.getResultCode()), String.valueOf(response.getErrorCode()), null).inc();
+                    String.valueOf(response.getResultCode()), String.valueOf(response.getErrorCode()), "none").inc();
         }
     }
     
