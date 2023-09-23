@@ -69,6 +69,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.alibaba.nacos.api.remote.RemoteConstants.MONITOR_LABEL_NONE;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
@@ -385,10 +386,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             recordRequestFailedMetrics(request, e, response);
             throw e;
         } catch (Exception e) {
-            NacosException nacosException = new NacosException(NacosException.SERVER_ERROR,
-                    "Request nacos server failed: ", e);
-            recordRequestFailedMetrics(request, nacosException, response);
-            throw nacosException;
+            recordRequestFailedMetrics(request, e, response);
+            throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
     }
     
@@ -396,18 +395,18 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      * Records registration metrics for a service instance.
      *
      * @param request   The registration request object.
-     * @param exception The NacosException encountered during the registration process, or null if registration was
+     * @param exception The Exception encountered during the registration process, or null if registration was
      *                  successful.
      * @param response  The response object containing registration result information, or null if registration failed.
      */
-    private void recordRequestFailedMetrics(AbstractNamingRequest request, NacosException exception,
-            Response response) {
+    private void recordRequestFailedMetrics(AbstractNamingRequest request, Exception exception, Response response) {
         if (Objects.isNull(response)) {
-            MetricsMonitor.getClientNamingRequestFailedMonitor(request.getClass().getSimpleName(), "none", "none",
-                    exception.getClass().getSimpleName()).inc();
+            MetricsMonitor.getNamingRequestFailedMonitor(request.getClass().getSimpleName(), MONITOR_LABEL_NONE,
+                    MONITOR_LABEL_NONE, exception.getClass().getSimpleName()).inc();
         } else {
-            MetricsMonitor.getClientNamingRequestFailedMonitor(request.getClass().getSimpleName(),
-                    String.valueOf(response.getResultCode()), String.valueOf(response.getErrorCode()), "none").inc();
+            MetricsMonitor.getNamingRequestFailedMonitor(request.getClass().getSimpleName(),
+                    String.valueOf(response.getResultCode()), String.valueOf(response.getErrorCode()),
+                    MONITOR_LABEL_NONE).inc();
         }
     }
     
