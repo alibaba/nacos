@@ -39,7 +39,6 @@ import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -345,7 +344,6 @@ public class LongPollingService {
         @Override
         public void run() {
             try {
-                ConfigCacheService.getContentBetaMd5(groupKey);
                 for (Iterator<ClientLongPolling> iter = allSubs.iterator(); iter.hasNext(); ) {
                     ClientLongPolling clientSub = iter.next();
                     if (clientSub.clientMd5Map.containsKey(groupKey)) {
@@ -366,7 +364,7 @@ public class LongPollingService {
                                         RequestUtil
                                                 .getRemoteIp((HttpServletRequest) clientSub.asyncContext.getRequest()),
                                         "polling", clientSub.clientMd5Map.size(), clientSub.probeRequestSize, groupKey);
-                        clientSub.sendResponse(Arrays.asList(groupKey));
+                        clientSub.sendResponse(Collections.singletonList(groupKey));
                     }
                 }
                 

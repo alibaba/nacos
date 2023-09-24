@@ -208,7 +208,7 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(new NamingSnapshotOperation(this.kvStorage, lock));
+        return Collections.singletonList(new NamingSnapshotOperation(this.kvStorage, lock, serializer));
     }
     
     @Override

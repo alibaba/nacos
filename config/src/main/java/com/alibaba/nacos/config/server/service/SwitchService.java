@@ -37,7 +37,7 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
 @Service
 public class SwitchService {
     
-    public static final String SWITCH_META_DATAID = "com.alibaba.nacos.meta.switch";
+    public static final String SWITCH_META_DATA_ID = "com.alibaba.nacos.meta.switch";
     
     public static final String FIXED_POLLING = "isFixedPolling";
     
@@ -85,7 +85,7 @@ public class SwitchService {
      */
     public static void load(String config) {
         if (StringUtils.isBlank(config)) {
-            FATAL_LOG.error("switch config is blank.");
+            FATAL_LOG.warn("switch config is blank.");
             return;
         }
         FATAL_LOG.warn("[switch-config] {}", config);
@@ -96,7 +96,7 @@ public class SwitchService {
                 if (!StringUtils.isBlank(line) && !line.startsWith("#")) {
                     String[] array = line.split("=");
                     
-                    if (array == null || array.length != 2) {
+                    if (array.length != 2) {
                         LogUtil.FATAL_LOG.error("corrupt switch record {}", line);
                         continue;
                     }

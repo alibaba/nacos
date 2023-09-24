@@ -98,7 +98,10 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             Map.Entry<String, RpcClient> next1 = iterator.next();
             if (next1.getKey().startsWith("Cluster-") && !newMemberKeys.contains(next1.getKey())) {
                 Loggers.CLUSTER.info("member leave,destroy client of member - > : {}", next1.getKey());
-                RpcClientFactory.getClient(next1.getKey()).shutdown();
+                RpcClient client = RpcClientFactory.getClient(next1.getKey());
+                if (client != null) {
+                    RpcClientFactory.getClient(next1.getKey()).shutdown();
+                }
                 iterator.remove();
             }
         }

@@ -117,8 +117,8 @@ class NewPermissions extends React.Component {
                 placeholder={locale.resourcePlaceholder}
                 style={{ width: '100%' }}
               >
-                {namespaces.map(({ namespace, namespaceShowName }) => (
-                  <Option value={`${namespace}:*:*`}>
+                {namespaces.map(({ namespace, namespaceShowName }, index) => (
+                  <Option key={index} value={`${namespace}:*:*`}>
                     {namespaceShowName} {namespace ? `(${namespace})` : ''}
                   </Option>
                 ))}

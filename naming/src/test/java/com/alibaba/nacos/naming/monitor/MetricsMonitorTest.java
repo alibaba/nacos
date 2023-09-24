@@ -17,6 +17,8 @@
 package com.alibaba.nacos.naming.monitor;
 
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -26,6 +28,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.util.LinkedList;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
@@ -45,6 +50,7 @@ public class MetricsMonitorTest {
                 .add(new SimpleMeterRegistry());
         
         MetricsMonitor.resetPush();
+        MetricsMonitor.getIpCountMonitor().set(0);
     }
     
     @Test
@@ -57,5 +63,39 @@ public class MetricsMonitorTest {
     public void testGetFailedPush() {
         assertEquals(0, MetricsMonitor.getFailedPushMonitor().get());
         assertEquals(1, MetricsMonitor.getFailedPushMonitor().incrementAndGet());
+    }
+    
+    @Test
+    public void testIncrementIpCountWithBatchRegister() {
+        BatchInstancePublishInfo test = new BatchInstancePublishInfo();
+        List<InstancePublishInfo> instancePublishInfos = new LinkedList<>();
+        instancePublishInfos.add(new InstancePublishInfo());
+        test.setInstancePublishInfos(instancePublishInfos);
+        assertEquals(0, MetricsMonitor.getIpCountMonitor().get());
+        MetricsMonitor.incrementIpCountWithBatchRegister(null, test);
+        assertEquals(1, MetricsMonitor.getIpCountMonitor().get());
+        
+        BatchInstancePublishInfo newTest = new BatchInstancePublishInfo();
+        List<InstancePublishInfo> newInstances = new LinkedList<>();
+        newInstances.add(new InstancePublishInfo());
+        newInstances.add(new InstancePublishInfo());
+        newTest.setInstancePublishInfos(newInstances);
+        MetricsMonitor.incrementIpCountWithBatchRegister(test, newTest);
+        assertEquals(2, MetricsMonitor.getIpCountMonitor().get());
+        MetricsMonitor.incrementIpCountWithBatchRegister(newTest, test);
+        assertEquals(1, MetricsMonitor.getIpCountMonitor().get());
+    }
+    
+    @Test
+    public void testIncrementIpCountWithBatchRegisterAfterNormalRegister() {
+        // mock normal register
+        MetricsMonitor.incrementInstanceCount();
+        BatchInstancePublishInfo newTest = new BatchInstancePublishInfo();
+        List<InstancePublishInfo> newInstances = new LinkedList<>();
+        newInstances.add(new InstancePublishInfo());
+        newInstances.add(new InstancePublishInfo());
+        newTest.setInstancePublishInfos(newInstances);
+        MetricsMonitor.incrementIpCountWithBatchRegister(new InstancePublishInfo(), newTest);
+        assertEquals(2, MetricsMonitor.getIpCountMonitor().get());
     }
 }

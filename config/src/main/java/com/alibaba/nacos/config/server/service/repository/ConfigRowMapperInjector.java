@@ -74,12 +74,15 @@ public class ConfigRowMapperInjector {
     public static final ConfigHistoryRowMapper HISTORY_LIST_ROW_MAPPER = new ConfigHistoryRowMapper();
     
     public static final ConfigHistoryDetailRowMapper HISTORY_DETAIL_ROW_MAPPER = new ConfigHistoryDetailRowMapper();
-    
-    public ConfigRowMapperInjector() {
+
+    static {
         injectConfigRowMapper();
     }
     
-    private void injectConfigRowMapper() {
+    public ConfigRowMapperInjector() {
+    }
+
+    private static void injectConfigRowMapper() {
         // CONFIG_INFO_WRAPPER_ROW_MAPPER
         
         RowMapperManager

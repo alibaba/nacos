@@ -299,8 +299,9 @@ public class ConfigController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        List<ConfigInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, null);
+        List<ConfigInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
         if (CollectionUtils.isEmpty(configInfoList)) {
             return RestResultUtils.success(true);
         }

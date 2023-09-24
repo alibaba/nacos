@@ -319,17 +319,14 @@ public class RpcClientTest {
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "10.10.10.10::8848")).getAddress());
         assertEquals("10.10.10.10:8848",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "10.10.10.10:8848")).getAddress());
-        assertEquals("10.10.10.10:8848",
-                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10:8848"))
-                        .getAddress());
-        assertEquals("10.10.10.10:8848",
-                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10::8848"))
-                        .getAddress());
+        assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
+                "http://10.10.10.10:8848")).getAddress());
+        assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
+                "http://10.10.10.10::8848")).getAddress());
         assertEquals("10.10.10.10:8848",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10")).getAddress());
-        assertEquals("10.10.10.10:8848",
-                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "https://10.10.10.10::8848"))
-                        .getAddress());
+        assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
+                "https://10.10.10.10::8848")).getAddress());
     }
     
     @Test
@@ -437,7 +434,7 @@ public class RpcClientTest {
             exception = e;
         }
         
-        verify(connection, times(3)).requestFuture(any());
+        verify(connection, times(4)).requestFuture(any());
         verify(rpcClient).switchServerAsyncOnRequestFail();
         Assert.assertNotNull(exception);
         assertEquals(RpcClientStatus.UNHEALTHY, rpcClient.rpcClientStatus.get());
@@ -634,5 +631,20 @@ public class RpcClientTest {
                 return super.nextRpcServer();
             }
         };
+    }
+    
+    @Test(expected = RuntimeException.class)
+    public void testHandleServerRequestWhenExceptionThenThrowException() throws RuntimeException {
+        RpcClient rpcClient = buildTestNextRpcServerClient();
+        Request request = new Request() {
+            @Override
+            public String getModule() {
+                return null;
+            }
+        };
+        rpcClient.serverRequestHandlers.add(req -> {
+            throw new RuntimeException();
+        });
+        rpcClient.handleServerRequest(request);
     }
 }

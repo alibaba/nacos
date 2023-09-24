@@ -49,7 +49,7 @@ public class RpcClientTlsConfig extends TlsConfig {
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_PROTOCOLS)) {
-            tlsConfig.setProtocols(RpcConstants.RPC_CLIENT_TLS_PROTOCOLS);
+            tlsConfig.setProtocols(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_PROTOCOLS));
         }
 
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_CIPHERS)) {
