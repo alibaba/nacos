@@ -20,22 +20,20 @@ import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.Remote.INTERNAL_MODULE;
 
-/**.
- * @author Daydreamer
- * @description Server tells the client that the connection is established
+/**
+ * Server tells the client that the connection is established.
+ *
+ * @author Daydreamer.
  * @date 2022/7/12 19:21
  **/
 public class SetupAckRequest extends ServerRequest {
-    
-    private String connectionId;
     
     private Map<String, Boolean> abilityTable;
     
     public SetupAckRequest() {
     }
     
-    public SetupAckRequest(String connectionId, Map<String, Boolean> abilityTable) {
-        this.connectionId = connectionId;
+    public SetupAckRequest(Map<String, Boolean> abilityTable) {
         this.abilityTable = abilityTable;
     }
     
@@ -45,14 +43,6 @@ public class SetupAckRequest extends ServerRequest {
     
     public void setAbilityTable(Map<String, Boolean> abilityTable) {
         this.abilityTable = abilityTable;
-    }
-    
-    public String getConnectionId() {
-        return connectionId;
-    }
-    
-    public void setConnectionId(String connectionId) {
-        this.connectionId = connectionId;
     }
     
     @Override

@@ -59,6 +59,8 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     private int healthCheckRetryTimes;
     
     private long healthCheckTimeOut;
+
+    private long capabilityNegotiationTimeout;
     
     private Map<String, String> labels;
 
@@ -90,6 +92,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         this.healthCheckTimeOut = loadLongConfig(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT, builder.healthCheckTimeOut);
         this.channelKeepAliveTimeout = loadLongConfig(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT,
                 builder.channelKeepAliveTimeout);
+        this.capabilityNegotiationTimeout = loadLongConfig(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT, builder.capabilityNegotiationTimeout);
         this.labels = builder.labels;
         this.labels.put("tls.enable", "false");
         if (Objects.nonNull(builder.tlsConfig)) {
@@ -178,6 +181,11 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     }
 
     @Override
+    public long capabilityNegotiationTimeout() {
+        return this.capabilityNegotiationTimeout;
+    }
+
+    @Override
     public int healthCheckRetryTimes() {
         return healthCheckRetryTimes;
     }
@@ -225,6 +233,8 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         private int healthCheckRetryTimes = 3;
         
         private long healthCheckTimeOut = 3000L;
+
+        private long capabilityNegotiationTimeout = 5000L;
         
         private Map<String, String> labels = new HashMap<>();
 
@@ -279,6 +289,10 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
             if (properties.contains(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME)) {
                 this.channelKeepAlive = Integer.parseInt(
                         properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME));
+            }
+            if (properties.contains(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT)) {
+                this.capabilityNegotiationTimeout = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT));
             }
             if (properties.contains(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES)) {
                 this.healthCheckRetryTimes = Integer.parseInt(
@@ -398,7 +412,11 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
             this.channelKeepAliveTimeout = channelKeepAliveTimeout;
             return this;
         }
-        
+
+        public void setCapabilityNegotiationTimeout(long capabilityNegotiationTimeout) {
+            this.capabilityNegotiationTimeout = capabilityNegotiationTimeout;
+        }
+
         /**
          * set healthCheckRetryTimes.
          */
