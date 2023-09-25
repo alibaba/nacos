@@ -19,7 +19,6 @@ package com.alibaba.nacos.core.ability.config;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
-import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.core.ability.TestServerAbilityControlManager;
 import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
@@ -45,8 +44,6 @@ public class AbilityConfigsTest {
     
     private TestAbilityConfig abilityConfigs;
     
-    private int tmp;
-    
     private ServerAbilityControlManager serverAbilityControlManager;
     
     private Map<AbilityKey, Boolean> currentAbilities;
@@ -59,9 +56,6 @@ public class AbilityConfigsTest {
         inject(abilityConfigs);
         serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
         serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_2);
-        serverAbilityControlManager.registerComponent(AbilityKey.SERVER_TEST_1, new TestHandler());
-        serverAbilityControlManager.registerComponent(AbilityKey.SERVER_TEST_2, new TestHandler());
-        // tmp is 2 now
     }
     
     void inject(AbilityConfigs abilityConfigs) {
@@ -118,47 +112,22 @@ public class AbilityConfigsTest {
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
         Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
         Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
-        //wait for invoke
-        Thread.sleep(100);
-        Assert.assertEquals(tmp, 2);
         
         // test change
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
         Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
         Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
-        //wait for invoke
-        Thread.sleep(100);
-        Assert.assertEquals(tmp, 1);
     
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
         Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
-        //wait for invoke
-        Thread.sleep(100);
-        Assert.assertEquals(tmp, 2);
     
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
         environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
         Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
         Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
-        //wait for invoke
-        Thread.sleep(100);
-        Assert.assertEquals(tmp, 0);
-    }
-    
-    class TestHandler implements HandlerMapping {
-    
-        @Override
-        public void enable() {
-            tmp++;
-        }
-    
-        @Override
-        public void disable() {
-            tmp--;
-        }
     }
     
 }
