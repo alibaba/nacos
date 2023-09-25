@@ -1,5 +1,6 @@
 name: E2E test for pull request
 
+
 on:
   workflow_run:
     workflows: ["PR-CI"]
@@ -146,7 +147,7 @@ jobs:
   e2e-test:
     if: ${{ success() }}
     name: E2E Test
-    needs: [deploy]
+    needs: [docker, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -194,7 +195,7 @@ jobs:
   clean:
     if: always()
     name: Clean
-    needs: [e2e-test]
+    needs: [docker, e2e-test]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
