@@ -57,18 +57,18 @@ public class AbilityConfigsTest {
         EnvUtil.setEnvironment(environment);
         abilityConfigs = new TestAbilityConfig();
         inject(abilityConfigs);
-        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_1);
-        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_2);
-        serverAbilityControlManager.registerComponent(AbilityKey.TEST_1, new TestHandler());
-        serverAbilityControlManager.registerComponent(AbilityKey.TEST_2, new TestHandler());
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_2);
+        serverAbilityControlManager.registerComponent(AbilityKey.SERVER_TEST_1, new TestHandler());
+        serverAbilityControlManager.registerComponent(AbilityKey.SERVER_TEST_2, new TestHandler());
         // tmp is 2 now
     }
     
     void inject(AbilityConfigs abilityConfigs) {
         TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
         Map<String, Boolean> newTable = new HashMap<>();
-        newTable.put(AbilityKey.TEST_1.getName(), true);
-        newTable.put(AbilityKey.TEST_2.getName(), true);
+        newTable.put(AbilityKey.SERVER_TEST_1.getName(), true);
+        newTable.put(AbilityKey.SERVER_TEST_2.getName(), true);
         serverAbilityControlManager.setCurrentSupportingAbility(newTable);
         abilityConfigs.setAbilityHandlerRegistry(serverAbilityControlManager);
         this.serverAbilityControlManager = serverAbilityControlManager;
@@ -86,63 +86,63 @@ public class AbilityConfigsTest {
         instanceField.setAccessible(true);
         ServerAbilities serverAbilities = (ServerAbilities) instanceField.get(ServerAbilities.class);
         currentAbilities = (Map<AbilityKey, Boolean>) abilitiesField.get(serverAbilities);
-        currentAbilities.put(AbilityKey.TEST_1, true);
-        currentAbilities.put(AbilityKey.TEST_2, true);
+        currentAbilities.put(AbilityKey.SERVER_TEST_1, true);
+        currentAbilities.put(AbilityKey.SERVER_TEST_2, true);
     }
     
     @Test
     public void testLoadAbilities() throws Exception {
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.TRUE.toString());
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_2.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.FALSE.toString());
         // test load
         fill();
         ServerAbilityControlManager manager = new ServerAbilityControlManager();
         // config has higher priority
-        Assert.assertTrue(manager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertFalse(manager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
+        Assert.assertTrue(manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        Assert.assertFalse(manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
         // clear
         currentAbilities.clear();
     }
     
     @Test
     public void testInit() {
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
     }
     
     @Test
     public void testConfigChange() throws InterruptedException {
         // test no change
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.TRUE.toString());
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_2.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.TRUE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
         //wait for invoke
         Thread.sleep(100);
         Assert.assertEquals(tmp, 2);
         
         // test change
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
+        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
         //wait for invoke
         Thread.sleep(100);
         Assert.assertEquals(tmp, 1);
     
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
         //wait for invoke
         Thread.sleep(100);
         Assert.assertEquals(tmp, 2);
     
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.FALSE.toString());
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_2.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
+        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
         //wait for invoke
         Thread.sleep(100);
         Assert.assertEquals(tmp, 0);

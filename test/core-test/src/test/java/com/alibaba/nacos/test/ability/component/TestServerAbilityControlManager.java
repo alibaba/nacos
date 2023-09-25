@@ -9,10 +9,10 @@ import java.util.Map;
 public class TestServerAbilityControlManager extends ServerAbilityControlManager {
     
     @Override
-    protected Map<String, Boolean> initCurrentNodeAbilities() {
-        Map<String, Boolean> map = new HashMap<>();
-        map.put(AbilityKey.TEST_1.getName(), true);
-        map.put(AbilityKey.TEST_2.getName(), false);
+    protected Map<AbilityKey, Boolean> initCurrentNodeAbilities() {
+        Map<AbilityKey, Boolean> map = new HashMap<>();
+        map.put(AbilityKey.SERVER_TEST_1, true);
+        map.put(AbilityKey.SERVER_TEST_2, false);
         return map;
     }
 }

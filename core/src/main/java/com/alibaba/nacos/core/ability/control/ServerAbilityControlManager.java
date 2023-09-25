@@ -38,16 +38,16 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
     }
     
     @Override
-    protected Map<String, Boolean> initCurrentNodeAbilities() {
+    protected Map<AbilityKey, Boolean> initCurrentNodeAbilities() {
         // static abilities
-        Map<String, Boolean> staticAbilities = AbilityKey.mapStr(ServerAbilities.getStaticAbilities());
+        Map<AbilityKey, Boolean> staticAbilities = ServerAbilities.getStaticAbilities();
         // all function server can support
-        Set<String> abilityKeys = staticAbilities.keySet();
-        Map<String, Boolean> abilityTable = new HashMap<>(abilityKeys.size());
+        Set<AbilityKey> abilityKeys = staticAbilities.keySet();
+        Map<AbilityKey, Boolean> abilityTable = new HashMap<>(abilityKeys.size());
         // if not define in config, then load from ServerAbilities
-        Set<String> unIncludedInConfig = new HashSet<>();
+        Set<AbilityKey> unIncludedInConfig = new HashSet<>();
         abilityKeys.forEach(abilityKey -> {
-            String key = AbilityConfigs.PREFIX + abilityKey;
+            String key = AbilityConfigs.PREFIX + abilityKey.getName();
             try {
                 Boolean property = EnvUtil.getProperty(key, Boolean.class);
                 // if not null

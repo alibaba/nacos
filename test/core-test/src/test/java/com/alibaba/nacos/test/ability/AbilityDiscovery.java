@@ -130,8 +130,8 @@ public class AbilityDiscovery {
     @Test
     public void testClientDiscovery() throws NacosException {
         // client judge ability
-        Assert.assertEquals(client.getConnectionAbility(AbilityKey.TEST_1), AbilityStatus.SUPPORTED);
-        Assert.assertEquals(client.getConnectionAbility(AbilityKey.TEST_2), AbilityStatus.NOT_SUPPORTED);
+        Assert.assertEquals(client.getConnectionAbility(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
+        Assert.assertEquals(client.getConnectionAbility(AbilityKey.SERVER_TEST_2), AbilityStatus.NOT_SUPPORTED);
     }
     
     @Test
@@ -157,8 +157,8 @@ public class AbilityDiscovery {
         client.registerServerRequestHandler(new ServerRequestHandler() {
             @Override
             public Response requestReply(Request request, Connection connection) {
-                if (connection.getConnectionAbility(AbilityKey.TEST_1).equals(AbilityStatus.SUPPORTED) && connection
-                        .getConnectionAbility(AbilityKey.TEST_2).equals(AbilityStatus.NOT_SUPPORTED)) {
+                if (connection.getConnectionAbility(AbilityKey.SERVER_TEST_1).equals(AbilityStatus.SUPPORTED) && connection
+                        .getConnectionAbility(AbilityKey.SERVER_TEST_2).equals(AbilityStatus.NOT_SUPPORTED)) {
                     clientSuccess = true;
                 }
                 return new Response(){};
@@ -199,8 +199,8 @@ public class AbilityDiscovery {
         
         @Override
         public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
-            if (meta.getConnectionAbility(AbilityKey.TEST_1).equals(AbilityStatus.SUPPORTED) && meta
-                    .getConnectionAbility(AbilityKey.TEST_2).equals(AbilityStatus.NOT_SUPPORTED)) {
+            if (meta.getConnectionAbility(AbilityKey.SERVER_TEST_1).equals(AbilityStatus.SUPPORTED) && meta
+                    .getConnectionAbility(AbilityKey.SERVER_TEST_2).equals(AbilityStatus.NOT_SUPPORTED)) {
                 serverSuccess = true;
             }
             return new ConfigQueryResponse();

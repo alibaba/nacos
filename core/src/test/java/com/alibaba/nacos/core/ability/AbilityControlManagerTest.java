@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import org.junit.Assert;
 import org.junit.Before;
@@ -40,7 +41,7 @@ public class AbilityControlManagerTest {
     @Before
     public void inject() {
         Map<String, Boolean> newTable = new HashMap<>();
-        newTable.put(AbilityKey.TEST_1.getName(), true);
+        newTable.put(AbilityKey.SERVER_TEST_1.getName(), true);
         serverAbilityControlManager.setCurrentSupportingAbility(newTable);
     }
     
@@ -48,65 +49,65 @@ public class AbilityControlManagerTest {
     public void testComponent() throws InterruptedException {
         enabled = 0;
         // invoke enable() or disable() when registering
-        serverAbilityControlManager.registerComponent(AbilityKey.TEST_1, new TestHandlerMapping(), -1);
+        serverAbilityControlManager.registerComponent(AbilityKey.SERVER_TEST_1, new TestHandlerMapping(), -1);
         Assert.assertEquals(1, serverAbilityControlManager.handlerMappingCount());
 
-        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_1);
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         // nothing happens if it has enabled
         Assert.assertEquals(enabled, 1);
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
 
         // invoke disable()
-        serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.TEST_1);
+        serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         // disable will invoke handler
         Assert.assertEquals(enabled, 0);
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
+        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
 
-        serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.TEST_1);
+        serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         // nothing to do because it has disable
         Assert.assertEquals(enabled, 0);
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
+        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
 
-        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_1);
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         Assert.assertEquals(enabled, 1);
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
 
-        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_1);
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
         // wait for invoking handler asyn
         Thread.sleep(200L);
         Assert.assertEquals(enabled, 1);
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
+        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
     }
     
     @Test
     public void testCurrentNodeAbility() {
         Set<String> keySet = serverAbilityControlManager.getCurrentNodeAbilities().keySet();
         // diable all
-        keySet.forEach(key -> serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.getEnum(key)));
+        keySet.forEach(key -> serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(key)));
+            Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         });
         // enable all
-        keySet.forEach(key -> serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.getEnum(key)));
+        keySet.forEach(key -> serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(key)));
+            Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         });
     }
     
     @Test
     public void testPriority() throws InterruptedException {
         TestServerAbilityControlManager testClientAbilityControlManager = new TestServerAbilityControlManager();
-        AbilityKey key = AbilityKey.TEST_1;
+        AbilityKey key = AbilityKey.SERVER_TEST_1;
         TestPriority handlerMapping1 = new TestPriority("1");
         TestPriority handlerMapping2 = new TestPriority("2");
         TestPriority handlerMapping3 = new TestPriority("3");

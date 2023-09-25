@@ -17,12 +17,14 @@
 package com.alibaba.nacos.common.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.initializer.AbilityPostProcessor;
 import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
@@ -32,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -41,9 +44,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-/**.
+/**
+ * It is a capability control center, manager current node abilities or other control.
+ *
  * @author Daydreamer
- * @description It is a capability control center, manager current node abilities or other control.
  * @date 2022/7/12 19:18
  **/
 public abstract class AbstractAbilityControlManager {
@@ -72,7 +76,23 @@ public abstract class AbstractAbilityControlManager {
     protected AbstractAbilityControlManager() {
         ThreadUtils.addShutdownHook(this::destroy);
         NotifyCenter.registerToPublisher(AbilityUpdateEvent.class, 16384);
-        currentRunningAbility.putAll(initCurrentNodeAbilities());
+        currentRunningAbility.putAll(getAbilityTable());
+    }
+
+    /**
+     * initialize abilities.
+     *
+     * @return abilities
+     */
+    private Map<String, Boolean> getAbilityTable() {
+        // get processors
+        Collection<AbilityPostProcessor> processors = NacosServiceLoader.load(AbilityPostProcessor.class);
+        Map<AbilityKey, Boolean> abilities = initCurrentNodeAbilities();
+        // get abilities
+        for (AbilityPostProcessor processor : processors) {
+            processor.process(abilities);
+        }
+        return AbilityKey.mapStr(abilities);
     }
     
     /**.
@@ -110,7 +130,7 @@ public abstract class AbstractAbilityControlManager {
      *
      * @return current node abilities
      */
-    protected abstract Map<String, Boolean> initCurrentNodeAbilities();
+    protected abstract Map<AbilityKey, Boolean> initCurrentNodeAbilities();
     
     /**.
      * Return the abilities current node
