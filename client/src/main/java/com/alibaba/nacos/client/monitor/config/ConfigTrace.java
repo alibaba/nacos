@@ -21,6 +21,7 @@ package com.alibaba.nacos.client.monitor.config;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
 
 /**
@@ -44,7 +45,7 @@ public class ConfigTrace {
     
     public static Span getClientConfigRpcSpan(String rpcType) {
         String spanName = NACOS_CLIENT_CONFIG_RPC_SPAN + "/" + rpcType.toUpperCase();
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT).startSpan());
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
     }
     
     /**
@@ -55,21 +56,21 @@ public class ConfigTrace {
      */
     public static Span getClientConfigHttpSpan(String method) {
         String spanName = NACOS_CLIENT_CONFIG_HTTP_SPAN + "/" + method.toUpperCase();
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT).startSpan());
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
     }
     
     public static Span getClientConfigServiceSpan(String spanNameExtension) {
         String spanName = NACOS_CLIENT_CONFIG_SERVICE_SPAN + "/" + spanNameExtension;
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT).startSpan());
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
     }
     
     public static Span getClientConfigWorkerSpan(String spanNameExtension) {
         String spanName = NACOS_CLIENT_CONFIG_WORKER_SPAN + "/" + spanNameExtension;
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT).startSpan());
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
     }
     
-    private static Span spanProxy(Span span) {
-        span.setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion());
-        return span;
+    private static Span spanProxy(SpanBuilder spanBuilder) {
+        return spanBuilder.setSpanKind(SpanKind.CLIENT)
+                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
     }
 }
