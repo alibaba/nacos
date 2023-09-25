@@ -48,7 +48,7 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
             long start = System.currentTimeMillis();
             
             // Trace
-            Span span = NamingTrace.getClientNamingWorkerSpan("handleNotifySubscriberRequestFromServer");
+            Span span = NamingTrace.getClientNamingWorkerSpan("handleNamingRequestFromServer");
             try (Scope ignored = span.makeCurrent()) {
                 
                 if (span.isRecording()) {

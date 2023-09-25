@@ -44,8 +44,7 @@ public class NamingTrace {
     
     public static Span getClientNamingRpcSpan(String rpcType) {
         String spanName = NACOS_CLIENT_NAMING_RPC_SPAN + "/" + rpcType.toUpperCase();
-        return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
-                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT).startSpan());
     }
     
     /**
@@ -56,19 +55,21 @@ public class NamingTrace {
      */
     public static Span getClientNamingHttpSpan(String method) {
         String spanName = NACOS_CLIENT_NAMING_HTTP_SPAN + "/" + method.toUpperCase();
-        return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
-                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT).startSpan());
     }
     
     public static Span getClientNamingServiceSpan(String spanNameExtension) {
         String spanName = NACOS_CLIENT_NAMING_SERVICE_SPAN + "/" + spanNameExtension;
-        return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
-                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT).startSpan());
     }
     
     public static Span getClientNamingWorkerSpan(String spanNameExtension) {
         String spanName = NACOS_CLIENT_NAMING_WORKER_SPAN + "/" + spanNameExtension;
-        return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
-                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT).startSpan());
+    }
+    
+    private static Span spanProxy(Span span) {
+        span.setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion());
+        return span;
     }
 }
