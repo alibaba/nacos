@@ -22,14 +22,14 @@ import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 import java.util.Map;
 
 /**
- * It is used to register server abilities.
+ * It is used to register client abilities.
  *
  * @author Daydreamer
  * @date 2022/8/31 12:32
  **/
-public class ServerAbilities extends AbstractAbilityRegistry {
+public class SdkClientAbilities extends AbstractAbilityRegistry {
     
-    private static final ServerAbilities INSTANCE = new ServerAbilities();
+    private static final SdkClientAbilities INSTANCE = new SdkClientAbilities();
     
     {
         /*
@@ -44,7 +44,7 @@ public class ServerAbilities extends AbstractAbilityRegistry {
          *       <code>supportedAbilities.put(AbilityKey.DATA_COMPRESSION, true);</code> means that current client support compression.
          *
          */
-        // put ability here, which you want current server supports
+        // put ability here, which you want current client supports
     }
     
     /**.
@@ -55,5 +55,4 @@ public class ServerAbilities extends AbstractAbilityRegistry {
     public static Map<AbilityKey, Boolean> getStaticAbilities() {
         return INSTANCE.getSupportedAbilities();
     }
-    
 }

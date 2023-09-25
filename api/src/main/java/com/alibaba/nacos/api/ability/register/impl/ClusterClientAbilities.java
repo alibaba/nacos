@@ -1,19 +1,3 @@
-/*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.alibaba.nacos.api.ability.register.impl;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
@@ -21,15 +5,15 @@ import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 
 import java.util.Map;
 
-/**.
+/**
+ * It is used to register cluster client abilities.
+ *
  * @author Daydreamer
- * @description It is used to register client abilities.
- * @date 2022/8/31 12:32
  **/
-public class ClientAbilities extends AbstractAbilityRegistry {
-    
-    private static final ClientAbilities INSTANCE = new ClientAbilities();
-    
+public class ClusterClientAbilities extends AbstractAbilityRegistry {
+
+    private static final ClusterClientAbilities INSTANCE = new ClusterClientAbilities();
+
     {
         /*
          * example:
@@ -45,9 +29,9 @@ public class ClientAbilities extends AbstractAbilityRegistry {
          */
         // put ability here, which you want current client supports
     }
-    
-    /**.
-     * get static ability current server supports
+
+    /**
+     * get static ability current cluster client supports.
      *
      * @return static ability
      */

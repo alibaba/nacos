@@ -18,9 +18,10 @@ package com.alibaba.nacos.client.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
-import com.alibaba.nacos.api.ability.register.impl.ClientAbilities;
+import com.alibaba.nacos.api.ability.register.impl.SdkClientAbilities;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**.
@@ -34,13 +35,10 @@ public class ClientAbilityControlManager extends AbstractAbilityControlManager {
     }
     
     @Override
-    protected Map<AbilityKey, Boolean> initCurrentNodeAbilities() {
-        return ClientAbilities.getStaticAbilities();
-    }
-
-    @Override
-    protected AbilityMode initializeMode() {
-        return AbilityMode.SDK_CLIENT;
+    protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
+        Map<AbilityMode, Map<AbilityKey, Boolean>> abilities = new HashMap<>();
+        abilities.put(AbilityMode.SDK_CLIENT, SdkClientAbilities.getStaticAbilities());
+        return abilities;
     }
 
     @Override

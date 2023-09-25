@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.ability;
 
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 
@@ -25,8 +26,8 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
 
     @JustForTest
     public void setCurrentSupportingAbility(Map<String, Boolean> ability) {
-        currentRunningAbility.clear();
-        currentRunningAbility.putAll(ability);
+        currentNodeAbilities.get(AbilityMode.SERVER).clear();
+        currentNodeAbilities.get(AbilityMode.SERVER).putAll(ability);
     }
     
 }

@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,18 +42,18 @@ public class AbilityControlManagerTest {
     
     @Test
     public void testCurrentNodeAbility() {
-        Set<String> keySet = serverAbilityControlManager.getCurrentNodeAbilities().keySet();
+        Set<String> keySet = serverAbilityControlManager.getCurrentNodeAbilities(AbilityMode.SERVER).keySet();
         // diable all
         keySet.forEach(key -> serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+            Assert.assertNotEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)), AbilityStatus.SUPPORTED);
         });
         // enable all
         keySet.forEach(key -> serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+            Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)), AbilityStatus.SUPPORTED);
         });
     }
     

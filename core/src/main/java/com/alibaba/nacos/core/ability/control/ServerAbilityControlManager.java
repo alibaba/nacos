@@ -18,6 +18,8 @@ package com.alibaba.nacos.core.ability.control;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
+import com.alibaba.nacos.api.ability.register.impl.ClusterClientAbilities;
+import com.alibaba.nacos.api.ability.register.impl.SdkClientAbilities;
 import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.core.ability.config.AbilityConfigs;
@@ -39,7 +41,13 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
     }
     
     @Override
-    protected Map<AbilityKey, Boolean> initCurrentNodeAbilities() {
+    protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
+        // init client abilities
+        Map<AbilityMode, Map<AbilityKey, Boolean>> res = new HashMap<>();
+        res.put(AbilityMode.CLUSTER_CLIENT, initClusterClientAbilities());
+        res.put(AbilityMode.SDK_CLIENT, initSdkClientAbilities());
+
+        // init server abilities
         // static abilities
         Map<AbilityKey, Boolean> staticAbilities = ServerAbilities.getStaticAbilities();
         // all function server can support
@@ -64,12 +72,25 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
         });
         // load from ServerAbilities
         unIncludedInConfig.forEach(abilityKey -> abilityTable.put(abilityKey, staticAbilities.get(abilityKey)));
-        return abilityTable;
+
+        res.put(AbilityMode.SERVER, abilityTable);
+        return res;
     }
 
-    @Override
-    protected AbilityMode initializeMode() {
-        return AbilityMode.SERVER;
+    /**
+     * init cluster client abilities.
+     */
+    private Map<AbilityKey, Boolean> initClusterClientAbilities() {
+        // static abilities
+        return ClusterClientAbilities.getStaticAbilities();
+    }
+
+    /**
+     * init sdk client abilities.
+     */
+    private Map<AbilityKey, Boolean> initSdkClientAbilities() {
+        // static abilities
+        return SdkClientAbilities.getStaticAbilities();
     }
 
     @Override

@@ -142,7 +142,6 @@ public class StartingApplicationListener implements NacosApplicationListener {
         ThreadPoolManager.shutdown();
         WatchFileCenter.shutdown();
         NotifyCenter.shutdown();
-        NacosAbilityManagerHolder.getInstance().destroy();
         
         closeExecutor();
         
