@@ -85,7 +85,7 @@ jobs:
   deploy:
     if: ${{ success() }}
     name: Deploy nacos
-    needs: [list-version,docker]
+    needs: [docker]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
@@ -146,7 +146,7 @@ jobs:
   e2e-test:
     if: ${{ success() }}
     name: E2E Test
-    needs: [list-version, deploy]
+    needs: [deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
@@ -194,7 +194,7 @@ jobs:
   clean:
     if: always()
     name: Clean
-    needs: [list-version, e2e-test]
+    needs: [e2e-test]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
