@@ -98,7 +98,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
                 RpcClientTlsConfig.properties(properties.asProperties()));
-        this.redoService = new NamingGrpcRedoService(this);
+        this.redoService = new NamingGrpcRedoService(this, properties);
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
         start(serverListFactory, serviceInfoHolder);
     }

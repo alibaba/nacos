@@ -411,17 +411,13 @@ public class ClientWorker implements Closeable {
     
     private int calculateTaskId() {
         int perTaskSize = (int) ParamUtil.getPerTaskConfigSize();
-        int taskId = -1;
         for (int index = 0; index < taskIdCacheCountList.size(); index++) {
             if (taskIdCacheCountList.get(index).get() < perTaskSize) {
                 return index;
             }
         }
-        if (taskId < 0) {
-            taskIdCacheCountList.add(new AtomicInteger(0));
-            taskId = taskIdCacheCountList.size() - 1;
-        }
-        return taskId;
+        taskIdCacheCountList.add(new AtomicInteger(0));
+        return taskIdCacheCountList.size() - 1;
     }
     
     public CacheData getCache(String dataId, String group) {
@@ -733,7 +729,7 @@ public class ClientWorker implements Closeable {
                 
                 @Override
                 public Class<? extends Event> subscribeType() {
-                    return ServerlistChangeEvent.class;
+                    return ServerListChangeEvent.class;
                 }
             };
             NotifyCenter.registerSubscriber(subscriber);

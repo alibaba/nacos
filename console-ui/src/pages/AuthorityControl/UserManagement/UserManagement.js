@@ -146,7 +146,11 @@ class UserManagement extends React.Component {
             <Button
               type={'primary'}
               style={{ marginRight: 10 }}
-              onClick={() => this.getUsers()}
+              onClick={() => {
+                this.setState({ pageNo: 1 }, () => {
+                  this.getUsers();
+                });
+              }}
               data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
             >
               {locale.query}

@@ -17,11 +17,13 @@
 package com.alibaba.nacos.config.server.filter;
 
 import com.alibaba.nacos.common.paramcheck.AbstractParamChecker;
+import com.alibaba.nacos.common.paramcheck.ParamCheckResponse;
 import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
 import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
+import com.alibaba.nacos.plugin.control.Loggers;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -31,7 +33,6 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.List;
 
 /**
@@ -61,13 +62,34 @@ public class ConfigParamCheckFilter implements Filter {
             List<ParamInfo> paramInfoList = paramExtractor.extractParam(req);
             ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
             AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(ServerParamCheckConfig.getInstance().getActiveParamChecker());
-            paramChecker.checkParamInfoList(paramInfoList);
-            chain.doFilter(req, resp);
+            ParamCheckResponse paramCheckResponse = paramChecker.checkParamInfoList(paramInfoList);
+            if (paramCheckResponse.isSuccess()) {
+                chain.doFilter(req, resp);
+            } else {
+                Loggers.CONTROL.info("Param check invalid,{},url:{}", paramCheckResponse.getMessage(), uri);
+                generate400Response(resp, paramCheckResponse.getMessage());
+            }
         } catch (Exception e) {
-            resp.setStatus(400);
-            PrintWriter writer = resp.getWriter();
-            writer.print(e.getMessage());
-            writer.flush();
+            generate400Response(resp, e.getMessage());
+        }
+        
+    }
+    
+    /**
+     * Generate 400 response.
+     *
+     * @param response the response
+     * @param message  the message
+     */
+    public void generate400Response(HttpServletResponse response, String message) {
+        try {
+            response.setHeader("Pragma", "no-cache");
+            response.setDateHeader("Expires", 0);
+            response.setHeader("Cache-Control", "no-cache,no-store");
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getOutputStream().println(message);
+        } catch (Exception ex) {
+            Loggers.CONTROL.error("Error to generate tps 400 response", ex);
         }
     }
 }

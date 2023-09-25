@@ -30,6 +30,7 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerInterceptors;
 import io.grpc.ServerServiceDefinition;
+import io.grpc.ServerTransportFilter;
 import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import io.grpc.netty.shaded.io.grpc.netty.NettyServerBuilder;
 import io.grpc.protobuf.ProtoUtils;
@@ -37,6 +38,9 @@ import io.grpc.stub.ServerCalls;
 import io.grpc.util.MutableHandlerRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -68,7 +72,7 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     @Override
     public void startServer() throws Exception {
         final MutableHandlerRegistry handlerRegistry = new MutableHandlerRegistry();
-        addServices(handlerRegistry, new GrpcConnectionInterceptor(), new GrpcServerParamCheckInterceptor());
+        addServices(handlerRegistry, getSeverInterceptors().toArray(new ServerInterceptor[0]));
         NettyServerBuilder builder = NettyServerBuilder.forPort(getServicePort()).executor(getRpcExecutor());
         
         Optional<InternalProtocolNegotiator.ProtocolNegotiator> negotiator = newProtocolNegotiator();
@@ -78,10 +82,12 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
             builder.protocolNegotiator(actual);
         }
         
+        for (ServerTransportFilter each : getServerTransportFilters()) {
+            builder.addTransportFilter(each);
+        }
         server = builder.maxInboundMessageSize(getMaxInboundMessageSize()).fallbackHandlerRegistry(handlerRegistry)
                 .compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
-                .addTransportFilter(new AddressTransportFilter(connectionManager))
                 .keepAliveTime(getKeepAliveTime(), TimeUnit.MILLISECONDS)
                 .keepAliveTimeout(getKeepAliveTimeout(), TimeUnit.MILLISECONDS)
                 .permitKeepAliveTime(getPermitKeepAliveTime(), TimeUnit.MILLISECONDS).build();
@@ -130,6 +136,16 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
             return property;
         }
         return GrpcServerConstants.GrpcConfig.DEFAULT_GRPC_MAX_INBOUND_MSG_SIZE;
+    }
+    
+    protected List<ServerInterceptor> getSeverInterceptors() {
+        List<ServerInterceptor> result = new LinkedList<>();
+        result.add(new GrpcConnectionInterceptor());
+        return result;
+    }
+    
+    protected List<ServerTransportFilter> getServerTransportFilters() {
+        return Collections.singletonList(new AddressTransportFilter(connectionManager));
     }
     
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {

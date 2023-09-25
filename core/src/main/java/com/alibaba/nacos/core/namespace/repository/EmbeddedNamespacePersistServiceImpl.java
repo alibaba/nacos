@@ -73,14 +73,14 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     
     @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResoure, final long time) {
+            String createResource, final long time) {
         
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper.insert(Arrays
                 .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
                         "gmt_modified"));
-        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResoure, time, time};
+        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResource, time, time};
         
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         
@@ -178,7 +178,7 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
         }
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
-        String sql = tenantInfoMapper.count(Arrays.asList("tenant_id"));
+        String sql = tenantInfoMapper.count(Collections.singletonList("tenant_id"));
         Integer result = databaseOperate.queryOne(sql, new String[] {tenantId}, Integer.class);
         if (result == null) {
             return 0;

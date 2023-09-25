@@ -25,6 +25,12 @@ import java.util.List;
  */
 public abstract class AbstractParamChecker {
     
+    protected ParamCheckRule paramCheckRule;
+    
+    public AbstractParamChecker() {
+        initParamCheckRule();
+    }
+    
     /**
      * Gets checker type.
      *
@@ -33,9 +39,15 @@ public abstract class AbstractParamChecker {
     public abstract String getCheckerType();
     
     /**
-     * Check param info list.
+     * Check param info list param check response.
      *
      * @param paramInfos the param infos
+     * @return the param check response
      */
-    public abstract void checkParamInfoList(List<ParamInfo> paramInfos);
+    public abstract ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos);
+    
+    /**
+     * Init param check rule.
+     */
+    public abstract void initParamCheckRule();
 }

@@ -103,6 +103,7 @@ class App extends React.Component {
     changeLanguage: PropTypes.func,
     getState: PropTypes.func,
     loginPageEnabled: PropTypes.string,
+    consoleUiEnable: PropTypes.string,
   };
 
   constructor(props) {
@@ -121,7 +122,8 @@ class App extends React.Component {
   }
 
   get router() {
-    const { loginPageEnabled } = this.props;
+    const { loginPageEnabled, consoleUiEnable } = this.props;
+
     return (
       <HashRouter>
         <Switch>
@@ -130,9 +132,9 @@ class App extends React.Component {
           )}
           {/* <Route path="/login" component={Login} /> */}
           <Layout>
-            {MENU.map(item => (
-              <Route key={item.path} {...item} />
-            ))}
+            {consoleUiEnable &&
+              consoleUiEnable === 'true' &&
+              MENU.map(item => <Route key={item.path} {...item} />)}
           </Layout>
         </Switch>
       </HashRouter>
