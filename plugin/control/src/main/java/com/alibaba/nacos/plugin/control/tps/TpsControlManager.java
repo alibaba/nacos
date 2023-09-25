@@ -22,6 +22,7 @@ import com.alibaba.nacos.plugin.control.rule.parser.NacosTpsControlRuleParser;
 import com.alibaba.nacos.plugin.control.rule.parser.TpsControlRuleParser;
 import com.alibaba.nacos.plugin.control.rule.storage.RuleStorageProxy;
 import com.alibaba.nacos.plugin.control.tps.barrier.TpsBarrier;
+import com.alibaba.nacos.plugin.control.tps.barrier.creator.DefaultNacosTpsBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.barrier.creator.TpsBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
@@ -54,6 +55,15 @@ public abstract class TpsControlManager {
         return new NacosTpsControlRuleParser();
     }
     
+    /**
+     * Build tps barrier creator to creator tps barrier for each point.
+     *
+     * @return TpsBarrierCreator implementation for current plugin
+     */
+    protected TpsBarrierCreator buildTpsBarrierCreator() {
+        return new DefaultNacosTpsBarrierCreator();
+    }
+    
     protected void initTpsRule(String pointName) {
         RuleStorageProxy ruleStorageProxy = RuleStorageProxy.getInstance();
         
@@ -75,13 +85,6 @@ public abstract class TpsControlManager {
             Loggers.CONTROL.info("No tps control rule of {} found  ", pointName, localRuleContent);
         }
     }
-    
-    /**
-     * Build tps barrier creator to creator tps barrier for each point.
-     *
-     * @return TpsBarrierCreator implemetation for current plugin
-     */
-    protected abstract TpsBarrierCreator buildTpsBarrierCreator();
     
     /**
      * apple tps rule.
