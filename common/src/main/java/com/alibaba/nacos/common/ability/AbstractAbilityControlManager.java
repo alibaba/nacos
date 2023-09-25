@@ -17,6 +17,7 @@
 package com.alibaba.nacos.common.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.ability.initializer.AbilityPostProcessor;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -60,9 +61,10 @@ public abstract class AbstractAbilityControlManager {
         // get processors
         Collection<AbilityPostProcessor> processors = NacosServiceLoader.load(AbilityPostProcessor.class);
         Map<AbilityKey, Boolean> abilities = initCurrentNodeAbilities();
+        AbilityMode mode = initializeMode();
         // get abilities
         for (AbilityPostProcessor processor : processors) {
-            processor.process(abilities);
+            processor.process(mode, abilities);
         }
         return AbilityKey.mapStr(abilities);
     }
@@ -111,6 +113,13 @@ public abstract class AbstractAbilityControlManager {
      * @return current node abilities
      */
     protected abstract Map<AbilityKey, Boolean> initCurrentNodeAbilities();
+
+    /**
+     * initialize mode.
+     *
+     * @return mode.
+     */
+    protected abstract AbilityMode initializeMode();
     
     /**.
      * Return the abilities current node

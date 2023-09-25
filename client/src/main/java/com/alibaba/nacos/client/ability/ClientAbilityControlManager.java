@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.ability.register.impl.ClientAbilities;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 
@@ -36,7 +37,12 @@ public class ClientAbilityControlManager extends AbstractAbilityControlManager {
     protected Map<AbilityKey, Boolean> initCurrentNodeAbilities() {
         return ClientAbilities.getStaticAbilities();
     }
-    
+
+    @Override
+    protected AbilityMode initializeMode() {
+        return AbilityMode.SDK_CLIENT;
+    }
+
     @Override
     public int getPriority() {
         // if server ability manager exist, you should choose the server one

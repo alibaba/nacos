@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.ability.control;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.core.ability.config.AbilityConfigs;
@@ -65,7 +66,12 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
         unIncludedInConfig.forEach(abilityKey -> abilityTable.put(abilityKey, staticAbilities.get(abilityKey)));
         return abilityTable;
     }
-    
+
+    @Override
+    protected AbilityMode initializeMode() {
+        return AbilityMode.SERVER;
+    }
+
     @Override
     public int getPriority() {
         return 1;
