@@ -10,7 +10,6 @@ on:
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-  TEST_REPO_NAME: nacos-group/nacos-e2e
 
 jobs:
   docker:
@@ -23,8 +22,6 @@ jobs:
       matrix:
         base-image: ["ubuntu"]
         java-version: ["8"]
-    outputs:
-      version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:
       - name: 'Download artifact'
         uses: actions/github-script@v3.1.0
@@ -75,14 +72,35 @@ jobs:
           echo $tag
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${tag} .
           docker push ${DOCKER_REPO}:${tag}
+      - uses: actions/upload-artifact@v3
+        name: Upload distribution tar
+        with:
+          name: versionlist
+          path: nacos-e2e/cicd/build/versionlist/*
+
+
+  list-version:
+    if: always()
+    name: List version
+    needs: [docker]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      version-json: ${{ steps.show_versions.outputs.version-json }}
+    steps:
+      - uses: actions/download-artifact@v3
+        name: Download versionlist
+        with:
+          name: versionlist
+          path: versionlist
       - name: Show versions
         id: show_versions
         run: | 
-          a=(`ls nacos-e2e/cicd/build/versionlist`)
+          a=(`ls versionlist`)
           printf '%s\n' "${a[@]}" | jq -R . | jq -s .
           echo version-json=`printf '%s\n' "${a[@]}" | jq -R . | jq -s .` >> $GITHUB_OUTPUT
   
-
+  
   deploy:
     if: ${{ success() }}
     name: Deploy nacos
@@ -100,50 +118,41 @@ jobs:
     steps:
       - name: set nodeport
         run: |
-          echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
+            echo "::set-env name=NODE_PORT::$(expr $(expr $(expr $(expr 1 * $(expr ${{ github.run_number }} - 1)) + ${{ strategy.job-index }}) % 30000) + 30000)"
       - name: set cluster params
         if: ${{ matrix.mode == 'standalone' }}
         run: |
           echo "::set-env name=REPLICA_COUNT::1"
           echo "::set-env name=DATABASE::embedded"
-      - uses: Wuyunfan-BUPT/test-tools@add_display_tools
+      - uses: apache/rocketmq-test-tool@136205caa6e97f81744e30adea114dd2f09cc55e
         name: Deploy nacos
         with:
-          yamlString: |
-            action: deploy
+          action: "deploy"
+          ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
+          test-version: "${{ matrix.version }}"
+          chart-git: "https://ghproxy.com/https://github.com/nacos-group/nacos-e2e.git"
+          chart-branch: "main"
+          chart-path: "./cicd/helm"
+          job-id: ${{ strategy.job-index }}
+          helm-values: |
             namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
-            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
-            waitTimes: 1200
-            velaAppDescription: nacos-${{ env.GITHUB_WORKFLOW }}-${{ github.run_id }}@${{ matrix.version }}
-            repoName: nacos
-            velauxUsername: ${{ secrets.VELA_USERNAME }}
-            velauxPassword: ${{ secrets.VELA_PASSWORD }}
-            helm:
-              chart: ./cicd/helm
-              git:
-                branch: main
-              repoType: git
-              retries: 3
-              url: https://ghproxy.com/https://github.com/nacos-group/nacos-e2e.git
-              values:
-                namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
-                global:
-                  mode: ${{ matrix.mode }}
-                nacos:
-                  replicaCount: ${{ env.REPLICA_COUNT }}
-                  image: 
-                    repository: ${{ env.DOCKER_REPO }}
-                    tag: ${{ matrix.version }}
-                  storage:
-                    type: ${{ env.DATABASE }}
-                    db:
-                      port: 3306
-                      username: nacos
-                      password: nacos
-                      param: characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false
-                service:
-                  nodePort: ${{ env.NODE_PORT }}
-                  type: ClusterIP
+            global:
+              mode: ${{ matrix.mode }}
+            nacos:
+              replicaCount: ${{ env.REPLICA_COUNT }}
+              image: 
+                repository: ${{ env.DOCKER_REPO }}
+                tag: ${{ matrix.version }}
+              storage:
+                type: ${{ env.DATABASE }}
+                db:
+                  port: 3306
+                  username: nacos
+                  password: nacos
+                  param: characterEncoding=utf8&connectTimeout=1000&socketTimeout=3000&autoReconnect=true&useSSL=false
+            service:
+              nodePort: ${{ env.NODE_PORT }}
+              type: ClusterIP
   e2e-test:
     if: ${{ success() }}
     name: E2E Test
@@ -155,42 +164,31 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@add_display_tools
+      - uses: apache/rocketmq-test-tool@136205caa6e97f81744e30adea114dd2f09cc55e
         name: e2e test
         with:
-          yamlString: |
-            action: test
-            namespace: nacos-${{ github.run_id }}-0
-            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
-            API_VERSION: v1
-            KIND: Pod
-            RESTART_POLICY: Never
-            ENV:
-              REPO_NAME: ${{ env.TEST_REPO_NAME }}
-              CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
-              BRANCH: main
-              CODE_PATH: java/nacos-2X
-              CMD: mvn clean test -B
-              ALL_IP: null
-            CONTAINER:
-              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
-              RESOURCE_LIMITS:
-                cpu: 8
-                memory: 8Gi
-              RESOURCE_REQUIRE:
-                cpu: 8
-                memory: 8Gi
-
+          action: "test"
+          ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
+          test-version: "${{ matrix.version }}"
+          test-code-git: "https://github.com/nacos-group/nacos-e2e.git"
+          test-code-branch: "main"
+          test-code-path: "java/nacos-2X"
+          test-cmd: 'mvn clean test -B'
+          job-id: ${{ strategy.job-index }}
+      - name: Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        if: always() # always run even if the previous step fails
+        with:
+          report_paths: '**/test_report/TEST-*.xml'
+          annotate_only: true
+          include_passed: true
+          detailed_summary: true
       - uses: actions/upload-artifact@v3
         if: always()
         name: Upload test log
         with:
-          name: test-e2e-grpc-java-log.txt
+          name: testlog.txt ${{ matrix.mode }}
           path: testlog.txt
-      - name: add markdown
-        if: always()
-        run: |
-          cat result.md >> $GITHUB_STEP_SUMMARY
 
   clean:
     if: always()
@@ -203,12 +201,10 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.list-version.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@add_display_tools
+      - uses: apache/rocketmq-test-tool@136205caa6e97f81744e30adea114dd2f09cc55e
         name: clean
         with:
-          yamlString: |
-            action: clean
-            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
-            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
-            velauxUsername: ${{ secrets.VELA_USERNAME }}
-            velauxPassword: ${{ secrets.VELA_PASSWORD }}
+          action: "clean"
+          ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
+          test-version: "${{ matrix.version }}"
+          job-id: ${{ strategy.job-index }}
