@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.ConfigResourceInjector;
+import com.alibaba.nacos.client.auth.ram.injector.LockResourceInjector;
 import com.alibaba.nacos.client.auth.ram.injector.NamingResourceInjector;
 import com.alibaba.nacos.client.auth.ram.utils.SpasAdapter;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -53,6 +54,7 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
         resourceInjectors = new HashMap<>();
         resourceInjectors.put(SignType.NAMING, new NamingResourceInjector());
         resourceInjectors.put(SignType.CONFIG, new ConfigResourceInjector());
+        resourceInjectors.put(SignType.LOCK, new LockResourceInjector());
     }
     
     @Override

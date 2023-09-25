@@ -94,6 +94,17 @@ public class RequestResource {
         return result;
     }
     
+    /**
+     * Create new lock request resource builder.
+     *
+     * @return lock request resource builder
+     */
+    public static Builder lockBuilder() {
+        Builder result = new Builder();
+        result.setType(SignType.LOCK);
+        return result;
+    }
+    
     public static class Builder {
         
         private String type;

@@ -38,6 +38,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-naming</artifactId>
         </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-lock</artifactId>
+        </dependency>
     
         <dependency>
             <groupId>com.alibaba.nacos</groupId>

@@ -613,6 +613,7 @@
         <module>prometheus</module>
         <module>persistence</module>
         <module>k8s-sync</module>
+        <module>lock</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
@@ -658,6 +659,11 @@
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>nacos-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-lock</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
