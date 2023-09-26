@@ -22,6 +22,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoDa
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.RedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.data.WatcherRedoData;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 
@@ -50,6 +51,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
         try {
             redoForInstances();
             redoForSubscribes();
+            redoForWatchers();
         } catch (Exception e) {
             LogUtils.NAMING_LOGGER.warn("Redo task run with unexpected exception: ", e);
         }
@@ -134,6 +136,42 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 break;
             case REMOVE:
                 redoService.removeSubscriberForRedo(redoData.getServiceName(), redoData.getGroupName(), redoData.get());
+                break;
+            default:
+        }
+    }
+    
+    private void redoForWatchers() {
+        for (WatcherRedoData each : redoService.findWatcherRedoData()) {
+            try {
+                redoForWatcher(each);
+            } catch (NacosException e) {
+                LogUtils.NAMING_LOGGER.error("Redo watcher operation {} for pattern {}@@{}, uuid {} failed. ", each.getRedoType(),
+                        each.getGroupName(), each.getServiceName(), each.get(), e);
+            }
+        }
+    }
+    
+    private void redoForWatcher(WatcherRedoData redoData) throws NacosException {
+        RedoData.RedoType redoType = redoData.getRedoType();
+        String serviceNamePattern = redoData.getServiceName();
+        String groupNamePattern = redoData.getGroupName();
+        LogUtils.NAMING_LOGGER.info("Redo watcher operation {} for pattern {}@@{}", redoType, groupNamePattern, serviceNamePattern);
+        switch (redoType) {
+            case REGISTER:
+                if (isClientDisabled()) {
+                    return;
+                }
+                clientProxy.doFuzzyWatch(serviceNamePattern, groupNamePattern);
+                break;
+            case UNREGISTER:
+                if (isClientDisabled()) {
+                    return;
+                }
+                clientProxy.doCancelFuzzyWatch(serviceNamePattern, groupNamePattern);
+                break;
+            case REMOVE:
+                redoService.removeWatcherForRedo(redoData.getServiceName(), redoData.getGroupName());
                 break;
             default:
         }

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.naming;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.listener.AbstractWatchEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -531,6 +532,45 @@ public interface NamingService {
      */
     void unsubscribe(String serviceName, String groupName, List<String> clusters, EventListener listener)
             throws NacosException;
+    
+    /**
+     * Watch a range of services by match rule to receive notify events of matched services alteration.
+     *
+     * @param fixedGroupName fixed group name for watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    void fuzzyWatch(String fixedGroupName, AbstractWatchEventListener listener) throws NacosException;
+    
+    /**
+     * Watch a range of services by match rule to receive notify events of matched services alteration.
+     *
+     * @param serviceNamePattern service name pattern for watch
+     * @param fixedGroupName fixed group name for watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    void fuzzyWatch(String serviceNamePattern, String fixedGroupName,
+            AbstractWatchEventListener listener) throws NacosException;
+    
+    /**
+     * Cancel watch event listener of a pattern.
+     *
+     * @param fixedGroupName fixed group name for watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    void cancelFuzzyWatch(String fixedGroupName, AbstractWatchEventListener listener) throws NacosException;
+    
+    /**
+     * Cancel watch event listener of a pattern.
+     *
+     * @param serviceNamePattern service name pattern for watch
+     * @param fixedGroupName fixed group name for watch
+     * @param listener event listener
+     * @throws NacosException nacos exception
+     */
+    void cancelFuzzyWatch(String serviceNamePattern, String fixedGroupName, AbstractWatchEventListener listener) throws NacosException;
     
     /**
      * Get all service names from server.

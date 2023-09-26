@@ -30,6 +30,10 @@ public class NamingRemoteConstants {
     
     public static final String DE_REGISTER_INSTANCE = "deregisterInstance";
     
+    public static final String WATCH_SERVICE = "watchService";
+    
+    public static final String CANCEL_WATCH_SERVICE = "cancelWatchService";
+    
     public static final String QUERY_SERVICE = "queryService";
     
     public static final String SUBSCRIBE_SERVICE = "subscribeService";
