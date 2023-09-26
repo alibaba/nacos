@@ -19,6 +19,7 @@ package com.alibaba.nacos.istio.common;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
+import com.alibaba.nacos.config.server.model.event.IstioConfigChangeEvent;
 import com.alibaba.nacos.istio.misc.IstioConfig;
 import com.alibaba.nacos.istio.model.IstioService;
 import com.alibaba.nacos.istio.model.PushRequest;
@@ -29,6 +30,7 @@ import com.alibaba.nacos.naming.core.v2.event.metadata.InfoChangeEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
+import com.alibaba.nacos.naming.pojo.ServiceNameView;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.HashMap;
@@ -135,7 +137,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             InfoChangeEvent.InstanceInfoChangeEvent instanceInfoChangeEvent = (InfoChangeEvent.InstanceInfoChangeEvent) event;
             Service service = instanceInfoChangeEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
-            
+    
             boolean full = update(serviceName, service);
             PushRequest pushRequest = new PushRequest(serviceName, full);
             pushRequestQueue.add(pushRequest);

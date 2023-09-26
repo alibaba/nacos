@@ -21,6 +21,8 @@ import com.alibaba.nacos.istio.mcp.ServiceEntryMcpGenerator;
 import com.alibaba.nacos.istio.xds.CdsGenerator;
 import com.alibaba.nacos.istio.xds.EdsGenerator;
 import com.alibaba.nacos.istio.xds.EmptyXdsGenerator;
+import com.alibaba.nacos.istio.xds.LdsGenerator;
+import com.alibaba.nacos.istio.xds.RdsGenerator;
 import com.alibaba.nacos.istio.xds.ServiceEntryXdsGenerator;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +48,8 @@ public class ApiGeneratorFactory {
         //xds
         apiGeneratorMap.put(CLUSTER_TYPE, CdsGenerator.getInstance());
         apiGeneratorMap.put(ENDPOINT_TYPE, EdsGenerator.getInstance());
+        apiGeneratorMap.put(LISTENER_TYPE, LdsGenerator.getInstance());
+        apiGeneratorMap.put(ROUTE_TYPE, RdsGenerator.getInstance());
         
         // mcp
         apiGeneratorMap.put(SERVICE_ENTRY_COLLECTION, ServiceEntryMcpGenerator.getInstance());

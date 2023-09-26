@@ -21,61 +21,65 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.IstioConfigChangeEvent;
+import com.alibaba.nacos.istio.misc.Loggers;
 import com.alibaba.nacos.istio.model.DestinationRule;
+import com.alibaba.nacos.istio.model.PushRequest;
 import com.alibaba.nacos.istio.model.VirtualService;
+import com.alibaba.nacos.istio.xds.NacosXdsService;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * Listener for IstioConfig.
  *
- * @author junweiasdf
+ * @author junwei
  */
 @Service
-public class IstioConfigListener {
+@Component
+public class IstioConfigProcessor {
     
+    private NacosXdsService nacosXdsService;
+    
+    private NacosResourceManager resourceManager;
     private static final String TYPE_VIRTUAL_SERVICE = "virtualservice";
     
     private static final String TYPE_DESTINATION_RULE = "destinationrule";
     
+    public static final String CONFIG_REASON = "config";
+    
+    
     private final Yaml yaml;
     
-    public IstioConfigListener() {
+    public IstioConfigProcessor() {
         this.yaml = new Yaml();
         NotifyCenter.registerSubscriber(new Subscriber() {
             @Override
             public void onEvent(Event event) {
                 if (event instanceof IstioConfigChangeEvent) {
-                    processEvent((IstioConfigChangeEvent) event);
+                    IstioConfigChangeEvent istioConfigChangeEvent = (IstioConfigChangeEvent) event;
+                    String content = istioConfigChangeEvent.content;
+                    PushRequest pushRequest = new PushRequest(content, true);
+                    if (null == nacosXdsService) {
+                        nacosXdsService = ApplicationUtils.getBean(NacosXdsService.class);
+                    }
+                    if (null == resourceManager) {
+                        resourceManager = ApplicationUtils.getBean(NacosResourceManager.class);
+                    }
+                    pushRequest.addReason(CONFIG_REASON);
+                    ResourceSnapshot snapshot = resourceManager.createResourceSnapshot();
+                    pushRequest.setResourceSnapshot(snapshot);
+                    nacosXdsService.handleConfigEvent(pushRequest);
                 }
+                
             }
-            
+
             @Override
             public Class<? extends Event> subscribeType() {
                 return IstioConfigChangeEvent.class;
             }
         });
-    }
-    
-    private void processEvent(IstioConfigChangeEvent event) {
-        String type = event.type;
-        String content = event.content;
-        try {
-            if (TYPE_VIRTUAL_SERVICE.equals(type)) {
-                VirtualService vs = parseContent(content, VirtualService.class);
-                System.out.println(vs);
-            } else if (TYPE_DESTINATION_RULE.equals(type)) {
-                DestinationRule dr = parseContent(content, DestinationRule.class);
-                System.out.println(dr);
-            }
-        } catch (Exception e) {
-            // A good practice is to have some meaningful logging here.
-            System.err.println("Error processing event of type " + type);
-            e.printStackTrace();
-        }
-    }
-    
-    private <T> T parseContent(String content, Class<T> valueType) {
-        return yaml.loadAs(content, valueType);
     }
 }

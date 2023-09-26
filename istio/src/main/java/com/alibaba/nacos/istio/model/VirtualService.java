@@ -26,7 +26,8 @@ public class VirtualService {
     private Metadata metadata;
     
     private Spec spec;
-    
+    public VirtualService() {
+    }
     public static class Metadata {
         
         private String name;
@@ -65,6 +66,8 @@ public class VirtualService {
             private Rewrite rewrite;
             
             private List<Route> route;
+    
+            private Redirect redirect;
             
             public static class Match {
                 
@@ -73,13 +76,23 @@ public class VirtualService {
                 public static class Uri {
                     
                     private String prefix;
-                    
+    
+                    private String exact;
+    
                     public String getPrefix() {
                         return prefix;
                     }
                     
                     public void setPrefix(String prefix) {
                         this.prefix = prefix;
+                    }
+    
+                    public String getExact() {
+                        return exact;
+                    }
+    
+                    public void setExact(String exact) {
+                        this.exact = exact;
                     }
                 }
                 
@@ -114,6 +127,29 @@ public class VirtualService {
                     private String host;
                     
                     private String subset;
+    
+                    private Port port;
+    
+                    public static class Port {
+        
+                        private int number;
+        
+                        public int getNumber() {
+                            return number;
+                        }
+        
+                        public void setNumber(int number) {
+                            this.number = number;
+                        }
+                    }
+    
+                    public Port getPort() {
+                        return port;
+                    }
+    
+                    public void setPort(Port port) {
+                        this.port = port;
+                    }
                     
                     public String getHost() {
                         return host;
@@ -138,6 +174,28 @@ public class VirtualService {
                 
                 public void setDestination(Destination destination) {
                     this.destination = destination;
+                }
+            }
+    
+            public static class Redirect {
+        
+                private String uri;  // 重定向的URI
+                private String authority;  // 重定向的authority
+        
+                public String getUri() {
+                    return uri;
+                }
+        
+                public void setUri(String uri) {
+                    this.uri = uri;
+                }
+        
+                public String getAuthority() {
+                    return authority;
+                }
+        
+                public void setAuthority(String authority) {
+                    this.authority = authority;
                 }
             }
             
@@ -171,6 +229,14 @@ public class VirtualService {
             
             public void setRoute(List<Route> route) {
                 this.route = route;
+            }
+    
+            public Redirect getRedirect() {
+                return redirect;
+            }
+    
+            public void setRedirect(Redirect redirect) {
+                this.redirect = redirect;
             }
         }
         
