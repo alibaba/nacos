@@ -123,6 +123,37 @@ public interface Client {
     Collection<Service> getAllSubscribeService();
     
     /**
+     * Add a watched pattern for this client.
+     *
+     * @param pattern watch pattern.
+     * @return true if add successfully, otherwise false
+     */
+    boolean addWatchedPattern(String pattern);
+    
+    /**
+     * Remove a watched pattern for this client.
+     *
+     * @param pattern watch pattern.
+     * @return true if remove successfully, otherwise false
+     */
+    boolean removeWatchedPattern(String pattern);
+    
+    /**
+     * Judge whether watch this pattern of this client.
+     *
+     * @param watchPattern watch patten
+     * @return true if client watch the given pattern, otherwise false
+     */
+    boolean isWatchedPattern(String watchPattern);
+    
+    /**
+     * Get all watched pattern of current client.
+     *
+     * @return watch patterns
+     */
+    Collection<String> getAllWatchPattern();
+    
+    /**
      * Generate sync data.
      *
      * @return sync data

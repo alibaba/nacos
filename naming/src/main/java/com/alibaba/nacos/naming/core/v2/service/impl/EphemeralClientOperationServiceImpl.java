@@ -146,6 +146,33 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
     }
     
+    @Override
+    public void fuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
+        String patternWithoutNamespace = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
+        // need store namespace id in server side
+        String completedPattern =  NamingUtils.getPatternWithNamespace(namespaceId, patternWithoutNamespace);
+        Client client = clientManager.getClient(clientId);
+        if (!clientIsLegal(client, clientId)) {
+            return;
+        }
+        client.addWatchedPattern(completedPattern);
+        client.setLastUpdatedTime();
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientFuzzyWatchEvent(completedPattern, clientId));
+    }
+    
+    @Override
+    public void cancelFuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
+        String patternWithoutNamespace = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
+        String completedPattern =  NamingUtils.getPatternWithNamespace(namespaceId, patternWithoutNamespace);
+        Client client = clientManager.getClient(clientId);
+        if (!clientIsLegal(client, clientId)) {
+            return;
+        }
+        client.removeWatchedPattern(completedPattern);
+        client.setLastUpdatedTime();
+        NotifyCenter.publishEvent(new ClientOperationEvent.ClientCancelFuzzyWatchEvent(completedPattern, clientId));
+    }
+    
     private boolean clientIsLegal(Client client, String clientId) {
         if (client == null) {
             Loggers.SRV_LOG.warn("Client connection {} already disconnect", clientId);

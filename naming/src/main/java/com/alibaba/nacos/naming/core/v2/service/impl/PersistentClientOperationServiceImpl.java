@@ -182,6 +182,16 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
     }
     
     @Override
+    public void fuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
+        throw new UnsupportedOperationException("No persistent fuzzy watcher");
+    }
+    
+    @Override
+    public void cancelFuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
+        throw new UnsupportedOperationException("No persistent fuzzy watcher");
+    }
+    
+    @Override
     public Response onRequest(ReadRequest request) {
         throw new UnsupportedOperationException("Temporary does not support");
     }

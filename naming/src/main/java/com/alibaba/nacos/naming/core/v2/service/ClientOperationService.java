@@ -86,6 +86,30 @@ public interface ClientOperationService {
     }
     
     /**
+     * Fuzzy watch a pattern.
+     *
+     * @param namespaceId namespace id of this pattern
+     * @param serviceNamePattern watch service name pattern rule
+     * @param groupNamePattern watch service name pattern rule
+     * @param clientId id of client
+     */
+    default void fuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
+    
+    }
+    
+    /**
+     * Cancel fuzzy watch a pattern.
+     *
+     * @param namespaceId namespace id of this pattern
+     * @param serviceNamePattern watch service name pattern
+     * @param groupNamePattern watch service name pattern
+     * @param clientId id of client
+     */
+    default void cancelFuzzyWatch(String namespaceId, String serviceNamePattern, String groupNamePattern, String clientId) {
+    
+    }
+    
+    /**
      * get publish info.
      *
      * @param instance {@link Instance}
