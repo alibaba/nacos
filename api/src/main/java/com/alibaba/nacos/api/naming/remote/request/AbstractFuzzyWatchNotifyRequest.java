@@ -21,21 +21,21 @@ import com.alibaba.nacos.api.remote.request.ServerRequest;
 import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 
 /**
- * Abstract watch notify request, including basic watch notify information.
+ * Abstract fuzzy watch notify request, including basic fuzzy watch notify information.
  *
  * @author tanyongquan
  */
-public abstract class AbstractWatchNotifyRequest extends ServerRequest {
+public abstract class AbstractFuzzyWatchNotifyRequest extends ServerRequest {
     private String namespace;
     
     private String pattern;
     
     private String serviceChangedType;
     
-    public AbstractWatchNotifyRequest(){
+    public AbstractFuzzyWatchNotifyRequest(){
     }
     
-    public AbstractWatchNotifyRequest(String namespace, String pattern, String serviceChangedType) {
+    public AbstractFuzzyWatchNotifyRequest(String namespace, String pattern, String serviceChangedType) {
         this.namespace = namespace;
         this.pattern = pattern;
         this.serviceChangedType = serviceChangedType;

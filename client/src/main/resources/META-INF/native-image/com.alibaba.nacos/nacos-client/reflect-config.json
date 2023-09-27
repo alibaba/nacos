@@ -348,7 +348,7 @@
   ]
 },
 {
-  "name":"com.alibaba.nacos.api.naming.remote.request.AbstractWatchNotifyRequest",
+  "name":"com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,

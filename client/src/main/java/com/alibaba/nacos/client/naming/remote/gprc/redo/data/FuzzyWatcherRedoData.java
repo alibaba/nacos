@@ -14,30 +14,20 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming.remote.request;
+package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
 
 /**
- * Nacos naming watch service request.
+ * Redo data for fuzzy watcher.
  *
  * @author tanyongquan
  */
-public class WatchServiceRequest extends AbstractNamingRequest {
+public class FuzzyWatcherRedoData extends RedoData<String> {
     
-    private String type;
-    
-    public WatchServiceRequest() {
+    private FuzzyWatcherRedoData(String serviceNamePattern, String groupNamePattern) {
+        super(serviceNamePattern, groupNamePattern);
     }
     
-    public WatchServiceRequest(String namespace, String serviceNamePattern, String groupNamePattern, String type) {
-        super(namespace, serviceNamePattern, groupNamePattern);
-        this.type = type;
-    }
-    
-    public void setType(String type) {
-        this.type = type;
-    }
-    
-    public String getType() {
-        return this.type;
+    public static FuzzyWatcherRedoData build(String serviceNamePattern, String groupNamePattern) {
+        return new FuzzyWatcherRedoData(serviceNamePattern, groupNamePattern);
     }
 }

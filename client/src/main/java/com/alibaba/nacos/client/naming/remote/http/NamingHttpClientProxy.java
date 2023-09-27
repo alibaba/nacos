@@ -344,17 +344,17 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String uuid) throws NacosException {
-        throw new UnsupportedOperationException("Do not support watch services by UDP, please use gRPC replaced.");
+        throw new UnsupportedOperationException("Do not support fuzzy watch services by UDP, please use gRPC replaced.");
     }
     
     @Override
     public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
-        throw new UnsupportedOperationException("Do not support watch service by UDP, please use gRPC replaced.");
+        throw new UnsupportedOperationException("Do not support fuzzy watch service by UDP, please use gRPC replaced.");
     }
     
     @Override
     public boolean isFuzzyWatched(String serviceNamePattern, String groupNamePattern) {
-        throw new UnsupportedOperationException("Do not support watch service by UDP, please use gRPC replaced.");
+        throw new UnsupportedOperationException("Do not support fuzzy watch service by UDP, please use gRPC replaced.");
     }
     
     public String reqApi(String api, Map<String, String> params, String method) throws NacosException {

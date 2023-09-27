@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.notify.Event;
  *
  * @author tanyongquan
  */
-public class WatchNotifyEvent extends Event {
+public class FuzzyWatchNotifyEvent extends Event {
     
     private final String eventScope;
     
@@ -36,26 +36,26 @@ public class WatchNotifyEvent extends Event {
     
     private final String serviceChangedType;
     
-    private WatchNotifyEvent(String eventScope, Service changedService, String pattern, String uuid, String serviceChangedType) {
+    private FuzzyWatchNotifyEvent(String eventScope, Service changedService, String pattern, String uuid, String serviceChangedType) {
         this(eventScope, changedService, pattern, serviceChangedType);
         this.uuid = uuid;
     }
     
-    private WatchNotifyEvent(String eventScope, Service changedService, String pattern, String serviceChangedType) {
+    private FuzzyWatchNotifyEvent(String eventScope, Service changedService, String pattern, String serviceChangedType) {
         this.eventScope = eventScope;
         this.changedService = changedService;
         this.serviceChangedType = serviceChangedType;
         this.pattern = pattern;
     }
     
-    public static WatchNotifyEvent buildNotifyPatternSpecificListenerEvent(String eventScope, Service changedService,
+    public static FuzzyWatchNotifyEvent buildNotifyPatternSpecificListenerEvent(String eventScope, Service changedService,
             String pattern, String uuid, String serviceChangedType) {
-        return new WatchNotifyEvent(eventScope, changedService, pattern, uuid, serviceChangedType);
+        return new FuzzyWatchNotifyEvent(eventScope, changedService, pattern, uuid, serviceChangedType);
     }
     
-    public static WatchNotifyEvent buildNotifyPatternAllListenersEvent(String eventScope, Service changedService,
+    public static FuzzyWatchNotifyEvent buildNotifyPatternAllListenersEvent(String eventScope, Service changedService,
             String pattern, String serviceChangedType) {
-        return new WatchNotifyEvent(eventScope, changedService, pattern, serviceChangedType);
+        return new FuzzyWatchNotifyEvent(eventScope, changedService, pattern, serviceChangedType);
     }
     
     public Service getChangedService() {

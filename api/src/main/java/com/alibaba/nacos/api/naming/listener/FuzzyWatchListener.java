@@ -17,16 +17,16 @@
 package com.alibaba.nacos.api.naming.listener;
 
 /**
- * Watch Listener.
+ * Fuzzy Watch Listener.
  *
  * @author tanyongquan
  */
-public interface WatchListener {
+public interface FuzzyWatchListener {
     
     /**
      * callback event.
      *
      * @param event event
      */
-    void onEvent(WatchNotifyEvent event);
+    void onEvent(FuzzyWatchNotifyEvent event);
 }

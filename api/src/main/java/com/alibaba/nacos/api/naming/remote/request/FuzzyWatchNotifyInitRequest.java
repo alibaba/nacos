@@ -22,28 +22,28 @@ import java.util.Collection;
 import java.util.HashSet;
 
 /**
- * Nacos watch initial notify request, use it when init a watch request, push service by batch.
+ * Nacos fuzzy watch initial notify request, use it when init a watch request, push service by batch.
  *
  * @author tanyongquan
  */
-public class WatchNotifyInitRequest extends AbstractWatchNotifyRequest {
+public class FuzzyWatchNotifyInitRequest extends AbstractFuzzyWatchNotifyRequest {
     
     private Collection<String> servicesName;
     
-    public WatchNotifyInitRequest() {
+    public FuzzyWatchNotifyInitRequest() {
     }
     
-    private WatchNotifyInitRequest(String namespace, String pattern, String serviceChangedType, Collection<String> servicesName) {
+    private FuzzyWatchNotifyInitRequest(String namespace, String pattern, String serviceChangedType, Collection<String> servicesName) {
         super(namespace, pattern, serviceChangedType);
         this.servicesName = servicesName;
     }
     
-    public static WatchNotifyInitRequest buildInitRequest(String namespace, String pattern, Collection<String> servicesName) {
-        return new WatchNotifyInitRequest(namespace, pattern, Constants.WatchEventType.WATCH_INITIAL_MATCH, servicesName);
+    public static FuzzyWatchNotifyInitRequest buildInitRequest(String namespace, String pattern, Collection<String> servicesName) {
+        return new FuzzyWatchNotifyInitRequest(namespace, pattern, Constants.FuzzyWatchEventType.WATCH_INITIAL_MATCH, servicesName);
     }
     
-    public static WatchNotifyInitRequest buildInitFinishRequest(String namespace, String pattern) {
-        return new WatchNotifyInitRequest(namespace, pattern, Constants.WatchEventType.FINISH_WATCH_INIT, new HashSet<>(1));
+    public static FuzzyWatchNotifyInitRequest buildInitFinishRequest(String namespace, String pattern) {
+        return new FuzzyWatchNotifyInitRequest(namespace, pattern, Constants.FuzzyWatchEventType.FINISH_WATCH_INIT, new HashSet<>(1));
     }
     
     public Collection<String> getServicesName() {
