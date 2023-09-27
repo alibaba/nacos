@@ -82,7 +82,7 @@ For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.htm
 
 ## Documentation
 
-You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
+You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/v2/what-is-nacos.html).
 
 You can also read this online eBook from the [NACOS ARCHITECTURE & PRINCIPLES](https://www.yuque.com/nacos/ebook/kbyo6n).
 

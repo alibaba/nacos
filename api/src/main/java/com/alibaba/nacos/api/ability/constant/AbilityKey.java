@@ -16,26 +16,31 @@
 
 package com.alibaba.nacos.api.ability.constant;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
-/**.
+/**
+ * Ability key constant. It is used to constrain the ability key.<br/>
+ * <strong>Ensure that return value of {@link AbilityKey#getName()} is unique under one specify {@link AbilityMode}<strong/>.
+ *
  * @author Daydreamer
- * @description Ability key constant. It is used to constrain the ability key.
  * @date 2022/8/31 12:27
  **/
 public enum AbilityKey {
 
-    TEST_1("test_1", "just for junit test"),
+    SERVER_TEST_1("test_1", "just for junit test", AbilityMode.SERVER),
 
-    TEST_2("test_2", "just for junit test");
+    SERVER_TEST_2("test_2", "just for junit test", AbilityMode.SERVER),
+
+    SDK_CLIENT_TEST_1("test_1", "just for junit test", AbilityMode.SDK_CLIENT),
+
+    CLUSTER_CLIENT_TEST_1("test_1", "just for junit test", AbilityMode.CLUSTER_CLIENT);
     
-    /**.
-     * the name of a certain ability
+    /**
+     * the name of a certain ability.
      */
     private final String keyName;
 
@@ -44,11 +49,17 @@ public enum AbilityKey {
      */
     private final String description;
 
-    AbilityKey(String name, String description) {
-        this.keyName = name;
+    /**
+     * ability mode, which endpoint hold this ability.
+     */
+    private final AbilityMode mode;
+
+    AbilityKey(String keyName, String description, AbilityMode mode) {
+        this.keyName = keyName;
         this.description = description;
+        this.mode = mode;
     }
-    
+
     public String getName() {
         return keyName;
     }
@@ -56,54 +67,58 @@ public enum AbilityKey {
     public String getDescription() {
         return description;
     }
-    
-    /**.
-     * All key set
+
+    public AbilityMode getMode() {
+        return mode;
+    }
+
+    /**
+     * All key set.
      */
-    private static final Map<String, AbilityKey> ALL_ABILITIES;
+    private static final Map<AbilityMode, Map<String, AbilityKey>> ALL_ABILITIES = new HashMap<>();
     
-    /**.
-     * Get all keys
+    /**
+     * Get all keys.
      *
      * @return all keys
      */
-    public static Collection<AbilityKey> getAllValues() {
-        return Collections.unmodifiableCollection(ALL_ABILITIES.values());
+    public static Collection<AbilityKey> getAllValues(AbilityMode mode) {
+        return Collections.unmodifiableCollection(ALL_ABILITIES.get(mode).values());
     }
     
-    /**.
-     * Get all names
+    /**
+     * Get all names.
      *
      * @return all names
      */
-    public static Collection<String> getAllNames() {
-        return Collections.unmodifiableCollection(ALL_ABILITIES.keySet());
+    public static Collection<String> getAllNames(AbilityMode mode) {
+        return Collections.unmodifiableCollection(ALL_ABILITIES.get(mode).keySet());
     }
     
-    /**.
-     * Whether contains this name
+    /**
+     * Whether contains this name.
      *
      * @param name key name
      * @return whether contains
      */
-    public static boolean isLegalKey(String name) {
-        return ALL_ABILITIES.containsKey(name);
+    public static boolean isLegalKey(AbilityMode mode, String name) {
+        return ALL_ABILITIES.get(mode).containsKey(name);
     }
     
-    /**.
-     * Map the string key to enum
+    /**
+     * Map the string key to enum.
      *
      * @param abilities map
      * @return enum map
      */
-    public static Map<AbilityKey, Boolean> mapEnum(Map<String, Boolean> abilities) {
+    public static Map<AbilityKey, Boolean> mapEnum(AbilityMode mode, Map<String, Boolean> abilities) {
         if (abilities == null || abilities.isEmpty()) {
             return Collections.emptyMap();
         }
         return abilities.entrySet()
                 .stream()
-                .filter(entry -> isLegalKey(entry.getKey()))
-                .collect(Collectors.toMap((entry) -> getEnum(entry.getKey()), Map.Entry::getValue));
+                .filter(entry -> isLegalKey(mode, entry.getKey()))
+                .collect(Collectors.toMap((entry) -> getEnum(mode, entry.getKey()), Map.Entry::getValue));
     }
     
     /**.
@@ -127,11 +142,26 @@ public enum AbilityKey {
      * @param key string key
      * @return enum
      */
-    public static AbilityKey getEnum(String key) {
-        return ALL_ABILITIES.get(key);
+    public static AbilityKey getEnum(AbilityMode mode, String key) {
+        return ALL_ABILITIES.get(mode).get(key);
     }
     
     static {
-        ALL_ABILITIES = Arrays.stream(AbilityKey.values()).collect(Collectors.toMap(AbilityKey::getName, Function.identity()));
+        // check for developer
+        // ensure that name filed is unique under a AbilityMode
+        try {
+            for (AbilityKey value : AbilityKey.values()) {
+                AbilityMode mode = value.mode;
+                Map<String, AbilityKey> map = ALL_ABILITIES.getOrDefault(mode, new HashMap<>());
+                AbilityKey previous = map.putIfAbsent(value.getName(), value);
+                if (previous != null) {
+                    throw new IllegalStateException("Duplicate key name field " + value + " and " + previous + " under mode: " + mode);
+                }
+                ALL_ABILITIES.put(mode, map);
+            }
+        } catch (Throwable t) {
+            // for developer checking
+            t.printStackTrace();
+        }
     }
 }

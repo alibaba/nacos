@@ -29,7 +29,7 @@ public class TestAbilityConfig extends AbilityConfigs {
     
     public TestAbilityConfig() {
         Set<AbilityKey> serverAbilityKeys = super.getServerAbilityKeys();
-        serverAbilityKeys.add(AbilityKey.TEST_1);
-        serverAbilityKeys.add(AbilityKey.TEST_2);
+        serverAbilityKeys.add(AbilityKey.SERVER_TEST_1);
+        serverAbilityKeys.add(AbilityKey.SERVER_TEST_2);
     }
 }

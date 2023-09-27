@@ -60,7 +60,7 @@ public class CacheItem {
      */
     private volatile Map<String, ConfigCache> configCacheTags = null;
     
-    public SimpleReadWriteLock rwLock = new SimpleReadWriteLock();
+    private final SimpleReadWriteLock rwLock = new SimpleReadWriteLock();
     
     public CacheItem(String groupKey, String encryptedDataKey) {
         this.groupKey = StringPool.get(groupKey);
@@ -102,10 +102,6 @@ public class CacheItem {
     
     public SimpleReadWriteLock getRwLock() {
         return rwLock;
-    }
-    
-    public void setRwLock(SimpleReadWriteLock rwLock) {
-        this.rwLock = rwLock;
     }
     
     public String getType() {

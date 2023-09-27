@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
@@ -32,11 +33,12 @@ import com.alibaba.nacos.api.remote.response.SetupAckResponse;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.RpcClient;
-import com.alibaba.nacos.common.remote.client.RpcClientStatus;
-import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientStatus;
+import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.Connection;
+import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -61,10 +63,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -87,7 +88,7 @@ public abstract class GrpcClient extends RpcClient {
     /**
      * Block to wait setup success response.
      */
-    private final Map<String, RecAbilityContext> markForSetup = new ConcurrentHashMap<>();
+    private final RecAbilityContext recAbilityContext = new RecAbilityContext(null);
 
     @Override
     public ConnectionType getConnectionType() {
@@ -140,23 +141,7 @@ public abstract class GrpcClient extends RpcClient {
      */
     private void initSetupHandler() {
         // register to handler setup request
-        registerServerRequestHandler((request, connection) -> {
-            // if finish setup
-            if (request instanceof SetupAckRequest) {
-                SetupAckRequest setupAckRequest = (SetupAckRequest) request;
-                // remove and count down
-                RecAbilityContext context = markForSetup.remove(setupAckRequest.getConnectionId());
-                if (context != null) {
-                    // set server abilities
-                    context.connection.setAbilityTable(setupAckRequest.getAbilityTable());
-                    // notify
-                    java.util.Optional.ofNullable(context.blocker)
-                            .orElse(new CountDownLatch(1))
-                            .countDown();
-                }
-            }
-            return new SetupAckResponse();
-        });
+        registerServerRequestHandler(new SetupRequestHandler(this.recAbilityContext));
     }
     
     /**
@@ -309,12 +294,7 @@ public abstract class GrpcClient extends RpcClient {
                     LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Error to process server push response: {}",
                             grpcConn.getConnectionId(), payload.getBody().getValue().toStringUtf8());
                     // remove and notify
-                    RecAbilityContext context = markForSetup.remove(grpcConn.getConnectionId());
-                    if (context != null) {
-                        Optional.ofNullable(context.blocker)
-                                .orElse(new CountDownLatch(1))
-                                .countDown();
-                    }
+                    recAbilityContext.release(null);
                 }
             }
             
@@ -396,7 +376,7 @@ public abstract class GrpcClient extends RpcClient {
                 // if not supported, it will be false
                 if (serverCheckResponse.isSupportAbilityNegotiation()) {
                     // mark
-                    markForSetup.put(serverCheckResponse.getConnectionId(), new RecAbilityContext(grpcConn, new CountDownLatch(1)));
+                    this.recAbilityContext.reset(grpcConn);
                 }
                 
                 //create stream request and bind connection event to this connection.
@@ -411,17 +391,16 @@ public abstract class GrpcClient extends RpcClient {
                 conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
                 conSetupRequest.setLabels(super.getLabels());
                 // set ability table
-                conSetupRequest.setAbilityTable(NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities());
+                conSetupRequest.setAbilityTable(NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities(abilityMode()));
                 conSetupRequest.setTenant(super.getTenant());
                 grpcConn.sendRequest(conSetupRequest);
                 // wait for response
-                RecAbilityContext synResponse = markForSetup.get(connectionId);
-                if (synResponse != null) {
+                if (recAbilityContext.isNeedToSync()) {
                     // try to wait for notify response
-                    synResponse.blocker.await(5000L, TimeUnit.MICROSECONDS);
+                    recAbilityContext.await(this.clientConfig.capabilityNegotiationTimeout(), TimeUnit.MILLISECONDS);
                 } else {
                     // leave for adapting old version server
-                    //wait to register connection setup
+                    // wait to register connection setup
                     Thread.sleep(100L);
                 }
                 return grpcConn;
@@ -430,25 +409,21 @@ public abstract class GrpcClient extends RpcClient {
         } catch (Exception e) {
             LOGGER.error("[{}]Fail to connect to server!,error={}", GrpcClient.this.getName(), e);
             // remove and notify
-            RecAbilityContext context = markForSetup.remove(connectionId);
-            if (context != null) {
-                Optional.ofNullable(context.blocker)
-                        .orElse(new CountDownLatch(1))
-                        .countDown();
-            }
+            recAbilityContext.release(null);
         }
         return null;
     }
 
+    /**
+     * ability mode: sdk client or cluster client.
+     *
+     * @return mode
+     */
+    protected abstract AbilityMode abilityMode();
+
     @Override
     protected void afterReset(ConnectResetRequest request) {
-        RecAbilityContext context = markForSetup.remove(request.getConnectionId());
-        if (context != null) {
-            // remove and notify
-            java.util.Optional.ofNullable(context.blocker)
-                    .orElse(new CountDownLatch(1))
-                    .countDown();
-        }
+        recAbilityContext.release(null);
     }
 
     /**
@@ -459,32 +434,92 @@ public abstract class GrpcClient extends RpcClient {
         /**
          * connection waiting for server abilities.
          */
-        private Connection connection;
+        private volatile Connection connection;
 
         /**
          * way to block client.
          */
-        private CountDownLatch blocker;
+        private volatile CountDownLatch blocker;
 
-        public RecAbilityContext(Connection connection, CountDownLatch blocker) {
+        private volatile boolean needToSync = false;
+
+        public RecAbilityContext(Connection connection) {
             this.connection = connection;
-            this.blocker = blocker;
+            this.blocker = new CountDownLatch(1);
         }
 
-        public Connection getConnection() {
-            return connection;
+        /**
+         * whether to sync for ability table.
+         *
+         * @return whether to sync for ability table.
+         */
+        public boolean isNeedToSync() {
+            return this.needToSync;
         }
 
-        public void setConnection(Connection connection) {
+        /**
+         * reset with new connection which is waiting for ability table.
+         *
+         * @param connection new connection which is waiting for ability table.
+         */
+        public void reset(Connection connection) {
             this.connection = connection;
+            this.blocker = new CountDownLatch(1);
+            this.needToSync = true;
         }
 
-        public CountDownLatch getBlocker() {
-            return blocker;
+        /**
+         * notify sync by abilities.
+         *
+         * @param abilities abilities.
+         */
+        public void release(Map<String, Boolean> abilities) {
+            if (this.connection != null) {
+                this.connection.setAbilityTable(abilities);
+                // avoid repeat setting
+                this.connection = null;
+            }
+            if (this.blocker != null) {
+                blocker.countDown();
+            }
+            this.needToSync = false;
         }
 
-        public void setBlocker(CountDownLatch blocker) {
-            this.blocker = blocker;
+        /**
+         * await for abilities.
+         *
+         * @param timeout timeout.
+         * @param unit unit.
+         * @throws InterruptedException by blocker.
+         */
+        public void await(long timeout, TimeUnit unit) throws InterruptedException {
+            if (this.blocker != null) {
+                this.blocker.await(timeout, unit);
+            }
+            this.needToSync = false;
+        }
+    }
+
+    /**
+     * Setup response handler.
+     */
+    class SetupRequestHandler implements ServerRequestHandler {
+
+        private final RecAbilityContext abilityContext;
+
+        public SetupRequestHandler(RecAbilityContext abilityContext) {
+            this.abilityContext = abilityContext;
+        }
+
+        @Override
+        public Response requestReply(Request request, Connection connection) {
+            // if finish setup
+            if (request instanceof SetupAckRequest) {
+                SetupAckRequest setupAckRequest = (SetupAckRequest) request;
+                // remove and count down
+                recAbilityContext.release(setupAckRequest.getAbilityTable());
+            }
+            return new SetupAckResponse();
         }
     }
     

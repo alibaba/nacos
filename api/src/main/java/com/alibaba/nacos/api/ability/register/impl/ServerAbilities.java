@@ -21,9 +21,10 @@ import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 
 import java.util.Map;
 
-/**.
+/**
+ * It is used to register server abilities.
+ *
  * @author Daydreamer
- * @description It is used to register server abilities.
  * @date 2022/8/31 12:32
  **/
 public class ServerAbilities extends AbstractAbilityRegistry {

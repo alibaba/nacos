@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.utils;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -36,39 +37,39 @@ public class AbilityKeyTest {
         Map<String, Boolean> stringBooleanMap = AbilityKey.mapStr(enumMap);
         Assert.assertEquals(0, stringBooleanMap.size());
         
-        enumMap.put(AbilityKey.TEST_1, true);
-        enumMap.put(AbilityKey.TEST_2, false);
+        enumMap.put(AbilityKey.SERVER_TEST_1, true);
+        enumMap.put(AbilityKey.SERVER_TEST_2, false);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
         Assert.assertEquals(2, stringBooleanMap.size());
-        Assert.assertTrue(stringBooleanMap.get(AbilityKey.TEST_1.getName()));
-        Assert.assertFalse(stringBooleanMap.get(AbilityKey.TEST_2.getName()));
+        Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
+        Assert.assertFalse(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
         
-        enumMap.put(AbilityKey.TEST_2, true);
+        enumMap.put(AbilityKey.SERVER_TEST_2, true);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
         Assert.assertEquals(2, stringBooleanMap.size());
-        Assert.assertTrue(stringBooleanMap.get(AbilityKey.TEST_1.getName()));
-        Assert.assertTrue(stringBooleanMap.get(AbilityKey.TEST_2.getName()));
+        Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
+        Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
     }
     
     @Test
     public void testMapEnum() {
         Map<String, Boolean> mapStr = new HashMap<>();
         mapStr.put("test-no-existed", true);
-        Map<AbilityKey, Boolean> enumMap = AbilityKey.mapEnum(mapStr);
+        Map<AbilityKey, Boolean> enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
         Assert.assertEquals(0, enumMap.size());
         
-        mapStr.put(AbilityKey.TEST_2.getName(), false);
-        mapStr.put(AbilityKey.TEST_1.getName(), true);
-        enumMap = AbilityKey.mapEnum(mapStr);
-        Assert.assertFalse(enumMap.get(AbilityKey.TEST_2));
-        Assert.assertTrue(enumMap.get(AbilityKey.TEST_1));
+        mapStr.put(AbilityKey.SERVER_TEST_2.getName(), false);
+        mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
+        enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
+        Assert.assertFalse(enumMap.get(AbilityKey.SERVER_TEST_2));
+        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
     
         mapStr.clear();
-        mapStr.put(AbilityKey.TEST_2.getName(), true);
-        mapStr.put(AbilityKey.TEST_1.getName(), true);
-        enumMap = AbilityKey.mapEnum(mapStr);
-        Assert.assertTrue(enumMap.get(AbilityKey.TEST_2));
-        Assert.assertTrue(enumMap.get(AbilityKey.TEST_1));
+        mapStr.put(AbilityKey.SERVER_TEST_2.getName(), true);
+        mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
+        enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
+        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_TEST_2));
+        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
         
     }
     

@@ -18,17 +18,24 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Icon, Menu, Message } from '@alifd/next';
+import { ConfigProvider, Icon, Menu, Message, Dialog, Button } from '@alifd/next';
 import Header from './Header';
-import { getState, getNotice } from '../reducers/base';
+import { getState, getNotice, getGuide } from '../reducers/base';
 import getMenuData from './menu';
+import './index.scss';
 
 const { SubMenu, Item } = Menu;
 
 @withRouter
-@connect(state => ({ ...state.locale, ...state.base }), { getState, getNotice })
+@connect(state => ({ ...state.locale, ...state.base }), { getState, getNotice, getGuide })
 @ConfigProvider.config
 class MainLayout extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      visible: true,
+    };
+  }
   static displayName = 'MainLayout';
 
   static propTypes = {
@@ -39,14 +46,18 @@ class MainLayout extends React.Component {
     getState: PropTypes.func,
     functionMode: PropTypes.string,
     authEnabled: PropTypes.string,
-    children: PropTypes.object,
+    children: PropTypes.array,
     getNotice: PropTypes.func,
     notice: PropTypes.string,
+    consoleUiEnable: PropTypes.string,
+    getGuide: PropTypes.func,
+    guideMsg: PropTypes.string,
   };
 
   componentDidMount() {
     this.props.getState();
     this.props.getNotice();
+    this.props.getGuide();
   }
 
   goBack() {
@@ -87,7 +98,8 @@ class MainLayout extends React.Component {
   }
 
   render() {
-    const { locale = {}, version, functionMode, authEnabled } = this.props;
+    const { locale = {}, version, functionMode, authEnabled, consoleUiEnable } = this.props;
+    const { visible } = this.state;
     const MenuData = getMenuData(functionMode);
     return (
       <section
@@ -117,43 +129,64 @@ class MainLayout extends React.Component {
                       className="next-nav next-normal next-active next-right next-no-arrow next-nav-embeddable"
                       openMode="single"
                     >
-                      {MenuData.map((subMenu, idx) => {
-                        if (subMenu.children) {
+                      {consoleUiEnable &&
+                        consoleUiEnable === 'true' &&
+                        MenuData.map((subMenu, idx) => {
+                          if (subMenu.children) {
+                            return (
+                              <SubMenu key={String(idx)} label={locale[subMenu.key]}>
+                                {subMenu.children.map((item, i) => (
+                                  <Item
+                                    key={[idx, i].join('-')}
+                                    onClick={() => this.navTo(item.url)}
+                                    className={this.isCurrentPath(item.url)}
+                                  >
+                                    {locale[item.key]}
+                                  </Item>
+                                ))}
+                              </SubMenu>
+                            );
+                          }
                           return (
-                            <SubMenu key={String(idx)} label={locale[subMenu.key]}>
-                              {subMenu.children.map((item, i) => (
-                                <Item
-                                  key={[idx, i].join('-')}
-                                  onClick={() => this.navTo(item.url)}
-                                  className={this.isCurrentPath(item.url)}
-                                >
-                                  {locale[item.key]}
-                                </Item>
-                              ))}
-                            </SubMenu>
+                            <Item
+                              key={String(idx)}
+                              className={['first-menu', this.isCurrentPath(subMenu.url)]
+                                .filter(c => c)
+                                .join(' ')}
+                              onClick={() => this.navTo(subMenu.url)}
+                            >
+                              {locale[subMenu.key]}
+                            </Item>
                           );
-                        }
-                        return (
-                          <Item
-                            key={String(idx)}
-                            className={['first-menu', this.isCurrentPath(subMenu.url)]
-                              .filter(c => c)
-                              .join(' ')}
-                            onClick={() => this.navTo(subMenu.url)}
-                          >
-                            {locale[subMenu.key]}
-                          </Item>
-                        );
-                      })}
+                        })}
                     </Menu>
                   </>
                 )}
               </div>
             </div>
             <div className="right-panel next-shell-sub-main">
-              {authEnabled === 'false' ? (
-                <Message type="notice"><div dangerouslySetInnerHTML={{ __html: this.props.notice }} /></Message>
+              {authEnabled === 'false' && consoleUiEnable === 'true' ? (
+                <Message type="notice">
+                  <div dangerouslySetInnerHTML={{ __html: this.props.notice }} />
+                </Message>
               ) : null}
+              {consoleUiEnable === 'false' && (
+                <Dialog
+                  visible={visible}
+                  title={locale.consoleClosed}
+                  style={{ width: 600 }}
+                  hasMask={false}
+                  footer={false}
+                  className="enable-dialog"
+                >
+                  <Message type="notice">
+                    <div
+                      style={{ lineHeight: '24px' }}
+                      dangerouslySetInnerHTML={{ __html: this.props.guideMsg }}
+                    />
+                  </Message>
+                </Dialog>
+              )}
               {this.props.children}
             </div>
           </div>

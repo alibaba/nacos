@@ -48,7 +48,7 @@ class PermissionsManagement extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
     permissions: PropTypes.object,
-    namespaces: PropTypes.object,
+    namespaces: PropTypes.array,
     getPermissions: PropTypes.func,
     getNamespaces: PropTypes.func,
   };
@@ -142,7 +142,11 @@ class PermissionsManagement extends React.Component {
             <Button
               type={'primary'}
               style={{ marginRight: 10 }}
-              onClick={() => this.getPermissions()}
+              onClick={() => {
+                this.setState({ pageNo: 1 }, () => {
+                  this.getPermissions();
+                });
+              }}
               data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
             >
               {locale.query}

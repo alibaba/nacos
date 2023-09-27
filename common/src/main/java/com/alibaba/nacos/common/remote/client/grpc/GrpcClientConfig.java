@@ -96,4 +96,11 @@ public interface GrpcClientConfig extends RpcClientConfig {
      */
     void setTlsConfig(RpcClientTlsConfig tlsConfig);
 
+    /**
+     * get timeout of connection setup(TimeUnit.MILLISECONDS).
+     *
+     * @return timeout of connection setup
+     */
+    long capabilityNegotiationTimeout();
+
 }

@@ -17,9 +17,9 @@
 package com.alibaba.nacos.core.ability.config;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.ability.register.AbstractAbilityRegistry;
 import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
-import com.alibaba.nacos.common.ability.handler.HandlerMapping;
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.core.ability.TestServerAbilityControlManager;
 import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
@@ -45,8 +45,6 @@ public class AbilityConfigsTest {
     
     private TestAbilityConfig abilityConfigs;
     
-    private int tmp;
-    
     private ServerAbilityControlManager serverAbilityControlManager;
     
     private Map<AbilityKey, Boolean> currentAbilities;
@@ -57,18 +55,15 @@ public class AbilityConfigsTest {
         EnvUtil.setEnvironment(environment);
         abilityConfigs = new TestAbilityConfig();
         inject(abilityConfigs);
-        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_1);
-        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.TEST_2);
-        serverAbilityControlManager.registerComponent(AbilityKey.TEST_1, new TestHandler());
-        serverAbilityControlManager.registerComponent(AbilityKey.TEST_2, new TestHandler());
-        // tmp is 2 now
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_1);
+        serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.SERVER_TEST_2);
     }
     
     void inject(AbilityConfigs abilityConfigs) {
         TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
         Map<String, Boolean> newTable = new HashMap<>();
-        newTable.put(AbilityKey.TEST_1.getName(), true);
-        newTable.put(AbilityKey.TEST_2.getName(), true);
+        newTable.put(AbilityKey.SERVER_TEST_1.getName(), true);
+        newTable.put(AbilityKey.SERVER_TEST_2.getName(), true);
         serverAbilityControlManager.setCurrentSupportingAbility(newTable);
         abilityConfigs.setAbilityHandlerRegistry(serverAbilityControlManager);
         this.serverAbilityControlManager = serverAbilityControlManager;
@@ -86,79 +81,54 @@ public class AbilityConfigsTest {
         instanceField.setAccessible(true);
         ServerAbilities serverAbilities = (ServerAbilities) instanceField.get(ServerAbilities.class);
         currentAbilities = (Map<AbilityKey, Boolean>) abilitiesField.get(serverAbilities);
-        currentAbilities.put(AbilityKey.TEST_1, true);
-        currentAbilities.put(AbilityKey.TEST_2, true);
+        currentAbilities.put(AbilityKey.SERVER_TEST_1, true);
+        currentAbilities.put(AbilityKey.SERVER_TEST_2, true);
     }
     
     @Test
     public void testLoadAbilities() throws Exception {
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.TRUE.toString());
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_2.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.FALSE.toString());
         // test load
         fill();
         ServerAbilityControlManager manager = new ServerAbilityControlManager();
         // config has higher priority
-        Assert.assertTrue(manager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertFalse(manager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
+        Assert.assertEquals(manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
+        Assert.assertNotEquals(manager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
         // clear
         currentAbilities.clear();
     }
     
     @Test
     public void testInit() {
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
+        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
+        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
     }
     
     @Test
     public void testConfigChange() throws InterruptedException {
         // test no change
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.TRUE.toString());
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_2.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.TRUE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
-        //wait for invoke
-        Thread.sleep(100);
-        Assert.assertEquals(tmp, 2);
+        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
+        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
         
         // test change
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
-        //wait for invoke
-        Thread.sleep(100);
-        Assert.assertEquals(tmp, 1);
+        Assert.assertNotEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
+        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
     
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.TRUE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertTrue(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        //wait for invoke
-        Thread.sleep(100);
-        Assert.assertEquals(tmp, 2);
+        Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
     
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_1.getName(), Boolean.FALSE.toString());
-        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.TEST_2.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE.toString());
+        environment.setProperty(AbilityConfigs.PREFIX + AbilityKey.SERVER_TEST_2.getName(), Boolean.FALSE.toString());
         abilityConfigs.onEvent(new ServerConfigChangeEvent());
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_1));
-        Assert.assertFalse(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.TEST_2));
-        //wait for invoke
-        Thread.sleep(100);
-        Assert.assertEquals(tmp, 0);
-    }
-    
-    class TestHandler implements HandlerMapping {
-    
-        @Override
-        public void enable() {
-            tmp++;
-        }
-    
-        @Override
-        public void disable() {
-            tmp--;
-        }
+        Assert.assertNotEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
+        Assert.assertNotEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2), AbilityStatus.SUPPORTED);
     }
     
 }

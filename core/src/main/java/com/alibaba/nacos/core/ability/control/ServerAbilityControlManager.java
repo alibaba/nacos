@@ -17,6 +17,9 @@
 package com.alibaba.nacos.core.ability.control;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
+import com.alibaba.nacos.api.ability.register.impl.ClusterClientAbilities;
+import com.alibaba.nacos.api.ability.register.impl.SdkClientAbilities;
 import com.alibaba.nacos.api.ability.register.impl.ServerAbilities;
 import com.alibaba.nacos.common.ability.AbstractAbilityControlManager;
 import com.alibaba.nacos.core.ability.config.AbilityConfigs;
@@ -38,16 +41,22 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
     }
     
     @Override
-    protected Map<String, Boolean> initCurrentNodeAbilities() {
+    protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
+        // init client abilities
+        Map<AbilityMode, Map<AbilityKey, Boolean>> res = new HashMap<>();
+        res.put(AbilityMode.CLUSTER_CLIENT, initClusterClientAbilities());
+        res.put(AbilityMode.SDK_CLIENT, initSdkClientAbilities());
+
+        // init server abilities
         // static abilities
-        Map<String, Boolean> staticAbilities = AbilityKey.mapStr(ServerAbilities.getStaticAbilities());
+        Map<AbilityKey, Boolean> staticAbilities = ServerAbilities.getStaticAbilities();
         // all function server can support
-        Set<String> abilityKeys = staticAbilities.keySet();
-        Map<String, Boolean> abilityTable = new HashMap<>(abilityKeys.size());
+        Set<AbilityKey> abilityKeys = staticAbilities.keySet();
+        Map<AbilityKey, Boolean> abilityTable = new HashMap<>(abilityKeys.size());
         // if not define in config, then load from ServerAbilities
-        Set<String> unIncludedInConfig = new HashSet<>();
+        Set<AbilityKey> unIncludedInConfig = new HashSet<>();
         abilityKeys.forEach(abilityKey -> {
-            String key = AbilityConfigs.PREFIX + abilityKey;
+            String key = AbilityConfigs.PREFIX + abilityKey.getName();
             try {
                 Boolean property = EnvUtil.getProperty(key, Boolean.class);
                 // if not null
@@ -63,9 +72,27 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
         });
         // load from ServerAbilities
         unIncludedInConfig.forEach(abilityKey -> abilityTable.put(abilityKey, staticAbilities.get(abilityKey)));
-        return abilityTable;
+
+        res.put(AbilityMode.SERVER, abilityTable);
+        return res;
     }
-    
+
+    /**
+     * init cluster client abilities.
+     */
+    private Map<AbilityKey, Boolean> initClusterClientAbilities() {
+        // static abilities
+        return ClusterClientAbilities.getStaticAbilities();
+    }
+
+    /**
+     * init sdk client abilities.
+     */
+    private Map<AbilityKey, Boolean> initSdkClientAbilities() {
+        // static abilities
+        return SdkClientAbilities.getStaticAbilities();
+    }
+
     @Override
     public int getPriority() {
         return 1;

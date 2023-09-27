@@ -64,7 +64,7 @@ public class DumpAllProcessor implements NacosTaskProcessor {
                         ClientIpWhiteList.load(cf.getContent());
                     }
                     
-                    if (cf.getDataId().equals(SwitchService.SWITCH_META_DATAID)) {
+                    if (cf.getDataId().equals(SwitchService.SWITCH_META_DATA_ID)) {
                         SwitchService.load(cf.getContent());
                     }
     

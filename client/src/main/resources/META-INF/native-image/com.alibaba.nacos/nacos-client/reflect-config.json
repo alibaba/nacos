@@ -301,6 +301,7 @@
     {"name":"setEnabled","parameterTypes":["boolean"] }, 
     {"name":"setEphemeral","parameterTypes":["boolean"] }, 
     {"name":"setHealthy","parameterTypes":["boolean"] }, 
+    {"name":"setInstanceId","parameterTypes":["java.lang.String"] }, 
     {"name":"setIp","parameterTypes":["java.lang.String"] }, 
     {"name":"setMetadata","parameterTypes":["java.util.Map"] }, 
     {"name":"setPort","parameterTypes":["int"] }, 
