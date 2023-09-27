@@ -23,6 +23,8 @@ import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
@@ -109,11 +111,18 @@ public class DefaultPublisher extends Thread implements EventPublisher {
 
             while (!shutdown) {
                 final Event event = queue.take();
-                receiveEvent(event);
-                UPDATER.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
+                List<Event> events = new ArrayList<>(queue.size());
+                queue.drainTo(events);
+                events.add(event);
+                for (int i = 0, size = events.size(); !shutdown && i < size; i++) {
+                    receiveEvent(events.get(i));
+                    UPDATER.compareAndSet(this, lastEventSequence, Math.max(lastEventSequence, event.sequence()));
+                }
             }
         } catch (Throwable ex) {
-            LOGGER.error("Event listener exception : ", ex);
+            if (!shutdown) {
+                LOGGER.error("Event listener exception : ", ex);
+            }
         }
     }
     
@@ -138,7 +147,6 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         if (!success) {
             LOGGER.warn("Unable to plug in due to interruption, synchronize sending time, event : {}", event);
             receiveEvent(event);
-            return true;
         }
         return true;
     }
@@ -152,6 +160,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
     @Override
     public void shutdown() {
         this.shutdown = true;
+        super.interrupt();
         this.queue.clear();
     }
     
@@ -165,8 +174,6 @@ public class DefaultPublisher extends Thread implements EventPublisher {
      * @param event {@link Event}.
      */
     void receiveEvent(Event event) {
-        final long currentEventSequence = event.sequence();
-        
         if (!hasSubscriber()) {
             LOGGER.warn("[NotifyCenter] the {} is lost, because there is no subscriber.", event);
             return;
@@ -179,7 +186,7 @@ public class DefaultPublisher extends Thread implements EventPublisher {
             }
             
             // Whether to ignore expiration events
-            if (subscriber.ignoreExpireEvent() && lastEventSequence > currentEventSequence) {
+            if (subscriber.ignoreExpireEvent() && lastEventSequence > event.sequence()) {
                 LOGGER.debug("[NotifyCenter] the {} is unacceptable to this subscriber, because had expire",
                         event.getClass());
                 continue;
