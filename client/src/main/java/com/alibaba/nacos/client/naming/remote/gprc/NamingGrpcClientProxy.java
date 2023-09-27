@@ -30,10 +30,12 @@ import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
+import com.alibaba.nacos.api.naming.remote.request.FuzzyWatchRequest;
 import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
+import com.alibaba.nacos.api.naming.remote.response.FuzzyWatchResponse;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.response.Response;
@@ -42,6 +44,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
@@ -87,7 +90,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private final NamingGrpcRedoService redoService;
     
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
-            NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
+            NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder,
+            FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder) throws NacosException {
         super(securityProxy);
         this.namespaceId = namespaceId;
         this.uuid = UUID.randomUUID().toString();
@@ -100,13 +104,15 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 RpcClientTlsConfig.properties(properties.asProperties()));
         this.redoService = new NamingGrpcRedoService(this);
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
-        start(serverListFactory, serviceInfoHolder);
+        start(serverListFactory, serviceInfoHolder, fuzzyWatchServiceListHolder);
     }
     
-    private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
+    private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder,
+            FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.registerConnectionListener(redoService);
-        rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
+        rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder,
+                fuzzyWatchServiceListHolder));
         rpcClient.start();
         NotifyCenter.registerSubscriber(this);
     }
@@ -346,6 +352,58 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 false);
         requestToServer(request, SubscribeServiceResponse.class);
         redoService.removeSubscriberForRedo(serviceName, groupName, clusters);
+    }
+    
+    @Override
+    public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String watcherUuid) throws NacosException {
+        if (NAMING_LOGGER.isDebugEnabled()) {
+            NAMING_LOGGER.debug("[GRPC-FUZZY-WATCH] servicePattern:{}, groupPattern:{}", serviceNamePattern, groupNamePattern);
+        }
+        redoService.cacheFuzzyWatcherForRedo(serviceNamePattern, groupNamePattern);
+        doFuzzyWatch(serviceNamePattern, groupNamePattern);
+    }
+    
+    /**
+     * Execute fuzzy watch operation.
+     *
+     * @param serviceNamePattern service name pattern
+     * @param groupNamePattern   group name pattern
+     * @throws NacosException nacos exception
+     */
+    public void doFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
+        FuzzyWatchRequest request = new FuzzyWatchRequest(namespaceId, serviceNamePattern, groupNamePattern,
+                NamingRemoteConstants.FUZZY_WATCH_SERVICE);
+        requestToServer(request, FuzzyWatchResponse.class);
+        redoService.fuzzyWatcherRegistered(serviceNamePattern, groupNamePattern);
+    }
+    
+    @Override
+    public boolean isFuzzyWatched(String serviceNamePattern, String groupNamePattern) {
+        return redoService.isFuzzyWatcherRegistered(serviceNamePattern, groupNamePattern);
+    }
+    
+    @Override
+    public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
+        if (NAMING_LOGGER.isDebugEnabled()) {
+            NAMING_LOGGER
+                    .debug("[GRPC-CANCEL-FUZZY-WATCH] serviceNamePattern:{}, groupNamePattern:{}", serviceNamePattern, groupNamePattern);
+        }
+        redoService.fuzzyWatcherDeregister(serviceNamePattern, groupNamePattern);
+        doCancelFuzzyWatch(serviceNamePattern, groupNamePattern);
+    }
+    
+    /**
+     * Execute cancel fuzzy watch operation.
+     *
+     * @param serviceNamePattern service name pattern
+     * @param groupNamePattern   group name pattern
+     * @throws NacosException nacos exception
+     */
+    public void doCancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
+        FuzzyWatchRequest request = new FuzzyWatchRequest(namespaceId, serviceNamePattern, groupNamePattern,
+                NamingRemoteConstants.CANCEL_FUZZY_WATCH_SERVICE);
+        requestToServer(request, FuzzyWatchResponse.class);
+        redoService.removeFuzzyWatcherForRedo(serviceNamePattern, groupNamePattern);
     }
     
     @Override

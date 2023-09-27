@@ -348,6 +348,18 @@
   ]
 },
 {
+  "name":"com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getModule","parameterTypes":[] },
+    {"name":"getServiceChangedType","parameterTypes":[] },
+    {"name":"getPattern","parameterTypes":[] }
+  ]
+},
+{
   "name":"com.alibaba.nacos.api.naming.remote.request.InstanceRequest",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,

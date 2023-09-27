@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
+import com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
+import com.alibaba.nacos.api.naming.remote.response.NotifyFuzzyWatcherResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 
 /**
@@ -32,8 +35,11 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
     
     private final ServiceInfoHolder serviceInfoHolder;
     
-    public NamingPushRequestHandler(ServiceInfoHolder serviceInfoHolder) {
+    private final FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder;
+    
+    public NamingPushRequestHandler(ServiceInfoHolder serviceInfoHolder, FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder) {
         this.serviceInfoHolder = serviceInfoHolder;
+        this.fuzzyWatchServiceListHolder = fuzzyWatchServiceListHolder;
     }
     
     @Override
@@ -42,6 +48,10 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
             NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
             serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());
             return new NotifySubscriberResponse();
+        } else if (request instanceof AbstractFuzzyWatchNotifyRequest) {
+            AbstractFuzzyWatchNotifyRequest notifyRequest = (AbstractFuzzyWatchNotifyRequest) request;
+            fuzzyWatchServiceListHolder.processFuzzyWatchNotify(notifyRequest);
+            return new NotifyFuzzyWatcherResponse();
         }
         return null;
     }

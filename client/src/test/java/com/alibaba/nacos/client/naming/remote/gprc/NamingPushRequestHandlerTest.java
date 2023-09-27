@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,7 +38,8 @@ public class NamingPushRequestHandlerTest {
     public void testRequestReply() {
         //given
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
-        NamingPushRequestHandler handler = new NamingPushRequestHandler(holder);
+        FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder = mock(FuzzyWatchServiceListHolder.class);
+        NamingPushRequestHandler handler = new NamingPushRequestHandler(holder, fuzzyWatchServiceListHolder);
         ServiceInfo info = new ServiceInfo("name", "cluster1");
         Request req = NotifySubscriberRequest.buildNotifySubscriberRequest(info);
         //when

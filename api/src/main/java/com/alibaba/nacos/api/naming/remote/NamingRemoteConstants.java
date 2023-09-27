@@ -30,6 +30,10 @@ public class NamingRemoteConstants {
     
     public static final String DE_REGISTER_INSTANCE = "deregisterInstance";
     
+    public static final String FUZZY_WATCH_SERVICE = "fuzzyWatchService";
+    
+    public static final String CANCEL_FUZZY_WATCH_SERVICE = "cancelFuzzyWatchService";
+    
     public static final String QUERY_SERVICE = "queryService";
     
     public static final String SUBSCRIBE_SERVICE = "subscribeService";
