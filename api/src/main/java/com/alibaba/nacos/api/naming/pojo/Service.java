@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.api.naming.pojo;
 
+import com.alibaba.nacos.api.naming.utils.NamingUtils;
+
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
@@ -99,6 +101,10 @@ public class Service implements Serializable {
     
     public void setGroupName(String groupName) {
         this.groupName = groupName;
+    }
+    
+    public String getGroupedServiceName() {
+        return NamingUtils.getGroupedName(name, groupName);
     }
     
     public Map<String, String> getMetadata() {
