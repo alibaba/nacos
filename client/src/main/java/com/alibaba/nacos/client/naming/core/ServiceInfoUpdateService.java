@@ -191,6 +191,8 @@ public class ServiceInfoUpdateService implements Closeable {
                 if (serviceObj == null) {
                     serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName, clusters, false);
                     serviceInfoHolder.processServiceInfo(serviceObj);
+                    // TODO multiple time can be configured.
+                    delayTime = serviceObj.getCacheMillis() * DEFAULT_UPDATE_CACHE_TIME_MULTIPLE;
                     lastRefTime = serviceObj.getLastRefTime();
                     return;
                 }
