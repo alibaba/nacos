@@ -43,20 +43,26 @@ public class NamingTrace {
     
     private static final String NACOS_CLIENT_VERSION_ATTRIBUTE = "nacos.client.version";
     
+    /**
+     * Get the Nacos client naming rpc span. Outgoing span should set the span kind to client.
+     *
+     * @param rpcType the rpc system type
+     * @return the OpenTelemetry span
+     */
     public static Span getClientNamingRpcSpan(String rpcType) {
         String spanName = NACOS_CLIENT_NAMING_RPC_SPAN + "/" + rpcType.toUpperCase();
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT));
     }
     
     /**
-     * Get the Nacos client naming http span.
+     * Get the Nacos client naming http span. Outgoing span should set the span kind to client.
      *
      * @param method the http method
      * @return the OpenTelemetry span
      */
     public static Span getClientNamingHttpSpan(String method) {
         String spanName = NACOS_CLIENT_NAMING_HTTP_SPAN + "/" + method.toUpperCase();
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
+        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT));
     }
     
     public static Span getClientNamingServiceSpan(String spanNameExtension) {
@@ -70,7 +76,7 @@ public class NamingTrace {
     }
     
     private static Span spanProxy(SpanBuilder spanBuilder) {
-        return spanBuilder.setSpanKind(SpanKind.CLIENT)
-                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion()).startSpan();
+        return spanBuilder.setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion())
+                .startSpan();
     }
 }
