@@ -23,6 +23,11 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Nacos naming fuzzy watch notify service change push delay task.
+ *
+ * @author tanyongquan
+ */
 public class FuzzyWatchNotifyChangeDelayTask extends AbstractDelayTask {
     private final Service service;
     

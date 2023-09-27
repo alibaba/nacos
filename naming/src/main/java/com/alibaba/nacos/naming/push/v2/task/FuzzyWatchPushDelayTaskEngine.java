@@ -29,6 +29,11 @@ import com.alibaba.nacos.naming.misc.NamingExecuteTaskDispatcher;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.push.v2.executor.PushExecutor;
 
+/**
+ * Nacos naming fuzzy watch notify service change push delay task execute engine.
+ *
+ * @author tanyongquan
+ */
 public class FuzzyWatchPushDelayTaskEngine extends NacosDelayTaskExecuteEngine {
     
     private final ClientManager clientManager;

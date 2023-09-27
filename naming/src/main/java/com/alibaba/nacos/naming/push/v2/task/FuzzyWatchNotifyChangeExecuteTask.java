@@ -31,6 +31,11 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * Nacos naming fuzzy watch notify service change push execute task.
+ *
+ * @author tanyongquan
+ */
 public class FuzzyWatchNotifyChangeExecuteTask extends AbstractExecuteTask {
     
     private final Service service;
