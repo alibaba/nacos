@@ -66,7 +66,7 @@ public class FuzzyWatchServiceListHolder {
                 // may have a 'change event' sent to client before 'init event'
                 if (matchedServiceSet.add(service)) {
                     NotifyCenter.publishEvent(FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
-                            service, request.getPattern(), Constants.FuzzyWatchEventType.ADD_SERVICE));
+                            service, request.getPattern(), Constants.ServiceChangedType.ADD_SERVICE));
                 }
             }
         } else if (request instanceof FuzzyWatchNotifyChangeRequest) {
@@ -77,24 +77,24 @@ public class FuzzyWatchServiceListHolder {
             String serviceChangeType = request.getServiceChangedType();
             
             switch (serviceChangeType) {
-                case Constants.FuzzyWatchEventType.ADD_SERVICE:
-                case Constants.FuzzyWatchEventType.INSTANCE_CHANGED:
+                case Constants.ServiceChangedType.ADD_SERVICE:
+                case Constants.ServiceChangedType.INSTANCE_CHANGED:
                     for (String pattern : matchedPattern) {
                         Set<Service> matchedServiceSet = patternMatchMap.get(pattern);
                         if (matchedServiceSet != null && matchedServiceSet.add(service)) {
                             NotifyCenter.publishEvent(
                                     FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
-                                            service, pattern, Constants.FuzzyWatchEventType.ADD_SERVICE));
+                                            service, pattern, Constants.ServiceChangedType.ADD_SERVICE));
                         }
                     }
                     break;
-                case Constants.FuzzyWatchEventType.DELETE_SERVICE:
+                case Constants.ServiceChangedType.DELETE_SERVICE:
                     for (String pattern : matchedPattern) {
                         Set<Service> matchedServiceSet = patternMatchMap.get(pattern);
                         if (matchedServiceSet != null && matchedServiceSet.remove(service)) {
                             NotifyCenter.publishEvent(
                                     FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
-                                            service, pattern, Constants.FuzzyWatchEventType.DELETE_SERVICE));
+                                            service, pattern, Constants.ServiceChangedType.DELETE_SERVICE));
                         }
                     }
                     break;
@@ -120,7 +120,7 @@ public class FuzzyWatchServiceListHolder {
         for (Service service : cacheServices) {
             NotifyCenter.publishEvent(
                     FuzzyWatchNotifyEvent.buildNotifyPatternSpecificListenerEvent(notifierEventScope, service,
-                    pattern, uuid, Constants.FuzzyWatchEventType.ADD_SERVICE));
+                    pattern, uuid, Constants.ServiceChangedType.ADD_SERVICE));
         }
     }
     

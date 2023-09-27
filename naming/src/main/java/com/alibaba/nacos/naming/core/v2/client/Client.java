@@ -151,7 +151,7 @@ public interface Client {
      *
      * @return watch patterns
      */
-    Collection<String> getAllWatchPattern();
+    Collection<String> getAllFuzzyWatchPattern();
     
     /**
      * Generate sync data.

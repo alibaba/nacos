@@ -254,7 +254,7 @@ public class Constants {
     /**
      * The constants in fuzzy watch event type directory.
      */
-    public static class FuzzyWatchEventType {
+    public static class ServiceChangedType {
         
         public static final String ADD_SERVICE = "ADD_SERVICE";
         

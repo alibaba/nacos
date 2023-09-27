@@ -160,7 +160,7 @@ public abstract class AbstractClient implements Client {
     }
     
     @Override
-    public Collection<String> getAllWatchPattern() {
+    public Collection<String> getAllFuzzyWatchPattern() {
         return watchedPattern;
     }
     
