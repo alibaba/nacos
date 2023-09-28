@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.backups.FailoverReactor3;
+import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -150,8 +150,8 @@ public class ServiceInfoHolderTest {
         ServiceInfoHolder holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
         Field field = ServiceInfoHolder.class.getDeclaredField("failoverReactor");
         field.setAccessible(true);
-        FailoverReactor3 reactor = (FailoverReactor3) field.get(holder);
-        Field executorService = FailoverReactor3.class.getDeclaredField("executorService");
+        FailoverReactor reactor = (FailoverReactor) field.get(holder);
+        Field executorService = FailoverReactor.class.getDeclaredField("executorService");
         executorService.setAccessible(true);
         ScheduledExecutorService pool = (ScheduledExecutorService) executorService.get(reactor);
         Assert.assertFalse(pool.isShutdown());
