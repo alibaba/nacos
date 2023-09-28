@@ -43,7 +43,7 @@ public class ServerAbilityControlManager extends AbstractAbilityControlManager {
     @Override
     protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
         // init client abilities
-        Map<AbilityMode, Map<AbilityKey, Boolean>> res = new HashMap<>();
+        Map<AbilityMode, Map<AbilityKey, Boolean>> res = new HashMap<>(2);
         res.put(AbilityMode.CLUSTER_CLIENT, initClusterClientAbilities());
         res.put(AbilityMode.SDK_CLIENT, initSdkClientAbilities());
 

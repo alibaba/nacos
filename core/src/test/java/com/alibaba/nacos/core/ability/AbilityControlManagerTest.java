@@ -30,9 +30,9 @@ import java.util.Set;
 
 @SpringBootTest
 public class AbilityControlManagerTest {
-
+    
     private TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
-
+    
     @Before
     public void inject() {
         Map<String, Boolean> newTable = new HashMap<>();
@@ -44,16 +44,20 @@ public class AbilityControlManagerTest {
     public void testCurrentNodeAbility() {
         Set<String> keySet = serverAbilityControlManager.getCurrentNodeAbilities(AbilityMode.SERVER).keySet();
         // diable all
-        keySet.forEach(key -> serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+        keySet.forEach(key -> serverAbilityControlManager
+                .disableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertNotEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)), AbilityStatus.SUPPORTED);
+            Assert.assertNotEquals(serverAbilityControlManager
+                    .isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)), AbilityStatus.SUPPORTED);
         });
         // enable all
-        keySet.forEach(key -> serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+        keySet.forEach(key -> serverAbilityControlManager
+                .enableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertEquals(serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)), AbilityStatus.SUPPORTED);
+            Assert.assertEquals(serverAbilityControlManager
+                    .isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)), AbilityStatus.SUPPORTED);
         });
     }
     

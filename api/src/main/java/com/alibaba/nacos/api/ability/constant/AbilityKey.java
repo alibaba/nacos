@@ -24,19 +24,31 @@ import java.util.stream.Collectors;
 
 /**
  * Ability key constant. It is used to constrain the ability key.<br/>
- * <strong>Ensure that return value of {@link AbilityKey#getName()} is unique under one specify {@link AbilityMode}<strong/>.
+ * <strong>Ensure that return value of {@link AbilityKey#getName()} is unique under one specify {@link AbilityMode}</strong>.
  *
  * @author Daydreamer
  * @date 2022/8/31 12:27
  **/
 public enum AbilityKey {
-
+    
+    /**
+     * For Test temporarily.
+     */
     SERVER_TEST_1("test_1", "just for junit test", AbilityMode.SERVER),
-
+    
+    /**
+     * For Test temporarily.
+     */
     SERVER_TEST_2("test_2", "just for junit test", AbilityMode.SERVER),
-
+    
+    /**
+     * For Test temporarily.
+     */
     SDK_CLIENT_TEST_1("test_1", "just for junit test", AbilityMode.SDK_CLIENT),
-
+    
+    /**
+     * For Test temporarily.
+     */
     CLUSTER_CLIENT_TEST_1("test_1", "just for junit test", AbilityMode.CLUSTER_CLIENT);
     
     /**

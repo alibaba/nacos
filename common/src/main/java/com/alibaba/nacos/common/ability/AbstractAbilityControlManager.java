@@ -26,9 +26,9 @@ import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Collection;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -41,7 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public abstract class AbstractAbilityControlManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractAbilityControlManager.class);
-
+    
     /**
      * current node support abilities.
      */
@@ -51,7 +51,7 @@ public abstract class AbstractAbilityControlManager {
         NotifyCenter.registerToPublisher(AbilityUpdateEvent.class, 16384);
         initAbilityTable();
     }
-
+    
     /**
      * initialize abilities.
      *
@@ -71,9 +71,12 @@ public abstract class AbstractAbilityControlManager {
             // check for developer
             for (AbilityKey abilityKey : abilitiesTable.keySet()) {
                 if (!mode.equals(abilityKey.getMode())) {
-                    LOGGER.error("You should not contain a other mode: {} in a specify mode: {} abilities set, error key: {}, please check again.",
+                    LOGGER.error(
+                            "You should not contain a other mode: {} in a specify mode: {} abilities set, error key: {}, please check again.",
                             abilityKey.getMode(), mode, abilityKey);
-                    throw new IllegalStateException("Except mode: " + mode + " but " + abilityKey + " mode: " + abilityKey.getMode() + ", please check again.");
+                    throw new IllegalStateException(
+                            "Except mode: " + mode + " but " + abilityKey + " mode: " + abilityKey.getMode()
+                                    + ", please check again.");
                 }
             }
             Collection<AbilityPostProcessor> processors = NacosServiceLoader.load(AbilityPostProcessor.class);
@@ -85,7 +88,8 @@ public abstract class AbstractAbilityControlManager {
         Set<AbilityMode> abilityModes = abilities.keySet();
         LOGGER.info("Ready to initialize current node abilities, support modes: {}", abilityModes);
         for (AbilityMode abilityMode : abilityModes) {
-            this.currentNodeAbilities.put(abilityMode, new ConcurrentHashMap<>(AbilityKey.mapStr(abilities.get(abilityMode))));
+            this.currentNodeAbilities
+                    .put(abilityMode, new ConcurrentHashMap<>(AbilityKey.mapStr(abilities.get(abilityMode))));
         }
         LOGGER.info("Initialize current abilities finish...");
     }
@@ -101,7 +105,7 @@ public abstract class AbstractAbilityControlManager {
             doTurn(abilities, abilityKey, true, abilityKey.getMode());
         }
     }
-
+    
     protected void doTurn(Map<String, Boolean> abilities, AbilityKey key, boolean turn, AbilityMode mode) {
         if (!key.getMode().equals(mode)) {
             throw new IllegalStateException("Except " + mode + " but " + key.getMode());
@@ -128,8 +132,8 @@ public abstract class AbstractAbilityControlManager {
         }
     }
     
-    /**.
-     * Whether current node support
+    /**
+     * . Whether current node support
      *
      * @param abilityKey ability key from {@link AbilityKey}
      * @return whether support
@@ -145,15 +149,15 @@ public abstract class AbstractAbilityControlManager {
         return AbilityStatus.UNKNOWN;
     }
     
-    /**.
-     * Init current node abilities
+    /**
+     * . Init current node abilities
      *
      * @return current node abilities
      */
     protected abstract Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities();
     
-    /**.
-     * Return the abilities current node
+    /**
+     * . Return the abilities current node
      *
      * @return current abilities
      */
@@ -166,13 +170,13 @@ public abstract class AbstractAbilityControlManager {
     }
     
     /**
-     * A legal nacos application has a ability control manager.
-     * If there are more than one, the one with higher priority is preferred
+     * A legal nacos application has a ability control manager. If there are more than one, the one with higher priority
+     * is preferred
      *
      * @return priority
      */
     public abstract int getPriority();
-
+    
     /**
      * notify when current node ability changing.
      */
@@ -185,13 +189,14 @@ public abstract class AbstractAbilityControlManager {
         private boolean isOn;
         
         private Map<String, Boolean> table;
-    
-        private AbilityUpdateEvent(){}
-    
+        
+        private AbilityUpdateEvent() {
+        }
+        
         public Map<String, Boolean> getAbilityTable() {
             return table;
         }
-    
+        
         public void setTable(Map<String, Boolean> abilityTable) {
             this.table = abilityTable;
         }
@@ -199,15 +204,15 @@ public abstract class AbstractAbilityControlManager {
         public AbilityKey getAbilityKey() {
             return abilityKey;
         }
-    
+        
         public void setAbilityKey(AbilityKey abilityKey) {
             this.abilityKey = abilityKey;
         }
-    
+        
         public boolean isOn() {
             return isOn;
         }
-    
+        
         public void setOn(boolean on) {
             isOn = on;
         }

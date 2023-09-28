@@ -36,7 +36,7 @@ public class ClientAbilityControlManager extends AbstractAbilityControlManager {
     
     @Override
     protected Map<AbilityMode, Map<AbilityKey, Boolean>> initCurrentNodeAbilities() {
-        Map<AbilityMode, Map<AbilityKey, Boolean>> abilities = new HashMap<>();
+        Map<AbilityMode, Map<AbilityKey, Boolean>> abilities = new HashMap<>(1);
         abilities.put(AbilityMode.SDK_CLIENT, SdkClientAbilities.getStaticAbilities());
         return abilities;
     }

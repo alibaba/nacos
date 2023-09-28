@@ -110,12 +110,13 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     if (labels != null && labels.containsKey(Constants.APPNAME)) {
                         appName = labels.get(Constants.APPNAME);
                     }
-
+                    
                     ConnectionMeta metaInfo = new ConnectionMeta(connectionId, payload.getMetadata().getClientIp(),
                             remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
                             setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
-                    Connection connection = new GrpcConnection(metaInfo, responseObserver, GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
+                    Connection connection = new GrpcConnection(metaInfo, responseObserver,
+                            GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
                     // null if supported
                     if (setUpRequest.getAbilityTable() != null) {
                         // map to table
@@ -139,10 +140,11 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     } else {
                         try {
                             // finish register, tell client has set up successfully
-                            connection.request(new SetupAckRequest(NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities(AbilityMode.SERVER)), 3000L);
+                            connection.request(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
+                                    .getCurrentNodeAbilities(AbilityMode.SERVER)), 3000L);
                         } catch (Exception e) {
                             // nothing to do
-
+                            
                         }
                     }
                     
