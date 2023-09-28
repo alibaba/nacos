@@ -35,8 +35,7 @@ import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -54,6 +53,7 @@ public class DiskFailoverDataSource implements FailoverDataSource {
 
     private Map<String, FailoverData> serviceMap = new ConcurrentHashMap<>();
 
+    private Set<String> serviceNames = new HashSet<>();
 
 
     private final String failoverDir;
@@ -92,6 +92,33 @@ public class DiskFailoverDataSource implements FailoverDataSource {
 
                     if (file.getName().equals(UtilAndComs.FAILOVER_SWITCH)) {
                         continue;
+                    }
+
+                    if (file.getName().equals(UtilAndComs.FAILOVER_SERVICENAME)) {
+                        try {
+                            String dataString = ConcurrentDiskUtil.getFileContent(file,
+                                    Charset.defaultCharset().toString());
+                            reader = new BufferedReader(new StringReader(dataString));
+                            String serviceNameStr;
+                            if ((serviceNameStr = reader.readLine()) != null) {
+                                String[] serviceNameList = serviceNameStr.split(",");
+                                if (serviceNameList.length > 0) {
+                                    serviceNames = new HashSet<>(Arrays.asList(serviceNameList));
+                                }
+                            }
+                            continue;
+                        } catch (Exception e) {
+                            NAMING_LOGGER.error("[NA] failed to read cache for dom: {}", file.getName(), e);
+                            continue;
+                        } finally {
+                            try {
+                                if (reader != null) {
+                                    reader.close();
+                                }
+                            } catch (Exception e) {
+                                //ignore
+                            }
+                        }
                     }
 
                     ServiceInfo dom = null;
@@ -159,7 +186,7 @@ public class DiskFailoverDataSource implements FailoverDataSource {
                         if (IS_FAILOVER_MODE.equals(line1)) {
                             NAMING_LOGGER.info("failover-mode is on");
                             new FailoverFileReader().run();
-                            return new FailoverSwitch(Boolean.TRUE);
+                            return new FailoverSwitch(Boolean.TRUE, serviceNames);
                         } else if (NO_FAILOVER_MODE.equals(line1)) {
                             NAMING_LOGGER.info("failover-mode is off");
                         }
@@ -182,10 +209,9 @@ public class DiskFailoverDataSource implements FailoverDataSource {
 
     @Override
     public void saveFailoverData(Map<String, FailoverData> failoverDataMap) {
-        // 2.从ServiceInfoHoler复制服务数据写入到容灾数据源FailoverDataSource；
         for (Map.Entry<String, FailoverData> entry : failoverDataMap.entrySet()) {
             ServiceInfo serviceInfo = (ServiceInfo) entry.getValue().getData();
-            if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils
+            if (!serviceNames.contains(serviceInfo.getKey()) || StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils
                     .equals(serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY) || StringUtils
                     .equals(serviceInfo.getName(), UtilAndComs.ENV_CONFIGS) || StringUtils
                     .equals(serviceInfo.getName(), UtilAndComs.VIP_CLIENT_FILE) || StringUtils
