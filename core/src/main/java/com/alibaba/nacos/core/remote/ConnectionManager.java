@@ -275,6 +275,7 @@ public class ConnectionManager {
                     String[] split = redirectAddress.split(Constants.COLON);
                     connectResetRequest.setServerIp(split[0]);
                     connectResetRequest.setServerPort(split[1]);
+                    connectResetRequest.setConnectionId(connectionId);
                 }
                 try {
                     connection.request(connectResetRequest, 3000L);

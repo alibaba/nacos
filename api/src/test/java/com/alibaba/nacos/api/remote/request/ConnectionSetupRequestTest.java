@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import com.alibaba.nacos.api.ability.ClientAbilities;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.HashMap;
 
 public class ConnectionSetupRequestTest extends BasicRequestTest {
     
@@ -28,7 +28,7 @@ public class ConnectionSetupRequestTest extends BasicRequestTest {
     public void testSerialize() throws Exception {
         ConnectionSetupRequest request = new ConnectionSetupRequest();
         request.setClientVersion("2.2.2");
-        request.setAbilities(new ClientAbilities());
+        request.setAbilityTable(new HashMap<>());
         request.setTenant("testNamespaceId");
         request.setLabels(Collections.singletonMap("labelKey", "labelValue"));
         request.setRequestId("1");
@@ -37,7 +37,7 @@ public class ConnectionSetupRequestTest extends BasicRequestTest {
         Assert.assertTrue(json.contains("\"clientVersion\":\"2.2.2\""));
         Assert.assertTrue(json.contains("\"tenant\":\"testNamespaceId\""));
         Assert.assertTrue(json.contains("\"labels\":{\"labelKey\":\"labelValue\"}"));
-        Assert.assertTrue(json.contains("\"abilities\":{"));
+        Assert.assertTrue(json.contains("\"abilityTable\":{"));
         Assert.assertTrue(json.contains("\"module\":\"internal\""));
         Assert.assertTrue(json.contains("\"requestId\":\"1\""));
     }

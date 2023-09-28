@@ -31,8 +31,9 @@ public interface ServerRequestHandler {
      * Handle request from server.
      *
      * @param request request
+     * @param connection current connection, it can be used to know server ability
      * @return response.
      */
-    Response requestReply(Request request);
+    Response requestReply(Request request, Connection connection);
     
 }

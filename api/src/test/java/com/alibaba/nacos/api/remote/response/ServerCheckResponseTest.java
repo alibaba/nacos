@@ -38,7 +38,7 @@ public class ServerCheckResponseTest {
     
     @Test
     public void testSerialization() throws JsonProcessingException {
-        ServerCheckResponse response = new ServerCheckResponse("35643245_1.1.1.1_3306");
+        ServerCheckResponse response = new ServerCheckResponse("35643245_1.1.1.1_3306", false);
         String actual = mapper.writeValueAsString(response);
         assertTrue(actual.contains("\"connectionId\":\"35643245_1.1.1.1_3306\""));
     }
