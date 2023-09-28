@@ -518,8 +518,9 @@ public abstract class GrpcClient extends RpcClient {
                 SetupAckRequest setupAckRequest = (SetupAckRequest) request;
                 // remove and count down
                 recAbilityContext.release(setupAckRequest.getAbilityTable());
+                return new SetupAckResponse();
             }
-            return new SetupAckResponse();
+            return null;
         }
     }
     
