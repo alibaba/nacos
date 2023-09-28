@@ -46,6 +46,8 @@ public class UtilAndComs {
     public static final String NACOS_NAMING_LOG_NAME = "com.alibaba.nacos.naming.log.filename";
     
     public static final String NACOS_NAMING_LOG_LEVEL = "com.alibaba.nacos.naming.log.level";
+
+    public static final String NACOS_FAIL_OVER_STORAGE_TYPE = "com.alibaba.nacos.failover.storage.type";
     
     public static final int DEFAULT_POLLING_THREAD_COUNT =
             ThreadUtils.getSuitableThreadCount(1) > 1 ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;

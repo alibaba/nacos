@@ -32,12 +32,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -49,25 +44,25 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author xiweng.yy
  */
 public class ServiceInfoHolder implements Closeable {
-    
+
     private static final String JM_SNAPSHOT_PATH_PROPERTY = "JM.SNAPSHOT.PATH";
-    
+
     private static final String FILE_PATH_NACOS = "nacos";
-    
+
     private static final String FILE_PATH_NAMING = "naming";
-    
+
     private static final String USER_HOME_PROPERTY = "user.home";
-    
+
     private final ConcurrentMap<String, ServiceInfo> serviceInfoMap;
-    
+
     private final FailoverReactor failoverReactor;
-    
+
     private final boolean pushEmptyProtection;
-    
+
     private String cacheDir;
-    
+
     private String notifierEventScope;
-    
+
     public ServiceInfoHolder(String namespace, String notifierEventScope, NacosClientProperties properties) {
         initCacheDir(namespace, properties);
         if (isLoadCacheAtStart(properties)) {
@@ -75,19 +70,21 @@ public class ServiceInfoHolder implements Closeable {
         } else {
             this.serviceInfoMap = new ConcurrentHashMap<>(16);
         }
-        this.failoverReactor = new FailoverReactor(this, cacheDir);
+
+        this.failoverReactor = new FailoverReactor(this, cacheDir,notifierEventScope);
+
         this.pushEmptyProtection = isPushEmptyProtect(properties);
         this.notifierEventScope = notifierEventScope;
     }
-    
+
     private void initCacheDir(String namespace, NacosClientProperties properties) {
         String jmSnapshotPath = properties.getProperty(JM_SNAPSHOT_PATH_PROPERTY);
-    
+
         String namingCacheRegistryDir = "";
         if (properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR) != null) {
             namingCacheRegistryDir = File.separator + properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR);
         }
-        
+
         if (!StringUtils.isBlank(jmSnapshotPath)) {
             cacheDir = jmSnapshotPath + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
                     + File.separator + FILE_PATH_NAMING + File.separator + namespace;
@@ -96,7 +93,7 @@ public class ServiceInfoHolder implements Closeable {
                     + File.separator + FILE_PATH_NAMING + File.separator + namespace;
         }
     }
-    
+
     private boolean isLoadCacheAtStart(NacosClientProperties properties) {
         boolean loadCacheAtStart = false;
         if (properties != null && StringUtils
@@ -106,7 +103,7 @@ public class ServiceInfoHolder implements Closeable {
         }
         return loadCacheAtStart;
     }
-    
+
     private boolean isPushEmptyProtect(NacosClientProperties properties) {
         boolean pushEmptyProtection = false;
         if (properties != null && StringUtils
@@ -116,11 +113,11 @@ public class ServiceInfoHolder implements Closeable {
         }
         return pushEmptyProtection;
     }
-    
+
     public Map<String, ServiceInfo> getServiceInfoMap() {
         return serviceInfoMap;
     }
-    
+
     public ServiceInfo getServiceInfo(final String serviceName, final String groupName, final String clusters) {
         NAMING_LOGGER.debug("failover-mode: {}", failoverReactor.isFailoverSwitch());
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
@@ -130,7 +127,7 @@ public class ServiceInfoHolder implements Closeable {
         }
         return serviceInfoMap.get(key);
     }
-    
+
     /**
      * Process service json.
      *
@@ -142,7 +139,7 @@ public class ServiceInfoHolder implements Closeable {
         serviceInfo.setJsonFromServer(json);
         return processServiceInfo(serviceInfo);
     }
-    
+
     /**
      * Process service info.
      *
@@ -168,18 +165,21 @@ public class ServiceInfoHolder implements Closeable {
         if (changed) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
-            NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
-                    serviceInfo.getClusters(), serviceInfo.getHosts()));
+            if (!failoverReactor.isFailoverSwitch()) {
+                NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
+                        serviceInfo.getClusters(), serviceInfo.getHosts()));
+            }
+
             DiskCache.write(serviceInfo, cacheDir);
         }
         return serviceInfo;
     }
-    
+
     private boolean isEmptyOrErrorPush(ServiceInfo serviceInfo) {
         return null == serviceInfo.getHosts() || (pushEmptyProtection && !serviceInfo.validate());
     }
-    
-    private boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
+
+    public boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
         if (null == oldService) {
             NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(), newService.getKey(),
                     JacksonUtils.toJson(newService.getHosts()));
@@ -199,11 +199,11 @@ public class ServiceInfoHolder implements Closeable {
         for (Instance host : newService.getHosts()) {
             newHostMap.put(host.toInetAddr(), host);
         }
-        
+
         Set<Instance> modHosts = new HashSet<>();
         Set<Instance> newHosts = new HashSet<>();
         Set<Instance> remvHosts = new HashSet<>();
-        
+
         List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(
                 newHostMap.entrySet());
         for (Map.Entry<String, Instance> entry : newServiceHosts) {
@@ -213,12 +213,12 @@ public class ServiceInfoHolder implements Closeable {
                 modHosts.add(host);
                 continue;
             }
-            
+
             if (!oldHostMap.containsKey(key)) {
                 newHosts.add(host);
             }
         }
-        
+
         for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
             Instance host = entry.getValue();
             String key = entry.getKey();
@@ -229,19 +229,19 @@ public class ServiceInfoHolder implements Closeable {
             //add to remove hosts
             remvHosts.add(host);
         }
-        
+
         if (newHosts.size() > 0) {
             changed = true;
             NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(newHosts));
         }
-        
+
         if (remvHosts.size() > 0) {
             changed = true;
             NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(remvHosts));
         }
-        
+
         if (modHosts.size() > 0) {
             changed = true;
             NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
@@ -249,7 +249,17 @@ public class ServiceInfoHolder implements Closeable {
         }
         return changed;
     }
-    
+
+    public boolean isFailoverSwitch() {
+        return failoverReactor.isFailoverSwitch();
+    }
+
+    public ServiceInfo getFailoverServiceInfo(final String serviceName, final String groupName, final String clusters) {
+        String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
+        String key = ServiceInfo.getKey(groupedServiceName, clusters);
+        return failoverReactor.getService(key);
+    }
+
     @Override
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
