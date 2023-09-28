@@ -16,34 +16,35 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ConnectResetRequestTest extends BasicRequestTest {
+import java.util.Collections;
+
+public class SetupAckRequestTest extends BasicRequestTest {
     
     @Test
     public void testSerialize() throws Exception {
-        ConnectResetRequest request = new ConnectResetRequest();
-        request.setServerIp("127.0.0.1");
-        request.setServerPort("8888");
+        SetupAckRequest request = new SetupAckRequest(
+                Collections.singletonMap(AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE));
         request.setRequestId("1");
-        request.setConnectionId("11111_127.0.0.1_8888");
         String json = mapper.writeValueAsString(request);
+        System.out.println(json);
         Assert.assertNotNull(json);
-        Assert.assertTrue(json.contains("\"serverIp\":\"127.0.0.1\""));
-        Assert.assertTrue(json.contains("\"serverPort\":\"8888\""));
+        Assert.assertTrue(json.contains("\"abilityTable\":{\"test_1\":true}"));
         Assert.assertTrue(json.contains("\"module\":\"internal\""));
         Assert.assertTrue(json.contains("\"requestId\":\"1\""));
-        Assert.assertTrue(json.contains("\"connectionId\":\"11111_127.0.0.1_8888\""));
     }
     
     @Test
     public void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"serverIp\":\"127.0.0.1\",\"serverPort\":\"8888\",\"module\":\"internal\",\"connectionId\":\"11111_127.0.0.1_8888\"}";
-        ConnectResetRequest result = mapper.readValue(json, ConnectResetRequest.class);
+        String json =
+                "{\"headers\":{},\"requestId\":\"1\",\"abilityTable\":{\"test_1\":true}," + "\"module\":\"internal\"}";
+        SetupAckRequest result = mapper.readValue(json, SetupAckRequest.class);
         Assert.assertNotNull(result);
-        Assert.assertEquals("127.0.0.1", result.getServerIp());
-        Assert.assertEquals("8888", result.getServerPort());
-        Assert.assertEquals("11111_127.0.0.1_8888", result.getConnectionId());
+        Assert.assertTrue(result.getAbilityTable().get("test_1"));
+        Assert.assertEquals("1", result.getRequestId());
+        Assert.assertEquals("internal", result.getModule());
     }
 }

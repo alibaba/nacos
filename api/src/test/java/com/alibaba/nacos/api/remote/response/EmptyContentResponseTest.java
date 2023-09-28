@@ -92,6 +92,16 @@ public class EmptyContentResponseTest {
         assertCommonResponse(response);
     }
     
+    @Test
+    public void testSetupAckResponse() throws JsonProcessingException {
+        SetupAckResponse response = new SetupAckResponse();
+        response.setRequestId("1");
+        String actual = mapper.writeValueAsString(response);
+        assertCommonResponseJson(actual);
+        response = mapper.readValue(COMMON_JSON, SetupAckResponse.class);
+        assertCommonResponse(response);
+    }
+    
     private void assertCommonResponse(Response response) {
         assertTrue(response.isSuccess());
         assertNull(response.getMessage());
