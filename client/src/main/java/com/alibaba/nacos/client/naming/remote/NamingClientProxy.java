@@ -188,6 +188,7 @@ public interface NamingClientProxy extends Closeable {
      * @param serviceNamePattern service name pattern
      * @param groupNamePattern group name pattern
      * @param uuid UUID used to identify the Listener. Used for local initialization when repeating fuzzy watch
+
      * @throws NacosException nacos exception
      */
     void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String uuid) throws NacosException;

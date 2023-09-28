@@ -571,7 +571,7 @@ public interface NamingService {
      * @throws NacosException nacos exception
      */
     void cancelFuzzyWatch(String serviceNamePattern, String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException;
-    
+
     /**
      * Get all service names from server.
      *

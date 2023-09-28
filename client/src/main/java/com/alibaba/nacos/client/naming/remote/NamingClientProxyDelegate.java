@@ -57,7 +57,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     private final ServiceInfoUpdateService serviceInfoUpdateService;
     
     private final ServiceInfoHolder serviceInfoHolder;
-    
+
     private final FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder;
     
     private final NamingHttpClientProxy httpClientProxy;

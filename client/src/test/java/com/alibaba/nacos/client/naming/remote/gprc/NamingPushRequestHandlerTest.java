@@ -39,7 +39,7 @@ public class NamingPushRequestHandlerTest {
         //given
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder = mock(FuzzyWatchServiceListHolder.class);
-        NamingPushRequestHandler handler = new NamingPushRequestHandler(holder, fuzzyWatchServiceListHolder);
+        NamingPushRequestHandler handler = new NamingPushRequestHandler(holder, fuzzyWatchServiceListHolder)
         ServiceInfo info = new ServiceInfo("name", "cluster1");
         Request req = NotifySubscriberRequest.buildNotifySubscriberRequest(info);
         //when

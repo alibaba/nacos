@@ -244,7 +244,7 @@ public class Constants {
      * The constants in fuzzy watch pattern match rule directory.
      */
     public static class FuzzyWatchMatchRule {
-        
+
         public static final String MATCH_ALL = "MATCH_ALL";
         
         public static final String MATCH_PREFIX = "MATCH_PREFIX";
