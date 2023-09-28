@@ -163,7 +163,7 @@ public enum AbilityKey {
         // ensure that name filed is unique under a AbilityMode
         try {
             for (AbilityKey value : AbilityKey.values()) {
-                AbilityMode mode = value.mode;
+                AbilityMode mode = value.getMode();
                 Map<String, AbilityKey> map = ALL_ABILITIES.getOrDefault(mode, new HashMap<>());
                 AbilityKey previous = map.putIfAbsent(value.getName(), value);
                 if (previous != null) {

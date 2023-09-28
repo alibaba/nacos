@@ -21,8 +21,13 @@ import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**.
  * @author Daydreamer
@@ -35,20 +40,26 @@ public class AbilityKeyTest {
     public void testMapStr() {
         Map<AbilityKey, Boolean> enumMap = new HashMap<>();
         Map<String, Boolean> stringBooleanMap = AbilityKey.mapStr(enumMap);
-        Assert.assertEquals(0, stringBooleanMap.size());
+        assertEquals(0, stringBooleanMap.size());
         
         enumMap.put(AbilityKey.SERVER_TEST_1, true);
         enumMap.put(AbilityKey.SERVER_TEST_2, false);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        Assert.assertEquals(2, stringBooleanMap.size());
+        assertEquals(2, stringBooleanMap.size());
         Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
         Assert.assertFalse(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
         
         enumMap.put(AbilityKey.SERVER_TEST_2, true);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        Assert.assertEquals(2, stringBooleanMap.size());
+        assertEquals(2, stringBooleanMap.size());
         Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
         Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
+    }
+    
+    @Test
+    public void testMapEnumForEmpty() {
+        Map<AbilityKey, Boolean> actual = AbilityKey.mapEnum(AbilityMode.SERVER, Collections.emptyMap());
+        assertTrue(actual.isEmpty());
     }
     
     @Test
@@ -56,7 +67,7 @@ public class AbilityKeyTest {
         Map<String, Boolean> mapStr = new HashMap<>();
         mapStr.put("test-no-existed", true);
         Map<AbilityKey, Boolean> enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        Assert.assertEquals(0, enumMap.size());
+        assertEquals(0, enumMap.size());
         
         mapStr.put(AbilityKey.SERVER_TEST_2.getName(), false);
         mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
@@ -73,4 +84,28 @@ public class AbilityKeyTest {
         
     }
     
+    @Test
+    public void testGetAllValues() {
+        Collection<AbilityKey> actual = AbilityKey.getAllValues(AbilityMode.SERVER);
+        assertEquals(2, actual.size());
+        actual = AbilityKey.getAllValues(AbilityMode.SDK_CLIENT);
+        assertEquals(1, actual.size());
+        actual = AbilityKey.getAllValues(AbilityMode.CLUSTER_CLIENT);
+        assertEquals(1, actual.size());
+    }
+    
+    @Test
+    public void testGetAllNames() {
+        Collection<String> actual = AbilityKey.getAllNames(AbilityMode.SERVER);
+        assertEquals(2, actual.size());
+        actual = AbilityKey.getAllNames(AbilityMode.SDK_CLIENT);
+        assertEquals(1, actual.size());
+        actual = AbilityKey.getAllNames(AbilityMode.CLUSTER_CLIENT);
+        assertEquals(1, actual.size());
+    }
+    
+    @Test
+    public void testGetDescription() {
+        assertEquals("just for junit test", AbilityKey.SERVER_TEST_1.getDescription());
+    }
 }
