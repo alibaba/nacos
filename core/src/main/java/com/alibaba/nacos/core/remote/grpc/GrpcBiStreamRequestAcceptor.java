@@ -140,8 +140,9 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     } else {
                         try {
                             // finish register, tell client has set up successfully
-                            connection.request(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
-                                    .getCurrentNodeAbilities(AbilityMode.SERVER)), 3000L);
+                            // async response
+                            connection.requestFuture(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
+                                    .getCurrentNodeAbilities(AbilityMode.SERVER)));
                         } catch (Exception e) {
                             // nothing to do
                             
