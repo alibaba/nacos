@@ -121,25 +121,22 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         PushRequest pushRequest = new PushRequest(resourceManager.getResourceSnapshot(), true);
         IstioConfig istioConfig = pushRequest.getResourceSnapshot().getIstioConfig();
     
-        if(discoveryRequest.getTypeUrl().equals(CLUSTER_TYPE)){
+        if (discoveryRequest.getTypeUrl().equals(CLUSTER_TYPE)) {
             for (String resourceName : resourceNames) {
                 String reason = parseClusterNameToServiceName(resourceName, istioConfig.getDomainSuffix());
-                System.out.println(reason);
                 pushRequest.addReason(reason);
             }
         }
     
-        if(discoveryRequest.getTypeUrl().equals(LISTENER_TYPE) && discoveryRequest.getResponseNonce().isEmpty()){
+        if (discoveryRequest.getTypeUrl().equals(LISTENER_TYPE) && discoveryRequest.getResponseNonce().isEmpty()) {
             String reason = INIT_LISTENER;
-            System.out.println(reason);
             pushRequest.addReason(reason);
         }
     
-        if(discoveryRequest.getTypeUrl().equals(ROUTE_TYPE) && discoveryRequest.getResponseNonce().isEmpty()){
+        if (discoveryRequest.getTypeUrl().equals(ROUTE_TYPE) && discoveryRequest.getResponseNonce().isEmpty()) {
             String reason = DEFAULT_ROUTE_CONFIGURATION;
             pushRequest.addReason(reason);
             for (String resourceName : resourceNames) {
-                System.out.println(reason);
                 pushRequest.addReason(resourceName);
             }
         }
@@ -187,8 +184,6 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         if (watchedStatus == null) {
             Loggers.MAIN.info("xds: reconnect, type {}, connection-id {}, version {}, nonce {}.",
                     type, connectionId, discoveryRequest.getVersionInfo(), discoveryRequest.getResponseNonce());
-//            Loggers.MAIN.info("xds: content {}",
-//                    discoveryRequest);
             Loggers.MAIN.info("xds: content {},{}",
                             discoveryRequest.getTypeUrl(), discoveryRequest.getResourceNamesList());
            
@@ -252,7 +247,6 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         }
     }
     
-    
     public void handleConfigEvent(PushRequest pushRequest) {
         if (connections.size() == 0) {
             return;
@@ -272,7 +266,6 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
                 DiscoveryResponse rdsResponse = buildDiscoveryResponse(ROUTE_TYPE, pushRequest);
                 connection.push(rdsResponse, rdsWatchedStatus);
             }
-
         }
     }
 

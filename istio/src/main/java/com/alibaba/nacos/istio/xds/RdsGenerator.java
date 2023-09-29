@@ -73,11 +73,9 @@ public class RdsGenerator implements ApiGenerator<Any> {
         List<Any> result = new ArrayList<>();
         Set<String> reasons = pushRequest.getReason();
         if (reasons.contains(DEFAULT_ROUTE_CONFIGURATION)) {
-            System.out.println("DEFAULT_ROUTE_CONFIGURATION :  " + DEFAULT_ROUTE_CONFIGURATION);
             reasons.stream()
                     .filter(reason -> !DEFAULT_ROUTE_CONFIGURATION.equals(reason))
                     .forEach(reason -> {
-//                    result.add(buildTestRouteConfiguration(reason));
                         result.add(buildDefaultRouteConfiguration(reason));
                     });
         } else if (reasons.contains(CONFIG_REASON)) {
@@ -129,34 +127,16 @@ public class RdsGenerator implements ApiGenerator<Any> {
         return Any.newBuilder().setValue(routeConfiguration.toByteString()).setTypeUrl(ROUTE_TYPE).build();
     }
     
-    private static Any buildTestRouteConfiguration(String routeConfigurationName) {
-        
-        String cluster = "outbound|8018||service-consumer.DEFAULT-GROUP.public.nacos";
-        // 构建 RouteConfiguration
-        RouteConfiguration routeConfiguration = RouteConfiguration.newBuilder()
-                .setName(routeConfigurationName)
-                .addVirtualHosts(
-                        VirtualHost.newBuilder()
-                                .setName("outbound|8072||service-provider.DEFAULT-GROUP.public.nacos")
-                                .addDomains("*")
-                                .addRoutes(
-                                        Route.newBuilder()
-                                                .setName("dynamic_route")
-                                                .setMatch(RouteMatch.newBuilder().setPrefix("/apia").build())
-                                                .setRoute(RouteAction.newBuilder().setCluster(cluster).setPrefixRewrite("/apib").build())
-                                                .build()
-                                )
-                                .build()
-                )
-                .build();
-        return Any.newBuilder().setValue(routeConfiguration.toByteString()).setTypeUrl(ROUTE_TYPE).build();
-    }
-    
+    /***
+     * <p> generate Rds From VirtualService.</p>
+     * @param virtualService VirtualService Parsed
+     * @param pushRequest PushRequest
+     * @return
+     */
     public static Any generateRdsFromVirtualService(VirtualService virtualService, PushRequest pushRequest) {
         List<VirtualService.Spec.Http> httpRoutes = virtualService.getSpec().getHttp();
         List<String> hosts = virtualService.getSpec().getHosts();
         Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources().getIstioServiceMap();
-        System.out.println(hosts);
         List<String> hostnames = getMatchingHostnames(hosts, pushRequest);
         String virtualHostName = virtualService.getMetadata().getName();
         for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
@@ -207,11 +187,11 @@ public class RdsGenerator implements ApiGenerator<Any> {
     
     private static void processHttpRoute(VirtualService.Spec.Http httpRoute, VirtualHost.Builder virtualHostBuilder, PushRequest pushRequest) {
         Route.Builder routeBuilder = Route.newBuilder();
-        // Setting name
+        
         if (httpRoute.getName() != null) {
             routeBuilder.setName(httpRoute.getName());
         }
-        // Setting all match conditions
+        
         for (VirtualService.Spec.Http.Match match : httpRoute.getMatch()) {
             RouteMatch.Builder routeMatchBuilder = RouteMatch.newBuilder();
             if (match.getUri().getPrefix() != null) {
@@ -222,15 +202,11 @@ public class RdsGenerator implements ApiGenerator<Any> {
             routeBuilder.setMatch(routeMatchBuilder);
         }
     
-        // Check if redirect is present
         if (httpRoute.getRedirect() != null) {
             setRedirectAction(httpRoute.getRedirect(), routeBuilder);
         } else {
-            // Setting all route actions
             setRouteAction(httpRoute, routeBuilder, pushRequest);
         }
-//        // Setting all route actions
-//        setRouteAction(httpRoute, routeBuilder, pushRequest);
         virtualHostBuilder.addRoutes(routeBuilder);
     }
     
@@ -252,7 +228,6 @@ public class RdsGenerator implements ApiGenerator<Any> {
         routeBuilder.setRoute(routeActionBuilder.setCluster(destName));
     }
     
-    // A new method to handle redirect action
     private static void setRedirectAction(VirtualService.Spec.Http.Redirect redirect, Route.Builder routeBuilder) {
         RedirectAction.Builder redirectBuilder = RedirectAction.newBuilder();
         if (redirect.getUri() != null) {

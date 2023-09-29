@@ -26,8 +26,9 @@ public class VirtualService {
     private Metadata metadata;
     
     private Spec spec;
-    public VirtualService() {
-    }
+    
+    public VirtualService() {}
+    
     public static class Metadata {
         
         private String name;
@@ -179,8 +180,9 @@ public class VirtualService {
     
             public static class Redirect {
         
-                private String uri;  // 重定向的URI
-                private String authority;  // 重定向的authority
+                private String uri;
+                
+                private String authority;
         
                 public String getUri() {
                     return uri;

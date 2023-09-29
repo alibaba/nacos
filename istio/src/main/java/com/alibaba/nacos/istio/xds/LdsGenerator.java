@@ -97,10 +97,8 @@ public class LdsGenerator implements ApiGenerator<Any> {
         Map<String, IstioService> istioServiceMap = pushRequest.getResourceSnapshot().getIstioResources()
                 .getIstioServiceMap();
         List<Any> result = new ArrayList<>();
-        // Always add the bootstrap listener
         result.add(buildBootstrapListener());
     
-        // Check if full update is requested
         if (pushRequest.isFull()) {
             for (Map.Entry<String, IstioService> entry : istioServiceMap.entrySet()) {
                 IstioService istioService = entry.getValue();
@@ -129,7 +127,6 @@ public class LdsGenerator implements ApiGenerator<Any> {
         
         Listener.Builder listenerBuilder = Listener.newBuilder().setName(listenerName);
         
-        // Set address
         listenerAddress = (listenerAddress == null) ? INIT_LISTENER_ADDRESS : listenerAddress;
         int portValue = isBootstrap ? INIT_LISTENER_PORT : listenerPort + DEFAULT_PORT_INCREMENT;
         listenerBuilder.setAddress(Address.newBuilder()
@@ -155,12 +152,10 @@ public class LdsGenerator implements ApiGenerator<Any> {
                 )
                 .build();
         
-        // Build HttpConnectionManager with the RouteConfiguration
         HttpConnectionManager httpConnectionManager = HttpConnectionManager.newBuilder().setStatPrefix(DEFAULT_HTTPMANAGER_PREFIX)
                 .addAccessLog(buildAccessLog()).setCodecType(HttpConnectionManager.CodecType.AUTO)
                 .setRouteConfig(routeConfiguration).addHttpFilters(createHttpFilter()).build();
         
-        // Add filter chain to the listener
         listenerBuilder.addFilterChains(createFilterChain(httpConnectionManager));
         
         Listener listener = listenerBuilder.build();
@@ -193,20 +188,16 @@ public class LdsGenerator implements ApiGenerator<Any> {
         listenerAddress = (listenerAddress == null) ? INIT_LISTENER_ADDRESS : listenerAddress;
         Listener.Builder listenerBuilder = Listener.newBuilder().setName(listenerName);
     
-        // Set address
         listenerBuilder.setAddress(Address.newBuilder()
                 .setSocketAddress(SocketAddress.newBuilder().setAddress(listenerAddress).setPortValue(listenerPort + DEFAULT_PORT_INCREMENT)));
-        //Build ConfigSource for RDS (using ADS in this example)
         ConfigSource configSource = createConfigSource();
         
         Rds rds = Rds.newBuilder().setConfigSource(configSource).setRouteConfigName(rdsName).build();
         
-        // Build HttpConnectionManager with the RouteConfiguration
         HttpConnectionManager httpConnectionManager = HttpConnectionManager.newBuilder().setStatPrefix(DEFAULT_HTTPMANAGER_PREFIX)
                 .addAccessLog(buildAccessLog()).setCodecType(HttpConnectionManager.CodecType.AUTO).setRds(rds)
                 .addHttpFilters(createHttpFilter()).build();
         
-        // Add filter chain to the listener
         listenerBuilder.addFilterChains(createFilterChain(httpConnectionManager));
         
         Listener listener = listenerBuilder.build();

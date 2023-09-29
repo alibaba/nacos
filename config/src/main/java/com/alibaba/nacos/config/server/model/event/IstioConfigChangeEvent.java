@@ -16,11 +16,7 @@
 
 package com.alibaba.nacos.config.server.model.event;
 
-/**
- *
- */
 public class IstioConfigChangeEvent extends ConfigDataChangeEvent {
-    
     
     public final String content;
     

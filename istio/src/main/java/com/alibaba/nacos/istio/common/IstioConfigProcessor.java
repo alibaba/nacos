@@ -21,16 +21,11 @@ import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.config.server.model.event.IstioConfigChangeEvent;
-import com.alibaba.nacos.istio.misc.Loggers;
-import com.alibaba.nacos.istio.model.DestinationRule;
 import com.alibaba.nacos.istio.model.PushRequest;
-import com.alibaba.nacos.istio.model.VirtualService;
 import com.alibaba.nacos.istio.xds.NacosXdsService;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.error.YAMLException;
 
 /**
  * Listener for IstioConfig.
@@ -44,17 +39,10 @@ public class IstioConfigProcessor {
     private NacosXdsService nacosXdsService;
     
     private NacosResourceManager resourceManager;
-    private static final String TYPE_VIRTUAL_SERVICE = "virtualservice";
-    
-    private static final String TYPE_DESTINATION_RULE = "destinationrule";
     
     public static final String CONFIG_REASON = "config";
     
-    
-    private final Yaml yaml;
-    
     public IstioConfigProcessor() {
-        this.yaml = new Yaml();
         NotifyCenter.registerSubscriber(new Subscriber() {
             @Override
             public void onEvent(Event event) {
