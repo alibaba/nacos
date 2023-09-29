@@ -90,6 +90,11 @@ public abstract class GrpcClient extends RpcClient {
      */
     private final RecAbilityContext recAbilityContext = new RecAbilityContext(null);
 
+    /**
+     * for receiving server abilities.
+     */
+    private SetupRequestHandler setupRequestHandler;
+
     @Override
     public ConnectionType getConnectionType() {
         return ConnectionType.GRPC;
@@ -141,7 +146,7 @@ public abstract class GrpcClient extends RpcClient {
      */
     private void initSetupHandler() {
         // register to handler setup request
-        registerServerRequestHandler(new SetupRequestHandler(this.recAbilityContext));
+        setupRequestHandler = new SetupRequestHandler(this.recAbilityContext);
     }
     
     /**
@@ -269,6 +274,11 @@ public abstract class GrpcClient extends RpcClient {
                     if (request != null) {
                         
                         try {
+                            if (request instanceof SetupAckRequest) {
+                                // there is no connection ready this time
+                                setupRequestHandler.requestReply(request, null);
+                                return;
+                            }
                             Response response = handleServerRequest(request);
                             if (response != null) {
                                 response.setRequestId(request.getRequestId());
@@ -476,6 +486,8 @@ public abstract class GrpcClient extends RpcClient {
         public void release(Map<String, Boolean> abilities) {
             if (this.connection != null) {
                 this.connection.setAbilityTable(abilities);
+                // fix https://github.com/alibaba/nacos/issues/11209
+                ((GrpcConnection) this.connection).sendResponse(new SetupAckResponse());
                 // avoid repeat setting
                 this.connection = null;
             }
