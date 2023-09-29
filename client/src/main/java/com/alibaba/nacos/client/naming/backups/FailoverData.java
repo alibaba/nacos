@@ -15,12 +15,20 @@
  */
 package com.alibaba.nacos.client.naming.backups;
 
+/**
+ * Failover Data.
+ *
+ * @author zongkang.guo
+ */
 public class FailoverData {
 
+    /**
+     * failover type,naming or config.
+     */
     private DataType dataType;
 
     /**
-     * 容灾数据，子类设置具体类型
+     * failover data.
      */
     private Object data;
 
@@ -30,7 +38,13 @@ public class FailoverData {
     }
 
     public enum DataType {
+        /**
+         * naming.
+         */
         naming,
+        /**
+         * config.
+         */
         config
     }
 

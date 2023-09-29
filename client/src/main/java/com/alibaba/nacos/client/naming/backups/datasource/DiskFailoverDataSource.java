@@ -41,7 +41,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
+ * Failover Data Disk Impl.
  *
+ * @author zongkang.guo
  */
 public class DiskFailoverDataSource implements FailoverDataSource {
 

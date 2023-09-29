@@ -119,7 +119,7 @@ public class FailoverReactor implements Closeable {
             FailoverSwitch fSwitch = failoverDataSource.getSwitch();
             if (fSwitch != null && fSwitch.getEnabled() && !failoverSwitchEnable) {
                 failoverSwitchEnable = Boolean.TRUE;
-                Map<String, ServiceInfo> map = new ConcurrentHashMap<>();
+                Map<String, ServiceInfo> map = new ConcurrentHashMap<>(200);
                 Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
                 for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
                     map.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
@@ -134,7 +134,7 @@ public class FailoverReactor implements Closeable {
 
             if (fSwitch != null && failoverSwitchEnable && !fSwitch.getEnabled()) {
                 failoverSwitchEnable = Boolean.FALSE;
-                Map<String, ServiceInfo> map = new ConcurrentHashMap<>();
+                Map<String, ServiceInfo> map = new ConcurrentHashMap<>(200);
                 Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
                 for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
                     map.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());

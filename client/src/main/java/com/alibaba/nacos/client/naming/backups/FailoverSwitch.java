@@ -17,15 +17,21 @@ package com.alibaba.nacos.client.naming.backups;
 
 import java.util.Set;
 
+
+/**
+ * Failover switch.
+ *
+ * @author zongkang.guo
+ */
 public class FailoverSwitch {
 
     /**
-     * 容灾是否打开；
+     * Failover switch enable.
      */
     private boolean enabled;
 
     /**
-     * 参与容灾的服务名列表
+     * Failover service name.
      */
     private Set<String> serviceNames;
 

@@ -17,6 +17,11 @@ package com.alibaba.nacos.client.naming.backups;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 
+/**
+ * Naming Failover Data.
+ *
+ * @author zongkang.guo
+ */
 public class NamingFailoverData extends FailoverData {
 
     private NamingFailoverData(ServiceInfo serviceInfo) {
