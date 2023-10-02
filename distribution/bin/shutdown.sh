@@ -15,7 +15,7 @@
 cd `dirname $0`/../target
 target_dir=`pwd`
 
-pid=`ps ax | grep -i 'nacos.nacos' | grep ${target_dir} | grep java | grep -v grep | awk '{print $1}'`
+pid=`pgrep -f nacos.nacos`
 if [ -z "$pid" ] ; then
         echo "No nacosServer running."
         exit -1;
