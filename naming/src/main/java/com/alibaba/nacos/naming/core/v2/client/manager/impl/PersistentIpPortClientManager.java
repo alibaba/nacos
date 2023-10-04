@@ -56,14 +56,9 @@ public class PersistentIpPortClientManager implements ClientManager {
     
     @Override
     public boolean clientConnected(String clientId, ClientAttributes attributes) {
-        return clientConnected(clientFactory.newClient(clientId, attributes));
-    }
-    
-    @Override
-    public boolean clientConnected(final Client client) {
-        clients.computeIfAbsent(client.getClientId(), s -> {
-            Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
-            IpPortBasedClient ipPortBasedClient = (IpPortBasedClient) client;
+        clients.computeIfAbsent(clientId, s -> {
+            IpPortBasedClient ipPortBasedClient = clientFactory.newClient(clientId, attributes);
+            Loggers.SRV_LOG.info("Client connection {} connect", clientId);
             ipPortBasedClient.init();
             return ipPortBasedClient;
         });

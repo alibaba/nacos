@@ -69,15 +69,11 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     
     @Override
     public boolean clientConnected(String clientId, ClientAttributes attributes) {
-        String type = attributes.getClientAttribute(ClientConstants.CONNECTION_TYPE);
-        ClientFactory clientFactory = ClientFactoryHolder.getInstance().findClientFactory(type);
-        return clientConnected(clientFactory.newClient(clientId, attributes));
-    }
-    
-    @Override
-    public boolean clientConnected(final Client client) {
-        clients.computeIfAbsent(client.getClientId(), s -> {
-            Loggers.SRV_LOG.info("Client connection {} connect", client.getClientId());
+        clients.computeIfAbsent(clientId, s -> {
+            String type = attributes.getClientAttribute(ClientConstants.CONNECTION_TYPE);
+            ClientFactory clientFactory = ClientFactoryHolder.getInstance().findClientFactory(type);
+            Client client = clientFactory.newClient(clientId, attributes);
+            Loggers.SRV_LOG.info("Client connection {} connect", clientId);
             return (ConnectionBasedClient) client;
         });
         return true;
@@ -85,9 +81,14 @@ public class ConnectionBasedClientManager extends ClientConnectionEventListener 
     
     @Override
     public boolean syncClientConnected(String clientId, ClientAttributes attributes) {
-        String type = attributes.getClientAttribute(ClientConstants.CONNECTION_TYPE);
-        ClientFactory clientFactory = ClientFactoryHolder.getInstance().findClientFactory(type);
-        return clientConnected(clientFactory.newSyncedClient(clientId, attributes));
+        clients.computeIfAbsent(clientId, s -> {
+            String type = attributes.getClientAttribute(ClientConstants.CONNECTION_TYPE);
+            ClientFactory clientFactory = ClientFactoryHolder.getInstance().findClientFactory(type);
+            Client client = clientFactory.newSyncedClient(clientId, attributes);
+            Loggers.SRV_LOG.info("SyncClient connection {} connect", client.getClientId());
+            return (ConnectionBasedClient) client;
+        });
+        return true;
     }
     
     @Override

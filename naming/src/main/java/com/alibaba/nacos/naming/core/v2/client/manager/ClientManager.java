@@ -39,14 +39,6 @@ public interface ClientManager {
     boolean clientConnected(String clientId, ClientAttributes attributes);
     
     /**
-     * New client connected.
-     *
-     * @param client new client
-     * @return true if add successfully, otherwise false
-     */
-    boolean clientConnected(Client client);
-    
-    /**
      * New sync client connected.
      *
      * @param clientId   synced client id

@@ -19,12 +19,16 @@ package com.alibaba.nacos.naming.core.v2.client.manager.impl;
 import com.alibaba.nacos.naming.consistency.ephemeral.distro.v2.DistroClientVerifyInfo;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,16 +37,15 @@ import java.util.concurrent.ConcurrentMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class PersistentIpPortClientManagerTest {
     
     PersistentIpPortClientManager persistentIpPortClientManager;
     
-    private final String clientId = System.currentTimeMillis() + "_127.0.0.1_80";
+    private final String clientId = System.currentTimeMillis() + "_127.0.0.1_80#false";
     
-    private final String snapshotClientId = System.currentTimeMillis() + "_127.0.0.1_8080";
+    private final String snapshotClientId = System.currentTimeMillis() + "_127.0.0.1_8080#false";
     
     @Mock
     private ClientAttributes clientAttributes;
@@ -53,11 +56,15 @@ public class PersistentIpPortClientManagerTest {
     @Mock
     private IpPortBasedClient snapshotClient;
     
+    @Mock
+    ConfigurableApplicationContext context;
+    
     @Before
     public void setUp() throws Exception {
+        ApplicationUtils.injectContext(context);
+        EnvUtil.setEnvironment(new MockEnvironment());
         persistentIpPortClientManager = new PersistentIpPortClientManager();
-        when(client.getClientId()).thenReturn(clientId);
-        persistentIpPortClientManager.clientConnected(client);
+        persistentIpPortClientManager.clientConnected(clientId, clientAttributes);
     }
     
     @Test

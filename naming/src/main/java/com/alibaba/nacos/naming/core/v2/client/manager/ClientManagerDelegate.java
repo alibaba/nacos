@@ -59,11 +59,6 @@ public class ClientManagerDelegate implements ClientManager {
     }
     
     @Override
-    public boolean clientConnected(Client client) {
-        return getClientManagerById(client.getClientId()).clientConnected(client);
-    }
-    
-    @Override
     public boolean syncClientConnected(String clientId, ClientAttributes attributes) {
         return getClientManagerById(clientId).syncClientConnected(clientId, attributes);
     }

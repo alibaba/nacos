@@ -21,7 +21,6 @@ import com.alibaba.nacos.naming.constants.ClientConstants;
 import com.alibaba.nacos.naming.core.DistroMapper;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
-import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Before;
@@ -37,7 +36,6 @@ import java.util.Collection;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EphemeralIpPortClientManagerTest {
@@ -47,16 +45,10 @@ public class EphemeralIpPortClientManagerTest {
     private final String syncedClientId = "127.0.0.1:8080#true";
     
     @Mock
-    private IpPortBasedClient client;
-    
-    @Mock
     private DistroMapper distroMapper;
     
     @Mock
     private SwitchDomain switchDomain;
-    
-    @Mock
-    private ClientAttributes attributes;
     
     EphemeralIpPortClientManager ephemeralIpPortClientManager;
     
@@ -68,17 +60,22 @@ public class EphemeralIpPortClientManagerTest {
     @Before
     public void setUp() throws Exception {
         ephemeralIpPortClientManager = new EphemeralIpPortClientManager(distroMapper, switchDomain);
-        when(client.getClientId()).thenReturn(ephemeralIpPortId);
-        when(client.getRevision()).thenReturn(1320L);
-        ephemeralIpPortClientManager.clientConnected(client);
-        when(attributes.getClientAttribute(ClientConstants.REVISION, 0)).thenReturn(5120);
-        ephemeralIpPortClientManager.syncClientConnected(syncedClientId, attributes);
+        ClientAttributes ephemeralAttributes = new ClientAttributes();
+        ephemeralAttributes.addClientAttribute(ClientConstants.REVISION, 1320);
+        ephemeralIpPortClientManager.clientConnected(ephemeralIpPortId, ephemeralAttributes);
+        ClientAttributes syncedAttributes = new ClientAttributes();
+        syncedAttributes.addClientAttribute(ClientConstants.REVISION, 5120);
+        ephemeralIpPortClientManager.syncClientConnected(syncedClientId, syncedAttributes);
     }
     
     @Test
     public void testGetClient() {
-        Client fetchedClient = ephemeralIpPortClientManager.getClient(ephemeralIpPortId);
-        assertEquals(fetchedClient, client);
+        Client firstClient = ephemeralIpPortClientManager.getClient(ephemeralIpPortId);
+        ClientAttributes newClientAttributes = new ClientAttributes();
+        newClientAttributes.addClientAttribute(ClientConstants.REVISION, 6666);
+        ephemeralIpPortClientManager.clientConnected(ephemeralIpPortId, newClientAttributes);
+        Client secondClient = ephemeralIpPortClientManager.getClient(ephemeralIpPortId);
+        assertEquals(firstClient, secondClient);
     }
     
     @Test
