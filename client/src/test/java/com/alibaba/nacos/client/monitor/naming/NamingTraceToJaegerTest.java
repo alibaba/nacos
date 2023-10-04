@@ -47,7 +47,7 @@ public class NamingTraceToJaegerTest {
     
     @BeforeClass
     public static void init() {
-        TraceMonitor.setTracer(initOpenTelemetry());
+        TraceMonitor.setOpenTelemetry(initOpenTelemetry());
     }
     
     private NacosNamingService client;
@@ -56,7 +56,7 @@ public class NamingTraceToJaegerTest {
     public void mock() throws Exception {
         Properties prop = new Properties();
         // set your own nacos server address
-        prop.setProperty("serverAddr", "1.1.1.1:8848");
+        prop.setProperty("serverAddr", "localhost:8848");
         prop.put(PropertyKeyConst.NAMESPACE, "test");
         client = new NacosNamingService(prop);
     }

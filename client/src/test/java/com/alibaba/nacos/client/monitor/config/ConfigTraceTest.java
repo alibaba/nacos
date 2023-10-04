@@ -57,7 +57,8 @@ public class ConfigTraceTest {
         testExporter = new ConfigTraceTest.TestExporter();
         testOpenTelemetry = OpenTelemetrySdk.builder().setTracerProvider(
                 SdkTracerProvider.builder().addSpanProcessor(SimpleSpanProcessor.create(testExporter)).build()).build();
-        testTracer = TraceMonitor.setTracer(testOpenTelemetry);
+        TraceMonitor.setOpenTelemetry(testOpenTelemetry);
+        testTracer = TraceMonitor.getTracer();
     }
     
     @After

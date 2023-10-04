@@ -47,7 +47,7 @@ public class ConfigTraceToJaegerTest {
     
     @BeforeClass
     public static void init() {
-        TraceMonitor.setTracer(initOpenTelemetry());
+        TraceMonitor.setOpenTelemetry(initOpenTelemetry());
     }
     
     private NacosConfigService nacosConfigService;
@@ -56,7 +56,7 @@ public class ConfigTraceToJaegerTest {
     public void mock() throws Exception {
         final Properties properties = new Properties();
         // set your own nacos server address
-        properties.put("serverAddr", "1.1.1.1:8848");
+        properties.put("serverAddr", "localhost:8848");
         nacosConfigService = new NacosConfigService(properties);
     }
     

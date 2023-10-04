@@ -38,8 +38,6 @@ public class TraceMonitor {
     
     private static OpenTelemetry nacosOpenTelemetry = GlobalOpenTelemetry.get();
     
-    private static Tracer tracer = nacosOpenTelemetry.getTracer(NACOS_CLIENT_NAME, VersionUtils.version);
-    
     private static final TextMapSetter<Header> HTTP_CONTEXT_SETTER = (carrier, key, value) -> {
         assert carrier != null;
         carrier.addParam(key, value);
@@ -59,12 +57,17 @@ public class TraceMonitor {
     }
     
     /**
-     * Get the Nacos client OpenTelemetry tracer.
+     * Get the Nacos client OpenTelemetry tracer. We should call <b>getTracer()</b> in
+     * {@link io.opentelemetry.api.OpenTelemetry} instance rather than return a
+     * {@link io.opentelemetry.api.trace.Tracer} directly.
+     *
+     * <p>See <a href="https://opentelemetry.io/docs/instrumentation/java/manual/#acquiring-a-tracer">OpenTelemetry
+     * doc</a>
      *
      * @return the OpenTelemetry tracer
      */
     public static Tracer getTracer() {
-        return tracer;
+        return nacosOpenTelemetry.getTracer(NACOS_CLIENT_NAME, VersionUtils.version);
     }
     
     /**
@@ -77,52 +80,18 @@ public class TraceMonitor {
     }
     
     /**
-     * Set the Nacos client OpenTelemetry tracer with new OpenTelemetry instance.
-     *
-     * @param openTelemetry the OpenTelemetry instance
-     */
-    public static Tracer setTracer(OpenTelemetry openTelemetry) {
-        return setTracer(openTelemetry, NACOS_CLIENT_NAME, VersionUtils.version);
-    }
-    
-    /**
-     * Set the Nacos client OpenTelemetry tracer with new OpenTelemetry instance, tracer name and version.
-     *
-     * @param openTelemetry the OpenTelemetry instance
-     * @param name          the tracer name
-     * @param version       the tracer version
-     */
-    public static Tracer setTracer(OpenTelemetry openTelemetry, String name, String version) {
-        nacosOpenTelemetry = openTelemetry;
-        tracer = setTracer(name, version);
-        return tracer;
-    }
-    
-    /**
-     * Set the Nacos client OpenTelemetry tracer with new tracer name and version.
-     *
-     * @param name    the tracer name
-     * @param version the tracer version
-     */
-    public static Tracer setTracer(String name, String version) {
-        tracer = nacosOpenTelemetry.getTracer(name, version);
-        return tracer;
-    }
-    
-    /**
      * Set the Nacos client OpenTelemetry instance.
      *
      * @param openTelemetry the OpenTelemetry instance
      */
     public static void setOpenTelemetry(OpenTelemetry openTelemetry) {
-        setTracer(openTelemetry);
+        nacosOpenTelemetry = openTelemetry;
     }
     
     /**
-     * Reset the Nacos client OpenTelemetry instance to global. Then reset the tracer.
+     * Reset the Nacos client OpenTelemetry instance to global.
      */
-    public static void resetOpenTelemetryAndTrace() {
+    public static void resetOpenTelemetry() {
         nacosOpenTelemetry = GlobalOpenTelemetry.get();
-        tracer = nacosOpenTelemetry.getTracer(NACOS_CLIENT_NAME, VersionUtils.version);
     }
 }
