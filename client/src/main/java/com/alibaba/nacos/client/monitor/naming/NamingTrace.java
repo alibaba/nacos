@@ -19,6 +19,7 @@
 package com.alibaba.nacos.client.monitor.naming;
 
 import com.alibaba.nacos.client.monitor.TraceMonitor;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -40,8 +41,6 @@ public class NamingTrace {
     private static final String NACOS_CLIENT_NAMING_SERVICE_SPAN = NACOS_CLIENT_NAMING_BASE_SPAN + ".service";
     
     private static final String NACOS_CLIENT_NAMING_WORKER_SPAN = NACOS_CLIENT_NAMING_BASE_SPAN + ".worker";
-    
-    private static final String NACOS_CLIENT_VERSION_ATTRIBUTE = "nacos.client.version";
     
     /**
      * Get the Nacos client naming rpc span. Outgoing span should set the span kind to client.
@@ -76,7 +75,7 @@ public class NamingTrace {
     }
     
     private static Span spanProxy(SpanBuilder spanBuilder) {
-        return spanBuilder.setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion())
+        return spanBuilder.setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion())
                 .startSpan();
     }
 }

@@ -36,6 +36,8 @@ public class TraceMonitor {
     
     private static final String NACOS_CLIENT_NAME = "Nacos-Java-Client";
     
+    private static final String NACOS_CLIENT_REQUEST_FROM_SERVER_SPAN = "Nacos.client.request.from.server";
+    
     private static OpenTelemetry nacosOpenTelemetry = GlobalOpenTelemetry.get();
     
     private static final TextMapSetter<Header> HTTP_CONTEXT_SETTER = (carrier, key, value) -> {
@@ -86,6 +88,10 @@ public class TraceMonitor {
      */
     public static void setOpenTelemetry(OpenTelemetry openTelemetry) {
         nacosOpenTelemetry = openTelemetry;
+    }
+    
+    public static String getNacosClientRequestFromServerSpanName() {
+        return NACOS_CLIENT_REQUEST_FROM_SERVER_SPAN;
     }
     
     /**

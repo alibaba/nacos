@@ -48,7 +48,7 @@ public class ServerHttpAgentTest {
         ServerListManager server = new ServerListManager("aaa", "namespace1");
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, new Properties());
         
-        final String appname = ServerHttpAgent.getAppname();
+        final String appname = ServerHttpAgent.getAppName();
         //set by AppNameUtils, init in ParamUtils static block
         Assert.assertEquals("unknown", appname);
         

@@ -42,17 +42,18 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
 import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
-import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
+import com.alibaba.nacos.client.monitor.config.ConfigRpcTransportClientTraceProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
-import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -73,8 +74,8 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.slf4j.Logger;
@@ -132,11 +133,11 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
     
     private final ConfigFilterChainManager configFilterChainManager;
     
-    private String uuid = UUID.randomUUID().toString();
+    private final String uuid = UUID.randomUUID().toString();
     
     private long timeout;
     
-    private ConfigRpcTransportClient agent;
+    private final ConfigRpcTransportClientTraceProxy agent;
     
     private int taskPenaltyTime;
     
@@ -339,34 +340,63 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @return cache data
      */
     public CacheData addCacheDataIfAbsent(String dataId, String group) {
-        CacheData cache = getCache(dataId, group);
-        if (null != cache) {
-            return cache;
-        }
         
-        String key = GroupKey.getKey(dataId, group);
-        cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
+        CacheData cache;
         
-        synchronized (cacheMap) {
-            CacheData cacheFromMap = getCache(dataId, group);
-            // multiple listeners on the same dataid+group and race condition,so double check again
-            //other listener thread beat me to set to cacheMap
-            if (null != cacheFromMap) {
-                cache = cacheFromMap;
-                //reset so that server not hang this check
-                cache.setInitializing(true);
-            } else {
-                int taskId = calculateTaskId();
-                increaseTaskIdCount(taskId);
-                cache.setTaskId(taskId);
+        SpanBuilder spanBuilder = ConfigTrace.getClientConfigWorkerSpanBuilder("addCacheDataIfAbsent");
+        spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, this.getClass().getName());
+        spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, "addCacheDataIfAbsent");
+        spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+        
+        Span span = spanBuilder.startSpan();
+        try (Scope ignored = span.makeCurrent()) {
+            
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span.setAttribute(NacosSemanticAttributes.TENANT, getAgentTenant());
             }
             
-            Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
-            copy.put(key, cache);
-            cacheMap.set(copy);
+            cache = getCache(dataId, group);
+            if (null != cache) {
+                return cache;
+            }
+            
+            String key = GroupKey.getKey(dataId, group);
+            cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
+            
+            synchronized (cacheMap) {
+                CacheData cacheFromMap = getCache(dataId, group);
+                // multiple listeners on the same data_id + group and race condition, so double check again
+                // other listener thread beat me to set to cacheMap
+                if (null != cacheFromMap) {
+                    cache = cacheFromMap;
+                    //reset so that server not hang this check
+                    cache.setInitializing(true);
+                } else {
+                    int taskId = calculateTaskId();
+                    increaseTaskIdCount(taskId);
+                    cache.setTaskId(taskId);
+                }
+                
+                Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
+                copy.put(key, cache);
+                cacheMap.set(copy);
+            }
+            
+            LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
+            
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.CACHE_KEY, key);
+            }
+            
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            span.end();
         }
-        
-        LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
         
         ConfigMetrics.setListenerConfigCountGauge(cacheMap.get().size());
         
@@ -382,38 +412,72 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @return cache data
      */
     public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
-        CacheData cache = getCache(dataId, group, tenant);
-        if (null != cache) {
-            return cache;
-        }
-        String key = GroupKey.getKeyTenant(dataId, group, tenant);
-        synchronized (cacheMap) {
-            CacheData cacheFromMap = getCache(dataId, group, tenant);
-            // multiple listeners on the same dataid+group and race condition,so
-            // double check again
-            // other listener thread beat me to set to cacheMap
-            if (null != cacheFromMap) {
-                cache = cacheFromMap;
-                // reset so that server not hang this check
-                cache.setInitializing(true);
-            } else {
-                cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
-                int taskId = calculateTaskId();
-                increaseTaskIdCount(taskId);
-                cache.setTaskId(taskId);
-                // fix issue # 1317
-                if (enableRemoteSyncConfig) {
-                    ConfigResponse response = getServerConfig(dataId, group, tenant, 3000L, false);
-                    cache.setEncryptedDataKey(response.getEncryptedDataKey());
-                    cache.setContent(response.getContent());
-                }
+        
+        CacheData cache;
+        
+        SpanBuilder spanBuilder = ConfigTrace.getClientConfigWorkerSpanBuilder("addCacheDataIfAbsentWithTenant");
+        spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, this.getClass().getName());
+        spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, "addCacheDataIfAbsent");
+        spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
+        
+        Span span = spanBuilder.startSpan();
+        try (Scope ignored = span.makeCurrent()) {
+            
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span.setAttribute(NacosSemanticAttributes.TENANT, getAgentTenant());
             }
             
-            Map<String, CacheData> copy = new HashMap<>(this.cacheMap.get());
-            copy.put(key, cache);
-            cacheMap.set(copy);
+            cache = getCache(dataId, group, tenant);
+            if (null != cache) {
+                return cache;
+            }
+            String key = GroupKey.getKeyTenant(dataId, group, tenant);
+            synchronized (cacheMap) {
+                CacheData cacheFromMap = getCache(dataId, group, tenant);
+                // multiple listeners on the same data_id + group and race condition, so
+                // double check again
+                // other listener thread beat me to set to cacheMap
+                if (null != cacheFromMap) {
+                    cache = cacheFromMap;
+                    // reset so that server not hang this check
+                    cache.setInitializing(true);
+                } else {
+                    cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                    int taskId = calculateTaskId();
+                    increaseTaskIdCount(taskId);
+                    cache.setTaskId(taskId);
+                    // fix issue # 1317
+                    if (enableRemoteSyncConfig) {
+                        if (StringUtils.isBlank(group)) {
+                            group = Constants.DEFAULT_GROUP;
+                        }
+                        ConfigResponse response = this.agent.queryConfig(dataId, group, tenant, 3000L, false);
+                        cache.setEncryptedDataKey(response.getEncryptedDataKey());
+                        cache.setContent(response.getContent());
+                    }
+                }
+                
+                Map<String, CacheData> copy = new HashMap<>(this.cacheMap.get());
+                copy.put(key, cache);
+                cacheMap.set(copy);
+            }
+            
+            LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
+            
+            if (span.isRecording()) {
+                span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span.setAttribute(NacosSemanticAttributes.CACHE_KEY, key);
+            }
+            
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            span.end();
         }
-        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
         
         ConfigMetrics.setListenerConfigCountGauge(cacheMap.get().size());
         
@@ -430,17 +494,13 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
     
     private int calculateTaskId() {
         int perTaskSize = (int) ParamUtil.getPerTaskConfigSize();
-        int taskId = -1;
         for (int index = 0; index < taskIdCacheCountList.size(); index++) {
             if (taskIdCacheCountList.get(index).get() < perTaskSize) {
                 return index;
             }
         }
-        if (taskId < 0) {
-            taskIdCacheCountList.add(new AtomicInteger(0));
-            taskId = taskIdCacheCountList.size() - 1;
-        }
-        return taskId;
+        taskIdCacheCountList.add(new AtomicInteger(0));
+        return taskIdCacheCountList.size() - 1;
     }
     
     public CacheData getCache(String dataId, String group) {
@@ -473,7 +533,8 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         
         init(properties);
         
-        agent = new ConfigRpcTransportClient(properties, serverListManager);
+        agent = TraceDynamicProxy.getConfigRpcTransportClientTraceProxy(
+                new ConfigRpcTransportClient(properties, serverListManager));
         int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Math.max(count, MIN_THREAD_NUM),
                 r -> {
@@ -496,8 +557,11 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
     
     private void refreshContentAndCheck(CacheData cacheData, boolean notify) {
         try {
-            ConfigResponse response = getServerConfig(cacheData.dataId, cacheData.group, cacheData.tenant, 3000L,
-                    notify);
+            String group = cacheData.group;
+            if (StringUtils.isBlank(group)) {
+                group = Constants.DEFAULT_GROUP;
+            }
+            ConfigResponse response = this.agent.queryConfig(cacheData.dataId, group, cacheData.tenant, 3000L, notify);
             cacheData.setEncryptedDataKey(response.getEncryptedDataKey());
             cacheData.setContent(response.getContent());
             if (null != response.getConfigType()) {
@@ -532,10 +596,10 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
-        boolean isFixServer = agent.serverListManager.isFixed;
+        boolean isFixServer = agent.getServerListManager().isFixed;
         metric.put("isFixedServer", isFixServer);
-        metric.put("addressUrl", agent.serverListManager.addressServerUrl);
-        metric.put("serverUrls", agent.serverListManager.getUrlString());
+        metric.put("addressUrl", agent.getServerListManager().addressServerUrl);
+        metric.put("serverUrls", agent.getServerListManager().getUrlString());
         
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);
@@ -587,7 +651,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         return agent.isHealthServer();
     }
     
-    public class ConfigRpcTransportClient extends ConfigTransportClient {
+    public class ConfigRpcTransportClient extends ConfigTransportClient implements ConfigRpcTransportClientTraceProxy {
         
         Map<String, ExecutorService> multiTaskExecutor = new HashMap<>();
         
@@ -665,111 +729,55 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
             /*
              * Register Config Change /Config ReSync Handler
              */
-            rpcClientInner.registerServerRequestHandler((request) -> {
-                if (request instanceof ConfigChangeNotifyRequest) {
-                    final long start = System.currentTimeMillis();
-                    
-                    // trace
-                    Span span = ConfigTrace.getClientConfigWorkerSpan("handleConfigChangeNotifyRequestFromServer");
-                    try (Scope ignored = span.makeCurrent()) {
-                        
-                        if (span.isRecording()) {
-                            span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                                    "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.initRpcClientHandler()");
-                            span.setAttribute(NacosSemanticAttributes.RPC_CLIENT_NAME, rpcClientInner.getName());
-                            span.setAttribute(NacosSemanticAttributes.TENANT, getTenant());
-                            span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getName());
-                        }
-                        
-                        ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
-                        LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
-                                rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
-                                configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
-                        String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
-                                configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
-                        
-                        if (span.isRecording()) {
-                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_ID,
-                                    configChangeNotifyRequest.getRequestId());
-                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_DATA_ID,
-                                    configChangeNotifyRequest.getDataId());
-                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_GROUP,
-                                    configChangeNotifyRequest.getGroup());
-                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_TENANT,
-                                    configChangeNotifyRequest.getTenant());
-                        }
-                        
-                        CacheData cacheData = cacheMap.get().get(groupKey);
-                        if (cacheData != null) {
-                            synchronized (cacheData) {
-                                cacheData.getReceiveNotifyChanged().set(true);
-                                cacheData.setConsistentWithServer(false);
-                                notifyListenConfig();
+            rpcClientInner.registerServerRequestHandler(
+                    TraceDynamicProxy.getServerRequestHandlerTraceProxy((request) -> {
+                        if (request instanceof ConfigChangeNotifyRequest) {
+                            final long start = System.currentTimeMillis();
+                            
+                            ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
+                            LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
+                                    rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
+                                    configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                            String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
+                                    configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                            
+                            CacheData cacheData = cacheMap.get().get(groupKey);
+                            if (cacheData != null) {
+                                synchronized (cacheData) {
+                                    cacheData.getReceiveNotifyChanged().set(true);
+                                    cacheData.setConsistentWithServer(false);
+                                    notifyListenConfig();
+                                }
                             }
                             
+                            // metrics
+                            ConfigMetrics.incServerRequestHandleCounter();
+                            ConfigMetrics.recordHandleServerRequestCostDurationTimer(
+                                    ConfigChangeNotifyRequest.class.getSimpleName(),
+                                    System.currentTimeMillis() - start);
+                            
+                            return new ConfigChangeNotifyResponse();
                         }
-                        
-                    } catch (Throwable e) {
-                        span.recordException(e);
-                        span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                        throw e;
-                    } finally {
-                        span.end();
-                    }
-                    
-                    // metrics
-                    ConfigMetrics.incServerRequestHandleCounter();
-                    ConfigMetrics.recordHandleServerRequestCostDurationTimer(
-                            ConfigChangeNotifyRequest.class.getSimpleName(), System.currentTimeMillis() - start);
-                    
-                    return new ConfigChangeNotifyResponse();
-                }
-                return null;
-            });
+                        return null;
+                    }));
             
-            rpcClientInner.registerServerRequestHandler((request) -> {
-                if (request instanceof ClientConfigMetricRequest) {
-                    final long start = System.currentTimeMillis();
-                    
-                    // trace
-                    ClientConfigMetricResponse response;
-                    Span span = ConfigTrace.getClientConfigWorkerSpan("handleClientConfigMetricRequestFromServer");
-                    try (Scope ignored = span.makeCurrent()) {
-                        
-                        if (span.isRecording()) {
-                            span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                                    "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.initRpcClientHandler()");
-                            span.setAttribute(NacosSemanticAttributes.RPC_CLIENT_NAME, rpcClientInner.getName());
-                            span.setAttribute(NacosSemanticAttributes.TENANT, getTenant());
-                            span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getName());
+            rpcClientInner.registerServerRequestHandler(
+                    TraceDynamicProxy.getServerRequestHandlerTraceProxy((request) -> {
+                        if (request instanceof ClientConfigMetricRequest) {
+                            final long start = System.currentTimeMillis();
+                            
+                            ClientConfigMetricResponse response = new ClientConfigMetricResponse();
+                            response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
+                            
+                            // metrics
+                            ConfigMetrics.incServerRequestHandleCounter();
+                            ConfigMetrics.recordHandleServerRequestCostDurationTimer(
+                                    ClientConfigMetricRequest.class.getSimpleName(),
+                                    System.currentTimeMillis() - start);
+                            return response;
                         }
-                        
-                        response = new ClientConfigMetricResponse();
-                        response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
-                        
-                        if (span.isRecording()) {
-                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_ID,
-                                    request.getRequestId());
-                            span.setAttribute(NacosSemanticAttributes.CONTENT,
-                                    "metrics size: " + response.getMetrics().size());
-                        }
-                        
-                    } catch (Throwable e) {
-                        span.recordException(e);
-                        span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                        throw e;
-                    } finally {
-                        span.end();
-                    }
-                    
-                    // metrics
-                    ConfigMetrics.incServerRequestHandleCounter();
-                    ConfigMetrics.recordHandleServerRequestCostDurationTimer(
-                            ClientConfigMetricRequest.class.getSimpleName(), System.currentTimeMillis() - start);
-                    return response;
-                }
-                return null;
-            });
+                        return null;
+                    }));
             
             rpcClientInner.registerConnectionListener(new ConnectionEventListener() {
                 
@@ -912,7 +920,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
                 
             }
             
-            //execute check listen ,return true if has change keys.
+            //execute check listen, return true if it has change keys.
             boolean hasChangedKeys = checkListenCache(listenCachesMap);
             
             //execute check remove listen.
@@ -921,7 +929,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
             if (needAllSync) {
                 lastAllSyncTime = now;
             }
-            //If has changed keys,notify re sync md5.
+            //If it has changed keys, notify re-sync md5.
             if (hasChangedKeys) {
                 notifyListenConfig();
             }
@@ -1153,37 +1161,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
                 }
             }
             
-            ConfigQueryResponse response;
-            Span span = ConfigTrace.getClientConfigWorkerSpan("queryConfigRequest");
-            try (Scope ignored = span.makeCurrent()) {
-                
-                if (span.isRecording()) {
-                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.queryConfig()");
-                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
-                    span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                    span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                    span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                    span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-                    span.setAttribute(NacosSemanticAttributes.TIMEOUT_MS, readTimeouts);
-                }
-                
-                response = (ConfigQueryResponse) requestProxy(rpcClient, request, readTimeouts);
-                
-                if (response.isSuccess()) {
-                    span.setStatus(StatusCode.OK);
-                } else {
-                    span.setStatus(StatusCode.ERROR, response.getErrorCode() + ": " + response.getMessage());
-                }
-                
-            } catch (NacosException e) {
-                span.recordException(e);
-                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                throw e;
-            } finally {
-                span.end();
-            }
+            ConfigQueryResponse response = (ConfigQueryResponse) agent.requestProxy(rpcClient, request, readTimeouts);
             
             ConfigResponse configResponse = new ConfigResponse();
             if (response.isSuccess()) {
@@ -1226,10 +1204,18 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         }
         
         private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
-            return requestProxy(rpcClientInner, request, 3000L);
+            return agent.requestProxy(rpcClientInner, request, 3000L);
         }
         
-        private Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
+        /**
+         * request proxy. This method is set to public for trace dynamic proxy.
+         *
+         * @param rpcClientInner rpc client.
+         * @param request        request.
+         * @return response.
+         * @throws NacosException nacos exception.
+         */
+        public Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
                 throws NacosException {
             try {
                 request.putAllHeader(super.getSecurityHeaders(resourceBuild(request)));
@@ -1246,39 +1232,8 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
                         "More than client-side current limit threshold");
             }
             
-            Response rpcResponse;
-            // Trace
-            Span span = ConfigTrace.getClientConfigRpcSpan("GRPC");
             long start = System.currentTimeMillis();
-            try (Scope ignored = span.makeCurrent()) {
-                
-                TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
-                        .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
-                span.setAttribute(SemanticAttributes.RPC_SYSTEM,
-                        rpcClientInner.getConnectionType().getType().toLowerCase());
-                if (rpcClientInner.getCurrentServer() != null) {
-                    span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
-                            rpcClientInner.getCurrentServer().getAddress());
-                }
-                
-                rpcResponse = rpcClientInner.request(request, timeoutMills);
-                
-                if (rpcResponse.isSuccess()) {
-                    span.setStatus(StatusCode.OK);
-                } else {
-                    span.setStatus(StatusCode.ERROR, rpcResponse.getErrorCode() + ": " + rpcResponse.getMessage());
-                }
-                
-                if (span.isRecording()) {
-                    span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, rpcResponse.getResultCode());
-                }
-            } catch (NacosException e) {
-                span.recordException(e);
-                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                throw e;
-            } finally {
-                span.end();
-            }
+            Response rpcResponse = rpcClientInner.request(request, timeoutMills);
             long cost = System.currentTimeMillis() - start;
             // Metrics
             ConfigMetrics.recordRpcCostDurationTimer(rpcClientInner.getConnectionType().getType(),
@@ -1327,38 +1282,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
                 request.putAdditionalParam(TYPE_PARAM, type);
                 request.putAdditionalParam(ENCRYPTED_DATA_KEY_PARAM, encryptedDataKey == null ? "" : encryptedDataKey);
                 
-                ConfigPublishResponse response;
-                Span span = ConfigTrace.getClientConfigWorkerSpan("publishConfigRequest");
-                try (Scope ignored = span.makeCurrent()) {
-                    
-                    if (span.isRecording()) {
-                        span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                                "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.publishConfig()");
-                        span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                                "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
-                        span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                        span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                        span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                        span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-                        span.setAttribute(NacosSemanticAttributes.APPLICATION_NAME, appName);
-                        span.setAttribute(NacosSemanticAttributes.CONTENT, content);
-                    }
-                    
-                    response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
-                    
-                    if (response.isSuccess()) {
-                        span.setStatus(StatusCode.OK);
-                    } else {
-                        span.setStatus(StatusCode.ERROR, response.getErrorCode() + ": " + response.getMessage());
-                    }
-                    
-                } catch (NacosException e) {
-                    span.recordException(e);
-                    span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                    throw e;
-                } finally {
-                    span.end();
-                }
+                ConfigPublishResponse response = (ConfigPublishResponse) requestProxy(getOneRunningClient(), request);
                 
                 if (!response.isSuccess()) {
                     LOGGER.warn("[{}] [publish-single] fail, dataId={}, group={}, tenant={}, code={}, msg={}",
@@ -1383,37 +1307,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
             ConfigRemoveRequest request = new ConfigRemoveRequest(dataId, group, tenant, tag);
             
-            ConfigRemoveResponse response;
-            Span span = ConfigTrace.getClientConfigWorkerSpan("removeConfigRequest");
-            try (Scope ignored = span.makeCurrent()) {
-                
-                if (span.isRecording()) {
-                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.removeConfig()");
-                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.requestProxy()");
-                    span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                    span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                    span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                    span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-                    span.setAttribute(NacosSemanticAttributes.TAG, tag);
-                }
-                
-                response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
-                
-                if (response.isSuccess()) {
-                    span.setStatus(StatusCode.OK);
-                } else {
-                    span.setStatus(StatusCode.ERROR, response.getErrorCode() + ": " + response.getMessage());
-                }
-                
-            } catch (NacosException e) {
-                span.recordException(e);
-                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                throw e;
-            } finally {
-                span.end();
-            }
+            ConfigRemoveResponse response = (ConfigRemoveResponse) requestProxy(getOneRunningClient(), request);
             
             if (response.isSuccess()) {
                 ConfigMetrics.incRemoveSuccessCounter();
@@ -1426,7 +1320,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         /**
          * check server is health.
          *
-         * @return
+         * @return true if server is health.
          */
         public boolean isHealthServer() {
             try {
@@ -1436,14 +1330,19 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
                 return false;
             }
         }
+        
+        public ServerListManager getServerListManager() {
+            return serverListManager;
+        }
+        
     }
     
     public String getAgentName() {
         return this.agent.getName();
     }
     
-    public ConfigTransportClient getAgent() {
-        return this.agent;
+    public String getAgentTenant() {
+        return this.agent.getTenant();
     }
     
 }

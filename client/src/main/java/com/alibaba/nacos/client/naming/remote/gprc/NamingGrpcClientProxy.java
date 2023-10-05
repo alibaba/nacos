@@ -41,6 +41,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
@@ -116,7 +117,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.registerConnectionListener(redoService);
-        rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
+        rpcClient.registerServerRequestHandler(
+                TraceDynamicProxy.getServerRequestHandlerTraceProxy(new NamingPushRequestHandler(serviceInfoHolder)));
         rpcClient.start();
         NotifyCenter.registerSubscriber(this);
     }

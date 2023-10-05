@@ -19,6 +19,7 @@
 package com.alibaba.nacos.client.monitor.config;
 
 import com.alibaba.nacos.client.monitor.TraceMonitor;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -41,54 +42,37 @@ public class ConfigTrace {
     
     private static final String NACOS_CLIENT_CONFIG_WORKER_SPAN = NACOS_CLIENT_CONFIG_BASE_SPAN + ".worker";
     
-    private static final String NACOS_CLIENT_VERSION_ATTRIBUTE = "nacos.client.version";
-    
-    /**
-     * Get the Nacos client config rpc span. Outgoing span should set the span kind to client.
-     *
-     * @param rpcType the rpc system type
-     * @return the OpenTelemetry span
-     */
-    public static Span getClientConfigRpcSpan(String rpcType) {
-        String spanName = NACOS_CLIENT_CONFIG_RPC_SPAN + "/" + rpcType.toUpperCase();
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT));
+    public static SpanBuilder getClientConfigRpcSpanBuilder(String rpcType) {
+        String spanName = NACOS_CLIENT_CONFIG_RPC_SPAN + " / " + rpcType.toUpperCase();
+        return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
+                .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
     }
     
-    /**
-     * Get the Nacos client config http span. Outgoing span should set the span kind to client.
-     *
-     * @param method the http method
-     * @return the OpenTelemetry span
-     */
-    public static Span getClientConfigHttpSpan(String method) {
-        String spanName = NACOS_CLIENT_CONFIG_HTTP_SPAN + "/" + method.toUpperCase();
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT));
+    public static SpanBuilder getClientConfigHttpSpanBuilder(String method) {
+        String spanName = NACOS_CLIENT_CONFIG_HTTP_SPAN + " / " + method.toUpperCase();
+        return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
+                .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
     }
     
     public static Span getClientConfigServiceSpan(String spanNameExtension) {
-        String spanName = NACOS_CLIENT_CONFIG_SERVICE_SPAN + "/" + spanNameExtension;
+        String spanName = NACOS_CLIENT_CONFIG_SERVICE_SPAN + " / " + spanNameExtension;
         return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
     }
     
     public static SpanBuilder getClientConfigServiceSpanBuilder(String spanNameExtension) {
         String spanName = NACOS_CLIENT_CONFIG_SERVICE_SPAN + " / " + spanNameExtension;
         return TraceMonitor.getTracer().spanBuilder(spanName)
-                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion());
-    }
-    
-    public static Span getClientConfigWorkerSpan(String spanNameExtension) {
-        String spanName = NACOS_CLIENT_CONFIG_WORKER_SPAN + "/" + spanNameExtension;
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
+                .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
     }
     
     public static SpanBuilder getClientConfigWorkerSpanBuilder(String spanNameExtension) {
         String spanName = NACOS_CLIENT_CONFIG_WORKER_SPAN + " / " + spanNameExtension;
         return TraceMonitor.getTracer().spanBuilder(spanName)
-                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion());
+                .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
     }
     
     private static Span spanProxy(SpanBuilder spanBuilder) {
-        return spanBuilder.setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion())
+        return spanBuilder.setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion())
                 .startSpan();
     }
 }

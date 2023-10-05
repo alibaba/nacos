@@ -21,13 +21,8 @@ import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
-import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.context.Scope;
 
 /**
  * Naming push request handler.
@@ -47,26 +42,8 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
         if (request instanceof NotifySubscriberRequest) {
             long start = System.currentTimeMillis();
             
-            // Trace
-            Span span = NamingTrace.getClientNamingWorkerSpan("handleNamingRequestFromServer");
-            try (Scope ignored = span.makeCurrent()) {
-                
-                if (span.isRecording()) {
-                    span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                            "com.alibaba.nacos.client.naming.remote.gprc.NamingPushRequestHandler.requestReply()");
-                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_ID, request.getRequestId());
-                }
-                
-                NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
-                serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());
-                
-            } catch (Throwable e) {
-                span.recordException(e);
-                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                throw e;
-            } finally {
-                span.end();
-            }
+            NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
+            serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());
             
             // Metrics
             NamingMetrics.incServerRequestHandleCounter();

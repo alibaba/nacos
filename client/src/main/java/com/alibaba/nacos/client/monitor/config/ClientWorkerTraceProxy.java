@@ -21,8 +21,6 @@ package com.alibaba.nacos.client.monitor.config;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
-import com.alibaba.nacos.client.config.impl.CacheData;
-import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
 
 import java.util.List;
 
@@ -35,34 +33,111 @@ import java.util.List;
 public interface ClientWorkerTraceProxy {
     
     // Methods for Service level config span
+    
+    /**
+     * Add listener to config. For trace dynamic proxy.
+     *
+     * @param dataId           dataId
+     * @param group            group
+     * @param content          content
+     * @param encryptedDataKey encryptedDataKey
+     * @param listeners        listener
+     * @throws NacosException NacosException
+     */
     void addTenantListenersWithContent(String dataId, String group, String content, String encryptedDataKey,
             List<? extends Listener> listeners) throws NacosException;
     
+    /**
+     * Add listener to config. For trace dynamic proxy.
+     *
+     * @param dataId    dataId
+     * @param group     group
+     * @param listeners listener
+     * @throws NacosException NacosException
+     */
     void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException;
     
+    /**
+     * Remove listener from config. For trace dynamic proxy.
+     *
+     * @param dataId   dataId
+     * @param group    group
+     * @param listener listener
+     */
     void removeTenantListener(String dataId, String group, Listener listener);
     
+    /**
+     * Remove all listeners from config. For trace dynamic proxy.
+     *
+     * @param dataId      dataId
+     * @param group       group
+     * @param tenant      tenant
+     * @param readTimeout readTimeout
+     * @param notify      notify
+     * @return ConfigResponse
+     * @throws NacosException NacosException
+     */
     ConfigResponse getServerConfig(String dataId, String group, String tenant, long readTimeout, boolean notify)
             throws NacosException;
     
+    /**
+     * Remove all listeners from config. For trace dynamic proxy.
+     *
+     * @param dataId dataId
+     * @param group  group
+     * @param tenant tenant
+     * @param tag    tag
+     * @return boolean
+     * @throws NacosException NacosException
+     */
     boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException;
     
+    /**
+     * Remove all listeners from config. For trace dynamic proxy.
+     *
+     * @param dataId           dataId
+     * @param group            group
+     * @param tenant           tenant
+     * @param appName          appName
+     * @param tag              tag
+     * @param betaIps          betaIps
+     * @param content          content
+     * @param encryptedDataKey encryptedDataKey
+     * @param casMd5           casMd5
+     * @param type             type
+     * @return boolean
+     * @throws NacosException NacosException
+     */
     boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
             String content, String encryptedDataKey, String casMd5, String type) throws NacosException;
     
+    /**
+     * Check whether the server is health. For trace dynamic proxy.
+     *
+     * @return boolean
+     */
     boolean isHealthServer();
     
-    // Methods for Worker level config span
-    CacheData addCacheDataIfAbsent(String dataId, String group);
-    
-    CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException;
-    
-    CacheData getCache(String dataId, String group, String tenant);
-    
     // Other necessary methods
-    ConfigTransportClient getAgent();
     
+    /**
+     * Get agent tenant. For trace dynamic proxy.
+     *
+     * @return tenant
+     */
+    String getAgentTenant();
+    
+    /**
+     * Get agent name. For trace dynamic proxy.
+     *
+     * @return name
+     */
     String getAgentName();
     
+    /**
+     * Shutdown the worker. For trace dynamic proxy.
+     *
+     * @throws NacosException NacosException
+     */
     void shutdown() throws NacosException;
 }

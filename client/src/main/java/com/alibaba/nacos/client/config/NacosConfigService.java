@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
@@ -68,7 +69,7 @@ public class NacosConfigService implements ConfigService {
      * will be deleted in 2.0 later versions
      */
     @Deprecated
-    ServerHttpAgent agent = null;
+    HttpAgent agent;
     
     /**
      * long polling.
@@ -91,7 +92,7 @@ public class NacosConfigService implements ConfigService {
         this.worker = TraceDynamicProxy.getClientWorkerTraceProxy(
                 new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties));
         // will be deleted in 2.0 later versions
-        agent = new ServerHttpAgent(serverListManager);
+        agent = TraceDynamicProxy.getHttpAgentTraceProxy(new ServerHttpAgent(serverListManager));
         
     }
     
@@ -110,33 +111,8 @@ public class NacosConfigService implements ConfigService {
             throws NacosException {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
         
-        ConfigResponse configResponse;
-        Span span0 = ConfigTrace.getClientConfigServiceSpan("queryConfig");
-        try (Scope ignored = span0.makeCurrent()) {
-            
-            if (span0.isRecording()) {
-                span0.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.NacosConfigService.getConfigAndSignListener()");
-                span0.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient.queryConfig()");
-                span0.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                span0.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span0.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span0.setAttribute(NacosSemanticAttributes.TENANT, worker.getAgent().getTenant());
-                span0.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
-                span0.setAttribute(NacosSemanticAttributes.TIMEOUT_MS, timeoutMs);
-            }
-            
-            configResponse = worker.getAgent()
-                    .queryConfig(dataId, group, worker.getAgent().getTenant(), timeoutMs, false);
-            
-        } catch (NacosException e) {
-            span0.recordException(e);
-            span0.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span0.end();
-        }
+        ConfigResponse configResponse = worker.getServerConfig(dataId, group, worker.getAgentTenant(), timeoutMs,
+                false);
         
         String content = configResponse.getContent();
         String encryptedDataKey = configResponse.getEncryptedDataKey();
@@ -261,8 +237,8 @@ public class NacosConfigService implements ConfigService {
                     span1.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
                 }
                 
-                encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(agent.getName(), dataId,
-                        group, tenant);
+                encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(worker.getAgentName(),
+                        dataId, group, tenant);
                 
             } catch (Throwable e) {
                 span1.recordException(e);
@@ -296,38 +272,38 @@ public class NacosConfigService implements ConfigService {
                     worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
         
-        Span span3 = ConfigTrace.getClientConfigServiceSpan("getSnapshotConfig");
-        try (Scope ignored = span3.makeCurrent()) {
+        Span span2 = ConfigTrace.getClientConfigServiceSpan("getSnapshotConfig");
+        try (Scope ignored = span2.makeCurrent()) {
             
-            if (span3.isRecording()) {
-                span3.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+            if (span2.isRecording()) {
+                span2.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
                         "com.alibaba.nacos.client.config.NacosConfigService.getConfigInner()");
-                span3.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                span2.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
                         "com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor.getSnapshot()");
-                span3.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                span3.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span3.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span3.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                span3.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
+                span2.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
+                span2.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                span2.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span2.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                span2.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
             }
             
             content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
             
             if (content != null) {
-                span3.setStatus(StatusCode.OK, "get snapshot ok");
-                if (span3.isRecording()) {
-                    span3.setAttribute(NacosSemanticAttributes.CONTENT, content);
+                span2.setStatus(StatusCode.OK, "get snapshot ok");
+                if (span2.isRecording()) {
+                    span2.setAttribute(NacosSemanticAttributes.CONTENT, content);
                 }
             } else {
-                span3.setStatus(StatusCode.ERROR, "get snapshot failed");
+                span2.setStatus(StatusCode.ERROR, "get snapshot failed");
             }
             
         } catch (Throwable e) {
-            span3.recordException(e);
-            span3.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            span2.recordException(e);
+            span2.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            span3.end();
+            span2.end();
         }
         
         if (content != null) {
@@ -337,30 +313,30 @@ public class NacosConfigService implements ConfigService {
         cr.setContent(content);
         
         String encryptedDataKey;
-        Span span4 = ConfigTrace.getClientConfigServiceSpan("getEncryptDataKeySnapshot");
-        try (Scope ignored = span4.makeCurrent()) {
+        Span span3 = ConfigTrace.getClientConfigServiceSpan("getEncryptDataKeySnapshot");
+        try (Scope ignored = span3.makeCurrent()) {
             
-            if (span4.isRecording()) {
-                span4.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
+            if (span3.isRecording()) {
+                span3.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
                         "com.alibaba.nacos.client.config.NacosConfigService.getConfigInner()");
-                span4.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
+                span3.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
                         "com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot()");
-                span4.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                span4.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span4.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span4.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                span4.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
+                span3.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
+                span3.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                span3.setAttribute(NacosSemanticAttributes.GROUP, group);
+                span3.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                span3.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
             }
             
-            encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(agent.getName(), dataId, group,
-                    tenant);
+            encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(worker.getAgentName(), dataId,
+                    group, tenant);
             
         } catch (Throwable e) {
-            span4.recordException(e);
-            span4.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            span3.recordException(e);
+            span3.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
-            span4.end();
+            span3.end();
         }
         
         cr.setEncryptedDataKey(encryptedDataKey);

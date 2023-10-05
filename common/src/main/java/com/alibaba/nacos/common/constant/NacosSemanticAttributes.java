@@ -25,6 +25,8 @@ package com.alibaba.nacos.common.constant;
  **/
 public final class NacosSemanticAttributes {
     
+    public static final String CLIENT_VERSION = "nacos.client.version";
+    
     public static final String FUNCTION_CURRENT_NAME = "nacos.function.current.name";
     
     public static final String FUNCTION_CALLED_NAME = "nacos.function.called.name";
@@ -41,11 +43,15 @@ public final class NacosSemanticAttributes {
     
     public static final String AGENT_NAME = "nacos.agent.name";
     
+    public static final String ENCODE = "nacos.encode";
+    
     public static final String DATA_ID = "nacos.data.id";
     
     public static final String GROUP = "nacos.group";
     
     public static final String TENANT = "nacos.tenant";
+    
+    public static final String NOTIFY = "nacos.notify";
     
     public static final String INSTANCE = "nacos.instance";
     
@@ -56,6 +62,8 @@ public final class NacosSemanticAttributes {
     public static final String TAG = "nacos.tag";
     
     public static final String APPLICATION_NAME = "nacos.application.name";
+    
+    public static final String CACHE_KEY = "nacos.cache.key";
     
     public static final String PAGE_NO = "nacos.page.no";
     
@@ -77,7 +85,17 @@ public final class NacosSemanticAttributes {
         
         public static final String REQUEST_TENANT = "nacos.request.tenant";
         
+        public static final String REQUEST_NAMESPACE = "nacos.request.namespace";
+        
+        public static final String REQUEST_SERVICE_NAME = "nacos.request.service.name";
+        
+        public static final String REQUEST_SERVICE_CLUSTER_NAME = "nacos.request.service.cluster.name";
+        
+        public static final String REQUEST_MODULE = "nacos.request.module";
+        
         public static final String REQUEST_RESULT = "nacos.request.result";
+        
+        public static final String REQUEST_TYPE = "nacos.request.type";
         
     }
     

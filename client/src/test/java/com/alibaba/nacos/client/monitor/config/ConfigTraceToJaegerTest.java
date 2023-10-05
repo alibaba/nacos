@@ -18,9 +18,11 @@
 
 package com.alibaba.nacos.client.monitor.config;
 
+import com.alibaba.nacos.api.config.ConfigChangeEvent;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
+import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
@@ -76,6 +78,17 @@ public class ConfigTraceToJaegerTest {
         try (Scope ignored = testSpan.makeCurrent()) {
             config = nacosConfigService.getConfig(dataId, group, timeout);
             b = nacosConfigService.removeConfig(dataId, group);
+            AbstractConfigChangeListener a = new AbstractConfigChangeListener() {
+                @Override
+                public void receiveConfigChange(ConfigChangeEvent event) {
+                }
+                
+                @Override
+                public void receiveConfigInfo(String configInfo) {
+                    super.receiveConfigInfo(configInfo);
+                }
+            };
+            nacosConfigService.addListener(dataId, group, a);
         } finally {
             testSpan.end();
         }

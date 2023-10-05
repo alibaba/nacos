@@ -24,6 +24,7 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
@@ -68,69 +69,70 @@ public class ConfigTraceTest {
     
     @Test
     public void testGetClientConfigRpcSpan() {
-        Span span = ConfigTrace.getClientConfigRpcSpan("GRPC");
+        SpanBuilder spanBuilder = ConfigTrace.getClientConfigRpcSpanBuilder("GRPC");
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
-        runSpan(span);
+        runSpan(spanBuilder);
         
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
             Assert.assertEquals("test.value", attributes.get(testKey));
             Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
-            Assert.assertEquals("Nacos.client.config.rpc/GRPC", spanData.getName());
+            Assert.assertEquals("Nacos.client.config.rpc / GRPC", spanData.getName());
         }
     }
     
     @Test
     public void testGetClientConfigHttpSpan() {
-        Span span = ConfigTrace.getClientConfigHttpSpan("GET");
+        SpanBuilder spanBuilder = ConfigTrace.getClientConfigHttpSpanBuilder("GET");
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
-        runSpan(span);
+        runSpan(spanBuilder);
         
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
             Assert.assertEquals("test.value", attributes.get(testKey));
             Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
-            Assert.assertEquals("Nacos.client.config.http/GET", spanData.getName());
+            Assert.assertEquals("Nacos.client.config.http / GET", spanData.getName());
         }
     }
     
     @Test
     public void testGetClientConfigServiceSpan() {
-        Span span = ConfigTrace.getClientConfigServiceSpan("test");
+        SpanBuilder spanBuilder = ConfigTrace.getClientConfigServiceSpanBuilder("test");
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
-        runSpan(span);
+        runSpan(spanBuilder);
         
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
             Assert.assertEquals("test.value", attributes.get(testKey));
             Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
-            Assert.assertEquals("Nacos.client.config.service/test", spanData.getName());
+            Assert.assertEquals("Nacos.client.config.service / test", spanData.getName());
         }
     }
     
     @Test
     public void testGetClientConfigWorkerSpan() {
-        Span span = ConfigTrace.getClientConfigWorkerSpan("test");
+        SpanBuilder spanBuilder = ConfigTrace.getClientConfigWorkerSpanBuilder("test");
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
-        runSpan(span);
+        runSpan(spanBuilder);
         
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
             
             Assert.assertEquals("test.value", attributes.get(testKey));
             Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
-            Assert.assertEquals("Nacos.client.config.worker/test", spanData.getName());
+            Assert.assertEquals("Nacos.client.config.worker / test", spanData.getName());
         }
     }
     
-    private void runSpan(Span span) {
+    private void runSpan(SpanBuilder spanBuilder) {
+        Span span = spanBuilder.startSpan();
         try (Scope ignored = span.makeCurrent()) {
             span.setStatus(StatusCode.OK);
             span.setAttribute("test.key", "test.value");
