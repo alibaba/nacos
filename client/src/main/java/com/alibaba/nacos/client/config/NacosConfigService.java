@@ -34,6 +34,8 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
+import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -71,7 +73,7 @@ public class NacosConfigService implements ConfigService {
     /**
      * long polling.
      */
-    private final ClientWorker worker;
+    private final ClientWorkerTraceProxy worker;
     
     private String namespace;
     
@@ -86,7 +88,8 @@ public class NacosConfigService implements ConfigService {
         ServerListManager serverListManager = new ServerListManager(clientProperties);
         serverListManager.start();
         
-        this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties);
+        this.worker = TraceDynamicProxy.getClientWorkerTraceProxy(
+                new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties));
         // will be deleted in 2.0 later versions
         agent = new ServerHttpAgent(serverListManager);
         
@@ -138,30 +141,7 @@ public class NacosConfigService implements ConfigService {
         String content = configResponse.getContent();
         String encryptedDataKey = configResponse.getEncryptedDataKey();
         
-        Span span1 = ConfigTrace.getClientConfigServiceSpan("addTenantListeners");
-        try (Scope ignored = span1.makeCurrent()) {
-            
-            if (span1.isRecording()) {
-                span1.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.NacosConfigService.getConfigAndSignListener()");
-                span1.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListenersWithContent()");
-                span1.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                span1.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span1.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span1.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
-                span1.setAttribute(NacosSemanticAttributes.CONTENT, content);
-            }
-            
-            worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, Arrays.asList(listener));
-            
-        } catch (NacosException e) {
-            span1.recordException(e);
-            span1.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span1.end();
-        }
+        worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, Arrays.asList(listener));
         
         // get a decryptContent, fix https://github.com/alibaba/nacos/issues/7039
         ConfigResponse cr = new ConfigResponse();
@@ -175,29 +155,7 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void addListener(String dataId, String group, Listener listener) throws NacosException {
-        Span span = ConfigTrace.getClientConfigServiceSpan("addListener");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.NacosConfigService.addListener()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListeners()");
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
-            }
-            
-            worker.addTenantListeners(dataId, group, Arrays.asList(listener));
-            
-        } catch (NacosException e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
+        worker.addTenantListeners(dataId, group, Arrays.asList(listener));
     }
     
     @Override
@@ -229,29 +187,7 @@ public class NacosConfigService implements ConfigService {
     
     @Override
     public void removeListener(String dataId, String group, Listener listener) {
-        Span span = ConfigTrace.getClientConfigServiceSpan("removeListener");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.NacosConfigService.removeListener()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeTenantListener()");
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
-            }
-            
-            worker.removeTenantListener(dataId, group, listener);
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
+        worker.removeTenantListener(dataId, group, listener);
     }
     
     private String getConfigInner(String tenant, String dataId, String group, long timeoutMs) throws NacosException {
@@ -344,36 +280,7 @@ public class NacosConfigService implements ConfigService {
         
         try {
             
-            ConfigResponse response;
-            Span span2 = ConfigTrace.getClientConfigServiceSpan("getServerConfig");
-            try (Scope ignored = span2.makeCurrent()) {
-                
-                if (span2.isRecording()) {
-                    span2.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                            "com.alibaba.nacos.client.config.NacosConfigService.getConfigInner()");
-                    span2.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                            "com.alibaba.nacos.client.config.impl.ClientWorker.getServerConfig()");
-                    span2.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                    span2.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                    span2.setAttribute(NacosSemanticAttributes.GROUP, group);
-                    span2.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                    span2.setAttribute(NacosSemanticAttributes.TIMEOUT_MS, timeoutMs);
-                    span2.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
-                }
-                
-                response = worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
-                
-                if (span2.isRecording() && response != null) {
-                    span2.setAttribute(NacosSemanticAttributes.CONTENT, response.getContent());
-                }
-                
-            } catch (NacosException e) {
-                span2.recordException(e);
-                span2.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                throw e;
-            } finally {
-                span2.end();
-            }
+            ConfigResponse response = worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
             
             cr.setContent(response.getContent());
             cr.setEncryptedDataKey(response.getEncryptedDataKey());
@@ -470,40 +377,7 @@ public class NacosConfigService implements ConfigService {
         group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
         
-        boolean result;
-        Span span = ConfigTrace.getClientConfigServiceSpan("removeConfig");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.NacosConfigService.removeConfigInner()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        " com.alibaba.nacos.client.config.impl.ClientWorker.removeConfig()");
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                span.setAttribute(NacosSemanticAttributes.TAG, tag);
-                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
-            }
-            
-            result = worker.removeConfig(dataId, group, tenant, tag);
-            
-            if (result) {
-                span.setStatus(StatusCode.OK, "remove config success");
-            } else {
-                span.setStatus(StatusCode.ERROR, "remove config failed");
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-        
-        return result;
+        return worker.removeConfig(dataId, group, tenant, tag);
     }
     
     private boolean publishConfigInner(String tenant, String dataId, String group, String tag, String appName,
@@ -521,75 +395,13 @@ public class NacosConfigService implements ConfigService {
         content = cr.getContent();
         String encryptedDataKey = cr.getEncryptedDataKey();
         
-        boolean result;
-        Span span = ConfigTrace.getClientConfigServiceSpan("publishConfig");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.NacosConfigService.publishConfigInner()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        " com.alibaba.nacos.client.config.impl.ClientWorker.publishConfig()");
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                span.setAttribute(NacosSemanticAttributes.APPLICATION_NAME, appName);
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                span.setAttribute(NacosSemanticAttributes.TAG, tag);
-                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
-            }
-            
-            result = worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey,
-                    casMd5, type);
-            
-            if (result) {
-                span.setStatus(StatusCode.OK, "publish config success");
-            } else {
-                span.setStatus(StatusCode.ERROR, "publish config failed");
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-        
-        return result;
+        return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5,
+                type);
     }
     
     @Override
     public String getServerStatus() {
-        boolean result;
-        
-        Span span = ConfigTrace.getClientConfigServiceSpan("getServerStatus");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.NacosConfigService.getServerStatus()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        " com.alibaba.nacos.client.config.impl.ClientWorker.isHealthServer()");
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, worker.getAgentName());
-                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
-            }
-            
-            result = worker.isHealthServer();
-            
-            if (result) {
-                span.setStatus(StatusCode.OK, "Server is up");
-            } else {
-                span.setStatus(StatusCode.ERROR, "Server is down");
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
+        boolean result = worker.isHealthServer();
         
         if (result) {
             return UP;

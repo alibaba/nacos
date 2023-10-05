@@ -70,9 +70,21 @@ public class ConfigTrace {
         return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
     }
     
+    public static SpanBuilder getClientConfigServiceSpanBuilder(String spanNameExtension) {
+        String spanName = NACOS_CLIENT_CONFIG_SERVICE_SPAN + " / " + spanNameExtension;
+        return TraceMonitor.getTracer().spanBuilder(spanName)
+                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion());
+    }
+    
     public static Span getClientConfigWorkerSpan(String spanNameExtension) {
         String spanName = NACOS_CLIENT_CONFIG_WORKER_SPAN + "/" + spanNameExtension;
         return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
+    }
+    
+    public static SpanBuilder getClientConfigWorkerSpanBuilder(String spanNameExtension) {
+        String spanName = NACOS_CLIENT_CONFIG_WORKER_SPAN + " / " + spanNameExtension;
+        return TraceMonitor.getTracer().spanBuilder(spanName)
+                .setAttribute(NACOS_CLIENT_VERSION_ATTRIBUTE, VersionUtils.getFullClientVersion());
     }
     
     private static Span spanProxy(SpanBuilder spanBuilder) {

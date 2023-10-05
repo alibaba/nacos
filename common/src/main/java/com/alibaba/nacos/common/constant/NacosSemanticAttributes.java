@@ -35,6 +35,8 @@ public final class NacosSemanticAttributes {
     
     public static final String CONTENT = "nacos.content";
     
+    public static final String CONFIG_TYPE = "nacos.config.type";
+    
     public static final String NAMESPACE = "nacos.namespace";
     
     public static final String AGENT_NAME = "nacos.agent.name";

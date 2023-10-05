@@ -42,6 +42,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
@@ -108,7 +109,7 @@ import static com.alibaba.nacos.api.common.Constants.ENCODE;
  *
  * @author Nacos
  */
-public class ClientWorker implements Closeable {
+public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
@@ -160,30 +161,7 @@ public class ClientWorker implements Closeable {
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
         
-        CacheData cache;
-        Span span = ConfigTrace.getClientConfigWorkerSpan("addListenerCache");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addListeners()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, getAgent().getTenant());
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-            }
-            
-            cache = addCacheDataIfAbsent(dataId, group);
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
+        CacheData cache = addCacheDataIfAbsent(dataId, group);
         
         synchronized (cache) {
             
@@ -210,30 +188,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache;
-        Span span = ConfigTrace.getClientConfigWorkerSpan("addTenantListenerCache");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListeners()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-            }
-            
-            cache = addCacheDataIfAbsent(dataId, group, tenant);
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             for (Listener listener : listeners) {
@@ -261,31 +216,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache;
-        Span span = ConfigTrace.getClientConfigWorkerSpan("addTenantListenersWithContentCache");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addTenantListenersWithContent()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.addCacheDataIfAbsent()");
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-                span.setAttribute(NacosSemanticAttributes.CONTENT, content);
-            }
-            
-            cache = addCacheDataIfAbsent(dataId, group, tenant);
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             cache.setEncryptedDataKey(encryptedDataKey);
@@ -310,30 +241,7 @@ public class ClientWorker implements Closeable {
     public void removeListener(String dataId, String group, Listener listener) {
         group = blank2defaultGroup(group);
         
-        CacheData cache;
-        Span span = ConfigTrace.getClientConfigWorkerSpan("removeListenerCache");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeListener()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, getAgent().getTenant());
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-            }
-            
-            cache = getCache(dataId, group);
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
+        CacheData cache = getCache(dataId, group);
         
         if (null != cache) {
             synchronized (cache) {
@@ -359,30 +267,7 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache;
-        Span span = ConfigTrace.getClientConfigWorkerSpan("removeTenantListenerCache");
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.removeTenantListener()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.client.config.impl.ClientWorker.getCache()");
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-                span.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-            }
-            
-            cache = getCache(dataId, group, tenant);
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
+        CacheData cache = getCache(dataId, group, tenant);
         
         if (null != cache) {
             synchronized (cache) {
@@ -1547,7 +1432,7 @@ public class ClientWorker implements Closeable {
             try {
                 return getOneRunningClient().isRunning();
             } catch (NacosException e) {
-                LOGGER.warn("check server status failed. error={}", e);
+                LOGGER.warn("check server status failed. error=" + e.getMessage(), e);
                 return false;
             }
         }
