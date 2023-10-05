@@ -633,8 +633,10 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 if (span.isRecording()) {
                     span.setAttribute(SemanticAttributes.RPC_SYSTEM,
                             rpcClient.getConnectionType().getType().toLowerCase());
-                    span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
-                            rpcClient.getCurrentServer().getAddress());
+                    if (rpcClient.getCurrentServer() != null) {
+                        span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
+                                rpcClient.getCurrentServer().getAddress());
+                    }
                 }
                 
                 response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);

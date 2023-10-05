@@ -1371,8 +1371,10 @@ public class ClientWorker implements Closeable {
                         .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
                 span.setAttribute(SemanticAttributes.RPC_SYSTEM,
                         rpcClientInner.getConnectionType().getType().toLowerCase());
-                span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
-                        rpcClientInner.getCurrentServer().getAddress());
+                if (rpcClientInner.getCurrentServer() != null) {
+                    span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
+                            rpcClientInner.getCurrentServer().getAddress());
+                }
                 
                 rpcResponse = rpcClientInner.request(request, timeoutMills);
                 
