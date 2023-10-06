@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.persistence.model.Page;
@@ -104,7 +105,7 @@ public class HistoryService {
             String namespaceId) throws AccessException {
         if (!Objects.equals(configHistoryInfo.getDataId(), dataId) || !Objects
                 .equals(configHistoryInfo.getGroup(), group) || !Objects
-                .equals(configHistoryInfo.getTenant(), namespaceId)) {
+                .equals(configHistoryInfo.getTenant() == null ? StringUtils.EMPTY : configHistoryInfo.getTenant(), namespaceId)) {
             throw new AccessException("Please check dataId, group or namespaceId.");
         }
     }
