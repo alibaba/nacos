@@ -18,9 +18,11 @@
 
 package com.alibaba.nacos.config.server.service.kubernetes;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import io.kubernetes.client.openapi.ApiClient;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import okhttp3.OkHttpClient;
@@ -50,7 +52,7 @@ public class ConfigMapSyncTask {
     private ApiClient apiClient;
     
     @Autowired
-    @Qualifier("embeddedConfigInfoPersistServiceImpl")
+    @Qualifier(value = "embeddedConfigInfoPersistServiceImpl")
     private ConfigInfoPersistService configInfoPersistService;
     
     @Autowired
@@ -66,12 +68,11 @@ public class ConfigMapSyncTask {
     @PostConstruct
     public void init() throws IOException {
         if (configMapSyncConfig.isOutsideCluster()) {
-            apiClient = configMapSyncService.getOutsideApiClient();
-            coreV1Api = new CoreV1Api(apiClient);
+            apiClient = ApiClientFactory.createOutsideApiClient(configMapSyncConfig);
         } else {
-            coreV1Api = new CoreV1Api();
-            apiClient = coreV1Api.getApiClient();
+            apiClient = ApiClientFactory.createInsideApiClient();
         }
+        coreV1Api = new CoreV1Api(apiClient);
         OkHttpClient httpClient = apiClient.getHttpClient().newBuilder().readTimeout(Duration.ZERO).build();
         apiClient.setHttpClient(httpClient);
     }
@@ -81,15 +82,21 @@ public class ConfigMapSyncTask {
      */
     @Scheduled(fixedDelay = 3600000)
     public void checkAndSyncConfigMaps() {
+        List<V1ConfigMap> configMapList;
         try {
-            List<V1ConfigMap> configMapList = coreV1Api.listConfigMapForAllNamespaces(null, null, null, null, null,
-                    null, null, null, null, null).getItems();
-            for (V1ConfigMap configMap : configMapList) {
-                String dataId = Objects.requireNonNull(configMap.getMetadata()).getName();
-                String group = "K8S_GROUP";
-                String namespace = configMap.getMetadata().getNamespace();
-                String content = Objects.requireNonNull(configMap.getData()).toString();
-                ConfigInfoWrapper configInfo = configInfoPersistService.findConfigInfo(dataId, group, namespace);
+            configMapList = coreV1Api.listConfigMapForAllNamespaces(true, null, null, null, null,
+                    null, null, null, null, true).getItems();
+        } catch (ApiException e) {
+            Loggers.MAIN.error("[{}] catch exception: " + e, "configMap-sync");
+            throw new RuntimeException(e);
+        }
+        for (V1ConfigMap configMap : configMapList) {
+            String dataId = Objects.requireNonNull(configMap.getMetadata(), "getMetadata() returns a null").getName();
+            String group = ConfigMapSyncConfig.K8S_GROUP;
+            String namespace = configMap.getMetadata().getNamespace();
+            String content = Objects.requireNonNull(configMap.getData(), "getData() returns a null.").toString();
+            ConfigInfoWrapper configInfo = configInfoPersistService.findConfigInfo(dataId, group, namespace);
+            try {
                 if (configInfo == null) {
                     Loggers.MAIN.info("[{}] find a missed config.", "configMap-sync");
                     configMapSyncService.publishConfigMap(configMap, apiClient.getBasePath());
@@ -99,9 +106,9 @@ public class ConfigMapSyncTask {
                         configMapSyncService.publishConfigMap(configMap, apiClient.getBasePath());
                     }
                 }
+            } catch (NacosException e) {
+                Loggers.MAIN.error("[{}] catch exception: " + e, "configMap-sync");
             }
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
     
@@ -112,6 +119,10 @@ public class ConfigMapSyncTask {
      * @return whether contents are equal.
      */
     private Boolean compareContent(String configMapContent, String nacosContent) {
+        if (configMapContent == null && nacosContent != null || configMapContent != null && nacosContent == null) {
+            return false;
+        }
+        assert configMapContent != null;
         configMapContent = configMapContent.substring(1, configMapContent.length() - 1);
         Map<String, String> configMapPair = contentToMap(configMapContent);
         nacosContent = nacosContent.replace("\n", ", ");
