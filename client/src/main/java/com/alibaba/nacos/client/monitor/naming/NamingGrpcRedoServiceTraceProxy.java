@@ -126,4 +126,11 @@ public interface NamingGrpcRedoServiceTraceProxy extends Closeable {
      * @return cache service
      */
     InstanceRedoData getRegisteredInstancesByKey(String combinedServiceName);
+    
+    /**
+     * get service namespace.
+     *
+     * @return namespace
+     */
+    String getNamespace();
 }

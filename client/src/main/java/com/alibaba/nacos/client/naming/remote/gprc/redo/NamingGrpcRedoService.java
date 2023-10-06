@@ -62,11 +62,14 @@ public class NamingGrpcRedoService implements ConnectionEventListener, NamingGrp
     
     private final ScheduledExecutorService redoExecutor;
     
+    private final String namespace;
+    
     private volatile boolean connected = false;
     
     public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy) {
         NamingMetrics.gaugeMapSize(NamingMetrics.getCacheMeterName(), "instanceRedoCacheSize", registeredInstances);
         NamingMetrics.gaugeMapSize(NamingMetrics.getCacheMeterName(), "subscriberRedoCacheSize", subscribes);
+        this.namespace = clientProxy.getNamespace();
         this.redoExecutor = new ScheduledThreadPoolExecutor(REDO_THREAD, new NameThreadFactory(REDO_THREAD_NAME));
         this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this), DEFAULT_REDO_DELAY,
                 DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
@@ -325,6 +328,11 @@ public class NamingGrpcRedoService implements ConnectionEventListener, NamingGrp
     @Override
     public InstanceRedoData getRegisteredInstancesByKey(String combinedServiceName) {
         return registeredInstances.get(combinedServiceName);
+    }
+    
+    @Override
+    public String getNamespace() {
+        return this.namespace;
     }
     
     /**

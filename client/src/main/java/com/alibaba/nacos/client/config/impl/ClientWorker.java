@@ -46,14 +46,12 @@ import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
 import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
 import com.alibaba.nacos.client.monitor.config.ConfigRpcTransportClientTraceProxy;
-import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
-import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -73,11 +71,6 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.SpanBuilder;
-import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.context.Scope;
-import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.slf4j.Logger;
 
 import java.util.ArrayList;
@@ -162,7 +155,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
         
-        CacheData cache = addCacheDataIfAbsent(dataId, group);
+        CacheData cache = TraceDynamicProxy.getClientWorkerTraceProxy(this).addCacheDataIfAbsent(dataId, group);
         
         synchronized (cache) {
             
@@ -190,7 +183,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        CacheData cache = TraceDynamicProxy.getClientWorkerTraceProxy(this).addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             for (Listener listener : listeners) {
@@ -219,7 +212,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        CacheData cache = TraceDynamicProxy.getClientWorkerTraceProxy(this).addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             cache.setEncryptedDataKey(encryptedDataKey);
@@ -344,64 +337,37 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @param group  group of data
      * @return cache data
      */
+    @Override
     public CacheData addCacheDataIfAbsent(String dataId, String group) {
         
-        CacheData cache;
-        
-        SpanBuilder spanBuilder = ConfigTrace.getClientConfigWorkerSpanBuilder("addCacheDataIfAbsent");
-        spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, this.getClass().getName());
-        spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, "addCacheDataIfAbsent");
-        spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-        
-        Span span = spanBuilder.startSpan();
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, getAgentTenant());
-            }
-            
-            cache = getCache(dataId, group);
-            if (null != cache) {
-                return cache;
-            }
-            
-            String key = GroupKey.getKey(dataId, group);
-            cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
-            
-            synchronized (cacheMap) {
-                CacheData cacheFromMap = getCache(dataId, group);
-                // multiple listeners on the same data_id + group and race condition, so double check again
-                // other listener thread beat me to set to cacheMap
-                if (null != cacheFromMap) {
-                    cache = cacheFromMap;
-                    //reset so that server not hang this check
-                    cache.setInitializing(true);
-                } else {
-                    int taskId = calculateTaskId();
-                    increaseTaskIdCount(taskId);
-                    cache.setTaskId(taskId);
-                }
-                
-                Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
-                copy.put(key, cache);
-                cacheMap.set(copy);
-            }
-            
-            LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.CACHE_KEY, key);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
+        CacheData cache = getCache(dataId, group);
+        if (null != cache) {
+            return cache;
         }
+        
+        String key = GroupKey.getKey(dataId, group);
+        cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group);
+        
+        synchronized (cacheMap) {
+            CacheData cacheFromMap = getCache(dataId, group);
+            // multiple listeners on the same data_id + group and race condition, so double check again
+            // other listener thread beat me to set to cacheMap
+            if (null != cacheFromMap) {
+                cache = cacheFromMap;
+                //reset so that server not hang this check
+                cache.setInitializing(true);
+            } else {
+                int taskId = calculateTaskId();
+                increaseTaskIdCount(taskId);
+                cache.setTaskId(taskId);
+            }
+            
+            Map<String, CacheData> copy = new HashMap<>(cacheMap.get());
+            copy.put(key, cache);
+            cacheMap.set(copy);
+        }
+        
+        LOGGER.info("[{}] [subscribe] {}", this.agent.getName(), key);
         
         ConfigMetrics.setListenerConfigCountGauge(cacheMap.get().size());
         
@@ -416,73 +382,45 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @param tenant tenant of data
      * @return cache data
      */
+    @Override
     public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
         
-        CacheData cache;
-        
-        SpanBuilder spanBuilder = ConfigTrace.getClientConfigWorkerSpanBuilder("addCacheDataIfAbsentWithTenant");
-        spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, this.getClass().getName());
-        spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, "addCacheDataIfAbsent");
-        spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, getAgentName());
-        
-        Span span = spanBuilder.startSpan();
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, getAgentTenant());
-            }
-            
-            cache = getCache(dataId, group, tenant);
-            if (null != cache) {
-                return cache;
-            }
-            String key = GroupKey.getKeyTenant(dataId, group, tenant);
-            synchronized (cacheMap) {
-                CacheData cacheFromMap = getCache(dataId, group, tenant);
-                // multiple listeners on the same data_id + group and race condition, so
-                // double check again
-                // other listener thread beat me to set to cacheMap
-                if (null != cacheFromMap) {
-                    cache = cacheFromMap;
-                    // reset so that server not hang this check
-                    cache.setInitializing(true);
-                } else {
-                    cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
-                    int taskId = calculateTaskId();
-                    increaseTaskIdCount(taskId);
-                    cache.setTaskId(taskId);
-                    // fix issue # 1317
-                    if (enableRemoteSyncConfig) {
-                        if (StringUtils.isBlank(group)) {
-                            group = Constants.DEFAULT_GROUP;
-                        }
-                        ConfigResponse response = this.agent.queryConfig(dataId, group, tenant, 3000L, false);
-                        cache.setEncryptedDataKey(response.getEncryptedDataKey());
-                        cache.setContent(response.getContent());
-                    }
-                }
-                
-                Map<String, CacheData> copy = new HashMap<>(this.cacheMap.get());
-                copy.put(key, cache);
-                cacheMap.set(copy);
-            }
-            
-            LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.CACHE_KEY, key);
-            }
-            
-        } catch (Throwable e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
+        CacheData cache = getCache(dataId, group, tenant);
+        if (null != cache) {
+            return cache;
         }
+        String key = GroupKey.getKeyTenant(dataId, group, tenant);
+        synchronized (cacheMap) {
+            CacheData cacheFromMap = getCache(dataId, group, tenant);
+            // multiple listeners on the same data_id + group and race condition, so
+            // double check again
+            // other listener thread beat me to set to cacheMap
+            if (null != cacheFromMap) {
+                cache = cacheFromMap;
+                // reset so that server not hang this check
+                cache.setInitializing(true);
+            } else {
+                cache = new CacheData(configFilterChainManager, agent.getName(), dataId, group, tenant);
+                int taskId = calculateTaskId();
+                increaseTaskIdCount(taskId);
+                cache.setTaskId(taskId);
+                // fix issue # 1317
+                if (enableRemoteSyncConfig) {
+                    if (StringUtils.isBlank(group)) {
+                        group = Constants.DEFAULT_GROUP;
+                    }
+                    ConfigResponse response = this.agent.queryConfig(dataId, group, tenant, 3000L, false);
+                    cache.setEncryptedDataKey(response.getEncryptedDataKey());
+                    cache.setContent(response.getContent());
+                }
+            }
+            
+            Map<String, CacheData> copy = new HashMap<>(this.cacheMap.get());
+            copy.put(key, cache);
+            cacheMap.set(copy);
+        }
+        
+        LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
         
         ConfigMetrics.setListenerConfigCountGauge(cacheMap.get().size());
         

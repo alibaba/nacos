@@ -29,13 +29,17 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.http.HttpAgent;
+import com.alibaba.nacos.client.config.impl.CacheData;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigRpcTransportClientTraceProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
+import com.alibaba.nacos.client.monitor.naming.NamingGrpcRedoServiceTraceProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -255,6 +259,44 @@ public class TraceDynamicProxy {
                         }
                         default:
                             break;
+                    }
+                    
+                    String targetMethodName = "addCacheDataIfAbsent";
+                    if (targetMethodName.equals(methodName)) {
+                        Object result;
+                        
+                        spanBuilder = ConfigTrace.getClientConfigWorkerSpanBuilder(methodName);
+                        spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, clientWorker.getClass().getName());
+                        spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, methodName);
+                        spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, clientWorker.getAgentName());
+                        
+                        Span span = spanBuilder.startSpan();
+                        try (Scope ignored = span.makeCurrent()) {
+                            
+                            if (span.isRecording()) {
+                                span.setAttribute(NacosSemanticAttributes.DATA_ID, (String) args[0]);
+                                span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                String tenant = args.length > 2 ? (String) args[2] : clientWorker.getAgentTenant();
+                                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                            }
+                            
+                            result = method.invoke(clientWorker, args);
+                            
+                            if (span.isRecording() && result instanceof CacheData) {
+                                CacheData cacheData = (CacheData) result;
+                                span.setAttribute(NacosSemanticAttributes.CONTENT, cacheData.getContent());
+                            }
+                            
+                        } catch (InvocationTargetException e) {
+                            Throwable targetException = e.getTargetException();
+                            span.recordException(targetException);
+                            span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                            throw targetException;
+                        } finally {
+                            span.end();
+                        }
+                        
+                        return result;
                     }
                     
                     try {
@@ -954,6 +996,143 @@ public class TraceDynamicProxy {
                     
                     try {
                         return method.invoke(namingClientProxy, args);
+                    } catch (InvocationTargetException e) {
+                        throw e.getTargetException();
+                    }
+                });
+    }
+    
+    public static NamingGrpcRedoServiceTraceProxy getNamingGrpcRedoServiceTraceProxy(
+            NamingGrpcRedoService namingGrpcRedoService) {
+        return (NamingGrpcRedoServiceTraceProxy) Proxy.newProxyInstance(TraceDynamicProxy.class.getClassLoader(),
+                new Class[] {NamingGrpcRedoServiceTraceProxy.class}, (proxy, method, args) -> {
+                    String methodName = method.getName();
+                    
+                    SpanBuilder spanBuilder = NamingTrace.getClientNamingWorkerSpanBuilder(methodName);
+                    spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE,
+                            namingGrpcRedoService.getClass().getName());
+                    spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, methodName);
+                    spanBuilder.setAttribute(NacosSemanticAttributes.NAMESPACE, namingGrpcRedoService.getNamespace());
+                    
+                    switch (methodName) {
+                        case "cacheInstanceForRedo": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                    String instanceString;
+                                    if (args[2] instanceof Instance) {
+                                        instanceString = args[2].toString();
+                                    } else {
+                                        List<?> instanceList = (List<?>) args[2];
+                                        instanceString = StringUtils.join(instanceList, ", ");
+                                    }
+                                    span.setAttribute(NacosSemanticAttributes.INSTANCE, instanceString);
+                                }
+                                
+                                result = method.invoke(namingGrpcRedoService, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "instanceRegistered":
+                        case "instanceDeregister":
+                        case "instanceDeregistered": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                }
+                                
+                                result = method.invoke(namingGrpcRedoService, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "cacheSubscriberForRedo":
+                        case "subscriberRegistered":
+                        case "subscriberDeregister":
+                        case "isSubscriberRegistered":
+                        case "removeSubscriberForRedo": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                    span.setAttribute(NacosSemanticAttributes.CLUSTER, (String) args[2]);
+                                }
+                                
+                                result = method.invoke(namingGrpcRedoService, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "getRegisteredInstancesByKey": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                }
+                                
+                                result = method.invoke(namingGrpcRedoService, args);
+                                
+                                if (span.isRecording() && result instanceof InstanceRedoData) {
+                                    Instance instance = ((InstanceRedoData) result).get();
+                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_RESULT,
+                                            instance.toString());
+                                }
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        default:
+                            break;
+                    }
+                    
+                    try {
+                        return method.invoke(namingGrpcRedoService, args);
                     } catch (InvocationTargetException e) {
                         throw e.getTargetException();
                     }

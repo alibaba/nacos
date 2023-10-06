@@ -21,6 +21,7 @@ package com.alibaba.nacos.client.monitor.config;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.client.config.impl.CacheData;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 
 import java.util.List;
@@ -111,6 +112,26 @@ public interface ClientWorkerTraceProxy extends Closeable {
      */
     boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
             String content, String encryptedDataKey, String casMd5, String type) throws NacosException;
+    
+    
+    /**
+     * Add cache data if absent.
+     *
+     * @param dataId data id if data
+     * @param group  group of data
+     * @return cache data
+     */
+    CacheData addCacheDataIfAbsent(String dataId, String group);
+    
+    /**
+     * Add cache data if absent.
+     *
+     * @param dataId data id if data
+     * @param group  group of data
+     * @param tenant tenant of data
+     * @return cache data
+     */
+    CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException;
     
     /**
      * Check whether the server is health. For trace dynamic proxy.
