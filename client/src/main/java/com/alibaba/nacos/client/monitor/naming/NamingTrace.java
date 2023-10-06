@@ -21,12 +21,14 @@ package com.alibaba.nacos.client.monitor.naming;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
 
 /**
  * Naming traces management.
+ *
+ * <p>For the trace about Nacos server request to client. See
+ * {@link  com.alibaba.nacos.client.monitor.TraceDynamicProxy} method: <b>getServerRequestHandlerTraceProxy()</b>.
  *
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
@@ -42,26 +44,16 @@ public class NamingTrace {
     
     private static final String NACOS_CLIENT_NAMING_WORKER_SPAN = NACOS_CLIENT_NAMING_BASE_SPAN + ".worker";
     
-    /**
-     * Get the Nacos client naming rpc span. Outgoing span should set the span kind to client.
-     *
-     * @param rpcType the rpc system type
-     * @return the OpenTelemetry span
-     */
-    public static Span getClientNamingRpcSpan(String rpcType) {
+    public static SpanBuilder getClientNamingRpcSpanBuilder(String rpcType) {
         String spanName = NACOS_CLIENT_NAMING_RPC_SPAN + " / " + rpcType.toUpperCase();
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT));
+        return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
+                .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
     }
     
-    /**
-     * Get the Nacos client naming http span. Outgoing span should set the span kind to client.
-     *
-     * @param method the http method
-     * @return the OpenTelemetry span
-     */
-    public static Span getClientNamingHttpSpan(String method) {
+    public static SpanBuilder getClientNamingHttpSpanBuilder(String method) {
         String spanName = NACOS_CLIENT_NAMING_HTTP_SPAN + " / " + method.toUpperCase();
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT));
+        return TraceMonitor.getTracer().spanBuilder(spanName).setSpanKind(SpanKind.CLIENT)
+                .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
     }
     
     public static SpanBuilder getClientNamingServiceSpanBuilder(String spanNameExtension) {
@@ -70,19 +62,9 @@ public class NamingTrace {
                 .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
     }
     
-    public static Span getClientNamingWorkerSpan(String spanNameExtension) {
-        String spanName = NACOS_CLIENT_NAMING_WORKER_SPAN + " / " + spanNameExtension;
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
-    }
-    
     public static SpanBuilder getClientNamingWorkerSpanBuilder(String spanNameExtension) {
         String spanName = NACOS_CLIENT_NAMING_WORKER_SPAN + " / " + spanNameExtension;
         return TraceMonitor.getTracer().spanBuilder(spanName)
                 .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
-    }
-    
-    private static Span spanProxy(SpanBuilder spanBuilder) {
-        return spanBuilder.setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion())
-                .startSpan();
     }
 }

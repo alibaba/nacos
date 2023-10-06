@@ -128,16 +128,28 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void onEvent(ServerListChangedEvent event) {
-        
-        Span span = NamingTrace.getClientNamingWorkerSpan("onServerListChangedEvent");
+        onServerListChangeEventWithTrace(event);
+    }
+    
+    /**
+     * On server list change event with OpenTelemetry trace.
+     *
+     * <p>Those codes about spans are <b>no-operation</b> when Nacos users don't use OpenTelemetry.
+     *
+     * <p>Didn't use dynamic proxy here, because the {@link RpcClient} is an abstract class in nacos-common, rather
+     * than an interface.
+     *
+     * @param event server list change event
+     */
+    private void onServerListChangeEventWithTrace(ServerListChangedEvent event) {
+        Span span = NamingTrace.getClientNamingWorkerSpanBuilder("onServerListChangedEvent").startSpan();
         try (Scope ignored = span.makeCurrent()) {
             
             span.addEvent("onServerListChangedEvent");
             if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CURRENT_NAME,
-                        "com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy.onEvent()");
-                span.setAttribute(NacosSemanticAttributes.FUNCTION_CALLED_NAME,
-                        "com.alibaba.nacos.common.remote.client.RpcClient.onServerListChange()");
+                span.setAttribute(SemanticAttributes.CODE_NAMESPACE,
+                        "com.alibaba.nacos.common.remote.client.RpcClient");
+                span.setAttribute(SemanticAttributes.CODE_FUNCTION, "onServerListChange");
                 span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
                 span.setAttribute(NacosSemanticAttributes.EVENT, event.toString());
                 span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
@@ -152,7 +164,6 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         } finally {
             span.end();
         }
-        
     }
     
     @Override
@@ -404,50 +415,13 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
             throws NacosException {
+        Response response;
         try {
             request.putAllHeader(
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
             long start = System.currentTimeMillis();
             
-            Response response;
-            Span span = NamingTrace.getClientNamingRpcSpan(rpcClient.getConnectionType().getType());
-            try (Scope ignored = span.makeCurrent()) {
-                
-                TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
-                        .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
-                
-                if (span.isRecording()) {
-                    span.setAttribute(SemanticAttributes.RPC_SYSTEM,
-                            rpcClient.getConnectionType().getType().toLowerCase());
-                    if (rpcClient.getCurrentServer() != null) {
-                        span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
-                                rpcClient.getCurrentServer().getAddress());
-                    }
-                }
-                
-                response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
-                
-                if (responseClass.isAssignableFrom(response.getClass())) {
-                    if (ResponseCode.SUCCESS.getCode() == response.getResultCode()) {
-                        span.setStatus(StatusCode.OK);
-                    } else {
-                        span.setStatus(StatusCode.ERROR, response.getErrorCode() + ": " + response.getMessage());
-                    }
-                    
-                    if (span.isRecording()) {
-                        span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, response.getResultCode());
-                    }
-                } else {
-                    span.setStatus(StatusCode.ERROR, "Server return unexpected response");
-                }
-                
-            } catch (NacosException e) {
-                span.recordException(e);
-                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-                throw e;
-            } finally {
-                span.end();
-            }
+            response = rpcClientRequestWithTrace(request);
             
             NamingMetrics.recordRpcCostDurationTimer(rpcClient.getConnectionType().getType(),
                     rpcClient.getCurrentServer().getAddress(), String.valueOf(response.getResultCode()),
@@ -461,12 +435,61 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             }
             NAMING_LOGGER.error("Server return unexpected response '{}', expected response should be '{}'",
                     response.getClass().getName(), responseClass.getName());
+            throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
         } catch (NacosException e) {
             throw e;
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
-        throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
+    }
+    
+    /**
+     * Request to server with OpenTelemetry trace.
+     *
+     * <p>Those codes about spans are <b>no-operation</b> when Nacos users don't use OpenTelemetry.
+     *
+     * <p>Didn't use dynamic proxy here, because the {@link RpcClient} is an abstract class, rather
+     * than an interface.
+     *
+     * @param request request
+     * @return response
+     * @throws NacosException nacos exception
+     */
+    private Response rpcClientRequestWithTrace(AbstractNamingRequest request) throws NacosException {
+        Response response;
+        Span span = NamingTrace.getClientNamingRpcSpanBuilder(rpcClient.getConnectionType().getType()).startSpan();
+        try (Scope ignored = span.makeCurrent()) {
+            
+            TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                    .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
+            
+            if (span.isRecording()) {
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                if (rpcClient.getCurrentServer() != null) {
+                    span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
+                            rpcClient.getCurrentServer().getAddress());
+                }
+            }
+            
+            response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            
+            if (span.isRecording()) {
+                span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, response.getResultCode());
+                if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
+                    span.setStatus(StatusCode.ERROR, response.getMessage());
+                } else {
+                    span.setStatus(StatusCode.OK);
+                }
+            }
+            
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            span.end();
+        }
+        return response;
     }
     
     @Override

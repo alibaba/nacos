@@ -130,6 +130,7 @@ public interface ClientWorkerTraceProxy extends Closeable {
      * @param group  group of data
      * @param tenant tenant of data
      * @return cache data
+     * @throws NacosException NacosException
      */
     CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException;
     

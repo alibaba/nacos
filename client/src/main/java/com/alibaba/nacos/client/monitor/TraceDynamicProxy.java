@@ -68,6 +68,8 @@ import java.util.List;
  */
 public class TraceDynamicProxy {
     
+    // Config module
+    
     public static ClientWorkerTraceProxy getClientWorkerTraceProxy(ClientWorker clientWorker) {
         return (ClientWorkerTraceProxy) Proxy.newProxyInstance(TraceDynamicProxy.class.getClassLoader(),
                 new Class[] {ClientWorkerTraceProxy.class}, (proxy, method, args) -> {
@@ -653,6 +655,8 @@ public class TraceDynamicProxy {
                 });
     }
     
+    // Naming module
+    
     public static NamingClientProxy getNamingClientProxyTraceProxy(NamingClientProxy namingClientProxy) {
         return (NamingClientProxy) Proxy.newProxyInstance(TraceDynamicProxy.class.getClassLoader(),
                 new Class[] {NamingClientProxy.class}, (proxy, method, args) -> {
@@ -1024,10 +1028,11 @@ public class TraceDynamicProxy {
                                     span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
                                     span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
                                     String instanceString;
-                                    if (args[2] instanceof Instance) {
-                                        instanceString = args[2].toString();
+                                    Object instanceArg = args[2];
+                                    if (instanceArg instanceof Instance) {
+                                        instanceString = instanceArg.toString();
                                     } else {
-                                        List<?> instanceList = (List<?>) args[2];
+                                        List<?> instanceList = (List<?>) instanceArg;
                                         instanceString = StringUtils.join(instanceList, ", ");
                                     }
                                     span.setAttribute(NacosSemanticAttributes.INSTANCE, instanceString);

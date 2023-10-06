@@ -30,6 +30,9 @@ import java.util.Map;
 /**
  * Unified management of OpenTelemetry tracer.
  *
+ * <p>For the trace about Nacos server request to client. See
+ * {@link  com.alibaba.nacos.client.monitor.TraceDynamicProxy} method: <b>getServerRequestHandlerTraceProxy()</b>.
+ *
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
 public class TraceMonitor {
@@ -59,7 +62,9 @@ public class TraceMonitor {
     }
     
     /**
-     * Get the Nacos client OpenTelemetry tracer. We should call <b>getTracer()</b> in
+     * Get the Nacos client OpenTelemetry tracer.
+     *
+     * <p>We should call <b>getTracer()</b> in
      * {@link io.opentelemetry.api.OpenTelemetry} instance rather than return a
      * {@link io.opentelemetry.api.trace.Tracer} directly.
      *

@@ -21,12 +21,14 @@ package com.alibaba.nacos.client.monitor.config;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
 
 /**
  * Config traces management.
+ *
+ * <p>For the trace about Nacos server request to client. See
+ * {@link  com.alibaba.nacos.client.monitor.TraceDynamicProxy} method: <b>getServerRequestHandlerTraceProxy()</b>.
  *
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
@@ -54,11 +56,6 @@ public class ConfigTrace {
                 .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
     }
     
-    public static Span getClientConfigServiceSpan(String spanNameExtension) {
-        String spanName = NACOS_CLIENT_CONFIG_SERVICE_SPAN + " / " + spanNameExtension;
-        return spanProxy(TraceMonitor.getTracer().spanBuilder(spanName));
-    }
-    
     public static SpanBuilder getClientConfigServiceSpanBuilder(String spanNameExtension) {
         String spanName = NACOS_CLIENT_CONFIG_SERVICE_SPAN + " / " + spanNameExtension;
         return TraceMonitor.getTracer().spanBuilder(spanName)
@@ -69,10 +66,5 @@ public class ConfigTrace {
         String spanName = NACOS_CLIENT_CONFIG_WORKER_SPAN + " / " + spanNameExtension;
         return TraceMonitor.getTracer().spanBuilder(spanName)
                 .setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion());
-    }
-    
-    private static Span spanProxy(SpanBuilder spanBuilder) {
-        return spanBuilder.setAttribute(NacosSemanticAttributes.CLIENT_VERSION, VersionUtils.getFullClientVersion())
-                .startSpan();
     }
 }
