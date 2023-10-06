@@ -686,6 +686,11 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
+    public String getNamespace() {
+        return namespaceId;
+    }
+    
+    @Override
     public void shutdown() throws NacosException {
         NAMING_LOGGER.info("Shutdown naming grpc client proxy for  uuid->{}", uuid);
         redoService.shutdown();

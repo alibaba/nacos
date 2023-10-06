@@ -21,6 +21,7 @@ package com.alibaba.nacos.client.monitor.config;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 
 import java.util.List;
 
@@ -30,7 +31,7 @@ import java.util.List;
  *
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
-public interface ClientWorkerTraceProxy {
+public interface ClientWorkerTraceProxy extends Closeable {
     
     // Methods for Service level config span
     
@@ -134,10 +135,4 @@ public interface ClientWorkerTraceProxy {
      */
     String getAgentName();
     
-    /**
-     * Shutdown the worker. For trace dynamic proxy.
-     *
-     * @throws NacosException NacosException
-     */
-    void shutdown() throws NacosException;
 }

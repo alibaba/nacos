@@ -39,6 +39,8 @@ public final class NacosSemanticAttributes {
     
     public static final String CONFIG_TYPE = "nacos.config.type";
     
+    public static final String NAMING_CLIENT_TYPE = "nacos.naming.client.type";
+    
     public static final String NAMESPACE = "nacos.namespace";
     
     public static final String AGENT_NAME = "nacos.agent.name";
@@ -75,6 +77,10 @@ public final class NacosSemanticAttributes {
     
     public static final String TIMEOUT_MS = "nacos.timeout.ms";
     
+    public static final String UDP_PORT = "nacos.udp.port";
+    
+    public static final String HEALTHY_ONLY = "nacos.healthy.only";
+    
     public static final class RequestAttributes {
         
         public static final String REQUEST_ID = "nacos.request.id";
@@ -90,6 +96,8 @@ public final class NacosSemanticAttributes {
         public static final String REQUEST_SERVICE_NAME = "nacos.request.service.name";
         
         public static final String REQUEST_SERVICE_CLUSTER_NAME = "nacos.request.service.cluster.name";
+        
+        public static final String REQUEST_SERVICE_HOST = "nacos.request.service.host";
         
         public static final String REQUEST_MODULE = "nacos.request.module";
         

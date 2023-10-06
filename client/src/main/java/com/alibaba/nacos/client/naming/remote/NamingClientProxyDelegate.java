@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
@@ -58,16 +59,19 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     private final ServiceInfoHolder serviceInfoHolder;
     
-    private final NamingHttpClientProxy httpClientProxy;
+    private final NamingClientProxy httpClientProxy;
     
-    private final NamingGrpcClientProxy grpcClientProxy;
+    private final NamingClientProxy grpcClientProxy;
     
     private final SecurityProxy securityProxy;
+    
+    private final String namespace;
     
     private ScheduledExecutorService executorService;
     
     public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder,
             NacosClientProperties properties, InstancesChangeNotifier changeNotifier) throws NacosException {
+        this.namespace = namespace;
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
         this.serverListManager = new ServerListManager(properties, namespace);
@@ -77,9 +81,10 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
-        this.httpClientProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties);
-        this.grpcClientProxy = new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties,
-                serviceInfoHolder);
+        this.httpClientProxy = TraceDynamicProxy.getNamingClientProxyTraceProxy(
+                new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties));
+        this.grpcClientProxy = TraceDynamicProxy.getNamingClientProxyTraceProxy(
+                new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties, serviceInfoHolder));
     }
     
     private void initSecurityProxy(NacosClientProperties properties) {
@@ -194,6 +199,11 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public boolean serverHealthy() {
         return grpcClientProxy.serverHealthy() || httpClientProxy.serverHealthy();
+    }
+    
+    @Override
+    public String getNamespace() {
+        return this.namespace;
     }
     
     private NamingClientProxy getExecuteClientProxy(Instance instance) {

@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
+import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 
 import java.util.concurrent.ScheduledExecutorService;
@@ -33,7 +34,7 @@ import java.util.concurrent.ScheduledExecutorService;
  *
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
-public interface ConfigRpcTransportClientTraceProxy {
+public interface ConfigRpcTransportClientTraceProxy extends Closeable {
     
     // Methods for Worker level config span
     
@@ -152,10 +153,4 @@ public interface ConfigRpcTransportClientTraceProxy {
      */
     boolean isHealthServer();
     
-    /**
-     * Shutdown agent. For trace dynamic proxy.
-     *
-     * @throws NacosException NacosException
-     */
-    void shutdown() throws NacosException;
 }

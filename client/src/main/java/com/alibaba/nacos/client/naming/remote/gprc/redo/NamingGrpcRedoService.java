@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.naming.remote.gprc.redo;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.monitor.naming.NamingGrpcRedoServiceTraceProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
@@ -44,7 +45,7 @@ import java.util.concurrent.TimeUnit;
  *
  * @author xiweng.yy
  */
-public class NamingGrpcRedoService implements ConnectionEventListener {
+public class NamingGrpcRedoService implements ConnectionEventListener, NamingGrpcRedoServiceTraceProxy {
     
     private static final String REDO_THREAD_NAME = "com.alibaba.nacos.client.naming.grpc.redo";
     
@@ -101,6 +102,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param groupName   group name
      * @param instance    registered instance
      */
+    @Override
     public void cacheInstanceForRedo(String serviceName, String groupName, Instance instance) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
         InstanceRedoData redoData = InstanceRedoData.build(serviceName, groupName, instance);
@@ -116,6 +118,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param groupName   group name
      * @param instances   batch registered instance
      */
+    @Override
     public void cacheInstanceForRedo(String serviceName, String groupName, List<Instance> instances) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
         BatchInstanceRedoData redoData = BatchInstanceRedoData.build(serviceName, groupName, instances);
@@ -130,6 +133,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param serviceName service name
      * @param groupName   group name
      */
+    @Override
     public void instanceRegistered(String serviceName, String groupName) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
         synchronized (registeredInstances) {
@@ -146,6 +150,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param serviceName service name
      * @param groupName   group name
      */
+    @Override
     public void instanceDeregister(String serviceName, String groupName) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
         synchronized (registeredInstances) {
@@ -163,6 +168,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param serviceName service name
      * @param groupName   group name
      */
+    @Override
     public void instanceDeregistered(String serviceName, String groupName) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
         synchronized (registeredInstances) {
@@ -213,6 +219,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param groupName   group name
      * @param cluster     cluster
      */
+    @Override
     public void cacheSubscriberForRedo(String serviceName, String groupName, String cluster) {
         String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         SubscriberRedoData redoData = SubscriberRedoData.build(serviceName, groupName, cluster);
@@ -228,6 +235,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param groupName   group name
      * @param cluster     cluster
      */
+    @Override
     public void subscriberRegistered(String serviceName, String groupName, String cluster) {
         String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
@@ -245,6 +253,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param groupName   group name
      * @param cluster     cluster
      */
+    @Override
     public void subscriberDeregister(String serviceName, String groupName, String cluster) {
         String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
@@ -264,6 +273,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param cluster     cluster
      * @return {@code true} if subscribed, otherwise {@code false}
      */
+    @Override
     public boolean isSubscriberRegistered(String serviceName, String groupName, String cluster) {
         String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
@@ -279,6 +289,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      * @param groupName   group name
      * @param cluster     cluster
      */
+    @Override
     public void removeSubscriberForRedo(String serviceName, String groupName, String cluster) {
         String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), cluster);
         synchronized (subscribes) {
@@ -311,6 +322,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      *
      * @return cache service
      */
+    @Override
     public InstanceRedoData getRegisteredInstancesByKey(String combinedServiceName) {
         return registeredInstances.get(combinedServiceName);
     }
@@ -318,6 +330,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     /**
      * Shutdown redo service.
      */
+    @Override
     public void shutdown() {
         LogUtils.NAMING_LOGGER.info("Shutdown grpc redo service executor " + redoExecutor);
         registeredInstances.clear();

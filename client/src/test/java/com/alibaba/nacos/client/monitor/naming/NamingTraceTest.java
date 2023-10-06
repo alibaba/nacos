@@ -24,6 +24,7 @@ import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.AttributeKey;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import io.opentelemetry.context.Scope;
@@ -100,10 +101,10 @@ public class NamingTraceTest {
     
     @Test
     public void testGetClientNamingServiceSpan() {
-        Span span = NamingTrace.getClientNamingServiceSpan("test");
+        SpanBuilder spanBuilder = NamingTrace.getClientNamingServiceSpanBuilder("test");
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
-        runSpan(span);
+        runSpan(spanBuilder);
         
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
@@ -116,10 +117,10 @@ public class NamingTraceTest {
     
     @Test
     public void testGetClientNamingWorkerSpan() {
-        Span span = NamingTrace.getClientNamingWorkerSpan("test");
+        SpanBuilder spanBuilder = NamingTrace.getClientNamingWorkerSpanBuilder("test");
         AttributeKey<String> testKey = AttributeKey.stringKey("test.key");
         AttributeKey<String> versionKey = AttributeKey.stringKey("nacos.client.version");
-        runSpan(span);
+        runSpan(spanBuilder);
         
         for (SpanData spanData : testExporter.exportedSpans) {
             Attributes attributes = spanData.getAttributes();
@@ -127,6 +128,16 @@ public class NamingTraceTest {
             Assert.assertEquals("test.value", attributes.get(testKey));
             Assert.assertEquals(VersionUtils.getFullClientVersion(), attributes.get(versionKey));
             Assert.assertEquals("Nacos.client.naming.worker/test", spanData.getName());
+        }
+    }
+    
+    private void runSpan(SpanBuilder spanBuilder) {
+        Span span = spanBuilder.startSpan();
+        try (Scope ignored = span.makeCurrent()) {
+            span.setStatus(StatusCode.OK);
+            span.setAttribute("test.key", "test.value");
+        } finally {
+            span.end();
         }
     }
     

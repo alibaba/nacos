@@ -184,6 +184,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @param listeners listeners
      * @throws NacosException nacos exception
      */
+    @Override
     public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners)
             throws NacosException {
         group = blank2defaultGroup(group);
@@ -212,6 +213,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @param listeners        listeners
      * @throws NacosException nacos exception
      */
+    @Override
     public void addTenantListenersWithContent(String dataId, String group, String content, String encryptedDataKey,
             List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
@@ -264,6 +266,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @param group    group of data
      * @param listener listener
      */
+    @Override
     public void removeTenantListener(String dataId, String group, Listener listener) {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
@@ -307,6 +310,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @return success or not.
      * @throws NacosException exception to throw.
      */
+    @Override
     public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
         return agent.removeConfig(dataId, group, tenant, tag);
     }
@@ -326,6 +330,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @return success or not.
      * @throws NacosException exception throw.
      */
+    @Override
     public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
             String content, String encryptedDataKey, String casMd5, String type) throws NacosException {
         return agent.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5,
@@ -514,6 +519,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
+    @Override
     public ConfigResponse getServerConfig(String dataId, String group, String tenant, long readTimeout, boolean notify)
             throws NacosException {
         if (StringUtils.isBlank(group)) {
@@ -647,6 +653,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      * @return true: that means has at least one connected rpc client. false: that means does not have any connected rpc
      * client.
      */
+    @Override
     public boolean isHealthServer() {
         return agent.isHealthServer();
     }
@@ -672,9 +679,18 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
             super(properties, serverListManager);
         }
         
+        @Override
+        public void setExecutor(ScheduledExecutorService executor) {
+            super.setExecutor(executor);
+        }
+        
+        @Override
+        public void start() throws NacosException {
+            super.start();
+        }
+        
         private ConnectionType getConnectionType() {
             return ConnectionType.GRPC;
-            
         }
         
         @Override
@@ -1215,6 +1231,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
          * @return response.
          * @throws NacosException nacos exception.
          */
+        @Override
         public Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
                 throws NacosException {
             try {
@@ -1322,6 +1339,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
          *
          * @return true if server is health.
          */
+        @Override
         public boolean isHealthServer() {
             try {
                 return getOneRunningClient().isRunning();
@@ -1331,16 +1349,24 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
             }
         }
         
+        @Override
+        public String getTenant() {
+            return super.getTenant();
+        }
+        
+        @Override
         public ServerListManager getServerListManager() {
             return serverListManager;
         }
         
     }
     
+    @Override
     public String getAgentName() {
         return this.agent.getName();
     }
     
+    @Override
     public String getAgentTenant() {
         return this.agent.getTenant();
     }

@@ -20,7 +20,11 @@ package com.alibaba.nacos.client.monitor;
 
 import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
+import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
+import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
@@ -29,11 +33,16 @@ import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigRpcTransportClientTraceProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
+import com.alibaba.nacos.client.monitor.naming.NamingTrace;
+import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
+import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
+import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.HttpMethod;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -46,6 +55,7 @@ import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.net.HttpURLConnection;
+import java.util.List;
 
 /**
  * Utils for dynamic proxy to the OpenTelemetry tracing.
@@ -598,6 +608,355 @@ public class TraceDynamicProxy {
                     }
                     return result;
                     
+                });
+    }
+    
+    public static NamingClientProxy getNamingClientProxyTraceProxy(NamingClientProxy namingClientProxy) {
+        return (NamingClientProxy) Proxy.newProxyInstance(TraceDynamicProxy.class.getClassLoader(),
+                new Class[] {NamingClientProxy.class}, (proxy, method, args) -> {
+                    String methodName = method.getName();
+                    String namingClientType;
+                    SpanBuilder spanBuilder;
+                    if (namingClientProxy instanceof NamingGrpcClientProxy) {
+                        namingClientType = "grpc";
+                        spanBuilder = NamingTrace.getClientNamingWorkerSpanBuilder(methodName);
+                    } else if (namingClientProxy instanceof NamingHttpClientProxy) {
+                        namingClientType = "http";
+                        spanBuilder = NamingTrace.getClientNamingWorkerSpanBuilder(methodName);
+                    } else {
+                        namingClientType = "Delegate";
+                        spanBuilder = NamingTrace.getClientNamingServiceSpanBuilder(methodName);
+                    }
+                    
+                    spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, namingClientProxy.getClass().getName());
+                    spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, methodName);
+                    spanBuilder.setAttribute(NacosSemanticAttributes.NAMESPACE, namingClientProxy.getNamespace());
+                    spanBuilder.setAttribute(NacosSemanticAttributes.NAMING_CLIENT_TYPE, namingClientType);
+                    
+                    switch (methodName) {
+                        case "registerService":
+                        case "deregisterInstance": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                    Instance instance = (Instance) args[2];
+                                    span.setAttribute(NacosSemanticAttributes.INSTANCE, instance.toString());
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "batchRegisterService":
+                        case "batchDeregisterService": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                    List<?> instanceList = (List<?>) args[2];
+                                    span.setAttribute(NacosSemanticAttributes.INSTANCE,
+                                            StringUtils.join(instanceList, ", "));
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "updateInstance": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.PUT);
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                    Instance instance = (Instance) args[2];
+                                    span.setAttribute(NacosSemanticAttributes.INSTANCE, instance.toString());
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "queryInstancesOfService": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                    span.setAttribute(NacosSemanticAttributes.CLUSTER, (String) args[2]);
+                                    span.setAttribute(NacosSemanticAttributes.UDP_PORT, (int) args[3]);
+                                    span.setAttribute(NacosSemanticAttributes.HEALTHY_ONLY, (boolean) args[4]);
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                                if (span.isRecording() && result != null) {
+                                    if (result instanceof QueryServiceResponse) {
+                                        QueryServiceResponse response = ((QueryServiceResponse) result);
+                                        if (response.getServiceInfo() != null) {
+                                            span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_RESULT,
+                                                    StringUtils.join(response.getServiceInfo().getHosts(), ", "));
+                                        }
+                                    } else if (result instanceof String) {
+                                        span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_RESULT,
+                                                (String) result);
+                                    }
+                                }
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "queryService": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "createService": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    Service service = (Service) args[0];
+                                    span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.POST);
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, service.getName());
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, service.getGroupName());
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "deleteService": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.DELETE);
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "updateService": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    Service service = (Service) args[0];
+                                    span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.PUT);
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, service.getName());
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, service.getGroupName());
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "getServiceList": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    switch (namingClientType) {
+                                        case "grpc":
+                                            span.setAttribute(SemanticAttributes.RPC_SYSTEM, "grpc");
+                                            break;
+                                        case "http":
+                                            span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                    span.setAttribute(NacosSemanticAttributes.PAGE_NO, (int) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.PAGE_SIZE, (int) args[1]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[2]);
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                                if (span.isRecording() && result != null) {
+                                    if (result instanceof ServiceListResponse) {
+                                        ServiceListResponse response = ((ServiceListResponse) result);
+                                        span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_RESULT,
+                                                StringUtils.join(response.getServiceNames(), ", "));
+                                    } else if (result instanceof String) {
+                                        span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_RESULT,
+                                                (String) result);
+                                    }
+                                }
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "subscribe":
+                        case "unsubscribe":
+                        case "isSubscribed": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                if (span.isRecording()) {
+                                    span.setAttribute(NacosSemanticAttributes.SERVICE_NAME, (String) args[0]);
+                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
+                                    span.setAttribute(NacosSemanticAttributes.CLUSTER, (String) args[2]);
+                                }
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        case "serverHealthy": {
+                            Object result;
+                            Span span = spanBuilder.startSpan();
+                            try (Scope ignored = span.makeCurrent()) {
+                                
+                                result = method.invoke(namingClientProxy, args);
+                                
+                                if (span.isRecording() && result != null) {
+                                    boolean isHealthy = (boolean) result;
+                                    if (isHealthy) {
+                                        span.setStatus(StatusCode.OK, "Server is up");
+                                    } else {
+                                        span.setStatus(StatusCode.ERROR, "Server is down");
+                                    }
+                                }
+                                
+                            } catch (InvocationTargetException e) {
+                                Throwable targetException = e.getTargetException();
+                                span.recordException(targetException);
+                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
+                                throw targetException;
+                            } finally {
+                                span.end();
+                            }
+                            
+                            return result;
+                        }
+                        default:
+                            break;
+                    }
+                    
+                    try {
+                        return method.invoke(namingClientProxy, args);
+                    } catch (InvocationTargetException e) {
+                        throw e.getTargetException();
+                    }
                 });
     }
     
