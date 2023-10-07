@@ -211,22 +211,4 @@ public class DiskFailoverDataSource implements FailoverDataSource {
         return serviceMap;
     }
 
-    @Override
-    public void saveFailoverData(Map<String, FailoverData> failoverDataMap) {
-        for (Map.Entry<String, FailoverData> entry : failoverDataMap.entrySet()) {
-            ServiceInfo serviceInfo = (ServiceInfo) entry.getValue().getData();
-            if (!serviceNames.contains(serviceInfo.getKey()) || StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils
-                    .equals(serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY) || StringUtils
-                    .equals(serviceInfo.getName(), UtilAndComs.ENV_CONFIGS) || StringUtils
-                    .equals(serviceInfo.getName(), UtilAndComs.VIP_CLIENT_FILE) || StringUtils
-                    .equals(serviceInfo.getName(), UtilAndComs.ALL_HOSTS)) {
-                continue;
-            }
-
-            DiskCache.write(serviceInfo, failoverDir);
-        }
-
-        return;
-    }
-
 }

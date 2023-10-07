@@ -40,11 +40,4 @@ public interface FailoverDataSource {
      */
     Map<String, FailoverData> getFailoverData();
 
-    /**
-     * Save disaster recovery data.
-     *
-     * @param failoverDataMap Failover data map
-     */
-    void saveFailoverData(Map<String, FailoverData> failoverDataMap);
-
 }
