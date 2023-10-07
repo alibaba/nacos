@@ -28,16 +28,13 @@ import static com.alibaba.nacos.api.common.Constants.Naming.NAMING_MODULE;
 public abstract class AbstractFuzzyWatchNotifyRequest extends ServerRequest {
     private String namespace;
     
-    private String pattern;
-    
     private String serviceChangedType;
     
     public AbstractFuzzyWatchNotifyRequest(){
     }
     
-    public AbstractFuzzyWatchNotifyRequest(String namespace, String pattern, String serviceChangedType) {
+    public AbstractFuzzyWatchNotifyRequest(String namespace, String serviceChangedType) {
         this.namespace = namespace;
-        this.pattern = pattern;
         this.serviceChangedType = serviceChangedType;
     }
     
@@ -55,14 +52,6 @@ public abstract class AbstractFuzzyWatchNotifyRequest extends ServerRequest {
     
     public void setServiceChangedType(String serviceChangedType) {
         this.serviceChangedType = serviceChangedType;
-    }
-    
-    public String getPattern() {
-        return pattern;
-    }
-    
-    public void setPattern(String pattern) {
-        this.pattern = pattern;
     }
     
     @Override

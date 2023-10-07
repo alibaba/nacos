@@ -355,8 +355,7 @@
   "methods":[
     {"name":"<init>","parameterTypes":[] },
     {"name":"getModule","parameterTypes":[] },
-    {"name":"getServiceChangedType","parameterTypes":[] },
-    {"name":"getPattern","parameterTypes":[] }
+    {"name":"getServiceChangedType","parameterTypes":[] }
   ]
 },
 {
@@ -397,7 +396,8 @@
   "queryAllDeclaredConstructors":true,
   "methods":[
     {"name":"<init>","parameterTypes":[] },
-    {"name":"getServicesName","parameterTypes":[] }
+    {"name":"getServicesName","parameterTypes":[] },
+    {"name":"getPattern","parameterTypes":[] }
   ]
 },
 {

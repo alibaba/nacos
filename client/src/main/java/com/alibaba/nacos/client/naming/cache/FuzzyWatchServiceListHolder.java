@@ -59,14 +59,15 @@ public class FuzzyWatchServiceListHolder {
     public void processFuzzyWatchNotify(AbstractFuzzyWatchNotifyRequest request) {
         if (request instanceof FuzzyWatchNotifyInitRequest) {
             FuzzyWatchNotifyInitRequest watchNotifyInitRequest = (FuzzyWatchNotifyInitRequest) request;
-            Set<Service> matchedServiceSet = patternMatchMap.computeIfAbsent(request.getPattern(), keyInner -> new ConcurrentHashSet<>());
+            Set<Service> matchedServiceSet = patternMatchMap.computeIfAbsent(watchNotifyInitRequest.getPattern(),
+                    keyInner -> new ConcurrentHashSet<>());
             Collection<String> servicesName = watchNotifyInitRequest.getServicesName();
             for (String groupedName : servicesName) {
                 Service service = new Service(NamingUtils.getServiceName(groupedName), NamingUtils.getGroupName(groupedName));
                 // may have a 'change event' sent to client before 'init event'
                 if (matchedServiceSet.add(service)) {
                     NotifyCenter.publishEvent(FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
-                            service, request.getPattern(), Constants.ServiceChangedType.ADD_SERVICE));
+                            service, watchNotifyInitRequest.getPattern(), Constants.ServiceChangedType.ADD_SERVICE));
                 }
             }
         } else if (request instanceof FuzzyWatchNotifyChangeRequest) {

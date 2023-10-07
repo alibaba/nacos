@@ -28,14 +28,17 @@ import java.util.HashSet;
  */
 public class FuzzyWatchNotifyInitRequest extends AbstractFuzzyWatchNotifyRequest {
     
+    private String pattern;
+    
     private Collection<String> servicesName;
     
     public FuzzyWatchNotifyInitRequest() {
     }
     
     private FuzzyWatchNotifyInitRequest(String namespace, String pattern, String serviceChangedType, Collection<String> servicesName) {
-        super(namespace, pattern, serviceChangedType);
+        super(namespace, serviceChangedType);
         this.servicesName = servicesName;
+        this.pattern = pattern;
     }
     
     public static FuzzyWatchNotifyInitRequest buildInitRequest(String namespace, String pattern, Collection<String> servicesName) {
@@ -44,6 +47,14 @@ public class FuzzyWatchNotifyInitRequest extends AbstractFuzzyWatchNotifyRequest
     
     public static FuzzyWatchNotifyInitRequest buildInitFinishRequest(String namespace, String pattern) {
         return new FuzzyWatchNotifyInitRequest(namespace, pattern, Constants.ServiceChangedType.FINISH_WATCH_INIT, new HashSet<>(1));
+    }
+    
+    public String getPattern() {
+        return pattern;
+    }
+    
+    public void setPattern(String pattern) {
+        this.pattern = pattern;
     }
     
     public Collection<String> getServicesName() {

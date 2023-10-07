@@ -32,7 +32,7 @@ public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyReque
     
     public FuzzyWatchNotifyChangeRequest(String namespace, String serviceName,
             String groupName, String serviceChangedType) {
-        super(namespace, "", serviceChangedType);
+        super(namespace, serviceChangedType);
         this.serviceName = serviceName;
         this.groupName = groupName;
     }
