@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.client.naming.backups;
 
-import com.alibaba.nacos.api.config.filter.IConfigFilter;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.backups.datasource.DiskFailoverDataSource;
@@ -27,7 +26,10 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import io.micrometer.core.instrument.MultiGauge;
 
-import java.util.*;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -43,7 +45,6 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 public class FailoverReactor implements Closeable {
 
     private static final String FAILOVER_DIR = "/failover";
-
 
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<>();
 
@@ -74,7 +75,8 @@ public class FailoverReactor implements Closeable {
         }
 
         failoverDataSource = new DiskFailoverDataSource(serviceInfoHolder);
-        failoverInstanceCounts = MultiGauge.builder("nacos_naming_client_failover_instances").register(io.micrometer.core.instrument.Metrics.globalRegistry);
+        failoverInstanceCounts = MultiGauge.builder("nacos_naming_client_failover_instances")
+                .register(io.micrometer.core.instrument.Metrics.globalRegistry);
         // init executorService
         this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
             Thread thread = new Thread(r);
@@ -93,7 +95,6 @@ public class FailoverReactor implements Closeable {
         executorService.scheduleWithFixedDelay(new FailoverSwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
 
     }
-
 
     class FailoverSwitchRefresher implements Runnable {
 
@@ -171,7 +172,7 @@ public class FailoverReactor implements Closeable {
 
     /**
      * shutdown ThreadPool.
-     * @throws NacosException
+     * @throws NacosException Nacos exception
      */
     @Override
     public void shutdown() throws NacosException {

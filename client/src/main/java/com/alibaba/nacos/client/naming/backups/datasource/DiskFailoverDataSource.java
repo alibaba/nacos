@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.client.naming.backups.datasource;
 
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -35,7 +36,12 @@ import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-import java.util.*;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
@@ -57,7 +63,6 @@ public class DiskFailoverDataSource implements FailoverDataSource {
 
     private Set<String> serviceNames = new HashSet<>();
 
-
     private String failoverDir;
 
     private long lastModifiedMillis = 0L;
@@ -65,7 +70,6 @@ public class DiskFailoverDataSource implements FailoverDataSource {
     public DiskFailoverDataSource(ServiceInfoHolder serviceInfoHolder) {
         this.failoverDir = serviceInfoHolder.getCacheDir() + FAILOVER_DIR;
     }
-
 
     class FailoverFileReader implements Runnable {
 
@@ -201,7 +205,6 @@ public class DiskFailoverDataSource implements FailoverDataSource {
 
         return new FailoverSwitch(Boolean.FALSE);
     }
-
 
     @Override
     public Map<String, FailoverData> getFailoverData() {

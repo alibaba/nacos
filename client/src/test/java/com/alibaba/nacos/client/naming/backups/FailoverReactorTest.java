@@ -69,7 +69,7 @@ public class FailoverReactorTest {
     public void testGetService() throws NacosException {
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp",UUID.randomUUID().toString());
+        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp", UUID.randomUUID().toString());
         ServiceInfo info = failoverReactor.getService("aa@@bb");
         Assert.assertEquals(new ServiceInfo("aa@@bb").toString(), info.toString());
         failoverReactor.shutdown();

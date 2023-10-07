@@ -40,7 +40,11 @@ import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.UUID;
 
 /**
  * Nacos Naming Service.
@@ -237,10 +241,10 @@ public class NacosNamingService implements NamingService {
             serviceInfo = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
             if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
                 serviceInfo.getHosts();
-                if (!clientProxy.isSubscribed(serviceName, groupName, clusterString)){
+                if (!clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
                     serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
                 }
-            } else{
+            } else {
                 if (subscribe) {
                     serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
                     if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
@@ -248,7 +252,7 @@ public class NacosNamingService implements NamingService {
                     }
                 }
             }
-        }else {
+        } else {
             if (subscribe) {
                 serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
                 if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
@@ -314,10 +318,10 @@ public class NacosNamingService implements NamingService {
             serviceInfo = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
             if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
                 serviceInfo.getHosts();
-                if (!clientProxy.isSubscribed(serviceName, groupName, clusterString)){
+                if (!clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
                     serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
                 }
-            } else{
+            } else {
                 if (subscribe) {
                     serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
                     if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
@@ -325,7 +329,7 @@ public class NacosNamingService implements NamingService {
                     }
                 }
             }
-        }else {
+        } else {
             if (subscribe) {
                 serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
                 if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
