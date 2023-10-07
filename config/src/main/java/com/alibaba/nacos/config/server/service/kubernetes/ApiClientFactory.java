@@ -26,6 +26,11 @@ import io.kubernetes.client.util.KubeConfig;
 import java.io.FileReader;
 import java.io.IOException;
 
+/**
+ * The ApiClient factory.
+ *
+ * @author wangyixing
+ */
 public class ApiClientFactory {
     
     /**

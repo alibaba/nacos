@@ -119,7 +119,10 @@ public class ConfigMapSyncTask {
      * @return whether contents are equal.
      */
     private Boolean compareContent(String configMapContent, String nacosContent) {
-        if (configMapContent == null && nacosContent != null || configMapContent != null && nacosContent == null) {
+        if (configMapContent == null && nacosContent != null) {
+            return false;
+        }
+        if (configMapContent != null && nacosContent == null) {
             return false;
         }
         assert configMapContent != null;

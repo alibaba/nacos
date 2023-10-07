@@ -36,20 +36,16 @@ import io.kubernetes.client.informer.ResourceEventHandler;
 import io.kubernetes.client.informer.SharedIndexInformer;
 import io.kubernetes.client.informer.SharedInformerFactory;
 import io.kubernetes.client.openapi.ApiClient;
-import io.kubernetes.client.openapi.Configuration;
 import io.kubernetes.client.openapi.apis.CoreV1Api;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ConfigMapList;
 import io.kubernetes.client.util.CallGeneratorParams;
-import io.kubernetes.client.util.ClientBuilder;
-import io.kubernetes.client.util.KubeConfig;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -237,7 +233,7 @@ public class ConfigMapSyncServiceImpl implements ConfigMapSyncService {
         String group = ConfigMapSyncConfig.K8S_GROUP;
         String tenant = configMap.getMetadata().getNamespace();
         // 将 ConfigMap 的数据转换为 Nacos 的配置内容
-        Map<String, String> dataMap = configMap.getData() != null ? configMap.getData() : new HashMap<>();
+        Map<String, String> dataMap = configMap.getData() != null ? configMap.getData() : new HashMap<>(10);
         String content = getContent(dataMap);
         return new ConfigInfo(dataId, group, tenant, null, content);
     }
