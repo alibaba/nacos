@@ -148,7 +148,6 @@ public class RedoScheduledTask extends AbstractExecuteTask {
             } catch (NacosException e) {
                 LogUtils.NAMING_LOGGER.error("Redo fuzzy watcher operation {} for pattern {}@@{} failed. ", each.getRedoType(),
                         each.getGroupName(), each.getServiceName(), e);
-
             }
         }
     }
