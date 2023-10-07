@@ -250,6 +250,8 @@ public class NacosNamingService implements NamingService {
                     if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
                         serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
                     }
+                } else {
+                    serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
                 }
             }
         } else {
