@@ -58,13 +58,12 @@ public class DiskFailoverDataSource implements FailoverDataSource {
     private Set<String> serviceNames = new HashSet<>();
 
 
-    private final String failoverDir;
+    private String failoverDir;
 
     private long lastModifiedMillis = 0L;
 
-
-    public DiskFailoverDataSource(ServiceInfoHolder serviceInfoHolder, String cacheDir) {
-        this.failoverDir = cacheDir + FAILOVER_DIR;
+    public DiskFailoverDataSource(ServiceInfoHolder serviceInfoHolder) {
+        this.failoverDir = serviceInfoHolder.getCacheDir() + FAILOVER_DIR;
     }
 
 

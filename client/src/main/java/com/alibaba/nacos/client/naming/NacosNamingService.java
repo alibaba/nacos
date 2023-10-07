@@ -234,7 +234,6 @@ public class NacosNamingService implements NamingService {
         List<Instance> list;
         String clusterString = StringUtils.join(clusters, ",");
         if (serviceInfoHolder.isFailoverSwitch()) {
-            list = new ArrayList<>();
             serviceInfo = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
             if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
                 serviceInfo.getHosts();
@@ -311,14 +310,32 @@ public class NacosNamingService implements NamingService {
                                           boolean subscribe) throws NacosException {
         ServiceInfo serviceInfo;
         String clusterString = StringUtils.join(clusters, ",");
-        if (subscribe) {
-            serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
-            if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
-                serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
+        if (serviceInfoHolder.isFailoverSwitch()) {
+            serviceInfo = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
+            if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
+                serviceInfo.getHosts();
+                if (!clientProxy.isSubscribed(serviceName, groupName, clusterString)){
+                    serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
+                }
+            } else{
+                if (subscribe) {
+                    serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
+                    if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
+                        serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
+                    }
+                }
             }
-        } else {
-            serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
+        }else {
+            if (subscribe) {
+                serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
+                if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
+                    serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
+                }
+            } else {
+                serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
+            }
         }
+
         return selectInstances(serviceInfo, healthy);
     }
 
@@ -481,6 +498,6 @@ public class NacosNamingService implements NamingService {
         serviceInfoHolder.shutdown();
         clientProxy.shutdown();
         NotifyCenter.deregisterSubscriber(changeNotifier);
-        
+
     }
 }

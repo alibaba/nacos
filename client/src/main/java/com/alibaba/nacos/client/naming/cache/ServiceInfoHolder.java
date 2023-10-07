@@ -71,7 +71,7 @@ public class ServiceInfoHolder implements Closeable {
             this.serviceInfoMap = new ConcurrentHashMap<>(16);
         }
 
-        this.failoverReactor = new FailoverReactor(this, cacheDir,notifierEventScope);
+        this.failoverReactor = new FailoverReactor(this, cacheDir, notifierEventScope);
 
         this.pushEmptyProtection = isPushEmptyProtect(properties);
         this.notifierEventScope = notifierEventScope;
@@ -248,6 +248,10 @@ public class ServiceInfoHolder implements Closeable {
                     JacksonUtils.toJson(modHosts));
         }
         return changed;
+    }
+
+    public String getCacheDir() {
+        return cacheDir;
     }
 
     public boolean isFailoverSwitch() {
