@@ -66,7 +66,7 @@ public class WatchServiceListHolder {
                 // may have a 'change event' sent to client before 'init event'
                 if (cacheService.add(service)) {
                     NotifyCenter.publishEvent(WatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
-                            service, request.getPattern(), Constants.WatchEventType.ADD_SERVICE));
+                            service, request.getPattern(), Constants.ServiceChangedType.ADD_SERVICE));
                 }
             }
         } else if (request instanceof WatchNotifyChangeRequest) {
@@ -77,8 +77,8 @@ public class WatchServiceListHolder {
             String serviceChangeType = request.getServiceChangedType();
             
             switch (serviceChangeType) {
-                case Constants.WatchEventType.ADD_SERVICE:
-                case Constants.WatchEventType.INSTANCE_CHANGED:
+                case Constants.ServiceChangedType.ADD_SERVICE:
+                case Constants.ServiceChangedType.INSTANCE_CHANGED:
                     for (String pattern : matchedPattern) {
                         Set<Service> matchedServiceSet = patternMatchMap.get(pattern);
                         if (matchedServiceSet != null && matchedServiceSet.add(service)) {
@@ -88,7 +88,7 @@ public class WatchServiceListHolder {
                         }
                     }
                     break;
-                case Constants.WatchEventType.DELETE_SERVICE:
+                case Constants.ServiceChangedType.DELETE_SERVICE:
                     for (String pattern : matchedPattern) {
                         Set<Service> matchedServiceSet = patternMatchMap.get(pattern);
                         if (matchedServiceSet != null && matchedServiceSet.remove(service)) {
@@ -119,7 +119,7 @@ public class WatchServiceListHolder {
         }
         for (Service service : cacheServices) {
             NotifyCenter.publishEvent(WatchNotifyEvent.buildNotifyPatternSpecificListenerEvent(notifierEventScope, service,
-                    pattern, uuid, Constants.WatchEventType.ADD_SERVICE));
+                    pattern, uuid, Constants.ServiceChangedType.ADD_SERVICE));
         }
     }
     

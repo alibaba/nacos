@@ -39,11 +39,11 @@ public class WatchNotifyInitRequest extends AbstractWatchNotifyRequest {
     }
     
     public static WatchNotifyInitRequest buildInitRequest(String namespace, String pattern, Collection<String> servicesName) {
-        return new WatchNotifyInitRequest(namespace, pattern, Constants.WatchEventType.WATCH_INITIAL_MATCH, servicesName);
+        return new WatchNotifyInitRequest(namespace, pattern, Constants.ServiceChangedType.WATCH_INITIAL_MATCH, servicesName);
     }
     
     public static WatchNotifyInitRequest buildInitFinishRequest(String namespace, String pattern) {
-        return new WatchNotifyInitRequest(namespace, pattern, Constants.WatchEventType.FINISH_WATCH_INIT, new HashSet<>(1));
+        return new WatchNotifyInitRequest(namespace, pattern, Constants.ServiceChangedType.FINISH_WATCH_INIT, new HashSet<>(1));
     }
     
     public Collection<String> getServicesName() {

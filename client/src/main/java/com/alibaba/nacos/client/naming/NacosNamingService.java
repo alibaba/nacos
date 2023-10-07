@@ -467,6 +467,7 @@ public class NacosNamingService implements NamingService {
         String uuid = UUID.randomUUID().toString();
         listener.setUuid(uuid);
         servicesChangeNotifier.registerFuzzyWatchListener(serviceNamePattern, groupNamePattern, listener);
+        clientProxy.fuzzyWatch(serviceNamePattern, groupNamePattern, uuid);
     }
     
     @Override
@@ -487,7 +488,6 @@ public class NacosNamingService implements NamingService {
         }
         servicesChangeNotifier.deregisterFuzzyWatchListener(serviceNamePattern, groupNamePattern, listener);
         if (!servicesChangeNotifier.isWatched(serviceNamePattern, groupNamePattern)) {
-
             clientProxy.cancelFuzzyWatch(serviceNamePattern, groupNamePattern);
         }
     }
