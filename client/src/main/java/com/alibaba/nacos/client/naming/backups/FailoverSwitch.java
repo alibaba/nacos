@@ -30,10 +30,6 @@ public class FailoverSwitch {
      */
     private boolean enabled;
 
-    /**
-     * Failover service name.
-     */
-    private Set<String> serviceNames;
 
     public boolean getEnabled() {
         return enabled;
@@ -43,20 +39,7 @@ public class FailoverSwitch {
         this.enabled = enabled;
     }
 
-    public Set<String> getServiceNames() {
-        return serviceNames;
-    }
-
-    public void setServiceNames(Set<String> serviceNames) {
-        this.serviceNames = serviceNames;
-    }
-
     public FailoverSwitch(boolean enabled) {
         this.enabled = enabled;
-    }
-
-    public FailoverSwitch(boolean enabled, Set<String> serviceNames) {
-        this.enabled = enabled;
-        this.serviceNames = serviceNames;
     }
 }

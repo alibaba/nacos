@@ -18,22 +18,25 @@ package com.alibaba.nacos.client.naming.backups;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.client.naming.backups.datasource.DiskFailoverDataSource;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.MultiGauge;
+import io.micrometer.core.instrument.Tags;
 
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Map;
-import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -48,30 +51,24 @@ public class FailoverReactor implements Closeable {
 
     private boolean failoverSwitchEnable;
 
-    private static final long DAY_PERIOD_MINUTES = 24 * 60;
-
     private final ServiceInfoHolder serviceInfoHolder;
 
     private final ScheduledExecutorService executorService;
 
-    private final FailoverDataSource failoverDataSource;
-
-    private final MultiGauge failoverInstanceCounts;
+    private FailoverDataSource failoverDataSource;
 
     private String notifierEventScope;
+
+    private MultiGauge failoverInstanceCounts = MultiGauge.builder("nacos_naming_client_failover_instances").description("Nacos failover data service count").register(Metrics.globalRegistry);
 
     public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String cacheDir, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
         this.notifierEventScope = notifierEventScope;
-        // spi
-        ServiceLoader<FailoverDataSource> configFilters = ServiceLoader.load(FailoverDataSource.class);
-        for (FailoverDataSource dataSource : configFilters) {
-            dataSource.getSwitch();
+        Collection<FailoverDataSource> dataSources = NacosServiceLoader.load(FailoverDataSource.class);
+        for (FailoverDataSource dataSource : dataSources) {
+            failoverDataSource = dataSource;
+            break;
         }
-
-        failoverDataSource = new DiskFailoverDataSource(serviceInfoHolder);
-        failoverInstanceCounts = MultiGauge.builder("nacos_naming_client_failover_instances")
-                .register(io.micrometer.core.instrument.Metrics.globalRegistry);
         // init executorService
         this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
             Thread thread = new Thread(r);
@@ -99,14 +96,15 @@ public class FailoverReactor implements Closeable {
             FailoverSwitch fSwitch = failoverDataSource.getSwitch();
             if (fSwitch != null && fSwitch.getEnabled()) {
                 failoverSwitchEnable = true;
-                Map<String, ServiceInfo> map = new ConcurrentHashMap<>(200);
+                Map<String, ServiceInfo> failoverMap = new ConcurrentHashMap<>(200);
                 Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
                 for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
-                    map.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
+                    failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                 }
 
-                if (map.size() > 0) {
-                    serviceMap = map;
+                if (failoverMap.size() > 0) {
+                    failoverInstanceCounts.register(failoverMap.keySet().stream().map(serviceName -> MultiGauge.Row.of(Tags.of("service_name", serviceName), ((ServiceInfo)failoverMap.get(serviceName)).ipCount())).collect(Collectors.toList()), true);
+                    serviceMap = failoverMap;
                 }
 
                 return;
@@ -124,9 +122,9 @@ public class FailoverReactor implements Closeable {
                                 newService.getClusters(), newService.getHosts()));
                     }
                 }
+                serviceMap.clear();
+                return;
             }
-
-            serviceMap.clear();
         }
     }
 
@@ -161,6 +159,7 @@ public class FailoverReactor implements Closeable {
 
     /**
      * shutdown ThreadPool.
+     *
      * @throws NacosException Nacos exception
      */
     @Override
