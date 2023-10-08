@@ -44,15 +44,11 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class FailoverReactor implements Closeable {
 
-    private static final String FAILOVER_DIR = "/failover";
-
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<>();
 
     private boolean failoverSwitchEnable;
 
     private static final long DAY_PERIOD_MINUTES = 24 * 60;
-
-    private final String failoverDir;
 
     private final ServiceInfoHolder serviceInfoHolder;
 
@@ -66,7 +62,6 @@ public class FailoverReactor implements Closeable {
 
     public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String cacheDir, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
-        this.failoverDir = cacheDir + FAILOVER_DIR;
         this.notifierEventScope = notifierEventScope;
         // spi
         ServiceLoader<FailoverDataSource> configFilters = ServiceLoader.load(FailoverDataSource.class);
@@ -119,14 +114,8 @@ public class FailoverReactor implements Closeable {
 
             if (fSwitch != null && failoverSwitchEnable && !fSwitch.getEnabled()) {
                 failoverSwitchEnable = false;
-                Map<String, ServiceInfo> map = new ConcurrentHashMap<>(200);
-                Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
-                for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
-                    map.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
-                }
-
                 Map<String, ServiceInfo> serviceInfoMap = serviceInfoHolder.getServiceInfoMap();
-                for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
+                for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
                     ServiceInfo oldService = entry.getValue();
                     ServiceInfo newService = serviceInfoMap.get(entry.getKey());
                     boolean changed = serviceInfoHolder.isChangedServiceInfo(oldService, newService);
