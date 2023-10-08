@@ -59,7 +59,9 @@ public class FailoverReactor implements Closeable {
 
     private String notifierEventScope;
 
-    private MultiGauge failoverInstanceCounts = MultiGauge.builder("nacos_naming_client_failover_instances").description("Nacos failover data service count").register(Metrics.globalRegistry);
+    private MultiGauge failoverInstanceCounts = MultiGauge.builder("nacos_naming_client_failover_instances")
+            .description("Nacos failover data service count")
+            .register(Metrics.globalRegistry);
 
     public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String cacheDir, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
@@ -103,7 +105,10 @@ public class FailoverReactor implements Closeable {
                 }
 
                 if (failoverMap.size() > 0) {
-                    failoverInstanceCounts.register(failoverMap.keySet().stream().map(serviceName -> MultiGauge.Row.of(Tags.of("service_name", serviceName), ((ServiceInfo)failoverMap.get(serviceName)).ipCount())).collect(Collectors.toList()), true);
+                    failoverInstanceCounts.register(failoverMap.keySet().stream().map(
+                            serviceName -> MultiGauge.Row.of(Tags.of("service_name", serviceName),
+                                    ((ServiceInfo)failoverMap.get(serviceName)).ipCount()))
+                            .collect(Collectors.toList()), true);
                     serviceMap = failoverMap;
                 }
 

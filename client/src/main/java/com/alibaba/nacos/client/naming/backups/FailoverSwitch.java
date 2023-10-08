@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.client.naming.backups;
 
-import java.util.Set;
-
 /**
  * Failover switch.
  *
@@ -29,7 +27,6 @@ public class FailoverSwitch {
      * Failover switch enable.
      */
     private boolean enabled;
-
 
     public boolean getEnabled() {
         return enabled;

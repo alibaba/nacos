@@ -235,7 +235,7 @@ public class NacosNamingService implements NamingService {
     public List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters,
                                           boolean subscribe) throws NacosException {
         List<Instance> list;
-        ServiceInfo serviceInfo = getServiceInfo(serviceName,groupName, clusters, subscribe);
+        ServiceInfo serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<>();
         }
@@ -285,7 +285,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy,
                                           boolean subscribe) throws NacosException {
-        ServiceInfo serviceInfo = getServiceInfo(serviceName,groupName, clusters, subscribe);
+        ServiceInfo serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
         return selectInstances(serviceInfo, healthy);
     }
 
@@ -371,7 +371,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters,
                                              boolean subscribe) throws NacosException {
-        ServiceInfo serviceInfo = getServiceInfo(serviceName,groupName, clusters, subscribe);
+        ServiceInfo serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
         return Balancer.RandomByWeight.selectHost(serviceInfo);
     }
 
