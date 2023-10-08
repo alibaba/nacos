@@ -107,7 +107,7 @@ public class FailoverReactor implements Closeable {
                 if (failoverMap.size() > 0) {
                     failoverInstanceCounts.register(failoverMap.keySet().stream().map(
                             serviceName -> MultiGauge.Row.of(Tags.of("service_name", serviceName),
-                                    ((ServiceInfo)failoverMap.get(serviceName)).ipCount()))
+                                    ((ServiceInfo) failoverMap.get(serviceName)).ipCount()))
                             .collect(Collectors.toList()), true);
                     serviceMap = failoverMap;
                 }
