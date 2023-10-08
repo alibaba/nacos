@@ -97,7 +97,7 @@ public class FailoverReactor implements Closeable {
         public void run() {
 
             FailoverSwitch fSwitch = failoverDataSource.getSwitch();
-            if (fSwitch != null && fSwitch.getEnabled() && !failoverSwitchEnable) {
+            if (fSwitch != null && fSwitch.getEnabled()) {
                 failoverSwitchEnable = true;
                 Map<String, ServiceInfo> map = new ConcurrentHashMap<>(200);
                 Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
