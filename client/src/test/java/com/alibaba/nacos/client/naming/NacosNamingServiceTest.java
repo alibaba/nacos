@@ -831,6 +831,11 @@ public class NacosNamingServiceTest {
     }
     
     @Test
+    public void testFuzzyWatch() throws NacosException {
+        // TODO
+    }
+    
+    @Test
     public void testGetServicesOfServer1() throws NacosException {
         //given
         int pageNo = 1;
