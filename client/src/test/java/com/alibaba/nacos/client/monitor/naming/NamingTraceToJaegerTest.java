@@ -41,6 +41,11 @@ import org.junit.Test;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This test case is used to see the trace of nacos client naming in JAEGER.
+ *
+ * <p>This is not actually a unit test, but a demo to show how to use OpenTelemetry to trace nacos client naming.
+ */
 public class NamingTraceToJaegerTest {
     
     private static final String JAEGER_ENDPOINT = "http://localhost:4317";

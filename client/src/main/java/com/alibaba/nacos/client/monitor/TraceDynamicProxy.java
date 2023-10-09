@@ -611,7 +611,7 @@ public class TraceDynamicProxy {
                             }
                     }
                     
-                    SpanBuilder spanBuilder = ConfigTrace.getClientConfigHttpSpanBuilder(methodName);
+                    SpanBuilder spanBuilder = ConfigTrace.getClientConfigHttpSpanBuilder(httpMethod);
                     spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, httpAgent.getClass().getName());
                     spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, methodName);
                     spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, httpAgent.getName());
@@ -681,7 +681,7 @@ public class TraceDynamicProxy {
                     
                     switch (methodName) {
                         case "registerService":
-                        case "deregisterInstance": {
+                        case "deregisterService": {
                             Object result;
                             Span span = spanBuilder.startSpan();
                             try (Scope ignored = span.makeCurrent()) {

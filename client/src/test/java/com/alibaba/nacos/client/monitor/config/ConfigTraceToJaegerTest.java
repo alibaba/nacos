@@ -43,6 +43,11 @@ import org.junit.Test;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This test case is used to see the trace of nacos client config in JAEGER.
+ *
+ * <p>This is not actually a unit test, but a demo to show how to use OpenTelemetry to trace nacos client config.
+ */
 public class ConfigTraceToJaegerTest {
     
     private static final String JAEGER_ENDPOINT = "http://localhost:4317";
