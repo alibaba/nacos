@@ -62,6 +62,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.Arrays;
 import java.util.Properties;
@@ -387,6 +388,8 @@ public abstract class GrpcClient extends RpcClient {
                 if (serverCheckResponse.isSupportAbilityNegotiation()) {
                     // mark
                     this.recAbilityContext.reset(grpcConn);
+                    // promise null if no abilities receive
+                    grpcConn.setAbilityTable(null);
                 }
                 
                 //create stream request and bind connection event to this connection.
@@ -408,6 +411,16 @@ public abstract class GrpcClient extends RpcClient {
                 if (recAbilityContext.isNeedToSync()) {
                     // try to wait for notify response
                     recAbilityContext.await(this.clientConfig.capabilityNegotiationTimeout(), TimeUnit.MILLISECONDS);
+                    // if no server abilities receiving, then reconnect
+                    if (!grpcConn.isAbilitiesSet()) {
+                        LOGGER.error("Client don't receive server abilities table even empty table but server supports ability negotiation."
+                                        + " You can check if it is need to adjust the timeout of ability negotiation by property: {}"
+                                        + " if always fail to connect.",
+                                GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT);
+                        grpcConn.setAbandon(true);
+                        grpcConn.close();
+                        return null;
+                    }
                 } else {
                     // leave for adapting old version server
                     // wait to register connection setup
@@ -486,8 +499,6 @@ public abstract class GrpcClient extends RpcClient {
         public void release(Map<String, Boolean> abilities) {
             if (this.connection != null) {
                 this.connection.setAbilityTable(abilities);
-                // fix https://github.com/alibaba/nacos/issues/11209
-                ((GrpcConnection) this.connection).sendResponse(new SetupAckResponse());
                 // avoid repeat setting
                 this.connection = null;
             }
@@ -529,7 +540,8 @@ public abstract class GrpcClient extends RpcClient {
             if (request instanceof SetupAckRequest) {
                 SetupAckRequest setupAckRequest = (SetupAckRequest) request;
                 // remove and count down
-                recAbilityContext.release(setupAckRequest.getAbilityTable());
+                recAbilityContext.release(Optional.ofNullable(setupAckRequest.getAbilityTable())
+                        .orElse(new HashMap<>()));
                 return new SetupAckResponse();
             }
             return null;

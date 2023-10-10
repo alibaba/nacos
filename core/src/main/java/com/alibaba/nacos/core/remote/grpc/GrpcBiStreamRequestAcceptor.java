@@ -115,7 +115,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
                             setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
-                    Connection connection = new GrpcConnection(metaInfo, responseObserver,
+                    GrpcConnection connection = new GrpcConnection(metaInfo, responseObserver,
                             GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
                     // null if supported
                     if (setUpRequest.getAbilityTable() != null) {
@@ -140,8 +140,8 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     } else {
                         try {
                             // finish register, tell client has set up successfully
-                            // async response
-                            connection.requestFuture(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
+                            // async response without client ack
+                            connection.sendRequestNoAck(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
                                     .getCurrentNodeAbilities(AbilityMode.SERVER)));
                         } catch (Exception e) {
                             // nothing to do

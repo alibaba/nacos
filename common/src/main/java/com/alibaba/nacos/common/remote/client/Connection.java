@@ -38,7 +38,7 @@ public abstract class Connection implements Requester {
     protected RpcClient.ServerInfo serverInfo;
     
     protected Map<String, Boolean> abilityTable;
-    
+
     public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
     }
@@ -56,6 +56,10 @@ public abstract class Connection implements Requester {
             return AbilityStatus.UNKNOWN;
         }
         return  abilityTable.get(abilityKey.getName()) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
+    }
+
+    public boolean isAbilitiesSet() {
+        return abilityTable != null;
     }
     
     public void setAbilityTable(Map<String, Boolean> abilityTable) {
