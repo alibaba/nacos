@@ -538,7 +538,7 @@ public abstract class GrpcClient extends RpcClient {
                 SetupAckRequest setupAckRequest = (SetupAckRequest) request;
                 // remove and count down
                 recAbilityContext.release(Optional.ofNullable(setupAckRequest.getAbilityTable())
-                        .orElse(new HashMap<>()));
+                        .orElse(new HashMap<>(0)));
                 return new SetupAckResponse();
             }
             return null;
