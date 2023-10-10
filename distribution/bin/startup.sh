@@ -146,4 +146,4 @@ else
   nohup "$JAVA" "$JAVA_OPT_EXT_FIX" ${JAVA_OPT} nacos.nacos >> ${BASE_DIR}/logs/start.out 2>&1 &
 fi
 
-echo "nacos is starting，you can check the ${BASE_DIR}/logs/start.out"
+echo "nacos is starting. you can check the ${BASE_DIR}/logs/start.out"
