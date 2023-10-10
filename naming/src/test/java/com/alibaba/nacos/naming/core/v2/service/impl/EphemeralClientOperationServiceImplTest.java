@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -75,7 +76,7 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
         when(service.getGroupedServiceName()).thenReturn("G@@S");
         when(service.isEphemeral()).thenReturn(true);
         ephemeralClientOperationServiceImpl = new EphemeralClientOperationServiceImpl(clientManager);
-        client = new IpPortBasedClient(clientId, true);
+        client = new ConnectionBasedClient(clientId, true, 1L);
         when(clientManager.getClient(clientId)).thenReturn(client);
     }
     
