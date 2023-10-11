@@ -40,6 +40,7 @@ public class ConfigChangeClusterSyncRequestTest extends BasedConfigRequestTest {
         configChangeClusterSyncRequest.setTag(TAG);
         configChangeClusterSyncRequest.setBeta(Boolean.TRUE);
         configChangeClusterSyncRequest.setLastModified(0L);
+        configChangeClusterSyncRequest.setBatch(false);
         configChangeClusterSyncRequest.putAllHeader(HEADERS);
         requestId = injectRequestUuId(configChangeClusterSyncRequest);
     }

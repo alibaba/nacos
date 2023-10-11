@@ -143,6 +143,9 @@ public class ConfigChangeListenContext {
             Set<String> connectionIds = groupKeyContext.get(groupKey.getKey());
             if (CollectionUtils.isNotEmpty(connectionIds)) {
                 connectionIds.remove(connectionId);
+                if (connectionIds.isEmpty()) {
+                    groupKeyContext.remove(groupKey.getKey());
+                }
             } else {
                 groupKeyContext.remove(groupKey.getKey());
             }

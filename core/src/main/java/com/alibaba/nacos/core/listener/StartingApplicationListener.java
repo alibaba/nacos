@@ -18,11 +18,12 @@ package com.alibaba.nacos.core.listener;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.executor.ThreadPoolManager;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
@@ -30,7 +31,6 @@ import com.alibaba.nacos.sys.file.WatchFileCenter;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.env.OriginTrackedMapPropertySource;
@@ -115,12 +115,12 @@ public class StartingApplicationListener implements NacosApplicationListener {
         
         logStarting();
     }
-
+    
     @Override
     public void contextLoaded(ConfigurableApplicationContext context) {
         EnvUtil.customEnvironment();
     }
-
+    
     @Override
     public void started(ConfigurableApplicationContext context) {
         starting = false;
@@ -236,8 +236,8 @@ public class StartingApplicationListener implements NacosApplicationListener {
     private void logStarting() {
         if (!EnvUtil.getStandaloneMode()) {
             
-            scheduledExecutorService = ExecutorFactory.newSingleScheduledExecutorService(
-                    new NameThreadFactory("com.alibaba.nacos.core.nacos-starting"));
+            scheduledExecutorService = ExecutorFactory
+                    .newSingleScheduledExecutorService(new NameThreadFactory("com.alibaba.nacos.core.nacos-starting"));
             
             scheduledExecutorService.scheduleWithFixedDelay(() -> {
                 if (starting) {

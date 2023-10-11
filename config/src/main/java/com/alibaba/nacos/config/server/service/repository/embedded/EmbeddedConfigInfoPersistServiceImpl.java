@@ -254,10 +254,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     @Override
     public long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser,
             final ConfigInfo configInfo, Map<String, Object> configAdvanceInfo) {
-        final String appNameTmp =
-                StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        final String tenantTmp =
-                StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        final String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        final String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
@@ -460,7 +458,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     public void removeTagByIdAtomic(long id) {
         ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.CONFIG_TAGS_RELATION);
-        final String sql = configTagsRelationMapper.delete(Arrays.asList("id"));
+        final String sql = configTagsRelationMapper.delete(Collections.singletonList("id"));
         final Object[] args = new Object[] {id};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
@@ -585,10 +583,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     private ConfigOperateResult updateConfigInfoAtomicCas(final ConfigInfo configInfo, final String srcIp,
             final String srcUser, Map<String, Object> configAdvanceInfo) {
-        final String appNameTmp =
-                StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        final String tenantTmp =
-                StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        final String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        final String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
@@ -626,10 +622,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     @Override
     public void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
             Map<String, Object> configAdvanceInfo) {
-        final String appNameTmp =
-                StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        final String tenantTmp =
-                StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        final String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        final String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         final String desc = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("desc");
         final String use = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("use");
@@ -659,7 +653,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         try {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
-            final String sql = configInfoMapper.update(Arrays.asList("md5"),
+            final String sql = configInfoMapper.update(Collections.singletonList("md5"),
                     Arrays.asList("data_id", "group_id", "tenant_id", "gmt_modified"));
             final Object[] args = new Object[] {md5, dataId, group, tenantTmp, lastTime};
             
@@ -718,7 +712,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.select(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "type",
-                        "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"));
+                        "encrypted_data_key", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id"));
         final Object[] args = new Object[] {dataId, group, tenantTmp};
         return databaseOperate.queryOne(sql, args, CONFIG_INFO_WRAPPER_ROW_MAPPER);
         
@@ -1161,7 +1155,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     public List<String> selectTagByConfig(String dataId, String group, String tenant) {
         ConfigTagsRelationMapper configTagsRelationMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.CONFIG_TAGS_RELATION);
-        String sql = configTagsRelationMapper.select(Arrays.asList("tag_name"),
+        String sql = configTagsRelationMapper.select(Collections.singletonList("tag_name"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
         return databaseOperate.queryMany(sql, new Object[] {dataId, group, tenant}, String.class);
     }
@@ -1353,7 +1347,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.select(
-                Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "type"),
+                Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "type", "gmt_modified"),
                 Collections.singletonList("tenant_id"));
         return databaseOperate.queryMany(sql, new Object[] {tenantTmp}, CONFIG_INFO_WRAPPER_ROW_MAPPER);
     }

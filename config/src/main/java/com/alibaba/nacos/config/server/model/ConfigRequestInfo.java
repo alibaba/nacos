@@ -34,10 +34,13 @@ public class ConfigRequestInfo implements Serializable {
     
     private String betaIps;
     
-    public ConfigRequestInfo(String srcIp, String requestIpApp, String betaIps) {
+    private String casMd5;
+    
+    public ConfigRequestInfo(String srcIp, String requestIpApp, String betaIps, String casMd5) {
         this.srcIp = srcIp;
         this.requestIpApp = requestIpApp;
         this.betaIps = betaIps;
+        this.casMd5 = casMd5;
     }
     
     public ConfigRequestInfo() {
@@ -67,6 +70,14 @@ public class ConfigRequestInfo implements Serializable {
         this.betaIps = betaIps;
     }
     
+    public String getCasMd5() {
+        return casMd5;
+    }
+    
+    public void setCasMd5(String casMd5) {
+        this.casMd5 = casMd5;
+    }
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -76,18 +87,18 @@ public class ConfigRequestInfo implements Serializable {
             return false;
         }
         ConfigRequestInfo that = (ConfigRequestInfo) o;
-        return Objects.equals(srcIp, that.srcIp) && Objects.equals(requestIpApp, that.requestIpApp) && Objects
-                .equals(betaIps, that.betaIps);
+        return Objects.equals(srcIp, that.srcIp) && Objects.equals(requestIpApp, that.requestIpApp) && Objects.equals(
+                betaIps, that.betaIps) && Objects.equals(casMd5, that.casMd5);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(srcIp, requestIpApp, betaIps);
+        return Objects.hash(srcIp, requestIpApp, betaIps, casMd5);
     }
     
     @Override
     public String toString() {
         return "ConfigRequestInfoVo{" + "srcIp='" + srcIp + '\'' + ", requestIpApp='" + requestIpApp + '\''
-                + ", betaIps='" + betaIps + '\'' + '}';
+                + ", betaIps='" + betaIps + '\'' + ", casMd5='" + casMd5 + '\'' + '}';
     }
 }

@@ -102,10 +102,11 @@ class SubscriberList extends React.Component {
     this.props.removeSubscribers();
   };
 
-  setNowNameSpace = (nowNamespaceName, nowNamespaceId) =>
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId, nowNamespaceDesc) =>
     this.setState({
       nowNamespaceName,
       nowNamespaceId,
+      nowNamespaceDesc,
     });
 
   render() {
@@ -122,7 +123,7 @@ class SubscriberList extends React.Component {
       groupNamePlaceholder,
       query,
     } = locale;
-    const { search, nowNamespaceName, nowNamespaceId } = this.state;
+    const { search, nowNamespaceName, nowNamespaceId, nowNamespaceDesc } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -138,7 +139,13 @@ class SubscriberList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <PageTitle title={subscriberList} desc={nowNamespaceId} nameSpace />
+          <PageTitle
+            title={subscriberList}
+            desc={nowNamespaceDesc}
+            namespaceId={nowNamespaceId}
+            namespaceName={nowNamespaceName}
+            nameSpace
+          />
           <RegionGroup
             setNowNameSpace={this.setNowNameSpace}
             namespaceCallBack={this.switchNamespace}

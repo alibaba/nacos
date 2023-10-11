@@ -143,8 +143,8 @@ public class NamingGrpcClientProxyTest {
         Field uuidField = NamingGrpcClientProxy.class.getDeclaredField("uuid");
         uuidField.setAccessible(true);
         uuid = (String) uuidField.get(client);
-        
-        Assert.assertTrue(RpcClientFactory.getClient(uuid) != null);
+    
+        Assert.assertNotNull(RpcClientFactory.getClient(uuid));
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
         ((RpcClient) rpcClientField.get(client)).shutdown();
@@ -187,7 +187,7 @@ public class NamingGrpcClientProxyTest {
         try {
             client.registerService(SERVICE_NAME, GROUP_NAME, instance);
         } catch (NacosException ex) {
-            Assert.assertEquals(null, ex.getCause());
+            Assert.assertNull(ex.getCause());
             
             throw ex;
         }
@@ -435,7 +435,7 @@ public class NamingGrpcClientProxyTest {
     @Test
     public void testShutdown() throws Exception {
         client.shutdown();
-        Assert.assertTrue(RpcClientFactory.getClient(uuid) == null);
+        Assert.assertNull(RpcClientFactory.getClient(uuid));
         //verify(this.rpcClient, times(1)).shutdown();
     }
     

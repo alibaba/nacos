@@ -16,9 +16,12 @@
 
 package com.alibaba.nacos.api.remote.request;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -67,5 +70,20 @@ public class RequestMetaTest {
     public void testToString() {
         String expected = "RequestMeta{connectionId='test-connection-id', clientIp='127.0.0.1', clientVersion='1.0.0', labels={env=dev}}";
         assertEquals(expected, requestMeta.toString());
+    }
+    
+    @Test
+    public void testGetConnectionAbilityForNonExist() {
+        assertEquals(AbilityStatus.UNKNOWN, requestMeta.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+        requestMeta.setAbilityTable(Collections.emptyMap());
+        assertEquals(AbilityStatus.UNKNOWN, requestMeta.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+    }
+    
+    @Test
+    public void testGetConnectionAbilityForExist() {
+        requestMeta.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, requestMeta.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+        requestMeta.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE));
+        assertEquals(AbilityStatus.SUPPORTED, requestMeta.getConnectionAbility(AbilityKey.SERVER_TEST_1));
     }
 }

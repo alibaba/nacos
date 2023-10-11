@@ -112,11 +112,10 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     @Override
     public void insertConfigHistoryAtomic(long id, ConfigInfo configInfo, String srcIp, String srcUser,
             final Timestamp time, String ops) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-        String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
-                : configInfo.getEncryptedDataKey();
+        String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
         
         try {
             HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
@@ -240,6 +239,6 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         if (result == null) {
             throw new IllegalArgumentException("findConfigHistoryCountByTime error");
         }
-        return result.intValue();
+        return result;
     }
 }

@@ -27,7 +27,7 @@ import java.util.List;
  * @author zongtanghu
  */
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
-public abstract class SmartSubscriber extends Subscriber {
+public abstract class SmartSubscriber extends Subscriber<Event> {
     
     /**
      * Returns which event type are smart subscriber interested in.

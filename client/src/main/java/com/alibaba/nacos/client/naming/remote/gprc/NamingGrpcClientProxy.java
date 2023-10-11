@@ -41,6 +41,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -63,10 +64,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.alibaba.nacos.api.remote.RemoteConstants.MONITOR_LABEL_NONE;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
@@ -98,7 +101,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
                 RpcClientTlsConfig.properties(properties.asProperties()));
-        this.redoService = new NamingGrpcRedoService(this);
+        this.redoService = new NamingGrpcRedoService(this, properties);
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
         start(serverListFactory, serviceInfoHolder);
     }
@@ -365,11 +368,11 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
             throws NacosException {
+        Response response = null;
         try {
             request.putAllHeader(
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
-            Response response =
-                    requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }
@@ -378,12 +381,33 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             }
             NAMING_LOGGER.error("Server return unexpected response '{}', expected response should be '{}'",
                     response.getClass().getName(), responseClass.getName());
+            throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
         } catch (NacosException e) {
+            recordRequestFailedMetrics(request, e, response);
             throw e;
         } catch (Exception e) {
+            recordRequestFailedMetrics(request, e, response);
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
-        throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
+    }
+    
+    /**
+     * Records registration metrics for a service instance.
+     *
+     * @param request   The registration request object.
+     * @param exception The Exception encountered during the registration process, or null if registration was
+     *                  successful.
+     * @param response  The response object containing registration result information, or null if registration failed.
+     */
+    private void recordRequestFailedMetrics(AbstractNamingRequest request, Exception exception, Response response) {
+        if (Objects.isNull(response)) {
+            MetricsMonitor.getNamingRequestFailedMonitor(request.getClass().getSimpleName(), MONITOR_LABEL_NONE,
+                    MONITOR_LABEL_NONE, exception.getClass().getSimpleName()).inc();
+        } else {
+            MetricsMonitor.getNamingRequestFailedMonitor(request.getClass().getSimpleName(),
+                    String.valueOf(response.getResultCode()), String.valueOf(response.getErrorCode()),
+                    MONITOR_LABEL_NONE).inc();
+        }
     }
     
     @Override

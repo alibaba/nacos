@@ -18,11 +18,16 @@ package com.alibaba.nacos.naming.controllers;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
+import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +40,11 @@ import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ServiceControllerTest extends BaseTest {
@@ -48,9 +58,34 @@ public class ServiceControllerTest extends BaseTest {
     @Mock
     private SubscribeManager subscribeManager;
     
+    private SmartSubscriber subscriber;
+    
+    private volatile Class<? extends Event> eventReceivedClass;
+    
     @Before
     public void before() {
         super.before();
+        subscriber = new SmartSubscriber() {
+            @Override
+            public List<Class<? extends Event>> subscribeTypes() {
+                List<Class<? extends Event>> result = new LinkedList<>();
+                result.add(UpdateServiceTraceEvent.class);
+                return result;
+            }
+            
+            @Override
+            public void onEvent(Event event) {
+                eventReceivedClass = event.getClass();
+            }
+        };
+        NotifyCenter.registerSubscriber(subscriber);
+    }
+    
+    @After
+    public void tearDown() throws Exception {
+        NotifyCenter.deregisterSubscriber(subscriber);
+        NotifyCenter.deregisterPublisher(UpdateServiceTraceEvent.class);
+        eventReceivedClass = null;
     }
     
     @Test
@@ -104,7 +139,7 @@ public class ServiceControllerTest extends BaseTest {
     }
     
     @Test
-    public void testUpdate() {
+    public void testUpdate() throws Exception {
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME);
         servletRequest.addParameter("protectThreshold", "0.01");
@@ -115,13 +150,14 @@ public class ServiceControllerTest extends BaseTest {
             e.printStackTrace();
             Assert.fail(e.getMessage());
         }
+        TimeUnit.SECONDS.sleep(1);
+        assertEquals(eventReceivedClass, UpdateServiceTraceEvent.class);
     }
     
     @Test
     public void testSearchService() {
         try {
-            Mockito.when(
-                    serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
+            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(Collections.singletonList("result"));
             
             ObjectNode objectNode = serviceController.searchService(TEST_NAMESPACE, "");
@@ -132,8 +168,7 @@ public class ServiceControllerTest extends BaseTest {
         }
         
         try {
-            Mockito.when(
-                    serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
+            Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(Arrays.asList("re1", "re2"));
             Mockito.when(serviceOperatorV2.listAllNamespace()).thenReturn(Arrays.asList("re1", "re2"));
             

@@ -22,6 +22,8 @@ com.alibaba.nacos.api.remote.request.PushAckRequest
 com.alibaba.nacos.api.remote.request.ServerCheckRequest
 com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest
 com.alibaba.nacos.api.remote.request.ServerReloadRequest
+com.alibaba.nacos.api.remote.request.SetupAckRequest
+com.alibaba.nacos.api.remote.response.SetupAckResponse
 com.alibaba.nacos.api.remote.response.ClientDetectionResponse
 com.alibaba.nacos.api.remote.response.ConnectResetResponse
 com.alibaba.nacos.api.remote.response.ErrorResponse

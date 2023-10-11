@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
@@ -70,6 +71,11 @@ public class GrpcClientTest {
     public void setUp() throws Exception {
         when(clientConfig.name()).thenReturn("testClient");
         grpcClient = spy(new GrpcClient(clientConfig) {
+            @Override
+            protected AbilityMode abilityMode() {
+                return AbilityMode.SDK_CLIENT;
+            }
+
             @Override
             public int rpcPortOffset() {
                 return 1000;
