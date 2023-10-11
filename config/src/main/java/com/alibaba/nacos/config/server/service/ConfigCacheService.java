@@ -101,7 +101,6 @@ public class ConfigCacheService {
         CacheItem ci = makeSure(groupKey, encryptedDataKey);
         ci.setType(type);
         final int lockResult = tryWriteLock(groupKey);
-        assert (lockResult != 0);
         
         if (lockResult < 0) {
             DUMP_LOG.warn("[dump-error] write lock failed. {}", groupKey);
@@ -209,7 +208,6 @@ public class ConfigCacheService {
         
         makeSure(groupKey, null);
         final int lockResult = tryWriteLock(groupKey);
-        assert (lockResult != 0);
         
         if (lockResult < 0) {
             DUMP_LOG.warn("[dump-beta-error] write lock failed. {}", groupKey);
@@ -294,7 +292,6 @@ public class ConfigCacheService {
         
         makeSure(groupKey, null);
         final int lockResult = tryWriteLock(groupKey);
-        assert (lockResult != 0);
         
         if (lockResult < 0) {
             DUMP_LOG.warn("[dump-tag-error] write lock failed. {}", groupKey);
@@ -360,7 +357,6 @@ public class ConfigCacheService {
         
         makeSure(groupKey, encryptedDataKey);
         final int lockResult = tryWriteLock(groupKey);
-        assert (lockResult != 0);
         
         if (lockResult < 0) {
             DUMP_LOG.warn("[dump-error] write lock failed. {}", groupKey);
