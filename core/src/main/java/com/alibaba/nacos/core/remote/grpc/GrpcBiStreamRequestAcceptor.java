@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
+import com.alibaba.nacos.api.remote.request.SetupAckRequest;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.Connection;
@@ -112,8 +115,13 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
                             setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
-                    Connection connection = new GrpcConnection(metaInfo, responseObserver, GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
-                    connection.setAbilities(setUpRequest.getAbilities());
+                    Connection connection = new GrpcConnection(metaInfo, responseObserver,
+                            GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
+                    // null if supported
+                    if (setUpRequest.getAbilityTable() != null) {
+                        // map to table
+                        connection.setAbilityTable(setUpRequest.getAbilityTable());
+                    }
                     boolean rejectSdkOnStarting = metaInfo.isSdkSource() && !ApplicationUtils.isStarted();
                     
                     if (rejectSdkOnStarting || !connectionManager.register(connectionId, connection)) {
@@ -128,6 +136,15 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                                 Loggers.REMOTE_DIGEST
                                         .warn("[{}]Send connect reset request error,error={}", connectionId, e);
                             }
+                        }
+                    } else {
+                        try {
+                            // finish register, tell client has set up successfully
+                            connection.request(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
+                                    .getCurrentNodeAbilities(AbilityMode.SERVER)), 3000L);
+                        } catch (Exception e) {
+                            // nothing to do
+                            
                         }
                     }
                     

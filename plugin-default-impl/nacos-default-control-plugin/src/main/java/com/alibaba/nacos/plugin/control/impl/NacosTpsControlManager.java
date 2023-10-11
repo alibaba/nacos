@@ -18,11 +18,9 @@ package com.alibaba.nacos.plugin.control.impl;
 
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.plugin.control.Loggers;
-import com.alibaba.nacos.plugin.control.tps.barrier.TpsBarrier;
-import com.alibaba.nacos.plugin.control.tps.barrier.creator.DefaultNacosTpsBarrierCreator;
-import com.alibaba.nacos.plugin.control.tps.barrier.creator.TpsBarrierCreator;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.TpsMetrics;
+import com.alibaba.nacos.plugin.control.tps.barrier.TpsBarrier;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.response.TpsResultCode;
@@ -63,11 +61,6 @@ public class NacosTpsControlManager extends TpsControlManager {
             return thread;
         });
         startTpsReport();
-    }
-    
-    @Override
-    protected TpsBarrierCreator buildTpsBarrierCreator() {
-        return new DefaultNacosTpsBarrierCreator();
     }
     
     protected void startTpsReport() {

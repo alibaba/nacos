@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import org.junit.Test;
 
 import static org.mockito.Mockito.when;
@@ -33,6 +34,12 @@ public class GrpcClientTlsTest extends GrpcClientTest {
         when(clientConfig.tlsConfig()).thenReturn(tlsConfig);
 
         grpcClient = new GrpcClient(clientConfig) {
+
+            @Override
+            protected AbilityMode abilityMode() {
+                return AbilityMode.SDK_CLIENT;
+            }
+
             @Override
             public int rpcPortOffset() {
                 return 1000;
@@ -51,6 +58,12 @@ public class GrpcClientTlsTest extends GrpcClientTest {
         when(clientConfig.tlsConfig()).thenReturn(tlsConfig);
 
         grpcClient = new GrpcClient(clientConfig) {
+
+            @Override
+            protected AbilityMode abilityMode() {
+                return AbilityMode.SDK_CLIENT;
+            }
+
             @Override
             public int rpcPortOffset() {
                 return 1000;
@@ -72,6 +85,11 @@ public class GrpcClientTlsTest extends GrpcClientTest {
         when(clientConfig.name()).thenReturn("testClient");
         when(clientConfig.tlsConfig()).thenReturn(tlsConfig);
         grpcClient = new GrpcClient(clientConfig) {
+            @Override
+            protected AbilityMode abilityMode() {
+                return AbilityMode.SDK_CLIENT;
+            }
+
             @Override
             public int rpcPortOffset() {
                 return 1000;
