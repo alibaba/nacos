@@ -410,13 +410,7 @@ public abstract class GrpcClient extends RpcClient {
                 // try to wait for notify response
                 recAbilityContext.await(this.clientConfig.capabilityNegotiationTimeout(), TimeUnit.MILLISECONDS);
                 // if no server abilities receiving, then reconnect
-                if (!grpcConn.isAbilitiesSet()) {
-                    LOGGER.error("Client don't receive server abilities table even empty table but server supports ability negotiation."
-                                    + " You can check if it is need to adjust the timeout of ability negotiation by property: {}"
-                                    + " if always fail to connect.",
-                            GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT);
-                    grpcConn.setAbandon(true);
-                    grpcConn.close();
+                if (!recAbilityContext.check(grpcConn)) {
                     return null;
                 }
             } else {
@@ -517,6 +511,25 @@ public abstract class GrpcClient extends RpcClient {
                 this.blocker.await(timeout, unit);
             }
             this.needToSync = false;
+        }
+
+        /**
+         * check whether receive abilities.
+         *
+         * @param connection  conn.
+         * @return  whether receive abilities.
+         */
+        public boolean check(Connection connection) {
+            if (!connection.isAbilitiesSet()) {
+                LOGGER.error("Client don't receive server abilities table even empty table but server supports ability negotiation."
+                                + " You can check if it is need to adjust the timeout of ability negotiation by property: {}"
+                                + " if always fail to connect.",
+                        GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT);
+                connection.setAbandon(true);
+                connection.close();
+                return false;
+            }
+            return true;
         }
     }
 
