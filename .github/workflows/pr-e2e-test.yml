@@ -116,8 +116,6 @@ jobs:
             waitTimes: 1200
             velaAppDescription: nacos-${{ env.GITHUB_WORKFLOW }}-${{ github.run_id }}@${{ matrix.version }}
             repoName: nacos
-            velauxUsername: ${{ secrets.VELA_USERNAME }}
-            velauxPassword: ${{ secrets.VELA_PASSWORD }}
             helm:
               chart: ./cicd/helm
               git:
@@ -210,5 +208,3 @@ jobs:
             action: clean
             namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
-            velauxUsername: ${{ secrets.VELA_USERNAME }}
-            velauxPassword: ${{ secrets.VELA_PASSWORD }}
