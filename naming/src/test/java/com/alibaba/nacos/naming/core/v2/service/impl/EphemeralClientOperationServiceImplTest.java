@@ -66,7 +66,7 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
     
     private final String ipPortBasedClientId = "1.1.1.1:80#true";
     
-    private final String connectionBasedClientId = "test";;
+    private final String connectionBasedClientId = "test";
     
     private final String ip = "1.1.1.1";
     
