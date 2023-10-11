@@ -84,8 +84,8 @@ public class ConfigMapSyncTask {
     public void checkAndSyncConfigMaps() {
         List<V1ConfigMap> configMapList;
         try {
-            configMapList = coreV1Api.listConfigMapForAllNamespaces(true, null, null, null, null,
-                    null, null, null, null, true).getItems();
+            configMapList = Objects.requireNonNull(coreV1Api.listConfigMapForAllNamespaces(true, null, null, null, null,
+                    null, null, null, null, true)).getItems();
         } catch (ApiException e) {
             Loggers.MAIN.error("[{}] catch exception: " + e, "configMap-sync");
             throw new RuntimeException(e);
