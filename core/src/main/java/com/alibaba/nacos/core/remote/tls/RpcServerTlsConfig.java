@@ -22,8 +22,6 @@ import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
 
-import java.lang.reflect.InvocationTargetException;
-
 /**
  * Grpc config.
  *
@@ -41,11 +39,9 @@ public class RpcServerTlsConfig extends TlsConfig {
     
     public static synchronized RpcServerTlsConfig getInstance() {
         if (null == instance) {
-            try {
-                instance = PropertiesUtil
-                        .handleSpringBinder(EnvUtil.getEnvironment(), PREFIX, RpcServerTlsConfig.class);
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException | ClassNotFoundException e) {
-                Loggers.REMOTE.warn("TLS config bind failed, use default value", e);
+            instance = PropertiesUtil.handleSpringBinder(EnvUtil.getEnvironment(), PREFIX, RpcServerTlsConfig.class);
+            if (instance == null) {
+                Loggers.REMOTE.debug("TLS configuration is empty, use default value");
                 instance = new RpcServerTlsConfig();
             }
         }
