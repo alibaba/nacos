@@ -41,17 +41,17 @@ import io.grpc.stub.StreamObserver;
  * @version $Id: GrpcConnection.java, v 0.1 2020年07月13日 7:26 PM liuzunfei Exp $
  */
 public class GrpcConnection extends Connection {
-
+    
     private StreamObserver streamObserver;
-
+    
     private Channel channel;
-
+    
     public GrpcConnection(ConnectionMeta metaInfo, StreamObserver streamObserver, Channel channel) {
         super(metaInfo);
         this.streamObserver = streamObserver;
         this.channel = channel;
     }
-
+    
     /**
      * send request without ack.
      *
@@ -62,7 +62,7 @@ public class GrpcConnection extends Connection {
         try {
             //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
             synchronized (streamObserver) {
-
+                
                 Payload payload = GrpcUtils.convert(request);
                 traceIfNecessary(payload);
                 streamObserver.onNext(payload);
@@ -74,7 +74,7 @@ public class GrpcConnection extends Connection {
             throw e;
         }
     }
-
+    
     private void traceIfNecessary(Payload payload) {
         String connectionId = null;
         if (this.isTraced()) {
@@ -88,19 +88,19 @@ public class GrpcConnection extends Connection {
             }
         }
     }
-
+    
     private DefaultRequestFuture sendRequestInner(Request request, RequestCallBack callBack) throws NacosException {
         final String requestId = String.valueOf(PushAckIdGenerator.getNextId());
         request.setRequestId(requestId);
-
+        
         DefaultRequestFuture defaultPushFuture = new DefaultRequestFuture(getMetaInfo().getConnectionId(), requestId,
                 callBack, () -> RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), requestId));
-
+        
         RpcAckCallbackSynchronizer.syncCallback(getMetaInfo().getConnectionId(), requestId, defaultPushFuture);
         sendRequestNoAck(request);
         return defaultPushFuture;
     }
-
+    
     @Override
     public Response request(Request request, long timeoutMills) throws NacosException {
         DefaultRequestFuture pushFuture = sendRequestInner(request, null);
@@ -112,36 +112,36 @@ public class GrpcConnection extends Connection {
             RpcAckCallbackSynchronizer.clearFuture(getMetaInfo().getConnectionId(), pushFuture.getRequestId());
         }
     }
-
+    
     @Override
     public RequestFuture requestFuture(Request request) throws NacosException {
         return sendRequestInner(request, null);
     }
-
+    
     @Override
     public void asyncRequest(Request request, RequestCallBack requestCallBack) throws NacosException {
         sendRequestInner(request, requestCallBack);
     }
-
+    
     @Override
     public void close() {
         String connectionId = null;
-
+        
         try {
             connectionId = getMetaInfo().getConnectionId();
-
+            
             if (isTraced()) {
                 Loggers.REMOTE_DIGEST.warn("[{}] try to close connection ", connectionId);
             }
-
+            
             closeBiStream();
             channel.close();
-
+            
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.warn("[{}] connection  close exception  : {}", connectionId, e);
         }
     }
-
+    
     private void closeBiStream() {
         if (streamObserver instanceof ServerCallStreamObserver) {
             ServerCallStreamObserver serverCallStreamObserver = ((ServerCallStreamObserver) streamObserver);
@@ -150,7 +150,7 @@ public class GrpcConnection extends Connection {
             }
         }
     }
-
+    
     @Override
     public boolean isConnected() {
         return channel != null && channel.isOpen() && channel.isActive();

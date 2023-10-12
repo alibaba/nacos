@@ -38,7 +38,7 @@ public abstract class Connection implements Requester {
     protected RpcClient.ServerInfo serverInfo;
     
     protected Map<String, Boolean> abilityTable;
-
+    
     public Connection(RpcClient.ServerInfo serverInfo) {
         this.serverInfo = serverInfo;
     }

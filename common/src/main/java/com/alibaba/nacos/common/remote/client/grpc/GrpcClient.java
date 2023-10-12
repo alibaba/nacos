@@ -366,7 +366,7 @@ public abstract class GrpcClient extends RpcClient {
             int port = serverInfo.getServerPort() + rpcPortOffset();
             ManagedChannel managedChannel = createNewManagedChannel(serverInfo.getServerIp(), port);
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
-
+    
             Response response = serverCheck(serverInfo.getServerIp(), port, newChannelStubTemp);
             if (!(response instanceof ServerCheckResponse)) {
                 shuntDownChannel(managedChannel);
@@ -376,7 +376,7 @@ public abstract class GrpcClient extends RpcClient {
             // ability table will be null if server doesn't support ability table
             ServerCheckResponse serverCheckResponse = (ServerCheckResponse) response;
             connectionId = serverCheckResponse.getConnectionId();
-
+    
             BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc.newStub(
                     newChannelStubTemp.getChannel());
             GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
@@ -388,10 +388,10 @@ public abstract class GrpcClient extends RpcClient {
                 // promise null if no abilities receive
                 grpcConn.setAbilityTable(null);
             }
-
+    
             //create stream request and bind connection event to this connection.
             StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);
-
+    
             // stream observer to send response to server
             grpcConn.setPayloadStreamObserver(payloadStreamObserver);
             grpcConn.setGrpcFutureServiceStub(newChannelStubTemp);
@@ -439,17 +439,17 @@ public abstract class GrpcClient extends RpcClient {
     protected void afterReset(ConnectResetRequest request) {
         recAbilityContext.release(null);
     }
-
+    
     /**
      * This is for receiving server abilities.
      */
     static class RecAbilityContext {
-
+        
         /**
          * connection waiting for server abilities.
          */
         private volatile Connection connection;
-
+        
         /**
          * way to block client.
          */
@@ -498,7 +498,7 @@ public abstract class GrpcClient extends RpcClient {
             }
             this.needToSync = false;
         }
-
+        
         /**
          * await for abilities.
          *
