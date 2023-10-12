@@ -208,7 +208,7 @@ public class DefaultParamChecker extends AbstractParamChecker {
         if (dataId.length() > paramCheckRule.maxDataIdLength) {
             paramCheckResponse.setSuccess(false);
             paramCheckResponse.setMessage(String.format("Param 'dataId' is illegal, the param length should not exceed %d.",
-                    paramCheckRule.maxNamespaceIdLength));
+                    paramCheckRule.maxDataIdLength));
             return paramCheckResponse;
         }
         if (!dataIdPattern.matcher(dataId).matches()) {
@@ -369,13 +369,13 @@ public class DefaultParamChecker extends AbstractParamChecker {
             portInt = Integer.parseInt(port);
         } catch (Exception e) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d",
+            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d.",
                     paramCheckRule.minPort, paramCheckRule.maxPort));
             return paramCheckResponse;
         }
         if (portInt > paramCheckRule.maxPort || portInt < paramCheckRule.minPort) {
             paramCheckResponse.setSuccess(false);
-            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d",
+            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d.",
                     paramCheckRule.minPort, paramCheckRule.maxPort));
             return paramCheckResponse;
         }

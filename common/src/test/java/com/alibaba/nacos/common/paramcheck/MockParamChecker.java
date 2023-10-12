@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.spi;
+package com.alibaba.nacos.common.paramcheck;
 
-public class SpiTestImpl implements SpiTestInterface {
+import java.util.List;
+
+public class MockParamChecker extends AbstractParamChecker {
     
-    public static boolean newInstanceException;
+    @Override
+    public String getCheckerType() {
+        return "mock";
+    }
     
-    public SpiTestImpl() throws IllegalAccessException {
-        if (newInstanceException) {
-            throw new IllegalAccessException("test");
-        }
+    @Override
+    public ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos) {
+        return new ParamCheckResponse();
+    }
+    
+    @Override
+    public void initParamCheckRule() {
     }
 }
