@@ -93,6 +93,27 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
      */
     private static int correctUsageDelay = 10 * 60;
     
+    private static boolean dumpChangeOn = true;
+    
+    //default 30 seconds
+    private static long dumpChangeWorkerInterval = 30 * 1000L;
+    
+    public static boolean isDumpChangeOn() {
+        return dumpChangeOn;
+    }
+    
+    public static void setDumpChangeOn(boolean dumpChangeOn) {
+        PropertyUtil.dumpChangeOn = dumpChangeOn;
+    }
+    
+    public static long getDumpChangeWorkerInterval() {
+        return dumpChangeWorkerInterval;
+    }
+    
+    public static void setDumpChangeWorkerInterval(long dumpChangeWorkerInterval) {
+        PropertyUtil.dumpChangeWorkerInterval = dumpChangeWorkerInterval;
+    }
+    
     public static int getNotifyConnectTimeout() {
         return notifyConnectTimeout;
     }
@@ -254,6 +275,9 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
             setDefaultMaxAggrSize(getInt(PropertiesConstant.DEFAULT_MAX_AGGR_SIZE, defaultMaxAggrSize));
             setCorrectUsageDelay(getInt(PropertiesConstant.CORRECT_USAGE_DELAY, correctUsageDelay));
             setInitialExpansionPercent(getInt(PropertiesConstant.INITIAL_EXPANSION_PERCENT, initialExpansionPercent));
+            setDumpChangeOn(getBoolean(PropertiesConstant.DUMP_CHANGE_ON, dumpChangeOn));
+            setDumpChangeWorkerInterval(
+                    getLong(PropertiesConstant.DUMP_CHANGE_WORKER_INTERVAL, dumpChangeWorkerInterval));
         } catch (Exception e) {
             LOGGER.error("read application.properties failed", e);
             throw e;
@@ -266,6 +290,10 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     private int getInt(String key, int defaultValue) {
         return Integer.parseInt(getString(key, String.valueOf(defaultValue)));
+    }
+    
+    private long getLong(String key, long defaultValue) {
+        return Long.parseLong(getString(key, String.valueOf(defaultValue)));
     }
     
     private String getString(String key, String defaultValue) {

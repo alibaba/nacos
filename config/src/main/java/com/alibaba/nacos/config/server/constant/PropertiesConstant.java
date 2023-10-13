@@ -59,4 +59,9 @@ public class PropertiesConstant {
     
     public static final String SEARCH_WAIT_TIMEOUT = "nacos.config.search.wait_timeout";
     
+    public static final String DUMP_CHANGE_ON = "dumpChangeOn";
+    
+    public static final String DUMP_CHANGE_WORKER_INTERVAL = "dumpChangeWorkerInterval";
+    
+    
 }

@@ -68,9 +68,8 @@ public class DumpProcessor implements NacosTaskProcessor {
         String handleIp = dumpTask.getHandleIp();
         boolean isBeta = dumpTask.isBeta();
         String tag = dumpTask.getTag();
-        boolean isBatch = dumpTask.isBatch();
         ConfigDumpEvent.ConfigDumpEventBuilder build = ConfigDumpEvent.builder().namespaceId(tenant).dataId(dataId)
-                .group(group).isBatch(isBatch).isBeta(isBeta).tag(tag).handleIp(handleIp);
+                .group(group).isBeta(isBeta).tag(tag).handleIp(handleIp);
         String type = "formal";
         if (isBeta) {
             type = "beta";
