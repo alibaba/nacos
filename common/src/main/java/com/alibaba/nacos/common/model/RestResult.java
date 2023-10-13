@@ -21,6 +21,8 @@ import java.io.Serializable;
 /**
  * Rest result.
  *
+ * <p>TODO replaced or extend by {@link com.alibaba.nacos.api.model.v2.Result}.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public class RestResult<T> implements Serializable {
@@ -40,16 +42,6 @@ public class RestResult<T> implements Serializable {
         this.code = code;
         this.setMessage(message);
         this.data = data;
-    }
-    
-    public RestResult(int code, T data) {
-        this.code = code;
-        this.data = data;
-    }
-    
-    public RestResult(int code, String message) {
-        this.code = code;
-        this.setMessage(message);
     }
     
     public int getCode() {
@@ -114,7 +106,7 @@ public class RestResult<T> implements Serializable {
             this.data = data;
             return this;
         }
-    
+        
         /**
          * Build result.
          *

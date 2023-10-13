@@ -392,6 +392,9 @@
                     <append>true</append>
                     <excludes>
                         <exclude>**/grpc/auto/**</exclude>
+                        <exclude>**/packagescan/classreading/**</exclude>
+                        <exclude>**/packagescan/resource/**</exclude>
+                        <exclude>**/packagescan/util/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>
