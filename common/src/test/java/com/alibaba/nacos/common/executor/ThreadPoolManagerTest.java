@@ -33,44 +33,35 @@ public class ThreadPoolManagerTest {
         manager.register(namespace, group, executor);
         Assert.assertTrue(manager.getResourcesManager().containsKey(namespace));
         Assert.assertEquals(1, manager.getResourcesManager().get(namespace).get(group).size());
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
         
         manager.register(namespace, group, ExecutorFactory.newSingleExecutorService());
         Assert.assertEquals(2, manager.getResourcesManager().get(namespace).get(group).size());
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
         
         manager.destroy(namespace, group);
         Assert.assertFalse(manager.getResourcesManager().get(namespace).containsKey(group));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
         
         manager.register(namespace, group, executor);
         manager.destroy(namespace);
         Assert.assertFalse(manager.getResourcesManager().containsKey(namespace));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
         
         manager.register(namespace, group, executor);
         manager.deregister(namespace, group, ExecutorFactory.newSingleExecutorService());
         Assert.assertEquals(1, manager.getResourcesManager().get(namespace).get(group).size());
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
         
         manager.deregister(namespace, group, executor);
         Assert.assertEquals(0, manager.getResourcesManager().get(namespace).get(group).size());
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
         
         manager.register(namespace, group, executor);
         manager.deregister(namespace, group);
         Assert.assertFalse(manager.getResourcesManager().get(namespace).containsKey(group));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
         
         manager.register(namespace, group, executor);
         manager.register(namespace, group, ExecutorFactory.newSingleExecutorService());
         ThreadPoolManager.shutdown();
         Assert.assertFalse(manager.getResourcesManager().containsKey(namespace));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
         
         manager.destroy(namespace);
         manager.destroy(namespace, group);
         Assert.assertFalse(manager.getResourcesManager().containsKey(namespace));
-        Assert.assertTrue(manager.getLockers().containsKey(namespace));
     }
 }
