@@ -119,11 +119,11 @@ public class DumpChangeConfigWorker implements Runnable {
                                 configInfoWrapper.getLastModified(), configInfoWrapper.getEncryptedDataKey());
                         final String content = configInfoWrapper.getContent();
                         final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_GBK);
-                        final String md5UTF8 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
+                        final String md5Utf8 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
                         
                         LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={},md5UTF8={}",
                                 new Object[] {groupKey, configInfoWrapper.getLastModified(), content.length(), md5,
-                                        md5UTF8});
+                                        md5Utf8});
                     }
                 }
                 if (changeConfigs.size() < pageSize) {
