@@ -25,13 +25,13 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,14 +50,6 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class ServiceInfoHolder implements Closeable {
 
-    private static final String JM_SNAPSHOT_PATH_PROPERTY = "JM.SNAPSHOT.PATH";
-
-    private static final String FILE_PATH_NACOS = "nacos";
-
-    private static final String FILE_PATH_NAMING = "naming";
-
-    private static final String USER_HOME_PROPERTY = "user.home";
-
     private final ConcurrentMap<String, ServiceInfo> serviceInfoMap;
 
     private final FailoverReactor failoverReactor;
@@ -69,34 +61,16 @@ public class ServiceInfoHolder implements Closeable {
     private String notifierEventScope;
 
     public ServiceInfoHolder(String namespace, String notifierEventScope, NacosClientProperties properties) {
-        initCacheDir(namespace, properties);
+        cacheDir = CacheDirUtil.initCacheDir(namespace, properties);
         if (isLoadCacheAtStart(properties)) {
             this.serviceInfoMap = new ConcurrentHashMap<>(DiskCache.read(this.cacheDir));
         } else {
             this.serviceInfoMap = new ConcurrentHashMap<>(16);
         }
 
-        this.failoverReactor = new FailoverReactor(this, cacheDir, notifierEventScope);
-
+        this.failoverReactor = new FailoverReactor(this, notifierEventScope);
         this.pushEmptyProtection = isPushEmptyProtect(properties);
         this.notifierEventScope = notifierEventScope;
-    }
-
-    private void initCacheDir(String namespace, NacosClientProperties properties) {
-        String jmSnapshotPath = properties.getProperty(JM_SNAPSHOT_PATH_PROPERTY);
-
-        String namingCacheRegistryDir = "";
-        if (properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR) != null) {
-            namingCacheRegistryDir = File.separator + properties.getProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR);
-        }
-
-        if (!StringUtils.isBlank(jmSnapshotPath)) {
-            cacheDir = jmSnapshotPath + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
-                    + File.separator + FILE_PATH_NAMING + File.separator + namespace;
-        } else {
-            cacheDir = properties.getProperty(USER_HOME_PROPERTY) + File.separator + FILE_PATH_NACOS + namingCacheRegistryDir
-                    + File.separator + FILE_PATH_NAMING + File.separator + namespace;
-        }
     }
 
     private boolean isLoadCacheAtStart(NacosClientProperties properties) {
@@ -124,7 +98,6 @@ public class ServiceInfoHolder implements Closeable {
     }
 
     public ServiceInfo getServiceInfo(final String serviceName, final String groupName, final String clusters) {
-        NAMING_LOGGER.debug("failover-mode: {}", failoverReactor.isFailoverSwitch());
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         String key = ServiceInfo.getKey(groupedServiceName, clusters);
         return serviceInfoMap.get(key);
@@ -183,6 +156,7 @@ public class ServiceInfoHolder implements Closeable {
 
     /**
      * isChangedServiceInfo.
+     *
      * @param oldService old service data
      * @param newService new service data
      * @return

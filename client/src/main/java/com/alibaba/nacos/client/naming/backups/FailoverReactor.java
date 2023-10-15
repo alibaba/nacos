@@ -23,6 +23,7 @@ import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.MultiGauge;
@@ -63,12 +64,13 @@ public class FailoverReactor implements Closeable {
             .description("Nacos failover data service count")
             .register(Metrics.globalRegistry);
 
-    public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String cacheDir, String notifierEventScope) {
+    public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
         this.notifierEventScope = notifierEventScope;
         Collection<FailoverDataSource> dataSources = NacosServiceLoader.load(FailoverDataSource.class);
         for (FailoverDataSource dataSource : dataSources) {
             failoverDataSource = dataSource;
+            NAMING_LOGGER.info("FailoverDataSource type is {}", dataSource.getClass());
             break;
         }
         // init executorService
@@ -101,13 +103,18 @@ public class FailoverReactor implements Closeable {
                 Map<String, ServiceInfo> failoverMap = new ConcurrentHashMap<>(200);
                 Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
                 for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
+                    ServiceInfo newService = (ServiceInfo) entry.getValue().getData();
+                    ServiceInfo oldService = serviceMap.get(entry.getKey());
+                    if (serviceInfoHolder.isChangedServiceInfo(oldService, newService)) {
+                        NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}", JacksonUtils.toJson(newService));
+                    }
                     failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                 }
 
                 if (failoverMap.size() > 0) {
                     failoverInstanceCounts.register(failoverMap.keySet().stream().map(
-                            serviceName -> MultiGauge.Row.of(Tags.of("service_name", serviceName),
-                                    ((ServiceInfo) failoverMap.get(serviceName)).ipCount()))
+                            serviceName -> MultiGauge.Row.of(Tags.of("service_name", serviceName, ""),
+                            ((ServiceInfo) failoverMap.get(serviceName)).ipCount()))
                             .collect(Collectors.toList()), true);
                     serviceMap = failoverMap;
                 }

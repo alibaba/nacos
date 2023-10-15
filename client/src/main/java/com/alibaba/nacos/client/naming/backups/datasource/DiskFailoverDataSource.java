@@ -24,6 +24,7 @@ import com.alibaba.nacos.client.naming.backups.NamingFailoverData;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -56,14 +57,22 @@ public class DiskFailoverDataSource implements FailoverDataSource {
 
     private static final String NO_FAILOVER_MODE = "0";
 
+    private static final String FAILOVER_MODE_PARAM = "failover-mode";
+
     private Map<String, FailoverData> serviceMap = new ConcurrentHashMap<>();
+
+    private final Map<String, String> switchParams = new ConcurrentHashMap<>();
 
     private String failoverDir;
 
     private long lastModifiedMillis = 0L;
 
     public DiskFailoverDataSource(ServiceInfoHolder serviceInfoHolder) {
+        failoverDir = CacheDirUtil.gettCacheDir() + FAILOVER_DIR;
         this.failoverDir = serviceInfoHolder.getCacheDir() + FAILOVER_DIR;
+    }
+
+    public void init() {
     }
 
     class FailoverFileReader implements Runnable {
@@ -141,6 +150,7 @@ public class DiskFailoverDataSource implements FailoverDataSource {
         try {
             File switchFile = Paths.get(failoverDir, UtilAndComs.FAILOVER_SWITCH).toFile();
             if (!switchFile.exists()) {
+                switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
                 NAMING_LOGGER.debug("failover switch is not found, {}", switchFile.getName());
                 return new FailoverSwitch(Boolean.FALSE);
             }
@@ -157,10 +167,12 @@ public class DiskFailoverDataSource implements FailoverDataSource {
                     for (String line : lines) {
                         String line1 = line.trim();
                         if (IS_FAILOVER_MODE.equals(line1)) {
+                            switchParams.put(FAILOVER_MODE_PARAM, Boolean.TRUE.toString());
                             NAMING_LOGGER.info("failover-mode is on");
                             new FailoverFileReader().run();
                             return new FailoverSwitch(Boolean.TRUE);
                         } else if (NO_FAILOVER_MODE.equals(line1)) {
+                            switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
                             NAMING_LOGGER.info("failover-mode is off");
                         }
                     }
@@ -171,12 +183,16 @@ public class DiskFailoverDataSource implements FailoverDataSource {
             NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
         }
 
+        switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
         return new FailoverSwitch(Boolean.FALSE);
     }
 
     @Override
     public Map<String, FailoverData> getFailoverData() {
-        return serviceMap;
+        if (Boolean.parseBoolean(switchParams.get(FAILOVER_MODE_PARAM))) {
+            return serviceMap;
+        }
+        return new ConcurrentHashMap<>(0);
     }
 
 }
