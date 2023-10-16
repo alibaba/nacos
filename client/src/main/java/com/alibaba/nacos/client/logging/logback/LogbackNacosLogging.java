@@ -78,12 +78,17 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
             LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
             Collection<NacosLogbackConfigurator> nacosLogbackConfigurators = NacosServiceLoader.load(
                     NacosLogbackConfigurator.class);
-            NacosLogbackConfigurator nacosLogbackConfigurator = nacosLogbackConfigurators.stream()
-                    .filter(c -> c.getVersion() == userVersion).collect(Collectors.toList()).get(0);
-            nacosLogbackConfigurator.setContext(loggerContext);
-            if(StringUtils.isNotBlank(location)){
-                nacosLogbackConfigurator.configure(ResourceUtils.getResourceUrl(location));
-            }
+            nacosLogbackConfigurators.stream()
+                    .filter(c -> c.getVersion() == userVersion).findFirst().ifPresent(nacosLogbackConfigurator->{
+                        nacosLogbackConfigurator.setContext(loggerContext);
+                        if(StringUtils.isNotBlank(location)){
+                            try {
+                                nacosLogbackConfigurator.configure(ResourceUtils.getResourceUrl(location));
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        }
+                    });
             return loggerContext;
         } catch (Exception e) {
             throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
