@@ -25,6 +25,7 @@ import com.alibaba.nacos.client.logging.AbstractNacosLogging;
 import com.alibaba.nacos.common.log.NacosLogbackConfigurator;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.ResourceUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.stream.Collectors;
@@ -80,7 +81,9 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
             NacosLogbackConfigurator nacosLogbackConfigurator = nacosLogbackConfigurators.stream()
                     .filter(c -> c.getVersion() == userVersion).collect(Collectors.toList()).get(0);
             nacosLogbackConfigurator.setContext(loggerContext);
-            nacosLogbackConfigurator.configure(ResourceUtils.getResourceUrl(location));
+            if(StringUtils.isNotBlank(location)){
+                nacosLogbackConfigurator.configure(ResourceUtils.getResourceUrl(location));
+            }
             return loggerContext;
         } catch (Exception e) {
             throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
