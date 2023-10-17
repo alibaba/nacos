@@ -836,10 +836,10 @@ public class ClientWorker implements Closeable {
             final String group = cacheData.group;
             final String tenant = cacheData.tenant;
             final String envName = cacheData.envName;
-        
+    
             // Check if a failover file exists for the specified dataId, group, and tenant.
             File file = LocalConfigInfoProcessor.getFailoverFile(envName, dataId, group, tenant);
-        
+    
             // If not using local config info and a failover file exists, load and use it.
             if (!cacheData.isUseLocalConfigInfo() && file.exists()) {
                 String content = LocalConfigInfoProcessor.getFailover(envName, dataId, group, tenant);
@@ -852,7 +852,7 @@ public class ClientWorker implements Closeable {
                         envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
                 return;
             }
-        
+    
             // If use local config info, but the failover file is deleted, switch back to server config.
             if (cacheData.isUseLocalConfigInfo() && !file.exists()) {
                 cacheData.setUseLocalConfigInfo(false);
@@ -860,7 +860,7 @@ public class ClientWorker implements Closeable {
                         dataId, group, tenant);
                 return;
             }
-        
+    
             // When the failover file content changes, indicating a change in local configuration.
             if (cacheData.isUseLocalConfigInfo() && file.exists()
                     && cacheData.getLocalConfigInfoVersion() != file.lastModified()) {
