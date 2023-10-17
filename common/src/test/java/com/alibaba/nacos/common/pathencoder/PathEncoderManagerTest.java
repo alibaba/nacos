@@ -70,13 +70,8 @@ public class PathEncoderManagerTest {
     public void testWindowsEncode() throws Exception {
         // load static
         PathEncoderManager instance = PathEncoderManager.getInstance();
-        // remove impl
-        targetEncoder.set(instance, null);
-        // try to encode, non windows
         String case1 = "aa||a";
-        Assert.assertEquals(PathEncoderManager.getInstance().encode(case1), case1);
         String case2 = "aa%A9%%A9%a";
-        Assert.assertEquals(PathEncoderManager.getInstance().decode(case2), case2);
         // try to encode if in windows
         targetEncoder.set(instance, new WindowsEncoder());
         Assert.assertEquals(PathEncoderManager.getInstance().encode(case1), case2);
@@ -84,10 +79,16 @@ public class PathEncoderManagerTest {
     }
     
     @Test
-    public void testEncodeWithNonExistOs() {
-        System.setProperty("os.name", "non-exist");
-        String testCase = "aa||a";
-        Assert.assertEquals(testCase, PathEncoderManager.getInstance().encode(testCase));
+    public void testEncodeWithNonExistOs() throws Exception {
+        // load static
+        PathEncoderManager instance = PathEncoderManager.getInstance();
+        // remove impl
+        targetEncoder.set(instance, null);
+        // try to encode, non windows
+        String case1 = "aa||a";
+        Assert.assertEquals(PathEncoderManager.getInstance().encode(case1), case1);
+        String case2 = "aa%A9%%A9%a";
+        Assert.assertEquals(PathEncoderManager.getInstance().decode(case2), case2);
     }
     
     @Test
