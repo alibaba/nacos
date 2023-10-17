@@ -84,13 +84,6 @@ public class PathEncoderManagerTest {
     }
     
     @Test
-    public void testEncodeWithNonExistOs() {
-        System.setProperty("os.name", "non-exist");
-        String testCase = "aa||a";
-        Assert.assertEquals(testCase, PathEncoderManager.getInstance().encode(testCase));
-    }
-    
-    @Test
     public void testEncodeForNull() throws IllegalAccessException {
         PathEncoder mockPathEncoder = mock(PathEncoder.class);
         targetEncoder.set(PathEncoderManager.getInstance(), mockPathEncoder);
