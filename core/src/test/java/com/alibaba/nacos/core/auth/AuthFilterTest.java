@@ -20,7 +20,6 @@ package com.alibaba.nacos.core.auth;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.Constants;
 import org.junit.Assert;
 import org.junit.Test;
@@ -31,6 +30,9 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExecutionChain;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -38,6 +40,7 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.Method;
 
 /**
  * {@link AuthFilter} unit test.
@@ -55,7 +58,7 @@ public class AuthFilterTest {
     private AuthConfigs authConfigs;
     
     @Mock
-    private ControllerMethodsCache methodsCache;
+    private RequestMappingHandlerMapping handlerMapping;
     
     @Test
     public void testDoFilter() {
@@ -78,11 +81,12 @@ public class AuthFilterTest {
             
             Mockito.when(authConfigs.getServerIdentityValue()).thenReturn("3");
             authFilter.doFilter(request, response, filterChain);
-            
-            Mockito.when(methodsCache.getMethod(Mockito.any()))
-                    .thenReturn(filterChain.getClass().getMethod("testSecured"));
+    
+            HandlerExecutionChain executionChain = Mockito.mock(HandlerExecutionChain.class);
+            Mockito.when(handlerMapping.getHandler(request)).thenReturn(executionChain);
+            Method method = filterChain.getClass().getMethod("testSecured");
+            Mockito.when(executionChain.getHandler()).thenReturn(new HandlerMethod(filterChain, method));
             authFilter.doFilter(request, response, filterChain);
-            
         } catch (Exception e) {
             e.printStackTrace();
             Assert.fail(e.getMessage());

@@ -17,8 +17,6 @@
 package com.alibaba.nacos.console.config;
 
 import com.alibaba.nacos.console.filter.XssFilter;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -28,8 +26,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
-
-import javax.annotation.PostConstruct;
 import java.time.ZoneId;
 
 /**
@@ -44,22 +40,8 @@ import java.time.ZoneId;
 @PropertySource("/application.properties")
 public class ConsoleConfig {
     
-    @Autowired
-    private ControllerMethodsCache methodsCache;
-    
     @Value("${nacos.console.ui.enabled:true}")
     private boolean consoleUiEnabled;
-    
-    /**
-     * Init.
-     */
-    @PostConstruct
-    public void init() {
-        methodsCache.initClassMethod("com.alibaba.nacos.core.controller");
-        methodsCache.initClassMethod("com.alibaba.nacos.naming.controllers");
-        methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");
-        methodsCache.initClassMethod("com.alibaba.nacos.console.controller");
-    }
     
     @Bean
     public CorsFilter corsFilter() {

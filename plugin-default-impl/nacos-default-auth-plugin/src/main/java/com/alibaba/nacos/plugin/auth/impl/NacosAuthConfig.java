@@ -18,7 +18,6 @@ package com.alibaba.nacos.plugin.auth.impl;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.AuthenticationManagerDelegator;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.DefaultAuthenticationManager;
 import com.alibaba.nacos.plugin.auth.impl.authenticate.IAuthenticationManager;
@@ -44,8 +43,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsUtils;
-
-import javax.annotation.PostConstruct;
 
 /**
  * Spring security config.
@@ -75,30 +72,20 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     private final LdapAuthenticationProvider ldapAuthenticationProvider;
     
-    private final ControllerMethodsCache methodsCache;
-    
     public NacosAuthConfig(Environment env, TokenManagerDelegate tokenProvider, AuthConfigs authConfigs,
             NacosUserDetailsServiceImpl userDetailsService,
-            ObjectProvider<LdapAuthenticationProvider> ldapAuthenticationProvider,
-            ControllerMethodsCache methodsCache) {
-        
+            ObjectProvider<LdapAuthenticationProvider> ldapAuthenticationProvider) {
         this.env = env;
         this.tokenProvider = tokenProvider;
         this.authConfigs = authConfigs;
         this.userDetailsService = userDetailsService;
         this.ldapAuthenticationProvider = ldapAuthenticationProvider.getIfAvailable();
-        this.methodsCache = methodsCache;
         
     }
     
     /**
      * Init.
      */
-    @PostConstruct
-    public void init() {
-        methodsCache.initClassMethod("com.alibaba.nacos.plugin.auth.impl.controller");
-    }
-    
     @Bean(name = BeanIds.AUTHENTICATION_MANAGER)
     @Override
     public AuthenticationManager authenticationManagerBean() throws Exception {

@@ -21,7 +21,6 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
@@ -29,6 +28,9 @@ import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.sys.env.Constants;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExecutionChain;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -50,13 +52,13 @@ public class AuthFilter implements Filter {
     
     private final AuthConfigs authConfigs;
     
-    private final ControllerMethodsCache methodsCache;
+    private final RequestMappingHandlerMapping handlerMapping;
     
     private final HttpProtocolAuthService protocolAuthService;
     
-    public AuthFilter(AuthConfigs authConfigs, ControllerMethodsCache methodsCache) {
+    public AuthFilter(AuthConfigs authConfigs, RequestMappingHandlerMapping handlerMapping) {
         this.authConfigs = authConfigs;
-        this.methodsCache = methodsCache;
+        this.handlerMapping = handlerMapping;
         this.protocolAuthService = new HttpProtocolAuthService(authConfigs);
         this.protocolAuthService.initialize();
     }
@@ -99,13 +101,14 @@ public class AuthFilter implements Filter {
         
         try {
             
-            Method method = methodsCache.getMethod(req);
-            
-            if (method == null) {
+            HandlerExecutionChain executionChain = handlerMapping.getHandler(req);
+            if (executionChain == null) {
                 chain.doFilter(request, response);
                 return;
             }
             
+            HandlerMethod handler = (HandlerMethod) executionChain.getHandler();
+            Method method = handler.getMethod();
             if (method.isAnnotationPresent(Secured.class) && authConfigs.isAuthEnabled()) {
                 
                 if (Loggers.AUTH.isDebugEnabled()) {

@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.utils.ReuseHttpServletRequest;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.DistroMapper;
@@ -29,6 +28,10 @@ import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExecutionChain;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -65,7 +68,8 @@ public class DistroFilter implements Filter {
     private DistroMapper distroMapper;
     
     @Autowired
-    private ControllerMethodsCache controllerMethodsCache;
+    @Qualifier("requestMappingHandlerMapping")
+    private RequestMappingHandlerMapping handlerMapping;
     
     @Autowired
     private DistroTagGenerator distroTagGenerator;
@@ -87,9 +91,15 @@ public class DistroFilter implements Filter {
         }
         
         try {
-            Method method = controllerMethodsCache.getMethod(req);
-            
             String path = new URI(req.getRequestURI()).getPath();
+            HandlerExecutionChain executionChain = handlerMapping.getHandler(req);
+            
+            if (executionChain == null) {
+                throw new NoSuchMethodException(req.getMethod() + " " + path);
+            }
+            HandlerMethod handler = (HandlerMethod) executionChain.getHandler();
+            Method method = handler.getMethod();
+            
             if (method == null) {
                 throw new NoSuchMethodException(req.getMethod() + " " + path);
             }
@@ -129,9 +139,9 @@ public class DistroFilter implements Filter {
             final String body = IoUtils.toString(req.getInputStream(), StandardCharsets.UTF_8.name());
             final Map<String, String> paramsValue = HttpClient.translateParameterMap(req.getParameterMap());
             
-            RestResult<String> result = HttpClient
-                    .request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList, paramsValue, body,
-                            PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(), req.getMethod());
+            RestResult<String> result = HttpClient.request(HTTP_PREFIX + targetServer + req.getRequestURI(), headerList,
+                    paramsValue, body, PROXY_CONNECT_TIMEOUT, PROXY_READ_TIMEOUT, StandardCharsets.UTF_8.name(),
+                    req.getMethod());
             String data = result.ok() ? result.getData() : result.getMessage();
             try {
                 WebUtils.response(resp, data, result.getCode());
