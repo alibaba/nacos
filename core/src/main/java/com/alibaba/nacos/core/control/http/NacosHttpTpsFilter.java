@@ -18,13 +18,15 @@ package com.alibaba.nacos.core.control.http;
 
 import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.control.TpsControlConfig;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
+import org.springframework.web.method.HandlerMethod;
+import org.springframework.web.servlet.HandlerExecutionChain;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.Filter;
@@ -46,10 +48,10 @@ import java.util.concurrent.TimeUnit;
  */
 public class NacosHttpTpsFilter implements Filter {
     
-    private ControllerMethodsCache controllerMethodsCache;
+    private final RequestMappingHandlerMapping handlerMapping;
     
-    public NacosHttpTpsFilter(ControllerMethodsCache controllerMethodsCache) {
-        this.controllerMethodsCache = controllerMethodsCache;
+    public NacosHttpTpsFilter(RequestMappingHandlerMapping handlerMapping) {
+        this.handlerMapping = handlerMapping;
     }
     
     @Override
@@ -63,8 +65,15 @@ public class NacosHttpTpsFilter implements Filter {
         final HttpServletRequest httpServletRequest = (HttpServletRequest) servletRequest;
         final HttpServletResponse response = (HttpServletResponse) servletResponse;
         
-        Method method = controllerMethodsCache.getMethod(httpServletRequest);
         try {
+            HandlerExecutionChain executionChain = handlerMapping.getHandler(httpServletRequest);
+            if (executionChain == null) {
+                filterChain.doFilter(httpServletRequest, servletResponse);
+                return;
+            }
+    
+            HandlerMethod handler = (HandlerMethod) executionChain.getHandler();
+            Method method = handler.getMethod();
             if (method != null && method.isAnnotationPresent(TpsControl.class)
                     && TpsControlConfig.isTpsControlEnabled()) {
                 TpsControl tpsControl = method.getAnnotation(TpsControl.class);

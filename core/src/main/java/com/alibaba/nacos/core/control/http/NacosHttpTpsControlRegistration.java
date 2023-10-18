@@ -16,10 +16,11 @@
 
 package com.alibaba.nacos.core.control.http;
 
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 /**
  * Nacos http tps control cut point filter registration.
@@ -43,7 +44,7 @@ public class NacosHttpTpsControlRegistration {
     }
     
     @Bean
-    public NacosHttpTpsFilter tpsFilter(ControllerMethodsCache methodsCache) {
-        return new NacosHttpTpsFilter(methodsCache);
+    public NacosHttpTpsFilter tpsFilter(@Qualifier("requestMappingHandlerMapping") RequestMappingHandlerMapping handlerMapping) {
+        return new NacosHttpTpsFilter(handlerMapping);
     }
 }
