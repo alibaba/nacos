@@ -67,7 +67,6 @@ public class ServiceInfoHolder implements Closeable {
         } else {
             this.serviceInfoMap = new ConcurrentHashMap<>(16);
         }
-        
         this.failoverReactor = new FailoverReactor(this, notifierEventScope);
         this.pushEmptyProtection = isPushEmptyProtect(properties);
         this.notifierEventScope = notifierEventScope;
@@ -145,7 +144,6 @@ public class ServiceInfoHolder implements Closeable {
                         new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
                                 serviceInfo.getClusters(), serviceInfo.getHosts()));
             }
-            
             DiskCache.write(serviceInfo, cacheDir);
         }
         return serviceInfo;

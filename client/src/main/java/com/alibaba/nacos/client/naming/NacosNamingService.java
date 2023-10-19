@@ -87,7 +87,6 @@ public class NacosNamingService implements NamingService {
     
     private void init(Properties properties) throws NacosException {
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        
         ValidatorUtils.checkInitParam(nacosClientProperties);
         this.namespace = InitUtils.initNamespaceForNaming(nacosClientProperties);
         InitUtils.initSerialization();
