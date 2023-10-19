@@ -22,22 +22,22 @@ package com.alibaba.nacos.client.naming.backups;
  * @author zongkang.guo
  */
 public class FailoverData {
-
+    
     /**
      * failover type,naming or config.
      */
     private DataType dataType;
-
+    
     /**
      * failover data.
      */
     private Object data;
-
+    
     public FailoverData(DataType dataType, Object data) {
         this.data = data;
         this.dataType = dataType;
     }
-
+    
     public enum DataType {
         /**
          * naming.
@@ -48,19 +48,19 @@ public class FailoverData {
          */
         config
     }
-
+    
     public DataType getDataType() {
         return dataType;
     }
-
+    
     public void setDataType(DataType dataType) {
         this.dataType = dataType;
     }
-
+    
     public Object getData() {
         return data;
     }
-
+    
     public void setData(Object data) {
         this.data = data;
     }

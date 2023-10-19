@@ -47,23 +47,22 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author nkorange
  */
 public class FailoverReactor implements Closeable {
-
+    
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<>();
-
+    
     private boolean failoverSwitchEnable;
-
+    
     private final ServiceInfoHolder serviceInfoHolder;
-
+    
     private final ScheduledExecutorService executorService;
-
+    
     private FailoverDataSource failoverDataSource;
-
+    
     private String notifierEventScope;
-
+    
     private MultiGauge failoverInstanceCounts = MultiGauge.builder("nacos_naming_client_failover_instances")
-            .description("Nacos failover data service count")
-            .register(Metrics.globalRegistry);
-
+            .description("Nacos failover data service count").register(Metrics.globalRegistry);
+    
     public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
         this.notifierEventScope = notifierEventScope;
@@ -82,21 +81,21 @@ public class FailoverReactor implements Closeable {
         });
         this.init();
     }
-
+    
     /**
      * Init.
      */
     public void init() {
-
+        
         executorService.scheduleWithFixedDelay(new FailoverSwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
-
+        
     }
-
+    
     class FailoverSwitchRefresher implements Runnable {
-
+        
         @Override
         public void run() {
-
+            
             FailoverSwitch fSwitch = failoverDataSource.getSwitch();
             if (fSwitch != null && fSwitch.getEnabled()) {
                 failoverSwitchEnable = true;
@@ -106,22 +105,23 @@ public class FailoverReactor implements Closeable {
                     ServiceInfo newService = (ServiceInfo) entry.getValue().getData();
                     ServiceInfo oldService = serviceMap.get(entry.getKey());
                     if (serviceInfoHolder.isChangedServiceInfo(oldService, newService)) {
-                        NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}", JacksonUtils.toJson(newService));
+                        NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}",
+                                JacksonUtils.toJson(newService));
                     }
                     failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                 }
-
+                
                 if (failoverMap.size() > 0) {
-                    failoverInstanceCounts.register(failoverMap.keySet().stream().map(
-                            serviceName -> MultiGauge.Row.of(Tags.of("service_name", serviceName, ""),
-                            ((ServiceInfo) failoverMap.get(serviceName)).ipCount()))
+                    failoverInstanceCounts.register(failoverMap.keySet().stream()
+                            .map(serviceName -> MultiGauge.Row.of(Tags.of("service_name", serviceName, ""),
+                                    ((ServiceInfo) failoverMap.get(serviceName)).ipCount()))
                             .collect(Collectors.toList()), true);
                     serviceMap = failoverMap;
                 }
-
+                
                 return;
             }
-
+            
             if (fSwitch != null && failoverSwitchEnable && !fSwitch.getEnabled()) {
                 failoverSwitchEnable = false;
                 Map<String, ServiceInfo> serviceInfoMap = serviceInfoHolder.getServiceInfoMap();
@@ -130,8 +130,8 @@ public class FailoverReactor implements Closeable {
                     ServiceInfo newService = serviceInfoMap.get(entry.getKey());
                     boolean changed = serviceInfoHolder.isChangedServiceInfo(oldService, newService);
                     if (changed) {
-                        NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(), newService.getGroupName(),
-                                newService.getClusters(), newService.getHosts()));
+                        NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
+                                newService.getGroupName(), newService.getClusters(), newService.getHosts()));
                     }
                 }
                 serviceMap.clear();
@@ -139,22 +139,22 @@ public class FailoverReactor implements Closeable {
             }
         }
     }
-
+    
     public boolean isFailoverSwitch() {
         return failoverSwitchEnable;
     }
-
+    
     public ServiceInfo getService(String key) {
         ServiceInfo serviceInfo = serviceMap.get(key);
-
+        
         if (serviceInfo == null) {
             serviceInfo = new ServiceInfo();
             serviceInfo.setName(key);
         }
-
+        
         return serviceInfo;
     }
-
+    
     /**
      * Add day.
      *
@@ -168,7 +168,7 @@ public class FailoverReactor implements Closeable {
         startDT.add(Calendar.DAY_OF_MONTH, num);
         return startDT.getTime();
     }
-
+    
     /**
      * shutdown ThreadPool.
      *

@@ -22,20 +22,20 @@ package com.alibaba.nacos.client.naming.backups;
  * @author zongkang.guo
  */
 public class FailoverSwitch {
-
+    
     /**
      * Failover switch enable.
      */
     private boolean enabled;
-
+    
     public boolean getEnabled() {
         return enabled;
     }
-
+    
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-
+    
     public FailoverSwitch(boolean enabled) {
         this.enabled = enabled;
     }

@@ -24,20 +24,20 @@ import java.util.Map;
  * @author Nacos
  */
 public interface FailoverDataSource {
-
+    
     /**
      * Get current disaster recovery switch.
      *
      * @return
      */
     FailoverSwitch getSwitch();
-
-
+    
+    
     /**
      * Get current disaster recovery data.
      *
      * @return map
      */
     Map<String, FailoverData> getFailoverData();
-
+    
 }

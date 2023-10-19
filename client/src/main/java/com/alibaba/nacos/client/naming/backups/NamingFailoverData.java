@@ -24,11 +24,11 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
  * @author zongkang.guo
  */
 public class NamingFailoverData extends FailoverData {
-
+    
     private NamingFailoverData(ServiceInfo serviceInfo) {
         super(DataType.naming, serviceInfo);
     }
-
+    
     public static NamingFailoverData newNamingFailoverData(ServiceInfo serviceInfo) {
         return new NamingFailoverData(serviceInfo);
     }
