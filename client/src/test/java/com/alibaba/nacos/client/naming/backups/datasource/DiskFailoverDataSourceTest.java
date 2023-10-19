@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class DiskFailoverDataSourceTest extends TestCase {
-
+    
     @Test
     public void testGetSwitch() {
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
@@ -34,7 +34,7 @@ public class DiskFailoverDataSourceTest extends TestCase {
         DiskFailoverDataSource diskFailoverDataSource = new DiskFailoverDataSource(holder);
         diskFailoverDataSource.getSwitch();
     }
-
+    
     @Test
     public void testGetFailoverData() {
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
@@ -42,7 +42,7 @@ public class DiskFailoverDataSourceTest extends TestCase {
         DiskFailoverDataSource diskFailoverDataSource = new DiskFailoverDataSource(holder);
         diskFailoverDataSource.getFailoverData();
     }
-
+    
     @Test
     public void testSaveFailoverData() {
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
