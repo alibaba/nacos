@@ -29,6 +29,7 @@
     <artifactId>nacos-control-plugin</artifactId>
     <name>nacos-control-plugin ${project.version}</name>
     <url>https://nacos.io</url>
+    <description>Nacos control plugin pom.xml file</description>
     
     <dependencies>
         <dependency>
