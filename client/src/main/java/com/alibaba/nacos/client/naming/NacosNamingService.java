@@ -313,7 +313,7 @@ public class NacosNamingService implements NamingService {
             serviceInfo = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
             if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
                 if (!clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
-                    serviceInfo = clientProxy.subscribe(serviceName, groupName, clusterString);
+                    clientProxy.subscribe(serviceName, groupName, clusterString);
                 }
                 return serviceInfo;
             }
