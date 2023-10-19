@@ -38,7 +38,7 @@ public class UtilAndComs {
     public static final String ALL_IPS = "000--00-ALL_IPS--00--000";
     
     public static final String FAILOVER_SWITCH = "00-00---000-VIPSRV_FAILOVER_SWITCH-000---00-00";
-
+    
     public static final String DEFAULT_NAMESPACE_ID = "public";
     
     public static final int REQUEST_DOMAIN_RETRY_COUNT = 3;
@@ -46,7 +46,7 @@ public class UtilAndComs {
     public static final String NACOS_NAMING_LOG_NAME = "com.alibaba.nacos.naming.log.filename";
     
     public static final String NACOS_NAMING_LOG_LEVEL = "com.alibaba.nacos.naming.log.level";
-
+    
     public static final String NACOS_FAIL_OVER_STORAGE_TYPE = "com.alibaba.nacos.failover.storage.type";
     
     public static final int DEFAULT_POLLING_THREAD_COUNT =
