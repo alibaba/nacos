@@ -26,10 +26,10 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertEquals;
 
 public class TraceEventPublisherFactoryTest {
+    
     private Map<String, EventPublisher> originalEventPublisherMap;
     
     @Before
@@ -57,6 +57,17 @@ public class TraceEventPublisherFactoryTest {
         TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.class, Byte.SIZE);
         String expectedStatus = "Trace event publisher statues:\n"
                 + "\tPublisher TraceEvent                    : shutdown=false, queue=      0/8      \n";
-        assertThat(TraceEventPublisherFactory.getInstance().getAllPublisherStatues(), is(expectedStatus));
+        assertEquals(expectedStatus, TraceEventPublisherFactory.getInstance().getAllPublisherStatues());
+    }
+    
+    @Test
+    public void testApplyAfterAddEventType() {
+        TraceEventPublisherFactory.getInstance().addPublisherEvent(TraceTestEvent.class);
+        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent1.class, Byte.SIZE);
+        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.TraceTestEvent2.class, Byte.SIZE);
+        TraceEventPublisherFactory.getInstance().apply(TraceTestEvent.class, Byte.SIZE);
+        String expectedStatus = "Trace event publisher statues:\n"
+                + "\tPublisher TraceTestEvent                : shutdown=false, queue=      0/8      \n";
+        assertEquals(expectedStatus, TraceEventPublisherFactory.getInstance().getAllPublisherStatues());
     }
 }

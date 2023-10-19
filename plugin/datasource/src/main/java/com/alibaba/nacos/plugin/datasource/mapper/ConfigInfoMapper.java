@@ -19,11 +19,15 @@ package com.alibaba.nacos.plugin.datasource.mapper;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The mapper of config info.
@@ -32,234 +36,212 @@ import java.util.Map;
  **/
 
 public interface ConfigInfoMapper extends Mapper {
-
-    String DATA_ID = "dataId";
     
-    String GROUP = "group";
-    
-    String APP_NAME = "appName";
-    
-    String CONTENT = "content";
-    
-    String TENANT = "tenant";
-
     /**
-     * Get the maxId.
-     * The default sql:
-     * SELECT max(id) FROM config_info
+     * Get the maxId. The default sql: SELECT max(id) FROM config_info
      *
+     * @param context sql paramMap
      * @return the sql of getting the maxId.
      */
-    default String findConfigMaxId() {
-        return "SELECT MAX(id) FROM config_info";
+    default MapperResult findConfigMaxId(MapperContext context) {
+        return new MapperResult("SELECT MAX(id) FROM config_info", Collections.emptyList());
     }
     
     /**
-     * Find all dataId and group.
-     * The default sql:
-     * SELECT DISTINCT data_id, group_id FROM config_info
+     * Find all dataId and group. The default sql: SELECT DISTINCT data_id, group_id FROM config_info
      *
+     * @param context sql paramMap
      * @return The sql of finding all dataId and group.
      */
-    default String findAllDataIdAndGroup() {
-        return "SELECT DISTINCT data_id, group_id FROM config_info";
+    default MapperResult findAllDataIdAndGroup(MapperContext context) {
+        return new MapperResult("SELECT DISTINCT data_id, group_id FROM config_info", Collections.emptyList());
     }
     
     /**
-     * Query the count of config_info by tenantId and appName.
-     * The default sql:
-     * SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name=?
+     * Query the count of config_info by tenantId and appName. The default sql: SELECT count(*) FROM config_info WHERE
+     * tenant_id LIKE ? AND app_name=?
      *
+     * @param context sql paramMap
      * @return The sql of querying the count of config_info.
      */
-    default String findConfigInfoByAppCountRows() {
-        return "SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?";
+    default MapperResult findConfigInfoByAppCountRows(MapperContext context) {
+        Object tenantId = context.getWhereParameter(FieldConstant.TENANT_ID);
+        Object appName = context.getWhereParameter(FieldConstant.APP_NAME);
+        String sql = "SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?";
+        return new MapperResult(sql, CollectionUtils.list(tenantId, appName));
     }
     
     /**
-     * Query configuration information based on group.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name=?
+     * Query configuration information based on group. <br/>The default sql: SELECT
+     * id,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND app_name=?
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return The sql of querying configration information based on group.
      */
-    String findConfigInfoByAppFetchRows(int startRow, int pageSize);
+    MapperResult findConfigInfoByAppFetchRows(MapperContext context);
     
     /**
-     * Returns the number of configuration items.
-     * The default sql:
-     * SELECT count(*) FROM config_info WHERE tenant_id LIKE ?
+     * Returns the number of configuration items. The default sql: SELECT count(*) FROM config_info WHERE tenant_id LIKE
+     * ?
      *
+     * @param context sql paramMap
      * @return The sql of querying the number of configuration items.
      */
-    default String configInfoLikeTenantCount() {
-        return "SELECT count(*) FROM config_info WHERE tenant_id LIKE ?";
+    default MapperResult configInfoLikeTenantCount(MapperContext context) {
+        Object tenantId = context.getWhereParameter(FieldConstant.TENANT_ID);
+        String sql = "SELECT count(*) FROM config_info WHERE tenant_id LIKE ?";
+        return new MapperResult(sql, Collections.singletonList(tenantId));
     }
     
     /**
-     * Get tenant id list  by page.
-     * The default sql:
-     * SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id LIMIT startRow, pageSize
+     * Get tenant id list  by page. The default sql: SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY
+     * tenant_id LIMIT startRow, pageSize
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return The sql of getting tenant id list  by page.
      */
-    String getTenantIdList(int startRow, int pageSize);
+    MapperResult getTenantIdList(MapperContext context);
     
     /**
-     * Get group id list  by page.
-     * The default sql:
-     * SELECT group_id FROM config_info WHERE tenant_id ='{defaultNamespaceId}' GROUP BY group_id LIMIT startRow, pageSize
+     * Get group id list  by page. The default sql: SELECT group_id FROM config_info WHERE tenant_id
+     * ='{defaultNamespaceId}' GROUP BY group_id LIMIT startRow, pageSize
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return The sql of getting group id list  by page.
      */
-    String getGroupIdList(int startRow, int pageSize);
+    MapperResult getGroupIdList(MapperContext context);
     
     /**
-     * Query all configuration information by page.
-     * The default sql:
-     * SELECT data_id,group_id,app_name  FROM (
-     * SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT startRow, pageSize ) g,
-     * config_info t WHERE g.id = t.id "
+     * Query all configuration information by page. The default sql: SELECT data_id,group_id,app_name  FROM ( SELECT id
+     * FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT startRow, pageSize ) g, config_info t WHERE g.id = t.id
+     * "
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return The sql of querying all configuration information.
      */
-    String findAllConfigKey(int startRow, int pageSize);
+    MapperResult findAllConfigKey(MapperContext context);
     
     /**
-     * Query all configuration information by page.
-     * The default sql:
-     * SELECT t.id,data_id,group_id,content,md5 FROM (
-     * SELECT id FROM config_info ORDER BY id LIMIT ?,?) g,
-     * config_info t  WHERE g.id = t.id
+     * Query all configuration information by page. The default sql: SELECT t.id,data_id,group_id,content,md5 FROM (
+     * SELECT id FROM config_info ORDER BY id LIMIT ?,?) g, config_info t  WHERE g.id = t.id
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return The sql of querying all configuration information by page.
      */
-    String findAllConfigInfoBaseFetchRows(int startRow, int pageSize);
+    MapperResult findAllConfigInfoBaseFetchRows(MapperContext context);
     
     /**
-     * Query all config info.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key
-     * FROM config_info WHERE id > ? ORDER BY id ASC LIMIT startRow,pageSize
+     * Query all config info. The default sql: SELECT
+     * id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id
+     * > ? ORDER BY id ASC LIMIT startRow,pageSize
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return The sql of querying all config info.
      */
-    String findAllConfigInfoFragment(int startRow, int pageSize);
+    MapperResult findAllConfigInfoFragment(MapperContext context);
     
     /**
-     * Query change config.
-     * The default sql:
-     * SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified,encrypted_data_key
-     * FROM config_info WHERE gmt_modified >=? AND gmt_modified <= ?
+     * Query change config. <br/>The default sql: SELECT data_id, group_id, tenant_id, app_name, content,
+     * gmt_modified,encrypted_data_key FROM config_info WHERE gmt_modified >=? AND gmt_modified <= ?
      *
+     * @param context sql paramMap
      * @return The sql of querying change config.
      */
-    default String findChangeConfig() {
-        return "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info WHERE "
-                + "gmt_modified >= ? AND gmt_modified <= ?";
+    default MapperResult findChangeConfig(MapperContext context) {
+        String sql =
+                "SELECT id, data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info WHERE "
+                        + "gmt_modified >= ? and id > ? order by id  limit ? ";
+        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+                context.getWhereParameter(FieldConstant.LAST_MAX_ID),
+                context.getWhereParameter(FieldConstant.PAGE_SIZE)));
     }
     
     /**
-     * Get the count of config information.
-     * The default sql:
-     * SELECT count(*) FROM config_info WHERE ...
+     * Get the count of config information. The default sql: SELECT count(*) FROM config_info WHERE ...
      *
-     * @param params The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime, endTime, content),
-     *               the value is the key's value.
-     * @param startTime start time
-     * @param endTime   end time
+     * @param context The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime,
+     *                endTime, content), the value is the key's value.
      * @return The sql of getting the count of config information.
      */
-    default String findChangeConfigCountRows(Map<String, String> params, final Timestamp startTime,
-            final Timestamp endTime) {
-        final String tenant = params.get(TENANT);
-        final String dataId = params.get(DATA_ID);
-        final String group = params.get(GROUP);
-        final String appName = params.get(APP_NAME);
+    default MapperResult findChangeConfigCountRows(MapperContext context) {
+        final String tenant = (String) context.getWhereParameter(FieldConstant.TENANT);
+        final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
+        final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
+        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        
+        final Timestamp startTime = (Timestamp) context.getWhereParameter(FieldConstant.START_TIME);
+        final Timestamp endTime = (Timestamp) context.getWhereParameter(FieldConstant.END_TIME);
+        
+        List<Object> paramList = new ArrayList<>();
         final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
         String where = " 1=1 ";
         
         if (!StringUtils.isBlank(dataId)) {
             where += " AND data_id LIKE ? ";
+            paramList.add(dataId);
         }
         if (!StringUtils.isBlank(group)) {
             where += " AND group_id LIKE ? ";
+            paramList.add(group);
         }
         
         if (!StringUtils.isBlank(tenant)) {
             where += " AND tenant_id = ? ";
+            paramList.add(tenant);
         }
         
         if (!StringUtils.isBlank(appName)) {
             where += " AND app_name = ? ";
+            paramList.add(appName);
         }
         if (startTime != null) {
             where += " AND gmt_modified >=? ";
+            paramList.add(startTime);
         }
         if (endTime != null) {
             where += " AND gmt_modified <=? ";
+            paramList.add(endTime);
         }
-        return sqlCountRows + where;
+        return new MapperResult(sqlCountRows + where, paramList);
     }
     
     /**
-     * According to the time period and configuration conditions to query the eligible configuration.
-     * The default sql:
+     * According to the time period and configuration conditions to query the eligible configuration. The default sql:
      * SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info WHERE ...
      *
-     * @param params The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime, endTime, content),
-     *               the value is the key's value.
-     * @param startTime start time
-     * @param endTime   end time
-     * @param startRow The start index.
-     * @param pageSize The size of page.
-     * @param lastMaxId The max id.
+     * @param context The map of params, the key is the parameter name(dataId, groupId, tenantId, appName, startTime,
+     *                endTime, content, startTime, endTime), the value is the key's value.
      * @return The sql of getting config information according to the time period.
      */
-    String findChangeConfigFetchRows(Map<String, String> params, final Timestamp startTime, final Timestamp endTime,
-            int startRow, int pageSize, long lastMaxId);
+    MapperResult findChangeConfigFetchRows(MapperContext context);
     
     /**
-     * list group key md5 by page.
-     * The default sql:
-     * SELECT t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM (
-     * SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) g, config_info t
-     * WHERE g.id = t.id
+     * list group key md5 by page. The default sql: SELECT
+     * t.id,data_id,group_id,tenant_id,app_name,md5,type,gmt_modified,encrypted_data_key FROM ( SELECT id FROM
+     * config_info ORDER BY id LIMIT ?,?  ) g, config_info t WHERE g.id = t.id
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return The sql of listing group key md5 by page.
      */
-    String listGroupKeyMd5ByPageFetchRows(int startRow, int pageSize);
+    MapperResult listGroupKeyMd5ByPageFetchRows(MapperContext context);
     
     /**
-     * query all configuration information according to group, appName, tenant (for export).
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,
-     * src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key
-     * FROM config_info WHERE ...
+     * query all configuration information according to group, appName, tenant (for export). The default sql: SELECT
+     * id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,
+     * src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE ...
      *
-     * @param ids       ids
-     * @param params    The map of params, the key is the parameter name(dataId, group, appName),
-     *                  the value is the key's value.
+     * @param context The map of params, the key is the parameter name(dataId, group, appName), the value is the key's
+     *                value.
      * @return Collection of ConfigInfo objects
      */
-    default String findAllConfigInfo4Export(List<Long> ids, Map<String, String> params) {
+    default MapperResult findAllConfigInfo4Export(MapperContext context) {
+        List<Long> ids = (List<Long>) context.getWhereParameter(FieldConstant.IDS);
+        
         String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,"
                 + "src_user,src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
+        
+        List<Object> paramList = new ArrayList<>();
         if (!CollectionUtils.isEmpty(ids)) {
             where.append(" id IN (");
             for (int i = 0; i < ids.size(); i++) {
@@ -267,226 +249,265 @@ public interface ConfigInfoMapper extends Mapper {
                     where.append(", ");
                 }
                 where.append('?');
+                paramList.add(ids.get(i));
             }
             where.append(") ");
         } else {
             where.append(" tenant_id = ? ");
-            if (StringUtils.isNotBlank(params.get(DATA_ID))) {
+            paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));
+            
+            String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
+            String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
+            String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+            
+            if (StringUtils.isNotBlank(dataId)) {
                 where.append(" AND data_id LIKE ? ");
+                paramList.add(dataId);
             }
-            if (StringUtils.isNotBlank(params.get(GROUP))) {
+            if (StringUtils.isNotBlank(group)) {
                 where.append(" AND group_id= ? ");
+                paramList.add(group);
             }
-            if (StringUtils.isNotBlank(params.get(APP_NAME))) {
+            if (StringUtils.isNotBlank(appName)) {
                 where.append(" AND app_name= ? ");
+                paramList.add(appName);
             }
         }
-        return sql + where;
+        return new MapperResult(sql + where, paramList);
     }
     
     /**
-     * Get the count of config information.
-     * The default sql:
-     * SELECT count(*) FROM config_info WHERE ...
+     * Get the count of config information. The default sql: SELECT count(*) FROM config_info WHERE ...
      *
-     * @param params The map of params, the key is the parameter name(dataId, groupId, tenant_id, content),
-     *               the value is the arbitrary object.
+     * @param context The map of params, the key is the parameter name(dataId, groupId, tenant_id, content), the value
+     *                is the arbitrary object.
      * @return The sql of getting the count of config information.
      */
-    default String findConfigInfoBaseLikeCountRows(Map<String, String> params) {
+    default MapperResult findConfigInfoBaseLikeCountRows(MapperContext context) {
+        final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
+        final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
+        final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
+        
+        final List<Object> paramList = new ArrayList<>();
         final String sqlCountRows = "SELECT count(*) FROM config_info WHERE ";
-        String where = " 1=1 AND tenant_id='"
-                + NamespaceUtil.getNamespaceDefaultId()
-                + "' ";
-
-        if (!StringUtils.isBlank(params.get(DATA_ID))) {
+        String where = " 1=1 AND tenant_id='" + NamespaceUtil.getNamespaceDefaultId() + "' ";
+        
+        if (!StringUtils.isBlank(dataId)) {
             where += " AND data_id LIKE ? ";
+            paramList.add(dataId);
         }
-        if (!StringUtils.isBlank(params.get(GROUP))) {
+        if (!StringUtils.isBlank(group)) {
             where += " AND group_id LIKE ? ";
+            paramList.add(group);
         }
-        if (!StringUtils.isBlank(params.get(CONTENT))) {
+        if (!StringUtils.isBlank(content)) {
             where += " AND content LIKE ? ";
+            paramList.add(content);
         }
-        return sqlCountRows + where;
+        return new MapperResult(sqlCountRows + where, paramList);
     }
     
     /**
-     * Get the config information.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE ...
+     * Get the config information. The default sql: SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE
+     * ...
      *
-     * @param params The map of params, the key is the parameter name(dataId, groupId, tenant_id, content),
-     *               the value is the key's value.
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The map of params, the key is the parameter name(dataId, groupId, tenant_id, content), the value
+     *                is the key's value.
      * @return The sql of getting the config information.
      */
-    String findConfigInfoBaseLikeFetchRows(Map<String, String> params, int startRow, int pageSize);
+    MapperResult findConfigInfoBaseLikeFetchRows(MapperContext context);
     
     /**
-     * find the count of config info.
-     * The default sql:
-     * SELECT count(*) FROM config_info ...
+     * find the count of config info. The default sql: SELECT count(*) FROM config_info ...
      *
-     * @param params The mpa of dataId, groupId and appName.
+     * @param context The mpa of dataId, groupId and appName.
      * @return The count of config info.
      */
-    default String findConfigInfo4PageCountRows(Map<String, String> params) {
-        final String appName = params.get(APP_NAME);
-        final String dataId = params.get(DATA_ID);
-        final String group = params.get(GROUP);
-        final String content = params.get(CONTENT);
+    default MapperResult findConfigInfo4PageCountRows(MapperContext context) {
+        final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
+        final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
+        final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
+        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
+        final List<Object> paramList = new ArrayList<>();
+        
         final String sqlCount = "SELECT count(*) FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id=? ");
+        paramList.add(tenantId);
         if (StringUtils.isNotBlank(dataId)) {
             where.append(" AND data_id=? ");
+            paramList.add(dataId);
         }
         if (StringUtils.isNotBlank(group)) {
             where.append(" AND group_id=? ");
+            paramList.add(group);
         }
         if (StringUtils.isNotBlank(appName)) {
             where.append(" AND app_name=? ");
+            paramList.add(appName);
         }
         if (!StringUtils.isBlank(content)) {
             where.append(" AND content LIKE ? ");
+            paramList.add(content);
         }
-        return sqlCount + where;
+        return new MapperResult(sqlCount + where, paramList);
     }
     
     /**
-     * find config info.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key FROM config_info ...
+     * find config info. The default sql: SELECT id,data_id,group_id,tenant_id,app_name,content,type,encrypted_data_key
+     * FROM config_info ...
      *
-     * @param params The mpa of dataId, groupId and appName.
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The mpa of dataId, groupId and appName.
      * @return The sql of finding config info.
      */
-    String findConfigInfo4PageFetchRows(Map<String, String> params, int startRow, int pageSize);
+    MapperResult findConfigInfo4PageFetchRows(MapperContext context);
     
     /**
-     * Query configuration information based on group.
-     * The default sql:
-     * SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=?
+     * Query configuration information based on group. The default sql: SELECT id,data_id,group_id,content FROM
+     * config_info WHERE group_id=? AND tenant_id=?
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return Query configuration information based on group.
      */
-    String findConfigInfoBaseByGroupFetchRows(int startRow, int pageSize);
+    MapperResult findConfigInfoBaseByGroupFetchRows(MapperContext context);
     
     /**
-     * Query config info count.
-     * The default sql:
-     * SELECT count(*) FROM config_info ...
+     * Query config info count. The default sql: SELECT count(*) FROM config_info ...
      *
-     * @param params The map of dataId, group, appName, content
+     * @param context The map of dataId, group, appName, content
      * @return The sql of querying config info count
      */
-    default String findConfigInfoLike4PageCountRows(Map<String, String> params) {
-        final String appName = params.get("appName");
-        final String content = params.get("content");
-        final String dataId = params.get("dataId");
-        final String group = params.get(GROUP);
+    default MapperResult findConfigInfoLike4PageCountRows(MapperContext context) {
+        final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
+        final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
+        final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
+        final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
+        
+        final List<Object> paramList = new ArrayList<>();
+        
         final String sqlCountRows = "SELECT count(*) FROM config_info";
         StringBuilder where = new StringBuilder(" WHERE ");
         where.append(" tenant_id LIKE ? ");
+        paramList.add(tenantId);
         if (!StringUtils.isBlank(dataId)) {
             where.append(" AND data_id LIKE ? ");
+            paramList.add(dataId);
         }
         if (!StringUtils.isBlank(group)) {
             where.append(" AND group_id LIKE ? ");
+            paramList.add(group);
         }
         if (!StringUtils.isBlank(appName)) {
             where.append(" AND app_name = ? ");
+            paramList.add(appName);
         }
         if (!StringUtils.isBlank(content)) {
             where.append(" AND content LIKE ? ");
+            paramList.add(content);
         }
-        return sqlCountRows + where;
+        return new MapperResult(sqlCountRows + where, paramList);
     }
     
     /**
-     * Query config info.
-     * The default sql:
-     * SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info ...
+     * Query config info. <br/>The default sql: <br/>SELECT
+     * id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info ...
      *
-     * @param params The map of dataId, group, appName, content
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return The sql of querying config info
      */
-    String findConfigInfoLike4PageFetchRows(Map<String, String> params, int startRow, int pageSize);
+    MapperResult findConfigInfoLike4PageFetchRows(MapperContext context);
     
     /**
-     * Query all configuration information by page.
-     * The default sql:
-     * SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5 "
-     *                 + " FROM (  SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id LIMIT ?,? )"
-     *                 + " g, config_info t  WHERE g.id = t.id
+     * Query all configuration information by page. <br/>The default sql: <br/>SELECT
+     * t.id,data_id,group_id,tenant_id,app_name,content,md5 " + " FROM (  SELECT id FROM config_info WHERE tenant_id
+     * LIKE ? ORDER BY id LIMIT ?,? )" + " g, config_info t  WHERE g.id = t.id
      *
-     * @param startRow The start index.
-     * @param pageSize The size of page.
+     * @param context The context of startRow, pageSize
      * @return Query all configuration information by page.
      */
-    String findAllConfigInfoFetchRows(int startRow, int pageSize);
+    MapperResult findAllConfigInfoFetchRows(MapperContext context);
     
     /**
-     * find ConfigInfo by ids.
-     * The default sql:
-     * SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id IN (...)
+     * find ConfigInfo by ids. <br/>The default sql: <br/>SELECT ID,data_id,group_id,tenant_id,app_name,content,md5 FROM
+     * config_info WHERE id IN (...)
      *
-     * @param idSize the size of ids.
+     * @param context the size of ids.
      * @return find ConfigInfo by ids.
      */
-    default String findConfigInfosByIds(int idSize) {
+    default MapperResult findConfigInfosByIds(MapperContext context) {
+        List<Long> ids = (List<Long>) context.getWhereParameter(FieldConstant.IDS);
         StringBuilder sql = new StringBuilder(
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE ");
         sql.append("id IN (");
-        for (int i = 0; i < idSize; i++) {
+        ArrayList<Object> paramList = new ArrayList<>();
+        
+        for (int i = 0; i < ids.size(); i++) {
             if (i != 0) {
                 sql.append(", ");
             }
             sql.append('?');
+            paramList.add(ids.get(i));
         }
         sql.append(") ");
-        return sql.toString();
+        return new MapperResult(sql.toString(), paramList);
     }
     
     /**
      * Remove configuration; database atomic operation, minimum SQL action, no business encapsulation.
      *
-     * @param size The size of ids.
+     * @param context The size of ids.
      * @return The sql of removing configuration.
      */
-    default String removeConfigInfoByIdsAtomic(int size) {
+    default MapperResult removeConfigInfoByIdsAtomic(MapperContext context) {
+        List<Long> ids = (List<Long>) context.getWhereParameter(FieldConstant.IDS);
         StringBuilder sql = new StringBuilder("DELETE FROM config_info WHERE ");
         sql.append("id IN (");
-        for (int i = 0; i < size; i++) {
+        ArrayList<Object> paramList = new ArrayList<>();
+        
+        for (int i = 0; i < ids.size(); i++) {
             if (i != 0) {
                 sql.append(", ");
             }
             sql.append('?');
+            paramList.add(ids.get(i));
         }
         sql.append(") ");
-        return sql.toString();
+        return new MapperResult(sql.toString(), paramList);
     }
     
     /**
-     * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
-     * The default sql:
+     * Update configuration; database atomic operation, minimum SQL action, no business encapsulation. The default sql:
      * UPDATE config_info SET content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,
      * effect=?,type=?,c_schema=? WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')
      *
+     * @param context sql paramMap
      * @return The sql of updating configuration cas.
      */
-    default String updateConfigInfoAtomicCas() {
-        return "UPDATE config_info SET "
+    default MapperResult updateConfigInfoAtomicCas(MapperContext context) {
+        List<Object> paramList = new ArrayList<>();
+        
+        paramList.add(context.getUpdateParameter(FieldConstant.CONTENT));
+        paramList.add(context.getUpdateParameter(FieldConstant.MD5));
+        paramList.add(context.getUpdateParameter(FieldConstant.SRC_IP));
+        paramList.add(context.getUpdateParameter(FieldConstant.SRC_USER));
+        paramList.add(context.getUpdateParameter(FieldConstant.GMT_MODIFIED));
+        paramList.add(context.getUpdateParameter(FieldConstant.APP_NAME));
+        paramList.add(context.getUpdateParameter(FieldConstant.C_DESC));
+        paramList.add(context.getUpdateParameter(FieldConstant.C_USE));
+        paramList.add(context.getUpdateParameter(FieldConstant.EFFECT));
+        paramList.add(context.getUpdateParameter(FieldConstant.TYPE));
+        paramList.add(context.getUpdateParameter(FieldConstant.C_SCHEMA));
+        
+        paramList.add(context.getWhereParameter(FieldConstant.DATA_ID));
+        paramList.add(context.getWhereParameter(FieldConstant.GROUP_ID));
+        paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));
+        paramList.add(context.getWhereParameter(FieldConstant.MD5));
+        String sql = "UPDATE config_info SET "
                 + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
                 + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
+        return new MapperResult(sql, paramList);
     }
     
     /**

@@ -82,7 +82,7 @@ For more details, see [quick-start.](https://nacos.io/en-us/docs/quick-start.htm
 
 ## Documentation
 
-You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/what-is-nacos.html).
+You can view the full documentation from the [Nacos website](https://nacos.io/en-us/docs/v2/what-is-nacos.html).
 
 You can also read this online eBook from the [NACOS ARCHITECTURE & PRINCIPLES](https://www.yuque.com/nacos/ebook/kbyo6n).
 
@@ -149,31 +149,19 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![瑞安农村商业银行](https://img.alicdn.com/tfs/TB1lxu7EBLoK1RjSZFuXXXn0XXa-409-74.png)
 ![司法大数据](https://img.alicdn.com/tfs/TB1L16eEzTpK1RjSZKPXXa3UpXa-302-50.png)
 ![搜易贷](https://www.souyidai.com/www-style/images/logo.gif)
-![美菜](https://www.meicai.cn/assets/images/new-img/logo.png)
-![松格科技](http://songe.so/images/logo.gif)
 ![平行云](https://img.alicdn.com/tfs/TB1OigyDyLaK1RjSZFxXXamPFXa-168-70.png)
 ![甘肃紫光](https://img.alicdn.com/tfs/TB1gJ4vIhTpK1RjSZR0XXbEwXXa-462-60.jpg)
 ![海云天](http://www.seaskylight.com/cn/uploadfiles/image/logo.png)
-![集萃智能](http://www.iimt.org.cn/pic/logosy.png)
 ![Acmedcare+](https://img.alicdn.com/tfs/TB1DZWSEzDpK1RjSZFrXXa78VXa-240-62.png)
-![吾享](https://w.wuuxiang.com/theme/images/common/logo1.png)
 ![北京天合互联信息有限公司](https://14605854.s21i.faiusr.com/4/ABUIABAEGAAg4OvkzwUo8b-qlwUwxQ449gM!300x300.png)
 ![上海密尔克卫化工](http://www.mwclg.com/static-resource/front/images/home/img_logo_nav.png)
 ![大连新唯](https://www.synwe.com/logo-full.png)
 ![立思辰](https://user-images.githubusercontent.com/10215557/51593180-7563af00-1f2c-11e9-95b1-ec2c645d6a0b.png)
-![拓深科技](http://www.tpson.cn/images/new/icon/LOGO_1.png)
 ![东家](https://img.alicdn.com/tfs/TB1zWW2EpYqK1RjSZLeXXbXppXa-262-81.png)
 ![上海克垚](http://www.sh-guiyao.com/images/logo.jpg)
-![郑州山水](http://www.zzssxx.com/style/images/logo.png)
 ![联采科技](http://www.lckjep.com:80//theme/img/logoTop.png)
 ![南京28研究所](https://img.alicdn.com/tfs/TB1G216EsbpK1RjSZFyXXX_qFXa-325-53.jpg)
-![长亮科技](http://www.sunline.cn/Uploads/image/20170724/59759a405c3b2.png)
-![深圳易停车库](http://www.ytparking.com/yiting/images/logo.png)
 ![凤凰网-汽车](https://p1.ifengimg.com/auto/image/2017/0922/auto_logo.png)
-![武汉日创科技](http://www.dragonwake.cn/static/css/default/images/logo.png)
-![易管智能](http://ebmsw.mro1598.com/UpLoadFile/MainCompany/20170308-1501-495c-a62f-fc03424f86f1/20170405/20170405-1056-4fe5-90e8-c055f8a1bb23.png)
-![云帐房](http://www.yunzhangfang.com/yzf-pc/img/logo.png)
-![知氏教育](https://www.chyeth.com/622e88980a5d091eaa6449f82d48ca43.png) 
 ![中化信息](http://www.sinochem.com/Portals/0/xinlogo.png)
 ![一点车](https://img.alicdn.com/tfs/TB1DXerNgDqK1RjSZSyXXaxEVXa-333-103.png)
 ![明传无线](https://img.alicdn.com/tfs/TB1VfOANgHqK1RjSZFPXXcwapXa-313-40.png)
@@ -196,12 +184,22 @@ These are only part of the companies using Nacos, for reference only. If you are
 ![康美](https://img.alicdn.com/tfs/TB19RCANgHqK1RjSZFPXXcwapXa-180-180.jpg)
 ![环球易购](https://img.alicdn.com/tfs/TB1iCGyNb2pK1RjSZFsXXaNlXXa-143-143.jpg)
 ![Nepxion](https://avatars0.githubusercontent.com/u/16344119?s=200&v=4)
-![东莞最佳拍档](https://img.alicdn.com/tfs/TB11ugsDzTpK1RjSZKPXXa3UpXa-300-300.png)
 ![chigua](https://img.alicdn.com/tfs/TB1aUe5EpzqK1RjSZSgXXcpAVXa-248-124.png)
 ![宅无限](https://img.alicdn.com/tfs/TB1H9O5EAvoK1RjSZFNXXcxMVXa-221-221.jpg)
 ![天阙](https://img.alicdn.com/tfs/TB1rNq4EwHqK1RjSZFgXXa7JXXa-200-200.jpg)
 ![联合永道](https://img.alicdn.com/tfs/TB1CRAxDxYaK1RjSZFnXXa80pXa-190-190.jpg)
 ![明源云](https://img.alicdn.com/tfs/TB1.q14ErrpK1RjSZTEXXcWAVXa-219-219.jpg)
-![三诺生物](http://www.sinocare.com/public/static/images/logored6000321.png)
+![DaoCloud](https://www.daocloud.io/static/Logo-Light.png)
+![美菜](https://www.meicai.cn/img/logo.9210b6eb.jpg)
+![松格科技](https://img5.tianyancha.com/logo/lll/3aad34039972b57e70874df8c919ae8b.png@!f_200x200)
+![集萃智能](https://www.jsic-tech.com/Public/uploads/20191206/5de9b9baac696.jpg)
+![吾享](https://www.wuuxiang.com/theme/images/common/logo1.png)
+![拓深科技](http://www.tpson.cn/static/upload/image/20230111/1673427385140440.png)
+![长亮科技](https://www.sunline.cn/u_file/fileUpload/2021-06/25/2021062586431.png)
+![深圳易停车库](http://pmt2f499f.pic44.websiteonline.cn/upload/wv0c.png)
+![武汉日创科技](http://www.dragonwake.cn/static/css/default/img/logo.png)
+![易管智能](https://i4im-web.oss-cn-shanghai.aliyuncs.com/images/logo.png)
+![云帐房](https://www.yunzhangfang.com/assets/img/logo.4096cf52.png)
+![三诺生物](https://www.sinocare.com/sannuo/templates/web/img/bocweb-logo.svg)
 
-
+郑州山水, 知氏教育

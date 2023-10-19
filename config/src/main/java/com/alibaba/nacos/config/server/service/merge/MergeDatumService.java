@@ -16,17 +16,17 @@
 
 package com.alibaba.nacos.config.server.service.merge;
 
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -125,14 +125,14 @@ public class MergeDatumService {
     }
     
     private boolean canExecute() {
-        if (!PropertyUtil.isEmbeddedStorage()) {
+        if (!DatasourceConfiguration.isEmbeddedStorage()) {
             return true;
         }
         if (EnvUtil.getStandaloneMode()) {
             return true;
         }
         ProtocolManager protocolManager = ApplicationUtils.getBean(ProtocolManager.class);
-        return protocolManager.getCpProtocol().isLeader(Constants.CONFIG_MODEL_RAFT_GROUP);
+        return protocolManager.getCpProtocol().isLeader(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP);
     }
     
     class MergeAllDataWorker extends Thread {
@@ -171,7 +171,7 @@ public class MergeDatumService {
                     if (datumList.size() > 0) {
                         // merge
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
-                        configInfoPersistService.insertOrUpdate(null, null, cf, time, null, false);
+                        configInfoPersistService.insertOrUpdate(null, null, cf, null);
                         LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
                                 datumList.size(), cf.getContent().length(), cf.getMd5(),
                                 ContentUtils.truncateContent(cf.getContent()));

@@ -17,203 +17,285 @@
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.model.MapperContext;
+import com.alibaba.nacos.plugin.datasource.model.MapperResult;
+import com.google.common.collect.Lists;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.List;
 
 public class ConfigInfoMapperByDerbyTest {
     
     private ConfigInfoMapperByDerby configInfoMapperByDerby;
     
+    private final Object[] emptyObjs = new Object[] {};
+    
+    int startRow = 0;
+    
+    int pageSize = 5;
+    
+    long lastMaxId = 123;
+    
+    String appName = "appName";
+    
+    String groupId = "groupId";
+    
+    String tenantId = "tenantId";
+    
+    String id = "123";
+    
+    List<Long> ids = Lists.newArrayList(1L, 2L, 3L, 5L, 144L);
+    
+    Timestamp startTime = new Timestamp(System.currentTimeMillis());
+    
+    Timestamp endTime = new Timestamp(System.currentTimeMillis());
+    
+    MapperContext context;
+    
     @Before
     public void setUp() throws Exception {
         configInfoMapperByDerby = new ConfigInfoMapperByDerby();
+        
+        context = new MapperContext(startRow, pageSize);
+        context.putWhereParameter(FieldConstant.APP_NAME, appName);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.putWhereParameter(FieldConstant.ID, id);
+        context.putWhereParameter(FieldConstant.START_TIME, startTime);
+        context.putWhereParameter(FieldConstant.END_TIME, endTime);
+        context.putWhereParameter(FieldConstant.IDS, ids);
+        context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
+        context.putWhereParameter(FieldConstant.PAGE_SIZE, pageSize);
     }
     
     @Test
     public void testFindConfigMaxId() {
-        String sql = configInfoMapperByDerby.findConfigMaxId();
-        Assert.assertEquals(sql, "SELECT MAX(id) FROM config_info");
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigMaxId(null);
+        Assert.assertEquals(mapperResult.getSql(), "SELECT MAX(id) FROM config_info");
     }
     
     @Test
     public void testFindAllDataIdAndGroup() {
-        String sql = configInfoMapperByDerby.findAllDataIdAndGroup();
-        Assert.assertEquals(sql, "SELECT DISTINCT data_id, group_id FROM config_info");
+        MapperResult mapperResult = configInfoMapperByDerby.findAllDataIdAndGroup(null);
+        Assert.assertEquals(mapperResult.getSql(), "SELECT DISTINCT data_id, group_id FROM config_info");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     public void testFindConfigInfoByAppCountRows() {
-        String sql = configInfoMapperByDerby.findConfigInfoByAppCountRows();
-        Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?");
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoByAppCountRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT count(*) FROM config_info WHERE tenant_id LIKE ? AND app_name = ?");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
     }
     
     @Test
     public void testFindConfigInfoByAppFetchRows() {
-        String sql = configInfoMapperByDerby.findConfigInfoByAppFetchRows(0, 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoByAppFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE"
-                        + " ? AND app_name = ? OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+                        + " ? AND app_name = ? OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
     }
     
     @Test
     public void testConfigInfoLikeTenantCount() {
-        String sql = configInfoMapperByDerby.configInfoLikeTenantCount();
-        Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE tenant_id LIKE ?");
+        MapperResult mapperResult = configInfoMapperByDerby.configInfoLikeTenantCount(context);
+        Assert.assertEquals(mapperResult.getSql(), "SELECT count(*) FROM config_info WHERE tenant_id LIKE ?");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId});
     }
     
     @Test
     public void testGetTenantIdList() {
-        String sql = configInfoMapperByDerby.getTenantIdList(0, 5);
-        Assert.assertEquals(sql,
-                "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+        MapperResult mapperResult = configInfoMapperByDerby.getTenantIdList(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET " + startRow
+                        + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     public void testGetGroupIdList() {
-        String sql = configInfoMapperByDerby.getGroupIdList(0, 5);
-        Assert.assertEquals(sql,
-                "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+        MapperResult mapperResult = configInfoMapperByDerby.getGroupIdList(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id OFFSET " + startRow
+                        + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     public void testFindAllConfigKey() {
-        String sql = configInfoMapperByDerby.findAllConfigKey(0, 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.findAllConfigKey(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 " SELECT data_id,group_id,app_name FROM  ( SELECT id FROM config_info WHERE tenant_id LIKE"
-                        + " ? ORDER BY id OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY ) g, config_info t  WHERE g.id = t.id ");
+                        + " ? ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + " ROWS ONLY ) g, config_info t  WHERE g.id = t.id ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId});
     }
     
     @Test
     public void testFindAllConfigInfoBaseFetchRows() {
-        String sql = configInfoMapperByDerby.findAllConfigInfoBaseFetchRows(0, 5);
-        Assert.assertEquals(sql, "SELECT t.id,data_id,group_id,content,md5  FROM ( SELECT id FROM config_info ORDER BY "
-                + "id OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY )   g, config_info t WHERE g.id = t.id ");
+        MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfoBaseFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT t.id,data_id,group_id,content,md5  FROM ( SELECT id FROM config_info ORDER BY " + "id OFFSET "
+                        + startRow + " ROWS FETCH NEXT " + pageSize
+                        + " ROWS ONLY )   g, config_info t WHERE g.id = t.id ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     public void testFindAllConfigInfoFragment() {
-        String sql = configInfoMapperByDerby.findAllConfigInfoFragment(0, 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfoFragment(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info "
-                        + "WHERE id > ? ORDER BY id ASC OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+                        + "WHERE id > ? ORDER BY id ASC OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id});
     }
     
     @Test
     public void testFindChangeConfig() {
-        String sql = configInfoMapperByDerby.findChangeConfig();
-        Assert.assertEquals(sql,
-                "SELECT data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info "
-                        + "WHERE gmt_modified >= ? AND gmt_modified <= ?");
+        MapperResult mapperResult = configInfoMapperByDerby.findChangeConfig(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT id, data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info "
+                        + "WHERE gmt_modified >= ? and id > ? order by id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
     }
     
     @Test
     public void testFindChangeConfigCountRows() {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        String sql = configInfoMapperByDerby.findChangeConfigCountRows(new HashMap<>(), timestamp, timestamp);
-        Assert.assertEquals(sql,
-                "SELECT count(*) FROM config_info WHERE  1=1  AND gmt_modified >=?  AND gmt_modified <=? ");
+        
+        MapperResult mapperResult = configInfoMapperByDerby.findChangeConfigCountRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT count(*) FROM config_info WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=? ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {appName, startTime, endTime});
     }
     
     @Test
     public void testFindChangeConfigFetchRows() {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        String sql = configInfoMapperByDerby.findChangeConfigFetchRows(new HashMap<>(), timestamp, timestamp, 0, 5,
-                100);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.findChangeConfigFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info "
-                        + "WHERE  1=1  AND gmt_modified >=?  AND gmt_modified <=?  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+                        + "WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=?  OFFSET " + startRow
+                        + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {appName, startTime, endTime});
     }
     
     @Test
     public void testListGroupKeyMd5ByPageFetchRows() {
-        String sql = configInfoMapperByDerby.listGroupKeyMd5ByPageFetchRows(0, 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.listGroupKeyMd5ByPageFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 " SELECT t.id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM ( SELECT id FROM config_info "
-                        + "ORDER BY id OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY ) g, config_info t WHERE g.id = t.id");
+                        + "ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + " ROWS ONLY ) g, config_info t WHERE g.id = t.id");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
+        
     }
     
     @Test
     public void testFindAllConfigInfo4Export() {
-        String sql = configInfoMapperByDerby.findAllConfigInfo4Export(new ArrayList<>(), new HashMap<>());
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfo4Export(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
-                        + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  tenant_id = ? ");
+                        + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  id IN (?, ?, ?, ?, ?) ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
+        
+        context.putWhereParameter(FieldConstant.IDS, null);
+        mapperResult = configInfoMapperByDerby.findAllConfigInfo4Export(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_create,gmt_modified,src_user,"
+                        + "src_ip,c_desc,c_use,effect,c_schema,encrypted_data_key FROM config_info WHERE  tenant_id = ?  AND app_name= ? ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
+        
     }
     
     @Test
     public void testFindConfigInfoBaseLikeCountRows() {
-        String sql = configInfoMapperByDerby.findConfigInfoBaseLikeCountRows(new HashMap<>());
-        Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE  1=1 AND tenant_id='' ");
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoBaseLikeCountRows(context);
+        Assert.assertEquals(mapperResult.getSql(), "SELECT count(*) FROM config_info WHERE  1=1 AND tenant_id='' ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     public void testFindConfigInfoBaseLikeFetchRows() {
-        String sql = configInfoMapperByDerby.findConfigInfoBaseLikeFetchRows(new HashMap<>(), 0, 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoBaseLikeFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE  1=1 AND tenant_id=''  "
-                        + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+                        + "OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     public void testFindConfigInfo4PageCountRows() {
-        String sql = configInfoMapperByDerby.findConfigInfo4PageCountRows(new HashMap<>());
-        Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE  tenant_id=? ");
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfo4PageCountRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT count(*) FROM config_info WHERE  tenant_id=?  AND app_name=? ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
     }
     
     @Test
     public void testFindConfigInfo4PageFetchRows() {
-        String sql = configInfoMapperByDerby.findConfigInfo4PageFetchRows(new HashMap<>(), 0, 5);
-        Assert.assertEquals(sql,
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,type FROM config_info WHERE  tenant_id=?  "
-                        + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfo4PageFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT id,data_id,group_id,tenant_id,app_name,content,type FROM config_info WHERE  tenant_id=?  AND app_name=? "
+                        + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
     }
     
     @Test
     public void testFindConfigInfoBaseByGroupFetchRows() {
-        String sql = configInfoMapperByDerby.findConfigInfoBaseByGroupFetchRows(0, 5);
-        Assert.assertEquals(sql, "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=? "
-                + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoBaseByGroupFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=? " + "OFFSET "
+                        + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {groupId, tenantId});
     }
     
     @Test
     public void testFindConfigInfoLike4PageCountRows() {
-        String sql = configInfoMapperByDerby.findConfigInfoLike4PageCountRows(new HashMap<>());
-        Assert.assertEquals(sql, "SELECT count(*) FROM config_info WHERE  tenant_id LIKE ? ");
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoLike4PageCountRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT count(*) FROM config_info WHERE  tenant_id LIKE ?  AND app_name = ? ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
     }
     
     @Test
     public void testFindConfigInfoLike4PageFetchRows() {
-        String sql = configInfoMapperByDerby.findConfigInfoLike4PageFetchRows(new HashMap<>(), 0, 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoLike4PageFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info "
-                        + "WHERE  tenant_id LIKE ?  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+                        + "WHERE  tenant_id LIKE ?  AND app_name = ?  OFFSET " + startRow + " ROWS FETCH NEXT "
+                        + pageSize + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
     }
     
     @Test
     public void testFindAllConfigInfoFetchRows() {
-        String sql = configInfoMapperByDerby.findAllConfigInfoFetchRows(0, 5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfoFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5  FROM ( SELECT id FROM config_info  "
                         + "WHERE tenant_id LIKE ? ORDER BY id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY ) g, config_info t  WHERE g.id = t.id ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, startRow, pageSize});
     }
     
     @Test
     public void testFindConfigInfosByIds() {
-        String sql = configInfoMapperByDerby.findConfigInfosByIds(5);
-        Assert.assertEquals(sql,
+        MapperResult mapperResult = configInfoMapperByDerby.findConfigInfosByIds(context);
+        Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5 FROM config_info WHERE id IN (?, ?, ?, ?, ?) ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
     }
     
     @Test
     public void testRemoveConfigInfoByIdsAtomic() {
-        String sql = configInfoMapperByDerby.removeConfigInfoByIdsAtomic(5);
-        Assert.assertEquals(sql, "DELETE FROM config_info WHERE id IN (?, ?, ?, ?, ?) ");
+        MapperResult mapperResult = configInfoMapperByDerby.removeConfigInfoByIdsAtomic(context);
+        Assert.assertEquals(mapperResult.getSql(), "DELETE FROM config_info WHERE id IN (?, ?, ?, ?, ?) ");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), ids.toArray());
     }
     
     @Test
@@ -230,9 +312,45 @@ public class ConfigInfoMapperByDerbyTest {
     
     @Test
     public void testUpdateConfigInfoAtomicCas() {
-        String sql = configInfoMapperByDerby.updateConfigInfoAtomicCas();
-        Assert.assertEquals(sql, "UPDATE config_info SET "
+        String newContent = "new Content";
+        String newMD5 = "newMD5";
+        String srcIp = "1.1.1.1";
+        Object srcUser = "nacos";
+        Object time = new Timestamp(System.currentTimeMillis());
+        Object appNameTmp = "newAppName";
+        Object desc = "description";
+        Object use = "use";
+        Object effect = "effect";
+        Object type = "type";
+        Object schema = "schema";
+        
+        context.putUpdateParameter(FieldConstant.CONTENT, newContent);
+        context.putUpdateParameter(FieldConstant.MD5, newMD5);
+        context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
+        context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
+        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
+        context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
+        context.putUpdateParameter(FieldConstant.C_DESC, desc);
+        context.putUpdateParameter(FieldConstant.C_USE, use);
+        context.putUpdateParameter(FieldConstant.EFFECT, effect);
+        context.putUpdateParameter(FieldConstant.TYPE, type);
+        context.putUpdateParameter(FieldConstant.C_SCHEMA, schema);
+        
+        Object dataId = "dataId";
+        Object group = "group";
+        Object md5 = "md5";
+        
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, group);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        context.putWhereParameter(FieldConstant.MD5, md5);
+        
+        MapperResult mapperResult = configInfoMapperByDerby.updateConfigInfoAtomicCas(context);
+        Assert.assertEquals(mapperResult.getSql(), "UPDATE config_info SET "
                 + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
                 + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
+                new Object[] {newContent, newMD5, srcIp, srcUser, time, appNameTmp, desc, use, effect, type, schema,
+                        dataId, group, tenantId, md5});
     }
 }

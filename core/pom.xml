@@ -42,6 +42,10 @@
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-consistency</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-persistence</artifactId>
+        </dependency>
         
         <dependency>
             <groupId>${project.groupId}</groupId>
@@ -150,7 +154,7 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-contrl-plugin</artifactId>
+            <artifactId>nacos-control-plugin</artifactId>
             <version>${revision}</version>
         </dependency>
         <dependency>

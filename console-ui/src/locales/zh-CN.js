@@ -60,6 +60,7 @@ const I18N_CONF = {
     userList: '用户列表',
     roleManagement: '角色管理',
     privilegeManagement: '权限管理',
+    consoleClosed: '控制台已关闭',
   },
   Password: {
     passwordNotConsistent: '两次输入密码不一致',
@@ -146,6 +147,9 @@ const I18N_CONF = {
     extendInfo: '节点元数据',
     operation: '操作',
     leave: '下线',
+    leaveSucc: '下线成功',
+    leaveFail: '下线失败',
+    leavePrompt: '提示',
     confirm: '确认',
     confirmTxt: '确认要下线此集群节点?',
   },
@@ -290,6 +294,7 @@ const I18N_CONF = {
     configurationManagement8: '配置管理',
     queryResults: '查询到',
     articleMeetRequirements: '条满足要求的配置。',
+    fuzzydMode: '默认模糊匹配',
     fuzzyd: "添加通配符'*'进行模糊查询",
     defaultFuzzyd: '已开启默认模糊查询',
     fuzzyg: "添加通配符'*'进行模糊查询",
@@ -355,6 +360,7 @@ const I18N_CONF = {
     delSuccessMsg: '删除成功',
     cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
     authFail: '权限认证失败',
+    copyNamespaceID: '复制命名空间ID',
   },
   NewConfig: {
     newListingMain: '新建配置',
@@ -575,6 +581,7 @@ const I18N_CONF = {
     operation: '操作',
     refresh: '刷新',
     query: '查询',
+    fuzzydMode: '默认模糊匹配',
     defaultFuzzyd: '已开启默认模糊查询',
     fuzzyd: "添加通配符'*'进行模糊查询",
   },
@@ -611,6 +618,7 @@ const I18N_CONF = {
     deleteRole: '删除',
     deleteRoleTip: '是否要删除该角色？',
     refresh: '刷新',
+    fuzzydMode: '默认模糊匹配',
     defaultFuzzyd: '已开启默认模糊查询',
     fuzzyd: "添加通配符'*'进行模糊查询",
     query: '查询',
@@ -637,6 +645,7 @@ const I18N_CONF = {
     writeOnly: '只写',
     readWrite: '读写',
     refresh: '刷新',
+    fuzzydMode: '默认模糊匹配',
     defaultFuzzyd: '已开启默认模糊查询',
     fuzzyd: "添加通配符'*'进行模糊查询",
     query: '查询',
@@ -656,6 +665,9 @@ const I18N_CONF = {
     writeOnly: '只写',
     readWrite: '读写',
   },
+  Components: {
+      copySuccessfully: '复制成功！',
+  }
 };
 
 export default I18N_CONF;

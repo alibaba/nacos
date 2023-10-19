@@ -27,7 +27,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.core.remote.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

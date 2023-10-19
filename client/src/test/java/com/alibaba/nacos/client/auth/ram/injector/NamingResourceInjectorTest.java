@@ -49,6 +49,7 @@ public class NamingResourceInjectorTest {
         ramContext.setAccessKey(PropertyKeyConst.ACCESS_KEY);
         ramContext.setSecretKey(PropertyKeyConst.SECRET_KEY);
         stsCredential = new StsCredential();
+        StsConfig.getInstance().setRamRoleName(null);
     }
     
     @After
@@ -141,6 +142,7 @@ public class NamingResourceInjectorTest {
     
     private void clearForSts() throws NoSuchFieldException, IllegalAccessException {
         StsConfig.getInstance().setSecurityCredentialsUrl(null);
+        StsConfig.getInstance().setSecurityCredentials(null);
         Field field = StsCredentialHolder.class.getDeclaredField("stsCredential");
         field.setAccessible(true);
         field.set(StsCredentialHolder.getInstance(), null);

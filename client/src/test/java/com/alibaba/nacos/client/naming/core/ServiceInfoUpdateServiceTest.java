@@ -43,19 +43,19 @@ public class ServiceInfoUpdateServiceTest {
         info.setCacheMillis(10000L);
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         NamingClientProxy proxy = Mockito.mock(NamingClientProxy.class);
-        Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, 0, false)).thenReturn(info);
+        Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, false)).thenReturn(info);
         
         InstancesChangeNotifier notifyer = Mockito.mock(InstancesChangeNotifier.class);
         Properties prop = new Properties();
-    
+        
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         nacosClientProperties.setProperty("namingAsyncQuerySubscribeService", "true");
-        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy,
-                notifyer);
+        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties,
+                holder, proxy, notifyer);
         
         serviceInfoUpdateService.scheduleUpdateIfAbsent("aa", "bb", "cc");
-        TimeUnit.SECONDS.sleep(2);
-        Mockito.verify(proxy).queryInstancesOfService(serviceName, group, clusters, 0, false);
+        TimeUnit.MILLISECONDS.sleep(1500);
+        Mockito.verify(proxy).queryInstancesOfService(serviceName, group, clusters, false);
     }
     
     @Test
@@ -69,17 +69,17 @@ public class ServiceInfoUpdateServiceTest {
         info.setClusters(clusters);
         info.setLastRefTime(System.currentTimeMillis());
         NamingClientProxy proxy = Mockito.mock(NamingClientProxy.class);
-        Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, 0, false)).thenReturn(info);
+        Mockito.when(proxy.queryInstancesOfService(serviceName, group, clusters, false)).thenReturn(info);
         
         InstancesChangeNotifier notifyer = Mockito.mock(InstancesChangeNotifier.class);
         Properties prop = new Properties();
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-    
+        
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
-        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy,
-                notifyer);
+        final ServiceInfoUpdateService serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties,
+                holder, proxy, notifyer);
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, group, clusters);
-    
+        
         serviceInfoUpdateService.stopUpdateIfContain(serviceName, group, clusters);
         serviceInfoUpdateService.shutdown();
     }

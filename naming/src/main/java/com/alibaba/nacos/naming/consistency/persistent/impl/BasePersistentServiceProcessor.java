@@ -121,6 +121,8 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
                 return null != datum ? datum.value : null;
             } catch (KvStorageException ex) {
                 throw new NacosRuntimeException(ex.getErrCode(), ex.getErrMsg());
+            } catch (Exception e) {
+                throw new NacosRuntimeException(NacosException.SERVER_ERROR, e.getMessage());
             }
         });
     }
@@ -132,11 +134,11 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     
     @Override
     public Response onRequest(ReadRequest request) {
-        final List<byte[]> keys = serializer
-                .deserialize(request.getData().toByteArray(), TypeUtils.parameterize(List.class, byte[].class));
         final Lock lock = readLock;
         lock.lock();
         try {
+            final List<byte[]> keys = serializer
+                    .deserialize(request.getData().toByteArray(), TypeUtils.parameterize(List.class, byte[].class));
             final Map<byte[], byte[]> result = kvStorage.batchGet(keys);
             final BatchReadResponse response = new BatchReadResponse();
             result.forEach(response::append);
@@ -144,6 +146,9 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
                     .build();
         } catch (KvStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
+        } catch (Exception e) {
+            Loggers.RAFT.warn("On read request failed, ", e);
+            return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
         } finally {
             lock.unlock();
         }
@@ -152,11 +157,11 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     @Override
     public Response onApply(WriteRequest request) {
         final byte[] data = request.getData().toByteArray();
-        final BatchWriteRequest bwRequest = serializer.deserialize(data, BatchWriteRequest.class);
-        final Op op = Op.valueOf(request.getOperation());
         final Lock lock = readLock;
         lock.lock();
         try {
+            final BatchWriteRequest bwRequest = serializer.deserialize(data, BatchWriteRequest.class);
+            final Op op = Op.valueOf(request.getOperation());
             switch (op) {
                 case Write:
                     kvStorage.batchPut(bwRequest.getKeys(), bwRequest.getValues());
@@ -171,6 +176,9 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
             return Response.newBuilder().setSuccess(true).build();
         } catch (KvStorageException e) {
             return Response.newBuilder().setSuccess(false).setErrMsg(e.getErrMsg()).build();
+        } catch (Exception e) {
+            Loggers.RAFT.warn("On apply write request failed, ", e);
+            return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
         } finally {
             lock.unlock();
         }
@@ -200,7 +208,7 @@ public abstract class BasePersistentServiceProcessor extends RequestProcessor4CP
     
     @Override
     public List<SnapshotOperation> loadSnapshotOperate() {
-        return Collections.singletonList(new NamingSnapshotOperation(this.kvStorage, lock));
+        return Collections.singletonList(new NamingSnapshotOperation(this.kvStorage, lock, serializer));
     }
     
     @Override

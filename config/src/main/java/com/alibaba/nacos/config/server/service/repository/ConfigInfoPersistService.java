@@ -21,10 +21,13 @@ import com.alibaba.nacos.config.server.model.ConfigAdvanceInfo;
 import com.alibaba.nacos.config.server.model.ConfigAllInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.model.ConfigKey;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.config.server.model.ConfigOperateResult;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
+import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -67,12 +70,11 @@ public interface ConfigInfoPersistService {
      * @param srcIp             remote ip
      * @param srcUser           user
      * @param configInfo        config info
-     * @param time              time
      * @param configAdvanceInfo advance info
-     * @param notify            whether to push
+     * @return config operation result.
      */
-    void addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo, final Timestamp time,
-            final Map<String, Object> configAdvanceInfo, final boolean notify);
+    ConfigOperateResult addConfigInfo(final String srcIp, final String srcUser, final ConfigInfo configInfo,
+            final Map<String, Object> configAdvanceInfo);
     
     /**
      * insert or update.
@@ -80,36 +82,10 @@ public interface ConfigInfoPersistService {
      * @param srcIp             remote ip
      * @param srcUser           user
      * @param configInfo        config info
-     * @param time              time
      * @param configAdvanceInfo advance info
+     * @return config operation result.
      */
-    void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-            Map<String, Object> configAdvanceInfo);
-    
-    /**
-     * Write to the main table, insert or update.
-     *
-     * @param srcIp             remote ip
-     * @param srcUser           user
-     * @param configInfo        config info
-     * @param time              time
-     * @param configAdvanceInfo advance info
-     * @param notify            whether to push
-     */
-    void insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-            Map<String, Object> configAdvanceInfo, boolean notify);
-    
-    /**
-     * insert or update cas.
-     *
-     * @param srcIp             remote ip
-     * @param srcUser           user
-     * @param configInfo        config info
-     * @param time              time
-     * @param configAdvanceInfo advance info
-     * @return success or not.
-     */
-    boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
+    ConfigOperateResult insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo,
             Map<String, Object> configAdvanceInfo);
     
     /**
@@ -118,13 +94,11 @@ public interface ConfigInfoPersistService {
      * @param srcIp             remote ip
      * @param srcUser           user
      * @param configInfo        config info
-     * @param time              time
      * @param configAdvanceInfo advance info
-     * @param notify            whether to push
      * @return success or not.
      */
-    boolean insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo, Timestamp time,
-            Map<String, Object> configAdvanceInfo, boolean notify);
+    ConfigOperateResult insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo,
+            Map<String, Object> configAdvanceInfo);
     
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
@@ -133,12 +107,11 @@ public interface ConfigInfoPersistService {
      * @param srcIp             ip
      * @param srcUser           user
      * @param configInfo        info
-     * @param time              time
      * @param configAdvanceInfo advance info
      * @return execute sql result
      */
     long addConfigInfoAtomic(final long id, final String srcIp, final String srcUser, final ConfigInfo configInfo,
-            final Timestamp time, Map<String, Object> configAdvanceInfo);
+            Map<String, Object> configAdvanceInfo);
     
     /**
      * Add configuration; database atomic operation, minimum sql action, no business encapsulation.
@@ -171,15 +144,12 @@ public interface ConfigInfoPersistService {
      * @param srcUser           user
      * @param srcIp             remote ip
      * @param configAdvanceInfo advance info
-     * @param time              time
-     * @param notify            whether to push
      * @param policy            {@link SameConfigPolicy}
      * @return map containing the number of affected rows
      * @throws NacosException nacos exception
      */
     Map<String, Object> batchInsertOrUpdate(List<ConfigAllInfo> configInfoList, String srcUser, String srcIp,
-            Map<String, Object> configAdvanceInfo, Timestamp time, boolean notify, SameConfigPolicy policy)
-            throws NacosException;
+            Map<String, Object> configAdvanceInfo, SameConfigPolicy policy) throws NacosException;
     
     //------------------------------------------delete---------------------------------------------//
     
@@ -240,12 +210,11 @@ public interface ConfigInfoPersistService {
      * @param configInfo        config info
      * @param srcIp             remote ip
      * @param srcUser           user
-     * @param time              time
      * @param configAdvanceInfo advance info
-     * @param notify            whether to push
+     * @return config operation result.
      */
-    void updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser, final Timestamp time,
-            final Map<String, Object> configAdvanceInfo, final boolean notify);
+    ConfigOperateResult updateConfigInfo(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+            final Map<String, Object> configAdvanceInfo);
     
     /**
      * Update common configuration information.
@@ -253,13 +222,11 @@ public interface ConfigInfoPersistService {
      * @param configInfo        config info
      * @param srcIp             remote ip
      * @param srcUser           user
-     * @param time              time
      * @param configAdvanceInfo advance info
-     * @param notify            whether to push
-     * @return success or not.
+     * @return config operation result.
      */
-    boolean updateConfigInfoCas(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-            final Timestamp time, final Map<String, Object> configAdvanceInfo, final boolean notify);
+    ConfigOperateResult updateConfigInfoCas(final ConfigInfo configInfo, final String srcIp, final String srcUser,
+            final Map<String, Object> configAdvanceInfo);
     
     /**
      * Update configuration; database atomic operation, minimum SQL action, no business encapsulation.
@@ -267,11 +234,10 @@ public interface ConfigInfoPersistService {
      * @param configInfo        config info
      * @param srcIp             remote ip
      * @param srcUser           user
-     * @param time              time
      * @param configAdvanceInfo advance info
      */
     void updateConfigInfoAtomic(final ConfigInfo configInfo, final String srcIp, final String srcUser,
-            final Timestamp time, Map<String, Object> configAdvanceInfo);
+            Map<String, Object> configAdvanceInfo);
     
     /**
      * update md5.
@@ -467,13 +433,14 @@ public interface ConfigInfoPersistService {
             final String group, final String content) throws IOException;
     
     /**
-     * Query change config.
+     * Query change config.order by id asc.
      *
      * @param startTime start time
-     * @param endTime   end time
+     * @param lastMaxId lastMaxId
+     * @param pageSize  pageSize
      * @return {@link ConfigInfoWrapper} list
      */
-    List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, final Timestamp endTime);
+    List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize);
     
     /**
      * According to the time period and configuration conditions to query the eligible configuration.
@@ -577,6 +544,16 @@ public interface ConfigInfoPersistService {
     ConfigInfoWrapper queryConfigInfo(final String dataId, final String group, final String tenant);
     
     /**
+     * get config info state.
+     *
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @return config info state.
+     */
+    ConfigInfoStateWrapper findConfigInfoState(final String dataId, final String group, final String tenant);
+    
+    /**
      * query all configuration information according to group, appName, tenant (for export).
      *
      * @param dataId  data id
@@ -606,4 +583,5 @@ public interface ConfigInfoPersistService {
      */
     @Deprecated
     Page<ConfigInfoBase> findAllConfigInfoBase(final int pageNo, final int pageSize);
+    
 }

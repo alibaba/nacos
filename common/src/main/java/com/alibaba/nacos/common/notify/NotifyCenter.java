@@ -113,7 +113,6 @@ public class NotifyCenter {
         return INSTANCE.publisherMap;
     }
     
-    @JustForTest
     public static EventPublisher getPublisher(Class<? extends Event> topic) {
         if (ClassUtils.isAssignableFrom(SlowEvent.class, topic)) {
             return INSTANCE.sharePublisher;
@@ -121,7 +120,6 @@ public class NotifyCenter {
         return INSTANCE.publisherMap.get(topic.getCanonicalName());
     }
     
-    @JustForTest
     public static EventPublisher getSharePublisher() {
         return INSTANCE.sharePublisher;
     }

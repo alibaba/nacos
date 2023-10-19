@@ -16,15 +16,27 @@
 
 package com.alibaba.nacos.naming.consistency.persistent.impl;
 
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.TypeUtils;
+import com.alibaba.nacos.consistency.DataOperation;
+import com.alibaba.nacos.consistency.Serializer;
 import com.alibaba.nacos.consistency.snapshot.LocalFileMeta;
 import com.alibaba.nacos.consistency.snapshot.Reader;
 import com.alibaba.nacos.consistency.snapshot.Writer;
+import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
+import com.alibaba.nacos.naming.consistency.Datum;
+import com.alibaba.nacos.naming.consistency.KeyBuilder;
+import com.alibaba.nacos.naming.consistency.ValueChangeEvent;
 import com.alibaba.nacos.naming.misc.Loggers;
+import com.alibaba.nacos.naming.misc.SwitchDomain;
+import com.alibaba.nacos.naming.pojo.Record;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alipay.sofa.jraft.util.CRC64;
 
+import java.lang.reflect.Type;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.zip.Checksum;
@@ -46,10 +58,13 @@ public class NamingSnapshotOperation extends AbstractSnapshotOperation {
     private final String snapshotArchive = "naming_persistent.zip";
     
     private final KvStorage storage;
+
+    private final Serializer serializer;
     
-    public NamingSnapshotOperation(KvStorage storage, ReentrantReadWriteLock lock) {
+    public NamingSnapshotOperation(KvStorage storage, ReentrantReadWriteLock lock, Serializer serializer) {
         super(lock);
         this.storage = storage;
+        this.serializer = serializer;
     }
     
     @Override
@@ -84,9 +99,46 @@ public class NamingSnapshotOperation extends AbstractSnapshotOperation {
         }
         final String loadPath = Paths.get(readerPath, snapshotDir).toString();
         storage.snapshotLoad(loadPath);
+        // publish value change
+        publishValueChangeEvent();
         Loggers.RAFT.info("snapshot load from : {}", loadPath);
         DiskUtils.deleteDirectory(loadPath);
         return true;
+    }
+
+    /**
+     * publish value change event.
+     *
+     * @throws KvStorageException throw to invoker
+     */
+    private void publishValueChangeEvent() throws KvStorageException {
+        List<byte[]> keys = storage.allKeys();
+        for (int i = 0; i < keys.size(); i++) {
+            String key = new String(keys.get(i));
+            // Ignore old 1.x version data
+            if (!KeyBuilder.matchSwitchKey(key)) {
+                continue;
+            }
+            Datum datum = serializer.deserialize(storage.get(keys.get(i)), getDatumTypeFromKey(key));
+            Record value = (datum != null) ? datum.value : null;
+            // report for refreshing <code>SwitchDomain</code> message
+            if (value != null) {
+                ValueChangeEvent event = ValueChangeEvent.builder().key(key).value(value)
+                        .action(DataOperation.CHANGE).build();
+                NotifyCenter.publishEvent(event);
+            }
+        }
+    }
+
+    private Type getDatumTypeFromKey(String key) {
+        return TypeUtils.parameterize(Datum.class, getClassOfRecordFromKey(key));
+    }
+
+    private Class<? extends Record> getClassOfRecordFromKey(String key) {
+        if (KeyBuilder.matchSwitchKey(key)) {
+            return SwitchDomain.class;
+        }
+        return Record.class;
     }
     
     @Override

@@ -43,13 +43,14 @@ import ShowCodeing from 'components/ShowCodeing';
 import DeleteDialog from 'components/DeleteDialog';
 import DashboardCard from './DashboardCard';
 import { getParams, setParams, request } from '@/globalLib';
+import { goLogin } from '../../../globalLib';
 import { connect } from 'react-redux';
 import { getConfigs, getConfigsV2 } from '../../../reducers/configuration';
 import PageTitle from '../../../components/PageTitle';
 import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
-import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
+import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST, LOGINPAGE_ENABLED } from '../../../constants';
 
 const { Item } = MenuButton;
 const { Panel } = Collapse;
@@ -108,6 +109,7 @@ class ConfigurationManagement extends React.Component {
       tenant: true,
       nownamespace_id: window.nownamespace || '',
       nownamespace_name: window.namespaceShowName || '',
+      nownamespace_desc: window.namespaceDesc || '',
       selectedRecord: [],
       selectedKeys: [],
       hasdash: false,
@@ -511,10 +513,11 @@ class ConfigurationManagement extends React.Component {
     );
   }
 
-  setNowNameSpace(name, id) {
+  setNowNameSpace(name, id, desc) {
     this.setState({
       nownamespace_name: name,
       nownamespace_id: id,
+      nownamespace_desc: desc,
     });
   }
 
@@ -1013,12 +1016,22 @@ class ConfigurationManagement extends React.Component {
     const { locale = {} } = this.props;
     const self = this;
     self.field.setValue('sameConfigPolicy', 'ABORT');
+
+    const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
     let token = {};
-    try {
-      token = JSON.parse(localStorage.token);
-    } catch (e) {
-      console.log(e);
-      goLogin();
+
+    if (_LOGINPAGE_ENABLED !== 'false') {
+      try {
+        token = JSON.parse(localStorage.token);
+      } catch (e) {
+        console.log(e);
+        goLogin();
+        Dialog.alert({
+          title: locale.importFail,
+          content: locale.authFail,
+        });
+        return;
+      }
     }
     const { accessToken = '', username = '' } = token;
     const uploadProps = {
@@ -1135,7 +1148,9 @@ class ConfigurationManagement extends React.Component {
             <div style={{ display: this.inApp ? 'none' : 'block' }}>
               <PageTitle
                 title={locale.configurationManagement8}
-                desc={this.state.nownamespace_id}
+                desc={this.state.nownamespace_desc}
+                namespaceId={this.state.nownamespace_id}
+                namespaceName={this.state.nownamespace_name}
                 nameSpace
               />
               <RegionGroup
@@ -1190,13 +1205,13 @@ class ConfigurationManagement extends React.Component {
                   />
                 </Form.Item>
 
-                <Form.Item label="默认模糊匹配">
+                <Form.Item label={locale.fuzzydMode}>
                   <Switch
                     checkedChildren=""
                     unCheckedChildren=""
                     defaultChecked={this.state.defaultFuzzySearch}
                     onChange={this.handleDefaultFuzzySwitchChange}
-                    title={'自动在搜索参数前后加上*'}
+                    title={locale.fuzzyd}
                   />
                 </Form.Item>
 
@@ -1299,22 +1314,6 @@ class ConfigurationManagement extends React.Component {
                   />
                 </Form.Item>
               </Form>
-              <div style={{ position: 'absolute', right: 10, top: 0 }}>
-                <Icon
-                  type="add"
-                  size="medium"
-                  style={{
-                    color: 'black',
-                    marginRight: 0,
-                    verticalAlign: 'middle',
-                    cursor: 'pointer',
-                    backgroundColor: '#eee',
-                    border: '1px solid #ddd',
-                    padding: '3px 6px',
-                  }}
-                  onClick={this.chooseEnv.bind(this)}
-                />
-              </div>
             </div>
             <QueryResult total={configurations.totalCount} />
 
@@ -1350,8 +1349,9 @@ class ConfigurationManagement extends React.Component {
                       locaid: 'configsDelete',
                       onClick: () => this.cloneSelectedDataConfirm(),
                     },
-                  ].map(item => (
+                  ].map((item, index) => (
                     <Button
+                      key={index}
                       warning={item.warning}
                       type="primary"
                       style={{ marginRight: 10 }}

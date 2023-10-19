@@ -77,6 +77,10 @@ public class PropertyKeyConst {
     
     public static final String NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE = "namingAsyncQuerySubscribeService";
     
+    public static final String REDO_DELAY_TIME = "redoDelayTime";
+    
+    public static final String REDO_DELAY_THREAD_COUNT = "redoDelayThreadCount";
+    
     /**
      * Get the key value of some variable value from the system property.
      */

@@ -27,7 +27,7 @@ import java.util.Collection;
  */
 public class ControlConfigs {
     
-    private static ControlConfigs instance = null;
+    private static volatile ControlConfigs instance = null;
     
     public static ControlConfigs getInstance() {
         if (instance == null) {
@@ -50,37 +50,13 @@ public class ControlConfigs {
         ControlConfigs.instance = instance;
     }
     
-    private String tpsBarrierCreator = "nacos";
-    
-    private String tpsRuleBarrierCreator = "nacos";
-    
     private String connectionRuntimeEjector = "nacos";
-    
-    private String connectionManager = "nacos";
-    
-    private String tpsManager = "nacos";
     
     private String ruleExternalStorage = "";
     
-    private String ruleParser = "nacos";
-    
     private String localRuleStorageBaseDir = "";
     
-    public String getTpsBarrierCreator() {
-        return tpsBarrierCreator;
-    }
-    
-    public void setTpsBarrierCreator(String tpsBarrierCreator) {
-        this.tpsBarrierCreator = tpsBarrierCreator;
-    }
-    
-    public String getTpsRuleBarrierCreator() {
-        return tpsRuleBarrierCreator;
-    }
-    
-    public void setTpsRuleBarrierCreator(String tpsRuleBarrierCreator) {
-        this.tpsRuleBarrierCreator = tpsRuleBarrierCreator;
-    }
+    private String controlManagerType = "";
     
     public String getRuleExternalStorage() {
         return ruleExternalStorage;
@@ -88,22 +64,6 @@ public class ControlConfigs {
     
     public void setRuleExternalStorage(String ruleExternalStorage) {
         this.ruleExternalStorage = ruleExternalStorage;
-    }
-    
-    public String getRuleParser() {
-        return ruleParser;
-    }
-    
-    public void setRuleParser(String ruleParser) {
-        this.ruleParser = ruleParser;
-    }
-    
-    public String getConnectionManager() {
-        return connectionManager;
-    }
-    
-    public void setConnectionManager(String connectionManager) {
-        this.connectionManager = connectionManager;
     }
     
     public String getConnectionRuntimeEjector() {
@@ -114,19 +74,19 @@ public class ControlConfigs {
         this.connectionRuntimeEjector = connectionRuntimeEjector;
     }
     
-    public String getTpsManager() {
-        return tpsManager;
-    }
-    
-    public void setTpsManager(String tpsManager) {
-        this.tpsManager = tpsManager;
-    }
-    
     public String getLocalRuleStorageBaseDir() {
         return localRuleStorageBaseDir;
     }
     
     public void setLocalRuleStorageBaseDir(String localRuleStorageBaseDir) {
         this.localRuleStorageBaseDir = localRuleStorageBaseDir;
+    }
+    
+    public String getControlManagerType() {
+        return controlManagerType;
+    }
+    
+    public void setControlManagerType(String controlManagerType) {
+        this.controlManagerType = controlManagerType;
     }
 }

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 1999-2018 Alibaba Group Holding Ltd.
+  ~ Copyright 1999-2023 Alibaba Group Holding Ltd.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@
     
     <name>nacos-common ${project.version}</name>
     <url>https://nacos.io</url>
-    
+    <description>Nacos common pom.xml file</description>
     <dependencies>
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -61,7 +61,7 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
         </dependency>
-    
+
     </dependencies>
     <build>
         <resources>
@@ -70,6 +70,7 @@
                 <filtering>true</filtering>
                 <includes>
                     <include>nacos-version.txt</include>
+                    <include>META-INF/services/*</include>
                 </includes>
             </resource>
         </resources>

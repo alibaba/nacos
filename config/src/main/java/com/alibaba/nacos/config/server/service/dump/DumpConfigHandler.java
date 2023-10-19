@@ -46,81 +46,84 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
         final String content = event.getContent();
         final String type = event.getType();
         final long lastModified = event.getLastModifiedTs();
-        final String encryptedDataKey = event.getEncryptedDataKey();
+        //beta
         if (event.isBeta()) {
-            boolean result;
+            boolean result = false;
             if (event.isRemove()) {
                 result = ConfigCacheService.removeBeta(dataId, group, namespaceId);
                 if (result) {
-                    ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
-                            ConfigTraceService.DUMP_EVENT_REMOVE_OK, System.currentTimeMillis() - lastModified, 0);
+                    ConfigTraceService.logDumpBetaEvent(dataId, group, namespaceId, null, lastModified,
+                            event.getHandleIp(), ConfigTraceService.DUMP_TYPE_REMOVE_OK,
+                            System.currentTimeMillis() - lastModified, 0);
                 }
                 return result;
             } else {
-                result = ConfigCacheService
-                        .dumpBeta(dataId, group, namespaceId, content, lastModified, event.getBetaIps(),
-                                encryptedDataKey);
+                result = ConfigCacheService.dumpBeta(dataId, group, namespaceId, content, lastModified,
+                        event.getBetaIps(), event.getEncryptedDataKey());
                 if (result) {
-                    ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
-                            ConfigTraceService.DUMP_EVENT_OK, System.currentTimeMillis() - lastModified,
-                            content.length());
+                    ConfigTraceService.logDumpBetaEvent(dataId, group, namespaceId, null, lastModified,
+                            event.getHandleIp(), ConfigTraceService.DUMP_TYPE_OK,
+                            System.currentTimeMillis() - lastModified, content.length());
                 }
             }
             
             return result;
         }
-        if (StringUtils.isBlank(event.getTag())) {
-            if (dataId.equals(AggrWhitelist.AGGRIDS_METADATA)) {
-                AggrWhitelist.load(content);
-            }
-            
-            if (dataId.equals(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA)) {
-                ClientIpWhiteList.load(content);
-            }
-            
-            if (dataId.equals(SwitchService.SWITCH_META_DATAID)) {
-                SwitchService.load(content);
-            }
-            
-            boolean result;
-            if (!event.isRemove()) {
-                result = ConfigCacheService
-                        .dump(dataId, group, namespaceId, content, lastModified, type, encryptedDataKey);
-                
-                if (result) {
-                    ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
-                            ConfigTraceService.DUMP_EVENT_OK, System.currentTimeMillis() - lastModified,
-                            content.length());
-                }
-            } else {
-                result = ConfigCacheService.remove(dataId, group, namespaceId);
-                
-                if (result) {
-                    ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
-                            ConfigTraceService.DUMP_EVENT_REMOVE_OK, System.currentTimeMillis() - lastModified, 0);
-                }
-            }
-            return result;
-        } else {
+        
+        //tag
+        if (StringUtils.isNotBlank(event.getTag())) {
             //
             boolean result;
             if (!event.isRemove()) {
-                result = ConfigCacheService
-                        .dumpTag(dataId, group, namespaceId, event.getTag(), content, lastModified, encryptedDataKey);
+                result = ConfigCacheService.dumpTag(dataId, group, namespaceId, event.getTag(), content, lastModified,
+                        event.getEncryptedDataKey());
                 if (result) {
-                    ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
-                            ConfigTraceService.DUMP_EVENT_OK, System.currentTimeMillis() - lastModified,
-                            content.length());
+                    ConfigTraceService.logDumpTagEvent(dataId, group, namespaceId, event.getTag(), null, lastModified,
+                            event.getHandleIp(), ConfigTraceService.DUMP_TYPE_OK,
+                            System.currentTimeMillis() - lastModified, content.length());
                 }
             } else {
                 result = ConfigCacheService.removeTag(dataId, group, namespaceId, event.getTag());
                 if (result) {
-                    ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
-                            ConfigTraceService.DUMP_EVENT_REMOVE_OK, System.currentTimeMillis() - lastModified, 0);
+                    ConfigTraceService.logDumpTagEvent(dataId, group, namespaceId, event.getTag(), null, lastModified,
+                            event.getHandleIp(), ConfigTraceService.DUMP_TYPE_REMOVE_OK,
+                            System.currentTimeMillis() - lastModified, 0);
                 }
             }
             return result;
         }
+        
+        //default
+        if (dataId.equals(AggrWhitelist.AGGRIDS_METADATA)) {
+            AggrWhitelist.load(content);
+        }
+        
+        if (dataId.equals(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA)) {
+            ClientIpWhiteList.load(content);
+        }
+        
+        if (dataId.equals(SwitchService.SWITCH_META_DATA_ID)) {
+            SwitchService.load(content);
+        }
+        
+        boolean result;
+        if (!event.isRemove()) {
+            result = ConfigCacheService.dump(dataId, group, namespaceId, content, lastModified, event.getType(),
+                    event.getEncryptedDataKey());
+            
+            if (result) {
+                ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
+                        ConfigTraceService.DUMP_TYPE_OK, System.currentTimeMillis() - lastModified, content.length());
+            }
+        } else {
+            result = ConfigCacheService.remove(dataId, group, namespaceId);
+            
+            if (result) {
+                ConfigTraceService.logDumpEvent(dataId, group, namespaceId, null, lastModified, event.getHandleIp(),
+                        ConfigTraceService.DUMP_TYPE_REMOVE_OK, System.currentTimeMillis() - lastModified, 0);
+            }
+        }
+        return result;
         
     }
     

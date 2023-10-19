@@ -265,12 +265,22 @@ public class MetricsMonitor {
     
     /**
      * increment IpCount when use batchRegister instance.
+     * @param old old instancePublishInfo
      * @param instancePublishInfo must be BatchInstancePublishInfo
      */
-    public static void incrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
-        BatchInstancePublishInfo batchInstancePublishInfo = (BatchInstancePublishInfo) instancePublishInfo;
-        List<InstancePublishInfo> instancePublishInfos = batchInstancePublishInfo.getInstancePublishInfos();
-        getIpCountMonitor().addAndGet(instancePublishInfos.size());
+    public static void incrementIpCountWithBatchRegister(InstancePublishInfo old, BatchInstancePublishInfo instancePublishInfo) {
+        int newSize = instancePublishInfo.getInstancePublishInfos().size();
+        if (null == old) {
+            // First time increment batchPublishInfo, add all into metrics.
+            getIpCountMonitor().addAndGet(newSize);
+        } else if (old instanceof BatchInstancePublishInfo) {
+            // Not first time increment batchPublishInfo, calculate the diff, and add the diff to metrics, the diff may be negative.
+            int oldSize = ((BatchInstancePublishInfo) old).getInstancePublishInfos().size();
+            getIpCountMonitor().addAndGet(newSize - oldSize);
+        } else {
+            // Not first time increment batchPublishInfo and the old one is not batch, also diff it.
+            getIpCountMonitor().addAndGet(newSize - 1);
+        }
     }
     
     /**

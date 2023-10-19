@@ -329,7 +329,7 @@ public class EnvUtil {
      * @throws IOException ioexception {@link IOException}
      */
     public static List<String> readClusterConf() throws IOException {
-        try (Reader reader = new InputStreamReader(new FileInputStream(new File(getClusterConfFilePath())),
+        try (Reader reader = new InputStreamReader(new FileInputStream(getClusterConfFilePath()),
                 StandardCharsets.UTF_8)) {
             return analyzeClusterConf(reader);
         } catch (FileNotFoundException ignore) {

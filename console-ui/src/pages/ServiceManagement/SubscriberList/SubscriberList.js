@@ -102,15 +102,18 @@ class SubscriberList extends React.Component {
     this.props.removeSubscribers();
   };
 
-  setNowNameSpace = (nowNamespaceName, nowNamespaceId) =>
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId, nowNamespaceDesc) =>
     this.setState({
       nowNamespaceName,
       nowNamespaceId,
+      nowNamespaceDesc,
     });
 
   render() {
     const { locale = {}, subscriberData = {} } = this.props;
     const { count = 0, subscribers = [] } = subscriberData;
+    const subscribersArray = Array.isArray(subscribers) ? subscribers : [];
+
     const {
       pubNoData,
       subscriberList,
@@ -120,7 +123,7 @@ class SubscriberList extends React.Component {
       groupNamePlaceholder,
       query,
     } = locale;
-    const { search, nowNamespaceName, nowNamespaceId } = this.state;
+    const { search, nowNamespaceName, nowNamespaceId, nowNamespaceDesc } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
@@ -136,7 +139,13 @@ class SubscriberList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <PageTitle title={subscriberList} desc={nowNamespaceId} nameSpace />
+          <PageTitle
+            title={subscriberList}
+            desc={nowNamespaceDesc}
+            namespaceId={nowNamespaceId}
+            namespaceName={nowNamespaceName}
+            nameSpace
+          />
           <RegionGroup
             setNowNameSpace={this.setNowNameSpace}
             namespaceCallBack={this.switchNamespace}
@@ -186,7 +195,8 @@ class SubscriberList extends React.Component {
           </Row>
           <Row style={{ padding: 0 }}>
             <Col span="24" style={{ padding: 0 }}>
-              <Table dataSource={subscribers} locale={{ empty: pubNoData }}>
+              <Table dataSource={subscribersArray} locale={{ empty: pubNoData }}>
+                <Column title={locale.serviceName} dataIndex="serviceName" />
                 <Column title={locale.address} dataIndex="addrStr" />
                 <Column title={locale.clientVersion} dataIndex="agent" />
                 <Column title={locale.appName} dataIndex="app" />

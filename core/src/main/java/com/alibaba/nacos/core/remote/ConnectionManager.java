@@ -228,7 +228,7 @@ public class ConnectionManager {
     }
     
     /**
-     * regresh connection active time.
+     * refresh connection active time.
      *
      * @param connectionId connectionId.
      */
@@ -259,12 +259,13 @@ public class ConnectionManager {
     }
     
     /**
-     * send load request to spefic connetionId.
+     * send load request to specific connectionId.
      *
      * @param connectionId    connection id of client.
      * @param redirectAddress server address to redirect.
+     * @return whether remove connection.
      */
-    public void loadSingle(String connectionId, String redirectAddress) {
+    public boolean loadSingle(String connectionId, String redirectAddress) {
         Connection connection = getConnection(connectionId);
         
         if (connection != null) {
@@ -274,6 +275,7 @@ public class ConnectionManager {
                     String[] split = redirectAddress.split(Constants.COLON);
                     connectResetRequest.setServerIp(split[0]);
                     connectResetRequest.setServerPort(split[1]);
+                    connectResetRequest.setConnectionId(connectionId);
                 }
                 try {
                     connection.request(connectResetRequest, 3000L);
@@ -281,9 +283,11 @@ public class ConnectionManager {
                     unregister(connectionId);
                 } catch (Exception e) {
                     LOGGER.error("error occurs when expel connection, connectionId: {} ", connectionId, e);
+                    return false;
                 }
             }
         }
+        return true;
         
     }
     

@@ -21,7 +21,7 @@ import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.config.server.model.Page;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
@@ -64,7 +64,7 @@ public class DumpAllProcessor implements NacosTaskProcessor {
                         ClientIpWhiteList.load(cf.getContent());
                     }
                     
-                    if (cf.getDataId().equals(SwitchService.SWITCH_META_DATAID)) {
+                    if (cf.getDataId().equals(SwitchService.SWITCH_META_DATA_ID)) {
                         SwitchService.load(cf.getContent());
                     }
     
