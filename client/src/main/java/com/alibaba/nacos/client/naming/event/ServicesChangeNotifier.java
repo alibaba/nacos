@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.client.naming.event;
 
-import com.alibaba.nacos.api.naming.listener.AbstractWatchEventListener;
+import com.alibaba.nacos.api.naming.listener.AbstractFuzzyWatchEventListener;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.Event;
@@ -32,55 +32,55 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A watcher to notify watch event Listener callback.
+ * A watcher to notify service change event Listener callback.
  *
  * @author tanyongquan
  */
-public class WatchServiceChangeNotifier extends Subscriber<WatchNotifyEvent> {
+public class ServicesChangeNotifier extends Subscriber<FuzzyWatchNotifyEvent> {
     
     private final String eventScope;
     
     @JustForTest
-    public WatchServiceChangeNotifier() {
+    public ServicesChangeNotifier() {
         this.eventScope = UUID.randomUUID().toString();
     }
     
-    public WatchServiceChangeNotifier(String eventScope) {
+    public ServicesChangeNotifier(String eventScope) {
         this.eventScope = eventScope;
     }
     
     /**
-     * pattern -> Set[Listener].
+     * The content of map is {pattern -> Set[Listener]}.
      */
-    private final Map<String, ConcurrentHashSet<AbstractWatchEventListener>> watchListenerMap = new ConcurrentHashMap<>();
+    private final Map<String, ConcurrentHashSet<AbstractFuzzyWatchEventListener>> fuzzyWatchListenerMap = new ConcurrentHashMap<>();
     
-    /** register watch listener.
-     *  This listener responds to changes of the services (not the instance).
+    /** register fuzzy watch listener.
+     *  This listener responds to changes of the services (not the instance's change).
      *
      * @param serviceNamePattern service name pattern
      * @param groupNamePattern group name pattern
      * @param listener custom listener
      */
-    public void registerWatchListener(String serviceNamePattern, String groupNamePattern, AbstractWatchEventListener listener) {
+    public void registerFuzzyWatchListener(String serviceNamePattern, String groupNamePattern, AbstractFuzzyWatchEventListener listener) {
         String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
-        Set<AbstractWatchEventListener> eventListeners = watchListenerMap.computeIfAbsent(key, keyInner -> new ConcurrentHashSet<>());
+        Set<AbstractFuzzyWatchEventListener> eventListeners = fuzzyWatchListenerMap.computeIfAbsent(key, keyInner -> new ConcurrentHashSet<>());
         eventListeners.add(listener);
     }
     
-    /** remove watch listener.
+    /** remove fuzzy watch listener.
      *
      * @param serviceNamePattern service name pattern
      * @param groupNamePattern group name pattern
      */
-    public void deregisterWatchListener(String serviceNamePattern, String groupNamePattern, AbstractWatchEventListener listener) {
+    public void deregisterFuzzyWatchListener(String serviceNamePattern, String groupNamePattern, AbstractFuzzyWatchEventListener listener) {
         String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
-        ConcurrentHashSet<AbstractWatchEventListener> eventListeners = watchListenerMap.get(key);
+        ConcurrentHashSet<AbstractFuzzyWatchEventListener> eventListeners = fuzzyWatchListenerMap.get(key);
         if (eventListeners == null) {
             return;
         }
         eventListeners.remove(listener);
         if (CollectionUtils.isEmpty(eventListeners)) {
-            watchListenerMap.remove(key);
+            fuzzyWatchListenerMap.remove(key);
         }
     }
     
@@ -93,55 +93,55 @@ public class WatchServiceChangeNotifier extends Subscriber<WatchNotifyEvent> {
      */
     public boolean isWatched(String serviceNamePattern, String groupNamePattern) {
         String key = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
-        ConcurrentHashSet<AbstractWatchEventListener> eventListeners = watchListenerMap.get(key);
+        ConcurrentHashSet<AbstractFuzzyWatchEventListener> eventListeners = fuzzyWatchListenerMap.get(key);
         return CollectionUtils.isNotEmpty(eventListeners);
     }
     
     /**
-     * receive watch notify (watch init or service change) from nacos server, notify all listener watch this pattern.
+     * receive fuzzy watch notify (fuzzy watch init or service change) from nacos server, notify all listener watch this pattern.
      * If the event contains a UUID, then the event is used to notify the specified Listener when there are
-     * multiple watches for a particular Pattern
+     * multiple watches for a particular pattern.
      *
      * @param event watch notify event
      */
     @Override
-    public void onEvent(WatchNotifyEvent event) {
+    public void onEvent(FuzzyWatchNotifyEvent event) {
         String uuid = event.getUuid();
-        Collection<AbstractWatchEventListener> listeners = watchListenerMap.get(event.getPattern());
-        final com.alibaba.nacos.api.naming.listener.WatchNotifyEvent watchNotifyEvent = transferToWatchNotifyEvent(event);
-        for (AbstractWatchEventListener each : listeners) {
+        Collection<AbstractFuzzyWatchEventListener> listeners = fuzzyWatchListenerMap.get(event.getPattern());
+        final com.alibaba.nacos.api.naming.listener.FuzzyWatchNotifyEvent fuzzyWatchNotifyEvent = transferToWatchNotifyEvent(event);
+        for (AbstractFuzzyWatchEventListener each : listeners) {
             // notify all listener watch this pattern
             if (StringUtils.isEmpty(uuid)) {
                 if (each.getExecutor() != null) {
-                    each.getExecutor().execute(() -> each.onEvent(watchNotifyEvent));
+                    each.getExecutor().execute(() -> each.onEvent(fuzzyWatchNotifyEvent));
                 } else {
-                    each.onEvent(watchNotifyEvent);
+                    each.onEvent(fuzzyWatchNotifyEvent);
                 }
             } else if (uuid.equals(each.getUuid())) {
                 // notify specific listener by uuid, use in duplicate watch a same pattern
                 if (each.getExecutor() != null) {
-                    each.getExecutor().execute(() -> each.onEvent(watchNotifyEvent));
+                    each.getExecutor().execute(() -> each.onEvent(fuzzyWatchNotifyEvent));
                 } else {
-                    each.onEvent(watchNotifyEvent);
+                    each.onEvent(fuzzyWatchNotifyEvent);
                 }
                 return;
             }
         }
     }
     
-    private com.alibaba.nacos.api.naming.listener.WatchNotifyEvent transferToWatchNotifyEvent(
-            WatchNotifyEvent watchNotifyEvent) {
-        return new com.alibaba.nacos.api.naming.listener.WatchNotifyEvent(watchNotifyEvent.getChangedService(),
-                watchNotifyEvent.getServiceChangedType());
+    private com.alibaba.nacos.api.naming.listener.FuzzyWatchNotifyEvent transferToWatchNotifyEvent(
+            FuzzyWatchNotifyEvent fuzzyWatchNotifyEvent) {
+        return new com.alibaba.nacos.api.naming.listener.FuzzyWatchNotifyEvent(fuzzyWatchNotifyEvent.getChangedService(),
+                fuzzyWatchNotifyEvent.getServiceChangedType());
     }
     
     @Override
     public Class<? extends Event> subscribeType() {
-        return WatchNotifyEvent.class;
+        return FuzzyWatchNotifyEvent.class;
     }
     
     @Override
-    public boolean scopeMatches(WatchNotifyEvent event) {
+    public boolean scopeMatches(FuzzyWatchNotifyEvent event) {
         return this.eventScope.equals(event.scope());
     }
 }

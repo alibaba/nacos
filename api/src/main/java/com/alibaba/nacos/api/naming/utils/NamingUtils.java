@@ -208,7 +208,7 @@ public class NamingUtils {
     }
     
     /**
-     * Get the Pattern subscribed to under this NamespaceId.
+     * Get the pattern watched under given namespace id.
      * @param namespaceId name space id
      * @param completedPattern a set of all watch pattern(with namespace id)
      * @return filtered pattern set
@@ -228,16 +228,16 @@ public class NamingUtils {
      * Returns a combined string with matchPattern and matchType.
      * @param matchPattern a match pattern. Such as a 'serviceNamePrefix'
      * @param matchType The match type want to use
-     * @return 'matchPattern##matchType'
+     * @return grouped pattern like 'matchPattern##matchType'
      */
     public static String getGroupedPattern(final String matchPattern, final String matchType) {
-        if (StringUtils.isBlank(matchPattern) && !matchType.equals(Constants.WatchMatchRule.MATCH_ALL)) {
+        if (StringUtils.isBlank(matchPattern) && !matchType.equals(Constants.FuzzyWatchMatchRule.MATCH_ALL)) {
             throw new IllegalArgumentException("Param 'matchPattern' is illegal, matchPattern is blank");
         }
         if (StringUtils.isBlank(matchType)) {
             throw new IllegalArgumentException("Param 'matchType' is illegal, matchType is blank");
-        } else if (matchType.equals(Constants.WatchMatchRule.MATCH_ALL)) {
-            return Constants.WatchMatchRule.MATCH_ALL;
+        } else if (matchType.equals(Constants.FuzzyWatchMatchRule.MATCH_ALL)) {
+            return Constants.FuzzyWatchMatchRule.MATCH_ALL;
         }
         final String resultGroupedName = matchPattern + Constants.MATCH_PATTERN_SPLITER + matchType;
         return resultGroupedName.intern();
@@ -245,7 +245,7 @@ public class NamingUtils {
     
     /**
      *  Given a Pattern, return the string to be used for the match.
-     * @param groupedPattern a grouped pattern (match string ## match type)
+     * @param groupedPattern a grouped pattern, format: [match string ## match type]
      * @return the string to be used for the match.
      */
     public static String getMatchName(String groupedPattern) {
@@ -268,7 +268,7 @@ public class NamingUtils {
             return StringUtils.EMPTY;
         }
         if (!groupedPattern.contains(Constants.MATCH_PATTERN_SPLITER)) {
-            return Constants.WatchMatchRule.MATCH_ALL;
+            return Constants.FuzzyWatchMatchRule.MATCH_ALL;
         }
         return groupedPattern.split(Constants.MATCH_PATTERN_SPLITER)[1];
     }
@@ -330,9 +330,9 @@ public class NamingUtils {
         String serviceMatchType = getMatchRule(serviceNamePattern);
         // Only support prefix match or all match right now
         // Only support fixed group name right now
-        if (serviceMatchType.equals(Constants.WatchMatchRule.MATCH_ALL)) {
+        if (serviceMatchType.equals(Constants.FuzzyWatchMatchRule.MATCH_ALL)) {
             return groupName.equals(groupNamePattern);
-        } else if (serviceMatchType.equals(Constants.WatchMatchRule.MATCH_PREFIX)) {
+        } else if (serviceMatchType.equals(Constants.FuzzyWatchMatchRule.MATCH_PREFIX)) {
             return prefixMatchWithFixedGroupName(serviceName, serviceMatchName, groupName, getMatchName(groupNamePattern));
         }
         return false;

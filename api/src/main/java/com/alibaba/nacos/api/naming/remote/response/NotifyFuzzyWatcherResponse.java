@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
+package com.alibaba.nacos.api.naming.remote.response;
+
+import com.alibaba.nacos.api.remote.response.Response;
 
 /**
- * Redo data for Watcher.
+ * Response for notify fuzzy watcher.
  *
  * @author tanyongquan
  */
-public class WatcherRedoData extends RedoData<String> {
-    
-    private WatcherRedoData(String serviceNamePattern, String groupNamePattern) {
-        super(serviceNamePattern, groupNamePattern);
-    }
-    
-    public static WatcherRedoData build(String serviceNamePattern, String groupNamePattern) {
-        return new WatcherRedoData(serviceNamePattern, groupNamePattern);
-    }
+public class NotifyFuzzyWatcherResponse extends Response {
+
 }

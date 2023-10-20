@@ -17,22 +17,22 @@
 package com.alibaba.nacos.api.naming.remote.request;
 
 /**
- * Nacos watch notify service change request, use it when one of the services changes.
+ * Nacos fuzzy watch notify service change request, use it when one of the services changes.
  *
  * @author tanyongquan
  */
-public class WatchNotifyChangeRequest extends AbstractWatchNotifyRequest {
+public class FuzzyWatchNotifyChangeRequest extends AbstractFuzzyWatchNotifyRequest {
     
     String serviceName;
     
     String groupName;
     
-    public WatchNotifyChangeRequest() {
+    public FuzzyWatchNotifyChangeRequest() {
     }
     
-    public WatchNotifyChangeRequest(String namespace, String serviceName,
+    public FuzzyWatchNotifyChangeRequest(String namespace, String serviceName,
             String groupName, String serviceChangedType) {
-        super(namespace, "", serviceChangedType);
+        super(namespace, serviceChangedType);
         this.serviceName = serviceName;
         this.groupName = groupName;
     }

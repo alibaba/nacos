@@ -241,10 +241,10 @@ public class Constants {
     }
     
     /**
-     * The constants in Watch Pattern Match Rule directory.
+     * The constants in fuzzy watch pattern match rule directory.
      */
-    public static class WatchMatchRule {
-        
+    public static class FuzzyWatchMatchRule {
+
         public static final String MATCH_ALL = "MATCH_ALL";
         
         public static final String MATCH_PREFIX = "MATCH_PREFIX";
@@ -252,9 +252,9 @@ public class Constants {
     }
     
     /**
-     * The constants in Watch Notify Event directory.
+     * The constants in fuzzy watch event type directory.
      */
-    public static class WatchEventType {
+    public static class ServiceChangedType {
         
         public static final String ADD_SERVICE = "ADD_SERVICE";
         

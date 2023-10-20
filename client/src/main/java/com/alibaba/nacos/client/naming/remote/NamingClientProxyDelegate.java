@@ -25,7 +25,7 @@ import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.cache.WatchServiceListHolder;
+import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.core.ServiceInfoUpdateService;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
@@ -57,8 +57,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     private final ServiceInfoUpdateService serviceInfoUpdateService;
     
     private final ServiceInfoHolder serviceInfoHolder;
-    
-    private final WatchServiceListHolder watchServiceListHolder;
+
+    private final FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder;
     
     private final NamingHttpClientProxy httpClientProxy;
     
@@ -68,19 +68,19 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     private ScheduledExecutorService executorService;
     
-    public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder, WatchServiceListHolder watchServiceListHolder,
+    public NamingClientProxyDelegate(String namespace, ServiceInfoHolder serviceInfoHolder, FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder,
             NacosClientProperties properties, InstancesChangeNotifier changeNotifier) throws NacosException {
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
         this.serverListManager = new ServerListManager(properties, namespace);
         this.serviceInfoHolder = serviceInfoHolder;
-        this.watchServiceListHolder = watchServiceListHolder;
+        this.fuzzyWatchServiceListHolder = fuzzyWatchServiceListHolder;
         this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
         this.httpClientProxy = new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties);
         this.grpcClientProxy = new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties,
-                serviceInfoHolder, watchServiceListHolder);
+                serviceInfoHolder, fuzzyWatchServiceListHolder);
     }
     
     private void initSecurityProxy(NacosClientProperties properties) {
@@ -195,13 +195,13 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     
     @Override
     public void fuzzyWatch(String serviceNamePattern, String groupNamePattern, String uuid) throws NacosException {
-        NAMING_LOGGER.info("[WATCH] serviceNamePattern:{}, groupNamePattern:{}", serviceNamePattern, groupNamePattern);
-        if (!watchServiceListHolder.containsPatternMatchCache(serviceNamePattern, groupNamePattern)
+        NAMING_LOGGER.info("[FUZZY-WATCH] serviceNamePattern:{}, groupNamePattern:{}", serviceNamePattern, groupNamePattern);
+        if (!fuzzyWatchServiceListHolder.containsPatternMatchCache(serviceNamePattern, groupNamePattern)
                 || !isFuzzyWatched(serviceNamePattern, groupNamePattern)) {
-            watchServiceListHolder.addPatternMatchCache(serviceNamePattern, groupNamePattern);
+            fuzzyWatchServiceListHolder.addPatternMatchCache(serviceNamePattern, groupNamePattern);
             grpcClientProxy.fuzzyWatch(serviceNamePattern, groupNamePattern, "");
         } else {
-            watchServiceListHolder.duplicateWatchInit(serviceNamePattern, groupNamePattern, uuid);
+            fuzzyWatchServiceListHolder.duplicateFuzzyWatchInit(serviceNamePattern, groupNamePattern, uuid);
         }
     }
     
@@ -213,8 +213,8 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
     @Override
     public void cancelFuzzyWatch(String serviceNamePattern, String groupNamePattern) throws NacosException {
         NAMING_LOGGER
-                .debug("[CANCEL-WATCH] serviceNamePattern:{}, groupNamePattern:{} ", serviceNamePattern, groupNamePattern);
-        watchServiceListHolder.removePatternMatchCache(serviceNamePattern, groupNamePattern);
+                .debug("[CANCEL-FUZZY-WATCH] serviceNamePattern:{}, groupNamePattern:{} ", serviceNamePattern, groupNamePattern);
+        fuzzyWatchServiceListHolder.removePatternMatchCache(serviceNamePattern, groupNamePattern);
         grpcClientProxy.cancelFuzzyWatch(serviceNamePattern, groupNamePattern);
     }
     

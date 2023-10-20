@@ -18,12 +18,12 @@ package com.alibaba.nacos.client.naming.cache;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Service;
-import com.alibaba.nacos.api.naming.remote.request.AbstractWatchNotifyRequest;
-import com.alibaba.nacos.api.naming.remote.request.WatchNotifyChangeRequest;
-import com.alibaba.nacos.api.naming.remote.request.WatchNotifyInitRequest;
+import com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest;
+import com.alibaba.nacos.api.naming.remote.request.FuzzyWatchNotifyChangeRequest;
+import com.alibaba.nacos.api.naming.remote.request.FuzzyWatchNotifyInitRequest;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.event.WatchNotifyEvent;
+import com.alibaba.nacos.client.naming.event.FuzzyWatchNotifyEvent;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
@@ -34,11 +34,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Naming client watch service list holder.
+ * Naming client fuzzy watch service list holder.
  *
  * @author tanyongquan
  */
-public class WatchServiceListHolder {
+public class FuzzyWatchServiceListHolder {
     
     private String notifierEventScope;
     
@@ -47,54 +47,55 @@ public class WatchServiceListHolder {
      */
     private Map<String, ConcurrentHashSet<Service>> patternMatchMap = new ConcurrentHashMap<>();
     
-    public WatchServiceListHolder(String notifierEventScope, NacosClientProperties properties) {
+    public FuzzyWatchServiceListHolder(String notifierEventScope, NacosClientProperties properties) {
         this.notifierEventScope = notifierEventScope;
     }
     
     /**
-     * Publish service change event notify by watch.
+     * Publish service change event notify from nacos server about fuzzy watch.
      *
      * @param request watch notify request from Nacos server
      */
-    public void processServiceChange(AbstractWatchNotifyRequest request) {
-        if (request instanceof WatchNotifyInitRequest) {
-            WatchNotifyInitRequest watchNotifyInitRequest = (WatchNotifyInitRequest) request;
-            Set<Service> cacheService = patternMatchMap.computeIfAbsent(request.getPattern(), keyInner -> new ConcurrentHashSet<>());
+    public void processFuzzyWatchNotify(AbstractFuzzyWatchNotifyRequest request) {
+        if (request instanceof FuzzyWatchNotifyInitRequest) {
+            FuzzyWatchNotifyInitRequest watchNotifyInitRequest = (FuzzyWatchNotifyInitRequest) request;
+            Set<Service> matchedServiceSet = patternMatchMap.computeIfAbsent(watchNotifyInitRequest.getPattern(),
+                    keyInner -> new ConcurrentHashSet<>());
             Collection<String> servicesName = watchNotifyInitRequest.getServicesName();
             for (String groupedName : servicesName) {
                 Service service = new Service(NamingUtils.getServiceName(groupedName), NamingUtils.getGroupName(groupedName));
                 // may have a 'change event' sent to client before 'init event'
-                if (cacheService.add(service)) {
-                    NotifyCenter.publishEvent(WatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
-                            service, request.getPattern(), Constants.WatchEventType.ADD_SERVICE));
+                if (matchedServiceSet.add(service)) {
+                    NotifyCenter.publishEvent(FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
+                            service, watchNotifyInitRequest.getPattern(), Constants.ServiceChangedType.ADD_SERVICE));
                 }
             }
-        } else if (request instanceof WatchNotifyChangeRequest) {
-            WatchNotifyChangeRequest notifyChangeRequest = (WatchNotifyChangeRequest) request;
+        } else if (request instanceof FuzzyWatchNotifyChangeRequest) {
+            FuzzyWatchNotifyChangeRequest notifyChangeRequest = (FuzzyWatchNotifyChangeRequest) request;
             Collection<String> matchedPattern = NamingUtils.getServiceMatchedPatterns(notifyChangeRequest.getServiceName(),
                     notifyChangeRequest.getGroupName(),  patternMatchMap.keySet());
             Service service = new Service(notifyChangeRequest.getServiceName(), notifyChangeRequest.getGroupName());
             String serviceChangeType = request.getServiceChangedType();
             
             switch (serviceChangeType) {
-                case Constants.WatchEventType.ADD_SERVICE:
-                case Constants.WatchEventType.INSTANCE_CHANGED:
+                case Constants.ServiceChangedType.ADD_SERVICE:
+                case Constants.ServiceChangedType.INSTANCE_CHANGED:
                     for (String pattern : matchedPattern) {
                         Set<Service> matchedServiceSet = patternMatchMap.get(pattern);
                         if (matchedServiceSet != null && matchedServiceSet.add(service)) {
                             NotifyCenter.publishEvent(
-                                    WatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
-                                            service, pattern, serviceChangeType));
+                                    FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
+                                            service, pattern, Constants.ServiceChangedType.ADD_SERVICE));
                         }
                     }
                     break;
-                case Constants.WatchEventType.DELETE_SERVICE:
+                case Constants.ServiceChangedType.DELETE_SERVICE:
                     for (String pattern : matchedPattern) {
                         Set<Service> matchedServiceSet = patternMatchMap.get(pattern);
                         if (matchedServiceSet != null && matchedServiceSet.remove(service)) {
                             NotifyCenter.publishEvent(
-                                    WatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
-                                            service, pattern, serviceChangeType));
+                                    FuzzyWatchNotifyEvent.buildNotifyPatternAllListenersEvent(notifierEventScope,
+                                            service, pattern, Constants.ServiceChangedType.DELETE_SERVICE));
                         }
                     }
                     break;
@@ -105,21 +106,22 @@ public class WatchServiceListHolder {
     }
     
     /**
-     * For a duplicate watch of a certain pattern, initiate an initialization event to the corresponding Listener.
+     * For a duplicate fuzzy watch of a certain pattern, initiate an initialization event to the corresponding Listener.
      *
      * @param serviceNamePattern service name pattern.
      * @param groupNamePattern group name pattern.
      * @param uuid The UUID that identifies the Listener.
      */
-    public void duplicateWatchInit(String serviceNamePattern, String groupNamePattern, String uuid) {
+    public void duplicateFuzzyWatchInit(String serviceNamePattern, String groupNamePattern, String uuid) {
         String pattern = NamingUtils.getGroupedName(serviceNamePattern, groupNamePattern);
         Collection<Service> cacheServices = patternMatchMap.get(pattern);
         if (cacheServices == null) {
             return;
         }
         for (Service service : cacheServices) {
-            NotifyCenter.publishEvent(WatchNotifyEvent.buildNotifyPatternSpecificListenerEvent(notifierEventScope, service,
-                    pattern, uuid, Constants.WatchEventType.ADD_SERVICE));
+            NotifyCenter.publishEvent(
+                    FuzzyWatchNotifyEvent.buildNotifyPatternSpecificListenerEvent(notifierEventScope, service,
+                    pattern, uuid, Constants.ServiceChangedType.ADD_SERVICE));
         }
     }
     

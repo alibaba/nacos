@@ -22,7 +22,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoDa
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.RedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
-import com.alibaba.nacos.client.naming.remote.gprc.redo.data.WatcherRedoData;
+import com.alibaba.nacos.client.naming.remote.gprc.redo.data.FuzzyWatcherRedoData;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 
@@ -51,7 +51,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
         try {
             redoForInstances();
             redoForSubscribes();
-            redoForWatchers();
+            redoForFuzzyWatchers();
         } catch (Exception e) {
             LogUtils.NAMING_LOGGER.warn("Redo task run with unexpected exception: ", e);
         }
@@ -141,22 +141,22 @@ public class RedoScheduledTask extends AbstractExecuteTask {
         }
     }
     
-    private void redoForWatchers() {
-        for (WatcherRedoData each : redoService.findWatcherRedoData()) {
+    private void redoForFuzzyWatchers() {
+        for (FuzzyWatcherRedoData each : redoService.findFuzzyWatcherRedoData()) {
             try {
-                redoForWatcher(each);
+                redoForFuzzyWatcher(each);
             } catch (NacosException e) {
-                LogUtils.NAMING_LOGGER.error("Redo watcher operation {} for pattern {}@@{}, uuid {} failed. ", each.getRedoType(),
-                        each.getGroupName(), each.getServiceName(), each.get(), e);
+                LogUtils.NAMING_LOGGER.error("Redo fuzzy watcher operation {} for pattern {}@@{} failed. ", each.getRedoType(),
+                        each.getGroupName(), each.getServiceName(), e);
             }
         }
     }
     
-    private void redoForWatcher(WatcherRedoData redoData) throws NacosException {
+    private void redoForFuzzyWatcher(FuzzyWatcherRedoData redoData) throws NacosException {
         RedoData.RedoType redoType = redoData.getRedoType();
         String serviceNamePattern = redoData.getServiceName();
         String groupNamePattern = redoData.getGroupName();
-        LogUtils.NAMING_LOGGER.info("Redo watcher operation {} for pattern {}@@{}", redoType, groupNamePattern, serviceNamePattern);
+        LogUtils.NAMING_LOGGER.info("Redo fuzzy watcher operation {} for pattern {}@@{}", redoType, groupNamePattern, serviceNamePattern);
         switch (redoType) {
             case REGISTER:
                 if (isClientDisabled()) {
@@ -171,7 +171,7 @@ public class RedoScheduledTask extends AbstractExecuteTask {
                 clientProxy.doCancelFuzzyWatch(serviceNamePattern, groupNamePattern);
                 break;
             case REMOVE:
-                redoService.removeWatcherForRedo(redoData.getServiceName(), redoData.getGroupName());
+                redoService.removeFuzzyWatcherForRedo(serviceNamePattern, groupNamePattern);
                 break;
             default:
         }

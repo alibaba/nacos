@@ -20,23 +20,23 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 
 /**
- * Nacos naming watch service response.
+ * Nacos naming fuzzy watch service response.
  *
  * @author tanyongquan
  */
-public class WatchServiceResponse extends Response {
+public class FuzzyWatchResponse extends Response {
     
     private String type;
     
-    public WatchServiceResponse(){
+    public FuzzyWatchResponse(){
     }
     
-    public WatchServiceResponse(String type) {
+    public FuzzyWatchResponse(String type) {
         this.type = type;
     }
     
-    public static WatchServiceResponse buildSuccessResponse(String type) {
-        return new WatchServiceResponse(type);
+    public static FuzzyWatchResponse buildSuccessResponse(String type) {
+        return new FuzzyWatchResponse(type);
     }
     
     /**
@@ -45,8 +45,8 @@ public class WatchServiceResponse extends Response {
      * @param message error message
      * @return fail response
      */
-    public static WatchServiceResponse buildFailResponse(String message) {
-        WatchServiceResponse result = new WatchServiceResponse();
+    public static FuzzyWatchResponse buildFailResponse(String message) {
+        FuzzyWatchResponse result = new FuzzyWatchResponse();
         result.setErrorInfo(ResponseCode.FAIL.getCode(), message);
         return result;
     }

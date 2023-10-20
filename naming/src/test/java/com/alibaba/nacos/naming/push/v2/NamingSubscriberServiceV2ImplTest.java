@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.push.v2;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.event.service.ServiceEvent;
@@ -117,7 +118,7 @@ public class NamingSubscriberServiceV2ImplTest {
     
     @Test
     public void onEvent() {
-        subscriberService.onEvent(new ServiceEvent.ServiceChangedEvent(service));
+        subscriberService.onEvent(new ServiceEvent.ServiceChangedEvent(service, Constants.ServiceChangedType.ADD_SERVICE));
         verify(delayTaskEngine).addTask(eq(service), any(PushDelayTask.class));
     }
 }

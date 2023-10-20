@@ -14,15 +14,30 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.api.naming.remote.response;
-
-import com.alibaba.nacos.api.remote.response.Response;
+package com.alibaba.nacos.api.naming.remote.request;
 
 /**
- * Response for notify watcher.
+ * Nacos naming fuzzy watch service request.
  *
  * @author tanyongquan
  */
-public class NotifyWatcherResponse extends Response {
-
+public class FuzzyWatchRequest extends AbstractNamingRequest {
+    
+    private String type;
+    
+    public FuzzyWatchRequest() {
+    }
+    
+    public FuzzyWatchRequest(String namespace, String serviceNamePattern, String groupNamePattern, String type) {
+        super(namespace, serviceNamePattern, groupNamePattern);
+        this.type = type;
+    }
+    
+    public void setType(String type) {
+        this.type = type;
+    }
+    
+    public String getType() {
+        return this.type;
+    }
 }

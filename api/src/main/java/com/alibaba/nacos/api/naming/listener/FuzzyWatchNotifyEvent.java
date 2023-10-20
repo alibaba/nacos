@@ -16,26 +16,40 @@
 
 package com.alibaba.nacos.api.naming.listener;
 
-import java.util.concurrent.Executor;
+import com.alibaba.nacos.api.naming.pojo.Service;
 
 /**
- * Abstract watch event listener, to support handle event by user custom executor.
+ * Fuzzy Watch Notify Event.
  *
  * @author tanyongquan
  */
-public abstract class AbstractWatchEventListener implements WatchListener {
+public class FuzzyWatchNotifyEvent implements Event {
     
-    String uuid;
+    private Service service;
     
-    public Executor getExecutor() {
-        return null;
+    private String changeType;
+    
+    public FuzzyWatchNotifyEvent() {
     }
     
-    public final void setUuid(String uuid) {
-        this.uuid = uuid;
+    public FuzzyWatchNotifyEvent(Service service, String changeType) {
+        this.service = service;
+        this.changeType = changeType;
     }
     
-    public final String getUuid() {
-        return uuid;
+    public Service getService() {
+        return service;
+    }
+    
+    public void setService(Service service) {
+        this.service = service;
+    }
+    
+    public String getChangeType() {
+        return changeType;
+    }
+    
+    public void setChangeType(String changeType) {
+        this.changeType = changeType;
     }
 }

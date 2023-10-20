@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.naming.push.v2.executor;
 
+import com.alibaba.nacos.api.naming.remote.request.AbstractFuzzyWatchNotifyRequest;
+import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.PushDataWrapper;
@@ -51,6 +53,19 @@ public class PushExecutorDelegate implements PushExecutor {
     public void doPushWithCallback(String clientId, Subscriber subscriber, PushDataWrapper data,
             NamingPushCallback callBack) {
         getPushExecuteService(clientId, subscriber).doPushWithCallback(clientId, subscriber, data, callBack);
+    }
+    
+    @Override
+    public void doWatcherNotifyPush(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest) {
+        // only support fuzzy watch by rpc
+        rpcPushExecuteService.doWatcherNotifyPush(clientId, watchNotifyRequest);
+    }
+    
+    @Override
+    public void doFuzzyWatchNotifyPushWithCallBack(String clientId, AbstractFuzzyWatchNotifyRequest watchNotifyRequest,
+            PushCallBack callBack) {
+        // only support fuzzy watch by rpc
+        rpcPushExecuteService.doFuzzyWatchNotifyPushWithCallBack(clientId, watchNotifyRequest, callBack);
     }
     
     private PushExecutor getPushExecuteService(String clientId, Subscriber subscriber) {

@@ -43,7 +43,7 @@ import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.cache.WatchServiceListHolder;
+import com.alibaba.nacos.client.naming.cache.FuzzyWatchServiceListHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.security.SecurityProxy;
@@ -114,7 +114,7 @@ public class NamingGrpcClientProxyTest {
     private ServiceInfoHolder holder;
     
     @Mock
-    private WatchServiceListHolder watchServiceListHolder;
+    private FuzzyWatchServiceListHolder fuzzyWatchServiceListHolder;
     
     @Mock
     private RpcClient rpcClient;
@@ -143,7 +143,7 @@ public class NamingGrpcClientProxyTest {
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, nacosClientProperties, holder,
-                watchServiceListHolder);
+                fuzzyWatchServiceListHolder);
         
         Field uuidField = NamingGrpcClientProxy.class.getDeclaredField("uuid");
         uuidField.setAccessible(true);
@@ -506,7 +506,7 @@ public class NamingGrpcClientProxyTest {
         rpcClient.set(client, rpc);
         
         rpc.serverListFactory(factory);
-        rpc.registerServerRequestHandler(new NamingPushRequestHandler(holder, watchServiceListHolder));
+        rpc.registerServerRequestHandler(new NamingPushRequestHandler(holder, fuzzyWatchServiceListHolder));
         Field listenerField = NamingGrpcClientProxy.class.getDeclaredField("redoService");
         listenerField.setAccessible(true);
         NamingGrpcRedoService listener = (NamingGrpcRedoService) listenerField.get(client);
@@ -542,7 +542,7 @@ public class NamingGrpcClientProxyTest {
     public void testConfigAppNameLabels() throws Exception {
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, nacosClientProperties, holder,
-                watchServiceListHolder);
+                fuzzyWatchServiceListHolder);
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
         RpcClient rpcClient = (RpcClient) rpcClientField.get(client);
