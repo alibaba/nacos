@@ -102,21 +102,18 @@ public abstract class AbstractAbilityControlManager {
     public void enableCurrentNodeAbility(AbilityKey abilityKey) {
         Map<String, Boolean> abilities = this.currentNodeAbilities.get(abilityKey.getMode());
         if (abilities != null) {
-            doTurn(abilities, abilityKey, true, abilityKey.getMode());
+            doTurn(abilities, abilityKey, true);
         }
     }
     
-    protected void doTurn(Map<String, Boolean> abilities, AbilityKey key, boolean turn, AbilityMode mode) {
-        if (!key.getMode().equals(mode)) {
-            throw new IllegalStateException("Except " + mode + " but " + key.getMode());
-        }
+    protected void doTurn(Map<String, Boolean> abilities, AbilityKey key, boolean turn) {
         LOGGER.info("Turn current node ability: {}, turn: {}", key, turn);
         abilities.put(key.getName(), turn);
         // notify event
         AbilityUpdateEvent abilityUpdateEvent = new AbilityUpdateEvent();
         abilityUpdateEvent.setTable(Collections.unmodifiableMap(abilities));
-        abilityUpdateEvent.isOn = turn;
-        abilityUpdateEvent.abilityKey = key;
+        abilityUpdateEvent.setOn(turn);
+        abilityUpdateEvent.setAbilityKey(key);
         NotifyCenter.publishEvent(abilityUpdateEvent);
     }
     
@@ -128,7 +125,7 @@ public abstract class AbstractAbilityControlManager {
     public void disableCurrentNodeAbility(AbilityKey abilityKey) {
         Map<String, Boolean> abilities = this.currentNodeAbilities.get(abilityKey.getMode());
         if (abilities != null) {
-            doTurn(abilities, abilityKey, false, abilityKey.getMode());
+            doTurn(abilities, abilityKey, false);
         }
     }
     
@@ -180,7 +177,7 @@ public abstract class AbstractAbilityControlManager {
     /**
      * notify when current node ability changing.
      */
-    public class AbilityUpdateEvent extends Event {
+    public static class AbilityUpdateEvent extends Event {
         
         private static final long serialVersionUID = -1232411212311111L;
         

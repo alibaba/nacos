@@ -91,7 +91,7 @@ public final class TaskExecuteWorker implements NacosTaskProcessor, Closeable {
      * Worker status.
      */
     public String status() {
-        return name + ", pending tasks: " + pendingTaskCount();
+        return getName() + ", pending tasks: " + pendingTaskCount();
     }
     
     @Override

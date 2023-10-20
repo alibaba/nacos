@@ -26,7 +26,6 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
-import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
@@ -115,7 +114,7 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                             remoteIp, remotePort, localPort, ConnectionType.GRPC.getType(),
                             setUpRequest.getClientVersion(), appName, setUpRequest.getLabels());
                     metaInfo.setTenant(setUpRequest.getTenant());
-                    Connection connection = new GrpcConnection(metaInfo, responseObserver,
+                    GrpcConnection connection = new GrpcConnection(metaInfo, responseObserver,
                             GrpcServerConstants.CONTEXT_KEY_CHANNEL.get());
                     // null if supported
                     if (setUpRequest.getAbilityTable() != null) {
@@ -140,8 +139,9 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                     } else {
                         try {
                             // finish register, tell client has set up successfully
-                            connection.request(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
-                                    .getCurrentNodeAbilities(AbilityMode.SERVER)), 3000L);
+                            // async response without client ack
+                            connection.sendRequestNoAck(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
+                                    .getCurrentNodeAbilities(AbilityMode.SERVER)));
                         } catch (Exception e) {
                             // nothing to do
                             

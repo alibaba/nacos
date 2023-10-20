@@ -57,6 +57,10 @@ public abstract class Connection implements Requester {
         }
         return  abilityTable.get(abilityKey.getName()) ? AbilityStatus.SUPPORTED : AbilityStatus.NOT_SUPPORTED;
     }
+
+    public boolean isAbilitiesSet() {
+        return abilityTable != null;
+    }
     
     public void setAbilityTable(Map<String, Boolean> abilityTable) {
         this.abilityTable = abilityTable;

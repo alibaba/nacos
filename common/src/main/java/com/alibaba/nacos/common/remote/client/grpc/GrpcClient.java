@@ -33,18 +33,18 @@ import com.alibaba.nacos.api.remote.response.SetupAckResponse;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.remote.ConnectionType;
-import com.alibaba.nacos.common.remote.client.Connection;
-import com.alibaba.nacos.common.remote.client.RpcClient;
-import com.alibaba.nacos.common.remote.client.RpcClientStatus;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientStatus;
+import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
-import com.alibaba.nacos.common.utils.TlsTypeResolve;
 import com.alibaba.nacos.common.utils.VersionUtils;
+import com.alibaba.nacos.common.utils.TlsTypeResolve;
+import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
@@ -60,9 +60,10 @@ import io.grpc.stub.StreamObserver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -88,6 +89,11 @@ public abstract class GrpcClient extends RpcClient {
      * Block to wait setup success response.
      */
     private final RecAbilityContext recAbilityContext = new RecAbilityContext(null);
+
+    /**
+     * for receiving server abilities.
+     */
+    private SetupRequestHandler setupRequestHandler;
 
     @Override
     public ConnectionType getConnectionType() {
@@ -140,7 +146,7 @@ public abstract class GrpcClient extends RpcClient {
      */
     private void initSetupHandler() {
         // register to handler setup request
-        registerServerRequestHandler(new SetupRequestHandler(this.recAbilityContext));
+        setupRequestHandler = new SetupRequestHandler(this.recAbilityContext);
     }
     
     /**
@@ -268,6 +274,11 @@ public abstract class GrpcClient extends RpcClient {
                     if (request != null) {
                         
                         try {
+                            if (request instanceof SetupAckRequest) {
+                                // there is no connection ready this time
+                                setupRequestHandler.requestReply(request, null);
+                                return;
+                            }
                             Response response = handleServerRequest(request);
                             if (response != null) {
                                 response.setRequestId(request.getRequestId());
@@ -374,6 +385,8 @@ public abstract class GrpcClient extends RpcClient {
             if (serverCheckResponse.isSupportAbilityNegotiation()) {
                 // mark
                 this.recAbilityContext.reset(grpcConn);
+                // promise null if no abilities receive
+                grpcConn.setAbilityTable(null);
             }
     
             //create stream request and bind connection event to this connection.
@@ -395,10 +408,9 @@ public abstract class GrpcClient extends RpcClient {
             // wait for response
             if (recAbilityContext.isNeedToSync()) {
                 // try to wait for notify response
-                boolean waitForResponse = recAbilityContext.await(this.clientConfig.capabilityNegotiationTimeout(),
-                        TimeUnit.MILLISECONDS);
-                if (!waitForResponse) {
-                    // haven't received a response for registration; need to register again.
+                recAbilityContext.await(this.clientConfig.capabilityNegotiationTimeout(), TimeUnit.MILLISECONDS);
+                // if no server abilities receiving, then reconnect
+                if (!recAbilityContext.check(grpcConn)) {
                     return null;
                 }
             } else {
@@ -488,22 +500,36 @@ public abstract class GrpcClient extends RpcClient {
         }
         
         /**
-         * Wait for a specified duration for a condition to be met.
+         * await for abilities.
          *
-         * @param timeout The maximum time to wait.
-         * @param unit    The time unit for the timeout.
-         * @return true if the condition was successfully awaited, false otherwise.
-         * @throws InterruptedException if the waiting thread is interrupted.
+         * @param timeout timeout.
+         * @param unit unit.
+         * @throws InterruptedException by blocker.
          */
-        public boolean await(long timeout, TimeUnit unit) throws InterruptedException {
-            if (blocker != null) {
-                boolean waitForResponse = blocker.await(timeout, unit);
-                if (waitForResponse) {
-                    needToSync = false;
-                }
-                return waitForResponse;
+        public void await(long timeout, TimeUnit unit) throws InterruptedException {
+            if (this.blocker != null) {
+                this.blocker.await(timeout, unit);
             }
-            return false;
+            this.needToSync = false;
+        }
+
+        /**
+         * check whether receive abilities.
+         *
+         * @param connection  conn.
+         * @return  whether receive abilities.
+         */
+        public boolean check(Connection connection) {
+            if (!connection.isAbilitiesSet()) {
+                LOGGER.error("Client don't receive server abilities table even empty table but server supports ability negotiation."
+                                + " You can check if it is need to adjust the timeout of ability negotiation by property: {}"
+                                + " if always fail to connect.",
+                        GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT);
+                connection.setAbandon(true);
+                connection.close();
+                return false;
+            }
+            return true;
         }
     }
 
@@ -524,7 +550,8 @@ public abstract class GrpcClient extends RpcClient {
             if (request instanceof SetupAckRequest) {
                 SetupAckRequest setupAckRequest = (SetupAckRequest) request;
                 // remove and count down
-                recAbilityContext.release(setupAckRequest.getAbilityTable());
+                recAbilityContext.release(Optional.ofNullable(setupAckRequest.getAbilityTable())
+                        .orElse(new HashMap<>(0)));
                 return new SetupAckResponse();
             }
             return null;

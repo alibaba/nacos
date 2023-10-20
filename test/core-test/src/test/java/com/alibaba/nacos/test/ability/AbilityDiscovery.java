@@ -25,6 +25,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.SetupAckRequest;
@@ -37,6 +38,7 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
+import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestFilters;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -102,6 +104,8 @@ public class AbilityDiscovery {
     private Field serverReuqestHandlersField;
     
     private Field currentConnField;
+
+    private Field setupRequestHandlerField;
     
     @Before
     public void setup() throws NoSuchFieldException, IllegalAccessException, NacosException {
@@ -130,6 +134,10 @@ public class AbilityDiscovery {
         // server request handler
         serverReuqestHandlersField = RpcClient.class.getDeclaredField("serverRequestHandlers");
         serverReuqestHandlersField.setAccessible(true);
+
+        // setupRequestHandler
+        setupRequestHandlerField = GrpcClient.class.getDeclaredField("setupRequestHandler");
+        setupRequestHandlerField.setAccessible(true);
 
         // init client
         client = RpcClientFactory.createClient(UUID.randomUUID().toString(), ConnectionType.GRPC, new HashMap<>());
@@ -218,7 +226,7 @@ public class AbilityDiscovery {
         
         com.alibaba.nacos.core.remote.Connection connection = connectionManager.getConnection(conn.getConnectionId());
         try {
-            connection.request(new SetupAckRequest(), 2000L);
+            connection.request(new NotifySubscriberRequest(), 2000L);
         } catch (NacosException e) {
             // nothing to do
         }
@@ -243,6 +251,18 @@ public class AbilityDiscovery {
         // recover
         handlers.remove(ConfigQueryRequest.class.getSimpleName());
         handlers.put(ConfigQueryRequest.class.getSimpleName(), oldRequestHandler);
+    }
+
+    @Test
+    public void testNegotiationTimeout() throws Exception {
+        Object origin = setupRequestHandlerField.get(client);
+        // set null for setupRequestHandlerField
+        setupRequestHandlerField.set(client, null);
+        // try connect
+        Connection connection = client.connectToServer(new RpcClient.ServerInfo("127.0.0.1", port));
+        Assert.assertNull(connection);
+        // recovery
+        setupRequestHandlerField.set(client, origin);
     }
     
     @After
