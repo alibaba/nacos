@@ -204,6 +204,8 @@ public class Constants {
     
     public static final String ALL_PATTERN = "*";
     
+    public static final String FUZZY_WATCH_PATTERN_WILDCARD = "*";
+    
     public static final String COLON = ":";
     
     public static final String LINE_BREAK = "\n";
@@ -238,17 +240,6 @@ public class Constants {
         public static final String NAMING_MODULE = "naming";
     
         public static final String CMDB_CONTEXT_TYPE = "CMDB";
-    }
-    
-    /**
-     * The constants in fuzzy watch pattern match rule directory.
-     */
-    public static class FuzzyWatchMatchRule {
-
-        public static final String MATCH_ALL = "MATCH_ALL";
-        
-        public static final String MATCH_PREFIX = "MATCH_PREFIX";
-        
     }
     
     /**

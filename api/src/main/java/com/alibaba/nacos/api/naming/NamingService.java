@@ -534,7 +534,9 @@ public interface NamingService {
             throws NacosException;
     
     /**
-     * Watch a range of services by rule to receive notify events of matched services alteration.
+     * According to matching rules, watch services within a specific scope, and receive notifications when
+     * changes occur in the services within the scope.
+     * When given a fixed group name, watch changes in all services under this group.
      *
      * @param fixedGroupName fixed group name for fuzzy watch
      * @param listener event listener
@@ -543,7 +545,10 @@ public interface NamingService {
     void fuzzyWatch(String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException;
     
     /**
-     * Watch a range of services by rule to receive notify events of matched services alteration.
+     * According to matching rules, watch services within a specific scope, and receive notifications when
+     * changes occur in the services within the scope.
+     * When provided with a fixed group name and pattern of service name, watch changes in services under
+     * this group that match the specified pattern.
      *
      * @param serviceNamePattern service name pattern for fuzzy watch
      * @param fixedGroupName fixed group name for fuzzy watch
