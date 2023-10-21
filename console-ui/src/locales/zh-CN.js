@@ -38,6 +38,7 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
+    nacosMode: '模式',
     doesNotExist: '您访问的页面不存在',
     configurationManagementVirtual: '配置管理',
     configurationManagement: '配置列表',
@@ -666,8 +667,8 @@ const I18N_CONF = {
     readWrite: '读写',
   },
   Components: {
-      copySuccessfully: '复制成功！',
-  }
+    copySuccessfully: '复制成功！',
+  },
 };
 
 export default I18N_CONF;
