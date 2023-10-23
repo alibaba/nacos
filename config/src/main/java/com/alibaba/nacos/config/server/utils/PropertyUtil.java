@@ -95,7 +95,9 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     private static boolean dumpChangeOn = true;
     
-    //default 30 seconds
+    /**
+     * dumpChangeWorkerInterval, default 30 seconds.
+     */
     private static long dumpChangeWorkerInterval = 30 * 1000L;
     
     public static boolean isDumpChangeOn() {
