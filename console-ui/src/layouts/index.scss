@@ -1507,7 +1507,27 @@ h6 {
     text-align: center;
     font-size: 14px;
     font-weight: bold;
-    height: 72px;
+    height: 60px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    border-bottom: var(--shell-brand-navigation-ver-divider-size, 1px) var(--shell-brand-navigation-ver-divider-style, solid) var(--shell-brand-navigation-ver-divider-color, #EEEEEE);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    span {
+      margin-left: 5px;
+    }
+  }
+
+  .nav-mode {
+    margin: 0;
+    // background-color: #E4F3FE;
+    text-align: center;
+    font-size: 12px;
+    font-weight: bold;
+    height: 45px;
     text-overflow: ellipsis;
     white-space: nowrap;
     overflow: hidden;
