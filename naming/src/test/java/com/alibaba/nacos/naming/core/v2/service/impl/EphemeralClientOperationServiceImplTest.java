@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.v2.client.Client;
+import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManagerDelegate;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -59,9 +60,13 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
     @Mock
     private Subscriber subscriber;
     
-    private Client client;
+    private Client ipPortBasedClient;
     
-    private final String clientId = "1.1.1.1:80#true";
+    private Client connectionBasedClient;
+    
+    private final String ipPortBasedClientId = "1.1.1.1:80#true";
+    
+    private final String connectionBasedClientId = "test";
     
     private final String ip = "1.1.1.1";
     
@@ -75,15 +80,17 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
         when(service.getGroupedServiceName()).thenReturn("G@@S");
         when(service.isEphemeral()).thenReturn(true);
         ephemeralClientOperationServiceImpl = new EphemeralClientOperationServiceImpl(clientManager);
-        client = new IpPortBasedClient(clientId, true);
-        when(clientManager.getClient(clientId)).thenReturn(client);
+        ipPortBasedClient = new IpPortBasedClient(ipPortBasedClientId, true);
+        connectionBasedClient = new ConnectionBasedClient(connectionBasedClientId, true, 1L);
+        when(clientManager.getClient(connectionBasedClientId)).thenReturn(connectionBasedClient);
+        when(clientManager.getClient(ipPortBasedClientId)).thenReturn(ipPortBasedClient);
     }
     
     @Test(expected = NacosRuntimeException.class)
     public void testRegisterPersistentInstance() throws NacosException {
         when(service.isEphemeral()).thenReturn(false);
         // Excepted exception
-        ephemeralClientOperationServiceImpl.registerInstance(service, instance, clientId);
+        ephemeralClientOperationServiceImpl.registerInstance(service, instance, ipPortBasedClientId);
     }
     
     @Test
@@ -93,19 +100,19 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
                 "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
     
         when(instance.getClusterName()).thenReturn("cluster1,cluster2");
-        ephemeralClientOperationServiceImpl.registerInstance(service, instance, clientId);
+        ephemeralClientOperationServiceImpl.registerInstance(service, instance, ipPortBasedClientId);
     }
     
     @Test
     public void testRegisterAndDeregisterInstance() throws Exception {
         // Test register instance
-        ephemeralClientOperationServiceImpl.registerInstance(service, instance, clientId);
-        assertTrue(client.getAllPublishedService().contains(service));
-        assertEquals(client.getInstancePublishInfo(service).getIp(), ip);
-        assertEquals(client.getInstancePublishInfo(service).getPort(), port);
+        ephemeralClientOperationServiceImpl.registerInstance(service, instance, ipPortBasedClientId);
+        assertTrue(ipPortBasedClient.getAllPublishedService().contains(service));
+        assertEquals(ipPortBasedClient.getInstancePublishInfo(service).getIp(), ip);
+        assertEquals(ipPortBasedClient.getInstancePublishInfo(service).getPort(), port);
         // Test deregister instance
-        ephemeralClientOperationServiceImpl.deregisterInstance(service, instance, clientId);
-        Collection<Service> allPublishService = client.getAllPublishedService();
+        ephemeralClientOperationServiceImpl.deregisterInstance(service, instance, ipPortBasedClientId);
+        Collection<Service> allPublishService = ipPortBasedClient.getAllPublishedService();
         assertFalse(allPublishService.contains(service));
     }
     
@@ -128,17 +135,17 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
         List<Instance> instances = new ArrayList<>();
         instances.add(instance1);
         instances.add(instance2);
-        ephemeralClientOperationServiceImpl.batchRegisterInstance(service, instances, clientId);
-        assertTrue(client.getAllPublishedService().contains(service));
+        ephemeralClientOperationServiceImpl.batchRegisterInstance(service, instances, connectionBasedClientId);
+        assertTrue(connectionBasedClient.getAllPublishedService().contains(service));
     }
     
     @Test
     public void testSubscribeAndUnsubscribeService() throws Exception {
         // Test subscribe instance
-        ephemeralClientOperationServiceImpl.subscribeService(service, subscriber, clientId);
-        assertTrue(client.getAllSubscribeService().contains(service));
+        ephemeralClientOperationServiceImpl.subscribeService(service, subscriber, ipPortBasedClientId);
+        assertTrue(ipPortBasedClient.getAllSubscribeService().contains(service));
         // Test unsubscribe instance
-        ephemeralClientOperationServiceImpl.unsubscribeService(service, subscriber, clientId);
-        assertFalse(client.getAllSubscribeService().contains(service));
+        ephemeralClientOperationServiceImpl.unsubscribeService(service, subscriber, ipPortBasedClientId);
+        assertFalse(ipPortBasedClient.getAllSubscribeService().contains(service));
     }
 }

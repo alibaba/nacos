@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 
@@ -73,6 +74,11 @@ public class GrpcClusterClient extends GrpcClient {
     public GrpcClusterClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize,
                              Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
         super(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
+    }
+
+    @Override
+    protected AbilityMode abilityMode() {
+        return AbilityMode.CLUSTER_CLIENT;
     }
 
     @Override

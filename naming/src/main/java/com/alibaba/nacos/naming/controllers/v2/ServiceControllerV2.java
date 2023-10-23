@@ -30,6 +30,7 @@ import com.alibaba.nacos.common.trace.event.naming.RegisterServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -79,6 +80,7 @@ public class ServiceControllerV2 {
      * Create a new service. This API will create a persistence service.
      */
     @PostMapping()
+    @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
     @Secured(action = ActionTypes.WRITE)
     public Result<String> create(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();
@@ -99,6 +101,7 @@ public class ServiceControllerV2 {
      * Remove service.
      */
     @DeleteMapping()
+    @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE)
     public Result<String> remove(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
@@ -115,6 +118,7 @@ public class ServiceControllerV2 {
      * Get detail of service.
      */
     @GetMapping()
+    @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
     public Result<ServiceDetailInfo> detail(
             @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
@@ -130,6 +134,7 @@ public class ServiceControllerV2 {
      * List all service names.
      */
     @GetMapping("/list")
+    @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
     public Result<ServiceNameView> list(
             @RequestParam(value = "namespaceId", required = false, defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
@@ -150,6 +155,7 @@ public class ServiceControllerV2 {
      * Update service.
      */
     @PutMapping()
+    @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
     @Secured(action = ActionTypes.WRITE)
     public Result<String> update(ServiceForm serviceForm) throws Exception {
         serviceForm.validate();

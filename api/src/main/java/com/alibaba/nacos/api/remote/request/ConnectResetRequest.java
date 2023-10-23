@@ -30,9 +30,29 @@ public class ConnectResetRequest extends ServerRequest {
     
     String serverPort;
     
+    String connectionId;
+    
     @Override
     public String getModule() {
         return INTERNAL_MODULE;
+    }
+    
+    /**
+     * Getter method for property <tt>connectionId</tt>.
+     *
+     * @return property value of connectionId
+     */
+    public String getConnectionId() {
+        return connectionId;
+    }
+    
+    /**
+     * Setter method for property <tt>connectionId</tt>.
+     *
+     * @param connectionId value to be assigned to property connectionId
+     */
+    public void setConnectionId(String connectionId) {
+        this.connectionId = connectionId;
     }
     
     /**

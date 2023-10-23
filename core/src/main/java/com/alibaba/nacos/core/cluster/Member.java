@@ -53,7 +53,10 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
     
     private transient int failAccessCnt = 0;
     
+    @Deprecated
     private ServerAbilities abilities = new ServerAbilities();
+    
+    private boolean grpcReportEnabled;
     
     public Member() {
         String prefix = "nacos.core.member.meta.";
@@ -65,10 +68,20 @@ public class Member implements Comparable<Member>, Cloneable, Serializable {
                 .put(MemberMetaDataConstants.WEIGHT, EnvUtil.getProperty(prefix + MemberMetaDataConstants.WEIGHT, "1"));
     }
     
+    public boolean isGrpcReportEnabled() {
+        return grpcReportEnabled;
+    }
+    
+    public void setGrpcReportEnabled(boolean grpcReportEnabled) {
+        this.grpcReportEnabled = grpcReportEnabled;
+    }
+    
+    @Deprecated
     public ServerAbilities getAbilities() {
         return abilities;
     }
     
+    @Deprecated
     public void setAbilities(ServerAbilities abilities) {
         this.abilities = abilities;
     }

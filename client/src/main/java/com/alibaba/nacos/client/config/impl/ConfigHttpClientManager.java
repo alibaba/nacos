@@ -128,7 +128,7 @@ public class ConfigHttpClientManager implements Closeable {
         
         @Override
         public boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) {
-            final String body = requestHttpEntity.getBody() == null ? "" : JacksonUtils.toJson(requestHttpEntity.getBody());
+            final String body = requestHttpEntity.isEmptyBody() ? "" : JacksonUtils.toJson(requestHttpEntity.getBody());
             return Limiter.isLimit(MD5Utils.md5Hex(uri + body, Constants.ENCODE));
         }
         

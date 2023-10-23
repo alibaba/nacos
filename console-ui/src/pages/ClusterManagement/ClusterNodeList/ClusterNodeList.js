@@ -32,7 +32,6 @@ import {
   Message,
 } from '@alifd/next';
 import { request } from '../../../globalLib';
-import RegionGroup from '../../../components/RegionGroup';
 import axios from 'axios';
 import PageTitle from '../../../components/PageTitle';
 
@@ -64,18 +63,16 @@ class ClusterNodeList extends React.Component {
     this.field = new Field(this);
   }
 
+  componentDidMount() {
+    this.getQueryLater();
+  }
+
   openLoading() {
     this.setState({ loading: true });
   }
 
   closeLoading() {
     this.setState({ loading: false });
-  }
-
-  openEditServiceDialog() {
-    try {
-      this.editServiceDialog.current.getInstance().show(this.state.service);
-    } catch (error) {}
   }
 
   queryClusterStateList() {
@@ -186,11 +183,7 @@ class ClusterNodeList extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <PageTitle title={clusterNodeList} desc={nowNamespaceId} nameSpace />
-          <RegionGroup
-            setNowNameSpace={this.setNowNameSpace}
-            namespaceCallBack={this.getQueryLater}
-          />
+          <PageTitle title={clusterNodeList} />
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>

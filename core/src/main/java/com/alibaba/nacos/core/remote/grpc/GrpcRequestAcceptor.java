@@ -19,6 +19,7 @@ package com.alibaba.nacos.core.remote.grpc;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
+import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
@@ -35,6 +36,8 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.grpc.stub.StreamObserver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.concurrent.TimeUnit;
 
 /**
  * rpc request acceptor of grpc.
@@ -83,10 +86,10 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             responseObserver.onCompleted();
             return;
         }
-        
+
         // server check.
         if (ServerCheckRequest.class.getSimpleName().equals(type)) {
-            Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get()));
+            Payload serverCheckResponseP = GrpcUtils.convert(new ServerCheckResponse(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get(), true));
             traceIfNecessary(serverCheckResponseP, false);
             responseObserver.onNext(serverCheckResponseP);
             responseObserver.onCompleted();
@@ -162,12 +165,22 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             requestMeta.setConnectionId(GrpcServerConstants.CONTEXT_KEY_CONN_ID.get());
             requestMeta.setClientVersion(connection.getMetaInfo().getVersion());
             requestMeta.setLabels(connection.getMetaInfo().getLabels());
+            requestMeta.setAbilityTable(connection.getAbilityTable());
             connectionManager.refreshActiveTime(requestMeta.getConnectionId());
             Response response = requestHandler.handleRequest(request, requestMeta);
             Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
-            responseObserver.onNext(payloadResponse);
-            responseObserver.onCompleted();
+            if (response.getErrorCode() == NacosException.OVER_THRESHOLD) {
+                RpcScheduledExecutor.CONTROL_SCHEDULER.schedule(() -> {
+                    traceIfNecessary(payloadResponse, false);
+                    responseObserver.onNext(payloadResponse);
+                    responseObserver.onCompleted();
+                }, 1000L, TimeUnit.MILLISECONDS);
+            } else {
+                traceIfNecessary(payloadResponse, false);
+                responseObserver.onNext(payloadResponse);
+                responseObserver.onCompleted();
+            }
         } catch (Throwable e) {
             Loggers.REMOTE_DIGEST
                     .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,

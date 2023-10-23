@@ -301,7 +301,7 @@ public interface PersistService {
             Map<String, Object> configAdvanceInfo, boolean notify);
     
     /**
-     * insert or update cas..
+     * insert or update cas.
      *
      * @param srcIp             remote ip
      * @param srcUser           user
@@ -591,7 +591,7 @@ public interface PersistService {
     /**
      * Returns the number of beta configuration items.
      *
-     * @return number of configuration items..
+     * @return number of configuration items.
      */
     @Deprecated
     int configInfoBetaCount();
@@ -599,7 +599,7 @@ public interface PersistService {
     /**
      * Returns the number of beta configuration items.
      *
-     * @return number of configuration items..
+     * @return number of configuration items.
      */
     @Deprecated
     int configInfoTagCount();
@@ -703,8 +703,8 @@ public interface PersistService {
     /**
      * Query all tag config info for dump task.
      *
-     * @param pageNo   page numbser
-     * @param pageSize page sizxe
+     * @param pageNo   page numbers
+     * @param pageSize page size
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
     @Deprecated
@@ -1050,19 +1050,19 @@ public interface PersistService {
     /**
      * insert tenant info.
      *
-     * @param kp            kp
-     * @param tenantId      tenant Id
-     * @param tenantName    tenant name
-     * @param tenantDesc    tenant description
-     * @param createResoure create resouce
-     * @param time          time
+     * @param kp             kp
+     * @param tenantId       tenant Id
+     * @param tenantName     tenant name
+     * @param tenantDesc     tenant description
+     * @param createResource create resource
+     * @param time           time
      */
     @Deprecated
-    void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResoure,
+    void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResource,
             final long time);
     
     /**
-     * Update tenantInfo showname.
+     * Update tenantInfo show name.
      *
      * @param kp         kp
      * @param tenantId   tenant Id
