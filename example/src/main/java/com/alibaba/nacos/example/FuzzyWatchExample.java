@@ -78,7 +78,7 @@ public class FuzzyWatchExample {
             }
         });
         
-        naming.fuzzyWatch("nacos.test", DEFAULT_GROUP, new AbstractFuzzyWatchEventListener() {
+        naming.fuzzyWatch("nacos.test.*", DEFAULT_GROUP, new AbstractFuzzyWatchEventListener() {
             
             @Override
             public Executor getExecutor() {

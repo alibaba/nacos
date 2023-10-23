@@ -50,6 +50,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
+import static com.alibaba.nacos.api.common.Constants.FUZZY_WATCH_PATTERN_WILDCARD;
+
 /**
  * Nacos Naming Service.
  *
@@ -446,17 +448,22 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void fuzzyWatch(String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException {
-        // pattern e.g. DEFAULT_GROUP@@MATCH_ALL
-        doFuzzyWatch(Constants.FuzzyWatchMatchRule.MATCH_ALL, fixedGroupName, listener);
+        doFuzzyWatch(FUZZY_WATCH_PATTERN_WILDCARD, fixedGroupName, listener);
     }
     
     @Override
     public void fuzzyWatch(String serviceNamePattern, String fixedGroupName,
             AbstractFuzzyWatchEventListener listener) throws NacosException {
         // only support prefix match right now
-        // pattern e.g. DEFAULT_GROUP@@nacos.test##MATCH_PREFIX
-        String serviceNamePrefixPattern = NamingUtils.getGroupedPattern(serviceNamePattern, Constants.FuzzyWatchMatchRule.MATCH_PREFIX);
-        doFuzzyWatch(serviceNamePrefixPattern, fixedGroupName, listener);
+        if (!serviceNamePattern.endsWith(FUZZY_WATCH_PATTERN_WILDCARD)) {
+            if (serviceNamePattern.startsWith(FUZZY_WATCH_PATTERN_WILDCARD)) {
+                throw new UnsupportedOperationException("Suffix matching for service names is not supported yet."
+                        + " It will be supported in future updates if needed.");
+            } else {
+                throw new UnsupportedOperationException("Illegal service name pattern, please read the documentation and pass a valid pattern.");
+            }
+        }
+        doFuzzyWatch(serviceNamePattern, fixedGroupName, listener);
     }
     
     private void doFuzzyWatch(String serviceNamePattern, String groupNamePattern,
@@ -472,13 +479,12 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void cancelFuzzyWatch(String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException {
-        doCancelFuzzyWatch(Constants.FuzzyWatchMatchRule.MATCH_ALL, fixedGroupName, listener);
+        doCancelFuzzyWatch(FUZZY_WATCH_PATTERN_WILDCARD, fixedGroupName, listener);
     }
     
     @Override
     public void cancelFuzzyWatch(String serviceNamePattern, String fixedGroupName, AbstractFuzzyWatchEventListener listener) throws NacosException {
-        String serviceNamePrefixPattern =  NamingUtils.getGroupedPattern(serviceNamePattern, Constants.FuzzyWatchMatchRule.MATCH_PREFIX);
-        doCancelFuzzyWatch(serviceNamePrefixPattern, fixedGroupName, listener);
+        doCancelFuzzyWatch(serviceNamePattern, fixedGroupName, listener);
     }
     
     private void doCancelFuzzyWatch(String serviceNamePattern, String groupNamePattern,

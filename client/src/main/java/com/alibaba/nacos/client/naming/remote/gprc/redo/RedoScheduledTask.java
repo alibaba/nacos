@@ -146,8 +146,8 @@ public class RedoScheduledTask extends AbstractExecuteTask {
             try {
                 redoForFuzzyWatcher(each);
             } catch (NacosException e) {
-                LogUtils.NAMING_LOGGER.error("Redo fuzzy watcher operation {} for pattern {}@@{} failed. ", each.getRedoType(),
-                        each.getGroupName(), each.getServiceName(), e);
+                LogUtils.NAMING_LOGGER.error("Redo fuzzy watcher operation {} for pattern {}@@{} in namespace {} failed. ",
+                        each.getRedoType(), each.getGroupName(), each.getServiceName(), clientProxy.getNamespaceId(), e);
             }
         }
     }
@@ -156,7 +156,8 @@ public class RedoScheduledTask extends AbstractExecuteTask {
         RedoData.RedoType redoType = redoData.getRedoType();
         String serviceNamePattern = redoData.getServiceName();
         String groupNamePattern = redoData.getGroupName();
-        LogUtils.NAMING_LOGGER.info("Redo fuzzy watcher operation {} for pattern {}@@{}", redoType, groupNamePattern, serviceNamePattern);
+        LogUtils.NAMING_LOGGER.info("Redo fuzzy watcher operation {} for pattern {}@@{} in namespace {}", redoType,
+                groupNamePattern, serviceNamePattern, clientProxy.getNamespaceId());
         switch (redoType) {
             case REGISTER:
                 if (isClientDisabled()) {

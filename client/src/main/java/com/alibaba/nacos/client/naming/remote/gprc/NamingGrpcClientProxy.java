@@ -456,4 +456,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public boolean isEnable() {
         return rpcClient.isRunning();
     }
+    
+    public String getNamespaceId() {
+        return namespaceId;
+    }
 }
