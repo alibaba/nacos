@@ -21,6 +21,11 @@ package com.alibaba.nacos.config.server.service.kubernetes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * ConfigMap synchronization logger.
+ *
+ * @author wangyixing
+ */
 public class Loggers {
     
     public static final Logger MAIN = LoggerFactory.getLogger("com.alibaba.nacos.config.server.service");
