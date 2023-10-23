@@ -17,9 +17,12 @@
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.core.env.Environment;
+import org.springframework.mock.env.MockEnvironment;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -31,6 +34,8 @@ public class DefaultTlsProtocolNegotiatorBuilderTest {
     @Before
     public void setUp() throws Exception {
         builder = new DefaultTlsProtocolNegotiatorBuilder();
+        MockEnvironment environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
     }
     
     @After
