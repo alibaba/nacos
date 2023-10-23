@@ -106,7 +106,7 @@ jobs:
         run: |
           echo "::set-env name=REPLICA_COUNT::1"
           echo "::set-env name=DATABASE::embedded"
-      - uses: Wuyunfan-BUPT/test-tools@add_display_tools
+      - uses: Wuyunfan-BUPT/test-tools@main
         name: Deploy nacos
         with:
           yamlString: |
@@ -153,7 +153,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@add_display_tools
+      - uses: Wuyunfan-BUPT/test-tools@main
         name: e2e test
         with:
           yamlString: |
@@ -201,7 +201,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@add_display_tools
+      - uses: Wuyunfan-BUPT/test-tools@main
         name: clean
         with:
           yamlString: |
