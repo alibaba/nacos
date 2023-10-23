@@ -21,6 +21,7 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.CoreConstants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.logging.AbstractNacosLogging;
 import com.alibaba.nacos.common.log.NacosLogbackConfigurator;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
@@ -74,25 +75,22 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
 
     private LoggerContext loadConfigurationOnStart() {
         String location = getLocation(NACOS_LOGBACK_LOCATION);
-        try {
-            LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-            Collection<NacosLogbackConfigurator> nacosLogbackConfigurators = NacosServiceLoader.load(
-                    NacosLogbackConfigurator.class);
-            nacosLogbackConfigurators.stream()
-                    .filter(c -> c.getVersion() == userVersion).findFirst().ifPresent(nacosLogbackConfigurator->{
-                        nacosLogbackConfigurator.setContext(loggerContext);
-                        if(StringUtils.isNotBlank(location)){
-                            try {
-                                nacosLogbackConfigurator.configure(ResourceUtils.getResourceUrl(location));
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
-                            }
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        Collection<NacosLogbackConfigurator> nacosLogbackConfigurators = NacosServiceLoader.load(
+                NacosLogbackConfigurator.class);
+        nacosLogbackConfigurators.stream()
+                .filter(c -> c.getVersion() == userVersion).findFirst().ifPresent(nacosLogbackConfigurator->{
+                    nacosLogbackConfigurator.setContext(loggerContext);
+                    if(StringUtils.isNotBlank(location)){
+                        try {
+                            nacosLogbackConfigurator.configure(ResourceUtils.getResourceUrl(location));
+                        } catch (Exception e) {
+                            throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
+                            //throw new NacosException(NacosException.RESOURCE_NOT_FOUND, e);
                         }
-                    });
-            return loggerContext;
-        } catch (Exception e) {
-            throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
-        }
+                    }
+                });
+        return loggerContext;
     }
 
     class NacosLoggerContextListener implements LoggerContextListener {
