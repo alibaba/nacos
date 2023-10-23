@@ -160,7 +160,7 @@ public class ConfigInfoMapperByMySqlTest {
     public void testFindChangeConfig() {
         MapperResult mapperResult = configInfoMapperByMySql.findChangeConfig(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT id, data_id, group_id, tenant_id, app_name, content, gmt_modified, encrypted_data_key FROM config_info"
+                "SELECT id, data_id, group_id, tenant_id, app_name,md5, gmt_modified, encrypted_data_key FROM config_info"
                         + " WHERE gmt_modified >= ? and id > ? order by id  limit ? ");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
     }
@@ -180,7 +180,7 @@ public class ConfigInfoMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.LAST_MAX_ID, lastMaxId);
         MapperResult mapperResult = configInfoMapperByMySql.findChangeConfigFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info "
+                "SELECT id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM config_info "
                         + "WHERE  1=1  AND tenant_id = ?  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=?  AND id > "
                         + lastMaxId + " ORDER BY id ASC LIMIT " + startRow + "," + pageSize);
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
