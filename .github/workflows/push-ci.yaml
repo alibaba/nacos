@@ -198,7 +198,7 @@ jobs:
         if: always()
         name: Upload test log
         with:
-          name: testlog.txt ${{ matrix.mode }}
+          name: testlog-${{ matrix.mode }}-${{ matrix.version }}.txt
           path: testlog.txt
 
   clean:

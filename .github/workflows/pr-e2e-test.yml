@@ -183,7 +183,7 @@ jobs:
         if: always()
         name: Upload test log
         with:
-          name: test-e2e-grpc-java-log.txt
+          name: testlog-${{ matrix.mode }}-${{ matrix.version }}.txt
           path: testlog.txt
       - name: add markdown
         if: always()
