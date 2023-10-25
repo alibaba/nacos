@@ -95,10 +95,12 @@ public class FailoverReactor implements Closeable {
         
         @Override
         public void run() {
-            
             FailoverSwitch fSwitch = failoverDataSource.getSwitch();
+            boolean switchEnable = false;
             if (fSwitch != null && fSwitch.getEnabled()) {
-                failoverSwitchEnable = true;
+                switchEnable = true;
+            }
+            if (switchEnable) {
                 Map<String, ServiceInfo> failoverMap = new ConcurrentHashMap<>(200);
                 Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
                 for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
@@ -107,6 +109,10 @@ public class FailoverReactor implements Closeable {
                     if (serviceInfoHolder.isChangedServiceInfo(oldService, newService)) {
                         NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}",
                                 JacksonUtils.toJson(newService));
+                        if (!failoverSwitchEnable) {
+                            NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
+                                    newService.getGroupName(), newService.getClusters(), newService.getHosts()));
+                        }
                     }
                     failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                 }
@@ -119,11 +125,11 @@ public class FailoverReactor implements Closeable {
                     serviceMap = failoverMap;
                 }
                 
+                failoverSwitchEnable = true;
                 return;
             }
             
-            if (fSwitch != null && failoverSwitchEnable && !fSwitch.getEnabled()) {
-                failoverSwitchEnable = false;
+            if (failoverSwitchEnable && !switchEnable) {
                 Map<String, ServiceInfo> serviceInfoMap = serviceInfoHolder.getServiceInfoMap();
                 for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
                     ServiceInfo oldService = entry.getValue();
@@ -135,6 +141,7 @@ public class FailoverReactor implements Closeable {
                     }
                 }
                 serviceMap.clear();
+                failoverSwitchEnable = false;
                 return;
             }
         }

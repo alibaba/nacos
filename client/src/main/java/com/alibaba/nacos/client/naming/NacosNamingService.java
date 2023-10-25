@@ -236,10 +236,7 @@ public class NacosNamingService implements NamingService {
     public List<Instance> getAllInstances(String serviceName, String groupName, List<String> clusters,
             boolean subscribe) throws NacosException {
         List<Instance> list;
-        ServiceInfo serviceInfo = getFailoverService(serviceName, groupName, clusters);
-        if (serviceInfo == null) {
-            serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
-        }
+        ServiceInfo serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
         if (serviceInfo == null || CollectionUtils.isEmpty(list = serviceInfo.getHosts())) {
             return new ArrayList<>();
         }
@@ -289,10 +286,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public List<Instance> selectInstances(String serviceName, String groupName, List<String> clusters, boolean healthy,
             boolean subscribe) throws NacosException {
-        ServiceInfo serviceInfo = getFailoverService(serviceName, groupName, clusters);
-        if (serviceInfo == null) {
-            serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
-        }
+        ServiceInfo serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
         return selectInstances(serviceInfo, healthy);
     }
     
@@ -313,26 +307,22 @@ public class NacosNamingService implements NamingService {
         return list;
     }
     
-    private ServiceInfo getFailoverService(String serviceName, String groupName, List<String> clusters)
+    private ServiceInfo getServiceInfoByFailover(String serviceName, String groupName, String clusterString)
             throws NacosException {
         ServiceInfo serviceInfo = null;
-        String clusterString = StringUtils.join(clusters, ",");
-        if (serviceInfoHolder.isFailoverSwitch()) {
-            serviceInfo = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
-            if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
-                if (!clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
-                    clientProxy.subscribe(serviceName, groupName, clusterString);
-                }
-                return serviceInfo;
+        serviceInfo = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
+        if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
+            if (!clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
+                clientProxy.subscribe(serviceName, groupName, clusterString);
             }
+            return serviceInfo;
         }
         return serviceInfo;
     }
     
-    private ServiceInfo getServiceInfo(String serviceName, String groupName, List<String> clusters, boolean subscribe)
-            throws NacosException {
+    private ServiceInfo getServiceInfoBySubscribe(String serviceName, String groupName, String clusterString,
+            boolean subscribe) throws NacosException {
         ServiceInfo serviceInfo;
-        String clusterString = StringUtils.join(clusters, ",");
         if (subscribe) {
             serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, clusterString);
             if (null == serviceInfo || !clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
@@ -341,6 +331,21 @@ public class NacosNamingService implements NamingService {
         } else {
             serviceInfo = clientProxy.queryInstancesOfService(serviceName, groupName, clusterString, false);
         }
+        return serviceInfo;
+    }
+    
+    private ServiceInfo getServiceInfo(String serviceName, String groupName, List<String> clusters, boolean subscribe)
+            throws NacosException {
+        ServiceInfo serviceInfo;
+        String clusterString = StringUtils.join(clusters, ",");
+        if (serviceInfoHolder.isFailoverSwitch()) {
+            serviceInfo = getServiceInfoByFailover(serviceName, groupName, clusterString);
+            if (serviceInfo != null) {
+                return serviceInfo;
+            }
+        }
+        
+        serviceInfo = getServiceInfoBySubscribe(serviceName, groupName, clusterString, subscribe);
         return serviceInfo;
     }
     
@@ -385,10 +390,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public Instance selectOneHealthyInstance(String serviceName, String groupName, List<String> clusters,
             boolean subscribe) throws NacosException {
-        ServiceInfo serviceInfo = getFailoverService(serviceName, groupName, clusters);
-        if (serviceInfo == null) {
-            serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
-        }
+        ServiceInfo serviceInfo = getServiceInfo(serviceName, groupName, clusters, subscribe);
         return Balancer.RandomByWeight.selectHost(serviceInfo);
     }
     
