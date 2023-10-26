@@ -109,10 +109,8 @@ public class FailoverReactor implements Closeable {
                     if (serviceInfoHolder.isChangedServiceInfo(oldService, newService)) {
                         NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}",
                                 JacksonUtils.toJson(newService));
-                        if (!failoverSwitchEnable) {
-                            NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
-                                    newService.getGroupName(), newService.getClusters(), newService.getHosts()));
-                        }
+                        NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
+                                newService.getGroupName(), newService.getClusters(), newService.getHosts()));
                     }
                     failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                 }
