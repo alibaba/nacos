@@ -247,6 +247,10 @@ public class NacosXdsService extends AggregatedDiscoveryServiceGrpc.AggregatedDi
         }
     }
     
+    /**
+     * Handles events from Istio configuration changes and propagates updates to all connected clients.
+     * @param pushRequest pushRequest
+     */
     public void handleConfigEvent(PushRequest pushRequest) {
         if (connections.size() == 0) {
             return;

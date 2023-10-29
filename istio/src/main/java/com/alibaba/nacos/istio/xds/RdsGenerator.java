@@ -30,6 +30,7 @@ import io.envoyproxy.envoy.config.route.v3.RouteConfiguration;
 import io.envoyproxy.envoy.config.route.v3.RouteMatch;
 import io.envoyproxy.envoy.config.route.v3.VirtualHost;
 import io.envoyproxy.envoy.service.discovery.v3.Resource;
+import io.envoyproxy.envoy.type.matcher.v3.RegexMatcher;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
@@ -107,7 +108,6 @@ public class RdsGenerator implements ApiGenerator<Any> {
         if (routeConfigurationName.endsWith(ROUTE_CONFIGURATION_SUFFIX)) {
             virtualHostName = routeConfigurationName.substring(0, routeConfigurationName.length() - ROUTE_CONFIGURATION_SUFFIX.length());
         }
-        // 构建 RouteConfiguration
         RouteConfiguration routeConfiguration = RouteConfiguration.newBuilder()
                 .setName(routeConfigurationName)
                 .addVirtualHosts(
@@ -198,6 +198,11 @@ public class RdsGenerator implements ApiGenerator<Any> {
                 routeMatchBuilder.setPrefix(match.getUri().getPrefix());
             } else if (match.getUri().getExact() != null) {
                 routeMatchBuilder.setPath(match.getUri().getExact());
+            } else if (match.getUri().getRegex() != null) { // 检查是否定义了正则表达式
+                RegexMatcher regexMatcher = RegexMatcher.newBuilder()
+                        .setRegex(match.getUri().getRegex())
+                        .build();
+                routeMatchBuilder.setSafeRegex(regexMatcher);
             }
             routeBuilder.setMatch(routeMatchBuilder);
         }

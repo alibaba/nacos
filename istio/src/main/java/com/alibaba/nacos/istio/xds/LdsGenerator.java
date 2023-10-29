@@ -118,8 +118,11 @@ public class LdsGenerator implements ApiGenerator<Any> {
         return null;
     }
     
+    /**
+     * Constructs a default Envoy listener configuration with specified parameters.
+     * This method prepares the necessary configurations for both bootstrap and non-bootstrap scenarios.
+     */
     private static Any buildDefaultListener(String listenerName, String listenerAddress, int listenerPort, String rdsName, boolean isBootstrap) {
-        // Pre-conditions
         if (!isBootstrap && ((listenerName == null) || (listenerPort == 0) || (rdsName == null))) {
             Loggers.MAIN.error("Listener name, Listener port and RDS name cannot be null.");
             return null;
@@ -163,10 +166,18 @@ public class LdsGenerator implements ApiGenerator<Any> {
         return Any.newBuilder().setValue(listener.toByteString()).setTypeUrl(LISTENER_TYPE).build();
     }
     
+    /**
+     * Creates the initial bootstrap listener configuration.
+     * This is used during the startup phase of the Envoy server to construct the base configuration.
+     */
     private static Any buildBootstrapListener() {
         return buildDefaultListener(INIT_LISTENER_NAME, INIT_LISTENER_ADDRESS, INIT_LISTENER_PORT, null, true);
     }
     
+    /**
+     * Constructs a default listener configuration for static environments.
+     * This method is designed to provide configurations for scenarios where dynamic discovery services might not be used.
+     */
     private static Any buildDefaultStaticListener(String listenerName, String listenerAddress, int listenerPort, String rdsName) {
         if (INIT_LISTENER.equals(listenerName)) {
             return buildBootstrapListener();
@@ -174,6 +185,10 @@ public class LdsGenerator implements ApiGenerator<Any> {
         return buildDefaultListener(listenerName, listenerAddress, listenerPort, rdsName, false);
     }
     
+    /**
+     * Constructs a listener configuration for environments using dynamic service discovery.
+     * This method prepares the listener to utilize dynamic routing and service discovery services with rds.
+     */
     private static Any buildDynamicListener(String listenerName, String listenerAddress, int listenerPort,
             String rdsName) {
         if (INIT_LISTENER.equals(listenerName)) {

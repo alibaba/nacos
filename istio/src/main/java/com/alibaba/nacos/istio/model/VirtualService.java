@@ -80,6 +80,8 @@ public class VirtualService {
     
                     private String exact;
     
+                    private String regex;
+    
                     public String getPrefix() {
                         return prefix;
                     }
@@ -94,6 +96,14 @@ public class VirtualService {
     
                     public void setExact(String exact) {
                         this.exact = exact;
+                    }
+    
+                    public String getRegex() {
+                        return regex;
+                    }
+    
+                    public void setRegex(String regex) {
+                        this.regex = regex;
                     }
                 }
                 
