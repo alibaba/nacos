@@ -16,14 +16,18 @@
 
 package com.alibaba.nacos.persistence.repository.embedded;
 
-import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.dialects.DialectFactory;
+import com.alibaba.nacos.persistence.dialects.DialectModel;
+import com.alibaba.nacos.persistence.dialects.IDialect;
+import com.alibaba.nacos.persistence.enums.DbTypeEnum;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.RowMapper;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -36,6 +40,8 @@ import java.util.List;
 public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
     
     private final DatabaseOperate databaseOperate;
+    
+    private final DataSourceService dataSourceService = DynamicDataSource.getInstance().getDataSource();
     
     public EmbeddedPaginationHelperImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
@@ -86,18 +92,10 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
         if (pageNo > pageCount) {
             return page;
         }
-        
-        // fill the sql Page args
-        String fetchSql = sqlFetchRows;
-        if (!fetchSql.contains(PersistenceConstant.OFFSET)) {
-            fetchSql += " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
-            Object[] newArgs = Arrays.copyOf(args, args.length + 2);
-            newArgs[args.length] = (pageNo - 1) * pageSize;
-            newArgs[args.length + 1] = pageSize;
-            args = newArgs;
-        }
-        
-        List<E> result = databaseOperate.queryMany(fetchSql, args, rowMapper);
+        // dialect handle pagination parameters
+        IDialect dialect = DialectFactory.getDialect(DbTypeEnum.getDbType(dataSourceService.getDataSourceType()));
+        DialectModel dialectModel = dialect.buildPaginationSql(sqlFetchRows, args, pageNo, pageSize);
+        List<E> result = databaseOperate.queryMany(dialectModel.getSqlFetchRows(), dialectModel.getArgs(), rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }

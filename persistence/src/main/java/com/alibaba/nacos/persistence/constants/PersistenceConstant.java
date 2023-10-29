@@ -55,4 +55,6 @@ public class PersistenceConstant {
     public static final String OFFSET = "OFFSET";
     
     public static final String LIMIT = "LIMIT";
+    
+    public static final String ROWNUM = "ROWNUM";
 }
