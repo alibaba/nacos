@@ -135,7 +135,7 @@ public class NacosServiceInfoResourceWatcher extends SmartSubscriber {
             InfoChangeEvent.InstanceInfoChangeEvent instanceInfoChangeEvent = (InfoChangeEvent.InstanceInfoChangeEvent) event;
             Service service = instanceInfoChangeEvent.getService();
             String serviceName = IstioCrdUtil.buildServiceName(service);
-            
+    
             boolean full = update(serviceName, service);
             PushRequest pushRequest = new PushRequest(serviceName, full);
             pushRequestQueue.add(pushRequest);

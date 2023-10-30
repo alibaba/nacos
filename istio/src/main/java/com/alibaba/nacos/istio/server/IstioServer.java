@@ -48,6 +48,7 @@ public class IstioServer {
 
     @Autowired
     private NacosXdsService nacosXdsService;
+    
     /**
      * Start.
      *
@@ -71,9 +72,7 @@ public class IstioServer {
             @Override
             public void run() {
 
-                System.out.println("Stopping Nacos Istio server...");
                 IstioServer.this.stop();
-                System.out.println("Nacos Istio server stopped...");
             }
         });
     }
