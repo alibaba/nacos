@@ -28,8 +28,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class IstioConfig {
 
-    @Value("${nacos.istio.mcp.server.enabled:true}")
-    private boolean serverEnabled = true;
+    @Value("${nacos.istio.mcp.server.enabled:false}")
+    private boolean serverEnabled = false;
     @Value("${nacos.istio.mcp.server.port:18848}")
     private int serverPort = 18848;
     

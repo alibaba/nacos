@@ -173,7 +173,7 @@ nacos.core.auth.enable.userAgentAuthWhite=false
 
 #*************** Istio Related Configurations ***************#
 ### If turn on the MCP server:
-nacos.istio.mcp.server.enabled=true
+nacos.istio.mcp.server.enabled=false
 
 #*************** K8s Related Configurations ***************#
 ### If turn on the K8s sync:

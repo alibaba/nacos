@@ -240,23 +240,6 @@
         </encoder>
     </appender>
     
-    <appender name="istio-main"
-        class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_HOME}/istio-main.log</file>
-        <append>true</append>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/istio-main.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
-            <maxFileSize>2GB</maxFileSize>
-            <maxHistory>7</maxHistory>
-            <totalSizeCap>7GB</totalSizeCap>
-            <cleanHistoryOnStart>true</cleanHistoryOnStart>
-        </rollingPolicy>
-        <encoder>
-            <Pattern>%date %level %msg%n%n</Pattern>
-            <charset>UTF-8</charset>
-        </encoder>
-    </appender>
-    
     <root>
         <level value="INFO"/>
         <appender-ref ref="rootFile"/>
@@ -290,11 +273,6 @@
     <logger name="com.alibaba.nacos.plugin.control.connection" additivity="false">
         <level value="DEBUG"/>
         <appender-ref ref="plugin-control-connection"/>
-    </logger>
-    
-    <logger name="com.alibaba.nacos.istio.main" additivity="false">
-        <level value="INFO"/>
-        <appender-ref ref="istio-main"/>
     </logger>
     
     <logger name="com.alibaba.nacos.core.remote.digest" additivity="false">
