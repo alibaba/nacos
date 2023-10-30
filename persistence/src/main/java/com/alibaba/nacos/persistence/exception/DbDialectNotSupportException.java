@@ -21,19 +21,19 @@ package com.alibaba.nacos.persistence.exception;
  *
  * @author hkm
  */
-public class DbDialectException extends RuntimeException {
+public class DbDialectNotSupportException extends RuntimeException {
     
     private static final long serialVersionUID = 1L;
     
-    public DbDialectException(String message) {
+    public DbDialectNotSupportException(String message) {
         super(message);
     }
     
-    public DbDialectException(Throwable throwable) {
+    public DbDialectNotSupportException(Throwable throwable) {
         super(throwable);
     }
     
-    public DbDialectException(String message, Throwable throwable) {
+    public DbDialectNotSupportException(String message, Throwable throwable) {
         super(message, throwable);
     }
 }

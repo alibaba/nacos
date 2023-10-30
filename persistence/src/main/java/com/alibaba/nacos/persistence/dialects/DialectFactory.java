@@ -17,7 +17,7 @@
 package com.alibaba.nacos.persistence.dialects;
 
 import com.alibaba.nacos.persistence.enums.DbTypeEnum;
-import com.alibaba.nacos.persistence.exception.DbDialectException;
+import com.alibaba.nacos.persistence.exception.DbDialectNotSupportException;
 
 import java.util.EnumMap;
 import java.util.Map;
@@ -35,7 +35,7 @@ public class DialectFactory {
         IDialect dialect = DIALECT_ENUM_MAP.get(dbType);
         if (null == dialect) {
             if (dbType == dbType.OTHER) {
-                throw new DbDialectException(" DialectFactory database not supported. " + dbType.getDb());
+                throw new DbDialectNotSupportException(" DialectFactory database not supported. " + dbType.getDb());
             } else if (dbType == dbType.MYSQL) {
                 // mysql same type
                 dialect = new MySqlDialect();
