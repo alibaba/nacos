@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
 import com.alibaba.nacos.common.http.HttpRestResult;
 
+import java.net.HttpURLConnection;
 import java.util.Date;
 import java.util.Map;
 
@@ -124,5 +125,13 @@ public class MetricsHttpAgent implements HttpAgent {
     public void shutdown() throws NacosException {
         httpAgent.shutdown();
     }
+    
+    private boolean isFail(HttpRestResult<String> result) {
+        return result.getCode() == HttpURLConnection.HTTP_INTERNAL_ERROR
+                || result.getCode() == HttpURLConnection.HTTP_BAD_GATEWAY
+                || result.getCode() == HttpURLConnection.HTTP_UNAVAILABLE
+                || result.getCode() == HttpURLConnection.HTTP_NOT_FOUND;
+    }
+    
 }
 

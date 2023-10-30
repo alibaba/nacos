@@ -130,7 +130,7 @@ public class NamingHttpClientProxyTest {
             clientProxy.registerService(serviceName, groupName, instance);
         } catch (NacosException ex) {
             // verify the `NacosException` is directly thrown
-            Assert.assertEquals(null, ex.getCause());
+            Assert.assertNull(ex.getCause());
             
             throw ex;
         }
@@ -532,7 +532,7 @@ public class NamingHttpClientProxyTest {
         String namespaceId = "aaa";
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
         NamingHttpClientProxy clientProxy = new NamingHttpClientProxy(namespaceId, proxy, mgr, nacosClientProperties);
-        String actualNamespaceId = clientProxy.getNamespaceId();
+        String actualNamespaceId = clientProxy.getNamespace();
         Assert.assertEquals(namespaceId, actualNamespaceId);
     }
     

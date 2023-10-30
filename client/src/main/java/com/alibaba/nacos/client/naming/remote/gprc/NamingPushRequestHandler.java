@@ -41,8 +41,11 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
     public Response requestReply(Request request) {
         if (request instanceof NotifySubscriberRequest) {
             long start = System.currentTimeMillis();
+            
             NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
             serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());
+            
+            // Metrics
             NamingMetrics.incServerRequestHandleCounter();
             NamingMetrics.recordHandleServerRequestCostDurationTimer(NamingPushRequestHandler.class.getSimpleName(),
                     System.currentTimeMillis() - start);

@@ -41,7 +41,11 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
+import com.alibaba.nacos.client.monitor.TraceMonitor;
+import com.alibaba.nacos.client.monitor.naming.NamingGrpcRedoServiceTraceProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
+import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -50,6 +54,7 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoDa
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
@@ -59,6 +64,11 @@ import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -85,7 +95,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private final RpcClient rpcClient;
     
-    private final NamingGrpcRedoService redoService;
+    private final NamingGrpcRedoService redoServiceInstance;
+    
+    private final NamingGrpcRedoServiceTraceProxy redoService;
     
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
             NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
@@ -99,22 +111,59 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
                 RpcClientTlsConfig.properties(properties.asProperties()));
-        this.redoService = new NamingGrpcRedoService(this);
+        this.redoServiceInstance = new NamingGrpcRedoService(this);
+        this.redoService = TraceDynamicProxy.getNamingGrpcRedoServiceTraceProxy(this.redoServiceInstance);
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
         start(serverListFactory, serviceInfoHolder);
     }
     
     private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
-        rpcClient.registerConnectionListener(redoService);
-        rpcClient.registerServerRequestHandler(new NamingPushRequestHandler(serviceInfoHolder));
+        rpcClient.registerConnectionListener(redoServiceInstance);
+        rpcClient.registerServerRequestHandler(
+                TraceDynamicProxy.getServerRequestHandlerTraceProxy(new NamingPushRequestHandler(serviceInfoHolder)));
         rpcClient.start();
         NotifyCenter.registerSubscriber(this);
     }
     
     @Override
     public void onEvent(ServerListChangedEvent event) {
-        rpcClient.onServerListChange();
+        onServerListChangeEventWithTrace(event);
+    }
+    
+    /**
+     * On server list change event with OpenTelemetry trace.
+     *
+     * <p>Those codes about spans are <b>no-operation</b> when Nacos users don't use OpenTelemetry.
+     *
+     * <p>Didn't use dynamic proxy here, because the {@link RpcClient} is an abstract class in nacos-common, rather
+     * than an interface.
+     *
+     * @param event server list change event
+     */
+    private void onServerListChangeEventWithTrace(ServerListChangedEvent event) {
+        Span span = NamingTrace.getClientNamingWorkerSpanBuilder("onServerListChangedEvent").startSpan();
+        try (Scope ignored = span.makeCurrent()) {
+            
+            span.addEvent("onServerListChangedEvent");
+            if (span.isRecording()) {
+                span.setAttribute(SemanticAttributes.CODE_NAMESPACE,
+                        "com.alibaba.nacos.common.remote.client.RpcClient");
+                span.setAttribute(SemanticAttributes.CODE_FUNCTION, "onServerListChange");
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                span.setAttribute(NacosSemanticAttributes.EVENT, event.toString());
+                span.setAttribute(NacosSemanticAttributes.NAMESPACE, namespaceId);
+            }
+            
+            rpcClient.onServerListChange();
+            
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            span.end();
+        }
     }
     
     @Override
@@ -366,13 +415,13 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
             throws NacosException {
+        Response response;
         try {
             request.putAllHeader(
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
             long start = System.currentTimeMillis();
             
-            Response response =
-                    requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            response = rpcClientRequestWithTrace(request);
             
             NamingMetrics.recordRpcCostDurationTimer(rpcClient.getConnectionType().getType(),
                     rpcClient.getCurrentServer().getAddress(), String.valueOf(response.getResultCode()),
@@ -386,12 +435,66 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             }
             NAMING_LOGGER.error("Server return unexpected response '{}', expected response should be '{}'",
                     response.getClass().getName(), responseClass.getName());
+            throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
         } catch (NacosException e) {
             throw e;
         } catch (Exception e) {
             throw new NacosException(NacosException.SERVER_ERROR, "Request nacos server failed: ", e);
         }
-        throw new NacosException(NacosException.SERVER_ERROR, "Server return invalid response");
+    }
+    
+    /**
+     * Request to server with OpenTelemetry trace.
+     *
+     * <p>Those codes about spans are <b>no-operation</b> when Nacos users don't use OpenTelemetry.
+     *
+     * <p>Didn't use dynamic proxy here, because the {@link RpcClient} is an abstract class, rather
+     * than an interface.
+     *
+     * @param request request
+     * @return response
+     * @throws NacosException nacos exception
+     */
+    private Response rpcClientRequestWithTrace(AbstractNamingRequest request) throws NacosException {
+        Response response;
+        Span span = NamingTrace.getClientNamingRpcSpanBuilder(rpcClient.getConnectionType().getType()).startSpan();
+        try (Scope ignored = span.makeCurrent()) {
+            
+            TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                    .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
+            
+            if (span.isRecording()) {
+                span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcClient.getConnectionType().getType().toLowerCase());
+                if (rpcClient.getCurrentServer() != null) {
+                    span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
+                            rpcClient.getCurrentServer().getAddress());
+                }
+            }
+            
+            response = requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            
+            if (span.isRecording()) {
+                span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, response.getResultCode());
+                if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
+                    span.setStatus(StatusCode.ERROR, response.getMessage());
+                } else {
+                    span.setStatus(StatusCode.OK);
+                }
+            }
+            
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            span.end();
+        }
+        return response;
+    }
+    
+    @Override
+    public String getNamespace() {
+        return namespaceId;
     }
     
     @Override

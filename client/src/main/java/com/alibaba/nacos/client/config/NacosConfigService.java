@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
@@ -34,10 +35,19 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
+import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
+import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.SpanBuilder;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.slf4j.Logger;
 
 import java.util.Arrays;
@@ -61,12 +71,12 @@ public class NacosConfigService implements ConfigService {
      * will be deleted in 2.0 later versions
      */
     @Deprecated
-    ServerHttpAgent agent = null;
+    HttpAgent agent;
     
     /**
      * long polling.
      */
-    private final ClientWorker worker;
+    private final ClientWorkerTraceProxy worker;
     
     private String namespace;
     
@@ -81,9 +91,10 @@ public class NacosConfigService implements ConfigService {
         ServerListManager serverListManager = new ServerListManager(clientProperties);
         serverListManager.start();
         
-        this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties);
+        this.worker = TraceDynamicProxy.getClientWorkerTraceProxy(
+                new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties));
         // will be deleted in 2.0 later versions
-        agent = new ServerHttpAgent(serverListManager);
+        agent = TraceDynamicProxy.getHttpAgentTraceProxy(new ServerHttpAgent(serverListManager));
         
     }
     
@@ -102,8 +113,8 @@ public class NacosConfigService implements ConfigService {
             throws NacosException {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
         
-        ConfigResponse configResponse = worker.getAgent()
-                .queryConfig(dataId, group, worker.getAgent().getTenant(), timeoutMs, false);
+        ConfigResponse configResponse = worker.getServerConfig(dataId, group, worker.getAgentTenant(), timeoutMs,
+                false);
         
         String content = configResponse.getContent();
         String encryptedDataKey = configResponse.getEncryptedDataKey();
@@ -171,14 +182,15 @@ public class NacosConfigService implements ConfigService {
         // but is maintained by user.
         // This is designed for certain scenario like client emergency reboot,
         // changing config needed in the same time, while nacos server is down.
-        String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
+        String content = getFailoverWithTrace(worker.getAgentName(), dataId, group, tenant, false);
         
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}",
                     worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
             cr.setContent(content);
-            String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(agent.getName(), dataId,
-                    group, tenant);
+            
+            String encryptedDataKey = getFailoverWithTrace(agent.getName(), dataId, group, tenant, true);
+            
             cr.setEncryptedDataKey(encryptedDataKey);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -203,19 +215,140 @@ public class NacosConfigService implements ConfigService {
                     worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
         
-        content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
+        content = getSnapshotWithTrace(worker.getAgentName(), dataId, group, tenant, false);
         
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
                     worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
         }
         cr.setContent(content);
-        String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(agent.getName(), dataId,
-                group, tenant);
+        
+        String encryptedDataKey = getSnapshotWithTrace(agent.getName(), dataId, group, tenant, true);
+
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
         return content;
+    }
+    
+    /**
+     * Get failover with trace.
+     *
+     * <p>Didn't use dynamic proxy here because of calling static method.
+     *
+     * @param envName     env name
+     * @param dataId      data id
+     * @param group       group
+     * @param tenant      tenant
+     * @param isEncrypted is encrypted
+     * @return content
+     */
+    private String getFailoverWithTrace(String envName, String dataId, String group, String tenant,
+            boolean isEncrypted) {
+        
+        SpanBuilder spanBuilder;
+        if (isEncrypted) {
+            spanBuilder = ConfigTrace.getClientConfigServiceSpanBuilder("getEncryptDataKeyFailover");
+            spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, LocalEncryptedDataKeyProcessor.class.getName());
+        } else {
+            spanBuilder = ConfigTrace.getClientConfigServiceSpanBuilder("getFailover");
+            spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, LocalConfigInfoProcessor.class.getName());
+        }
+        
+        Span span = setSpanLocalConfigInfoAttributes(envName, dataId, group, tenant, spanBuilder);
+        
+        String content;
+        try (Scope ignored = span.makeCurrent()) {
+            
+            if (isEncrypted) {
+                content = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(envName, dataId, group, tenant);
+            } else {
+                content = LocalConfigInfoProcessor.getFailover(envName, dataId, group, tenant);
+            }
+            
+            if (span.isRecording()) {
+                if (content == null) {
+                    span.setStatus(StatusCode.ERROR, "Get failover failed");
+                } else {
+                    span.setStatus(StatusCode.OK, "Get failover ok");
+                    span.setAttribute(NacosSemanticAttributes.CONTENT, content);
+                }
+            }
+            
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            span.end();
+        }
+        
+        return content;
+    }
+    
+    /**
+     * Get snapshot with trace.
+     *
+     * <p>Didn't use dynamic proxy here because of calling static method.
+     *
+     * @param envName     env name
+     * @param dataId      data id
+     * @param group       group
+     * @param tenant      tenant
+     * @param isEncrypted is encrypted
+     * @return content
+     */
+    private String getSnapshotWithTrace(String envName, String dataId, String group, String tenant,
+            boolean isEncrypted) {
+        
+        SpanBuilder spanBuilder;
+        if (isEncrypted) {
+            spanBuilder = ConfigTrace.getClientConfigServiceSpanBuilder("getEncryptDataKeySnapshot");
+            spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, LocalEncryptedDataKeyProcessor.class.getName());
+        } else {
+            spanBuilder = ConfigTrace.getClientConfigServiceSpanBuilder("getSnapshot");
+            spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, LocalConfigInfoProcessor.class.getName());
+        }
+        
+        Span span = setSpanLocalConfigInfoAttributes(envName, dataId, group, tenant, spanBuilder);
+        
+        String content;
+        try (Scope ignored = span.makeCurrent()) {
+            
+            if (isEncrypted) {
+                content = LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(envName, dataId, group, tenant);
+            } else {
+                content = LocalConfigInfoProcessor.getSnapshot(envName, dataId, group, tenant);
+            }
+            
+            if (span.isRecording()) {
+                if (content == null) {
+                    span.setStatus(StatusCode.ERROR, "Get snapshot failed");
+                } else {
+                    span.setStatus(StatusCode.OK, "Get snapshot ok");
+                    span.setAttribute(NacosSemanticAttributes.CONTENT, content);
+                }
+            }
+            
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            span.end();
+        }
+        return content;
+    }
+    
+    private Span setSpanLocalConfigInfoAttributes(String envName, String dataId, String group, String tenant,
+            SpanBuilder spanBuilder) {
+        spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, envName);
+        spanBuilder.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+        spanBuilder.setAttribute(NacosSemanticAttributes.GROUP, group);
+        spanBuilder.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+        spanBuilder.setAttribute(NacosSemanticAttributes.NAMESPACE, namespace);
+        
+        return spanBuilder.startSpan();
     }
     
     private String blank2defaultGroup(String group) {

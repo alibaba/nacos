@@ -189,6 +189,11 @@ public class AbstractNamingClientProxyTest {
         }
         
         @Override
+        public String getNamespace() {
+            return null;
+        }
+        
+        @Override
         public Class<? extends Event> subscribeType() {
             return null;
         }

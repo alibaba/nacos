@@ -246,7 +246,7 @@ public class ServerHttpAgent implements HttpAgent {
                 || result.getCode() == HttpURLConnection.HTTP_NOT_FOUND;
     }
     
-    public static String getAppname() {
+    public static String getAppName() {
         return ParamUtil.getAppName();
     }
     

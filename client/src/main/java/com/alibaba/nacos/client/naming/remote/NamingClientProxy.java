@@ -34,7 +34,7 @@ import java.util.List;
 public interface NamingClientProxy extends Closeable {
     
     /**
-     * Register a instance to service with specified instance properties.
+     * Register an instance to service with specified instance properties.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -188,4 +188,11 @@ public interface NamingClientProxy extends Closeable {
      * @return true if server is healthy
      */
     boolean serverHealthy();
+    
+    /**
+     * Get namespace of naming client.
+     *
+     * @return namespace
+     */
+    String getNamespace();
 }

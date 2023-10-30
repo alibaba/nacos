@@ -154,6 +154,7 @@
         <jraft-core.version>1.3.12</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
+        <io.opentelemetry.version>1.29.0</io.opentelemetry.version>
     </properties>
     <!-- == -->
     <!-- =========================================================Build plugins================================================ -->
@@ -632,7 +633,7 @@
             <artifactId>mockito-inline</artifactId>
             <scope>test</scope>
         </dependency>
-        
+    
     </dependencies>
     
     <!-- Manage the version numbers of dependencies,
@@ -1008,7 +1009,7 @@
                 <version>2.9.0</version>
                 <scope>compile</scope>
             </dependency>
-    
+            
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>

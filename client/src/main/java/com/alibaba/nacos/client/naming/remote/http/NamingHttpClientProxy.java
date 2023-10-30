@@ -30,7 +30,9 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.TraceMonitor;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
+import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -50,6 +52,11 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import org.apache.http.HttpStatus;
 
 import java.util.Collections;
@@ -287,6 +294,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public boolean serverHealthy() {
+        String serverUpFlag = "UP";
         
         try {
             String serverStatus;
@@ -294,7 +302,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             JsonNode json = JacksonUtils.toObj(result);
             serverStatus = json.get("status").asText();
             
-            return "UP".equals(serverStatus);
+            return serverUpFlag.equals(serverStatus);
         } catch (Exception e) {
             return false;
         }
@@ -312,12 +320,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         
         if (selector != null) {
             switch (SelectorType.valueOf(selector.getType())) {
-                case none:
-                    break;
                 case label:
                     ExpressionSelector expressionSelector = (ExpressionSelector) selector;
                     params.put(SELECTOR_PARAM, JacksonUtils.toJson(expressionSelector));
                     break;
+                case none:
                 default:
                     break;
             }
@@ -371,7 +378,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public String reqApi(String api, Map<String, String> params, Map<String, String> body, List<String> servers,
             String method) throws NacosException {
         
-        params.put(CommonParams.NAMESPACE_ID, getNamespaceId());
+        params.put(CommonParams.NAMESPACE_ID, getNamespace());
         
         if (CollectionUtils.isEmpty(servers) && !serverListManager.isDomain()) {
             throw new NacosException(NacosException.INVALID_PARAM, "no server available");
@@ -448,8 +455,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         }
         try {
             
-            HttpRestResult<String> restResult = nacosRestTemplate.exchangeForm(url, header,
-                    Query.newInstance().initParams(params), body, method, String.class);
+            HttpRestResult<String> restResult = callServerWithTrace(url, header, Query.newInstance().initParams(params),
+                    body, method);
             
             NamingMetrics.recordNamingRequestTimer(method, url, String.valueOf(restResult.getCode()),
                     System.currentTimeMillis() - start);
@@ -470,7 +477,59 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         }
     }
     
-    public String getNamespaceId() {
+    /**
+     * Call server by HTTP with OpenTelemetry trace.
+     *
+     * <p>Those codes about spans are <b>no-operation</b> when Nacos users don't use OpenTelemetry.
+     *
+     * @param url        url
+     * @param header     header
+     * @param query      query
+     * @param bodyValues bodyValues
+     * @param httpMethod httpMethod
+     * @param <T>        T
+     * @return HttpRestResult
+     * @throws Exception exception
+     */
+    private <T> HttpRestResult<T> callServerWithTrace(String url, Header header, Query query,
+            Map<String, String> bodyValues, String httpMethod) throws Exception {
+        
+        HttpRestResult<T> restResult;
+        Span span = NamingTrace.getClientNamingHttpSpanBuilder(httpMethod).startSpan();
+        try (Scope ignored = span.makeCurrent()) {
+            
+            TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                    .inject(Context.current(), header, TraceMonitor.getHttpContextSetter());
+            
+            if (span.isRecording()) {
+                span.setAttribute(SemanticAttributes.HTTP_METHOD, httpMethod.toUpperCase());
+                span.setAttribute(SemanticAttributes.HTTP_URL, url);
+            }
+            
+            restResult = nacosRestTemplate.exchangeForm(url, header, query, bodyValues, httpMethod, String.class);
+            
+            if (restResult.ok()) {
+                span.setStatus(StatusCode.OK);
+            } else {
+                span.setStatus(StatusCode.ERROR, restResult.getCode() + ": " + restResult.getMessage());
+            }
+            
+            if (span.isRecording()) {
+                span.setAttribute(SemanticAttributes.HTTP_STATUS_CODE, restResult.getCode());
+            }
+        } catch (Throwable e) {
+            span.recordException(e);
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+            throw e;
+        } finally {
+            span.end();
+        }
+        
+        return restResult;
+    }
+    
+    @Override
+    public String getNamespace() {
         return namespaceId;
     }
     
