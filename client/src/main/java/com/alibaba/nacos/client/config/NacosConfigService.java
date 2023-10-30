@@ -224,7 +224,7 @@ public class NacosConfigService implements ConfigService {
         cr.setContent(content);
         
         String encryptedDataKey = getSnapshotWithTrace(agent.getName(), dataId, group, tenant, true);
-        
+
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();

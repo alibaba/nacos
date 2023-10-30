@@ -154,7 +154,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      */
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
-        
+      
         CacheData cache = TraceDynamicProxy.getClientWorkerTraceProxy(this).addCacheDataIfAbsent(dataId, group);
         
         synchronized (cache) {
@@ -182,7 +182,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
             throws NacosException {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
-        
+      
         CacheData cache = TraceDynamicProxy.getClientWorkerTraceProxy(this).addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
@@ -1114,7 +1114,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
                     rpcClient = ensureRpcClient(String.valueOf(cacheData.getTaskId()));
                 }
             }
-            
+          
             ConfigQueryResponse response = (ConfigQueryResponse) agent.requestProxy(rpcClient, request, readTimeouts);
             
             ConfigResponse configResponse = new ConfigResponse();
@@ -1189,6 +1189,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
             
             long start = System.currentTimeMillis();
             Response rpcResponse = rpcClientInner.request(request, timeoutMills);
+
             long cost = System.currentTimeMillis() - start;
             // Metrics
             ConfigMetrics.recordRpcCostDurationTimer(rpcClientInner.getConnectionType().getType(),

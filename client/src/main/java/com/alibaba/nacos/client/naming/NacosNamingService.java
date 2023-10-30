@@ -461,7 +461,8 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public String getServerStatus() {
-        return clientProxy.serverHealthy() ? UP : DOWN;
+        boolean result = clientProxy.serverHealthy();
+        return result ? UP : DOWN;
     }
     
     public String getNamespace() {

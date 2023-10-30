@@ -210,6 +210,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(META_PARAM, JacksonUtils.toJson(instance.getMetadata()));
         
         reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.PUT);
+        
     }
     
     @Override
