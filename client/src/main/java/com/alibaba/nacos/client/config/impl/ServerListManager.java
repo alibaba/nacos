@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
@@ -133,13 +134,14 @@ public class ServerListManager implements Closeable {
         for (String serverAddr : fixed) {
             String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
             if (serverAddrArr.length == 1) {
-                serverAddrs
-                        .add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
+                serverAddrs.add(
+                        serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
             } else {
                 serverAddrs.add(serverAddr);
             }
         }
         this.serverUrls = new ArrayList<>(serverAddrs);
+        ConfigMetrics.setServerNumberGauge(this.serverUrls.size());
         if (StringUtils.isNotBlank(namespace)) {
             this.namespace = namespace;
             this.tenant = namespace;
@@ -203,14 +205,15 @@ public class ServerListManager implements Closeable {
                 } else {
                     String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
                     if (serverAddrArr.length == 1) {
-                        serverAddrs.add(HTTP_PREFIX + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil
-                                .getDefaultServerPort());
+                        serverAddrs.add(HTTP_PREFIX + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER
+                                + ParamUtil.getDefaultServerPort());
                     } else {
                         serverAddrs.add(HTTP_PREFIX + serverAddr);
                     }
                 }
             }
             this.serverUrls = serverAddrs;
+            ConfigMetrics.setServerNumberGauge(this.serverUrls.size());
             this.name = initServerName(properties);
             
         } else {
@@ -236,9 +239,9 @@ public class ServerListManager implements Closeable {
                         : "") + getFixedNameSuffix(serverUrls.toArray(new String[0]));
             } else {
                 //if use endpoint ,  use endpoint ,content path ,serverlist name
-                serverName = CUSTOM_NAME + "-" + String
-                        .join("_", endpoint, String.valueOf(endpointPort), contentPath, serverListName) + (
-                        StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace)) : "");
+                serverName = CUSTOM_NAME + "-" + String.join("_", endpoint, String.valueOf(endpointPort), contentPath,
+                        serverListName) + (StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(namespace))
+                        : "");
             }
         }
         serverName = serverName.replaceAll("\\/", "_");
@@ -260,8 +263,8 @@ public class ServerListManager implements Closeable {
             hasQueryString = true;
         }
         if (properties != null && properties.containsKey(PropertyKeyConst.ENDPOINT_QUERY_PARAMS)) {
-            addressServerUrlTem
-                    .append(hasQueryString ? "&" : "?" + properties.getProperty(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
+            addressServerUrlTem.append(
+                    hasQueryString ? "&" : "?" + properties.getProperty(PropertyKeyConst.ENDPOINT_QUERY_PARAMS));
             
         }
         
@@ -284,9 +287,9 @@ public class ServerListManager implements Closeable {
     
     private String initEndpoint(final NacosClientProperties properties) {
         
-        String endpointPortTmp = TemplateUtils
-                .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
-                        () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
+        String endpointPortTmp = TemplateUtils.stringEmptyAndThenExecute(
+                properties.getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_PORT),
+                () -> properties.getProperty(PropertyKeyConst.ENDPOINT_PORT));
         
         if (StringUtils.isNotBlank(endpointPortTmp)) {
             this.endpointPort = Integer.parseInt(endpointPortTmp);
@@ -404,6 +407,7 @@ public class ServerListManager implements Closeable {
             return;
         }
         serverUrls = new ArrayList<>(newServerAddrList);
+        ConfigMetrics.setServerNumberGauge(serverUrls.size());
         iterator = iterator();
         currentServerAddr = iterator.next();
         

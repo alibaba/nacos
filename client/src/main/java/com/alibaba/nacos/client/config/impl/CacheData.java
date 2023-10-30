@@ -26,6 +26,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -442,9 +443,12 @@ public class CacheData {
                     }
                     
                     listenerWrap.lastCallMd5 = md5;
+                    
+                    long jobCost = System.currentTimeMillis() - start;
+                    ConfigMetrics.recordNotifyCostDurationTimer(envName, dataId, group, tenant, jobCost);
                     LOGGER.info(
                             "[{}] [notify-ok] dataId={}, group={},tenant={}, md5={}, listener={} ,job run cost={} millis.",
-                            envName, dataId, group, tenant, md5, listener, (System.currentTimeMillis() - start));
+                            envName, dataId, group, tenant, md5, listener, jobCost);
                 } catch (NacosException ex) {
                     LOGGER.error(
                             "[{}] [notify-error] dataId={}, group={},tenant={},md5={}, listener={} errCode={} errMsg={},stackTrace :{}",
@@ -519,6 +523,9 @@ public class CacheData {
     
     public void setConsistentWithServer(boolean consistentWithServer) {
         isConsistentWithServer.set(consistentWithServer);
+        if (consistentWithServer) {
+            ConfigMetrics.incSyncWithServerCounter();
+        }
     }
     
     public boolean isDiscard() {

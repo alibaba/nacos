@@ -30,7 +30,7 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.MetricsMonitor;
+import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -150,6 +150,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(HEALTHY_PARAM, String.valueOf(instance.isHealthy()));
         params.put(EPHEMERAL_PARAM, String.valueOf(instance.isEphemeral()));
         params.put(META_PARAM, JacksonUtils.toJson(instance.getMetadata()));
+        
         reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.POST);
     }
     
@@ -168,9 +169,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
-                        instance);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+                serviceName, instance);
         if (instance.isEphemeral()) {
             return;
         }
@@ -187,8 +187,8 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[UPDATE-SERVICE] {} update service {} with instance: {}", namespaceId, serviceName, instance);
+        NAMING_LOGGER.info("[UPDATE-SERVICE] {} update service {} with instance: {}", namespaceId, serviceName,
+                instance);
         
         final Map<String, String> params = new HashMap<>(32);
         params.put(CommonParams.NAMESPACE_ID, namespaceId);
@@ -203,6 +203,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(META_PARAM, JacksonUtils.toJson(instance.getMetadata()));
         
         reqApi(UtilAndComs.nacosUrlInstance, params, HttpMethod.PUT);
+        
     }
     
     @Override
@@ -215,7 +216,9 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(UDP_PORT_PARAM, String.valueOf(udpPort));
         params.put(CLIENT_IP_PARAM, NetUtils.localIP());
         params.put(HEALTHY_ONLY_PARAM, String.valueOf(healthyOnly));
+        
         String result = reqApi(UtilAndComs.nacosUrlBase + "/instance/list", params, HttpMethod.GET);
+        
         if (StringUtils.isNotEmpty(result)) {
             return JacksonUtils.toObj(result, ServiceInfo.class);
         }
@@ -232,6 +235,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.GROUP_NAME, groupName);
         
         String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.GET);
+        
         return JacksonUtils.toObj(result, Service.class);
     }
     
@@ -249,7 +253,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(SELECTOR_PARAM, JacksonUtils.toJson(selector));
         
         reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.POST);
-        
     }
     
     @Override
@@ -263,6 +266,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
         params.put(CommonParams.GROUP_NAME, groupName);
         
         String result = reqApi(UtilAndComs.nacosUrlService, params, HttpMethod.DELETE);
+        
         return "ok".equals(result);
     }
     
@@ -285,9 +289,11 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public boolean serverHealthy() {
         
         try {
+            String serverStatus;
             String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<>(8), HttpMethod.GET);
             JsonNode json = JacksonUtils.toObj(result);
-            String serverStatus = json.get("status").asText();
+            serverStatus = json.get("status").asText();
+            
             return "UP".equals(serverStatus);
         } catch (Exception e) {
             return false;
@@ -425,7 +431,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     public String callServer(String api, Map<String, String> params, Map<String, String> body, String curServer,
             String method) throws NacosException {
         long start = System.currentTimeMillis();
-        long end = 0;
         String namespace = params.get(CommonParams.NAMESPACE_ID);
         String group = params.get(CommonParams.GROUP_NAME);
         String serviceName = params.get(CommonParams.SERVICE_NAME);
@@ -442,12 +447,12 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             url = NamingHttpClientManager.getInstance().getPrefix() + curServer + api;
         }
         try {
-            HttpRestResult<String> restResult = nacosRestTemplate
-                    .exchangeForm(url, header, Query.newInstance().initParams(params), body, method, String.class);
-            end = System.currentTimeMillis();
             
-            MetricsMonitor.getNamingRequestMonitor(method, url, String.valueOf(restResult.getCode()))
-                    .observe(end - start);
+            HttpRestResult<String> restResult = nacosRestTemplate.exchangeForm(url, header,
+                    Query.newInstance().initParams(params), body, method, String.class);
+            
+            NamingMetrics.recordNamingRequestTimer(method, url, String.valueOf(restResult.getCode()),
+                    System.currentTimeMillis() - start);
             
             if (restResult.ok()) {
                 return restResult.getData();

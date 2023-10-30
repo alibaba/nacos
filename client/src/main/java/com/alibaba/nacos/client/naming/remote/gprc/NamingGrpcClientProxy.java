@@ -41,6 +41,7 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
@@ -54,8 +55,8 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 
@@ -159,6 +160,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                             instances));
         }
         String combinedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
+        
         InstanceRedoData instanceRedoData = redoService.getRegisteredInstancesByKey(combinedServiceName);
         if (!(instanceRedoData instanceof BatchInstanceRedoData)) {
             throw new NacosException(NacosException.INVALID_PARAM, String.format(
@@ -197,6 +199,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
             throws NacosException {
         BatchInstanceRequest request = new BatchInstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.BATCH_REGISTER_INSTANCE, instances);
+        
         requestToServer(request, BatchInstanceResponse.class);
         redoService.instanceRegistered(serviceName, groupName);
     }
@@ -212,15 +215,15 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void doRegisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.REGISTER_INSTANCE, instance);
+        
         requestToServer(request, Response.class);
         redoService.instanceRegistered(serviceName, groupName);
     }
     
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
-        NAMING_LOGGER
-                .info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId, serviceName,
-                        instance);
+        NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
+                serviceName, instance);
         redoService.instanceDeregister(serviceName, groupName);
         doDeregisterService(serviceName, groupName, instance);
     }
@@ -236,6 +239,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void doDeregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         InstanceRequest request = new InstanceRequest(namespaceId, serviceName, groupName,
                 NamingRemoteConstants.DE_REGISTER_INSTANCE, instance);
+        
         requestToServer(request, Response.class);
         redoService.instanceDeregistered(serviceName, groupName);
     }
@@ -252,7 +256,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         request.setCluster(clusters);
         request.setHealthyOnly(healthyOnly);
         request.setUdpPort(udpPort);
+        
         QueryServiceResponse response = requestToServer(request, QueryServiceResponse.class);
+        
         return response.getServiceInfo();
     }
     
@@ -285,7 +291,9 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 request.setSelector(JacksonUtils.toJson(selector));
             }
         }
+        
         ServiceListResponse response = requestToServer(request, ServiceListResponse.class);
+        
         ListView<String> result = new ListView<>();
         result.setCount(response.getCount());
         result.setData(response.getServiceNames());
@@ -313,16 +321,18 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public ServiceInfo doSubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, groupName, serviceName, clusters,
                 true);
+        
         SubscribeServiceResponse response = requestToServer(request, SubscribeServiceResponse.class);
         redoService.subscriberRegistered(serviceName, groupName, clusters);
+        
         return response.getServiceInfo();
     }
     
     @Override
     public void unsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         if (NAMING_LOGGER.isDebugEnabled()) {
-            NAMING_LOGGER
-                    .debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName, clusters);
+            NAMING_LOGGER.debug("[GRPC-UNSUBSCRIBE] service:{}, group:{}, cluster:{} ", serviceName, groupName,
+                    clusters);
         }
         redoService.subscriberDeregister(serviceName, groupName, clusters);
         doUnsubscribe(serviceName, groupName, clusters);
@@ -344,6 +354,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void doUnsubscribe(String serviceName, String groupName, String clusters) throws NacosException {
         SubscribeServiceRequest request = new SubscribeServiceRequest(namespaceId, groupName, serviceName, clusters,
                 false);
+        
         requestToServer(request, SubscribeServiceResponse.class);
         redoService.removeSubscriberForRedo(serviceName, groupName, clusters);
     }
@@ -358,8 +369,15 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         try {
             request.putAllHeader(
                     getSecurityHeaders(request.getNamespace(), request.getGroupName(), request.getServiceName()));
+            long start = System.currentTimeMillis();
+            
             Response response =
                     requestTimeout < 0 ? rpcClient.request(request) : rpcClient.request(request, requestTimeout);
+            
+            NamingMetrics.recordRpcCostDurationTimer(rpcClient.getConnectionType().getType(),
+                    rpcClient.getCurrentServer().getAddress(), String.valueOf(response.getResultCode()),
+                    System.currentTimeMillis() - start);
+            
             if (ResponseCode.SUCCESS.getCode() != response.getResultCode()) {
                 throw new NacosException(response.getErrorCode(), response.getMessage());
             }

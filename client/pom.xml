@@ -63,12 +63,12 @@
             <artifactId>nacos-common</artifactId>
             <optional>true</optional>
         </dependency>
-    
+        
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-auth-plugin</artifactId>
         </dependency>
-    
+        
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-encryption-plugin</artifactId>
@@ -79,6 +79,7 @@
             <artifactId>nacos-api</artifactId>
             <optional>true</optional>
         </dependency>
+        
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
@@ -112,13 +113,20 @@
         </dependency>
         
         <dependency>
-            <groupId>io.prometheus</groupId>
-            <artifactId>simpleclient</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
         </dependency>
+        
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+        
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-otlp</artifactId>
+        </dependency>
+    
     </dependencies>
     
     <build>
@@ -143,7 +151,7 @@
                                 <minimizeJar>true</minimizeJar>
                                 <createSourcesJar>true</createSourcesJar>
                                 <shadeSourcesContent>true</shadeSourcesContent>
-
+                                
                                 <filters>
                                     <filter>
                                         <artifact>*:*</artifact>
@@ -181,7 +189,7 @@
                                         </includes>
                                     </filter>
                                 </filters>
-
+                                
                                 <artifactSet>
                                     <includes>
                                         <include>com.alibaba.nacos:nacos-api</include>
@@ -201,7 +209,7 @@
                                         <include>org.codehaus.mojo:*</include>
                                     </includes>
                                 </artifactSet>
-
+                                
                                 <relocations>
                                     <relocation>
                                         <pattern>io.grpc</pattern>
@@ -218,17 +226,17 @@
                                             <include>io.grpc.netty.shaded.io.grpc.netty.*</include>
                                         </includes>
                                     </relocation>
-
+                                    
                                     <relocation>
                                         <pattern>com.google</pattern>
                                         <shadedPattern>com.alibaba.nacos.shaded.com.google</shadedPattern>
                                     </relocation>
-
+                                    
                                     <relocation>
                                         <pattern>javax.annotation</pattern>
                                         <shadedPattern>com.alibaba.nacos.shaded.javax.annotation</shadedPattern>
                                     </relocation>
-
+                                    
                                     <relocation>
                                         <pattern>io.perfmark</pattern>
                                         <shadedPattern>com.alibaba.nacos.shaded.io.perfmark</shadedPattern>
@@ -254,7 +262,7 @@
                                         <shadedPattern>com.alibaba.nacos.shaded.org.example</shadedPattern>
                                     </relocation>
                                 </relocations>
-
+                                
                                 <transformers>
                                     <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer"/>
@@ -268,7 +276,7 @@
             </plugins>
         </pluginManagement>
     </build>
-
+    
     <profiles>
         <profile>
             <id>release-sign-artifacts</id>

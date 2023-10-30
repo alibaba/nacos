@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 
@@ -39,8 +40,12 @@ public class NamingPushRequestHandler implements ServerRequestHandler {
     @Override
     public Response requestReply(Request request) {
         if (request instanceof NotifySubscriberRequest) {
+            long start = System.currentTimeMillis();
             NotifySubscriberRequest notifyRequest = (NotifySubscriberRequest) request;
             serviceInfoHolder.processServiceInfo(notifyRequest.getServiceInfo());
+            NamingMetrics.incServerRequestHandleCounter();
+            NamingMetrics.recordHandleServerRequestCostDurationTimer(NamingPushRequestHandler.class.getSimpleName(),
+                    System.currentTimeMillis() - start);
             return new NotifySubscriberResponse();
         }
         return null;

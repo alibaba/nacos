@@ -21,6 +21,7 @@ import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -52,6 +53,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     public InstancesChangeNotifier(String eventScope) {
         this.eventScope = eventScope;
+        NamingMetrics.gaugeMapSize(NamingMetrics.getCommonMeterName(), "subscribeServiceNumber", listenerMap);
     }
     
     /**
@@ -64,7 +66,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      */
     public void registerListener(String groupName, String serviceName, String clusters, EventListener listener) {
         String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
-        ConcurrentHashSet<EventListener> eventListeners = listenerMap.computeIfAbsent(key, keyInner -> new ConcurrentHashSet<>());
+        ConcurrentHashSet<EventListener> eventListeners = listenerMap.computeIfAbsent(key,
+                keyInner -> new ConcurrentHashSet<>());
         eventListeners.add(listener);
     }
     
@@ -112,8 +115,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     @Override
     public void onEvent(InstancesChangeEvent event) {
-        String key = ServiceInfo
-                .getKey(NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName()), event.getClusters());
+        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName()),
+                event.getClusters());
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (CollectionUtils.isEmpty(eventListeners)) {
             return;

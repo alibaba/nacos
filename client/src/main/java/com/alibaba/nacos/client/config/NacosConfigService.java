@@ -101,10 +101,13 @@ public class NacosConfigService implements ConfigService {
     public String getConfigAndSignListener(String dataId, String group, long timeoutMs, Listener listener)
             throws NacosException {
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
+        
         ConfigResponse configResponse = worker.getAgent()
                 .queryConfig(dataId, group, worker.getAgent().getTenant(), timeoutMs, false);
+        
         String content = configResponse.getContent();
         String encryptedDataKey = configResponse.getEncryptedDataKey();
+        
         worker.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, Arrays.asList(listener));
         
         // get a decryptContent, fix https://github.com/alibaba/nacos/issues/7039
@@ -169,12 +172,13 @@ public class NacosConfigService implements ConfigService {
         // This is designed for certain scenario like client emergency reboot,
         // changing config needed in the same time, while nacos server is down.
         String content = LocalConfigInfoProcessor.getFailover(worker.getAgentName(), dataId, group, tenant);
+        
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get failover ok, dataId={}, group={}, tenant={}, config={}",
                     worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
             cr.setContent(content);
-            String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                    .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
+            String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeyFailover(agent.getName(), dataId,
+                    group, tenant);
             cr.setEncryptedDataKey(encryptedDataKey);
             configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
@@ -182,7 +186,9 @@ public class NacosConfigService implements ConfigService {
         }
         
         try {
+            
             ConfigResponse response = worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
+            
             cr.setContent(response.getContent());
             cr.setEncryptedDataKey(response.getEncryptedDataKey());
             configFilterChainManager.doFilter(null, cr);
@@ -196,15 +202,16 @@ public class NacosConfigService implements ConfigService {
             LOGGER.warn("[{}] [get-config] get from server error, dataId={}, group={}, tenant={}, msg={}",
                     worker.getAgentName(), dataId, group, tenant, ioe.toString());
         }
-
+        
         content = LocalConfigInfoProcessor.getSnapshot(worker.getAgentName(), dataId, group, tenant);
+        
         if (content != null) {
             LOGGER.warn("[{}] [get-config] get snapshot ok, dataId={}, group={}, tenant={}, config={}",
                     worker.getAgentName(), dataId, group, tenant, ContentUtils.truncateContent(content));
         }
         cr.setContent(content);
-        String encryptedDataKey = LocalEncryptedDataKeyProcessor
-                .getEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant);
+        String encryptedDataKey = LocalEncryptedDataKeyProcessor.getEncryptDataKeySnapshot(agent.getName(), dataId,
+                group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
@@ -218,6 +225,7 @@ public class NacosConfigService implements ConfigService {
     private boolean removeConfigInner(String tenant, String dataId, String group, String tag) throws NacosException {
         group = blank2defaultGroup(group);
         ParamUtils.checkKeyParam(dataId, group);
+        
         return worker.removeConfig(dataId, group, tenant, tag);
     }
     
@@ -236,24 +244,26 @@ public class NacosConfigService implements ConfigService {
         content = cr.getContent();
         String encryptedDataKey = cr.getEncryptedDataKey();
         
-        return worker
-                .publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5, type);
+        return worker.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5,
+                type);
     }
     
     @Override
     public String getServerStatus() {
-        if (worker.isHealthServer()) {
+        boolean result = worker.isHealthServer();
+        
+        if (result) {
             return UP;
         } else {
             return DOWN;
         }
     }
-
+    
     @Override
     public void addConfigFilter(IConfigFilter configFilter) {
         configFilterChainManager.addFilter(configFilter);
     }
-
+    
     @Override
     public void shutDown() throws NacosException {
         worker.shutdown();

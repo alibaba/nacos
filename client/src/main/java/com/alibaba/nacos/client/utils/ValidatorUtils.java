@@ -20,6 +20,8 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -30,7 +32,11 @@ import java.util.regex.Pattern;
  */
 public final class ValidatorUtils {
     
-    private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(\\/)\\1+");
+    private static final String HTTP_PROTOCOL = "http";
+    
+    private static final String HTTPS_PROTOCOL = "https";
+    
+    private static final Pattern CONTEXT_PATH_MATCH = Pattern.compile("(/)\\1+");
     
     public static void checkInitParam(NacosClientProperties properties) throws NacosException {
         checkContextPath(properties.getProperty(PropertyKeyConst.CONTEXT_PATH));
@@ -49,6 +55,31 @@ public final class ValidatorUtils {
         if (matcher.find()) {
             throw new IllegalArgumentException("Illegal url path expression");
         }
+    }
+    
+    /**
+     * Check whether the http/https url is valid.
+     *
+     * @param urlString url string
+     * @return null if not valid, otherwise return the url string
+     */
+    public static String checkValidUrl(String urlString) {
+        if (urlString == null) {
+            return null;
+        }
+        URI url;
+        try {
+            url = new URI(urlString);
+        } catch (URISyntaxException e) {
+            return null;
+        }
+        if (url.getHost() == null) {
+            return null;
+        }
+        if (url.getScheme().equalsIgnoreCase(HTTP_PROTOCOL) || url.getScheme().equalsIgnoreCase(HTTPS_PROTOCOL)) {
+            return url.toString();
+        }
+        return null;
     }
     
 }
