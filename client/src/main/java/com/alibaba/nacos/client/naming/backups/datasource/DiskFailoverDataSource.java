@@ -72,9 +72,6 @@ public class DiskFailoverDataSource implements FailoverDataSource {
         this.failoverDir = serviceInfoHolder.getCacheDir() + FAILOVER_DIR;
     }
     
-    public void init() {
-    }
-    
     class FailoverFileReader implements Runnable {
         
         @Override

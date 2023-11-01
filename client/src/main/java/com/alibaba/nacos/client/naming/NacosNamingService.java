@@ -307,17 +307,8 @@ public class NacosNamingService implements NamingService {
         return list;
     }
     
-    private ServiceInfo getServiceInfoByFailover(String serviceName, String groupName, String clusterString)
-            throws NacosException {
-        ServiceInfo serviceInfo = null;
-        serviceInfo = serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
-        if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
-            if (!clientProxy.isSubscribed(serviceName, groupName, clusterString)) {
-                clientProxy.subscribe(serviceName, groupName, clusterString);
-            }
-            return serviceInfo;
-        }
-        return serviceInfo;
+    private ServiceInfo getServiceInfoByFailover(String serviceName, String groupName, String clusterString) {
+        return serviceInfoHolder.getFailoverServiceInfo(serviceName, groupName, clusterString);
     }
     
     private ServiceInfo getServiceInfoBySubscribe(String serviceName, String groupName, String clusterString,
@@ -340,7 +331,7 @@ public class NacosNamingService implements NamingService {
         String clusterString = StringUtils.join(clusters, ",");
         if (serviceInfoHolder.isFailoverSwitch()) {
             serviceInfo = getServiceInfoByFailover(serviceName, groupName, clusterString);
-            if (serviceInfo != null) {
+            if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
                 return serviceInfo;
             }
         }
