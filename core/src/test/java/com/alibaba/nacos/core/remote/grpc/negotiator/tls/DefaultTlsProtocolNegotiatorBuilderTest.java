@@ -17,19 +17,28 @@
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
+
+import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class DefaultTlsProtocolNegotiatorBuilderTest {
     
+    private ConfigurableEnvironment environment;
+    
     private DefaultTlsProtocolNegotiatorBuilder builder;
     
     @Before
     public void setUp() throws Exception {
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
         builder = new DefaultTlsProtocolNegotiatorBuilder();
     }
     
@@ -38,6 +47,7 @@ public class DefaultTlsProtocolNegotiatorBuilderTest {
         RpcServerTlsConfig.getInstance().setEnableTls(false);
         RpcServerTlsConfig.getInstance().setCertChainFile(null);
         RpcServerTlsConfig.getInstance().setCertPrivateKey(null);
+        clearRpcServerTlsConfigInstance();
     }
     
     @Test
@@ -51,5 +61,11 @@ public class DefaultTlsProtocolNegotiatorBuilderTest {
         RpcServerTlsConfig.getInstance().setCertPrivateKey("test-server-key.pem");
         RpcServerTlsConfig.getInstance().setCertChainFile("test-server-cert.pem");
         assertNotNull(builder.build());
+    }
+    
+    private static void clearRpcServerTlsConfigInstance() throws Exception {
+        Field instanceField = RpcServerTlsConfig.class.getDeclaredField("instance");
+        instanceField.setAccessible(true);
+        instanceField.set(null, null);
     }
 }
