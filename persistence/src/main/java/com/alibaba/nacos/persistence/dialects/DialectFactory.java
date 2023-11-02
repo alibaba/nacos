@@ -34,16 +34,27 @@ public class DialectFactory {
     public static IDialect getDialect(final DbTypeEnum dbType) {
         IDialect dialect = DIALECT_ENUM_MAP.get(dbType);
         if (null == dialect) {
-            if (dbType == dbType.OTHER) {
+            if (dbType == DbTypeEnum.OTHER) {
                 throw new DbDialectNotSupportException(" DialectFactory database not supported. " + dbType.getDb());
-            } else if (dbType == dbType.MYSQL) {
+            } else if (dbType == DbTypeEnum.MYSQL || dbType == DbTypeEnum.MARIADB || dbType == DbTypeEnum.GBASE
+                    || dbType == DbTypeEnum.OSCAR || dbType == DbTypeEnum.XU_GU || dbType == DbTypeEnum.CLICK_HOUSE
+                    || dbType == DbTypeEnum.OCEAN_BASE || dbType == DbTypeEnum.CUBRID || dbType == DbTypeEnum.GOLDILOCKS
+                    || dbType == DbTypeEnum.CSIIDB) {
                 // mysql same type
                 dialect = new MySqlDialect();
-            } else if (dbType == dbType.ORACLE) {
+            } else if (dbType == DbTypeEnum.ORACLE || dbType == DbTypeEnum.DM || dbType == DbTypeEnum.GAUSS) {
                 // oracle same type
                 dialect = new OracleDialect();
-            } else if (dbType == dbType.DERBY) {
-                // derby same type
+            } else if (dbType == DbTypeEnum.POSTGRE_SQL || dbType == DbTypeEnum.H2 || dbType == DbTypeEnum.LEALONE
+                    || dbType == DbTypeEnum.SQLITE || dbType == DbTypeEnum.HSQL || dbType == DbTypeEnum.KINGBASE_ES
+                    || dbType == DbTypeEnum.PHOENIX || dbType == DbTypeEnum.SAP_HANA || dbType == DbTypeEnum.IMPALA
+                    || dbType == DbTypeEnum.HIGH_GO || dbType == DbTypeEnum.VERTICA || dbType == DbTypeEnum.REDSHIFT
+                    || dbType == DbTypeEnum.OPENGAUSS || dbType == DbTypeEnum.TDENGINE || dbType == DbTypeEnum.UXDB) {
+                // postgresql same type
+                dialect = new PostgreSqlDialect();
+            } else if (dbType == DbTypeEnum.ORACLE_12C || dbType == DbTypeEnum.FIREBIRD || dbType == DbTypeEnum.DERBY
+                    || dbType == DbTypeEnum.SQL_SERVER) {
+                //  derby same type
                 dialect = new DerbyDialect();
             }
             DIALECT_ENUM_MAP.put(dbType, dialect);
