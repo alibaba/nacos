@@ -40,6 +40,7 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
+    nacosMode: 'MODE',
     doesNotExist: 'The page you visit does not exist',
     configurationManagementVirtual: 'ConfigManagement',
     configurationManagement: 'Configurations',
@@ -671,8 +672,8 @@ const I18N_CONF = {
     readWrite: 'Read and write',
   },
   Components: {
-      copySuccessfully: 'Success copied!',
-  }
+    copySuccessfully: 'Success copied!',
+  },
 };
 
 export default I18N_CONF;
