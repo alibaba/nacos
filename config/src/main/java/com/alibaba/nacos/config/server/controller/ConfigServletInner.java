@@ -148,10 +148,7 @@ public class ConfigServletInner {
             String tenant, String tag, String isNotify, String clientIp, boolean isV2)
             throws IOException, ServletException {
         
-        boolean notify = false;
-        if (StringUtils.isNotBlank(isNotify)) {
-            notify = Boolean.parseBoolean(isNotify);
-        }
+        boolean notify = StringUtils.isNotBlank(isNotify) && Boolean.parseBoolean(isNotify);
         
         String acceptCharset = ENCODE_UTF8;
         
@@ -167,7 +164,6 @@ public class ConfigServletInner {
         
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
-        boolean isSli = false;
         if (lockResult > 0) {
             // LockResult > 0 means cacheItem is not null and other thread can`t delete this cacheItem
             try {
@@ -178,28 +174,27 @@ public class ConfigServletInner {
                         && cacheItem.getIps4Beta().contains(clientIp)) {
                     isBeta = true;
                 }
-                
+    
                 final String configType =
                         (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
-                response.setHeader("Config-Type", configType);
+                response.setHeader(com.alibaba.nacos.api.common.Constants.CONFIG_TYPE, configType);
                 FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
                 String contentTypeHeader = fileTypeEnum.getContentType();
                 response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
-                
+    
                 if (isV2) {
                     response.setHeader(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
                 }
-                
-                String pullEvent = ConfigTraceService.PULL_EVENT;
+    
+                String pullEvent;
                 String content = null;
                 ConfigInfoBase configInfoBase = null;
-                PrintWriter out;
                 if (isBeta) {
                     ConfigCache configCacheBeta = cacheItem.getConfigCacheBeta();
                     pullEvent = ConfigTraceService.PULL_EVENT_BETA;
                     md5 = configCacheBeta.getMd5(acceptCharset);
                     lastModified = configCacheBeta.getLastModifiedTs();
-                    
+        
                     if (PropertyUtil.isDirectRead()) {
                         configInfoBase = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
@@ -248,7 +243,6 @@ public class ConfigServletInner {
                                 
                                 return get404Result(response, isV2);
                             }
-                            isSli = true;
                         }
                     } else {
                         md5 = cacheItem.getTagMd5(tag, acceptCharset);
@@ -264,7 +258,7 @@ public class ConfigServletInner {
                             // FIXME CacheItem
                             // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
-                                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify && isSli, "http");
+                                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
                             
                             // pullLog.info("[client-get] clientIp={}, {},
                             // no data",
@@ -283,7 +277,7 @@ public class ConfigServletInner {
                 response.setHeader("Cache-Control", "no-cache,no-store");
                 response.setDateHeader("Last-Modified", lastModified);
                 putEncryptedDataKeyHeader(response, tag, clientIp, acceptCharset, cacheItem, isBeta, autoTag);
-                
+                PrintWriter out;
                 if (PropertyUtil.isDirectRead()) {
                     Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId,
                             configInfoBase.getEncryptedDataKey(), configInfoBase.getContent());
@@ -306,20 +300,12 @@ public class ConfigServletInner {
                 }
                 out.flush();
                 out.close();
-                
+    
                 LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
-                
-                final long delayed = System.currentTimeMillis() - lastModified;
-                
-                if (notify) {
-                    
-                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
-                            ConfigTraceService.PULL_TYPE_OK, delayed, requestIp, true, "http");
-                } else {
-                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
-                            ConfigTraceService.PULL_TYPE_OK, -1, requestIp, false, "http");
-                }
-                
+    
+                final long delayed = notify ? -1 : System.currentTimeMillis() - lastModified;
+                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
+                        ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
             } finally {
                 releaseConfigReadLock(groupKey);
             }
@@ -327,7 +313,7 @@ public class ConfigServletInner {
             
             // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT,
-                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify && isSli, "http");
+                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
             
             return get404Result(response, isV2);
             
