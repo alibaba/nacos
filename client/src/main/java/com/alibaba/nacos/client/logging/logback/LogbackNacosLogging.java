@@ -35,15 +35,14 @@ import java.util.Collection;
  *
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
  * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
- *
  * @since 0.9.0
  */
 public class LogbackNacosLogging extends AbstractNacosLogging {
-    
+
     private static final String NACOS_LOGBACK_LOCATION = "classpath:nacos-logback.xml";
-    
+
     private Integer userVersion = 2;
-    
+
     /**
      * logback use 'ch.qos.logback.core.model.Model' since 1.3.0, set logback version during initialization.
      */
@@ -54,7 +53,7 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
             userVersion = 1;
         }
     }
-    
+
     @Override
     public void loadConfiguration() {
         LoggerContext loggerContext = loadConfigurationOnStart();
@@ -78,9 +77,9 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
         Collection<NacosLogbackConfigurator> nacosLogbackConfigurators = NacosServiceLoader.load(
                 NacosLogbackConfigurator.class);
         nacosLogbackConfigurators.stream()
-                .filter(c -> c.getVersion() == userVersion).findFirst().ifPresent(nacosLogbackConfigurator->{
+                .filter(c -> c.getVersion() == userVersion).findFirst().ifPresent(nacosLogbackConfigurator -> {
                     nacosLogbackConfigurator.setContext(loggerContext);
-                    if(StringUtils.isNotBlank(location)){
+                    if (StringUtils.isNotBlank(location)) {
                         try {
                             nacosLogbackConfigurator.configure(ResourceUtils.getResourceUrl(location));
                         } catch (Exception e) {
@@ -121,5 +120,5 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
     private void addListener(LoggerContext loggerContext) {
         loggerContext.addListener(new NacosLoggerContextListener());
     }
-    
+
 }
