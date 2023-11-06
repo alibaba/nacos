@@ -43,7 +43,6 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
-import java.io.PrintWriter;
 import java.net.URLEncoder;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
@@ -109,7 +108,6 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         int lockResult = tryConfigReadLock(groupKey);
         String pullEvent = ConfigTraceService.PULL_EVENT;
         boolean isBeta = false;
-        boolean isSli = false;
         if (lockResult > 0) {
             try {
                 String md5 = Constants.NULL;
@@ -125,7 +123,6 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 }
                 String content = null;
                 ConfigInfoBase configInfoBase = null;
-                PrintWriter out = null;
                 if (isBeta) {
                     md5 = cacheItem.getConfigCacheBeta().getMd5(acceptCharset);
                     lastModified = cacheItem.getConfigCacheBeta().getLastModifiedTs();
@@ -164,20 +161,13 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             }
                             pullEvent = ConfigTraceService.PULL_EVENT;
                             if (configInfoBase == null && content == null) {
-                                // FIXME CacheItem
                                 // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
                                         ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, false, "grpc");
                                 
-                                // pullLog.info("[client-get] clientIp={}, {},
-                                // no data",
-                                // new Object[]{clientIp, groupKey});
-                                
                                 response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                                 return response;
                             }
-                            isSli = true;
-                            
                         }
                     } else {
                         if (cacheItem != null) {
@@ -192,18 +182,12 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                         response.setTag(tag);
                         pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
                         if (configInfoBase == null && content == null) {
-                            // FIXME CacheItem
                             // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
                                     ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, false, "grpc");
                             
-                            // pullLog.info("[client-get] clientIp={}, {},
-                            // no data",
-                            // new Object[]{clientIp, groupKey});
-                            
                             response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                             return response;
-                            
                         }
                     }
                 }
@@ -215,17 +199,10 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     response.setLastModified(lastModified);
                     response.setContent(configInfoBase.getContent());
                     response.setResultCode(ResponseCode.SUCCESS.getCode());
-                    
                 } else {
-                    //read from file
-                    try {
-                        response.setContent(content);
-                        response.setLastModified(lastModified);
-                        response.setResultCode(ResponseCode.SUCCESS.getCode());
-                    } catch (Exception e) {
-                        response.setErrorInfo(ResponseCode.FAIL.getCode(), e.getMessage());
-                        return response;
-                    }
+                    response.setContent(content);
+                    response.setLastModified(lastModified);
+                    response.setResultCode(ResponseCode.SUCCESS.getCode());
                 }
                 
                 LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp, md5, TimeUtils.getCurrentTimeStr());
@@ -233,7 +210,6 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 final long delayed = System.currentTimeMillis() - lastModified;
                 
                 if (notify) {
-                    
                     ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
                             ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "grpc");
                 } else {
@@ -263,8 +239,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         if (cacheItem == null) {
             return null;
         }
-        
-        String encryptedDataKey = null;
+        String encryptedDataKey;
         if (isBeta && cacheItem.getConfigCacheBeta() != null) {
             encryptedDataKey = cacheItem.getConfigCacheBeta().getEncryptedDataKey();
         } else {
@@ -282,7 +257,6 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
             }
         }
-        
         return encryptedDataKey;
     }
     
