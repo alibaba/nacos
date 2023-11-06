@@ -25,10 +25,8 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * DataSource plugin Mapper sql proxy.
@@ -41,9 +39,7 @@ public class MapperProxy implements InvocationHandler {
     
     private Mapper mapper;
     
-    private static final Map<String, MapperProxy> SINGLE_MAPPER_PROXY_MAP = new HashMap<>(16);
-    
-    private static final ReadWriteLock LOCK = new ReentrantReadWriteLock(true);
+    private static final Map<String, MapperProxy> SINGLE_MAPPER_PROXY_MAP = new ConcurrentHashMap<>(16);
     
     public <R> R createProxy(Mapper mapper) {
         this.mapper = mapper;
@@ -54,24 +50,8 @@ public class MapperProxy implements InvocationHandler {
      * create proxy-mapper single instead of using method createProxy.
      */
     public static <R> R createSingleProxy(Mapper mapper) {
-        String key = mapper.getClass().getSimpleName();
-        if (!SINGLE_MAPPER_PROXY_MAP.containsKey(key)) {
-            try {
-                LOCK.writeLock().lock();
-                if (!SINGLE_MAPPER_PROXY_MAP.containsKey(key)) {
-                    MapperProxy mapperProxy = new MapperProxy();
-                    SINGLE_MAPPER_PROXY_MAP.put(key, mapperProxy.createProxy(mapper));
-                }
-            } finally {
-                LOCK.writeLock().unlock();
-            }
-        }
-        try {
-            LOCK.readLock().lock();
-            return (R) SINGLE_MAPPER_PROXY_MAP.get(key);
-        } finally {
-            LOCK.readLock().unlock();
-        }
+        return (R) SINGLE_MAPPER_PROXY_MAP.computeIfAbsent(mapper.getClass().getSimpleName(), key ->
+                new MapperProxy().createProxy(mapper));
     }
     
     @Override
