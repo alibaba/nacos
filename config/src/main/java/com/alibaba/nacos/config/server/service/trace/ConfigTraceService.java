@@ -288,7 +288,7 @@ public class ConfigTraceService {
         if (isNotify && delayed < 0) {
             delayed = 0;
         }
-    
+        
         // localIp | dataid | group | tenant| requestIpAppName| ts | event | type | [delayed] |clientIp| isNotify | mode（http/grpc)
         LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
                 requestIpAppName, ts, event, type, delayed, clientIp, isNotify, model);

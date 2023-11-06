@@ -174,18 +174,18 @@ public class ConfigServletInner {
                         && cacheItem.getIps4Beta().contains(clientIp)) {
                     isBeta = true;
                 }
-    
+                
                 final String configType =
                         (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
                 response.setHeader(com.alibaba.nacos.api.common.Constants.CONFIG_TYPE, configType);
                 FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
                 String contentTypeHeader = fileTypeEnum.getContentType();
                 response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
-    
+                
                 if (isV2) {
                     response.setHeader(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
                 }
-    
+                
                 String pullEvent;
                 String content = null;
                 ConfigInfoBase configInfoBase = null;
@@ -194,7 +194,7 @@ public class ConfigServletInner {
                     pullEvent = ConfigTraceService.PULL_EVENT_BETA;
                     md5 = configCacheBeta.getMd5(acceptCharset);
                     lastModified = configCacheBeta.getLastModifiedTs();
-        
+                    
                     if (PropertyUtil.isDirectRead()) {
                         configInfoBase = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
                     } else {
@@ -300,9 +300,9 @@ public class ConfigServletInner {
                 }
                 out.flush();
                 out.close();
-    
+                
                 LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
-    
+                
                 final long delayed = notify ? -1 : System.currentTimeMillis() - lastModified;
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
                         ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
