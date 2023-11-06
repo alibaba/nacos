@@ -20,7 +20,11 @@ import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.Field;
+import java.util.Map;
+
 public class ClassUtilsTest {
+    
     @Test
     public void testFindClassByName1() {
         Class<?> clazz = ClassUtils.findClassByName("java.lang.Integer");
@@ -49,5 +53,58 @@ public class ClassUtilsTest {
     @Test
     public void testIsAssignableFrom() {
         Assert.assertTrue(ClassUtils.isAssignableFrom(Object.class, Integer.class));
+    }
+    
+    @Test
+    public void testForNameArray() throws ClassNotFoundException {
+        Class clazz = ClassUtils.forName("[Lcom.alibaba.nacos.common.utils.ClassUtilsTest;", null);
+        Assert.assertEquals("[Lcom.alibaba.nacos.common.utils.ClassUtilsTest;", clazz.getName());
+        clazz = ClassUtils.forName("java.lang.String[]", null);
+        Assert.assertEquals("[Ljava.lang.String;", clazz.getName());
+        clazz = ClassUtils.forName("[[Ljava.lang.String;", null);
+        Assert.assertEquals("[[Ljava.lang.String;", clazz.getName());
+    }
+    
+    @Test(expected = ClassNotFoundException.class)
+    public void testForNameNonExist() throws ClassNotFoundException {
+        ClassUtils.forName("com.alibaba.nacos.common.NonExistClass", null);
+    }
+    
+    @Test
+    public void testForNameFromPrimitive() throws NoSuchFieldException, IllegalAccessException, ClassNotFoundException {
+        Field field = ClassUtils.class.getDeclaredField("PRIMITIVE_TYPE_NAME_MAP");
+        field.setAccessible(true);
+        Map<String, Class<?>> map = (Map<String, Class<?>>) field.get(null);
+        map.put("Test", ClassUtilsTest.class);
+        Assert.assertEquals(ClassUtilsTest.class, ClassUtils.forName("Test", null));
+    }
+    
+    @Test
+    public void testGetDefaultClassLoader() {
+        ClassLoader cachedClassLoader = Thread.currentThread().getContextClassLoader();
+        try {
+            Thread.currentThread().setContextClassLoader(null);
+            Assert.assertNotNull(ClassUtils.getDefaultClassLoader());
+        } finally {
+            Thread.currentThread().setContextClassLoader(cachedClassLoader);
+        }
+    }
+    
+    @Test
+    public void testClassPackageAsResourcePath() throws ClassNotFoundException {
+        Class noPackageClass = ClassUtils.forName("ClassUtilsTestMockClass", null);
+        Assert.assertEquals("", ClassUtils.classPackageAsResourcePath(null));
+        Assert.assertEquals("", ClassUtils.classPackageAsResourcePath(noPackageClass));
+        Assert.assertEquals("com/alibaba/nacos/common/utils",
+                ClassUtils.classPackageAsResourcePath(ClassUtilsTest.class));
+    }
+    
+    @Test
+    public void testConvertClassNameAndClassPath() {
+        String name = ClassUtilsTest.class.getName();
+        Assert.assertEquals("com/alibaba/nacos/common/utils/ClassUtilsTest",
+                ClassUtils.convertClassNameToResourcePath(name));
+        Assert.assertEquals(name,
+                ClassUtils.resourcePathToConvertClassName("com/alibaba/nacos/common/utils/ClassUtilsTest"));
     }
 }

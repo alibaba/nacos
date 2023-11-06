@@ -24,6 +24,7 @@ import java.util.Arrays;
 
 /**
  * String utils.
+ *
  * @author zzq
  */
 public class StringUtilsTest {
@@ -77,7 +78,24 @@ public class StringUtilsTest {
         Assert.assertEquals("NULL", StringUtils.defaultIfEmpty("", "NULL"));
         Assert.assertEquals(" ", StringUtils.defaultIfEmpty(" ", "NULL"));
         Assert.assertEquals("bat", StringUtils.defaultIfEmpty("bat", "NULL"));
-        Assert.assertEquals(null, StringUtils.defaultIfEmpty("", null));
+        Assert.assertNull(StringUtils.defaultIfEmpty("", null));
+    }
+    
+    @Test
+    public void testDefaultIfBlank() {
+        Assert.assertEquals("NULL", StringUtils.defaultIfBlank(null, "NULL"));
+        Assert.assertEquals("NULL", StringUtils.defaultIfBlank("", "NULL"));
+        Assert.assertEquals("NULL", StringUtils.defaultIfBlank(" ", "NULL"));
+        Assert.assertEquals("bat", StringUtils.defaultIfBlank("bat", "NULL"));
+        Assert.assertNull(StringUtils.defaultIfBlank("", null));
+    }
+    
+    @Test
+    public void testDefaultEmptyIfBlank() {
+        Assert.assertEquals("", StringUtils.defaultEmptyIfBlank(null));
+        Assert.assertEquals("", StringUtils.defaultEmptyIfBlank(""));
+        Assert.assertEquals("", StringUtils.defaultEmptyIfBlank(" "));
+        Assert.assertEquals("bat", StringUtils.defaultEmptyIfBlank("bat"));
     }
     
     @Test
@@ -123,11 +141,6 @@ public class StringUtilsTest {
         Assert.assertEquals(StringUtils.EMPTY, StringUtils.join(objects, "a"));
         Assert.assertEquals("a;b;c", StringUtils.join(Arrays.asList("a", "b", "c"), ";"));
         Assert.assertEquals("abc", StringUtils.join(Arrays.asList("a", "b", "c"), null));
-    }
-    
-    @Test
-    public void escapeJavaScript() {
-        //TODO
     }
     
     @Test
@@ -185,6 +198,7 @@ public class StringUtilsTest {
         Assert.assertFalse(StringUtils.startsWith("abcdef", null));
         Assert.assertTrue(StringUtils.startsWith("abcdef", "abc"));
         Assert.assertFalse(StringUtils.startsWith("ABCDEF", "abc"));
+        Assert.assertFalse(StringUtils.startsWith("ABC", "ABCDEF"));
     }
     
     @Test
@@ -217,8 +231,283 @@ public class StringUtilsTest {
     public void testSplit() {
         Assert.assertNull(StringUtils.split(null, ","));
         Assert.assertArrayEquals(new String[0], StringUtils.split("", ","));
-        Assert.assertArrayEquals(new String[]{"ab", "cd", "ef"}, StringUtils.split("ab cd ef", null));
-        Assert.assertArrayEquals(new String[]{"ab", "cd", "ef"}, StringUtils.split("ab   cd ef", null));
-        Assert.assertArrayEquals(new String[]{"ab", "cd", "ef"}, StringUtils.split("ab:cd:ef", ":"));
+        Assert.assertArrayEquals(new String[] {"ab", "cd", "ef"}, StringUtils.split("ab cd ef", null));
+        Assert.assertArrayEquals(new String[] {"ab", "cd", "ef"}, StringUtils.split("ab   cd ef", null));
+        Assert.assertArrayEquals(new String[] {"ab", "cd", "ef"}, StringUtils.split("ab:cd:ef", ":"));
+    }
+    
+    @Test
+    public void testTokenizeToStringArray() {
+        // Test case 1: Empty string
+        String str1 = "";
+        String delimiters1 = ",";
+        boolean trimTokens1 = true;
+        boolean ignoreEmptyTokens1 = false;
+        String[] expected1 = new String[0];
+        String[] result1 = StringUtils.tokenizeToStringArray(str1, delimiters1, trimTokens1, ignoreEmptyTokens1);
+        Assert.assertArrayEquals(expected1, result1);
+        
+        // Test case 2: Null string
+        String str2 = null;
+        String delimiters2 = " ";
+        boolean trimTokens2 = false;
+        boolean ignoreEmptyTokens2 = true;
+        String[] expected2 = new String[0];
+        String[] result2 = StringUtils.tokenizeToStringArray(str2, delimiters2, trimTokens2, ignoreEmptyTokens2);
+        Assert.assertArrayEquals(expected2, result2);
+        
+        // Test case 3: Single token
+        String str3 = "Hello";
+        String delimiters3 = ",";
+        boolean trimTokens3 = true;
+        boolean ignoreEmptyTokens3 = false;
+        String[] expected3 = {"Hello"};
+        String[] result3 = StringUtils.tokenizeToStringArray(str3, delimiters3, trimTokens3, ignoreEmptyTokens3);
+        Assert.assertArrayEquals(expected3, result3);
+        
+        // Test case 4: Multiple tokens with trimming
+        String str4 = "  Hello,  World,  ";
+        String delimiters4 = ",";
+        boolean trimTokens4 = true;
+        boolean ignoreEmptyTokens4 = false;
+        String[] expected4 = {"Hello", "World", ""};
+        String[] result4 = StringUtils.tokenizeToStringArray(str4, delimiters4, trimTokens4, ignoreEmptyTokens4);
+        Assert.assertArrayEquals(expected4, result4);
+        
+        // Test case 5: Multiple tokens with empty tokens ignored
+        String str5 = "  ,Hello,  ,World,  ";
+        String delimiters5 = ",";
+        boolean trimTokens5 = true;
+        boolean ignoreEmptyTokens5 = true;
+        String[] expected5 = {"Hello", "World"};
+        String[] result5 = StringUtils.tokenizeToStringArray(str5, delimiters5, trimTokens5, ignoreEmptyTokens5);
+        Assert.assertArrayEquals(expected5, result5);
+    }
+    
+    @Test
+    public void testHasText() {
+        // Test case 1: Empty string
+        Assert.assertFalse(StringUtils.hasText(""));
+        
+        // Test case 2: String with whitespace only
+        Assert.assertFalse(StringUtils.hasText("   "));
+        
+        // Test case 3: Null string
+        Assert.assertFalse(StringUtils.hasText(null));
+        
+        // Test case 4: String with non-whitespace characters
+        Assert.assertTrue(StringUtils.hasText("hello"));
+        
+        // Test case 5: String with both text and whitespace
+        Assert.assertTrue(StringUtils.hasText(" hello "));
+    }
+    
+    @Test
+    public void testCleanPath() {
+        // Test case 1: path with no length
+        String path1 = "";
+        String expected1 = "";
+        Assert.assertEquals(expected1, StringUtils.cleanPath(path1));
+        
+        // Test case 2: normal path
+        String path2 = "path/to/file";
+        String expected2 = "path/to/file";
+        Assert.assertEquals(expected2, StringUtils.cleanPath(path2));
+        
+        // Test case 3: path with Windows folder separator
+        String path3 = "path\\to\\文件";
+        String expected3 = "path/to/文件";
+        Assert.assertEquals(expected3, StringUtils.cleanPath(path3));
+        
+        // Test case 4: path with dot
+        String path4 = "path/..";
+        String expected4 = "";
+        Assert.assertEquals(expected4, StringUtils.cleanPath(path4));
+        
+        // Test case 5: path with top path
+        String path5 = "path/../top";
+        String expected5 = "top";
+        Assert.assertEquals(expected5, StringUtils.cleanPath(path5));
+        
+        // Test case 6: path with multiple top path
+        String path6 = "path/../../top";
+        String expected6 = "../top";
+        Assert.assertEquals(expected6, StringUtils.cleanPath(path6));
+        
+        // Test case 7: path with leading colon
+        String path7 = "file:../top";
+        String expected7 = "file:../top";
+        Assert.assertEquals(expected7, StringUtils.cleanPath(path7));
+        
+        // Test case 8: path with leading slash
+        String path8 = "file:/path/../file";
+        String expected8 = "file:/file";
+        Assert.assertEquals(expected8, StringUtils.cleanPath(path8));
+        
+        // Test case 9: path with empty prefix
+        String path9 = "file:path/../file";
+        String expected9 = "file:file";
+        Assert.assertEquals(expected9, StringUtils.cleanPath(path9));
+        
+        // Test case 10: prefix contain separator
+        String path10 = "file/:path/../file";
+        String expected10 = "file/file";
+        Assert.assertEquals(expected10, StringUtils.cleanPath(path10));
+        
+        // Test case 11: dot in file name
+        String path11 = "file:/path/to/file.txt";
+        String expected11 = "file:/path/to/file.txt";
+        Assert.assertEquals(expected11, StringUtils.cleanPath(path11));
+        
+        // Test case 12: dot in path
+        String path12 = "file:/path/./file.txt";
+        String expected12 = "file:/path/file.txt";
+        Assert.assertEquals(expected12, StringUtils.cleanPath(path12));
+        
+        // Test case 13: path with dot and slash
+        String path13 = "file:aaa/../";
+        String expected13 = "file:./";
+        Assert.assertEquals(expected13, StringUtils.cleanPath(path13));
+    }
+    
+    @Test
+    public void testDelimitedListToStringArrayWithNull() {
+        Assert.assertEquals(0, StringUtils.delimitedListToStringArray(null, ",", "").length);
+        Assert.assertEquals(1, StringUtils.delimitedListToStringArray("a,b", null, "").length);
+    }
+    
+    @Test
+    public void testDelimitedListToStringArrayWithEmptyDelimiter() {
+        String testCase = "a,b";
+        String[] actual = StringUtils.delimitedListToStringArray(testCase, "", "");
+        Assert.assertEquals(3, actual.length);
+        Assert.assertEquals("a", actual[0]);
+        Assert.assertEquals(",", actual[1]);
+        Assert.assertEquals("b", actual[2]);
+    }
+    
+    @Test
+    public void testDeleteAny() {
+        // Test case 1: inString is empty, charsToDelete is empty
+        String inString1 = "";
+        String charsToDelete1 = "";
+        Assert.assertEquals("", StringUtils.deleteAny(inString1, charsToDelete1));
+        
+        // Test case 2: inString is empty, charsToDelete is not empty
+        String inString2 = "";
+        String charsToDelete2 = "abc";
+        Assert.assertEquals("", StringUtils.deleteAny(inString2, charsToDelete2));
+        
+        // Test case 3: inString is not empty, charsToDelete is empty
+        String inString3 = "abc";
+        String charsToDelete3 = "";
+        Assert.assertEquals("abc", StringUtils.deleteAny(inString3, charsToDelete3));
+        
+        // Test case 4: inString is not empty, charsToDelete is not empty
+        String inString4 = "abc";
+        String charsToDelete4 = "a";
+        Assert.assertEquals("bc", StringUtils.deleteAny(inString4, charsToDelete4));
+        
+        // Test case 5: inString contains special characters
+        String inString5 = "abc\n";
+        String charsToDelete5 = "\n";
+        Assert.assertEquals("abc", StringUtils.deleteAny(inString5, charsToDelete5));
+    
+        // Test case 6: inString not contains special characters
+        String inString6 = "abc\n";
+        String charsToDelete6 = "d";
+        Assert.assertEquals("abc\n", StringUtils.deleteAny(inString6, charsToDelete6));
+    }
+    
+    @Test
+    public void testReplace() {
+        // Test case 1: pattern is empty
+        Assert.assertEquals("abc", StringUtils.replace("abc", "", "a"));
+        
+        // Test case 2: oldPattern less than newPattern
+        Assert.assertEquals("aabc", StringUtils.replace("abc", "a", "aa"));
+    
+        // Test case 3: oldPattern more than newPattern
+        Assert.assertEquals("dc", StringUtils.replace("abc", "ab", "d"));
+    }
+    
+    @Test
+    public void testApplyRelativePath() {
+        // Test case 1
+        String path1 = "/path/to/file";
+        String relativePath1 = "subfolder/subfile";
+        String expected1 = "/path/to/subfolder/subfile";
+        String result1 = StringUtils.applyRelativePath(path1, relativePath1);
+        Assert.assertEquals(expected1, result1);
+        
+        // Test case 2
+        String path2 = "path/to/file";
+        String relativePath2 = "subfolder/subfile";
+        String expected2 = "path/to/subfolder/subfile";
+        String result2 = StringUtils.applyRelativePath(path2, relativePath2);
+        Assert.assertEquals(expected2, result2);
+        
+        // Test case 3
+        String path3 = "/path/to/file";
+        String relativePath3 = "/subfolder/subfile";
+        String expected3 = "/path/to/subfolder/subfile";
+        String result3 = StringUtils.applyRelativePath(path3, relativePath3);
+        Assert.assertEquals(expected3, result3);
+        
+        //Test case 4
+        String path4 = "file";
+        String relativePath4 = "/subfolder/subfile";
+        String expected4 = "/subfolder/subfile";
+        String result4 = StringUtils.applyRelativePath(path4, relativePath4);
+        Assert.assertEquals(expected4, result4);
+    }
+    
+    @Test
+    public void testGetFilename() {
+        // Test case 1: null path
+        String path1 = null;
+        String result1 = StringUtils.getFilename(path1);
+        Assert.assertNull(result1);
+        
+        // Test case 2: path without separator
+        String path2 = "myFile.txt";
+        String expectedResult2 = "myFile.txt";
+        String result2 = StringUtils.getFilename(path2);
+        Assert.assertEquals(expectedResult2, result2);
+        
+        // Test case 3: path with separator
+        String path3 = "myPath/myFile.txt";
+        String expectedResult3 = "myFile.txt";
+        String result3 = StringUtils.getFilename(path3);
+        Assert.assertEquals(expectedResult3, result3);
+        
+        // Test case 4: path with multiple separators
+        String path4 = "myPath/subPath/myFile.txt";
+        String expectedResult4 = "myFile.txt";
+        String result4 = StringUtils.getFilename(path4);
+        Assert.assertEquals(expectedResult4, result4);
+    }
+    
+    @Test
+    public void testCapitalize() {
+        // Test for an empty string
+        String str1 = "";
+        Assert.assertEquals("", StringUtils.capitalize(str1));
+        
+        // Test for a single word string
+        String str2 = "hello";
+        Assert.assertEquals("Hello", StringUtils.capitalize(str2));
+        
+        // Test for a multiple word string
+        String str3 = "hello world";
+        Assert.assertEquals("Hello world", StringUtils.capitalize(str3));
+        
+        // Test for a string with special characters
+        String str4 = "!@#$%^&*()";
+        Assert.assertEquals("!@#$%^&*()", StringUtils.capitalize(str4));
+        
+        // Test for a string with numbers
+        String str5 = "abc123";
+        Assert.assertEquals("Abc123", StringUtils.capitalize(str5));
     }
 }
