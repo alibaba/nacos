@@ -87,4 +87,9 @@ public class VersionUtilsTest {
         VersionUtils.compareVersion("1.2.1.1", "1.2.1");
     }
     
+    @Test
+    public void testFullClientVersion() {
+        Assert.assertNotNull(VersionUtils.getFullClientVersion());
+        Assert.assertTrue(VersionUtils.getFullClientVersion().startsWith("Nacos-Java-Client:v"));
+    }
 }
