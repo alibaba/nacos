@@ -33,9 +33,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * @author xiweng.yy
- */
 public class ThreadUtilsTest {
     
     private ExecutorService executorService;
