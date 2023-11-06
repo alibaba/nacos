@@ -20,9 +20,6 @@ import org.junit.Test;
 
 import java.util.UUID;
 
-/**
- * @author xiweng.yy
- */
 public class UuidUtilsTest {
     
     @Test

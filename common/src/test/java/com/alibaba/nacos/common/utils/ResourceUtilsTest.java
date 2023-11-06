@@ -29,9 +29,6 @@ import java.util.Properties;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
-/**
- * @author xiweng.yy
- */
 public class ResourceUtilsTest {
     
     @Test
@@ -135,7 +132,7 @@ public class ResourceUtilsTest {
     }
     
     @Test
-    public void testGetResourceAsFileByURL() throws IOException {
+    public void testGetResourceAsFileByUrl() throws IOException {
         File file = ResourceUtils
                 .getResourceAsFile(ResourceUtils.getResourceUrl("classpath:resource_utils_test.properties"));
         assertNotNull(file);
