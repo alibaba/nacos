@@ -29,24 +29,11 @@ import java.util.concurrent.TimeUnit;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 public final class ThreadUtils {
-
+    
     private ThreadUtils() {
     }
     
     private static final int THREAD_MULTIPLER = 2;
-    
-    /**
-     * Wait.
-     *
-     * @param object load object
-     */
-    public static void objectWait(Object object) {
-        try {
-            object.wait();
-        } catch (InterruptedException ignore) {
-            Thread.interrupted();
-        }
-    }
     
     /**
      * Sleep.

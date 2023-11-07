@@ -194,7 +194,7 @@ public class ServiceInfo {
                 continue;
             }
             
-            for (int i = 0; i < host.getWeight(); i++) {
+            if (host.getWeight() > 0) {
                 validHosts.add(host);
             }
         }
