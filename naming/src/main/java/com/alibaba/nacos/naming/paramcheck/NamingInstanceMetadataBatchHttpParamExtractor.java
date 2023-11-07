@@ -19,7 +19,6 @@ package com.alibaba.nacos.naming.paramcheck;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
-import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
@@ -36,18 +35,6 @@ import java.util.List;
  * @author zhuoguang
  */
 public class NamingInstanceMetadataBatchHttpParamExtractor extends AbstractHttpParamExtractor {
-    
-    @Override
-    public void init() {
-        addTargetRequest(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/metadata/batch",
-                HttpMethod.PUT);
-        addTargetRequest(UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/metadata/batch",
-                HttpMethod.DELETE);
-        addTargetRequest(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/metadata/batch",
-                HttpMethod.PUT);
-        addTargetRequest(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/metadata/batch",
-                HttpMethod.DELETE);
-    }
     
     @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {

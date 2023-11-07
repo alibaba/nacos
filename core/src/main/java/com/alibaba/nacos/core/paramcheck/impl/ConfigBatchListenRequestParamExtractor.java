@@ -32,11 +32,6 @@ import java.util.List;
 public class ConfigBatchListenRequestParamExtractor extends AbstractRpcParamExtractor {
     
     @Override
-    public void init() {
-        addTargetRequest(ConfigBatchListenRequest.class.getSimpleName());
-    }
-    
-    @Override
     public List<ParamInfo> extractParam(Request request) throws Exception {
         ConfigBatchListenRequest req = (ConfigBatchListenRequest) request;
         List<ConfigBatchListenRequest.ConfigListenContext> configListenContextList = req.getConfigListenContexts();

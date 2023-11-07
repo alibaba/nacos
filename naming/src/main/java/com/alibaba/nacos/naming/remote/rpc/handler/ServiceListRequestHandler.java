@@ -22,6 +22,8 @@ import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.paramcheck.ParamChecker;
+import com.alibaba.nacos.core.paramcheck.impl.ServiceListRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
@@ -46,6 +48,7 @@ public class ServiceListRequestHandler extends RequestHandler<ServiceListRequest
     @Override
     @TpsControl(pointName = "RemoteNamingServiceListQuery", name = "RemoteNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
+    @ParamChecker.Checker(rpcChecker = ServiceListRequestParamExtractor.class)
     public ServiceListResponse handle(ServiceListRequest request, RequestMeta meta) throws NacosException {
         Collection<Service> serviceSet = ServiceManager.getInstance().getSingletons(request.getNamespace());
         ServiceListResponse result = ServiceListResponse.buildSuccessResponse(0, new LinkedList<>());

@@ -32,11 +32,6 @@ import java.util.List;
 public class ServiceListRequestParamExtractor extends AbstractRpcParamExtractor {
     
     @Override
-    public void init() {
-        addTargetRequest(ServiceListRequest.class.getSimpleName());
-    }
-    
-    @Override
     public List<ParamInfo> extractParam(Request request) throws Exception {
         ServiceListRequest req = (ServiceListRequest) request;
         ParamInfo paramInfo = new ParamInfo();

@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.console.controller;
 
+import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
 import com.alibaba.nacos.core.cluster.health.ModuleHealthCheckerHolder;
 import com.alibaba.nacos.core.cluster.health.ReadinessResult;
+import com.alibaba.nacos.core.paramcheck.ParamChecker;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
  */
 @RestController("consoleHealth")
 @RequestMapping("/v1/console/health")
+@ParamChecker.Checker(httpChecker = ConsoleDefaultHttpParamExtractor.class)
 public class HealthController {
     
     /**

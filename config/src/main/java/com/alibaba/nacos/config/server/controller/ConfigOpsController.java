@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.paramcheck.ParamChecker;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.common.model.RestResult;
@@ -57,6 +59,7 @@ import java.util.Objects;
  */
 @RestController
 @RequestMapping(Constants.OPS_CONTROLLER_PATH)
+@ParamChecker.Checker(httpChecker = ConfigDefaultHttpParamExtractor.class)
 public class ConfigOpsController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigOpsController.class);

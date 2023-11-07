@@ -25,7 +25,7 @@ import com.alibaba.nacos.common.paramcheck.ParamCheckResponse;
 import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
-import com.alibaba.nacos.core.paramcheck.RpcParamExtractorManager;
+import com.alibaba.nacos.core.paramcheck.ParamChecker;
 import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.plugin.control.Loggers;
@@ -43,10 +43,19 @@ public class RemoteParamCheckFilter extends AbstractRequestFilter {
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
-        String className = request.getClass().getSimpleName();
+        boolean paramCheckEnabled = ServerParamCheckConfig.getInstance().isParamCheckEnabled();
+        if (!paramCheckEnabled) {
+            return null;
+        }
         try {
-            RpcParamExtractorManager extractorManager = RpcParamExtractorManager.getInstance();
-            AbstractRpcParamExtractor extractor = extractorManager.getExtractor(className);
+            ParamChecker.Checker checker = getHandleMethod(handlerClazz).getAnnotation(ParamChecker.Checker.class);
+            if (checker == null) {
+                checker = (ParamChecker.Checker) handlerClazz.getAnnotation(ParamChecker.Checker.class);
+                if (checker == null) {
+                    return null;
+                }
+            }
+            AbstractRpcParamExtractor extractor = ParamChecker.getRpcChecker(checker);
             List<ParamInfo> paramInfoList = extractor.extractParam(request);
             ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
             AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(

@@ -28,9 +28,11 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.paramcheck.ParamChecker;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.utils.GenericType;
@@ -61,6 +63,7 @@ import static com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequ
  */
 @RestController
 @RequestMapping(Constants.METRICS_CONTROLLER_PATH)
+@ParamChecker.Checker(httpChecker = ConfigDefaultHttpParamExtractor.class)
 public class ClientMetricsController {
     
     private final ServerMemberManager serverMemberManager;
