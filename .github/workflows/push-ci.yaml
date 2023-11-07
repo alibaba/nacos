@@ -42,7 +42,7 @@ jobs:
         name: Upload distribution tar
         with:
           name: nacos
-          path: distribution/target/nacos-server-*-SNAPSHOT.tar.gz
+          path: distribution/target/nacos-server-*.tar.gz
 
   docker:
     if: ${{ success() }}
@@ -74,7 +74,7 @@ jobs:
       - name: Build and save docker images
         id: build-images
         run: |
-          mv nacos-server-*-SNAPSHOT.tar.gz nacos-e2e/cicd/build/
+          mv nacos-server-*.tar.gz nacos-e2e/cicd/build/
           cd nacos-e2e/cicd/build
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist

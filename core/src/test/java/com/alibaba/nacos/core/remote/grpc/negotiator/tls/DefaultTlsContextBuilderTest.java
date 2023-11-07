@@ -18,14 +18,23 @@ package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.mock.env.MockEnvironment;
+
+import java.lang.reflect.Field;
 
 public class DefaultTlsContextBuilderTest {
     
+    private ConfigurableEnvironment environment;
+    
     @Before
     public void setUp() throws Exception {
+        environment = new MockEnvironment();
+        EnvUtil.setEnvironment(environment);
         RpcServerTlsConfig.getInstance().setEnableTls(true);
     }
     
@@ -40,6 +49,7 @@ public class DefaultTlsContextBuilderTest {
         RpcServerTlsConfig.getInstance().setProtocols(null);
         RpcServerTlsConfig.getInstance().setTrustCollectionCertFile(null);
         RpcServerTlsConfig.getInstance().setSslProvider("");
+        clearRpcServerTlsConfigInstance();
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -100,5 +110,11 @@ public class DefaultTlsContextBuilderTest {
         grpcServerConfig.setCertPrivateKey("non-exist-server-key.pem");
         grpcServerConfig.setCertChainFile("non-exist-cert.pem");
         DefaultTlsContextBuilder.getSslContext(RpcServerTlsConfig.getInstance());
+    }
+    
+    private static void clearRpcServerTlsConfigInstance() throws Exception {
+        Field instanceField = RpcServerTlsConfig.class.getDeclaredField("instance");
+        instanceField.setAccessible(true);
+        instanceField.set(null, null);
     }
 }
