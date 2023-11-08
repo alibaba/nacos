@@ -86,9 +86,10 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     *
     * @date 2023/11/8
     * @description do doFilters by reversed order
-    * @param
+    * @param request  request
+    * @param response response
     * @return
-    * @throws
+    * @throws NacosException NacosException
     */
     public void doFilter(IConfigRequest request, IConfigResponse response, boolean reversed) throws NacosException {
         if (!reversed) {
