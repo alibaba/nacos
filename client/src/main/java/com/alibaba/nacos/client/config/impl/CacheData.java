@@ -219,7 +219,7 @@ public class CacheData {
             cr.setGroup(group);
             cr.setContent(content);
             cr.setEncryptedDataKey(encryptedDataKey);
-            configFilterChainManager.doFilter(null, cr);
+            configFilterChainManager.doFilter(null, cr, true);
             String contentTmp = cr.getContent();
             wrap = new ManagerListenerWrap(listener, md5, contentTmp);
         } else {
@@ -424,7 +424,7 @@ public class CacheData {
                     cr.setGroup(group);
                     cr.setContent(content);
                     cr.setEncryptedDataKey(encryptedDataKey);
-                    configFilterChainManager.doFilter(null, cr);
+                    configFilterChainManager.doFilter(null, cr, true);
                     String contentTmp = cr.getContent();
                     timeSchedule = getNotifyBlockMonitor().schedule(
                             new LongNotifyHandler(listener.getClass().getSimpleName(), dataId, group, tenant, md5,

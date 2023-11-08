@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.Collections;
 
 /**
  * Config Filter Chain Management.
@@ -80,7 +81,17 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
         new VirtualFilterChain(this.filters).doFilter(request, response);
     }
-    
+
+    public void doFilter(IConfigRequest request, IConfigResponse response, boolean reversed) throws NacosException {
+        if (!reversed) {
+            new VirtualFilterChain(this.filters).doFilter(request, response);
+            return;
+        }
+        List<IConfigFilter> copiedFilters = new ArrayList<>(this.filters);
+        Collections.reverse(copiedFilters);
+        new VirtualFilterChain(copiedFilters).doFilter(request, response);
+    }
+
     private static class VirtualFilterChain implements IConfigFilterChain {
         
         private final List<? extends IConfigFilter> additionalFilters;
@@ -93,6 +104,14 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         
         @Override
         public void doFilter(final IConfigRequest request, final IConfigResponse response) throws NacosException {
+            if (this.currentPosition != this.additionalFilters.size()) {
+                this.currentPosition++;
+                IConfigFilter nextFilter = this.additionalFilters.get(this.currentPosition - 1);
+                nextFilter.doFilter(request, response, this);
+            }
+        }
+
+        public void doFilterReversed(final IConfigRequest request, final IConfigResponse response) throws NacosException {
             if (this.currentPosition != this.additionalFilters.size()) {
                 this.currentPosition++;
                 IConfigFilter nextFilter = this.additionalFilters.get(this.currentPosition - 1);

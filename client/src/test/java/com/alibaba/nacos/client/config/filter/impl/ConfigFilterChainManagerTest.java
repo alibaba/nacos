@@ -110,6 +110,16 @@ public class ConfigFilterChainManagerTest {
         //order
         List<Integer> orders = (List<Integer>) configContext.getParameter("orders");
         Assert.assertEquals(Arrays.asList(1, 2, 3), orders);
+
+        ConfigRequest rConfigRequest = new ConfigRequest();
+
+        configFilterChainManager.doFilter(rConfigRequest, new ConfigResponse(), true);
+
+        IConfigContext rConfigContext = rConfigRequest.getConfigContext();
+
+        //order
+        orders = (List<Integer>) rConfigContext.getParameter("orders");
+        Assert.assertEquals(Arrays.asList(3, 2, 1), orders);
     }
     
     @Test

@@ -22,6 +22,7 @@ import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.Pair;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.encryption.handler.EncryptionHandler;
 
 import java.util.Objects;
@@ -54,9 +55,12 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
             Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
             String secretKey = pair.getFirst();
             String encryptContent = pair.getSecond();
-            
-            ((ConfigRequest) request).setContent(encryptContent);
-            ((ConfigRequest) request).setEncryptedDataKey(secretKey);
+            if (!encryptContent.equals(content)) {
+                ((ConfigRequest) request).setContent(encryptContent);
+            }
+            if (!StringUtils.isBlank(secretKey) && !secretKey.equals(((ConfigRequest) request).getEncryptedDataKey())) {
+                ((ConfigRequest) request).setEncryptedDataKey(secretKey);
+            }
         }
         if (Objects.nonNull(response) && response instanceof ConfigResponse && Objects.isNull(request)) {
             
@@ -68,8 +72,14 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
             String content = configResponse.getContent();
             
             Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
+            String secretKey = pair.getFirst();
             String decryptContent = pair.getSecond();
-            ((ConfigResponse) response).setContent(decryptContent);
+            if (!decryptContent.equals(content)) {
+                ((ConfigResponse) response).setContent(decryptContent);
+            }
+            if (!StringUtils.isBlank(secretKey) && !secretKey.equals(((ConfigResponse) response).getEncryptedDataKey())) {
+                ((ConfigResponse) response).setEncryptedDataKey(secretKey);
+            }
         }
         filterChain.doFilter(request, response);
     }
