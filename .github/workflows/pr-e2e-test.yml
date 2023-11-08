@@ -10,7 +10,7 @@ on:
 env:
   DOCKER_REPO: wuyfeedocker/nacos-ci
   ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-  TEST_REPO_NAME: nacos-group/nacos-e2e
+  TEST_REPO_NAME: Wuyunfan-BUPT/nacos-e2e
 
 jobs:
   docker:
