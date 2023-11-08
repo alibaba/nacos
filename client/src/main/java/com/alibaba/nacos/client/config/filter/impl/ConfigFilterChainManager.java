@@ -82,10 +82,9 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         new VirtualFilterChain(this.filters).doFilter(request, response);
     }
 
-    /**
+   /**
     * do doFilters by reversed order
     * @date 2023/11/8
-    * @description do doFilters by reversed order
     * @param request  request
     * @param response response
     * @return
