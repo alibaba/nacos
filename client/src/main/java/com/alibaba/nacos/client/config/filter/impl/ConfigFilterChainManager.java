@@ -82,6 +82,14 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
         new VirtualFilterChain(this.filters).doFilter(request, response);
     }
 
+    /**
+    *
+    * @date 2023/11/8
+    * @description do doFilters by reversed order
+    * @param
+    * @return
+    * @throws
+    */
     public void doFilter(IConfigRequest request, IConfigResponse response, boolean reversed) throws NacosException {
         if (!reversed) {
             new VirtualFilterChain(this.filters).doFilter(request, response);
