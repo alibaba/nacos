@@ -94,6 +94,7 @@ jobs:
       DATABASE: mysql
       NODE_PORT: 30000
     strategy:
+      fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
@@ -144,17 +145,18 @@ jobs:
                   type: ClusterIP
   e2e-java-test:
     if: ${{ success() }}
-    name: E2E Test
+    name: Java e2e Test
     needs: [docker, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/test-tools@main
-        name: e2e test
+        name: java e2e test
         with:
           yamlString: |
             action: test
@@ -193,17 +195,18 @@ jobs:
 
   e2e-go-test:
     if: ${{ success() }}
-    name: E2E Test
+    name: GO E2E Test
     needs: [docker, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/test-tools@main
-        name: e2e test
+        name: go e2e test
         with:
           yamlString: |
             action: test
@@ -244,17 +247,18 @@ jobs:
 
   e2e-cpp-test:
     if: ${{ success() }}
-    name: E2E Test
+    name: Cpp E2E Test
     needs: [docker, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/test-tools@main
-        name: e2e test
+        name: cpp e2e test
         with:
           yamlString: |
             action: test
@@ -296,17 +300,18 @@ jobs:
 
   e2e-csharp-test:
     if: ${{ success() }}
-    name: E2E Test
+    name: Csharp E2E Test
     needs: [docker, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/test-tools@main
-        name: e2e test
+        name: csharp e2e test
         with:
           yamlString: |
             action: test
@@ -347,17 +352,18 @@ jobs:
 
   e2e-nodejs-test:
     if: ${{ success() }}
-    name: E2E Test
+    name: Nodejs E2E Test
     needs: [docker, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/test-tools@main
-        name: e2e test
+        name: nodejs e2e test
         with:
           yamlString: |
             action: test
@@ -396,17 +402,18 @@ jobs:
 
   e2e-python-test:
     if: ${{ success() }}
-    name: E2E Test
+    name: Python E2E Test
     needs: [docker, deploy]
     runs-on: ubuntu-latest
     timeout-minutes: 12
     strategy:
+      fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
       - uses: Wuyunfan-BUPT/test-tools@main
-        name: e2e test
+        name: python e2e test
         with:
           yamlString: |
             action: test
@@ -451,6 +458,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     strategy:
+      fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
