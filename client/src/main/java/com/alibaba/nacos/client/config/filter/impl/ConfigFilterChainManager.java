@@ -110,14 +110,6 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
                 nextFilter.doFilter(request, response, this);
             }
         }
-
-        public void doFilterReversed(final IConfigRequest request, final IConfigResponse response) throws NacosException {
-            if (this.currentPosition != this.additionalFilters.size()) {
-                this.currentPosition++;
-                IConfigFilter nextFilter = this.additionalFilters.get(this.currentPosition - 1);
-                nextFilter.doFilter(request, response, this);
-            }
-        }
     }
-    
+
 }
