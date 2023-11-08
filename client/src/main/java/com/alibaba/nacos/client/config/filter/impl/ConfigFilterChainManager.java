@@ -88,8 +88,6 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
      * @date 2023/11/8
      * @param request  request
      * @param response response
-     * @return
-     *
      * @throws NacosException NacosException
      */
     public void doFilter(IConfigRequest request, IConfigResponse response, boolean reversed) throws NacosException {
