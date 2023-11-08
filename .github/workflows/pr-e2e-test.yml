@@ -142,7 +142,7 @@ jobs:
                 service:
                   nodePort: ${{ env.NODE_PORT }}
                   type: ClusterIP
-  e2e-test:
+  e2e-java-test:
     if: ${{ success() }}
     name: E2E Test
     needs: [docker, deploy]
@@ -183,12 +183,266 @@ jobs:
         if: always()
         name: Upload test log
         with:
-          name: testlog-${{ matrix.mode }}-${{ matrix.version }}.txt
+          name: testlog-${{ matrix.mode }}-java.txt
           path: testlog.txt
       - name: add markdown
         if: always()
         run: |
           cat result.md >> $GITHUB_STEP_SUMMARY
+
+
+  e2e-go-test:
+    if: ${{ success() }}
+    name: E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: Wuyunfan-BUPT/test-tools@main
+        name: e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-0
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: golang
+              CMD: |
+                cd /root/code/golang && go mod init nacos_go_test
+                mkdir /usr/local/go/src/nacos_go_test && cp -rf ./util /usr/local/go/src/nacos_go_test/utils
+                go mod tidy
+                gotestsum --junitfile ./target/surefire-reports/TEST-report.xml ./nacosgotest -timeout 2m  -v
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 8
+                memory: 8Gi
+              RESOURCE_REQUIRE:
+                cpu: 8
+                memory: 8Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-go.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+  e2e-cpp-test:
+    if: ${{ success() }}
+    name: E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: Wuyunfan-BUPT/test-tools@main
+        name: e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-0
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: cpp
+              CMD: |
+                cd /root/code/cpp && make install
+                echo "export LD_LIBRARY_PATH=/usr/local/lib" >> ~/.bashrc  && source ~/.bashrc
+                cd /root/code/cpp/nacoscpptest
+                g++ nacos_test.cpp -o nacos_test -lgtest -lpthread -I/usr/local/include/nacos/ -L/usr/local/lib/  -lnacos-cli
+                chmod 777 nacos_test && ./nacos_test --gtest_output="xml:../target/surefire-reports/TEST-gtestresults.xml
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 8
+                memory: 8Gi
+              RESOURCE_REQUIRE:
+                cpu: 8
+                memory: 8Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-cpp.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+  e2e-csharp-test:
+    if: ${{ success() }}
+    name: E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: Wuyunfan-BUPT/test-tools@main
+        name: e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-0
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: cpp
+              CMD: |
+                rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
+                yum -y install dotnet-sdk-3.1 && yum -y install aspnetcore-runtime-7.0
+                cd /root/code/csharp/nacos-csharp-sdk-test && dotnet restore
+                dotnet test --logger:"junit;LogFilePath=../target/surefire-reports/TEST-result.xml"
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 8
+                memory: 8Gi
+              RESOURCE_REQUIRE:
+                cpu: 8
+                memory: 8Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-csharp.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+  e2e-nodejs-test:
+    if: ${{ success() }}
+    name: E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: Wuyunfan-BUPT/test-tools@main
+        name: e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-0
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: cpp
+              CMD: |
+                cd /root/code/nodejs/nacosnodejstest && npm install
+                mocha test --reporter mocha-junit-reporter --reporter-options mochaFile=../target/surefire-reports/TEST-report.xml
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 8
+                memory: 8Gi
+              RESOURCE_REQUIRE:
+                cpu: 8
+                memory: 8Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-nodejs.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
+  e2e-python-test:
+    if: ${{ success() }}
+    name: E2E Test
+    needs: [docker, deploy]
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      matrix:
+        mode: ["cluster","standalone"]
+        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+    steps:
+      - uses: Wuyunfan-BUPT/test-tools@main
+        name: e2e test
+        with:
+          yamlString: |
+            action: test
+            namespace: nacos-${{ github.run_id }}-0
+            askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
+            API_VERSION: v1
+            KIND: Pod
+            RESTART_POLICY: Never
+            ENV:
+              REPO_NAME: ${{ env.TEST_REPO_NAME }}
+              CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
+              BRANCH: main
+              CODE_PATH: cpp
+              CMD: |
+                cd /root/code/python && pip3 install -r requirements.txt && source ~/.bashrc
+                cd nacospythontest && pytest --junitxml ../target/surefire-reports/TEST-report.xml test/*_test.py --log-cli-level=DEBUG
+              ALL_IP: null
+            CONTAINER:
+              IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
+              RESOURCE_LIMITS:
+                cpu: 8
+                memory: 8Gi
+              RESOURCE_REQUIRE:
+                cpu: 8
+                memory: 8Gi
+      - uses: actions/upload-artifact@v3
+        if: always()
+        name: Upload test log
+        with:
+          name: testlog-${{ matrix.mode }}-python.txt
+          path: testlog.txt
+      - name: add markdown
+        if: always()
+        run: |
+          cat result.md >> $GITHUB_STEP_SUMMARY
+
 
   clean:
     if: always()
