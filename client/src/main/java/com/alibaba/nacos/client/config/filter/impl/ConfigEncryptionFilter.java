@@ -55,7 +55,7 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
             Pair<String, String> pair = EncryptionHandler.encryptHandler(dataId, content);
             String secretKey = pair.getFirst();
             String encryptContent = pair.getSecond();
-            if (!encryptContent.equals(content)) {
+            if (!StringUtils.isBlank(encryptContent) && !encryptContent.equals(content)) {
                 ((ConfigRequest) request).setContent(encryptContent);
             }
             if (!StringUtils.isBlank(secretKey) && !secretKey.equals(((ConfigRequest) request).getEncryptedDataKey())) {
@@ -76,7 +76,7 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
             Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
             String secretKey = pair.getFirst();
             String decryptContent = pair.getSecond();
-            if (!decryptContent.equals(content)) {
+            if (!StringUtils.isBlank(decryptContent) && !decryptContent.equals(content)) {
                 ((ConfigResponse) response).setContent(decryptContent);
             }
             if (!StringUtils.isBlank(secretKey) && !secretKey.equals(((ConfigResponse) response).getEncryptedDataKey())) {
