@@ -37,7 +37,7 @@ import java.util.List;
  * @date 2023/11/7 16:29
  */
 
-public class ParamChecker {
+public class ExtractorManager {
     
     /**
      * ParamChecker will first look for the Checker annotation in the handler method, and if that annotation is null, it
@@ -47,7 +47,7 @@ public class ParamChecker {
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
-    public @interface Checker {
+    public @interface Extractor {
         
         /**
          * Configure a Class to locate a specific Extractor, which takes effect only on the @Controller annotated class
@@ -55,17 +55,17 @@ public class ParamChecker {
          *
          * @return Class<? extends AbstractHttpParamExtractor>
          */
-        Class<? extends AbstractHttpParamExtractor> httpChecker() default DefaultHttpChecker.class;
+        Class<? extends AbstractHttpParamExtractor> httpExtractor() default DefaultHttpExtractor.class;
         
         /**
          * Configure a Class to locate a specific Extractor, which takes effect only on grpcHandler.
          *
          * @return Class<? extends AbstractRpcParamExtractor>
          */
-        Class<? extends AbstractRpcParamExtractor> rpcChecker() default DefaultGrpcChecker.class;
+        Class<? extends AbstractRpcParamExtractor> rpcExtractor() default DefaultGrpcExtractor.class;
     }
     
-    public static class DefaultHttpChecker extends AbstractHttpParamExtractor {
+    public static class DefaultHttpExtractor extends AbstractHttpParamExtractor {
         
         @Override
         public List<ParamInfo> extractParam(HttpServletRequest params) throws Exception {
@@ -73,7 +73,7 @@ public class ParamChecker {
         }
     }
     
-    public static class DefaultGrpcChecker extends AbstractRpcParamExtractor {
+    public static class DefaultGrpcExtractor extends AbstractRpcParamExtractor {
         
         @Override
         public List<ParamInfo> extractParam(Request request) throws Exception {
@@ -94,11 +94,11 @@ public class ParamChecker {
         });
     }
     
-    public static AbstractRpcParamExtractor getRpcChecker(Checker checker) {
-        return rpcManager.computeIfAbsent(checker.rpcChecker(), (key) -> new DefaultGrpcChecker());
+    public static AbstractRpcParamExtractor getRpcExtractor(Extractor extractor) {
+        return rpcManager.computeIfAbsent(extractor.rpcExtractor(), (key) -> new DefaultGrpcExtractor());
     }
     
-    public static AbstractHttpParamExtractor getHttpChecker(Checker checker) {
-        return httpManager.computeIfAbsent(checker.httpChecker(), (key) -> new DefaultHttpChecker());
+    public static AbstractHttpParamExtractor getHttpExtractor(Extractor extractor) {
+        return httpManager.computeIfAbsent(extractor.httpExtractor(), (key) -> new DefaultHttpExtractor());
     }
 }

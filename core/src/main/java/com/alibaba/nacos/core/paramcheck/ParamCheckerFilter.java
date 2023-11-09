@@ -59,15 +59,15 @@ public class ParamCheckerFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
         try {
             Method method = methodsCache.getMethod(req);
-            ParamChecker.Checker checker = method.getAnnotation(ParamChecker.Checker.class);
-            if (checker == null) {
-                checker = method.getDeclaringClass().getAnnotation(ParamChecker.Checker.class);
-                if (checker == null) {
+            ExtractorManager.Extractor extractor = method.getAnnotation(ExtractorManager.Extractor.class);
+            if (extractor == null) {
+                extractor = method.getDeclaringClass().getAnnotation(ExtractorManager.Extractor.class);
+                if (extractor == null) {
                     chain.doFilter(request, response);
                     return;
                 }
             }
-            AbstractHttpParamExtractor httpParamExtractor = ParamChecker.getHttpChecker(checker);
+            AbstractHttpParamExtractor httpParamExtractor = ExtractorManager.getHttpExtractor(extractor);
             List<ParamInfo> paramInfoList = httpParamExtractor.extractParam(req);
             ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
             AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(ServerParamCheckConfig.getInstance().getActiveParamChecker());

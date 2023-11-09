@@ -19,7 +19,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.paramcheck.ParamChecker;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.cluster.ServerStatusManager;
 import com.alibaba.nacos.naming.constants.ClientConstants;
@@ -54,7 +54,7 @@ import java.util.Collection;
 @RestController
 @RequestMapping({UtilsAndCommons.NACOS_NAMING_CONTEXT + UtilsAndCommons.NACOS_NAMING_OPERATOR_CONTEXT,
         UtilsAndCommons.NACOS_NAMING_CONTEXT + "/ops"})
-@ParamChecker.Checker(httpChecker = NamingDefaultHttpParamExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class OperatorController {
     
     private final SwitchManager switchManager;

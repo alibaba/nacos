@@ -27,7 +27,7 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
-import com.alibaba.nacos.core.paramcheck.ParamChecker;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.HistoryService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
@@ -53,7 +53,7 @@ import java.util.List;
 @NacosApi
 @RestController
 @RequestMapping(Constants.HISTORY_CONTROLLER_V2_PATH)
-@ParamChecker.Checker(httpChecker = ConfigDefaultHttpParamExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class HistoryControllerV2 {
     
     private final HistoryService historyService;

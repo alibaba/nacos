@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtracto
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.core.paramcheck.ParamChecker;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import org.springframework.ui.ModelMap;
@@ -48,7 +48,7 @@ import java.util.Set;
  */
 @RestController
 @RequestMapping(Constants.COMMUNICATION_CONTROLLER_PATH)
-@ParamChecker.Checker(httpChecker = ConfigDefaultHttpParamExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class CommunicationController {
     
     private final LongPollingService longPollingService;

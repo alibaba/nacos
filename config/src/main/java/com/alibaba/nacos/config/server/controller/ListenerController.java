@@ -24,7 +24,7 @@ import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.core.paramcheck.ParamChecker;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.ui.ModelMap;
@@ -43,7 +43,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping(Constants.LISTENER_CONTROLLER_PATH)
-@ParamChecker.Checker(httpChecker = ConfigDefaultHttpParamExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class ListenerController {
     
     private final ConfigSubService configSubService;

@@ -22,7 +22,7 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.service.capacity.CapacityService;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.paramcheck.ParamChecker;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,7 +40,7 @@ import javax.servlet.http.HttpServletResponse;
  */
 @RestController
 @RequestMapping(Constants.CAPACITY_CONTROLLER_PATH)
-@ParamChecker.Checker(httpChecker = ConfigDefaultHttpParamExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class CapacityController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(CapacityController.class);

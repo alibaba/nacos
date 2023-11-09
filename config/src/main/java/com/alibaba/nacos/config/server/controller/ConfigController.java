@@ -36,7 +36,7 @@ import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor;
-import com.alibaba.nacos.core.paramcheck.ParamChecker;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
@@ -104,7 +104,7 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
  */
 @RestController
 @RequestMapping(Constants.CONFIG_CONTROLLER_PATH)
-@ParamChecker.Checker(httpChecker = ConfigDefaultHttpParamExtractor.class)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class ConfigController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigController.class);
@@ -337,7 +337,7 @@ public class ConfigController {
      */
     @PostMapping("/listener")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @ParamChecker.Checker(httpChecker = ConfigListenerHttpParamExtractor.class)
+    @ExtractorManager.Extractor(httpExtractor = ConfigListenerHttpParamExtractor.class)
     public void listener(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
@@ -384,7 +384,7 @@ public class ConfigController {
      */
     @GetMapping(params = "search=accurate")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @ParamChecker.Checker(httpChecker = ConfigBlurSearchHttpParamExtractor.class)
+    @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
     public Page<ConfigInfo> searchConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -413,7 +413,7 @@ public class ConfigController {
      */
     @GetMapping(params = "search=blur")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
-    @ParamChecker.Checker(httpChecker = ConfigBlurSearchHttpParamExtractor.class)
+    @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
     public Page<ConfigInfo> fuzzySearchConfig(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,

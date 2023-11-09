@@ -28,7 +28,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.SubscribeServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UnsubscribeServiceTraceEvent;
 import com.alibaba.nacos.core.control.TpsControl;
-import com.alibaba.nacos.core.paramcheck.ParamChecker;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.SubscribeServiceRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
@@ -65,7 +65,7 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     @Override
     @TpsControl(pointName = "RemoteNamingServiceSubscribeUnSubscribe", name = "RemoteNamingServiceSubscribeUnsubscribe")
     @Secured(action = ActionTypes.READ)
-    @ParamChecker.Checker(rpcChecker = SubscribeServiceRequestParamExtractor.class)
+    @ExtractorManager.Extractor(rpcExtractor = SubscribeServiceRequestParamExtractor.class)
     public SubscribeServiceResponse handle(SubscribeServiceRequest request, RequestMeta meta) throws NacosException {
         String namespaceId = request.getNamespace();
         String serviceName = request.getServiceName();

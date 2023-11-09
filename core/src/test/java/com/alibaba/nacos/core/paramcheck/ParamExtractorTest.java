@@ -28,33 +28,34 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * ParamCheckerTest.
+ *
  * @author 985492783@qq.com
  * @date 2023/11/7 20:16
  */
-public class ParamCheckerTest {
+public class ParamExtractorTest {
     
     @Test
     public void testCheckAnnotation() {
-        ParamChecker.Checker checker = Controller.class.getAnnotation(ParamChecker.Checker.class);
-        AbstractRpcParamExtractor rpcChecker = ParamChecker.getRpcChecker(checker);
-        assertEquals(rpcChecker.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
+        ExtractorManager.Extractor extractor = Controller.class.getAnnotation(ExtractorManager.Extractor.class);
+        AbstractRpcParamExtractor paramExtractor = ExtractorManager.getRpcExtractor(extractor);
+        assertEquals(paramExtractor.getClass().getSimpleName(), ConfigRequestParamExtractor.class.getSimpleName());
     }
     
-    @ParamChecker.Checker(rpcChecker = ConfigRequestParamExtractor.class)
+    @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     public static class Controller {
         
         public void testCheckNull() {
         
         }
         
-        @ParamChecker.Checker(httpChecker = TestHttpChecker.class)
+        @ExtractorManager.Extractor(httpExtractor = TestHttpChecker.class)
         public void testCheck() {
         
         }
     }
     
     public static class TestHttpChecker extends AbstractHttpParamExtractor {
-    
+        
         @Override
         public List<ParamInfo> extractParam(HttpServletRequest params) throws Exception {
             List<ParamInfo> list = new ArrayList<>();

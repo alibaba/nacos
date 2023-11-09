@@ -39,7 +39,7 @@ import static org.junit.Assert.assertEquals;
  * @date 2023/11/7 20:29
  */
 @RunWith(MockitoJUnitRunner.class)
-public class ParamCheckerFilterTest {
+public class ParamExtractorFilterTest {
     
     @Mock
     private ControllerMethodsCache methodsCache;
@@ -53,7 +53,7 @@ public class ParamCheckerFilterTest {
                 .thenAnswer((k) -> k.getArgument(2));
         filter = new ParamCheckerFilter(methodsCache);
         
-        Method check = ParamCheckerTest.Controller.class.getMethod("testCheck");
+        final Method check = ParamExtractorTest.Controller.class.getMethod("testCheck");
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         request.addParameter("dataId", "testDataId");

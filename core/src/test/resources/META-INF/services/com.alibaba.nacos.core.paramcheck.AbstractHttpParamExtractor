@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.core.paramcheck.ParamCheckerTest$TestHttpChecker
+com.alibaba.nacos.core.paramcheck.ParamExtractorTest$TestHttpChecker
