@@ -21,6 +21,7 @@ package com.alibaba.nacos.core.monitor.topn;
  *
  * @author xiweng.yy
  */
+@SuppressWarnings("PMD.ClassNamingShouldBeCamelRule")
 public class StringTopNCounter extends BaseTopNCounter<String> {
     
     @Override
