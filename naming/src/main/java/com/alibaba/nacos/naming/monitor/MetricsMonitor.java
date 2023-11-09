@@ -17,9 +17,9 @@
 package com.alibaba.nacos.naming.monitor;
 
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
-import com.alibaba.nacos.core.monitor.topn.StringTopNCounter;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
@@ -90,7 +90,7 @@ public class MetricsMonitor {
     /**
      * topn service change count.
      */
-    private final StringTopNCounter serviceChangeCount = new StringTopNCounter();
+    private final ServiceTopNCounter serviceChangeCount = new ServiceTopNCounter();
     
     private MetricsMonitor() {
         for (Field each : MetricsMonitor.class.getDeclaredFields()) {
@@ -210,7 +210,7 @@ public class MetricsMonitor {
         return INSTANCE.namingPublisher.get(version);
     }
     
-    public static StringTopNCounter getServiceChangeCount() {
+    public static ServiceTopNCounter getServiceChangeCount() {
         return INSTANCE.serviceChangeCount;
     }
     
@@ -251,8 +251,8 @@ public class MetricsMonitor {
         INSTANCE.subscriberCount.decrementAndGet();
     }
     
-    public static void incrementServiceChangeCount(String namespace, String group, String name) {
-        INSTANCE.serviceChangeCount.increment(namespace + "@" + group + "@" + name);
+    public static void incrementServiceChangeCount(Service service) {
+        INSTANCE.serviceChangeCount.increment(service);
     }
     
     public static Counter getDiskException() {
