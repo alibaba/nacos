@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.utils;
+package com.alibaba.nacos.core.monitor;
+
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.Pair;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -54,7 +57,7 @@ public class TopnCounterMetricsContainer {
         while (curr.next != null && topnCounter.size() < n) {
             for (String dataId : curr.next.dataSet) {
                 // use inner AtomicInteger to reflect change to prometheus
-                topnCounter.add(new Pair<>(dataId, dataCount.get(dataId)));
+                topnCounter.add(Pair.with(dataId, dataCount.get(dataId)));
                 if (topnCounter.size() == n) {
                     break;
                 }
@@ -74,11 +77,11 @@ public class TopnCounterMetricsContainer {
     }
     
     /**
-     * put new data into container, if already exist, update it.
-     * this method could be slow (O(N)), most time use increment.
+     * put new data into container, if already exist, update it. this method could be slow (O(N)), most time use
+     * increment.
      *
      * @param dataId data name or data key.
-     * @param count data count.
+     * @param count  data count.
      */
     public void put(String dataId, int count) {
         if (dataCount.containsKey(dataId)) {
@@ -207,7 +210,8 @@ public class TopnCounterMetricsContainer {
         
         public int count;
         
-        public DoublyLinkedNode(DoublyLinkedNode next, DoublyLinkedNode prev, ConcurrentHashSet<String> dataSet, int count) {
+        public DoublyLinkedNode(DoublyLinkedNode next, DoublyLinkedNode prev, ConcurrentHashSet<String> dataSet,
+                int count) {
             this.next = next;
             this.prev = prev;
             this.dataSet = dataSet;

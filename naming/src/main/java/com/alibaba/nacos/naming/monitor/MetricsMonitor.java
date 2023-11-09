@@ -18,7 +18,7 @@ package com.alibaba.nacos.naming.monitor;
 
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
-import com.alibaba.nacos.common.utils.TopnCounterMetricsContainer;
+import com.alibaba.nacos.core.monitor.TopnCounterMetricsContainer;
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import com.alibaba.nacos.naming.misc.Loggers;
 import io.micrometer.core.instrument.Counter;

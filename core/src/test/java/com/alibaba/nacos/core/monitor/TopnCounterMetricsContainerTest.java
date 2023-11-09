@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.utils;
+package com.alibaba.nacos.core.monitor;
 
+import com.alibaba.nacos.common.utils.Pair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -81,7 +82,7 @@ public class TopnCounterMetricsContainerTest {
         List<Pair<String, AtomicInteger>> dataList = new ArrayList<>();
         for (int i = 0; i < dataIds.length(); i++) {
             topnCounterMetricsContainer.put(dataIds.substring(i, i + 1));
-            dataList.add(new Pair<>(dataIds.substring(i, i + 1), new AtomicInteger()));
+            dataList.add(Pair.with(dataIds.substring(i, i + 1), new AtomicInteger()));
         }
         Random random = new Random();
         for (int i = 0; i < 10000; i++) {

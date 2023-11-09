@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.config.server.monitor;
 
-import com.alibaba.nacos.common.utils.TopnCounterMetricsContainer;
+import com.alibaba.nacos.core.monitor.TopnCounterMetricsContainer;
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
