@@ -17,11 +17,13 @@
 package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.paramcheck.AbstractParamChecker;
 import com.alibaba.nacos.common.paramcheck.ParamCheckResponse;
 import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.plugin.control.Loggers;
 
 import javax.servlet.Filter;
@@ -82,7 +84,7 @@ public class ParamCheckerFilter implements Filter {
             }
         } catch (NacosException e) {
             Loggers.CONTROL.error("exception: {}", e.getMessage());
-            generate400Response(resp, e.getMessage());
+            throw new NacosRuntimeException(ErrorCode.UnKnowError.getCode(), e);
         }
         
     }
