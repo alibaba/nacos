@@ -170,12 +170,7 @@ jobs:
               CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
               BRANCH: main
               CODE_PATH: java/nacos-2X
-              CMD: |
-                mvn clean test -B
-                ls
-                ls /root/code
-                ls /root/code/java/nacos-2X
-                ls /root/code/java/nacos-2X/test_report/root/code/java/nacos-2X/target/surefire-reports
+              CMD: mvn clean test -B
               ALL_IP: null
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
@@ -230,10 +225,6 @@ jobs:
                 mkdir /usr/local/go/src/nacos_go_test && cp -rf ./util /usr/local/go/src/nacos_go_test/utils
                 go mod tidy
                 gotestsum --junitfile ./target/surefire-reports/TEST-report.xml ./nacosgotest -timeout 2m  -v
-                ls
-                ls /root/code
-                ls /root/code/golang
-                ls /root/code/golang/test_report/root/code/golang/target/surefire-reports
               ALL_IP: null
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
@@ -286,11 +277,7 @@ jobs:
                 echo "export LD_LIBRARY_PATH=/usr/local/lib" >> ~/.bashrc  && source ~/.bashrc
                 cd /root/code/cpp/nacoscpptest
                 g++ nacos_test.cpp -o nacos_test -lgtest -lpthread -I/usr/local/include/nacos/ -L/usr/local/lib/  -lnacos-cli
-                chmod 777 nacos_test && ./nacos_test --gtest_output="xml:../target/surefire-reports/TEST-gtestresults.xml
-                ls
-                ls /root/code
-                ls /root/code/cpp
-                ls /root/code/cpp/test_report/root/code/cpp/target/surefire-reports
+                chmod 777 nacos_test && ./nacos_test --gtest_output="xml:../target/surefire-reports/TEST-gtestresults.xml"
               ALL_IP: null
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
@@ -343,10 +330,6 @@ jobs:
                 yum -y install dotnet-sdk-3.1 && yum -y install aspnetcore-runtime-7.0
                 cd /root/code/csharp/nacos-csharp-sdk-test && dotnet restore
                 dotnet test --logger:"junit;LogFilePath=../target/surefire-reports/TEST-result.xml"
-                ls
-                ls /root/code
-                ls /root/code/csharp
-                ls /root/code/csharp/test_report/root/code/csharp/target/surefire-reports
               ALL_IP: null
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
@@ -397,10 +380,6 @@ jobs:
               CMD: |
                 cd /root/code/nodejs/nacosnodejstest && npm install
                 mocha test --reporter mocha-junit-reporter --reporter-options mochaFile=../target/surefire-reports/TEST-report.xml
-                ls
-                ls /root/code
-                ls /root/code/nodejs
-                ls /root/code/nodejs/test_report/root/code/nodejs/target/surefire-reports
               ALL_IP: null
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
@@ -451,10 +430,6 @@ jobs:
               CMD: |
                 cd /root/code/python && pip3 install -r requirements.txt && source ~/.bashrc
                 cd nacospythontest && pytest --junitxml ../target/surefire-reports/TEST-report.xml test/*_test.py --log-cli-level=DEBUG
-                ls
-                ls /root/code
-                ls /root/code/python
-                ls /root/code/pythons/test_report/root/code/python/target/surefire-reports
               ALL_IP: null
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
