@@ -62,6 +62,7 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -153,41 +154,57 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
      *
      * @param serviceName service name
      * @param groupName   group name
-     * @param instances   instance list
-     * @return instance list that need to be deregistered.
+     * @param deRegisterInstances   deregister instance list
+     * @return instance list that need to be retained.
      */
-    private List<Instance> getRetainInstance(String serviceName, String groupName, List<Instance> instances)
+    private List<Instance> getRetainInstance(String serviceName, String groupName, List<Instance> deRegisterInstances)
             throws NacosException {
-        if (CollectionUtils.isEmpty(instances)) {
+        if (CollectionUtils.isEmpty(deRegisterInstances)) {
             throw new NacosException(NacosException.INVALID_PARAM,
                     String.format("[Batch deRegistration] need deRegister instance is empty, instances: %s,",
-                            instances));
+                            deRegisterInstances));
         }
         String combinedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         InstanceRedoData instanceRedoData = redoService.getRegisteredInstancesByKey(combinedServiceName);
         if (!(instanceRedoData instanceof BatchInstanceRedoData)) {
             throw new NacosException(NacosException.INVALID_PARAM, String.format(
                     "[Batch deRegistration] batch deRegister is not BatchInstanceRedoData type , instances: %s,",
-                    instances));
+                    deRegisterInstances));
         }
         
         BatchInstanceRedoData batchInstanceRedoData = (BatchInstanceRedoData) instanceRedoData;
-        List<Instance> allInstance = batchInstanceRedoData.getInstances();
-        if (CollectionUtils.isEmpty(allInstance)) {
+        List<Instance> allRedoInstances = batchInstanceRedoData.getInstances();
+        if (CollectionUtils.isEmpty(allRedoInstances)) {
             throw new NacosException(NacosException.INVALID_PARAM, String.format(
                     "[Batch deRegistration] not found all registerInstance , serviceName：%s , groupName: %s",
                     serviceName, groupName));
         }
         
-        Map<Instance, Instance> instanceMap = instances.stream()
+        Map<Instance, Instance> deRegisterInstanceMap = deRegisterInstances.stream()
                 .collect(Collectors.toMap(Function.identity(), Function.identity()));
         List<Instance> retainInstances = new ArrayList<>();
-        for (Instance instance : allInstance) {
-            if (!instanceMap.containsKey(instance)) {
-                retainInstances.add(instance);
+        for (Instance redoInstance : allRedoInstances) {
+            boolean needRetained = true;
+            Iterator<Map.Entry<Instance, Instance>> it = deRegisterInstanceMap.entrySet().iterator();
+            while (it.hasNext()) {
+                Instance deRegisterInstance = it.next().getKey();
+                // only compare Ip & Port because redoInstance's instanceId or serviceName might be null but deRegisterInstance's might not be null.
+                if (compareIpAndPort(deRegisterInstance, redoInstance)) {
+                    needRetained = false;
+                    // clear current entry to speed up next redoInstance comparing.
+                    it.remove();
+                    break;
+                }
+            }
+            if (needRetained) {
+                retainInstances.add(redoInstance);
             }
         }
         return retainInstances;
+    }
+    
+    private boolean compareIpAndPort(Instance deRegisterInstance, Instance redoInstance) {
+        return ((deRegisterInstance.getIp().equals(redoInstance.getIp())) && (deRegisterInstance.getPort() == redoInstance.getPort()));
     }
     
     /**
