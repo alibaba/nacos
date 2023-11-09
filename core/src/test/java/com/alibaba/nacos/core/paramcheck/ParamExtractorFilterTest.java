@@ -35,6 +35,7 @@ import static org.junit.Assert.assertEquals;
 
 /**
  * ParamCheckerFilterTest.
+ *
  * @author 985492783@qq.com
  * @date 2023/11/7 20:29
  */
@@ -48,24 +49,27 @@ public class ParamExtractorFilterTest {
     
     @Test
     public void testFilter() throws NoSuchMethodException, ServletException, IOException {
-        MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class);
-        mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any()))
-                .thenAnswer((k) -> k.getArgument(2));
-        filter = new ParamCheckerFilter(methodsCache);
-        
-        final Method check = ParamExtractorTest.Controller.class.getMethod("testCheck");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        MockHttpServletResponse response = new MockHttpServletResponse();
-        request.addParameter("dataId", "123456789");
-        Mockito.when(methodsCache.getMethod(request)).thenReturn(check);
-        filter.doFilter(request, response, (servletRequest, servletResponse) -> {
-        });
-        assertEquals(response.getErrorMessage(), response.getStatus(), 200);
-        request.setParameter("dataId", "123456789*");
-        filter.doFilter(request, response, (servletRequest, servletResponse) -> {
-        });
-        assertEquals(response.getErrorMessage(), response.getStatus(), 400);
-        
-        mockedStatic.close();
+        try (MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class)) {
+            mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any()))
+                    .thenAnswer((k) -> k.getArgument(2));
+            filter = new ParamCheckerFilter(methodsCache);
+            
+            final Method check = ParamExtractorTest.Controller.class.getMethod("testCheck");
+            AbstractHttpParamExtractor httpExtractor = ExtractorManager.getHttpExtractor(
+                    check.getAnnotation(ExtractorManager.Extractor.class));
+            assertEquals(httpExtractor.getClass(), ParamExtractorTest.TestHttpChecker.class);
+            MockHttpServletRequest request = new MockHttpServletRequest();
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            request.addParameter("dataId", "123456789");
+            Mockito.when(methodsCache.getMethod(request)).thenReturn(check);
+            filter.doFilter(request, response, (servletRequest, servletResponse) -> {
+            });
+            
+            assertEquals(response.getStatus(), 200);
+            request.setParameter("dataId", "123456789*");
+            filter.doFilter(request, response, (servletRequest, servletResponse) -> {
+            });
+            assertEquals(response.getStatus(), 400);
+        }
     }
 }

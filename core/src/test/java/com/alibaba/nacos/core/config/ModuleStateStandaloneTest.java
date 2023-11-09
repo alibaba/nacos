@@ -47,18 +47,18 @@ public class ModuleStateStandaloneTest {
     @Test
     public void testStandaloneBuilder()
             throws InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchMethodException {
-        MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class);
-        environment = new MockEnvironment();
-        mockedStatic.when(EnvUtil::getEnvironment).thenReturn(environment);
-        mockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
-        
-        Constructor<ModuleStateHolder> constructor = ModuleStateHolder.class.getDeclaredConstructor();
-        constructor.setAccessible(true);
-        moduleStateHolder = constructor.newInstance();
-        
-        assertFalse(moduleStateHolder.getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
-        assertFalse(moduleStateHolder.getModuleState(RaftSysConstants.RAFT_STATE).isPresent());
-        mockedStatic.close();
+        try (MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class)) {
+            environment = new MockEnvironment();
+            mockedStatic.when(EnvUtil::getEnvironment).thenReturn(environment);
+            mockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
+            
+            Constructor<ModuleStateHolder> constructor = ModuleStateHolder.class.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            moduleStateHolder = constructor.newInstance();
+            
+            assertFalse(moduleStateHolder.getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
+            assertFalse(moduleStateHolder.getModuleState(RaftSysConstants.RAFT_STATE).isPresent());
+        }
     }
     
 }
