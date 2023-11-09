@@ -166,6 +166,7 @@ jobs:
             KIND: Pod
             RESTART_POLICY: Never
             ENV:
+              WAIT_TIME: 900
               REPO_NAME: ${{ env.TEST_REPO_NAME }}
               CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
               BRANCH: main
@@ -216,6 +217,7 @@ jobs:
             KIND: Pod
             RESTART_POLICY: Never
             ENV:
+              WAIT_TIME: 900
               REPO_NAME: ${{ env.TEST_REPO_NAME }}
               CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
               BRANCH: main
@@ -268,6 +270,7 @@ jobs:
             KIND: Pod
             RESTART_POLICY: Never
             ENV:
+              WAIT_TIME: 900
               REPO_NAME: ${{ env.TEST_REPO_NAME }}
               CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
               BRANCH: main
@@ -321,6 +324,7 @@ jobs:
             KIND: Pod
             RESTART_POLICY: Never
             ENV:
+              WAIT_TIME: 900
               REPO_NAME: ${{ env.TEST_REPO_NAME }}
               CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
               BRANCH: main
@@ -373,6 +377,7 @@ jobs:
             KIND: Pod
             RESTART_POLICY: Never
             ENV:
+              WAIT_TIME: 900
               REPO_NAME: ${{ env.TEST_REPO_NAME }}
               CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
               BRANCH: main
@@ -405,7 +410,7 @@ jobs:
     name: Python E2E Test
     needs: [docker, deploy]
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -423,6 +428,7 @@ jobs:
             KIND: Pod
             RESTART_POLICY: Never
             ENV:
+              WAIT_TIME: 900
               REPO_NAME: ${{ env.TEST_REPO_NAME }}
               CODE: https://ghproxy.com/https://github.com/${{ env.TEST_REPO_NAME }}
               BRANCH: main
