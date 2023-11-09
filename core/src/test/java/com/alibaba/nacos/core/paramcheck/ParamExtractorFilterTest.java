@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.paramcheck;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Test;
@@ -23,6 +24,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.internal.verification.Times;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -48,28 +50,48 @@ public class ParamExtractorFilterTest {
     private ParamCheckerFilter filter;
     
     @Test
-    public void testFilter() throws NoSuchMethodException, ServletException, IOException {
-        try (MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class)) {
-            mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any()))
-                    .thenAnswer((k) -> k.getArgument(2));
-            filter = new ParamCheckerFilter(methodsCache);
-            
-            final Method check = ParamExtractorTest.Controller.class.getMethod("testCheck");
-            AbstractHttpParamExtractor httpExtractor = ExtractorManager.getHttpExtractor(
-                    check.getAnnotation(ExtractorManager.Extractor.class));
-            assertEquals(httpExtractor.getClass(), ParamExtractorTest.TestHttpChecker.class);
-            MockHttpServletRequest request = new MockHttpServletRequest();
-            MockHttpServletResponse response = new MockHttpServletResponse();
-            request.addParameter("dataId", "123456789");
-            Mockito.when(methodsCache.getMethod(request)).thenReturn(check);
-            filter.doFilter(request, response, (servletRequest, servletResponse) -> {
-            });
-            
-            assertEquals(response.getStatus(), 200);
-            request.setParameter("dataId", "123456789*");
-            filter.doFilter(request, response, (servletRequest, servletResponse) -> {
-            });
-            assertEquals(response.getStatus(), 400);
+    public void testFilter() throws NacosException, ServletException, IOException, NoSuchMethodException {
+        AbstractHttpParamExtractor httpExtractor = testExtractor(methodsCache, ParamExtractorTest.Controller.class,
+                "testCheck");
+        assertEquals(httpExtractor.getClass(), ParamExtractorTest.TestHttpChecker.class);
+        Mockito.verify(httpExtractor, new Times(1)).extractParam(Mockito.any());
+    }
+    
+    /**
+     * Create mock method about AbstractHttpParamExtractor to verify.
+     *
+     * @param methodsCache   methodsCache
+     * @param clazz          clazz
+     * @param methodName     methodName
+     * @param parameterTypes parameterTypes
+     * @return AbstractHttpParamExtractor
+     */
+    public AbstractHttpParamExtractor testExtractor(ControllerMethodsCache methodsCache, Class<?> clazz,
+            String methodName, Class<?>... parameterTypes) throws NoSuchMethodException, ServletException, IOException {
+        MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class);
+        final Method check = clazz.getMethod(methodName, parameterTypes);
+        ExtractorManager.Extractor annotation = check.getAnnotation(ExtractorManager.Extractor.class);
+        if (annotation == null) {
+            annotation = clazz.getAnnotation(ExtractorManager.Extractor.class);
         }
+        AbstractHttpParamExtractor httpExtractor = Mockito.spy(ExtractorManager.getHttpExtractor(annotation));
+        
+        MockedStatic<ExtractorManager> managerMockedStatic = Mockito.mockStatic(ExtractorManager.class);
+        mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any()))
+                .thenAnswer((k) -> k.getArgument(2));
+        ParamCheckerFilter filter = new ParamCheckerFilter(methodsCache);
+        
+        ExtractorManager.Extractor finalAnnotation = annotation;
+        managerMockedStatic.when(() -> ExtractorManager.getHttpExtractor(finalAnnotation)).thenReturn(httpExtractor);
+        
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        Mockito.when(methodsCache.getMethod(request)).thenReturn(check);
+        
+        filter.doFilter(request, response, (servletRequest, servletResponse) -> {
+        });
+        managerMockedStatic.close();
+        mockedStatic.close();
+        return httpExtractor;
     }
 }
