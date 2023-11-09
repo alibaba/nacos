@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.naming.monitor;
 
+import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
+import com.alibaba.nacos.core.monitor.topn.StringTopNCounter;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
-import com.alibaba.nacos.core.monitor.TopnCounterMetricsContainer;
-import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
 import com.alibaba.nacos.naming.misc.Loggers;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
@@ -90,7 +90,7 @@ public class MetricsMonitor {
     /**
      * topn service change count.
      */
-    private final TopnCounterMetricsContainer serviceChangeCount = new TopnCounterMetricsContainer();
+    private final StringTopNCounter serviceChangeCount = new StringTopNCounter();
     
     private MetricsMonitor() {
         for (Field each : MetricsMonitor.class.getDeclaredFields()) {
@@ -110,18 +110,18 @@ public class MetricsMonitor {
         List<Tag> tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v1"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_subscriber", tags, namingSubscriber.get("v1"));
-    
+        
         tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v2"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_subscriber", tags, namingSubscriber.get("v2"));
-    
+        
         namingPublisher.put("v1", new AtomicInteger(0));
         namingPublisher.put("v2", new AtomicInteger(0));
-    
+        
         tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v1"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_publisher", tags, namingPublisher.get("v1"));
-    
+        
         tags = new ArrayList<>();
         tags.add(new ImmutableTag("version", "v2"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_naming_publisher", tags, namingPublisher.get("v2"));
@@ -210,7 +210,7 @@ public class MetricsMonitor {
         return INSTANCE.namingPublisher.get(version);
     }
     
-    public static TopnCounterMetricsContainer getServiceChangeCount() {
+    public static StringTopNCounter getServiceChangeCount() {
         return INSTANCE.serviceChangeCount;
     }
     
@@ -260,15 +260,18 @@ public class MetricsMonitor {
     }
     
     public static Counter getLeaderSendBeatFailedException() {
-        return NacosMeterRegistryCenter.counter(METER_REGISTRY, "nacos_exception", "module", "naming", "name", "leaderSendBeatFailed");
+        return NacosMeterRegistryCenter
+                .counter(METER_REGISTRY, "nacos_exception", "module", "naming", "name", "leaderSendBeatFailed");
     }
     
     /**
      * increment IpCount when use batchRegister instance.
-     * @param old old instancePublishInfo
+     *
+     * @param old                 old instancePublishInfo
      * @param instancePublishInfo must be BatchInstancePublishInfo
      */
-    public static void incrementIpCountWithBatchRegister(InstancePublishInfo old, BatchInstancePublishInfo instancePublishInfo) {
+    public static void incrementIpCountWithBatchRegister(InstancePublishInfo old,
+            BatchInstancePublishInfo instancePublishInfo) {
         int newSize = instancePublishInfo.getInstancePublishInfos().size();
         if (null == old) {
             // First time increment batchPublishInfo, add all into metrics.
@@ -285,6 +288,7 @@ public class MetricsMonitor {
     
     /**
      * decrement IpCount when use batchRegister instance.
+     *
      * @param instancePublishInfo must be BatchInstancePublishInfo
      */
     public static void decrementIpCountWithBatchRegister(InstancePublishInfo instancePublishInfo) {
