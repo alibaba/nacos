@@ -60,6 +60,8 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
             }
             if (!StringUtils.isBlank(secretKey) && !secretKey.equals(((ConfigRequest) request).getEncryptedDataKey())) {
                 ((ConfigRequest) request).setEncryptedDataKey(secretKey);
+            } else if (StringUtils.isBlank(((ConfigRequest) request).getEncryptedDataKey()) && StringUtils.isBlank(secretKey)) {
+                ((ConfigRequest) request).setEncryptedDataKey("");
             }
         }
         if (Objects.nonNull(response) && response instanceof ConfigResponse && Objects.isNull(request)) {
@@ -79,6 +81,8 @@ public class ConfigEncryptionFilter extends AbstractConfigFilter {
             }
             if (!StringUtils.isBlank(secretKey) && !secretKey.equals(((ConfigResponse) response).getEncryptedDataKey())) {
                 ((ConfigResponse) response).setEncryptedDataKey(secretKey);
+            } else if (StringUtils.isBlank(((ConfigResponse) response).getEncryptedDataKey()) && StringUtils.isBlank(secretKey)) {
+                ((ConfigResponse) response).setEncryptedDataKey("");
             }
         }
         filterChain.doFilter(request, response);
