@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.paramcheck;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.paramcheck.AbstractParamChecker;
 import com.alibaba.nacos.common.paramcheck.ParamCheckResponse;
 import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
@@ -36,6 +37,7 @@ import java.util.List;
 
 /**
  * ParamCheckerFilter to http filter.
+ *
  * @author 985492783@qq.com
  * @date 2023/11/7 17:40
  */
@@ -78,7 +80,7 @@ public class ParamCheckerFilter implements Filter {
                 Loggers.CONTROL.info("Param check invalid,{},url:{}", paramCheckResponse.getMessage(), req.getRequestURI());
                 generate400Response(resp, paramCheckResponse.getMessage());
             }
-        } catch (Exception e) {
+        } catch (NacosException e) {
             generate400Response(resp, e.getMessage());
         }
         

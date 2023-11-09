@@ -33,7 +33,7 @@ import java.util.List;
 public class NamingInstanceListHttpParamExtractor extends AbstractHttpParamExtractor {
 
     @Override
-    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) {
         ParamInfo paramInfo = new ParamInfo();
         String serviceName = request.getParameter("serviceName");
         String groupName = request.getParameter("groupName");

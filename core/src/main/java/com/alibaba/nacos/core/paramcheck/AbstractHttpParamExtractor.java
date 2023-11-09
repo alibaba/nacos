@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.paramcheck;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 
 import javax.servlet.http.HttpServletRequest;
@@ -33,9 +34,9 @@ public abstract class AbstractHttpParamExtractor implements ParamExtractor<HttpS
      *
      * @param request the request
      * @return the list
-     * @throws Exception the exception
+     * @throws NacosException the exception
      */
     @Override
-    public abstract List<ParamInfo> extractParam(HttpServletRequest request) throws Exception;
+    public abstract List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException;
     
 }

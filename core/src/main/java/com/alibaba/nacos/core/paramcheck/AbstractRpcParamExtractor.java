@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.paramcheck;
 
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 
@@ -34,8 +35,8 @@ public abstract class AbstractRpcParamExtractor implements ParamExtractor<Reques
      *
      * @param request the request
      * @return the list
-     * @throws Exception the exception
+     * @throws NacosException the exception
      */
     @Override
-    public abstract List<ParamInfo> extractParam(Request request) throws Exception;
+    public abstract List<ParamInfo> extractParam(Request request) throws NacosException;
 }

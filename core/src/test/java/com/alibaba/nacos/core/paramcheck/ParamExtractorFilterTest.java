@@ -56,15 +56,15 @@ public class ParamExtractorFilterTest {
         final Method check = ParamExtractorTest.Controller.class.getMethod("testCheck");
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        request.addParameter("dataId", "testDataId");
+        request.addParameter("dataId", "123456789");
         Mockito.when(methodsCache.getMethod(request)).thenReturn(check);
         filter.doFilter(request, response, (servletRequest, servletResponse) -> {
         });
-        assertEquals(response.getStatus(), 200);
-        request.setParameter("dataId", "testDataId*");
+        assertEquals(response.getErrorMessage(), response.getStatus(), 200);
+        request.setParameter("dataId", "123456789*");
         filter.doFilter(request, response, (servletRequest, servletResponse) -> {
         });
-        assertEquals(response.getStatus(), 400);
+        assertEquals(response.getErrorMessage(), response.getStatus(), 400);
         
         mockedStatic.close();
     }

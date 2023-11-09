@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.paramcheck;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -37,7 +38,7 @@ import java.util.List;
 public class NamingInstanceMetadataBatchHttpParamExtractor extends AbstractHttpParamExtractor {
     
     @Override
-    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException {
         ParamInfo paramInfo = new ParamInfo();
         String serviceName = request.getParameter("serviceName");
         String groupName = request.getParameter("groupName");

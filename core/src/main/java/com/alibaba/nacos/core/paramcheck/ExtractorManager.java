@@ -68,7 +68,7 @@ public class ExtractorManager {
     public static class DefaultHttpExtractor extends AbstractHttpParamExtractor {
         
         @Override
-        public List<ParamInfo> extractParam(HttpServletRequest params) throws Exception {
+        public List<ParamInfo> extractParam(HttpServletRequest params) {
             return Collections.emptyList();
         }
     }
@@ -76,7 +76,7 @@ public class ExtractorManager {
     public static class DefaultGrpcExtractor extends AbstractRpcParamExtractor {
         
         @Override
-        public List<ParamInfo> extractParam(Request request) throws Exception {
+        public List<ParamInfo> extractParam(Request request) {
             return Collections.emptyList();
         }
     }

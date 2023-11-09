@@ -57,7 +57,7 @@ public class ParamExtractorTest {
     public static class TestHttpChecker extends AbstractHttpParamExtractor {
         
         @Override
-        public List<ParamInfo> extractParam(HttpServletRequest params) throws Exception {
+        public List<ParamInfo> extractParam(HttpServletRequest params) {
             List<ParamInfo> list = new ArrayList<>();
             ParamInfo paramInfo = new ParamInfo();
             paramInfo.setDataId(params.getParameter("dataId"));

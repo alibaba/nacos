@@ -32,7 +32,7 @@ import java.util.List;
 public class ConfigRequestParamExtractor extends AbstractRpcParamExtractor {
     
     @Override
-    public List<ParamInfo> extractParam(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) {
         AbstractConfigRequest req = (AbstractConfigRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setDataId(req.getDataId());

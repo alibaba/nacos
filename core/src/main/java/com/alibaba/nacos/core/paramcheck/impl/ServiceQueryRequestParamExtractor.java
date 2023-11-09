@@ -32,7 +32,7 @@ import java.util.List;
 public class ServiceQueryRequestParamExtractor extends AbstractRpcParamExtractor {
     
     @Override
-    public List<ParamInfo> extractParam(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) {
         ServiceQueryRequest req = (ServiceQueryRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(req.getNamespace());

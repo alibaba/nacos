@@ -34,7 +34,7 @@ public class ConfigBlurSearchHttpParamExtractor extends AbstractHttpParamExtract
     private static final String BLUR_SEARCH_MODE = "blur";
     
     @Override
-    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) {
         String searchMode = request.getParameter("search");
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         if (StringUtils.equals(searchMode, BLUR_SEARCH_MODE)) {
