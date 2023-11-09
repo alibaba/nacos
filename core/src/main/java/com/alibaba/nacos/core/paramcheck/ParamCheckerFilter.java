@@ -81,6 +81,7 @@ public class ParamCheckerFilter implements Filter {
                 generate400Response(resp, paramCheckResponse.getMessage());
             }
         } catch (NacosException e) {
+            Loggers.CONTROL.error("exception: {}", e.getMessage());
             generate400Response(resp, e.getMessage());
         }
         
