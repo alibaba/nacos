@@ -339,11 +339,11 @@ public class NamingGrpcClientProxyTest {
         }
         response = new BatchInstanceResponse();
         when(this.rpcClient.request(any())).thenReturn(response);
-        List<Instance> instanceList = new ArrayList<>();
         Instance otherPortInstance = new Instance();
         otherPortInstance.setServiceName(SERVICE_NAME);
         otherPortInstance.setIp("1.1.1.1");
         otherPortInstance.setPort(2222);
+        List<Instance> instanceList = new ArrayList<>();
         instanceList.add(otherPortInstance);
         client.batchDeregisterService(SERVICE_NAME, GROUP_NAME, instanceList);
         verify(this.rpcClient, times(2)).request(argThat(request -> {
