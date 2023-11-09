@@ -83,7 +83,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     }
 
     /**
-     * do doFilters by reversed order
+     * Do doFilters by reversed order.
      *
      * @date 2023/11/8
      * @param request  request
