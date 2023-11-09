@@ -21,12 +21,9 @@ import com.alibaba.nacos.common.utils.Pair;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 /**
  * Nacos base topN counter.
@@ -35,10 +32,13 @@ import java.util.stream.Collectors;
  */
 public abstract class BaseTopNCounter<T> {
     
+    private final Comparator<Pair<String, AtomicInteger>> comparator;
+    
     protected ConcurrentMap<T, AtomicInteger> dataCount;
     
-    BaseTopNCounter() {
+    protected BaseTopNCounter() {
         dataCount = new ConcurrentHashMap<>();
+        this.comparator = Comparator.comparingInt(value -> value.getSecond().get());
     }
     
     /**
@@ -49,16 +49,16 @@ public abstract class BaseTopNCounter<T> {
      */
     public List<Pair<String, AtomicInteger>> getTopNCounter(int topN) {
         if (!checkEnabled()) {
+            reset();
             return Collections.emptyList();
         }
-        Queue<Pair<String, AtomicInteger>> queue = new PriorityQueue<>(topN + 1,
-                Comparator.comparingInt(o -> o.getSecond().get()));
         ConcurrentMap<T, AtomicInteger> snapshot = dataCount;
         dataCount = new ConcurrentHashMap<>();
+        FixedSizePriorityQueue<Pair<String, AtomicInteger>> queue = new FixedSizePriorityQueue<>(topN, comparator);
         for (T t : snapshot.keySet()) {
-            queue.add(Pair.with(keyToString(t), snapshot.get(t)));
+            queue.offer(Pair.with(keyToString(t), snapshot.get(t)));
         }
-        return queue.stream().limit(topN).collect(Collectors.toList());
+        return queue.toList();
     }
     
     protected abstract String keyToString(T t);
