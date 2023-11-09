@@ -21,6 +21,7 @@ import com.alibaba.nacos.core.distributed.distro.DistroConstants;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
@@ -57,4 +58,11 @@ public class ModuleStateStandaloneTest {
         assertFalse(moduleStateHolder.getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
         assertFalse(moduleStateHolder.getModuleState(RaftSysConstants.RAFT_STATE).isPresent());
     }
+    
+    @After
+    public void destroy() {
+        EnvUtil.setEnvironment(null);
+        EnvUtil.setIsStandalone(null);
+    }
+    
 }
