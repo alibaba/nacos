@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.monitor;
 
-import com.alibaba.nacos.common.utils.TopnCounterMetricsContainer;
 import com.alibaba.nacos.core.monitor.NacosMeterRegistryCenter;
+import com.alibaba.nacos.core.monitor.topn.StringTopNCounter;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Tag;
@@ -73,7 +73,7 @@ public class MetricsMonitor {
     /**
      * config change count.
      */
-    private static TopnCounterMetricsContainer configChangeCount = new TopnCounterMetricsContainer();
+    private static StringTopNCounter configChangeCount = new StringTopNCounter();
     
     static {
         ImmutableTag immutableTag = new ImmutableTag("module", "config");
@@ -166,7 +166,7 @@ public class MetricsMonitor {
         return configSubscriber.get(version);
     }
     
-    public static TopnCounterMetricsContainer getConfigChangeCount() {
+    public static StringTopNCounter getConfigChangeCount() {
         return configChangeCount;
     }
     
