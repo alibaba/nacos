@@ -16,38 +16,38 @@
 
 package com.alibaba.nacos.client.naming.backups.datasource;
 
-import com.alibaba.nacos.client.naming.backups.FailoverData;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import junit.framework.TestCase;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.HashMap;
-import java.util.Map;
+import java.util.Properties;
 
 public class DiskFailoverDataSourceTest extends TestCase {
     
     @Test
     public void testGetSwitch() {
+        Properties prop = new Properties();
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        DiskFailoverDataSource diskFailoverDataSource = new DiskFailoverDataSource(holder);
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(prop);
+        String cacheDir = CacheDirUtil.initCacheDir("public", properties);
+        DiskFailoverDataSource diskFailoverDataSource = new DiskFailoverDataSource();
         diskFailoverDataSource.getSwitch();
     }
     
     @Test
     public void testGetFailoverData() {
+        Properties prop = new Properties();
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        DiskFailoverDataSource diskFailoverDataSource = new DiskFailoverDataSource(holder);
+        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(prop);
+        String cacheDir = CacheDirUtil.initCacheDir("public", properties);
+        DiskFailoverDataSource diskFailoverDataSource = new DiskFailoverDataSource();
         diskFailoverDataSource.getFailoverData();
     }
     
-    @Test
-    public void testSaveFailoverData() {
-        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        DiskFailoverDataSource diskFailoverDataSource = new DiskFailoverDataSource(holder);
-        Map failoverDataMap = new HashMap<String, FailoverData>();
-    }
 }
