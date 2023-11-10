@@ -23,7 +23,6 @@ import com.alibaba.nacos.client.naming.backups.FailoverSwitch;
 import com.alibaba.nacos.client.naming.backups.NamingFailoverData;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
-import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
@@ -37,7 +36,6 @@ import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -67,9 +65,8 @@ public class DiskFailoverDataSource implements FailoverDataSource {
     
     private long lastModifiedMillis = 0L;
     
-    public DiskFailoverDataSource(ServiceInfoHolder serviceInfoHolder) {
+    public DiskFailoverDataSource() {
         failoverDir = CacheDirUtil.gettCacheDir() + FAILOVER_DIR;
-        this.failoverDir = serviceInfoHolder.getCacheDir() + FAILOVER_DIR;
     }
     
     class FailoverFileReader implements Runnable {
@@ -147,7 +144,6 @@ public class DiskFailoverDataSource implements FailoverDataSource {
         try {
             File switchFile = Paths.get(failoverDir, UtilAndComs.FAILOVER_SWITCH).toFile();
             if (!switchFile.exists()) {
-                switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
                 NAMING_LOGGER.debug("failover switch is not found, {}", switchFile.getName());
                 return new FailoverSwitch(Boolean.FALSE);
             }
