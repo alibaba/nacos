@@ -43,6 +43,7 @@ class MainLayout extends React.Component {
     location: PropTypes.object,
     history: PropTypes.object,
     version: PropTypes.any,
+    startupMode: PropTypes.any,
     getState: PropTypes.func,
     functionMode: PropTypes.string,
     authEnabled: PropTypes.string,
@@ -98,7 +99,14 @@ class MainLayout extends React.Component {
   }
 
   render() {
-    const { locale = {}, version, functionMode, authEnabled, consoleUiEnable } = this.props;
+    const {
+      locale = {},
+      version,
+      functionMode,
+      authEnabled,
+      consoleUiEnable,
+      startupMode,
+    } = this.props;
     const { visible } = this.state;
     const MenuData = getMenuData(functionMode);
     return (
@@ -123,6 +131,10 @@ class MainLayout extends React.Component {
                     <h1 className="nav-title">
                       {locale.nacosName}
                       <span>{version}</span>
+                    </h1>
+                    <h1 className="nav-mode">
+                      {locale.nacosMode}
+                      <span>{startupMode}</span>
                     </h1>
                     <Menu
                       defaultOpenKeys={this.defaultOpenKeys()}

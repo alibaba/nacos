@@ -112,7 +112,7 @@
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
-            <artifactId>nacos-contrl-plugin</artifactId>
+            <artifactId>nacos-control-plugin</artifactId>
             <version>${revision}</version>
         </dependency>
         <dependency>

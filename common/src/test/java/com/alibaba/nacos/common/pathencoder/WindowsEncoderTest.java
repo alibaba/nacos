@@ -108,6 +108,7 @@ public class WindowsEncoderTest extends TestCase {
         String case7 = "asdas<da";
         String case8 = "sdasas>a";
         String case9 = "das1|2e";
+        Assert.assertFalse(windowsEncoder.needEncode(null));
         Assert.assertFalse(windowsEncoder.needEncode(case1));
         Assert.assertTrue(windowsEncoder.needEncode(case2));
         Assert.assertTrue(windowsEncoder.needEncode(case3));

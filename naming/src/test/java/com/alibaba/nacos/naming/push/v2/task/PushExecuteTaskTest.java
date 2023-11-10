@@ -26,6 +26,7 @@ import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.monitor.MetricsMonitor;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.push.v2.NoRequiredRetryException;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
 import java.util.Optional;
@@ -79,6 +81,7 @@ public class PushExecuteTaskTest {
     
     @Before
     public void setUp() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         MetricsMonitor.resetAll();
         when(indexesManager.getAllClientsSubscribeService(service)).thenReturn(Collections.singletonList(clientId));
         when(clientManager.getClient(clientId)).thenReturn(client);

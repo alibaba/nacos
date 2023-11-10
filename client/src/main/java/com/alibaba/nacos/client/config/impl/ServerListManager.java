@@ -23,7 +23,6 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -48,6 +47,7 @@ import java.util.StringTokenizer;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import com.alibaba.nacos.client.utils.ParamUtil;
 
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
@@ -323,6 +323,9 @@ public class ServerListManager implements Closeable {
         GetServerListTask getServersTask = new GetServerListTask(addressServerUrl);
         for (int i = 0; i < initServerlistRetryTimes && serverUrls.isEmpty(); ++i) {
             getServersTask.run();
+            if (!serverUrls.isEmpty()) {
+                break;
+            }
             try {
                 this.wait((i + 1) * 100L);
             } catch (Exception e) {

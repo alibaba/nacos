@@ -31,6 +31,7 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.NumberUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.core.ServiceOperator;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
@@ -93,6 +94,7 @@ public class ServiceController {
      * @throws Exception exception
      */
     @PostMapping
+    @TpsControl(pointName = "NamingServiceRegister", name = "HttpNamingServiceRegister")
     @Secured(action = ActionTypes.WRITE)
     public String create(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName,
@@ -119,6 +121,7 @@ public class ServiceController {
      * @throws Exception exception
      */
     @DeleteMapping
+    @TpsControl(pointName = "NamingServiceDeregister", name = "HttpNamingServiceDeregister")
     @Secured(action = ActionTypes.WRITE)
     public String remove(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws Exception {
@@ -138,6 +141,7 @@ public class ServiceController {
      * @throws NacosException nacos exception
      */
     @GetMapping
+    @TpsControl(pointName = "NamingServiceQuery", name = "HttpNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
     public ObjectNode detail(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName) throws NacosException {
@@ -152,6 +156,7 @@ public class ServiceController {
      * @throws Exception exception
      */
     @GetMapping("/list")
+    @TpsControl(pointName = "NamingServiceListQuery", name = "HttpNamingServiceListQuery")
     @Secured(action = ActionTypes.READ)
     public ObjectNode list(HttpServletRequest request) throws Exception {
         final int pageNo = NumberUtils.toInt(WebUtils.required(request, "pageNo"));
@@ -176,6 +181,7 @@ public class ServiceController {
      * @throws Exception exception
      */
     @PutMapping
+    @TpsControl(pointName = "NamingServiceUpdate", name = "HttpNamingServiceUpdate")
     @Secured(action = ActionTypes.WRITE)
     public String update(HttpServletRequest request) throws Exception {
         String namespaceId = WebUtils.optional(request, CommonParams.NAMESPACE_ID, Constants.DEFAULT_NAMESPACE_ID);

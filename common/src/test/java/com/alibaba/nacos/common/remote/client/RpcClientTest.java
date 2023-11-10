@@ -642,7 +642,7 @@ public class RpcClientTest {
                 return null;
             }
         };
-        rpcClient.serverRequestHandlers.add(req -> {
+        rpcClient.serverRequestHandlers.add((req, conn) -> {
             throw new RuntimeException();
         });
         rpcClient.handleServerRequest(request);

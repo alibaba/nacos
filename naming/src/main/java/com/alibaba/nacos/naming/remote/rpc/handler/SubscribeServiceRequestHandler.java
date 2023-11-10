@@ -27,6 +27,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.SubscribeServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UnsubscribeServiceTraceEvent;
+import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -60,6 +61,7 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
     }
     
     @Override
+    @TpsControl(pointName = "RemoteNamingServiceSubscribeUnSubscribe", name = "RemoteNamingServiceSubscribeUnsubscribe")
     @Secured(action = ActionTypes.READ)
     public SubscribeServiceResponse handle(SubscribeServiceRequest request, RequestMeta meta) throws NacosException {
         String namespaceId = request.getNamespace();

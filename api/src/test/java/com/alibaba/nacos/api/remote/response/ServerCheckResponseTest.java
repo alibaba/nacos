@@ -38,15 +38,18 @@ public class ServerCheckResponseTest {
     
     @Test
     public void testSerialization() throws JsonProcessingException {
-        ServerCheckResponse response = new ServerCheckResponse("35643245_1.1.1.1_3306");
+        ServerCheckResponse response = new ServerCheckResponse("35643245_1.1.1.1_3306", false);
         String actual = mapper.writeValueAsString(response);
         assertTrue(actual.contains("\"connectionId\":\"35643245_1.1.1.1_3306\""));
+        assertTrue(actual.contains("\"supportAbilityNegotiation\":false"));
     }
     
     @Test
     public void testDeserialization() throws JsonProcessingException {
-        String json = "{\"resultCode\":200,\"errorCode\":0,\"connectionId\":\"35643245_1.1.1.1_3306\",\"success\":true}";
+        String json = "{\"resultCode\":200,\"errorCode\":0,\"connectionId\":\"35643245_1.1.1.1_3306\",\"success\":true,"
+                + "\"supportAbilityNegotiation\":true}";
         ServerCheckResponse response = mapper.readValue(json, ServerCheckResponse.class);
         assertEquals("35643245_1.1.1.1_3306", response.getConnectionId());
+        assertTrue(response.isSupportAbilityNegotiation());
     }
 }

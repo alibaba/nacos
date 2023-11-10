@@ -36,6 +36,7 @@ import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.PreInitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -73,6 +74,7 @@ public class NacosConfigService implements ConfigService {
     private final ConfigFilterChainManager configFilterChainManager;
     
     public NacosConfigService(Properties properties) throws NacosException {
+        PreInitUtils.asyncPreLoadCostComponent();
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         ValidatorUtils.checkInitParam(clientProperties);
         

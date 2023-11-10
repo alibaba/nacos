@@ -52,7 +52,13 @@ public class GrpcConnection extends Connection {
         this.channel = channel;
     }
     
-    private void sendRequestNoAck(Request request) throws NacosException {
+    /**
+     * send request without ack.
+     *
+     * @param request request data.
+     * @throws NacosException NacosException
+     */
+    public void sendRequestNoAck(Request request) throws NacosException {
         try {
             //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
             synchronized (streamObserver) {

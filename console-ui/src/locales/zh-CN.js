@@ -38,6 +38,7 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
+    nacosMode: '模式',
     doesNotExist: '您访问的页面不存在',
     configurationManagementVirtual: '配置管理',
     configurationManagement: '配置列表',
@@ -360,6 +361,7 @@ const I18N_CONF = {
     delSuccessMsg: '删除成功',
     cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
     authFail: '权限认证失败',
+    copyNamespaceID: '复制命名空间ID',
   },
   NewConfig: {
     newListingMain: '新建配置',
@@ -663,6 +665,9 @@ const I18N_CONF = {
     readOnly: '只读',
     writeOnly: '只写',
     readWrite: '读写',
+  },
+  Components: {
+    copySuccessfully: '复制成功！',
   },
 };
 

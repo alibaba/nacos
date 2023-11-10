@@ -58,6 +58,7 @@ const getState = () => dispatch =>
           loginPageEnabled: res.login_page_enabled,
           authEnabled: res.auth_enabled,
           consoleUiEnable: res.console_ui_enabled,
+          startupMode: res.startup_mode,
         },
       });
     })

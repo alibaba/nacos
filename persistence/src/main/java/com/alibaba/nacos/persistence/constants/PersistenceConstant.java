@@ -51,4 +51,8 @@ public class PersistenceConstant {
     public static final String EXTEND_NEED_READ_UNTIL_HAVE_DATA = "00--0-read-join-0--00";
     
     public static final String CONFIG_MODEL_RAFT_GROUP = "nacos_config";
+    
+    public static final String OFFSET = "OFFSET";
+    
+    public static final String LIMIT = "LIMIT";
 }

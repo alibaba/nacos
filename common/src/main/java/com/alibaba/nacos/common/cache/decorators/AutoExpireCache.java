@@ -24,6 +24,7 @@ import java.util.concurrent.Callable;
 
 /**
  * A wrapper that automatically expires the cache.
+ *
  * @author zzq
  * @date 2021/7/30
  */
@@ -48,14 +49,15 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
     
     @Override
     public V get(K key) {
-        if (keyProp.get(key) != null && isExpire(keyProp.get(key))) {
+        CacheItemProperties itemProperties = keyProp.get(key);
+        if (itemProperties != null && isExpire(itemProperties)) {
             this.keyProp.remove(key);
             this.delegate.remove(key);
             return null;
         }
         return this.delegate.get(key);
     }
-
+    
     @Override
     public V get(K key, Callable<? extends V> call) throws Exception {
         V cachedValue = this.get(key);
@@ -63,10 +65,10 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
             V v2 = call.call();
             this.put(key, v2);
             return v2;
-
+            
         }
         return cachedValue;
-
+        
     }
     
     @Override
@@ -87,9 +89,6 @@ public class AutoExpireCache<K, V> implements Cache<K, V> {
     }
     
     private boolean isExpire(CacheItemProperties itemProperties) {
-        if (itemProperties == null) {
-            return true;
-        }
         return expireNanos != -1 && (System.nanoTime() - itemProperties.getExpireNanos() > expireNanos);
     }
     
