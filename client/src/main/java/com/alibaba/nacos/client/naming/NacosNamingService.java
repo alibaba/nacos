@@ -39,6 +39,7 @@ import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.utils.PreInitUtils;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.ArrayList;
@@ -46,6 +47,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
+
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * Nacos Naming Service.
@@ -332,6 +335,8 @@ public class NacosNamingService implements NamingService {
         if (serviceInfoHolder.isFailoverSwitch()) {
             serviceInfo = getServiceInfoByFailover(serviceName, groupName, clusterString);
             if (serviceInfo != null && serviceInfo.getHosts().size() > 0) {
+                NAMING_LOGGER.debug("getServiceInfo from failover,serviceName: {}  data:{}", serviceName,
+                        JacksonUtils.toJson(serviceInfo.getHosts()));
                 return serviceInfo;
             }
         }
