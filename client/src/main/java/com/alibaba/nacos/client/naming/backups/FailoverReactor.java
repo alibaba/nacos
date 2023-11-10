@@ -94,53 +94,62 @@ public class FailoverReactor implements Closeable {
         
         @Override
         public void run() {
-            FailoverSwitch fSwitch = failoverDataSource.getSwitch();
-            if (fSwitch == null) {
-                failoverSwitchEnable = false;
-                return;
-            }
-            if (fSwitch.getEnabled() != failoverSwitchEnable) {
-                NAMING_LOGGER.info("failover switch changed, new: {}", fSwitch.getEnabled());
-            }
-            if (fSwitch.getEnabled() ) {
-                Map<String, ServiceInfo> failoverMap = new ConcurrentHashMap<>(200);
-                Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
-                for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
-                    ServiceInfo newService = (ServiceInfo) entry.getValue().getData();
-                    ServiceInfo oldService = serviceMap.get(entry.getKey());
-                    if (serviceInfoHolder.isChangedServiceInfo(oldService, newService)) {
-                        NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}",
-                                JacksonUtils.toJson(newService));
-                        NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
-                                newService.getGroupName(), newService.getClusters(), newService.getHosts()));
+            try {
+                FailoverSwitch fSwitch = failoverDataSource.getSwitch();
+                if (fSwitch == null) {
+                    failoverSwitchEnable = false;
+                    return;
+                }
+                if (fSwitch.getEnabled() != failoverSwitchEnable) {
+                    NAMING_LOGGER.info("failover switch changed, new: {}", fSwitch.getEnabled());
+                }
+                if (fSwitch.getEnabled()) {
+                    Map<String, ServiceInfo> failoverMap = new ConcurrentHashMap<>(200);
+                    Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
+                    for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
+                        ServiceInfo newService = (ServiceInfo) entry.getValue().getData();
+                        ServiceInfo oldService = serviceMap.get(entry.getKey());
+                        if (serviceInfoHolder.isChangedServiceInfo(oldService, newService)) {
+                            NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}",
+                                    JacksonUtils.toJson(newService));
+                            NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
+                                    newService.getGroupName(), newService.getClusters(), newService.getHosts()));
+                        }
+                        failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                     }
-                    failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
+                    
+                    if (failoverMap.size() > 0) {
+                        failoverServiceCntMetrics(failoverMap);
+                        serviceMap = failoverMap;
+                    }
+                    
+                    failoverSwitchEnable = true;
+                    return;
                 }
                 
-                if (failoverMap.size() > 0) {
-                    failoverServiceCntMetrics(failoverMap);
-                    serviceMap = failoverMap;
-                }
-                
-                failoverSwitchEnable = true;
-                return;
-            }
-            
-            if (failoverSwitchEnable && !fSwitch.getEnabled() ) {
-                Map<String, ServiceInfo> serviceInfoMap = serviceInfoHolder.getServiceInfoMap();
-                for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
-                    ServiceInfo oldService = entry.getValue();
-                    ServiceInfo newService = serviceInfoMap.get(entry.getKey());
-                    boolean changed = serviceInfoHolder.isChangedServiceInfo(oldService, newService);
-                    if (changed) {
-                        NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
-                                newService.getGroupName(), newService.getClusters(), newService.getHosts()));
+                if (failoverSwitchEnable && !fSwitch.getEnabled()) {
+                    Map<String, ServiceInfo> serviceInfoMap = serviceInfoHolder.getServiceInfoMap();
+                    for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
+                        ServiceInfo oldService = entry.getValue();
+                        ServiceInfo newService = serviceInfoMap.get(entry.getKey());
+                        if (newService != null) {
+                            boolean changed = serviceInfoHolder.isChangedServiceInfo(oldService, newService);
+                            if (changed) {
+                                NotifyCenter.publishEvent(
+                                        new InstancesChangeEvent(notifierEventScope, newService.getName(),
+                                                newService.getGroupName(), newService.getClusters(),
+                                                newService.getHosts()));
+                            }
+                        }
                     }
+                    
+                    serviceMap.clear();
+                    failoverSwitchEnable = false;
+                    failoverServiceCntMetricsClear();
+                    return;
                 }
-                serviceMap.clear();
-                failoverSwitchEnable = false;
-                failoverServiceCntMetricsClear();
-                return;
+            } catch (Exception e) {
+                NAMING_LOGGER.error("FailoverSwitchRefresher run err", e);
             }
         }
     }
