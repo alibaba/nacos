@@ -47,7 +47,7 @@ public class OperationController {
      * @throws Exception exception
      */
     @RequestMapping(value = "/label", method = RequestMethod.GET)
-    public String queryLabel(HttpServletRequest request) throws Exception {
+    public String queryLabel(HttpServletRequest request) {
         String entry = WebUtils.required(request, "entry");
         String label = WebUtils.required(request, "label");
         return cmdbProvider.queryLabel(entry, "ip", label);
