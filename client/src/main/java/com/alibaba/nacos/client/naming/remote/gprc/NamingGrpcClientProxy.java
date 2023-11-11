@@ -204,7 +204,8 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     }
     
     private boolean compareIpAndPort(Instance deRegisterInstance, Instance redoInstance) {
-        return ((deRegisterInstance.getIp().equals(redoInstance.getIp())) && (deRegisterInstance.getPort() == redoInstance.getPort()));
+        return ((deRegisterInstance.getIp().equals(redoInstance.getIp()))
+                && (deRegisterInstance.getPort() == redoInstance.getPort()));
     }
     
     /**
