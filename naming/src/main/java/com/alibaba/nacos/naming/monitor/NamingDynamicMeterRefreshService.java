@@ -50,9 +50,9 @@ public class NamingDynamicMeterRefreshService {
         for (Pair<String, AtomicInteger> serviceChangeCount : topnServiceChangeCount) {
             List<Tag> tags = new ArrayList<>();
             tags.add(new ImmutableTag("service", serviceChangeCount.getFirst()));
-            NacosMeterRegistryCenter.gauge(TOPN_SERVICE_CHANGE_REGISTRY, "service_change_count", tags, serviceChangeCount.getSecond());
+            NacosMeterRegistryCenter
+                    .gauge(TOPN_SERVICE_CHANGE_REGISTRY, "service_change_count", tags, serviceChangeCount.getSecond());
         }
-        MetricsMonitor.getServiceChangeCount().removeAll();
     }
     
     /**
@@ -60,6 +60,6 @@ public class NamingDynamicMeterRefreshService {
      */
     @Scheduled(cron = "0 0 0 ? * 1")
     public void resetTopnServiceChangeCount() {
-        MetricsMonitor.getServiceChangeCount().removeAll();
+        MetricsMonitor.getServiceChangeCount().reset();
     }
 }
