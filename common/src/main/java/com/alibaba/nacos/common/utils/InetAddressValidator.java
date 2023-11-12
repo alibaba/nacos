@@ -1,14 +1,10 @@
 /**
- * Copyright 2018-2021 Dynatrace LLC
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * http://www.apache.org/licenses/LICENSE-2.0
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Copyright 2018-2021 Dynatrace LLC Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+ * this file except in compliance with the License. You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0 Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
+ * either express or implied. See the License for the specific language governing permissions and limitations under the
+ * License.
  */
 
 package com.alibaba.nacos.common.utils;
@@ -22,7 +18,7 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"checkstyle:AbbreviationAsWordInName", "PMD.ClassNamingShouldBeCamelRule"})
 public class InetAddressValidator {
-
+    
     private InetAddressValidator() {
     }
     
@@ -59,9 +55,8 @@ public class InetAddressValidator {
             .compile("^" + "(?:[0-9a-fA-F]{1,4}:){6}" + "$");
     
     /**
-     * Check if <code>input</code> is a valid IPv4 address.
-     * The format is 'xxx.xxx.xxx.xxx'. Four blocks of integer numbers ranging from 0 to 255
-     * are required. Letters are not allowed.
+     * Check if <code>input</code> is a valid IPv4 address. The format is 'xxx.xxx.xxx.xxx'. Four blocks of integer
+     * numbers ranging from 0 to 255 are required. Letters are not allowed.
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv4 notation.
@@ -71,9 +66,8 @@ public class InetAddressValidator {
     }
     
     /**
-     * Check if the given address is a valid IPv6 address in the standard format
-     * The format is 'xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx'. Eight blocks of hexadecimal digits
-     * are required.
+     * Check if the given address is a valid IPv6 address in the standard format The format is
+     * 'xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx'. Eight blocks of hexadecimal digits are required.
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 notation.
@@ -83,9 +77,8 @@ public class InetAddressValidator {
     }
     
     /**
-     * Check if the given address is a valid IPv6 address in the hex-compressed notation
-     * The format is 'xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx'. If all digits in a block are '0'
-     * the block can be left empty.
+     * Check if the given address is a valid IPv6 address in the hex-compressed notation The format is
+     * 'xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx'. If all digits in a block are '0' the block can be left empty.
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 (hex-compressed) notation.
@@ -95,13 +88,8 @@ public class InetAddressValidator {
     }
     
     /**
-     * Check if <code>input</code> is a IPv6 address.
-     * Possible notations for valid IPv6 are:
-     * - Standard IPv6 address
-     * - Hex-compressed IPv6 address
-     * - Link-local IPv6 address
-     * - IPv4-mapped-to-IPV6 address
-     * - IPv6 mixed address
+     * Check if <code>input</code> is a IPv6 address. Possible notations for valid IPv6 are: - Standard IPv6 address -
+     * Hex-compressed IPv6 address - Link-local IPv6 address - IPv4-mapped-to-IPV6 address - IPv6 mixed address
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 notation.
@@ -112,11 +100,9 @@ public class InetAddressValidator {
     }
     
     /**
-     * Check if the given address is a valid IPv6 address in the mixed-standard or mixed-compressed notation.
-     * IPV6 Mixed mode consists of two parts, the first 96 bits (up to 6 blocks of 4 hex digits) are IPv6
-     * the IPV6 part can be either compressed or uncompressed
-     * the second block is a full IPv4 address
-     * e.g. '0:0:0:0:0:0:172.12.55.18'
+     * Check if the given address is a valid IPv6 address in the mixed-standard or mixed-compressed notation. IPV6 Mixed
+     * mode consists of two parts, the first 96 bits (up to 6 blocks of 4 hex digits) are IPv6 the IPV6 part can be
+     * either compressed or uncompressed the second block is a full IPv4 address e.g. '0:0:0:0:0:0:172.12.55.18'
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 (mixed-standard or mixed-compressed) notation.
@@ -143,9 +129,8 @@ public class InetAddressValidator {
     }
     
     /**
-     * Check if <code>input</code> is an IPv4 address mapped into a IPv6 address. These are
-     * starting with "::ffff:" followed by the IPv4 address in a dot-seperated notation.
-     * The format is '::ffff:d.d.d.d'
+     * Check if <code>input</code> is an IPv4 address mapped into a IPv6 address. These are starting with "::ffff:"
+     * followed by the IPv4 address in a dot-seperated notation. The format is '::ffff:d.d.d.d'
      *
      * @param input ip-address to check
      * @return true if <code>input</code> is in correct IPv6 notation containing an IPv4 address
@@ -159,8 +144,8 @@ public class InetAddressValidator {
     }
     
     /**
-     * Check if <code>input</code> is a link local IPv6 address starting with "fe80:" and containing
-     * a zone index with "%xxx". The zone index will not be checked.
+     * Check if <code>input</code> is a link local IPv6 address starting with "fe80:" and containing a zone index with
+     * "%xxx". The zone index will not be checked.
      *
      * @param input ip-address to check
      * @return true if address part of <code>input</code> is in correct IPv6 notation.
@@ -174,29 +159,6 @@ public class InetAddressValidator {
             }
         }
         return false;
-    }
-    
-    /**
-     * Check if <code>input</code> is a valid IPv4 or IPv6 address.
-     *
-     * @param ipAddress ip-address to check
-     * @return <code>true</code> if <code>ipAddress</code> is a valid ip-address
-     */
-    public static boolean isValidIP(String ipAddress) {
-        if (ipAddress == null || ipAddress.length() == 0) {
-            return false;
-        }
-        
-        return isIPv4Address(ipAddress) || isIPv6Address(ipAddress);
-    }
-    
-    /**
-     * get to ipv4 pattern.
-     *
-     * @return
-     */
-    public static Pattern getIpv4Pattern() {
-        return IPV4_PATTERN;
     }
     
 }
