@@ -202,7 +202,7 @@ public class FailoverReactor implements Closeable {
                 String serviceName = entry.getKey();
                 Gauge register = Gauge.builder("nacos_naming_client_failover_instances",
                                 ((ServiceInfo) failoverMap.get(serviceName)).ipCount(), Integer::intValue)
-                        .tag("service_name", "serviceName").description("Nacos failover data service count")
+                        .tag("service_name", serviceName).description("Nacos failover data service count")
                         .register(Metrics.globalRegistry);
                 meterMap.put(serviceName, register);
             }
