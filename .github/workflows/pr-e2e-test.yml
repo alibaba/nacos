@@ -26,15 +26,10 @@ jobs:
       version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:
       - name: 'Download artifact'
-        uses: actions/github-script@v7
+        uses: actions/github-script@v3.1.0
         with:
           script: |
-#            var artifacts = await github.actions.listWorkflowRunArtifacts({
-#               owner: context.repo.owner,
-#               repo: context.repo.repo,
-#               run_id: ${{ github.event.workflow_run.id }},
-#            });
-            var artifacts = await octokit.rest.actions.listWorkflowRunArtifacts({
+            var artifacts = await github.actions.listWorkflowRunArtifacts({
                owner: context.repo.owner,
                repo: context.repo.repo,
                run_id: ${{ github.event.workflow_run.id }},
@@ -42,18 +37,12 @@ jobs:
             var matchArtifactNacos = artifacts.data.artifacts.filter((artifact) => {
                return artifact.name == "nacos"
             })[0];
-#            var download = await github.actions.downloadArtifact({
-#               owner: context.repo.owner,
-#               repo: context.repo.repo,
-#               artifact_id: matchArtifactNacos.id,
-#               archive_format: 'zip',
-#            });
-            var download = await octokit.rest.actions.downloadArtifact({
+            var download = await github.actions.downloadArtifact({
                owner: context.repo.owner,
                repo: context.repo.repo,
                artifact_id: matchArtifactNacos.id,
                archive_format: 'zip',
-             });
+            });
             var fs = require('fs');
             fs.writeFileSync('${{github.workspace}}/nacos.zip', Buffer.from(download.data));
       - run: |
