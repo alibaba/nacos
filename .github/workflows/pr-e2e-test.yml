@@ -223,10 +223,8 @@ jobs:
               BRANCH: main
               CODE_PATH: golang
               CMD: |
-                cd /root/code/golang && go mod init nacos_go_test
-                mkdir /usr/local/go/src/nacos_go_test && cp -rf ./util /usr/local/go/src/nacos_go_test/utils
-                go mod tidy
-                gotestsum --junitfile ./target/surefire-reports/TEST-report.xml ./nacosgotest -timeout 2m  -v
+                cd /root/code/golang && go mod init nacos_go_test && go mod tidy
+                gotestsum --junitfile ./target/surefire-reports/TEST-report.xml ./nacosgotest
               ALL_IP: null
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
