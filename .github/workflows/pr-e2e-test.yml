@@ -26,7 +26,7 @@ jobs:
       version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:
       - name: 'Download artifact'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v3.1.0
         with:
           script: |
             var artifacts = await github.actions.listWorkflowRunArtifacts({
