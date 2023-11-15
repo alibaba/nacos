@@ -77,7 +77,7 @@ jobs:
       - name: Show versions
         id: show_versions
         run: |
-          a=(`ls versionlist`)
+          a=(`ls nacos-e2e/cicd/build/versionlist`)
           printf '%s\n' "${a[@]}" | jq -R . | jq -s .
           echo "VERSION_JSON=`printf '%s\n' "${a[@]}" | jq -R . | jq -s .`" >> $GITHUB_ENV
   
