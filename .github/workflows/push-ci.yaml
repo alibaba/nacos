@@ -117,7 +117,7 @@ jobs:
         run: |
           echo "REPLICA_COUNT=1" >> $GITHUB_ENV
           echo "DATABASE=embedded" >> $GITHUB_ENV
-      - uses: Wuyunfan-BUPT/test-tools@main
+      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
         name: Deploy nacos
         with:
           yamlString: |
@@ -165,7 +165,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@main
+      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
         name: java e2e test
         with:
           yamlString: |
@@ -216,7 +216,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@main
+      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
         name: go e2e test
         with:
           yamlString: |
@@ -267,7 +267,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@main
+      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
         name: cpp e2e test
         with:
           yamlString: |
@@ -321,7 +321,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@main
+      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
         name: csharp e2e test
         with:
           yamlString: |
@@ -374,7 +374,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@main
+      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
         name: nodejs e2e test
         with:
           yamlString: |
@@ -425,7 +425,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@main
+      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
         name: python e2e test
         with:
           yamlString: |
@@ -477,7 +477,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/test-tools@main
+      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
         name: clean
         with:
           yamlString: |
