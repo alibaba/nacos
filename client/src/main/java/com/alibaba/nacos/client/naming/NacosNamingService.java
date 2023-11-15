@@ -142,6 +142,7 @@ public class NacosNamingService implements NamingService {
     @Override
     public void registerInstance(String serviceName, String groupName, Instance instance) throws NacosException {
         NamingUtils.checkInstanceIsLegal(instance);
+        checkAndStripGroupNamePrefix(instance, groupName);
         clientProxy.registerService(serviceName, groupName, instance);
     }
     
@@ -149,6 +150,7 @@ public class NacosNamingService implements NamingService {
     public void batchRegisterInstance(String serviceName, String groupName, List<Instance> instances)
             throws NacosException {
         NamingUtils.batchCheckInstanceIsLegal(instances);
+        batchCheckAndStripGroupNamePrefix(instances, groupName);
         clientProxy.batchRegisterService(serviceName, groupName, instances);
     }
     
@@ -156,6 +158,7 @@ public class NacosNamingService implements NamingService {
     public void batchDeregisterInstance(String serviceName, String groupName, List<Instance> instances)
             throws NacosException {
         NamingUtils.batchCheckInstanceIsLegal(instances);
+        batchCheckAndStripGroupNamePrefix(instances, groupName);
         clientProxy.batchDeregisterService(serviceName, groupName, instances);
     }
     
@@ -191,6 +194,7 @@ public class NacosNamingService implements NamingService {
     
     @Override
     public void deregisterInstance(String serviceName, String groupName, Instance instance) throws NacosException {
+        checkAndStripGroupNamePrefix(instance, groupName);
         clientProxy.deregisterService(serviceName, groupName, instance);
     }
     
@@ -469,5 +473,23 @@ public class NacosNamingService implements NamingService {
         clientProxy.shutdown();
         NotifyCenter.deregisterSubscriber(changeNotifier);
         
+    }
+    
+    private void batchCheckAndStripGroupNamePrefix(List<Instance> instances, String groupName) throws NacosException {
+        for (Instance instance : instances) {
+            checkAndStripGroupNamePrefix(instance, groupName);
+        }
+    }
+    
+    private void checkAndStripGroupNamePrefix(Instance instance, String groupName) throws NacosException {
+        String serviceName = instance.getServiceName();
+        if (serviceName != null) {
+            String groupNameOfInstance = NamingUtils.getGroupName(serviceName);
+            if (!groupName.equals(groupNameOfInstance)) {
+                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, String.format(
+                    "wrong group name prefix of instance service name! it should be: %s, Instance: %s", groupName, instance));
+            }
+            instance.setServiceName(NamingUtils.getServiceName(serviceName));
+        }
     }
 }

@@ -121,6 +121,46 @@ public class NacosNamingServiceTest {
     }
     
     @Test
+    public void testBatchRegisterInstanceWithGroupNamePrefix() throws NacosException {
+        Instance instance = new Instance();
+        String serviceName = "service1";
+        String ip = "1.1.1.1";
+        int port = 10000;
+        instance.setServiceName(Constants.DEFAULT_GROUP + "@@" + serviceName);
+        instance.setEphemeral(true);
+        instance.setPort(port);
+        instance.setIp(ip);
+        List<Instance> instanceList = new ArrayList<>();
+        instanceList.add(instance);
+        //when
+        client.batchRegisterInstance(serviceName, Constants.DEFAULT_GROUP, instanceList);
+        //then
+        verify(proxy, times(1)).batchRegisterService(eq(serviceName), eq(Constants.DEFAULT_GROUP),
+                argThat(instances -> CollectionUtils.isEqualCollection(instanceList, instances)));
+    }
+
+    @Test
+    public void testBatchRegisterInstanceWithWrongGroupNamePrefix() throws NacosException {
+        Instance instance = new Instance();
+        String serviceName = "service1";
+        String ip = "1.1.1.1";
+        int port = 10000;
+        instance.setServiceName("WrongGroup" + "@@" + serviceName);
+        instance.setEphemeral(true);
+        instance.setPort(port);
+        instance.setIp(ip);
+        List<Instance> instanceList = new ArrayList<>();
+        instanceList.add(instance);
+        //when
+        try {
+            client.batchRegisterInstance(serviceName, Constants.DEFAULT_GROUP, instanceList);
+        } catch (Exception e) {
+            Assert.assertTrue(e instanceof NacosException);
+            Assert.assertTrue(e.getMessage().contains("wrong group name prefix of instance service name"));
+        }
+    }
+    
+    @Test
     public void testBatchDeRegisterInstance() throws NacosException {
         Instance instance = new Instance();
         String serviceName = "service1";
