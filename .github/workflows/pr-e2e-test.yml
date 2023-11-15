@@ -96,7 +96,7 @@ jobs:
       fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
-        version: ${{ fromJSON(env.VERSION_JSON) }} #needs.docker.outputs.version-json
+        version: ${{ fromJSON(${{ env.VERSION_JSON }}}} #needs.docker.outputs.version-json
     steps:
       - name: set nodeport
         run: |
