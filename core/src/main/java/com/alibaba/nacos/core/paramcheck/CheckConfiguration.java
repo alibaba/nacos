@@ -14,34 +14,34 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.console.config;
+package com.alibaba.nacos.core.paramcheck;
 
-import com.alibaba.nacos.console.filter.ConsoleParamCheckFilter;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Console filter config.
+ * ParamCheckerFilter registration.
  *
- * @author zhuoguang
+ * @author 985492783@qq.com
+ * @date 2023/11/7 17:52
  */
 @Configuration
-public class ConsoleFilterConfig {
+public class CheckConfiguration {
     
     @Bean
-    public FilterRegistrationBean<ConsoleParamCheckFilter> consoleParamCheckFilterRegistration() {
-        FilterRegistrationBean<ConsoleParamCheckFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(consoleParamCheckFilter());
-        registration.addUrlPatterns("/v1/console/*");
-        registration.addUrlPatterns("/v2/console/*");
-        registration.setName("consoleparamcheckfilter");
+    public FilterRegistrationBean<ParamCheckerFilter> checkerFilterRegistration(ParamCheckerFilter checkerFilter) {
+        FilterRegistrationBean<ParamCheckerFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(checkerFilter);
+        registration.addUrlPatterns("/*");
+        registration.setName("checkerFilter");
         registration.setOrder(8);
         return registration;
     }
     
     @Bean
-    public ConsoleParamCheckFilter consoleParamCheckFilter() {
-        return new ConsoleParamCheckFilter();
+    public ParamCheckerFilter checkerFilter(ControllerMethodsCache methodsCache) {
+        return new ParamCheckerFilter(methodsCache);
     }
 }

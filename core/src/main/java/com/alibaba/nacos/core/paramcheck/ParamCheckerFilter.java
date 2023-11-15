@@ -14,15 +14,16 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.filter;
+package com.alibaba.nacos.core.paramcheck;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.paramcheck.AbstractParamChecker;
 import com.alibaba.nacos.common.paramcheck.ParamCheckResponse;
 import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
-import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
-import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
-import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
+import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.plugin.control.Loggers;
 
 import javax.servlet.Filter;
@@ -33,16 +34,22 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 /**
- * Config param check filter.
+ * ParamCheckerFilter to http filter.
  *
- * @author zhuoguang
+ * @author 985492783@qq.com
+ * @date 2023/11/7 17:40
  */
-public class ConfigParamCheckFilter implements Filter {
+public class ParamCheckerFilter implements Filter {
     
-    private static final String MODULE = "config";
+    private final ControllerMethodsCache methodsCache;
+    
+    public ParamCheckerFilter(ControllerMethodsCache methodsCache) {
+        this.methodsCache = methodsCache;
+    }
     
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -55,22 +62,29 @@ public class ConfigParamCheckFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) request;
         HttpServletResponse resp = (HttpServletResponse) response;
         try {
-            String uri = req.getRequestURI();
-            String method = req.getMethod();
-            HttpParamExtractorManager extractorManager = HttpParamExtractorManager.getInstance();
-            AbstractHttpParamExtractor paramExtractor = extractorManager.getExtractor(uri, method, MODULE);
-            List<ParamInfo> paramInfoList = paramExtractor.extractParam(req);
+            Method method = methodsCache.getMethod(req);
+            ExtractorManager.Extractor extractor = method.getAnnotation(ExtractorManager.Extractor.class);
+            if (extractor == null) {
+                extractor = method.getDeclaringClass().getAnnotation(ExtractorManager.Extractor.class);
+                if (extractor == null) {
+                    chain.doFilter(request, response);
+                    return;
+                }
+            }
+            AbstractHttpParamExtractor httpParamExtractor = ExtractorManager.getHttpExtractor(extractor);
+            List<ParamInfo> paramInfoList = httpParamExtractor.extractParam(req);
             ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
             AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(ServerParamCheckConfig.getInstance().getActiveParamChecker());
             ParamCheckResponse paramCheckResponse = paramChecker.checkParamInfoList(paramInfoList);
             if (paramCheckResponse.isSuccess()) {
                 chain.doFilter(req, resp);
             } else {
-                Loggers.CONTROL.info("Param check invalid,{},url:{}", paramCheckResponse.getMessage(), uri);
+                Loggers.CONTROL.info("Param check invalid,{},url:{}", paramCheckResponse.getMessage(), req.getRequestURI());
                 generate400Response(resp, paramCheckResponse.getMessage());
             }
-        } catch (Exception e) {
-            generate400Response(resp, e.getMessage());
+        } catch (NacosException e) {
+            Loggers.CONTROL.error("exception: {}", e.getMessage());
+            throw new NacosRuntimeException(ErrorCode.UnKnowError.getCode(), e);
         }
         
     }
