@@ -22,8 +22,8 @@ jobs:
       matrix:
         base-image: ["ubuntu"]
         java-version: ["8"]
-    outputs:
-      version-json: ${{ steps.show_versions.outputs.version-json }}
+#    outputs:
+#      version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:
       - name: 'Download artifact'
         uses: actions/github-script@v3.1.0
@@ -79,7 +79,7 @@ jobs:
         run: |
           a=(`ls nacos-e2e/cicd/build/versionlist`)
           printf '%s\n' "${a[@]}" | jq -R . | jq -s .
-          echo version-json=`printf '%s\n' "${a[@]}" | jq -R . | jq -s .` >> $GITHUB_OUTPUT
+          echo "VERSION_JSON=`printf '%s\n' "${a[@]}" | jq -R . | jq -s .`" >> $GITHUB_ENV
   
 
   deploy:
@@ -96,7 +96,7 @@ jobs:
       fail-fast: false
       matrix:
         mode: ["cluster","standalone"]
-        version: ${{ fromJSON(needs.docker.outputs.version-json) }}
+        version: ${{ fromJSON(env.VERSION_JSON) }} #needs.docker.outputs.version-json
     steps:
       - name: set nodeport
         run: |
