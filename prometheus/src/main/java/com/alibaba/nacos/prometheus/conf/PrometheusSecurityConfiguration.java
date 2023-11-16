@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.prometheus.conf;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
+import org.springframework.core.annotation.Order;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
-import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH;
 import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_PATH;
-import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_SERVICE_PATH;
 
 
 /**
@@ -32,13 +32,22 @@ import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLE
  * @author vividfish
  */
 @Configuration
-@ConditionalOnMissingBean(value = WebSecurityConfigurerAdapter.class)
+@ConditionalOnProperty(name = "nacos.prometheus.metrics.enabled", havingValue = "true")
+@Order(4)
 public class PrometheusSecurityConfiguration extends WebSecurityConfigurerAdapter {
     
+    private final AuthConfigs authConfigs;
+    
+    public PrometheusSecurityConfiguration(AuthConfigs authConfigs) {
+        this.authConfigs = authConfigs;
+    }
+    
     @Override
-    public void configure(WebSecurity web) throws Exception {
-        web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_PATH);
-        web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_NAMESPACE_PATH);
-        web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_SERVICE_PATH);
+    protected void configure(HttpSecurity http) throws Exception {
+        if (!authConfigs.isAuthEnabled()) {
+            http.authorizeRequests().antMatchers(PROMETHEUS_CONTROLLER_PATH + "/**").permitAll();
+        } else {
+            http.authorizeRequests().antMatchers(PROMETHEUS_CONTROLLER_PATH + "/**").authenticated().and().httpBasic();
+        }
     }
 }

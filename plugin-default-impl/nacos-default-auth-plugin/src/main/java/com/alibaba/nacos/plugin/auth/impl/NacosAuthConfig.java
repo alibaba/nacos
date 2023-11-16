@@ -31,6 +31,7 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.env.Environment;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.BeanIds;
@@ -53,6 +54,7 @@ import javax.annotation.PostConstruct;
  * @author Nacos
  */
 @EnableGlobalMethodSecurity(prePostEnabled = true)
+@Order(5)
 public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     private static final String SECURITY_IGNORE_URLS_SPILT_CHAR = ",";
@@ -64,6 +66,9 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     private static final String DEFAULT_ALL_PATH_PATTERN = "/**";
     
     private static final String PROPERTY_IGNORE_URLS = "nacos.security.ignore.urls";
+    
+    private final String[] staticFilePattern = new String[] {"/", "/**/*.js", "/**/*.css", "/**/*.js", "/**/*.map",
+            "/**/*.html", "/**/*.png", "/**/*.ttf", "/**/*.woff", "/**/*.woff2", "/**/*.svg", "/**/*.eot"};
     
     private final Environment env;
     
@@ -107,15 +112,11 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
     
     @Override
     public void configure(WebSecurity web) {
-        
-        String ignoreUrls = null;
-        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
-        } else if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = DEFAULT_ALL_PATH_PATTERN;
-        }
+        web.ignoring().requestMatchers(request -> methodsCache.getMethod(request) != null);
+        web.ignoring().antMatchers(staticFilePattern);
+        String ignoreUrls = "";
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
-            ignoreUrls = env.getProperty(PROPERTY_IGNORE_URLS, DEFAULT_ALL_PATH_PATTERN);
+            ignoreUrls = env.getProperty(PROPERTY_IGNORE_URLS, "");
         }
         if (StringUtils.isNotBlank(ignoreUrls)) {
             for (String each : ignoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)) {
@@ -148,6 +149,8 @@ public class NacosAuthConfig extends WebSecurityConfigurerAdapter {
             
             http.addFilterBefore(new JwtAuthenticationTokenFilter(tokenProvider),
                     UsernamePasswordAuthenticationFilter.class);
+        } else {
+            http.authorizeRequests().antMatchers(DEFAULT_ALL_PATH_PATTERN).authenticated();
         }
     }
     
