@@ -52,8 +52,6 @@ class ListeningToQuery extends React.Component {
       visible: false,
       loading: false,
       total: 0,
-      pageSize: 10,
-      currentPage: 1,
       dataSource: [],
     };
     this.field = new Field(this);
@@ -139,12 +137,6 @@ class ListeningToQuery extends React.Component {
   };
 
   showMore() {}
-
-  changePage = value => {
-    this.setState({
-      currentPage: value,
-    });
-  };
 
   resetSearch() {
     this.field.reset();
@@ -323,15 +315,6 @@ class ListeningToQuery extends React.Component {
               )}
             </Col>
           </Row>
-          <div style={{ marginTop: 10, textAlign: 'right' }}>
-            <Pagination
-              current={this.state.currentPage}
-              total={this.state.total}
-              pageSize={this.state.pageSize}
-              onChange={this.changePage}
-            />
-            ,
-          </div>
         </Loading>
       </>
     );
