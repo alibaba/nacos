@@ -100,7 +100,7 @@ jobs:
     steps:
       - name: set nodeport
         run: |
-          echo "NODE_PORT=$(expr $(expr ${{ strategy.job-index }} + 1) * ${{ github.run_number }})" >> $GITHUB_ENV
+          echo "NODE_PORT=$(expr $(expr $(expr $(expr ${{ strategy.job-index }} + 1) * ${{ github.run_number }}) % 30000) + 30000)" >> $GITHUB_ENV
       - name: set cluster params
         if: ${{ matrix.mode == 'standalone' }}
         run: |
