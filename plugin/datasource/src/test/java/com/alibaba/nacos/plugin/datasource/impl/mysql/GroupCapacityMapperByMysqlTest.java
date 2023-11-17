@@ -19,6 +19,8 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
+import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.junit.Assert;
@@ -65,6 +67,18 @@ public class GroupCapacityMapperByMysqlTest {
     public void testGetDataSource() {
         String dataSource = groupCapacityMapperByMysql.getDataSource();
         Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+    }
+    
+    @Test
+    public void testGetDbTypeEnum() {
+        DbTypeEnum dbTypeEnum = groupCapacityMapperByMysql.getDbTypeEnum();
+        Assert.assertEquals(dbTypeEnum, DbTypeEnum.MYSQL);
+    }
+    
+    @Test
+    public void testGetIDialect() {
+        IDialect iDialect = groupCapacityMapperByMysql.getIDialect();
+        Assert.assertNotNull(iDialect);
     }
     
     @Test

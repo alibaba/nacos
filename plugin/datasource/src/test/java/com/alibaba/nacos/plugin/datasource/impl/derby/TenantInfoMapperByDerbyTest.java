@@ -18,6 +18,8 @@ package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
+import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,5 +43,17 @@ public class TenantInfoMapperByDerbyTest {
     public void testGetDataSource() {
         String dataSource = tenantInfoMapperByDerby.getDataSource();
         Assert.assertEquals(dataSource, DataSourceConstant.DERBY);
+    }
+    
+    @Test
+    public void testGetDbTypeEnum() {
+        DbTypeEnum dbTypeEnum = tenantInfoMapperByDerby.getDbTypeEnum();
+        Assert.assertEquals(dbTypeEnum, DbTypeEnum.DERBY);
+    }
+    
+    @Test
+    public void testGetIDialect() {
+        IDialect iDialect = tenantInfoMapperByDerby.getIDialect();
+        Assert.assertNotNull(iDialect);
     }
 }

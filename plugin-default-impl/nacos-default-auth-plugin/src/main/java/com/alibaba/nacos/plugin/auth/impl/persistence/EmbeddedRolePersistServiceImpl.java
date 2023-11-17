@@ -21,9 +21,9 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.plugin.auth.impl.persistence.embedded.AuthEmbeddedPaginationHelperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -60,9 +60,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         
         String where = " 1=1 ";
         
-        Page<RoleInfo> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, new ArrayList<String>().toArray(), pageNo,
-                        pageSize, ROLE_INFO_ROW_MAPPER);
+        Page<RoleInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
+                new ArrayList<String>().toArray(), pageNo, pageSize, ROLE_INFO_ROW_MAPPER);
         if (pageInfo == null) {
             pageInfo = new Page<>();
             pageInfo.setTotalCount(0);
@@ -196,6 +195,6 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public <E> PaginationHelper<E> createPaginationHelper() {
-        return new EmbeddedPaginationHelperImpl<>(databaseOperate);
+        return new AuthEmbeddedPaginationHelperImpl<>(databaseOperate);
     }
 }

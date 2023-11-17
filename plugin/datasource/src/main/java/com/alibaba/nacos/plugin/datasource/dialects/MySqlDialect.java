@@ -14,27 +14,28 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.persistence.dialects;
+package com.alibaba.nacos.plugin.datasource.dialects;
 
-import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.PageConstant;
 
 import java.util.Arrays;
 
 /**
- * PostgreSql Database pagination statement assembly implementation.
+ * Mysql Database pagination statement assembly implementation.
  *
- * @author hkm
+ * @author huangKeMing
  */
-public class PostgreSqlDialect implements IDialect {
+public class MySqlDialect implements IDialect {
     
     @Override
     public DialectModel buildPaginationSql(String sqlFetchRows, Object[] args, int pageNo, int pageSize) {
-        if (!sqlFetchRows.contains(PersistenceConstant.LIMIT)) {
-            String sqlFetch = sqlFetchRows + " LIMIT " + FIRST_MARK + " OFFSET " + SECOND_MARK;
+        if (!sqlFetchRows.contains(PageConstant.LIMIT)) {
+            StringBuilder sqlFetch = new StringBuilder(sqlFetchRows)
+                    .append(" ").append(PageConstant.LIMIT).append(" ").append(FIRST_MARK).append(COMMA).append(SECOND_MARK);
             Object[] newArgs = Arrays.copyOf(args, args.length + 2);
             newArgs[args.length] = (pageNo - 1) * pageSize;
             newArgs[args.length + 1] = pageSize;
-            return new DialectModel(sqlFetch, newArgs);
+            return new DialectModel(sqlFetch.toString(), newArgs);
         } else {
             return new DialectModel(sqlFetchRows, args);
         }

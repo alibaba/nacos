@@ -19,10 +19,11 @@ package com.alibaba.nacos.plugin.auth.impl.persistence;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
+import com.alibaba.nacos.plugin.auth.impl.persistence.extrnal.AuthExternalPaginationHelperImpl;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -46,11 +47,15 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     
     private JdbcTemplate jt;
     
+    private String dataSourceType = "";
+    
     private static final String PATTERN_STR = "*";
     
     @PostConstruct
     protected void init() {
-        jt = DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
+        DataSourceService dataSource = DynamicDataSource.getInstance().getDataSource();
+        jt = dataSource.getJdbcTemplate();
+        dataSourceType = dataSource.getDataSourceType();
     }
     
     /**
@@ -142,9 +147,8 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
         }
         
         try {
-            Page<User> pageInfo = helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                            USER_ROW_MAPPER);
+            Page<User> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo,
+                    pageSize, USER_ROW_MAPPER);
             if (pageInfo == null) {
                 pageInfo = new Page<>();
                 pageInfo.setTotalCount(0);
@@ -202,7 +206,7 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     }
     
     @Override
-    public <E> PaginationHelper<E> createPaginationHelper() {
-        return new ExternalStoragePaginationHelperImpl<>(jt);
+    public <E> AuthPaginationHelper<E> createPaginationHelper() {
+        return new AuthExternalPaginationHelperImpl<>(jt, dataSourceType);
     }
 }

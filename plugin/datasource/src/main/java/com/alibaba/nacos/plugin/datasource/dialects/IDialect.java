@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.persistence.dialects;
+package com.alibaba.nacos.plugin.datasource.dialects;
 
 /**
  * Database pagination statement assembly interface.
  *
- * @author hkm
+ * @author huangKeMing
  */
 public interface IDialect {
     

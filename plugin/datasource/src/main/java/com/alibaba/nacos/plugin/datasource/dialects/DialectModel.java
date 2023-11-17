@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.persistence.dialects;
+package com.alibaba.nacos.plugin.datasource.dialects;
 
 /**
  * The model required for the pagination parameter to be dynamic.
  *
- * @author hkm
+ * @author huangKeMing
  */
 public class DialectModel {
     

@@ -19,6 +19,9 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
+import com.alibaba.nacos.plugin.datasource.dialects.DialectFactory;
+import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
+import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
@@ -51,5 +54,15 @@ public class ConfigInfoAggrMapperByMySql extends AbstractMapper implements Confi
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
+    }
+    
+    @Override
+    public DbTypeEnum getDbTypeEnum() {
+        return DbTypeEnum.MYSQL;
+    }
+    
+    @Override
+    public IDialect getIDialect() {
+        return DialectFactory.getDialect(getDbTypeEnum());
     }
 }

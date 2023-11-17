@@ -21,6 +21,9 @@ import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
+import com.alibaba.nacos.plugin.datasource.dialects.DialectFactory;
+import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
+import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
@@ -276,6 +279,16 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     public String getDataSource() {
         return DataSourceConstant.DERBY;
     }
+    
+    @Override
+    public DbTypeEnum getDbTypeEnum() {
+        return DbTypeEnum.DERBY;
+    }
+    
+    @Override
+    public IDialect getIDialect() {
+        return DialectFactory.getDialect(getDbTypeEnum());
+    }
 
     @Override
     public MapperResult findChangeConfig(MapperContext context) {
@@ -286,4 +299,5 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
                 context.getWhereParameter(FieldConstant.LAST_MAX_ID),
                 context.getWhereParameter(FieldConstant.PAGE_SIZE)));
     }
+    
 }

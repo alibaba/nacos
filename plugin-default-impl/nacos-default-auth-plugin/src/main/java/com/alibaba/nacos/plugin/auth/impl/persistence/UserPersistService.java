@@ -88,5 +88,5 @@ public interface UserPersistService {
      * @param <E> Generic object
      * @return {@link PaginationHelper}
      */
-    <E> PaginationHelper<E> createPaginationHelper();
+    <E> AuthPaginationHelper<E> createPaginationHelper();
 }

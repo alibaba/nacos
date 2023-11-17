@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.persistence.exception;
+package com.alibaba.nacos.plugin.datasource.constants;
 
 /**
- * DbDialectException.
+ * The Page constant.
  *
- * @author hkm
- */
-public class DbDialectNotSupportException extends RuntimeException {
+ * @author huangKeMing
+ **/
+public class PageConstant {
     
-    private static final long serialVersionUID = 1L;
+    public static final String OFFSET = "OFFSET";
     
-    public DbDialectNotSupportException(String message) {
-        super(message);
-    }
+    public static final String ROWS = "ROWS";
     
-    public DbDialectNotSupportException(Throwable throwable) {
-        super(throwable);
-    }
+    public static final String FETCH_NEXT = "FETCH NEXT";
     
-    public DbDialectNotSupportException(String message, Throwable throwable) {
-        super(message, throwable);
-    }
+    public static final String ONLY = "ONLY";
+    
+    public static final String LIMIT = "LIMIT";
 }

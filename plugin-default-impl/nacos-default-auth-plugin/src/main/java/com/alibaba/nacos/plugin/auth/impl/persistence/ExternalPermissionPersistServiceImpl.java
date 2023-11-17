@@ -19,10 +19,11 @@ package com.alibaba.nacos.plugin.auth.impl.persistence;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
+import com.alibaba.nacos.plugin.auth.impl.persistence.extrnal.AuthExternalPaginationHelperImpl;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -46,11 +47,15 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
     
     private JdbcTemplate jt;
     
+    private String dataSourceType = "";
+    
     private static final String PATTERN_STR = "*";
     
     @PostConstruct
     protected void init() {
-        jt = DynamicDataSource.getInstance().getDataSource().getJdbcTemplate();
+        DataSourceService dataSource = DynamicDataSource.getInstance().getDataSource();
+        jt = dataSource.getJdbcTemplate();
+        dataSourceType = dataSource.getDataSourceType();
     }
     
     @Override
@@ -69,9 +74,8 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         }
         
         try {
-            Page<PermissionInfo> pageInfo = helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                            PERMISSION_ROW_MAPPER);
+            Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
+                    params.toArray(), pageNo, pageSize, PERMISSION_ROW_MAPPER);
             
             if (pageInfo == null) {
                 pageInfo = new Page<>();
@@ -141,9 +145,8 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
         }
         
         try {
-            Page<PermissionInfo> pageInfo = helper
-                    .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                            PERMISSION_ROW_MAPPER);
+            Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where,
+                    params.toArray(), pageNo, pageSize, PERMISSION_ROW_MAPPER);
             
             if (pageInfo == null) {
                 pageInfo = new Page<>();
@@ -176,6 +179,6 @@ public class ExternalPermissionPersistServiceImpl implements PermissionPersistSe
     
     @Override
     public <E> PaginationHelper<E> createPaginationHelper() {
-        return new ExternalStoragePaginationHelperImpl<>(jt);
+        return new AuthExternalPaginationHelperImpl<E>(jt, dataSourceType);
     }
 }

@@ -19,6 +19,8 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
+import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.google.common.collect.Lists;
@@ -135,5 +137,17 @@ public class ConfigInfoTagMapperByMySqlTest {
     public void testGetDataSource() {
         String dataSource = configInfoTagMapperByMySql.getDataSource();
         Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+    }
+    
+    @Test
+    public void testGetDbTypeEnum() {
+        DbTypeEnum dbTypeEnum = configInfoTagMapperByMySql.getDbTypeEnum();
+        Assert.assertEquals(dbTypeEnum, DbTypeEnum.MYSQL);
+    }
+    
+    @Test
+    public void testGetIDialect() {
+        IDialect iDialect = configInfoTagMapperByMySql.getIDialect();
+        Assert.assertNotNull(iDialect);
     }
 }

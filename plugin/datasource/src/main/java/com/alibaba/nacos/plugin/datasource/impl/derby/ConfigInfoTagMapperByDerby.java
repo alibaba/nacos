@@ -17,6 +17,9 @@
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.dialects.DialectFactory;
+import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
+import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
@@ -44,5 +47,15 @@ public class ConfigInfoTagMapperByDerby extends AbstractMapper implements Config
     @Override
     public String getDataSource() {
         return DataSourceConstant.DERBY;
+    }
+    
+    @Override
+    public DbTypeEnum getDbTypeEnum() {
+        return DbTypeEnum.DERBY;
+    }
+    
+    @Override
+    public IDialect getIDialect() {
+        return DialectFactory.getDialect(getDbTypeEnum());
     }
 }

@@ -16,6 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
+import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
+
 import java.util.List;
 
 /**
@@ -83,4 +86,16 @@ public interface Mapper {
      * @return an array of column names indicating the columns
      */
     String[] getPrimaryKeyGeneratedKeys();
+    
+    /**
+     * Get the datasource name.
+     * @return The name of datasource.
+     */
+    DbTypeEnum getDbTypeEnum();
+    
+    /**
+     * Get dialect.
+     * @return
+     */
+    IDialect getIDialect();
 }

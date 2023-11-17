@@ -16,12 +16,6 @@
 
 package com.alibaba.nacos.persistence.repository.extrnal;
 
-import com.alibaba.nacos.persistence.datasource.DataSourceService;
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.dialects.DialectFactory;
-import com.alibaba.nacos.persistence.dialects.DialectModel;
-import com.alibaba.nacos.persistence.dialects.IDialect;
-import com.alibaba.nacos.persistence.enums.DbTypeEnum;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
@@ -40,8 +34,6 @@ import java.util.List;
 public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
     
     private final JdbcTemplate jdbcTemplate;
-    
-    private final DataSourceService dataSourceService = DynamicDataSource.getInstance().getDataSource();
     
     public ExternalStoragePaginationHelperImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -92,11 +84,8 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
         if (pageNo > pageCount) {
             return page;
         }
-    
-        // dialect handle pagination parameters
-        IDialect dialect = DialectFactory.getDialect(DbTypeEnum.getDbType(dataSourceService.getDataSourceType()));
-        DialectModel dialectModel = dialect.buildPaginationSql(sqlFetchRows, args, pageNo, pageSize);
-        List<E> result = jdbcTemplate.query(dialectModel.getSqlFetchRows(), dialectModel.getArgs(), rowMapper);
+        
+        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
