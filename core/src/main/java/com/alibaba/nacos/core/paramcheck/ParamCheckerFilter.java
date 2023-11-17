@@ -63,6 +63,10 @@ public class ParamCheckerFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) response;
         try {
             Method method = methodsCache.getMethod(req);
+            if (method == null) {
+                chain.doFilter(req, resp);
+                return;
+            }
             ExtractorManager.Extractor extractor = method.getAnnotation(ExtractorManager.Extractor.class);
             if (extractor == null) {
                 extractor = method.getDeclaringClass().getAnnotation(ExtractorManager.Extractor.class);
