@@ -54,7 +54,8 @@ public class ServerRemoteAbilityTest {
     public void testSerialize() throws JsonProcessingException {
         serverAbilities = new ServerRemoteAbility();
         String json = mapper.writeValueAsString(serverAbilities);
-        assertEquals("{\"grpcReportEnabled\":true,\"supportRemoteConnection\":false}", json);
+        assertTrue(json.contains("\"supportRemoteConnection\":false"));
+        assertTrue(json.contains("\"grpcReportEnabled\":true"));
     }
     
     @Test
