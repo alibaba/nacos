@@ -140,8 +140,8 @@
         <jjwt.version>0.11.2</jjwt.version>
         <javatuples.version>1.2</javatuples.version>
         <grpc-java.version>1.57.2</grpc-java.version>
-        <proto-google-common-protos.version>2.7.1</proto-google-common-protos.version>
-        <protobuf-java.version>3.21.11</protobuf-java.version>
+        <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
+        <protobuf-java.version>3.22.3</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
         <mockito-all.version>1.10.19</mockito-all.version>
