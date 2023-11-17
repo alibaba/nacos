@@ -116,7 +116,7 @@ public class NacosConfigService implements ConfigService {
         cr.setGroup(group);
         cr.setContent(content);
         cr.setEncryptedDataKey(encryptedDataKey);
-        configFilterChainManager.doFilter(null, cr, true);
+        configFilterChainManager.doFilter(null, cr);
         return cr.getContent();
     }
     
@@ -179,7 +179,7 @@ public class NacosConfigService implements ConfigService {
             String encryptedDataKey = LocalEncryptedDataKeyProcessor
                     .getEncryptDataKeyFailover(agent.getName(), dataId, group, tenant);
             cr.setEncryptedDataKey(encryptedDataKey);
-            configFilterChainManager.doFilter(null, cr, true);
+            configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
             return content;
         }
@@ -188,7 +188,7 @@ public class NacosConfigService implements ConfigService {
             ConfigResponse response = worker.getServerConfig(dataId, group, tenant, timeoutMs, false);
             cr.setContent(response.getContent());
             cr.setEncryptedDataKey(response.getEncryptedDataKey());
-            configFilterChainManager.doFilter(null, cr, true);
+            configFilterChainManager.doFilter(null, cr);
             content = cr.getContent();
             
             return content;
@@ -209,7 +209,7 @@ public class NacosConfigService implements ConfigService {
         String encryptedDataKey = LocalEncryptedDataKeyProcessor
                 .getEncryptDataKeySnapshot(agent.getName(), dataId, group, tenant);
         cr.setEncryptedDataKey(encryptedDataKey);
-        configFilterChainManager.doFilter(null, cr, true);
+        configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();
         return content;
     }

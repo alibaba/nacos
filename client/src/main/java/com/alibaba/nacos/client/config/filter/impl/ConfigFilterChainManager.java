@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.ServiceLoader;
-import java.util.Collections;
 
 /**
  * Config Filter Chain Management.
@@ -80,24 +79,6 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     @Override
     public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
         new VirtualFilterChain(this.filters).doFilter(request, response);
-    }
-
-    /**
-     * Do doFilters by reversed order.
-     *
-     * @date 2023/11/8
-     * @param request  request
-     * @param response response
-     * @throws NacosException NacosException
-     */
-    public void doFilter(IConfigRequest request, IConfigResponse response, boolean reversed) throws NacosException {
-        if (!reversed) {
-            new VirtualFilterChain(this.filters).doFilter(request, response);
-            return;
-        }
-        List<IConfigFilter> copiedFilters = new ArrayList<>(this.filters);
-        Collections.reverse(copiedFilters);
-        new VirtualFilterChain(copiedFilters).doFilter(request, response);
     }
 
     private static class VirtualFilterChain implements IConfigFilterChain {
