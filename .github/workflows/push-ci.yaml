@@ -124,7 +124,7 @@ jobs:
             action: deploy
             namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
-            waitTimes: 1200
+            waitTimes: 2000
             velaAppDescription: nacos-${{ env.GITHUB_WORKFLOW }}-${{ github.run_id }}@${{ matrix.version }}
             repoName: nacos
             helm:
