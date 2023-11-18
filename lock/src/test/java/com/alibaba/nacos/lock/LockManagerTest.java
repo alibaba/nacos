@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.lock;
 
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
 import com.alibaba.nacos.lock.core.reentrant.mutex.ClientAtomicLock;
+import com.alibaba.nacos.lock.exception.NacosLockException;
 import com.alibaba.nacos.lock.factory.ClientLockFactory;
 import com.alibaba.nacos.lock.factory.LockFactory;
 import com.alibaba.nacos.lock.model.LockInfo;
@@ -43,8 +43,16 @@ public class LockManagerTest {
     @Test
     public void testLockManagerError() {
         String emptyType = "testLockFactory_lock";
-        Assert.assertThrows(NacosRuntimeException.class, () -> {
+        Assert.assertThrows(NacosLockException.class, () -> {
             lockManager.getMutexLock(new LockKey(emptyType, "key"));
+        });
+        
+        Assert.assertThrows(NacosLockException.class, () -> {
+            lockManager.getMutexLock(new LockKey(emptyType, null));
+        });
+        
+        Assert.assertThrows(NacosLockException.class, () -> {
+            lockManager.getMutexLock(new LockKey(null, "key"));
         });
     }
     

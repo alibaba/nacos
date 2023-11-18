@@ -16,10 +16,9 @@
 
 package com.alibaba.nacos.lock;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
+import com.alibaba.nacos.lock.exception.NacosLockException;
 import com.alibaba.nacos.lock.factory.LockFactory;
 import com.alibaba.nacos.lock.model.LockKey;
 import org.springframework.stereotype.Service;
@@ -51,10 +50,10 @@ public class NacosLockManager implements LockManager {
     @Override
     public AtomicLockService getMutexLock(LockKey lockKey) {
         if (lockKey == null || lockKey.getLockType() == null || lockKey.getKey() == null) {
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR);
+            throw new NacosLockException("lockType or lockKey is null.");
         }
         if (!factoryMap.containsKey(lockKey.getLockType())) {
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR);
+            throw new NacosLockException("lockType: " + lockKey.getLockType() + " is not exist.");
         }
         return atomicLockMap.computeIfAbsent(lockKey, lock -> {
             LockFactory lockFactory = factoryMap.get(lock.getLockType());
@@ -65,6 +64,17 @@ public class NacosLockManager implements LockManager {
     @Override
     public ConcurrentHashMap<LockKey, AtomicLockService> showLocks() {
         return atomicLockMap;
+    }
+    
+    @Override
+    public AtomicLockService removeMutexLock(LockKey lockKey) {
+        if (lockKey == null || lockKey.getLockType() == null || lockKey.getKey() == null) {
+            throw new NacosLockException("lockType or lockKey is null.");
+        }
+        if (!factoryMap.containsKey(lockKey.getLockType())) {
+            throw new NacosLockException("lockType: " + lockKey.getLockType() + " is not exist.");
+        }
+        return atomicLockMap.remove(lockKey);
     }
     
 }

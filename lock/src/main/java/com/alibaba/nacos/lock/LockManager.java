@@ -44,4 +44,12 @@ public interface LockManager {
      * @return Map
      */
     ConcurrentHashMap<LockKey, AtomicLockService> showLocks();
+    
+    /**
+     * remove mutex lock.
+     *
+     * @param lockKey lock key
+     * @return AbstractAtomicLock
+     */
+    AtomicLockService removeMutexLock(LockKey lockKey);
 }
