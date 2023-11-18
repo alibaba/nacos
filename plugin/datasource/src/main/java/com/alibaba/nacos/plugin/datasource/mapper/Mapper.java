@@ -95,7 +95,7 @@ public interface Mapper {
     
     /**
      * Get dialect.
-     * @return
+     * @return The dialect.
      */
     IDialect getIDialect();
 }
