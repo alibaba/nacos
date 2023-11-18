@@ -54,4 +54,10 @@ public interface AtomicLockService {
      * @return key
      */
     String getKey();
+    
+    /**
+     * judge lock is clear to gc.
+     * @return boolean
+     */
+    Boolean isClear();
 }

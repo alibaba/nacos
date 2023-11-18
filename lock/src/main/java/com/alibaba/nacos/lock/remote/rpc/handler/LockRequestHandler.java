@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.lock.remote.response.LockOperationResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import com.alibaba.nacos.lock.exception.NacosLockException;
 import com.alibaba.nacos.lock.service.LockOperationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,14 +53,18 @@ public class LockRequestHandler extends RequestHandler<LockOperationRequest, Loc
     public LockOperationResponse handle(LockOperationRequest request, RequestMeta meta) throws NacosException {
         Boolean lock = null;
         LOGGER.info("request: {}, instance: {}", request.getLockOperationEnum(), request.getLockInstance());
-        if (request.getLockOperationEnum() == LockOperationEnum.ACQUIRE) {
-            LockInstance lockInstance = request.getLockInstance();
-            lock = lockOperationService.lock(lockInstance);
-        } else if (request.getLockOperationEnum() == LockOperationEnum.RELEASE) {
-            lock = lockOperationService.unLock(request.getLockInstance());
-        } else {
-            return LockOperationResponse.fail("There is no Handler of such operations!");
+        try {
+            if (request.getLockOperationEnum() == LockOperationEnum.ACQUIRE) {
+                LockInstance lockInstance = request.getLockInstance();
+                lock = lockOperationService.lock(lockInstance);
+            } else if (request.getLockOperationEnum() == LockOperationEnum.RELEASE) {
+                lock = lockOperationService.unLock(request.getLockInstance());
+            } else {
+                return LockOperationResponse.fail("There is no Handler of such operations!");
+            }
+            return LockOperationResponse.success(lock);
+        } catch (NacosLockException e) {
+            return LockOperationResponse.fail(e.getMessage());
         }
-        return LockOperationResponse.success(lock);
     }
 }

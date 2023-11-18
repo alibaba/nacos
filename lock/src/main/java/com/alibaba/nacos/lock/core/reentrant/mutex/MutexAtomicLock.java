@@ -63,4 +63,9 @@ public class MutexAtomicLock extends AbstractAtomicLock {
         return System.currentTimeMillis() >= this.expiredTimestamp;
     }
     
+    @Override
+    public Boolean isClear() {
+        return EMPTY.equals(state.get()) || autoExpire();
+    }
+    
 }

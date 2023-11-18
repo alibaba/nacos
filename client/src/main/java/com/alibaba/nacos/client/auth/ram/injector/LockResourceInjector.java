@@ -33,7 +33,7 @@ import com.alibaba.nacos.plugin.auth.api.RequestResource;
  */
 public class LockResourceInjector extends AbstractResourceInjector {
     
-    private static final String AK_FILED = "ak";
+    private static final String AK_FIELD = "ak";
     
     @Override
     public void doInject(RequestResource resource, RamContext context, LoginIdentityContext result) {
@@ -48,7 +48,7 @@ public class LockResourceInjector extends AbstractResourceInjector {
         }
         
         if (StringUtils.isNotEmpty(accessKey) && StringUtils.isNotBlank(secretKey)) {
-            result.setParameter(AK_FILED, accessKey);
+            result.setParameter(AK_FIELD, accessKey);
         }
     }
 }
