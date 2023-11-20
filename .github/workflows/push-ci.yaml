@@ -11,7 +11,7 @@ concurrency:
   group: nacos-${{ github.ref }}
 
 env:
-  DOCKER_REPO: wuyfeedocker/nacos-ci
+  DOCKER_REPO: wuyfee/nacos-ci   # wuyfeedocker/nacos-ci
   TEST_REPO_NAME: Wuyunfan-BUPT/nacos-e2e
 
 
