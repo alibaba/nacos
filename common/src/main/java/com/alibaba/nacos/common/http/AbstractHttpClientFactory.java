@@ -196,9 +196,6 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
     protected synchronized SSLContext loadSSLContext() {
-        if (!TlsSystemConfig.tlsEnable) {
-            return null;
-        }
         try {
             return TlsHelper.buildSslContext(true);
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
