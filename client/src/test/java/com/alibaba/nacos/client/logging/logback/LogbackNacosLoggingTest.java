@@ -28,10 +28,10 @@ import org.slf4j.LoggerFactory;
 import static org.hamcrest.CoreMatchers.isA;
 
 public class LogbackNacosLoggingTest {
-
+    
     @Rule
     public ExpectedException exceptionRule = ExpectedException.none();
-
+    
     @Test
     public void testLoadConfiguration() {
         ILoggerFactory loggerFactory;
