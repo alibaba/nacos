@@ -19,9 +19,6 @@ package com.alibaba.nacos.plugin.datasource.impl.derby;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
-import com.alibaba.nacos.plugin.datasource.dialects.DialectFactory;
-import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
-import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantCapacityMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
@@ -45,16 +42,6 @@ public class TenantCapacityMapperByDerby extends AbstractMapper implements Tenan
         String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
                 context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
-    }
-    
-    @Override
-    public DbTypeEnum getDbTypeEnum() {
-        return DbTypeEnum.DERBY;
-    }
-    
-    @Override
-    public IDialect getIDialect() {
-        return DialectFactory.getDialect(getDbTypeEnum());
     }
     
 }

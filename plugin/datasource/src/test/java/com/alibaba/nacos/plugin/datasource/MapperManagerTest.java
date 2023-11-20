@@ -17,9 +17,6 @@
 package com.alibaba.nacos.plugin.datasource;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
-import com.alibaba.nacos.plugin.datasource.dialects.MySqlDialect;
-import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import org.junit.Assert;
@@ -58,16 +55,6 @@ public class MapperManagerTest {
             @Override
             public String getDataSource() {
                 return DataSourceConstant.MYSQL;
-            }
-    
-            @Override
-            public DbTypeEnum getDbTypeEnum() {
-                return DbTypeEnum.MYSQL;
-            }
-    
-            @Override
-            public IDialect getIDialect() {
-                return new MySqlDialect();
             }
         });
         MapperManager instance = MapperManager.instance(false);

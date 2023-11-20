@@ -18,8 +18,6 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
-import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
-import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,17 +41,5 @@ public class TenantInfoMapperByMySqlTest {
     public void testGetDataSource() {
         String dataSource = tenantInfoMapperByMySql.getDataSource();
         Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
-    }
-    
-    @Test
-    public void testGetDbTypeEnum() {
-        DbTypeEnum dbTypeEnum = tenantInfoMapperByMySql.getDbTypeEnum();
-        Assert.assertEquals(dbTypeEnum, DbTypeEnum.MYSQL);
-    }
-    
-    @Test
-    public void testGetIDialect() {
-        IDialect iDialect = tenantInfoMapperByMySql.getIDialect();
-        Assert.assertNotNull(iDialect);
     }
 }

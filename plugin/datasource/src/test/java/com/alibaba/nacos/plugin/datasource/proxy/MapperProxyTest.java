@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.plugin.datasource.proxy;
 
-import com.alibaba.nacos.plugin.datasource.dialects.IDialect;
-import com.alibaba.nacos.plugin.datasource.dialects.MySqlDialect;
-import com.alibaba.nacos.plugin.datasource.enums.DbTypeEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import org.junit.Assert;
 import org.junit.Before;
@@ -77,16 +74,6 @@ public class MapperProxyTest {
             @Override
             public String[] getPrimaryKeyGeneratedKeys() {
                 return new String[0];
-            }
-    
-            @Override
-            public DbTypeEnum getDbTypeEnum() {
-                return DbTypeEnum.MYSQL;
-            }
-    
-            @Override
-            public IDialect getIDialect() {
-                return new MySqlDialect();
             }
         };
         Mapper proxy = mapperProxy.createProxy(mapper);
