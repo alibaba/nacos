@@ -82,8 +82,8 @@ jobs:
           ls versionlist/
           tag=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g")
           echo $tag
-          docker build --no-cache -f Dockerfile -t ${env.DOCKER_REPO_ADDR}:${tag} .
-          docker push ${env.DOCKER_REPO_ADDR}:${tag}
+          docker build --no-cache -f Dockerfile -t ${{ env.DOCKER_REPO_ADDR }}:${tag} .
+          docker push ${{ env.DOCKER_REPO_ADDR }}:${tag}
       - name: Show versions
         id: show_versions
         run: |
