@@ -74,7 +74,7 @@ jobs:
           name: nacos
           path: ./
       - name: set docker params
-        if: ${{ matrix.DOCKER_REPO_ADDR == ${{ env.DOCKER_REPO_B }} }}
+        if: ${{ matrix.DOCKER_REPO_ADDR == env.DOCKER_REPO_B }}
         run: |
           echo "DOCKERHUB_USER_ACTUAL=${{ secrets.DOCKERHUB_USER_B }}" >> $GITHUB_ENV
           echo "DOCKERHUB_TOKEN_ACTUAL=${{ secrets.DOCKERHUB_TOKEN_B }}" >> $GITHUB_ENV
