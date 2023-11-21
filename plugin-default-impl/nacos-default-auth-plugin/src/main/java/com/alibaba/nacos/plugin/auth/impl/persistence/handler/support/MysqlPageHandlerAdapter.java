@@ -44,7 +44,7 @@ public class MysqlPageHandlerAdapter implements PageHandlerAdapter {
             List<Object> newArgsList = new ArrayList<>(Arrays.asList(arg));
             newArgsList.add((pageNo - 1) * pageSize);
             newArgsList.add(pageSize);
-    
+            
             Object[] newArgs = newArgsList.toArray(new Object[newArgsList.size()]);
             return new OffsetFetchResult(fetchSql, newArgs);
         }

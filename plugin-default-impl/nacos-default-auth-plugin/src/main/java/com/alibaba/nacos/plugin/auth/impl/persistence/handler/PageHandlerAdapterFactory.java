@@ -37,6 +37,14 @@ public class PageHandlerAdapterFactory {
     
     private Map<String, PageHandlerAdapter> handlerAdapterMap;
     
+    public List<PageHandlerAdapter> getHandlerAdapters() {
+        return handlerAdapters;
+    }
+    
+    public Map<String, PageHandlerAdapter> getHandlerAdapterMap() {
+        return handlerAdapterMap;
+    }
+    
     private PageHandlerAdapterFactory() {
         handlerAdapters = new ArrayList<>(2);
         handlerAdapterMap = new HashMap<>(2);
@@ -54,20 +62,20 @@ public class PageHandlerAdapterFactory {
         return instance;
     }
     
+    /**
+     * init handler adapters.
+     */
     private void initHandlerAdapters() {
-        handlerAdapters.add(new DerbyPageHandlerAdapter());
-        handlerAdapters.add(new MysqlPageHandlerAdapter());
-        
-        handlerAdapterMap.put(DerbyPageHandlerAdapter.class.getName(), new DerbyPageHandlerAdapter());
-        handlerAdapterMap.put(MysqlPageHandlerAdapter.class.getName(), new MysqlPageHandlerAdapter());
+        // MysqlPageHandlerAdapter
+        addHandlerAdapter(new MysqlPageHandlerAdapter());
+        // DerbyPageHandlerAdapter
+        addHandlerAdapter(new DerbyPageHandlerAdapter());
     }
     
-    public List<PageHandlerAdapter> getHandlerAdapters() {
-        return handlerAdapters;
+    private void addHandlerAdapter(PageHandlerAdapter handlerAdapter) {
+        handlerAdapters.add(handlerAdapter);
+        handlerAdapterMap.put(handlerAdapter.getClass().getName(), handlerAdapter);
     }
     
-    public Map<String, PageHandlerAdapter> getHandlerAdapterMap() {
-        return handlerAdapterMap;
-    }
 }
 

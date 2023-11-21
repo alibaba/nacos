@@ -19,7 +19,6 @@ package com.alibaba.nacos.plugin.auth.impl.persistence.embedded;
 import com.alibaba.nacos.plugin.auth.impl.persistence.handler.PageHandlerAdapterFactory;
 import com.alibaba.nacos.plugin.auth.impl.model.OffsetFetchResult;
 import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.plugin.auth.impl.constant.AuthPageConstant;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.impl.persistence.AuthPaginationHelper;
@@ -91,11 +90,9 @@ public class AuthEmbeddedPaginationHelperImpl<E> implements AuthPaginationHelper
         
         // fill the sql Page args
         String fetchSql = sqlFetchRows;
-        if (!sqlFetchRows.contains(AuthPageConstant.OFFSET)) {
-            OffsetFetchResult result = addOffsetAndFetchNext(fetchSql, args, pageNo, pageSize);
-            fetchSql = result.getFetchSql();
-            args = result.getNewArgs();
-        }
+        OffsetFetchResult offsetFetchResult = addOffsetAndFetchNext(fetchSql, args, pageNo, pageSize);
+        fetchSql = offsetFetchResult.getFetchSql();
+        args = offsetFetchResult.getNewArgs();
         
         List<E> result = databaseOperate.queryMany(fetchSql, args, rowMapper);
         for (E item : result) {
@@ -134,11 +131,9 @@ public class AuthEmbeddedPaginationHelperImpl<E> implements AuthPaginationHelper
         
         // fill the sql Page args
         String fetchSql = sqlFetchRows;
-        if (!sqlFetchRows.contains(AuthPageConstant.OFFSET)) {
-            OffsetFetchResult result = addOffsetAndFetchNext(fetchSql, args, pageNo, pageSize);
-            fetchSql = result.getFetchSql();
-            args = result.getNewArgs();
-        }
+        OffsetFetchResult offsetFetchResult = addOffsetAndFetchNext(fetchSql, args, pageNo, pageSize);
+        fetchSql = offsetFetchResult.getFetchSql();
+        args = offsetFetchResult.getNewArgs();
         
         List<E> result = databaseOperate.queryMany(fetchSql, args, rowMapper);
         for (E item : result) {
@@ -177,11 +172,9 @@ public class AuthEmbeddedPaginationHelperImpl<E> implements AuthPaginationHelper
         
         // fill the sql Page args
         String fetchSql = sqlFetchRows;
-        if (!sqlFetchRows.contains(AuthPageConstant.OFFSET)) {
-            OffsetFetchResult result = addOffsetAndFetchNext(fetchSql, args2, pageNo, pageSize);
-            fetchSql = result.getFetchSql();
-            args2 = result.getNewArgs();
-        }
+        OffsetFetchResult offsetFetchResult = addOffsetAndFetchNext(fetchSql, args2, pageNo, pageSize);
+        fetchSql = offsetFetchResult.getFetchSql();
+        args2 = offsetFetchResult.getNewArgs();
         
         List<E> result = databaseOperate.queryMany(fetchSql, args2, rowMapper);
         for (E item : result) {
@@ -201,11 +194,9 @@ public class AuthEmbeddedPaginationHelperImpl<E> implements AuthPaginationHelper
         
         // fill the sql Page args
         String fetchSql = sqlFetchRows;
-        if (!sqlFetchRows.contains(AuthPageConstant.OFFSET)) {
-            OffsetFetchResult result = addOffsetAndFetchNext(fetchSql, args, pageNo, pageSize);
-            fetchSql = result.getFetchSql();
-            args = result.getNewArgs();
-        }
+        OffsetFetchResult offsetFetchResult = addOffsetAndFetchNext(fetchSql, args, pageNo, pageSize);
+        fetchSql = offsetFetchResult.getFetchSql();
+        args = offsetFetchResult.getNewArgs();
         
         List<E> result = databaseOperate.queryMany(fetchSql, args, rowMapper);
         for (E item : result) {
@@ -232,8 +223,8 @@ public class AuthEmbeddedPaginationHelperImpl<E> implements AuthPaginationHelper
     }
     
     private OffsetFetchResult addOffsetAndFetchNext(String fetchSql, Object[] arg, int pageNo, int pageSize) {
-        return  PageHandlerAdapterFactory.getInstance().getHandlerAdapterMap().get(DerbyPageHandlerAdapter.class.getName())
-                .addOffsetAndFetchNext(fetchSql, arg, pageNo, pageSize);
+        return PageHandlerAdapterFactory.getInstance().getHandlerAdapterMap()
+                .get(DerbyPageHandlerAdapter.class.getName()).addOffsetAndFetchNext(fetchSql, arg, pageNo, pageSize);
     }
     
 }

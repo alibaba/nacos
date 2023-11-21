@@ -39,15 +39,19 @@ public class DerbyPageHandlerAdapter implements PageHandlerAdapter {
     
     @Override
     public OffsetFetchResult addOffsetAndFetchNext(String fetchSql, Object[] arg, int pageNo, int pageSize) {
-        fetchSql += " " + AuthPageConstant.OFFSET_ROWS + " " + AuthPageConstant.FETCH_NEXT;
-    
-        List<Object> newArgsList = new ArrayList<>(Arrays.asList(arg));
-        newArgsList.add((pageNo - 1) * pageSize);
-        newArgsList.add(pageSize);
-    
-        Object[] newArgs = newArgsList.toArray(new Object[newArgsList.size()]);
-    
-        return new OffsetFetchResult(fetchSql, newArgs);
+        if (!fetchSql.contains(AuthPageConstant.OFFSET)) {
+            fetchSql += " " + AuthPageConstant.OFFSET_ROWS + " " + AuthPageConstant.FETCH_NEXT;
+            
+            List<Object> newArgsList = new ArrayList<>(Arrays.asList(arg));
+            newArgsList.add((pageNo - 1) * pageSize);
+            newArgsList.add(pageSize);
+            
+            Object[] newArgs = newArgsList.toArray(new Object[newArgsList.size()]);
+            
+            return new OffsetFetchResult(fetchSql, newArgs);
+        }
+        
+        return new OffsetFetchResult(fetchSql, arg);
     }
     
 }
