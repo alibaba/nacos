@@ -9,6 +9,7 @@ on:
 
 env:
   DOCKER_REPO: wuyfee/nacos-ci   # wuyfeedocker/nacos-ci
+  DOCKER_REPO_B: wuyfeehub/nacos-ci
   TEST_REPO_NAME: Wuyunfan-BUPT/nacos-e2e
 
 jobs:
@@ -18,10 +19,14 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success'
     timeout-minutes: 30
+    env:
+      DOCKERHUB_USER_ACTUAL: ${{ secrets.DOCKERHUB_USER }}
+      DOCKERHUB_TOKEN_ACTUAL: ${{ secrets.DOCKERHUB_TOKEN }}
     strategy:
       matrix:
         base-image: ["ubuntu"]
         java-version: ["8"]
+        DOCKER_REPO_ADDR: [ ${{ env.DOCKER_REPO }}, ${{ env.DOCKER_REPO_B }} ]
     outputs:
       version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:
@@ -55,12 +60,17 @@ jobs:
           repository: nacos-group/nacos-e2e.git
           ref: main
           path: nacos-e2e
+      - name: set docker params
+        if: ${{ matrix.DOCKER_REPO_ADDR == ${{ env.DOCKER_REPO_B }} }}
+        run: |
+          echo "DOCKERHUB_USER_ACTUAL=${{ secrets.DOCKERHUB_USER_B }}" >> $GITHUB_ENV
+          echo "DOCKERHUB_TOKEN_ACTUAL=${{ secrets.DOCKERHUB_TOKEN_B }}" >> $GITHUB_ENV
       - name: docker-login
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY }}
-          username: ${{ secrets.DOCKERHUB_USER }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          username: ${{ env.DOCKERHUB_USER_ACTUAL }}
+          password: ${{ env.DOCKERHUB_TOKEN_ACTUAL }}
       - name: Build and save docker images
         id: build-images
         run: |
@@ -72,8 +82,8 @@ jobs:
           ls versionlist/
           tag=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g")
           echo $tag
-          docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${tag} .
-          docker push ${DOCKER_REPO}:${tag}
+          docker build --no-cache -f Dockerfile -t ${DOCKER_REPO_ADDR}:${tag} .
+          docker push ${DOCKER_REPO_ADDR}:${tag}
       - name: Show versions
         id: show_versions
         run: |
@@ -106,6 +116,13 @@ jobs:
         run: |
           echo "REPLICA_COUNT=1" >> $GITHUB_ENV
           echo "DATABASE=embedded" >> $GITHUB_ENV
+      - name: allocate docker repo
+        run: |
+          if [[ $(expr $(expr ${{ github.run_id }} + ${{ strategy.job-index }} ) % 2 ) -eq 1 ]]; then
+            echo "DOCKER_REPO_ACTUAL=${{ env.DOCKER_REPO }}" >> $GITHUB_ENV
+          else
+            echo "DOCKER_REPO_ACTUAL=${{ env.DOCKER_REPO_B }}" >> $GITHUB_ENV
+          fi
       - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
         name: Deploy nacos
         with:
@@ -130,7 +147,7 @@ jobs:
                 nacos:
                   replicaCount: ${{ env.REPLICA_COUNT }}
                   image:
-                    repository: ${{ env.DOCKER_REPO }}
+                    repository: ${{ env.DOCKER_REPO_ACTUAL }}
                     tag: ${{ matrix.version }}
                   storage:
                     type: ${{ env.DATABASE }}
