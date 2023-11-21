@@ -14,7 +14,7 @@ env:
   DOCKER_REPO: wuyfee/nacos-ci   # wuyfeedocker/nacos-ci
   DOCKER_REPO_B: wuyfeehub/nacos-ci
   TEST_REPO_NAME: Wuyunfan-BUPT/nacos-e2e
-
+  VERSION: ${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
 
 jobs:
   dist-tar:
@@ -54,7 +54,6 @@ jobs:
     env:
       DOCKERHUB_USER_ACTUAL: ${{ secrets.DOCKERHUB_USER }}
       DOCKERHUB_TOKEN_ACTUAL: ${{ secrets.DOCKERHUB_TOKEN }}
-      VERSION: ${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
     strategy:
       matrix:
         base-image: ["centos"]
