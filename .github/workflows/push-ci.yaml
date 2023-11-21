@@ -54,7 +54,7 @@ jobs:
     env:
       DOCKERHUB_USER_ACTUAL: ${{ secrets.DOCKERHUB_USER }}
       DOCKERHUB_TOKEN_ACTUAL: ${{ secrets.DOCKERHUB_TOKEN }}
-
+      VERSION: ${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
     strategy:
       matrix:
         base-image: ["centos"]
@@ -89,7 +89,7 @@ jobs:
         run: |
           mv nacos-server-*.tar.gz nacos-e2e/cicd/build/
           cd nacos-e2e/cicd/build
-          version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
+          version=${{ env.VERSION }}
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
           ls versionlist/
