@@ -26,7 +26,7 @@ jobs:
       matrix:
         base-image: ["ubuntu"]
         java-version: ["8"]
-        DOCKER_REPO_ADDR: [ ${{ env.DOCKER_REPO }}, ${{ env.DOCKER_REPO_B }} ]
+        DOCKER_REPO_ADDR: [ "wuyfee/nacos-ci", "wuyfeehub/nacos-ci" ]
     outputs:
       version-json: ${{ steps.show_versions.outputs.version-json }}
     steps:
