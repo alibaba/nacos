@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.http.param;
 
 import com.alibaba.nacos.api.naming.CommonParams;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.net.URLEncoder;
@@ -26,11 +25,13 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class QueryTest {
     
     @Test
-    public void testToQueryUrl() {
+    public void testInitParams() {
         Map<String, String> parameters = new LinkedHashMap<String, String>();
         parameters.put(CommonParams.NAMESPACE_ID, "namespace");
         parameters.put(CommonParams.SERVICE_NAME, "service");
@@ -41,16 +42,27 @@ public class QueryTest {
         parameters.put("weight", String.valueOf(1.0));
         parameters.put("ephemeral", String.valueOf(true));
         String excepted = "namespaceId=namespace&serviceName=service&groupName=group&ip=1.1.1.1&port=9999&weight=1.0&ephemeral=true";
-        assertEquals(excepted, Query.newInstance().initParams(parameters).toQueryUrl());
+        Query actual = Query.newInstance().initParams(parameters);
+        assertEquals(excepted, actual.toQueryUrl());
+        assertEquals("namespace", actual.getValue(CommonParams.NAMESPACE_ID));
     }
     
     @Test
-    public void testToQueryUrl2() throws Exception {
-        Query query = Query.newInstance().addParam("key-1", "value-1")
-                .addParam("key-2", "value-2");
+    public void testAddParams() throws Exception {
+        Query query = Query.newInstance().addParam("key-1", "value-1").addParam("key-2", "value-2");
         String s1 = query.toQueryUrl();
-        String s2 = "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name())
-                + "&key-2=" + URLEncoder.encode("value-2", StandardCharsets.UTF_8.name());
-        Assert.assertEquals(s1, s2);
+        String s2 = "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name()) + "&key-2=" + URLEncoder
+                .encode("value-2", StandardCharsets.UTF_8.name());
+        assertEquals(s2, s1);
+        assertEquals("value-1", query.getValue("key-1"));
+    }
+    
+    @Test
+    public void testClear() {
+        Query query = Query.newInstance().addParam("key-1", "value-1").addParam("key-2", "value-2");
+        assertFalse(query.isEmpty());
+        assertEquals("value-1", query.getValue("key-1"));
+        query.clear();
+        assertTrue(query.isEmpty());
     }
 }

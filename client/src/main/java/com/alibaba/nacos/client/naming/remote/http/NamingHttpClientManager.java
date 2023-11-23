@@ -73,7 +73,7 @@ public class NamingHttpClientManager implements Closeable {
     public void shutdown() throws NacosException {
         NAMING_LOGGER.warn("[NamingHttpClientManager] Start destroying NacosRestTemplate");
         try {
-            HttpClientBeanHolder.shutdownNacostSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
             NAMING_LOGGER.error("[NamingHttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
