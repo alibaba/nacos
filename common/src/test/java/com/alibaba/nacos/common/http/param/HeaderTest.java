@@ -96,12 +96,12 @@ public class HeaderTest {
     
     @Test
     public void testAddOriginalResponseHeader() {
-        Header header = Header.newInstance();
         List<String> list = new ArrayList<>(4);
         list.add("test1");
         list.add("test2");
         list.add("test3");
         list.add("test4");
+        Header header = Header.newInstance();
         header.addOriginalResponseHeader("test", list);
         assertEquals("test1", header.getValue("test"));
         assertEquals(1, header.getOriginalResponseHeader().size());
