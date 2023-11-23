@@ -16,16 +16,14 @@
 
 package com.alibaba.nacos.plugin.auth.impl.persistence.extrnal;
 
-import com.alibaba.nacos.plugin.auth.impl.persistence.handler.PageHandlerAdapterFactory;
-import com.alibaba.nacos.plugin.auth.impl.exception.NotExistException;
-import com.alibaba.nacos.plugin.auth.impl.model.OffsetFetchResult;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.plugin.auth.impl.model.OffsetFetchResult;
 import com.alibaba.nacos.plugin.auth.impl.persistence.AuthPaginationHelper;
 import com.alibaba.nacos.plugin.auth.impl.persistence.handler.PageHandlerAdapter;
+import com.alibaba.nacos.plugin.auth.impl.persistence.handler.PageHandlerAdapterFactory;
+import com.alibaba.nacos.plugin.auth.impl.persistence.handler.support.DefaultPageHandlerAdapter;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -38,8 +36,6 @@ import java.util.List;
  * @author huangKeMing
  */
 public class AuthExternalPaginationHelperImpl<E> implements AuthPaginationHelper<E> {
-    
-    public static final Logger LOGGER = LoggerFactory.getLogger(AuthExternalPaginationHelperImpl.class);
     
     private final JdbcTemplate jdbcTemplate;
     
@@ -264,8 +260,8 @@ public class AuthExternalPaginationHelperImpl<E> implements AuthPaginationHelper
             
         }
         
-        LOGGER.error("the PageHandlerAdapter Unsupported database type: " + dataSourceType);
-        throw new NotExistException("the PageHandlerAdapter Unsupported database type: " + dataSourceType);
+        return PageHandlerAdapterFactory.getInstance().getHandlerAdapterMap()
+                .get(DefaultPageHandlerAdapter.class.getName());
     }
     
 }

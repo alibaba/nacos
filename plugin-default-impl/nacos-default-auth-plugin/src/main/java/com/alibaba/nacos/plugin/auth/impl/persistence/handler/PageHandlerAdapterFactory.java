@@ -70,6 +70,8 @@ public class PageHandlerAdapterFactory {
         addHandlerAdapter(new MysqlPageHandlerAdapter());
         // DerbyPageHandlerAdapter
         addHandlerAdapter(new DerbyPageHandlerAdapter());
+        // DefaultPageHandlerAdapter
+        addHandlerAdapter(new DerbyPageHandlerAdapter());
     }
     
     private void addHandlerAdapter(PageHandlerAdapter handlerAdapter) {

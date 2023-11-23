@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -29,7 +28,7 @@ import org.springframework.jdbc.core.RowMapper;
  * @author huangKeMing
  */
 @SuppressWarnings("PMD.AbstractMethodOrInterfaceMethodMustUseJavadocRule")
-public interface AuthPaginationHelper<E> extends PaginationHelper<E> {
+public interface AuthPaginationHelper<E> {
     
     Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args, final int pageNo,
             final int pageSize, final RowMapper<E> rowMapper);

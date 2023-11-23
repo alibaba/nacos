@@ -22,7 +22,6 @@ import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternal
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.plugin.auth.impl.persistence.extrnal.AuthExternalPaginationHelperImpl;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -132,8 +131,8 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
     
     @Override
     public Page<User> getUsers(int pageNo, int pageSize, String username) {
-        
-        PaginationHelper<User> helper = createPaginationHelper();
+    
+        AuthPaginationHelper<User> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM users ";
         
@@ -179,8 +178,8 @@ public class ExternalUserPersistServiceImpl implements UserPersistService {
             where.append(" AND username LIKE ? ");
             params.add(generateLikeArgument(username));
         }
-        
-        PaginationHelper<User> helper = createPaginationHelper();
+    
+        AuthPaginationHelper<User> helper = createPaginationHelper();
         try {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     USER_ROW_MAPPER);

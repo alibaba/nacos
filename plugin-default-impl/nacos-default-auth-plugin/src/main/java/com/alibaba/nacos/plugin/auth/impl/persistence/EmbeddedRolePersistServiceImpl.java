@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.auth.impl.persistence.embedded.AuthEmbeddedPaginationHelperImpl;
@@ -51,8 +50,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-        
-        PaginationHelper<RoleInfo> helper = createPaginationHelper();
+    
+        AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
         
@@ -73,8 +72,8 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
-        
-        PaginationHelper<RoleInfo> helper = createPaginationHelper();
+    
+        AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM roles ";
         
@@ -187,14 +186,14 @@ public class EmbeddedRolePersistServiceImpl implements RolePersistService {
         }
         String sqlCountRows = "SELECT count(*) FROM roles";
         String sqlFetchRows = "SELECT role, username FROM roles";
-        
-        PaginationHelper<RoleInfo> helper = createPaginationHelper();
+    
+        AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                 ROLE_INFO_ROW_MAPPER);
     }
     
     @Override
-    public <E> PaginationHelper<E> createPaginationHelper() {
+    public <E> AuthPaginationHelper<E> createPaginationHelper() {
         return new AuthEmbeddedPaginationHelperImpl<>(databaseOperate);
     }
 }

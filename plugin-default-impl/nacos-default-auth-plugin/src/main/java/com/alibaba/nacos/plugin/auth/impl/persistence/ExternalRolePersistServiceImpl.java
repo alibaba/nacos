@@ -22,7 +22,6 @@ import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternal
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.plugin.auth.impl.persistence.extrnal.AuthExternalPaginationHelperImpl;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -62,8 +61,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> getRoles(int pageNo, int pageSize) {
-        
-        PaginationHelper<RoleInfo> helper = createPaginationHelper();
+    
+        AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM (SELECT DISTINCT role FROM roles) roles WHERE ";
         
@@ -88,8 +87,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     
     @Override
     public Page<RoleInfo> getRolesByUserNameAndRoleName(String username, String role, int pageNo, int pageSize) {
-        
-        PaginationHelper<RoleInfo> helper = createPaginationHelper();
+    
+        AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM roles ";
         
@@ -204,8 +203,8 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
             where.append(" AND role LIKE ? ");
             params.add(generateLikeArgument(role));
         }
-        
-        PaginationHelper<RoleInfo> helper = createPaginationHelper();
+    
+        AuthPaginationHelper<RoleInfo> helper = createPaginationHelper();
         try {
             return helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
                     ROLE_INFO_ROW_MAPPER);
@@ -216,7 +215,7 @@ public class ExternalRolePersistServiceImpl implements RolePersistService {
     }
     
     @Override
-    public <E> PaginationHelper<E> createPaginationHelper() {
+    public <E> AuthPaginationHelper<E> createPaginationHelper() {
         return new AuthExternalPaginationHelperImpl<>(jt, dataSourceType);
     }
     
