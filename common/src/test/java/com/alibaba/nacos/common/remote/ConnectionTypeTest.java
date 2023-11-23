@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,28 +16,25 @@
 
 package com.alibaba.nacos.common.remote;
 
-import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.response.ErrorResponse;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-public class PayloadRegistryTest {
+public class ConnectionTypeTest {
     
-    @BeforeClass
-    public static void setUpBefore() {
-        PayloadRegistry.init();
+    @Test
+    public void testGetByType() {
+        ConnectionType connectionType = ConnectionType.getByType("GRPC");
+        assertNotNull(connectionType);
+        assertEquals("GRPC", connectionType.getType());
+        assertEquals("Grpc Connection", connectionType.getName());
     }
     
     @Test
-    public void testRegisterInvalidClass() {
-        PayloadRegistry.register("test", Request.class);
-        assertNull(PayloadRegistry.getClassByType("test"));
-    }
-    
-    @Test(expected = RuntimeException.class)
-    public void testRegisterDuplicated() {
-        PayloadRegistry.register("ErrorResponse", ErrorResponse.class);
+    public void testGetByNonExistType() {
+        ConnectionType connectionType = ConnectionType.getByType("HTTP");
+        assertNull(connectionType);
     }
 }
