@@ -14,11 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.persistence.repository.extrnal;
+package com.alibaba.nacos.plugin.auth.impl.persistence.extrnal;
 
 import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
+import com.alibaba.nacos.plugin.auth.impl.model.OffsetFetchResult;
+import com.alibaba.nacos.plugin.auth.impl.persistence.AuthPaginationHelper;
+import com.alibaba.nacos.plugin.auth.impl.persistence.handler.PageHandlerAdapter;
+import com.alibaba.nacos.plugin.auth.impl.persistence.handler.PageHandlerAdapterFactory;
+import com.alibaba.nacos.plugin.auth.impl.persistence.handler.support.DefaultPageHandlerAdapter;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -26,17 +30,20 @@ import org.springframework.jdbc.core.RowMapper;
 import java.util.List;
 
 /**
- * External Storage Pagination utils.
+ * Auth plugin Pagination Utils For Apache External.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
+ * @param <E> Generic class
+ * @author huangKeMing
  */
-
-public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper {
+public class AuthExternalPaginationHelperImpl<E> implements AuthPaginationHelper<E> {
     
     private final JdbcTemplate jdbcTemplate;
     
-    public ExternalStoragePaginationHelperImpl(JdbcTemplate jdbcTemplate) {
+    private volatile String dataSourceType;
+    
+    public AuthExternalPaginationHelperImpl(JdbcTemplate jdbcTemplate, String dataSourceType) {
         this.jdbcTemplate = jdbcTemplate;
+        this.dataSourceType = dataSourceType;
     }
     
     /**
@@ -85,7 +92,13 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
             return page;
         }
         
-        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
+        // fill the sql Page args
+        String fetchSql = sqlFetchRows;
+        OffsetFetchResult offsetFetchResult = addOffsetAndFetchNext(fetchSql, args, pageNo, pageSize);
+        fetchSql = offsetFetchResult.getFetchSql();
+        args = offsetFetchResult.getNewArgs();
+        
+        List<E> result = jdbcTemplate.query(fetchSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -93,8 +106,8 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
     }
     
     @Override
-    public Page<E> fetchPageLimit(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
-            final int pageNo, final int pageSize, final RowMapper rowMapper) {
+    public Page<E> fetchPageLimit(final String sqlCountRows, final String sqlFetchRows, Object[] args, final int pageNo,
+            final int pageSize, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
@@ -120,7 +133,13 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
             return page;
         }
         
-        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
+        // fill the sql Page args
+        String fetchSql = sqlFetchRows;
+        OffsetFetchResult offsetFetchResult = addOffsetAndFetchNext(fetchSql, args, pageNo, pageSize);
+        fetchSql = offsetFetchResult.getFetchSql();
+        args = offsetFetchResult.getNewArgs();
+        
+        List<E> result = jdbcTemplate.query(fetchSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -136,7 +155,7 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
     
     @Override
     public Page<E> fetchPageLimit(final String sqlCountRows, final Object[] args1, final String sqlFetchRows,
-            final Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
+            Object[] args2, final int pageNo, final int pageSize, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
@@ -161,7 +180,13 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
         if (pageNo > pageCount) {
             return page;
         }
-        List<E> result = jdbcTemplate.query(sqlFetchRows, args2, rowMapper);
+        // fill the sql Page args
+        String fetchSql = sqlFetchRows;
+        OffsetFetchResult offsetFetchResult = addOffsetAndFetchNext(fetchSql, args2, pageNo, pageSize);
+        fetchSql = offsetFetchResult.getFetchSql();
+        args2 = offsetFetchResult.getNewArgs();
+        
+        List<E> result = jdbcTemplate.query(fetchSql, args2, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -169,14 +194,21 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
     }
     
     @Override
-    public Page<E> fetchPageLimit(final String sqlFetchRows, final Object[] args, final int pageNo, final int pageSize,
+    public Page<E> fetchPageLimit(final String sqlFetchRows, Object[] args, final int pageNo, final int pageSize,
             final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }
         // Create Page object
         final Page<E> page = new Page<>();
-        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
+        
+        // fill the sql Page args
+        String fetchSql = sqlFetchRows;
+        OffsetFetchResult offsetFetchResult = addOffsetAndFetchNext(fetchSql, args, pageNo, pageSize);
+        fetchSql = offsetFetchResult.getFetchSql();
+        args = offsetFetchResult.getNewArgs();
+        
+        List<E> result = jdbcTemplate.query(fetchSql, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
@@ -207,6 +239,29 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
+    }
+    
+    private OffsetFetchResult addOffsetAndFetchNext(String fetchSql, Object[] arg, int pageNo, int pageSize) {
+        return getHandlerAdapter(dataSourceType).addOffsetAndFetchNext(fetchSql, arg, pageNo, pageSize);
+    }
+    
+    /**
+     * Get handler adapter.
+     *
+     * @param dataSourceType data source type.
+     * @return
+     */
+    protected PageHandlerAdapter getHandlerAdapter(String dataSourceType) {
+        List<PageHandlerAdapter> handlerAdapters = PageHandlerAdapterFactory.getInstance().getHandlerAdapters();
+        for (PageHandlerAdapter adapter : handlerAdapters) {
+            if (adapter.supports(dataSourceType)) {
+                return adapter;
+            }
+            
+        }
+        
+        return PageHandlerAdapterFactory.getInstance().getHandlerAdapterMap()
+                .get(DefaultPageHandlerAdapter.class.getName());
     }
     
 }
