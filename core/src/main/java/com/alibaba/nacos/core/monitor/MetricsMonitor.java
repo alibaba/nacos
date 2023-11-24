@@ -23,6 +23,8 @@ import io.micrometer.core.instrument.Timer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -70,7 +72,7 @@ public final class MetricsMonitor {
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "longConnection"));
         NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, longConnection);
-        
+
     }
     
     public static AtomicInteger getLongConnectionMonitor() {
@@ -99,5 +101,32 @@ public final class MetricsMonitor {
     
     public static DistributionSummary getRaftFromLeader() {
         return RAFT_FROM_LEADER;
+    }
+
+    /**
+     * record request event.
+     *
+     * @param requestClass      requestClass
+     * @param success           success
+     * @param errorCode         errorCode
+     * @param throwableClass    throwableClass
+     * @param module            module
+     * @param costTime              cost
+     */
+    public static void recordGrpcRequestEvent(String requestClass,
+                                              boolean success,
+                                              int errorCode,
+                                              String throwableClass,
+                                              String module,
+                                              long costTime) {
+        NacosMeterRegistryCenter.timer(METER_REGISTRY, "grpc_server_requests",
+                Arrays.asList(
+                        Tag.of("requestClass", requestClass),
+                        Tag.of("success", String.valueOf(success)),
+                        Tag.of("errorCode", String.valueOf(errorCode)),
+                        Tag.of("throwableClass", throwableClass == null ? "None" : throwableClass),
+                        Tag.of("module", module == null ? "unknown" : module)
+                )
+        ).record(costTime, TimeUnit.NANOSECONDS);
     }
 }
