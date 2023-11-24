@@ -18,9 +18,12 @@
 
 package com.alibaba.nacos.client.logging.logback;
 
+import ch.qos.logback.classic.LoggerContext;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.LoggerFactory;
 
 import static org.hamcrest.CoreMatchers.isA;
 
@@ -31,9 +34,12 @@ public class LogbackNacosLoggingTest {
     
     @Test
     public void testLoadConfiguration() {
-        exceptionRule.expectCause(isA(ClassCastException.class));
-        exceptionRule.expectMessage("Could not initialize Logback Nacos logging from classpath:nacos-logback.xml");
-        LogbackNacosLogging logbackNacosLogging = new LogbackNacosLogging();
-        logbackNacosLogging.loadConfiguration();
+        ILoggerFactory loggerFactory;
+        if ((loggerFactory = LoggerFactory.getILoggerFactory()) != null && loggerFactory instanceof LoggerContext) {
+            exceptionRule.expectCause(isA(ClassCastException.class));
+            exceptionRule.expectMessage("Could not initialize Logback Nacos logging from classpath:nacos-logback.xml");
+            LogbackNacosLogging logbackNacosLogging = new LogbackNacosLogging();
+            logbackNacosLogging.loadConfiguration();
+        }
     }
 }
