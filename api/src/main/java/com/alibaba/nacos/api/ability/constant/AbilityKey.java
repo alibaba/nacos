@@ -18,8 +18,8 @@ package com.alibaba.nacos.api.ability.constant;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +30,12 @@ import java.util.stream.Collectors;
  * @date 2022/8/31 12:27
  **/
 public enum AbilityKey {
+
+    /**
+     * Server support register or deregister persistent instance by grpc.
+     */
+    SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC("supportPersistentInstanceByGrpc",
+            "support persistent instance by grpc", AbilityMode.SERVER),
     
     /**
      * For Test temporarily.
