@@ -256,7 +256,7 @@ public class ConnectionManager {
         Boolean enabled = EnvUtil.getProperty("nacos.metric.grpc.server.connection.enabled", Boolean.class, true);
         if (enabled) {
             RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(() -> {
-                Map<String, Integer> count = new HashMap<>();
+                Map<String, Integer> count = new HashMap<>(16);
                 connections.forEach((id, connection) -> {
                     String module = connection.getLabels().getOrDefault(RemoteConstants.LABEL_MODULE, "unknown");
                     count.put(module, count.getOrDefault(module, 0) + 1);
