@@ -23,8 +23,6 @@ import io.micrometer.core.instrument.Timer;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -50,8 +48,6 @@ public final class MetricsMonitor {
     private static GrpcServerExecutorMetric sdkServerExecutorMetric = new GrpcServerExecutorMetric("grpcSdkServer");
 
     private static GrpcServerExecutorMetric clusterServerExecutorMetric = new GrpcServerExecutorMetric("grpcClusterServer");
-
-    private static Map<String, AtomicInteger> moduleConnectionCnt = new ConcurrentHashMap<>();
 
     static {
         ImmutableTag immutableTag = new ImmutableTag("module", "core");
