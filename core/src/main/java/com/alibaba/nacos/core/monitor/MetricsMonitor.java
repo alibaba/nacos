@@ -23,6 +23,9 @@ import io.micrometer.core.instrument.Timer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -43,7 +46,9 @@ public final class MetricsMonitor {
     private static final Timer RAFT_APPLY_READ_TIMER;
     
     private static AtomicInteger longConnection = new AtomicInteger();
-    
+
+    private static Map<String, AtomicInteger> moduleConnectionCnt = new ConcurrentHashMap<>();
+
     static {
         ImmutableTag immutableTag = new ImmutableTag("module", "core");
         List<Tag> tags = new ArrayList<>();
@@ -100,4 +105,38 @@ public final class MetricsMonitor {
     public static DistributionSummary getRaftFromLeader() {
         return RAFT_FROM_LEADER;
     }
+
+    /**
+     * refresh all module connection count.
+     *
+     * @param connectionCnt new connection count.
+     */
+    public static void refreshModuleConnectionCount(Map<String, Integer> connectionCnt) {
+        // refresh all existed module connection cnt and add new module connection count
+        connectionCnt.forEach((module, cnt) -> {
+            AtomicInteger integer = moduleConnectionCnt.get(module);
+            // if exists
+            if (integer != null) {
+                integer.set(cnt);
+            } else {
+                // new module comes
+                AtomicInteger newModuleConnCnt = new AtomicInteger(cnt);
+                moduleConnectionCnt.put(module, newModuleConnCnt);
+                NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor",
+                        Arrays.asList(
+                                new ImmutableTag("module", module),
+                                new ImmutableTag("name", "longConnection")
+                        ),
+                        moduleConnectionCnt.get(module));
+            }
+        });
+        // reset the outdated module connection cnt
+        moduleConnectionCnt.forEach((module, cnt) -> {
+            if (connectionCnt.containsKey(module)) {
+                return;
+            }
+            cnt.set(0);
+        });
+    }
+
 }
