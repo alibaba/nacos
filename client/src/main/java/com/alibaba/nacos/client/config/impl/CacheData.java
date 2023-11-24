@@ -181,6 +181,21 @@ public class CacheData {
             }
         }
     }
+
+    private static String getTrace(StackTraceElement[] stackTrace, int traceDeep) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("\n");
+        int deep = 0;
+        for (StackTraceElement element : stackTrace) {
+            stringBuilder.append("\tat ").append(element).append("\n");
+            deep++;
+            if (traceDeep > 0 && deep > traceDeep) {
+                stringBuilder.append("\tat ... \n");
+                break;
+            }
+        }
+        return stringBuilder.toString();
+    }
     
     private void safeNotifyListener(final String dataId, final String group, final String content, final String type,
             final String md5, final String encryptedDataKey, final ManagerListenerWrap listenerWrap) {
@@ -226,7 +241,7 @@ public class CacheData {
                             name, dataId, group, md5, listener, ex.getErrCode(), ex.getErrMsg());
                 } catch (Throwable t) {
                     LOGGER.error("[{}] [notify-error] dataId={}, group={}, md5={}, listener={} tx={}", name, dataId,
-                            group, md5, listener, t.getCause());
+                            group, md5, listener, getTrace(t.getStackTrace(), 3));
                 } finally {
                     Thread.currentThread().setContextClassLoader(myClassLoader);
                 }
