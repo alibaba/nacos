@@ -18,6 +18,7 @@
 
 package com.alibaba.nacos.client.naming.remote;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -177,7 +178,12 @@ public class AbstractNamingClientProxyTest {
         public boolean serverHealthy() {
             return false;
         }
-        
+
+        @Override
+        public boolean isAbilitySupportedByServer(AbilityKey abilityKey) {
+            return false;
+        }
+
         @Override
         public void shutdown() throws NacosException {
         

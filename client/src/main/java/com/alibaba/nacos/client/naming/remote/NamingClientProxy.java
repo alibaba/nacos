@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.remote;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -187,4 +188,12 @@ public interface NamingClientProxy extends Closeable {
      * @return true if server is healthy
      */
     boolean serverHealthy();
+
+    /**
+     * Judge nacos server whether support the ability.
+     *
+     * @param abilityKey ability key
+     * @return true if supported
+     */
+    boolean isAbilitySupportedByServer(AbilityKey abilityKey);
 }

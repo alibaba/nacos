@@ -18,8 +18,8 @@ package com.alibaba.nacos.api.ability.constant;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -49,8 +49,14 @@ public enum AbilityKey {
     /**
      * For Test temporarily.
      */
-    CLUSTER_CLIENT_TEST_1("test_1", "just for junit test", AbilityMode.CLUSTER_CLIENT);
-    
+    CLUSTER_CLIENT_TEST_1("test_1", "just for junit test", AbilityMode.CLUSTER_CLIENT),
+
+    /**
+     * Support register or deregister persistent instance by grpc.
+     */
+    SUPPORT_PERSISTENT_INSTANCE_BY_GRPC("supportPersistentInstanceByGrpc",
+            "support persistent instance by grpc", AbilityMode.SERVER);
+
     /**
      * the name of a certain ability.
      */

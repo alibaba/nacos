@@ -18,6 +18,7 @@
 
 package com.alibaba.nacos.client.naming.remote.http;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -333,7 +334,14 @@ public class NamingHttpClientProxyTest {
                 eq(HttpMethod.GET), any());
         Assert.assertTrue(serverHealthy);
     }
-    
+
+    @Test
+    public void testIsAbilitySupportedByServer() {
+        // always return false
+        Assert.assertFalse(clientProxy.isAbilitySupportedByServer(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        Assert.assertFalse(clientProxy.isAbilitySupportedByServer(AbilityKey.SERVER_TEST_1));
+    }
+
     @Test
     public void testGetServiceList() throws Exception {
         //given

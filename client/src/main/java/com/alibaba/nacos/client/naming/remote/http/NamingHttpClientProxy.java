@@ -18,6 +18,7 @@ package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -268,7 +269,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public boolean serverHealthy() {
-        
         try {
             String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<>(8), HttpMethod.GET);
             JsonNode json = JacksonUtils.toObj(result);
@@ -278,7 +278,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
             return false;
         }
     }
-    
+
+    @Override
+    public boolean isAbilitySupportedByServer(AbilityKey abilityKey) {
+        // Http agent does not support ability check, return true directly.
+        return false;
+    }
+
     @Override
     public ListView<String> getServiceList(int pageNo, int pageSize, String groupName, AbstractSelector selector)
             throws NacosException {

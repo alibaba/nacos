@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
@@ -27,6 +29,7 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.AbstractNamingRequest;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
+import com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceListRequest;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
@@ -128,6 +131,14 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public void registerService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[REGISTER-SERVICE] {} registering service {} with instance {}", namespaceId, serviceName,
                 instance);
+        if (instance.isEphemeral()) {
+            registerServiceForEphemeral(serviceName, groupName, instance);
+        } else {
+            doRegisterServiceForPersistent(serviceName, groupName, instance);
+        }
+    }
+
+    private void registerServiceForEphemeral(String serviceName, String groupName, Instance instance) throws NacosException {
         redoService.cacheInstanceForRedo(serviceName, groupName, instance);
         doRegisterService(serviceName, groupName, instance);
     }
@@ -220,11 +231,33 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         requestToServer(request, Response.class);
         redoService.instanceRegistered(serviceName, groupName);
     }
-    
+
+    /**
+     * Execute register operation for persistent instance.
+     *
+     * @param serviceName name of service
+     * @param groupName   group of service
+     * @param instance    instance to register
+     * @throws NacosException nacos exception
+     */
+    public void doRegisterServiceForPersistent(String serviceName, String groupName, Instance instance) throws NacosException {
+        PersistentInstanceRequest request = new PersistentInstanceRequest(namespaceId, serviceName, groupName,
+                NamingRemoteConstants.REGISTER_INSTANCE, instance);
+        requestToServer(request, Response.class);
+    }
+
     @Override
     public void deregisterService(String serviceName, String groupName, Instance instance) throws NacosException {
         NAMING_LOGGER.info("[DEREGISTER-SERVICE] {} deregistering service {} with instance: {}", namespaceId,
                 serviceName, instance);
+        if (instance.isEphemeral()) {
+            deregisterServiceForEphemeral(serviceName, groupName, instance);
+        } else {
+            doDeregisterServiceForPersistent(serviceName, groupName, instance);
+        }
+    }
+
+    private void deregisterServiceForEphemeral(String serviceName, String groupName, Instance instance) throws NacosException {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
         InstanceRedoData instanceRedoData = redoService.getRegisteredInstancesByKey(key);
         if (instanceRedoData instanceof BatchInstanceRedoData) {
@@ -253,7 +286,21 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         requestToServer(request, Response.class);
         redoService.instanceDeregistered(serviceName, groupName);
     }
-    
+
+    /**
+     * Execute deregister operation for persistent instance.
+     *
+     * @param serviceName service name
+     * @param groupName   group name
+     * @param instance    instance
+     * @throws NacosException nacos exception
+     */
+    public void doDeregisterServiceForPersistent(String serviceName, String groupName, Instance instance) throws NacosException {
+        PersistentInstanceRequest request = new PersistentInstanceRequest(namespaceId, serviceName, groupName,
+                NamingRemoteConstants.DE_REGISTER_INSTANCE, instance);
+        requestToServer(request, Response.class);
+    }
+
     @Override
     public void updateInstance(String serviceName, String groupName, Instance instance) throws NacosException {
     
@@ -365,7 +412,12 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     public boolean serverHealthy() {
         return rpcClient.isRunning();
     }
-    
+
+    @Override
+    public boolean isAbilitySupportedByServer(AbilityKey abilityKey) {
+        return rpcClient.getConnectionAbility(abilityKey) == AbilityStatus.SUPPORTED;
+    }
+
     private <T extends Response> T requestToServer(AbstractNamingRequest request, Class<T> responseClass)
             throws NacosException {
         Response response = null;

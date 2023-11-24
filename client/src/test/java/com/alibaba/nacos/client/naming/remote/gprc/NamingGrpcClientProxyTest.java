@@ -18,6 +18,8 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -27,6 +29,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
+import com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse;
 import com.alibaba.nacos.api.naming.remote.response.InstanceResponse;
@@ -111,23 +114,25 @@ public class NamingGrpcClientProxyTest {
     
     @Mock
     private ServiceInfoHolder holder;
-    
+
     @Mock
     private RpcClient rpcClient;
-    
+
     private Properties prop;
-    
+
     private NamingGrpcClientProxy client;
-    
+
     private Response response;
-    
+
     private Instance instance;
-    
+
+    private Instance persistentInstance;
+
     private String uuid;
-    
+
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
-    
+
     @Before
     public void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
         System.setProperty(GrpcConstants.GRPC_RETRY_TIMES, "1");
@@ -143,19 +148,25 @@ public class NamingGrpcClientProxyTest {
         Field uuidField = NamingGrpcClientProxy.class.getDeclaredField("uuid");
         uuidField.setAccessible(true);
         uuid = (String) uuidField.get(client);
-    
+
         Assert.assertNotNull(RpcClientFactory.getClient(uuid));
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
         ((RpcClient) rpcClientField.get(client)).shutdown();
         rpcClientField.set(client, this.rpcClient);
-        
+
         response = new InstanceResponse();
         when(this.rpcClient.request(any())).thenReturn(response);
         instance = new Instance();
         instance.setServiceName(SERVICE_NAME);
         instance.setIp("1.1.1.1");
         instance.setPort(1111);
+
+        persistentInstance = new Instance();
+        persistentInstance.setServiceName(SERVICE_NAME);
+        persistentInstance.setIp("1.1.1.1");
+        persistentInstance.setPort(1111);
+        persistentInstance.setEphemeral(false);
     }
     
     @After
@@ -176,14 +187,26 @@ public class NamingGrpcClientProxyTest {
             return false;
         }));
     }
-    
+
+    @Test
+    public void testRegisterPersistentService() throws NacosException {
+        client.registerService(SERVICE_NAME, GROUP_NAME, persistentInstance);
+        verify(this.rpcClient, times(1)).request(argThat(request -> {
+            if (request instanceof PersistentInstanceRequest) {
+                PersistentInstanceRequest request1 = (PersistentInstanceRequest) request;
+                return request1.getType().equals(NamingRemoteConstants.REGISTER_INSTANCE);
+            }
+            return false;
+        }));
+    }
+
     @Test
     public void testRegisterServiceThrowsNacosException() throws NacosException {
         expectedException.expect(NacosException.class);
         expectedException.expectMessage("err args");
-        
+
         when(this.rpcClient.request(Mockito.any())).thenReturn(ErrorResponse.build(400, "err args"));
-        
+
         try {
             client.registerService(SERVICE_NAME, GROUP_NAME, instance);
         } catch (NacosException ex) {
@@ -220,7 +243,19 @@ public class NamingGrpcClientProxyTest {
             return false;
         }));
     }
-    
+
+    @Test
+    public void testDeregisterPersistentService() throws NacosException {
+        client.deregisterService(SERVICE_NAME, GROUP_NAME, persistentInstance);
+        verify(this.rpcClient, times(1)).request(argThat(request -> {
+            if (request instanceof PersistentInstanceRequest) {
+                PersistentInstanceRequest request1 = (PersistentInstanceRequest) request;
+                return request1.getType().equals(NamingRemoteConstants.DE_REGISTER_INSTANCE);
+            }
+            return false;
+        }));
+    }
+
     @Test
     public void testDeregisterServiceForBatchRegistered() throws NacosException {
         try {
@@ -326,7 +361,37 @@ public class NamingGrpcClientProxyTest {
             return false;
         }));
     }
-    
+
+    @Test
+    public void testBatchDeregisterServiceWithOtherPortInstance() throws NacosException {
+        try {
+            List<Instance> instanceList = new ArrayList<>();
+            instance.setHealthy(true);
+            instanceList.add(instance);
+            instanceList.add(new Instance());
+            client.batchRegisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+        } catch (Exception ignored) {
+        }
+        response = new BatchInstanceResponse();
+        when(this.rpcClient.request(any())).thenReturn(response);
+        Instance otherPortInstance = new Instance();
+        otherPortInstance.setServiceName(SERVICE_NAME);
+        otherPortInstance.setIp("1.1.1.1");
+        otherPortInstance.setPort(2222);
+        List<Instance> instanceList = new ArrayList<>();
+        instanceList.add(otherPortInstance);
+        client.batchDeregisterService(SERVICE_NAME, GROUP_NAME, instanceList);
+        verify(this.rpcClient, times(2)).request(argThat(request -> {
+            if (request instanceof BatchInstanceRequest) {
+                BatchInstanceRequest request1 = (BatchInstanceRequest) request;
+                request1.setRequestId("1");
+                return request1.getInstances().size() == 2 && request1.getType()
+                        .equals(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
+            }
+            return false;
+        }));
+    }
+
     @Test
     public void testUpdateInstance() throws Exception {
         //TODO thrown.expect(UnsupportedOperationException.class);
@@ -424,21 +489,57 @@ public class NamingGrpcClientProxyTest {
         client.subscribe(SERVICE_NAME, GROUP_NAME, CLUSTERS);
         assertTrue(client.isSubscribed(SERVICE_NAME, GROUP_NAME, CLUSTERS));
     }
-    
+
     @Test
     public void testServerHealthy() {
         when(this.rpcClient.isRunning()).thenReturn(true);
         Assert.assertTrue(client.serverHealthy());
         verify(this.rpcClient, times(1)).isRunning();
     }
-    
+
+    @Test
+    public void testIsAbilitySupportedByServer1() {
+        when(this.rpcClient.getConnectionAbility(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC))
+                .thenReturn(AbilityStatus.SUPPORTED);
+        Assert.assertTrue(client.isAbilitySupportedByServer(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        verify(this.rpcClient, times(1))
+                .getConnectionAbility(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC);
+    }
+
+    @Test
+    public void testIsAbilitySupportedByServer2() {
+        when(this.rpcClient.getConnectionAbility(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC))
+                .thenReturn(AbilityStatus.NOT_SUPPORTED);
+        Assert.assertFalse(client.isAbilitySupportedByServer(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        verify(this.rpcClient, times(1))
+                .getConnectionAbility(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC);
+    }
+
+    @Test
+    public void testIsAbilitySupportedByServer3() {
+        when(this.rpcClient.getConnectionAbility(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC))
+                .thenReturn(AbilityStatus.UNKNOWN);
+        Assert.assertFalse(client.isAbilitySupportedByServer(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        verify(this.rpcClient, times(1))
+                .getConnectionAbility(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC);
+    }
+
+    @Test
+    public void testIsAbilitySupportedByServer4() {
+        when(this.rpcClient.getConnectionAbility(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC))
+                .thenReturn(null);
+        Assert.assertFalse(client.isAbilitySupportedByServer(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        verify(this.rpcClient, times(1))
+                .getConnectionAbility(AbilityKey.SUPPORT_PERSISTENT_INSTANCE_BY_GRPC);
+    }
+
     @Test
     public void testShutdown() throws Exception {
         client.shutdown();
         Assert.assertNull(RpcClientFactory.getClient(uuid));
         //verify(this.rpcClient, times(1)).shutdown();
     }
-    
+
     @Test
     public void testIsEnable() {
         when(this.rpcClient.isRunning()).thenReturn(true);
