@@ -53,6 +53,44 @@ public class MetricsMonitorTest {
         NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
                 .add(new SimpleMeterRegistry());
     }
+
+    @Test
+    public void testSdkServerExecutorMetric() {
+        MetricsMonitor.getSdkServerExecutorMetric().getPoolSize().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getMaximumPoolSize().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getCorePoolSize().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getActiveCount().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getInQueueTaskCount().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getTaskCount().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getCompletedTaskCount().set(1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getType(), "grpcSdkServer");
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getPoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getMaximumPoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getCorePoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getActiveCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getInQueueTaskCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getTaskCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getCompletedTaskCount().get(), 1);
+    }
+
+    @Test
+    public void testClusterServerExecutorMetric() {
+        MetricsMonitor.getClusterServerExecutorMetric().getPoolSize().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getMaximumPoolSize().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getCorePoolSize().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getActiveCount().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getInQueueTaskCount().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getTaskCount().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getCompletedTaskCount().set(1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getType(), "grpcClusterServer");
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getPoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getMaximumPoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getCorePoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getActiveCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getInQueueTaskCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getTaskCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getCompletedTaskCount().get(), 1);
+    }
     
     @Test
     public void testGetLongConnectionMonitor() {
