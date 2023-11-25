@@ -139,4 +139,12 @@ public final class MetricsMonitor {
         });
     }
 
+    /**
+     * getter.
+     *
+     * @return moduleConnectionCnt.
+     */
+    public static Map<String, AtomicInteger> getModuleConnectionCnt() {
+        return moduleConnectionCnt;
+    }
 }
