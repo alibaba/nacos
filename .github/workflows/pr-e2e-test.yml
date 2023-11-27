@@ -80,7 +80,8 @@ jobs:
           echo ${{ env.TAG }}
           pwd
           ls
-          cp -rf nacos-e2e/cicd/build ./
+          mkdir build_backup
+          cp -rf nacos-e2e/cicd/build/* ./build_backup/
           ls
           cd nacos-e2e/cicd/build
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${{ env.TAG }} .
@@ -96,12 +97,8 @@ jobs:
           echo ${{ env.TAG }}
           pwd
           ls
-          cd ..
-          cd ..
-          ls
-          pwd
           rm -rf nacos-e2e/cicd/build/*
-          mv nacos-e2e/cicd/build_backup nacos-e2e/cicd/build
+          mv ./build_backup/* nacos-e2e/cicd/build/
           cd nacos-e2e/cicd/build
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO_B}:${{ env.TAG }} .
           docker push ${DOCKER_REPO_B}:${{ env.TAG }}
