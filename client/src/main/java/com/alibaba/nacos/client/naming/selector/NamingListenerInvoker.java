@@ -29,12 +29,13 @@ import java.util.Objects;
  * @author lideyou
  */
 public class NamingListenerInvoker implements ListenerInvoker<NamingEvent> {
+    
     private final EventListener listener;
-
+    
     public NamingListenerInvoker(EventListener listener) {
         this.listener = listener;
     }
-
+    
     @Override
     public void invoke(NamingEvent event) {
         if (listener instanceof AbstractEventListener && ((AbstractEventListener) listener).getExecutor() != null) {
@@ -43,21 +44,21 @@ public class NamingListenerInvoker implements ListenerInvoker<NamingEvent> {
             listener.onEvent(event);
         }
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-
+        
         if (this == o) {
             return true;
         }
-
+        
         NamingListenerInvoker that = (NamingListenerInvoker) o;
         return Objects.equals(listener, that.listener);
     }
-
+    
     @Override
     public int hashCode() {
         return Objects.hashCode(listener);

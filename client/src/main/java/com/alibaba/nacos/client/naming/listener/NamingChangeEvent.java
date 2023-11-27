@@ -28,38 +28,40 @@ import java.util.List;
  * @author lideyou
  */
 public class NamingChangeEvent extends NamingEvent {
+    
     private final InstancesDiff instancesDiff;
-
+    
     public NamingChangeEvent(String serviceName, List<Instance> instances, InstancesDiff instancesDiff) {
         super(serviceName, instances);
         this.instancesDiff = instancesDiff;
     }
-
-    public NamingChangeEvent(String serviceName, String groupName, String clusters, List<Instance> instances, InstancesDiff instancesDiff) {
+    
+    public NamingChangeEvent(String serviceName, String groupName, String clusters, List<Instance> instances,
+            InstancesDiff instancesDiff) {
         super(serviceName, groupName, clusters, instances);
         this.instancesDiff = instancesDiff;
     }
-
+    
     public boolean isAdded() {
         return this.instancesDiff.isAdded();
     }
-
+    
     public boolean isRemoved() {
         return this.instancesDiff.isRemoved();
     }
-
+    
     public boolean isModified() {
         return this.instancesDiff.isModified();
     }
-
+    
     public List<Instance> getAddedInstances() {
         return this.instancesDiff.getAddedInstances();
     }
-
+    
     public List<Instance> getRemovedInstances() {
         return this.instancesDiff.getRemovedInstances();
     }
-
+    
     public List<Instance> getModifiedInstances() {
         return this.instancesDiff.getModifiedInstances();
     }

@@ -33,6 +33,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 
 public class NamingListenerInvokerTest {
+    
     @Test
     public void testEventListener() {
         EventListener listener = mock(EventListener.class);
@@ -41,7 +42,7 @@ public class NamingListenerInvokerTest {
         listenerInvoker.invoke(event);
         verify(listener).onEvent(event);
     }
-
+    
     @Test
     public void testAbstractEventListener() {
         AbstractEventListener listener = mock(AbstractEventListener.class);
@@ -50,7 +51,7 @@ public class NamingListenerInvokerTest {
         listenerInvoker.invoke(event);
         verify(listener).getExecutor();
     }
-
+    
     @Test
     public void testAbstractNamingChaneEventListener() {
         AbstractNamingChangeListener listener = spy(AbstractNamingChangeListener.class);
@@ -59,7 +60,7 @@ public class NamingListenerInvokerTest {
         listenerInvoker.invoke(event);
         verify(listener).onChange(event);
     }
-
+    
     @Test
     public void testEquals() {
         EventListener listener1 = mock(EventListener.class);

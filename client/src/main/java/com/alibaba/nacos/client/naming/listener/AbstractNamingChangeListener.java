@@ -25,15 +25,17 @@ import com.alibaba.nacos.api.naming.listener.Event;
  * @author lideyou
  */
 public abstract class AbstractNamingChangeListener extends AbstractEventListener {
+    
     @Override
     public final void onEvent(Event event) {
         if (event instanceof NamingChangeEvent) {
             onChange((NamingChangeEvent) event);
         }
     }
-
+    
     /**
      * Callback when instances have changed.
+     *
      * @param event NamingChangeEvent
      */
     public abstract void onChange(NamingChangeEvent event);

@@ -23,6 +23,7 @@ package com.alibaba.nacos.client.selector;
  * @author lideyou
  */
 public interface ListenerInvoker<E> {
+    
     /**
      * Invoke inner listener.
      *

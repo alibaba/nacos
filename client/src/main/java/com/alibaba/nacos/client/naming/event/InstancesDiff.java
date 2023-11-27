@@ -29,80 +29,86 @@ import java.util.List;
  * @author lideyou
  */
 public class InstancesDiff {
+    
     private final List<Instance> addedInstances = new ArrayList<>();
-
+    
     private final List<Instance> removedInstances = new ArrayList<>();
-
+    
     private final List<Instance> modifiedInstances = new ArrayList<>();
-
+    
     public InstancesDiff() {
     }
-
-    public InstancesDiff(List<Instance> addedInstances, List<Instance> removedInstances, List<Instance> modifiedInstances) {
+    
+    public InstancesDiff(List<Instance> addedInstances, List<Instance> removedInstances,
+            List<Instance> modifiedInstances) {
         setAddedInstances(addedInstances);
         setRemovedInstances(removedInstances);
         setModifiedInstances(modifiedInstances);
     }
-
+    
     public List<Instance> getAddedInstances() {
         return addedInstances;
     }
-
+    
     public void setAddedInstances(Collection<Instance> addedInstances) {
         this.addedInstances.clear();
         if (CollectionUtils.isNotEmpty(addedInstances)) {
             this.addedInstances.addAll(addedInstances);
         }
     }
-
+    
     public List<Instance> getRemovedInstances() {
         return removedInstances;
     }
-
+    
     public void setRemovedInstances(Collection<Instance> removedInstances) {
         this.removedInstances.clear();
         if (CollectionUtils.isNotEmpty(removedInstances)) {
             this.removedInstances.addAll(removedInstances);
         }
     }
-
+    
     public List<Instance> getModifiedInstances() {
         return modifiedInstances;
     }
-
+    
     public void setModifiedInstances(Collection<Instance> modifiedInstances) {
         this.modifiedInstances.clear();
         if (CollectionUtils.isNotEmpty(modifiedInstances)) {
             this.modifiedInstances.addAll(modifiedInstances);
         }
     }
-
+    
     /**
      * Check if any instances have changed.
+     *
      * @return true if there are instances that have changed
      */
     public boolean hasDifferent() {
         return isAdded() || isRemoved() || isModified();
     }
-
+    
     /**
      * Check if any instances have been added.
+     *
      * @return true if there are instances that have been added.
      */
     public boolean isAdded() {
         return CollectionUtils.isNotEmpty(this.addedInstances);
     }
-
+    
     /**
      * Check if any instances have been added.
+     *
      * @return true if there are instances that have been added.
      */
     public boolean isRemoved() {
         return CollectionUtils.isNotEmpty(this.removedInstances);
     }
-
+    
     /**
      * Check if any instances have been added.
+     *
      * @return true if there are instances that have been added.
      */
     public boolean isModified() {

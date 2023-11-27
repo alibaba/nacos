@@ -32,23 +32,21 @@ import java.util.stream.Collectors;
  * @author lideyou
  */
 public class DefaultNamingSelector implements NamingSelector {
+    
     private final Predicate<Instance> filter;
-
+    
     public DefaultNamingSelector(Predicate<Instance> filter) {
         this.filter = filter;
     }
-
+    
     @Override
     public NamingResult select(NamingContext context) {
         List<Instance> instances = doFilter(context.getInstances());
         return () -> instances;
     }
-
+    
     private List<Instance> doFilter(List<Instance> instances) {
-        return instances == null ? Collections.emptyList() :
-                instances
-                        .stream()
-                        .filter(filter)
-                        .collect(Collectors.toList());
+        return instances == null ? Collections.emptyList()
+                : instances.stream().filter(filter).collect(Collectors.toList());
     }
 }

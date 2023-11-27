@@ -30,15 +30,16 @@ import java.util.Objects;
  * @author lideyou
  */
 public abstract class AbstractSelectorWrapper<S extends Selector<?, ?>, E, T extends Event> {
+    
     private final S selector;
-
+    
     private final ListenerInvoker<E> listener;
-
+    
     public AbstractSelectorWrapper(S selector, ListenerInvoker<E> listener) {
         this.selector = selector;
         this.listener = listener;
     }
-
+    
     /**
      * Check whether the event can be callback.
      *
@@ -46,7 +47,7 @@ public abstract class AbstractSelectorWrapper<S extends Selector<?, ?>, E, T ext
      * @return true if the event can be callback
      */
     protected abstract boolean isSelectable(T event);
-
+    
     /**
      * Check whether the result can be callback.
      *
@@ -54,14 +55,15 @@ public abstract class AbstractSelectorWrapper<S extends Selector<?, ?>, E, T ext
      * @return true if the result can be callback
      */
     protected abstract boolean isCallable(E event);
-
+    
     /**
      * Build an event received by the listener.
+     *
      * @param event original event
      * @return listener event
      */
     protected abstract E buildListenerEvent(T event);
-
+    
     /**
      * Notify listener.
      *
@@ -76,15 +78,15 @@ public abstract class AbstractSelectorWrapper<S extends Selector<?, ?>, E, T ext
             listener.invoke(newEvent);
         }
     }
-
+    
     public ListenerInvoker<E> getListener() {
         return this.listener;
     }
-
+    
     public S getSelector() {
         return this.selector;
     }
-
+    
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -96,7 +98,7 @@ public abstract class AbstractSelectorWrapper<S extends Selector<?, ?>, E, T ext
         AbstractSelectorWrapper<?, ?, ?> that = (AbstractSelectorWrapper<?, ?, ?>) o;
         return Objects.equals(selector, that.selector) && Objects.equals(listener, that.listener);
     }
-
+    
     @Override
     public int hashCode() {
         return Objects.hash(selector, listener);

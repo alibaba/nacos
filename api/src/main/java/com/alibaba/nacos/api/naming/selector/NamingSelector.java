@@ -24,4 +24,5 @@ import com.alibaba.nacos.api.selector.client.Selector;
  * @author lideyou
  */
 public interface NamingSelector extends Selector<NamingContext, NamingResult> {
+
 }

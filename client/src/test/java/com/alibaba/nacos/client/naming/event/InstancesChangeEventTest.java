@@ -36,7 +36,8 @@ public class InstancesChangeEventTest {
         hosts.add(ins);
         InstancesDiff diff = new InstancesDiff();
         diff.setAddedInstances(hosts);
-        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts, diff);
+        InstancesChangeEvent event = new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts,
+                diff);
         Assert.assertEquals(eventScope, event.scope());
         Assert.assertEquals(serviceName, event.getServiceName());
         Assert.assertEquals(clusters, event.getClusters());

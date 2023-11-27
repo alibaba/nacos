@@ -30,11 +30,11 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 
 public class NamingChangeEventTest {
-
+    
     private MockNamingEventListener eventListener;
-
+    
     private InstancesDiff instancesDiff;
-
+    
     @Before
     public void setUp() throws Exception {
         eventListener = new MockNamingEventListener();
@@ -43,7 +43,7 @@ public class NamingChangeEventTest {
         instancesDiff.setRemovedInstances(Arrays.asList(new Instance(), new Instance()));
         instancesDiff.setModifiedInstances(Arrays.asList(new Instance()));
     }
-
+    
     @Test
     public void testNamingChangeEventWithSimpleConstructor() {
         NamingChangeEvent event = new NamingChangeEvent("serviceName", Collections.EMPTY_LIST, instancesDiff);
@@ -69,10 +69,11 @@ public class NamingChangeEventTest {
         assertFalse(event.isModified());
         assertEquals(0, event.getRemovedInstances().size());
     }
-
+    
     @Test
     public void testNamingChangeEventWithFullConstructor() {
-        NamingChangeEvent event = new NamingChangeEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST, instancesDiff);
+        NamingChangeEvent event = new NamingChangeEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST,
+                instancesDiff);
         assertEquals("serviceName", event.getServiceName());
         assertEquals("group", event.getGroupName());
         assertEquals("clusters", event.getClusters());
@@ -95,7 +96,7 @@ public class NamingChangeEventTest {
         assertFalse(event.isModified());
         assertEquals(0, event.getRemovedInstances().size());
     }
-
+    
     @Test
     public void testGetChanges() {
         NamingChangeEvent event = new NamingChangeEvent("serviceName", Collections.EMPTY_LIST, instancesDiff);
@@ -104,22 +105,22 @@ public class NamingChangeEventTest {
         event.getAddedInstances().clear();
         assertFalse(event.isAdded());
         assertEquals(0, event.getAddedInstances().size());
-
+        
         assertTrue(event.isRemoved());
         assertEquals(2, event.getRemovedInstances().size());
         event.getRemovedInstances().clear();
         assertFalse(event.isRemoved());
         assertEquals(0, event.getRemovedInstances().size());
-
+        
         assertTrue(event.isModified());
         assertEquals(1, event.getModifiedInstances().size());
         event.getModifiedInstances().clear();
         assertFalse(event.isModified());
         assertEquals(0, event.getRemovedInstances().size());
     }
-
+    
     private static class MockNamingEventListener extends AbstractNamingChangeListener {
-
+        
         @Override
         public void onChange(NamingChangeEvent event) {
             assertNull(getExecutor());

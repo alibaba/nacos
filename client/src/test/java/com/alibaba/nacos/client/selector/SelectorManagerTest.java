@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class SelectorManagerTest {
-
+    
     @Test
     public void testCurd() {
         SelectorManager<NamingSelectorWrapper> selectorManager = new SelectorManager<>();
@@ -41,7 +41,7 @@ public class SelectorManagerTest {
         selectorManager.removeSelectorWrapper(subId, sw);
         assertNull(selectorManager.getSelectorWrappers(subId));
     }
-
+    
     @Test
     public void testSubInfo() {
         SelectorManager<NamingSelectorWrapper> selectorManager = new SelectorManager<>();
@@ -49,36 +49,36 @@ public class SelectorManagerTest {
         for (int i = 0; i < 64; i++) {
             list.add(generateRandomString(2, 32));
         }
-
+        
         for (String subId : list) {
             selectorManager.addSelectorWrapper(subId, mock(NamingSelectorWrapper.class));
             assertTrue(selectorManager.isSubscribed(subId));
         }
-
+        
         Set<String> subsSet = selectorManager.getSubscriptions();
         for (String subId : subsSet) {
             assertTrue(list.contains(subId));
         }
-
+        
         for (String subId : list) {
             selectorManager.removeSubscription(subId);
             assertFalse(selectorManager.isSubscribed(subId));
         }
     }
-
+    
     private static String generateRandomString(int minLength, int maxLength) {
         String characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-
+        
         Random random = new Random();
         int length = random.nextInt(maxLength - minLength + 1) + minLength;
         StringBuilder sb = new StringBuilder();
-
+        
         for (int i = 0; i < length; i++) {
             int index = random.nextInt(characters.length());
             char randomChar = characters.charAt(index);
             sb.append(randomChar);
         }
-
+        
         return sb.toString();
     }
 }
