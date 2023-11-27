@@ -92,7 +92,7 @@ jobs:
       - name: save docker_1 images
         run: |
           echo ${{ env.TAG }}
-          cp -rf nacos-e2e/cicd/build nacos-e2e/cicd/build_backup
+          cp -rf nacos-e2e/cicd/build/* ./build_backup/
           cd nacos-e2e/cicd/build
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${{ env.TAG }} .
           docker push ${DOCKER_REPO}:${{ env.TAG }}
@@ -106,9 +106,9 @@ jobs:
         run: |
           echo ${{ env.TAG }}
           pwd
-          cd ../../
+          ls
           rm -rf nacos-e2e/cicd/build/*
-          mv nacos-e2e/cicd/build_backup nacos-e2e/cicd/build
+          mv ./build_backup/*  nacos-e2e/cicd/build/
           cd nacos-e2e/cicd/build
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO_B}:${{ env.TAG }} .
           docker push ${DOCKER_REPO_B}:${{ env.TAG }}
