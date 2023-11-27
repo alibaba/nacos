@@ -93,9 +93,31 @@ jobs:
           touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
           ls versionlist/
           tag=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g")
+          echo "TAG=${tag}" >> $GITHUB_ENV
           echo $tag
           docker build --no-cache -f Dockerfile -t ${{ matrix.DOCKER_REPO_ADDR }}:${tag} .
           docker push ${{ matrix.DOCKER_REPO_ADDR }}:${tag}
+
+      - name: docker-login-1
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      - name: save docker_1 images
+        run: |
+          docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${{ env.TAG }} .
+          docker push ${DOCKER_REPO}:${{ env.TAG }}
+      - name: docker-login-2
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USER_B }}
+          password: ${{ secrets.DOCKERHUB_TOKEN_B }}
+      - name: save docker_2 images
+        run: |
+          docker build --no-cache -f Dockerfile -t ${DOCKER_REPO_B}:${{ env.TAG }} .
+          docker push ${DOCKER_REPO_B}:${{ env.TAG }}
       - name: Show versions
         id: show_versions
         run: | 
