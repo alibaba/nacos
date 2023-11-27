@@ -77,13 +77,7 @@ jobs:
         run: |
           echo "DOCKERHUB_USER_ACTUAL=${{ secrets.DOCKERHUB_USER_B }}" >> $GITHUB_ENV
           echo "DOCKERHUB_TOKEN_ACTUAL=${{ secrets.DOCKERHUB_TOKEN_B }}" >> $GITHUB_ENV
-      - name: docker-login
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ env.DOCKERHUB_USER_ACTUAL }}
-          password: ${{ env.DOCKERHUB_TOKEN_ACTUAL }}
-      - name: Build and save docker images
+      - name: Generate image tag
         id: build-images
         run: |
           mv nacos-server-*.tar.gz nacos-e2e/cicd/build/
@@ -106,6 +100,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: save docker_1 images
         run: |
+          cp -rf nacos-e2e/cicd/build nacos-e2e/cicd/build_backup
+          cd nacos-e2e/cicd/build
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${{ env.TAG }} .
           docker push ${DOCKER_REPO}:${{ env.TAG }}
       - name: docker-login-2
@@ -116,6 +112,9 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN_B }}
       - name: save docker_2 images
         run: |
+          rm -rf nacos-e2e/cicd/build/*
+          mv nacos-e2e/cicd/build_backup nacos-e2e/cicd/build
+          cd nacos-e2e/cicd/build
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO_B}:${{ env.TAG }} .
           docker push ${DOCKER_REPO_B}:${{ env.TAG }}
       - name: Show versions
