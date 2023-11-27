@@ -231,6 +231,19 @@ public class NamingUtilsTest {
             Assert.assertEquals(e.getErrCode(), NacosException.INVALID_PARAM);
         }
     }
+
+    @Test
+    public void testCheckInstanceIsNull() throws NacosException {
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(9089);
+        NamingUtils.checkInstanceIsLegal(instance);
+        try {
+            NamingUtils.checkInstanceIsLegal(null);
+        } catch (NacosException e) {
+            Assert.assertEquals(e.getErrCode(), NacosException.INVALID_PARAM);
+        }
+    }
     
     @Test
     public void testIsNumber() {
