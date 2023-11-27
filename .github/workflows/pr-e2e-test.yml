@@ -65,9 +65,9 @@ jobs:
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
           ls versionlist/
-          echo tag=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g")
-          echo "TAG=${tag}" >> $GITHUB_ENV
-          echo $tag
+          echo tagName=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g")
+          echo "TAG=${tagName}" >> $GITHUB_ENV
+          echo $tagName
       - name: docker-login-1
         uses: docker/login-action@v2
         with:
@@ -76,6 +76,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: save docker_1 images
         run: |
+          echo ${{ env.TAG }}
           cp -rf nacos-e2e/cicd/build nacos-e2e/cicd/build_backup
           cd nacos-e2e/cicd/build
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${{ env.TAG }} .
@@ -88,6 +89,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN_B }}
       - name: save docker_2 images
         run: |
+          echo ${{ env.TAG }}
           rm -rf nacos-e2e/cicd/build/*
           mv nacos-e2e/cicd/build_backup nacos-e2e/cicd/build
           cd nacos-e2e/cicd/build
