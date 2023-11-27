@@ -26,6 +26,7 @@ import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.HealthCheckResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.google.common.util.concurrent.ListenableFuture;
@@ -35,6 +36,7 @@ import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -79,6 +81,11 @@ public class GrpcConnectionTest {
     Payload errorResponsePayload;
     
     GrpcConnection connection;
+    
+    @BeforeClass
+    public static void setUpBeforeClass() {
+        PayloadRegistry.init();
+    }
     
     @Before
     public void setUp() throws Exception {
