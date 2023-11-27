@@ -89,6 +89,7 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN_B }}
       - name: save docker_2 images
         run: |
+          echo ${{ env.TAG }}
           rm -rf nacos-e2e/cicd/build/*
           mv nacos-e2e/cicd/build_backup nacos-e2e/cicd/build
           cd nacos-e2e/cicd/build
