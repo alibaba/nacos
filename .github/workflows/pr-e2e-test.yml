@@ -65,9 +65,9 @@ jobs:
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
           ls versionlist/
-          echo tagName=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g")
-          echo "TAG=${tagName}" >> $GITHUB_ENV
-          echo $tagName
+          echo TAG=${version}-$(echo ${{ matrix.java-version }} | sed -e "s/:/-/g") >> $GITHUB_ENV
+          echo ${TAG}
+          echo ${{ env.TAG }}
       - name: docker-login-1
         uses: docker/login-action@v2
         with:
