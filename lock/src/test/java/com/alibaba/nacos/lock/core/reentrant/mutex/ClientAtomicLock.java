@@ -59,4 +59,9 @@ public class ClientAtomicLock extends AbstractAtomicLock {
     public Boolean autoExpire() {
         return System.currentTimeMillis() >= this.expireTimestamp;
     }
+    
+    @Override
+    public Boolean isClear() {
+        return state.get() == null || autoExpire();
+    }
 }

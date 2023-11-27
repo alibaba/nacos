@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.lock.service.impl;
 
-import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.lock.model.LockInstance;
 import com.alibaba.nacos.api.lock.remote.LockOperationEnum;
 import com.alibaba.nacos.consistency.SerializeFactory;
@@ -33,6 +31,7 @@ import com.alibaba.nacos.lock.LockManager;
 import com.alibaba.nacos.lock.constant.Constants;
 import com.alibaba.nacos.lock.constant.PropertiesConstant;
 import com.alibaba.nacos.lock.core.reentrant.AtomicLockService;
+import com.alibaba.nacos.lock.exception.NacosLockException;
 import com.alibaba.nacos.lock.model.LockInfo;
 import com.alibaba.nacos.lock.model.LockKey;
 import com.alibaba.nacos.lock.persistence.NacosLockSnapshotOperation;
@@ -99,14 +98,14 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 final MutexLockRequest mutexLockRequest = serializer.deserialize(request.getData().toByteArray());
                 data = releaseLock(mutexLockRequest);
             } else {
-                return Response.newBuilder().setSuccess(false).build();
+                throw new NacosLockException("lockOperation is not exist.");
             }
             LOGGER.info("thread: {}, operator: {}, request: {}, success: {}", Thread.currentThread().getName(),
                     lockOperation, serializer.deserialize(request.getData().toByteArray()), data);
             ByteString bytes = ByteString.copyFrom(serializer.serialize(data));
             return Response.newBuilder().setSuccess(true).setData(bytes).build();
-        } catch (Exception e) {
-            return Response.newBuilder().setSuccess(false).build();
+        } catch (NacosLockException e) {
+            return Response.newBuilder().setSuccess(false).setErrMsg(e.getMessage()).build();
         } finally {
             lock.unlock();
         }
@@ -115,7 +114,11 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
     private Boolean releaseLock(MutexLockRequest request) {
         LockInfo lockInfo = request.getLockInfo();
         AtomicLockService mutexLock = lockManager.getMutexLock(lockInfo.getKey());
-        return mutexLock.unLock(lockInfo);
+        Boolean unLock = mutexLock.unLock(lockInfo);
+        if (mutexLock.isClear()) {
+            lockManager.removeMutexLock(lockInfo.getKey());
+        }
+        return unLock;
     }
     
     private Boolean acquireLock(MutexLockRequest request) {
@@ -143,9 +146,17 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 .setOperation(LockOperationEnum.ACQUIRE.name()).build();
         try {
             Response response = protocol.write(writeRequest);
-            return serializer.deserialize(response.getData().toByteArray());
+            if (response.getSuccess()) {
+                return serializer.deserialize(response.getData().toByteArray());
+            }
+            throw new NacosLockException(response.getErrMsg());
+        } catch (NacosLockException e) {
+            int paramSize = lockInstance.getParams() == null ? 0 : lockInstance.getParams().size();
+            LOGGER.error("key: {}, lockType:{}, paramSize:{} lock fail, errorMsg: {}", lockInstance.getKey(),
+                    lockInstance.getLockType(), paramSize, e.getMessage());
+            throw e;
         } catch (Exception e) {
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+            throw new NacosLockException("tryLock error.", e);
         }
     }
     
@@ -166,9 +177,17 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                 .setOperation(LockOperationEnum.RELEASE.name()).build();
         try {
             Response response = protocol.write(writeRequest);
-            return serializer.deserialize(response.getData().toByteArray());
+            if (response.getSuccess()) {
+                return serializer.deserialize(response.getData().toByteArray());
+            }
+            throw new NacosLockException(response.getErrMsg());
+        } catch (NacosLockException e) {
+            int paramSize = lockInstance.getParams() == null ? 0 : lockInstance.getParams().size();
+            LOGGER.error("key: {}, lockType:{}, paramSize:{} lock fail, errorMsg: {}", lockInstance.getKey(),
+                    lockInstance.getLockType(), paramSize, e.getMessage());
+            throw e;
         } catch (Exception e) {
-            throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
+            throw new NacosLockException("unLock error.", e);
         }
     }
     
