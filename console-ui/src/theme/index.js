@@ -1,5 +1,5 @@
-/*!
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+/*
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,15 @@
  * limitations under the License.
  */
 
-.service-management {
-  padding-top: 12px;
-  .page-title {
-    height: 30px;
-    width: 100%;
-    line-height: 30px;
-    margin: 0 0 20px;
+import { THEME } from '../constants';
+
+const changeTheme = theme => dispatch => {
+  if (theme === 'dark') {
+    document.body.classList.add('dark');
+  } else {
+    document.body.classList.remove('dark');
   }
-  .title-item {
-    font-size: 14px;
-    color: #000;
-    margin-right: 8px;
-  }
-  .next-switch-off {
-    background-color: #f2f3f7;
-    border-color: #c4c6cf;
-  }
-}
+  localStorage.setItem(THEME, theme);
+};
+
+export default changeTheme;
