@@ -45,8 +45,7 @@ public class InstancesChangeNotifierTest {
         InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
         EventListener listener = Mockito.mock(EventListener.class);
         NamingSelector selector = NamingSelectorFactory.newClusterSelector(clusters);
-        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector,
-                listener);
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector, listener);
         instancesChangeNotifier.registerListener(group, name, wrapper);
         List<ServiceInfo> subscribeServices = instancesChangeNotifier.getSubscribeServices();
         Assert.assertEquals(1, subscribeServices.size());
@@ -94,9 +93,8 @@ public class InstancesChangeNotifierTest {
         EventListener listener = Mockito.mock(EventListener.class);
         NamingSelector selector = NamingSelectorFactory.newClusterSelector(clusters);
         Assert.assertFalse(instancesChangeNotifier.isSubscribed(group, name));
-    
-        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector,
-                listener);
+        
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector, listener);
         instancesChangeNotifier.registerListener(group, name, wrapper);
         Assert.assertTrue(instancesChangeNotifier.isSubscribed(group, name));
     }
@@ -111,9 +109,8 @@ public class InstancesChangeNotifierTest {
         InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
         NamingSelector selector = NamingSelectorFactory.newClusterSelector(clusters);
         EventListener listener = Mockito.mock(EventListener.class);
-    
-        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector,
-                listener);
+        
+        NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector, listener);
         instancesChangeNotifier.registerListener(group, name, wrapper);
         Instance instance = new Instance();
         InstancesDiff diff = new InstancesDiff(null, Collections.singletonList(instance), null);

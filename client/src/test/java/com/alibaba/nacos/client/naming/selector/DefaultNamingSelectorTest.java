@@ -31,27 +31,27 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class DefaultNamingSelectorTest {
-
+    
     @Test
     public void testSelect() {
         DefaultNamingSelector namingSelector = new DefaultNamingSelector(Instance::isHealthy);
         Random random = new Random();
         int total = random.nextInt(32) + 1;
         int health = random.nextInt(total);
-
+        
         NamingContext namingContext = getMockNamingContext(total, health);
         NamingResult result = namingSelector.select(namingContext);
-
+        
         assertEquals(health, result.getResult().size());
         result.getResult().forEach(ins -> assertTrue(ins.isHealthy()));
     }
-
+    
     private NamingContext getMockNamingContext(int total, int health) {
         NamingContext namingContext = mock(NamingContext.class);
         when(namingContext.getInstances()).thenReturn(getInstance(total, health));
         return namingContext;
     }
-
+    
     private List<Instance> getInstance(int total, int health) {
         List<Instance> list = new ArrayList<>(total);
         for (int i = 0; i < total; i++) {
@@ -59,11 +59,11 @@ public class DefaultNamingSelectorTest {
             instance.setHealthy(false);
             list.add(instance);
         }
-
+        
         for (int i = 0; i < health; i++) {
             list.get(i).setHealthy(true);
         }
-
+        
         return list;
     }
 }

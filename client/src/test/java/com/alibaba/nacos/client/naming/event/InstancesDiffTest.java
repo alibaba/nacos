@@ -27,24 +27,19 @@ import java.util.List;
 import java.util.Random;
 
 public class InstancesDiffTest {
+    
     @Test
     public void testGetDiff() {
         String serviceName = "testService";
-        Instance addedIns = InstanceBuilder.newBuilder()
-                .setServiceName(serviceName)
-                .setClusterName("a").build();
-        Instance removedIns = InstanceBuilder.newBuilder()
-                .setServiceName(serviceName)
-                .setClusterName("b").build();
-        Instance modifiedIns = InstanceBuilder.newBuilder()
-                .setServiceName(serviceName)
-                .setClusterName("c").build();
-
+        Instance addedIns = InstanceBuilder.newBuilder().setServiceName(serviceName).setClusterName("a").build();
+        Instance removedIns = InstanceBuilder.newBuilder().setServiceName(serviceName).setClusterName("b").build();
+        Instance modifiedIns = InstanceBuilder.newBuilder().setServiceName(serviceName).setClusterName("c").build();
+        
         InstancesDiff instancesDiff = new InstancesDiff();
         instancesDiff.setAddedInstances(Collections.singletonList(addedIns));
         instancesDiff.setRemovedInstances(Collections.singletonList(removedIns));
         instancesDiff.setModifiedInstances(Collections.singletonList(modifiedIns));
-
+        
         Assert.assertTrue(instancesDiff.hasDifferent());
         Assert.assertTrue(instancesDiff.isAdded());
         Assert.assertTrue(instancesDiff.isRemoved());
@@ -53,19 +48,16 @@ public class InstancesDiffTest {
         Assert.assertEquals(removedIns, instancesDiff.getRemovedInstances().get(0));
         Assert.assertEquals(modifiedIns, instancesDiff.getModifiedInstances().get(0));
     }
-
+    
     @Test
     public void testWithFullConstructor() {
         Random random = new Random();
         int addedCount = random.nextInt(32) + 1;
         int removedCount = random.nextInt(32) + 1;
         int modifiedCount = random.nextInt(32) + 1;
-        InstancesDiff instancesDiff = new InstancesDiff(
-                getInstanceList(addedCount),
-                getInstanceList(removedCount),
-                getInstanceList(modifiedCount)
-        );
-
+        InstancesDiff instancesDiff = new InstancesDiff(getInstanceList(addedCount), getInstanceList(removedCount),
+                getInstanceList(modifiedCount));
+        
         Assert.assertTrue(instancesDiff.hasDifferent());
         Assert.assertTrue(instancesDiff.isAdded());
         Assert.assertTrue(instancesDiff.isRemoved());
@@ -82,7 +74,7 @@ public class InstancesDiffTest {
         Assert.assertFalse(instancesDiff.isRemoved());
         Assert.assertFalse(instancesDiff.isModified());
     }
-
+    
     @Test
     public void testWithNoConstructor() {
         Random random = new Random();
@@ -93,7 +85,7 @@ public class InstancesDiffTest {
         instancesDiff.setAddedInstances(getInstanceList(addedCount));
         instancesDiff.setRemovedInstances(getInstanceList(removedCount));
         instancesDiff.setModifiedInstances(getInstanceList(modifiedCount));
-
+        
         Assert.assertTrue(instancesDiff.hasDifferent());
         Assert.assertEquals(addedCount, instancesDiff.getAddedInstances().size());
         Assert.assertEquals(removedCount, instancesDiff.getRemovedInstances().size());
@@ -106,7 +98,7 @@ public class InstancesDiffTest {
         Assert.assertFalse(instancesDiff.isRemoved());
         Assert.assertFalse(instancesDiff.isModified());
     }
-
+    
     private static List<Instance> getInstanceList(int count) {
         ArrayList<Instance> list = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {

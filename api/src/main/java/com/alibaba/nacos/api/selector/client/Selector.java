@@ -24,6 +24,7 @@ package com.alibaba.nacos.api.selector.client;
  * @author lideyou
  */
 public interface Selector<C, E> {
+    
     /**
      * select the target result.
      *

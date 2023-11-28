@@ -27,4 +27,5 @@ import java.util.List;
  * @author lideyou
  */
 public interface NamingResult extends SelectResult<List<Instance>> {
+
 }

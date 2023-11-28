@@ -23,6 +23,7 @@ package com.alibaba.nacos.api.selector.client;
  * @author lideyou
  */
 public interface SelectResult<T> {
+    
     /**
      * Get select result.
      *

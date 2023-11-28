@@ -26,28 +26,28 @@ import java.util.List;
  * @author lideyou
  */
 public interface NamingContext {
-
+    
     /**
      * Get service name.
      *
      * @return service name
      */
     String getServiceName();
-
+    
     /**
      * Get group name.
      *
      * @return group name
      */
     String getGroupName();
-
+    
     /**
      * Get clusters.
      *
      * @return clusters
      */
     String getClusters();
-
+    
     /**
      * Get current instances.
      *
