@@ -50,7 +50,6 @@ jobs:
           unzip nacos.zip
           mkdir nacos
           cp -r nacos-* nacos/
-          ls
       - uses: actions/checkout@v3
         with:
           repository: nacos-group/nacos-e2e.git
@@ -59,11 +58,8 @@ jobs:
       - name: Generate image tag
         id: build-images
         run: |
-          pwd
-          ls
           mv nacos-server-*.tar.gz nacos-e2e/cicd/build
           cd nacos-e2e/cicd/build
-          ls
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
           touch versionlist/"${version}-`echo ${{ matrix.java-version }} | sed -e "s/:/-/g"`"
@@ -77,12 +73,8 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: save docker_1 images
         run: |
-          echo ${{ env.TAG }}
-          pwd
-          ls
           mkdir build_backup
           cp -rf nacos-e2e/cicd/build/* ./build_backup/
-          ls
           cd nacos-e2e/cicd/build
           docker build --no-cache -f Dockerfile -t ${DOCKER_REPO}:${{ env.TAG }} .
           docker push ${DOCKER_REPO}:${{ env.TAG }}
@@ -94,9 +86,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN_B }}
       - name: save docker_2 images
         run: |
-          echo ${{ env.TAG }}
-          pwd
-          ls
           rm -rf nacos-e2e/cicd/build/*
           mv ./build_backup/* nacos-e2e/cicd/build/
           cd nacos-e2e/cicd/build
