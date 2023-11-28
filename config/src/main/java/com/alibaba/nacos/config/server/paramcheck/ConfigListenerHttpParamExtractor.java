@@ -59,7 +59,7 @@ public class ConfigListenerHttpParamExtractor extends AbstractHttpParamExtractor
         for (String line : lines) {
             ParamInfo paramInfo = new ParamInfo();
             String[] words = line.split(Character.toString(WORD_SEPARATOR_CHAR));
-            if (words.length < 3 || words.length > 4) {
+            if (words.length < 2 || words.length > 4) {
                 throw new IllegalArgumentException("invalid probeModify");
             }
             paramInfo.setDataId(words[0]);
