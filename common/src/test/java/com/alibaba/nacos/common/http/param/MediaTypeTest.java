@@ -59,4 +59,13 @@ public class MediaTypeTest {
         assertEquals(excepted, mediaType.toString());
     }
     
+    @Test(expected = IllegalArgumentException.class)
+    public void testValueOfWithEmpty() {
+        MediaType.valueOf("");
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testValueOfWithEmpty2() {
+        MediaType.valueOf("", "UTF-8");
+    }
 }

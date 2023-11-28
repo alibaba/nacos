@@ -44,16 +44,20 @@ public class AbilityKeyTest {
         
         enumMap.put(AbilityKey.SERVER_TEST_1, true);
         enumMap.put(AbilityKey.SERVER_TEST_2, false);
+        enumMap.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC, false);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        assertEquals(2, stringBooleanMap.size());
+        assertEquals(3, stringBooleanMap.size());
         Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
         Assert.assertFalse(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
+        Assert.assertFalse(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
         
         enumMap.put(AbilityKey.SERVER_TEST_2, true);
+        enumMap.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC, true);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
-        assertEquals(2, stringBooleanMap.size());
+        assertEquals(3, stringBooleanMap.size());
         Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
         Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
+        Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
     }
     
     @Test
@@ -71,23 +75,27 @@ public class AbilityKeyTest {
         
         mapStr.put(AbilityKey.SERVER_TEST_2.getName(), false);
         mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
+        mapStr.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
         Assert.assertFalse(enumMap.get(AbilityKey.SERVER_TEST_2));
         Assert.assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
+        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
     
         mapStr.clear();
         mapStr.put(AbilityKey.SERVER_TEST_2.getName(), true);
         mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
+        mapStr.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
         Assert.assertTrue(enumMap.get(AbilityKey.SERVER_TEST_2));
         Assert.assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
+        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
         
     }
     
     @Test
     public void testGetAllValues() {
         Collection<AbilityKey> actual = AbilityKey.getAllValues(AbilityMode.SERVER);
-        assertEquals(2, actual.size());
+        assertEquals(3, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.SDK_CLIENT);
         assertEquals(1, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.CLUSTER_CLIENT);
@@ -97,7 +105,7 @@ public class AbilityKeyTest {
     @Test
     public void testGetAllNames() {
         Collection<String> actual = AbilityKey.getAllNames(AbilityMode.SERVER);
-        assertEquals(2, actual.size());
+        assertEquals(3, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.SDK_CLIENT);
         assertEquals(1, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.CLUSTER_CLIENT);

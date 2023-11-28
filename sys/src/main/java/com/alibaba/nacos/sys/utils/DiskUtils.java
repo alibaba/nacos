@@ -180,7 +180,8 @@ public final class DiskUtils {
      * @return content
      */
     public static String readFile(File file) {
-        try (FileChannel fileChannel = new FileInputStream(file).getChannel()) {
+        try (FileInputStream fis = new FileInputStream(file);
+                FileChannel fileChannel = fis.getChannel()) {
             StringBuilder text = new StringBuilder();
             ByteBuffer buffer = ByteBuffer.allocate(4096);
             CharBuffer charBuffer = CharBuffer.allocate(4096);
@@ -230,7 +231,8 @@ public final class DiskUtils {
      * @return write success
      */
     public static boolean writeFile(File file, byte[] content, boolean append) {
-        try (FileChannel fileChannel = new FileOutputStream(file, append).getChannel()) {
+        try (FileOutputStream fos = new FileOutputStream(file, append);
+                FileChannel fileChannel = fos.getChannel()) {
             ByteBuffer buffer = ByteBuffer.wrap(content);
             fileChannel.write(buffer);
             return true;
