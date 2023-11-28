@@ -80,7 +80,7 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
     public void doFilter(IConfigRequest request, IConfigResponse response) throws NacosException {
         new VirtualFilterChain(this.filters).doFilter(request, response);
     }
-    
+
     private static class VirtualFilterChain implements IConfigFilterChain {
         
         private final List<? extends IConfigFilter> additionalFilters;
@@ -100,5 +100,5 @@ public class ConfigFilterChainManager implements IConfigFilterChain {
             }
         }
     }
-    
+
 }

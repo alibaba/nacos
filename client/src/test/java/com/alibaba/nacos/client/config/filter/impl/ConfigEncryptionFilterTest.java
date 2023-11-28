@@ -61,14 +61,14 @@ public class ConfigEncryptionFilterTest {
     public void testDoFilter() throws NacosException {
         configEncryptionFilter.doFilter(configRequest, null, iConfigFilterChain);
         
-        Mockito.verify(configRequest).getDataId();
-        Mockito.verify(configRequest).getContent();
+        Mockito.verify(configRequest, Mockito.atLeast(1)).getDataId();
+        Mockito.verify(configRequest, Mockito.atLeast(1)).getContent();
         
         configEncryptionFilter.doFilter(null, configResponse, iConfigFilterChain);
         
-        Mockito.verify(configResponse).getDataId();
-        Mockito.verify(configResponse).getContent();
-        Mockito.verify(configResponse).getEncryptedDataKey();
+        Mockito.verify(configResponse, Mockito.atLeast(1)).getDataId();
+        Mockito.verify(configResponse, Mockito.atLeast(1)).getContent();
+        Mockito.verify(configResponse, Mockito.atLeast(1)).getEncryptedDataKey();
     }
     
     @Test

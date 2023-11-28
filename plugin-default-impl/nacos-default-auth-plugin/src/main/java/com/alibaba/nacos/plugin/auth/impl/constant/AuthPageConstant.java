@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2022 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,24 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.http.handler;
-
-import com.alibaba.nacos.common.utils.JacksonUtils;
+package com.alibaba.nacos.plugin.auth.impl.constant;
 
 /**
- * Request handler.
+ * Auth plugin page constant.
  *
- * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
- */
-public final class RequestHandler {
+ * @author huangKeming
+ **/
+
+public class AuthPageConstant {
     
-    public static String parse(Object object) throws Exception {
-        return JacksonUtils.toJson(object);
-    }
+    public static final String OFFSET = "OFFSET";
+    
+    public static final String OFFSET_ROWS = "OFFSET ? ROWS";
+    
+    public static final String FETCH_NEXT = "FETCH NEXT ? ROWS ONLY";
+    
+    public static final String LIMIT = "LIMIT";
+    
+    public static final String LIMIT_SIZE = "LIMIT ?,?";
     
 }

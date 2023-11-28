@@ -35,7 +35,7 @@ public class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
         String json = mapper.writeValueAsString(configBatchListenRequest);
         assertTrue(json.contains("\"listen\":" + "true"));
         assertTrue(json.contains(
-                "\"configListenContexts\":[{\"group\":\"group\",\"md5\":\"test_MD5\",\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}]"));
+                "\"configListenContexts\":[{\"dataId\":\"test_data\",\"group\":\"group\",\"md5\":\"test_MD5\",\"tenant\":\"test_tenant\"}]"));
         assertTrue(json.contains("\"module\":\"" + Constants.Config.CONFIG_MODULE));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
     }
