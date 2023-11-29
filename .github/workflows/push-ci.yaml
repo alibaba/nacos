@@ -13,8 +13,7 @@ concurrency:
 env:
   DOCKER_REPO: wuyfee/nacos-ci   # wuyfeedocker/nacos-ci
   DOCKER_REPO_B: wuyfeehub/nacos-ci
-  TEST_REPO_NAME: Wuyunfan-BUPT/nacos-e2e
-#  VERSION: ${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
+  TEST_REPO_NAME: nacos-group/nacos-e2e
 
 jobs:
   dist-tar:
@@ -145,7 +144,7 @@ jobs:
           else
             echo "DOCKER_REPO_ACTUAL=${{ env.DOCKER_REPO_B }}" >> $GITHUB_ENV
           fi
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@java-dev
         name: Deploy nacos
         with:
           yamlString: |
@@ -193,7 +192,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@java-dev
         name: java e2e test
         with:
           yamlString: |
@@ -244,7 +243,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@java-dev
         name: go e2e test
         with:
           yamlString: |
@@ -295,7 +294,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@java-dev
         name: cpp e2e test
         with:
           yamlString: |
@@ -349,7 +348,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@java-dev
         name: csharp e2e test
         with:
           yamlString: |
@@ -402,7 +401,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@java-dev
         name: nodejs e2e test
         with:
           yamlString: |
@@ -453,7 +452,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@java-dev
         name: python e2e test
         with:
           yamlString: |
@@ -505,7 +504,7 @@ jobs:
         mode: ["cluster","standalone"]
         version: ${{ fromJSON(needs.docker.outputs.version-json) }}
     steps:
-      - uses: Wuyunfan-BUPT/rocketmq-test-tool@main
+      - uses: apache/rocketmq-test-tool@java-dev
         name: clean
         with:
           yamlString: |
