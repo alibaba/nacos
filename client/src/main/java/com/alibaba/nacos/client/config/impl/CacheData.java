@@ -93,7 +93,7 @@ public class CacheData {
         LOGGER.info("nacos.cache.data.init.snapshot = {} ", initSnapshot);
     }
     
-    private final String envName;
+    public final String envName;
     
     private final ConfigFilterChainManager configFilterChainManager;
     
@@ -124,13 +124,13 @@ public class CacheData {
     /**
      * local cache change timestamp.
      */
-    private volatile AtomicLong lastModifiedTs = new AtomicLong(0);
+    private final AtomicLong lastModifiedTs = new AtomicLong(0);
     
     /**
      * notify change flag,for notify&sync concurrent control. 1.reset to false if starting to sync with server. 2.update
      * to true if receive config change notification.
      */
-    private volatile AtomicBoolean receiveNotifyChanged = new AtomicBoolean(false);
+    private final AtomicBoolean receiveNotifyChanged = new AtomicBoolean(false);
     
     private int taskId;
     
@@ -139,7 +139,7 @@ public class CacheData {
     /**
      * if is cache data md5 sync with the server.
      */
-    private volatile AtomicBoolean isConsistentWithServer = new AtomicBoolean();
+    private final AtomicBoolean isConsistentWithServer = new AtomicBoolean();
     
     /**
      * if is cache data is discard,need to remove.

@@ -20,6 +20,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.TimeZone;
 
 /**
@@ -43,5 +44,15 @@ public class DateFormatUtilsTest {
         buffer.append(day);
         buffer.append(hour);
         Assert.assertEquals(buffer.toString(), DateFormatUtils.format(c.getTime(), "yyyyMdH"));
+    }
+    
+    @Test(expected = NullPointerException.class)
+    public void testForNullPointerExceptionWithDate() {
+        DateFormatUtils.format(new Date(), null);
+    }
+    
+    @Test(expected = NullPointerException.class)
+    public void testForNullPointerExceptionWithPattern() {
+        DateFormatUtils.format(null, "yyyyMdH");
     }
 }

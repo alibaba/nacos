@@ -16,14 +16,12 @@
 
 package com.alibaba.nacos.persistence.repository.embedded;
 
-import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.RowMapper;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -87,17 +85,7 @@ public class EmbeddedPaginationHelperImpl<E> implements PaginationHelper {
             return page;
         }
         
-        // fill the sql Page args
-        String fetchSql = sqlFetchRows;
-        if (!fetchSql.contains(PersistenceConstant.OFFSET)) {
-            fetchSql += " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
-            Object[] newArgs = Arrays.copyOf(args, args.length + 2);
-            newArgs[args.length] = (pageNo - 1) * pageSize;
-            newArgs[args.length + 1] = pageSize;
-            args = newArgs;
-        }
-        
-        List<E> result = databaseOperate.queryMany(fetchSql, args, rowMapper);
+        List<E> result = databaseOperate.queryMany(sqlFetchRows, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }

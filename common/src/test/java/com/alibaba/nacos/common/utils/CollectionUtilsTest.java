@@ -22,14 +22,14 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.Vector;
@@ -38,7 +38,7 @@ import java.util.stream.IntStream;
 
 /**
  * Unit test of CollectionUtil.
- * 
+ *
  * @author <a href="mailto:jifeng.sun@outlook.com">sunjifeng</a>
  */
 public class CollectionUtilsTest {
@@ -189,7 +189,7 @@ public class CollectionUtilsTest {
         Assert.assertEquals(0, CollectionUtils.size(Collections.emptyList()));
         Assert.assertEquals(1, CollectionUtils.size(Collections.singletonList("")));
         Assert.assertEquals(10, CollectionUtils.size(IntStream.range(0, 10).boxed().collect(Collectors.toList())));
-    
+        
         // map
         Map<String, String> map = new HashMap<>();
         map.put("key1", "value1");
@@ -197,8 +197,7 @@ public class CollectionUtilsTest {
         map.put("key2", "value2");
         Assert.assertEquals(2, CollectionUtils.size(map));
         map.put("key3", "value3");
-        Assert.assertEquals(3,
-                CollectionUtils.size(map));
+        Assert.assertEquals(3, CollectionUtils.size(map));
         
         // array
         Assert.assertEquals(1, CollectionUtils.size(new Object[] {"1"}));
@@ -318,7 +317,7 @@ public class CollectionUtilsTest {
             public boolean hasMoreElements() {
                 return iterator.hasNext();
             }
-        
+            
             public T nextElement() {
                 return iterator.next();
             }
@@ -341,8 +340,13 @@ public class CollectionUtilsTest {
     
     @Test(expected = IllegalArgumentException.class)
     public void testGetOnlyElementIllegalArgumentException() {
-        List<Integer> list = Arrays.asList(1, 2, 3);
+        List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6);
         CollectionUtils.getOnlyElement(list);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetOnlyElementIllegalArgumentException2() {
+        CollectionUtils.getOnlyElement(null);
     }
     
     @Test(expected = NoSuchElementException.class)
@@ -356,5 +360,36 @@ public class CollectionUtilsTest {
         List<Integer> list = Arrays.asList(1);
         int element = CollectionUtils.getOnlyElement(list);
         Assert.assertEquals(1, element);
+    }
+    
+    @Test
+    public void testIsListEqualForNull() {
+        Assert.assertTrue(CollectionUtils.isListEqual(null, null));
+        Assert.assertFalse(CollectionUtils.isListEqual(Collections.emptyList(), null));
+        Assert.assertFalse(CollectionUtils.isListEqual(null, Collections.emptyList()));
+    }
+    
+    @Test
+    public void testIsListEqualForEquals() {
+        List<String> list1 = Arrays.asList("1", "2", "3");
+        List<String> list2 = Arrays.asList("1", "2", "3");
+        Assert.assertTrue(CollectionUtils.isListEqual(list1, list1));
+        Assert.assertTrue(CollectionUtils.isListEqual(list1, list2));
+        Assert.assertTrue(CollectionUtils.isListEqual(list2, list1));
+    }
+    
+    @Test
+    public void testIsListEqualForNotEquals() {
+        List<String> list1 = Arrays.asList("1", "2", "3");
+        List<String> list2 = Arrays.asList("1", "2", "3", "4");
+        List<String> list3 = Arrays.asList("1", "2", "3", "5");
+        Assert.assertFalse(CollectionUtils.isListEqual(list1, list2));
+        Assert.assertFalse(CollectionUtils.isListEqual(list2, list3));
+    }
+    
+    @Test
+    public void testIsMapEmpty() {
+        Assert.assertTrue(CollectionUtils.isMapEmpty(null));
+        Assert.assertTrue(CollectionUtils.isMapEmpty(Collections.emptyMap()));
     }
 }

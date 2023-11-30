@@ -17,9 +17,7 @@
 package com.alibaba.nacos.config.server.paramcheck;
 
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
-import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,13 +34,7 @@ public class ConfigBlurSearchHttpParamExtractor extends AbstractHttpParamExtract
     private static final String BLUR_SEARCH_MODE = "blur";
     
     @Override
-    public void init() {
-        addTargetRequest(Constants.CONFIG_CONTROLLER_PATH, HttpMethod.GET);
-        addTargetRequest(Constants.CONFIG_CONTROLLER_PATH + "/", HttpMethod.GET);
-    }
-    
-    @Override
-    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) {
         String searchMode = request.getParameter("search");
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         if (StringUtils.equals(searchMode, BLUR_SEARCH_MODE)) {

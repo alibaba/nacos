@@ -32,11 +32,6 @@ import java.util.List;
 public class ConfigDefaultHttpParamExtractor extends AbstractHttpParamExtractor {
     
     @Override
-    public void init() {
-        addDefaultTargetRequest("config");
-    }
-    
-    @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) {
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(getAliasNamespaceId(request));

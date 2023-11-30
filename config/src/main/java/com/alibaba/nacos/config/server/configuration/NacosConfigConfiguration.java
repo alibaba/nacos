@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.config.server.filter.CircuitFilter;
-import com.alibaba.nacos.config.server.filter.ConfigParamCheckFilter;
 import com.alibaba.nacos.config.server.filter.NacosWebFilter;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionDistributedEmbedStorage;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -66,19 +65,4 @@ public class NacosConfigConfiguration {
         return new CircuitFilter();
     }
     
-    @Bean
-    public FilterRegistrationBean<ConfigParamCheckFilter> configParamCheckFilterRegistration() {
-        FilterRegistrationBean<ConfigParamCheckFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(configParamCheckFilter());
-        registration.addUrlPatterns("/v1/cs/*");
-        registration.addUrlPatterns("/v2/cs/*");
-        registration.setName("configparamcheckfilter");
-        registration.setOrder(8);
-        return registration;
-    }
-    
-    @Bean
-    public ConfigParamCheckFilter configParamCheckFilter() {
-        return new ConfigParamCheckFilter();
-    }
 }

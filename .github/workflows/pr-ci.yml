@@ -25,7 +25,7 @@ jobs:
         name: Upload distribution tar
         with:
           name: nacos
-          path: distribution/target/nacos-server-*-SNAPSHOT.tar.gz
+          path: distribution/target/nacos-server-*.tar.gz
       - name: Save PR number
         run: |
           mkdir -p ./pr
