@@ -182,7 +182,7 @@ jobs:
         with:
           yamlString: |
             action: test
-            namespace: nacos-${{ github.run_id }}-0
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
             API_VERSION: v1
             KIND: Pod
@@ -233,7 +233,7 @@ jobs:
         with:
           yamlString: |
             action: test
-            namespace: nacos-${{ github.run_id }}-0
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
             API_VERSION: v1
             KIND: Pod
@@ -284,7 +284,7 @@ jobs:
         with:
           yamlString: |
             action: test
-            namespace: nacos-${{ github.run_id }}-0
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
             API_VERSION: v1
             KIND: Pod
@@ -338,7 +338,7 @@ jobs:
         with:
           yamlString: |
             action: test
-            namespace: nacos-${{ github.run_id }}-0
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
             API_VERSION: v1
             KIND: Pod
@@ -391,7 +391,7 @@ jobs:
         with:
           yamlString: |
             action: test
-            namespace: nacos-${{ github.run_id }}-0
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
             API_VERSION: v1
             KIND: Pod
@@ -442,7 +442,7 @@ jobs:
         with:
           yamlString: |
             action: test
-            namespace: nacos-${{ github.run_id }}-0
+            namespace: nacos-${{ github.run_id }}-${{ strategy.job-index }}
             askConfig: ${{ secrets.ASK_CONFIG_VIRGINA }}
             API_VERSION: v1
             KIND: Pod
