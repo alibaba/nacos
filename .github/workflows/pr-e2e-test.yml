@@ -454,7 +454,9 @@ jobs:
               BRANCH: main
               CODE_PATH: python
               CMD: |
-                cd /root/code/python && pip3 install -r requirements.txt && source ~/.bashrc
+                cd /root/code/python 
+                pip3 install -r requirements.txt
+                source ~/.bashrc
                 cd nacospythontest && pytest --junitxml ../target/surefire-reports/TEST-report.xml test/*_test.py --log-cli-level=DEBUG
               ALL_IP: null
             CONTAINER:
