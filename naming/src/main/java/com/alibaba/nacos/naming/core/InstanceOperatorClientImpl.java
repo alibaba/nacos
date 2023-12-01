@@ -104,7 +104,9 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         
         boolean ephemeral = instance.isEphemeral();
         String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
+        // 如果不存在client 则创建client (也就是首个服务实例注册时.)
         createIpPortClientIfAbsent(clientId);
+        // 服务，client 可以注册多个服务 1:N Service 一个服务多个实例（集群） 1:N Instance
         Service service = getService(namespaceId, serviceName, ephemeral);
         clientOperationService.registerInstance(service, instance, clientId);
     }
