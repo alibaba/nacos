@@ -32,6 +32,7 @@ import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
@@ -252,7 +253,18 @@ public class ConnectionManager {
             runtimeConnectionEjector.doEject();
             MetricsMonitor.getLongConnectionMonitor().set(connections.size());
         }, 1000L, 3000L, TimeUnit.MILLISECONDS);
-        
+
+        Boolean enabled = EnvUtil.getProperty("nacos.metric.grpc.server.connection.enabled", Boolean.class, true);
+        if (enabled) {
+            RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(() -> {
+                Map<String, Integer> count = new HashMap<>(16);
+                connections.forEach((id, connection) -> {
+                    String module = connection.getLabels().getOrDefault(RemoteConstants.LABEL_MODULE, "unknown");
+                    count.put(module, count.getOrDefault(module, 0) + 1);
+                });
+                MetricsMonitor.refreshModuleConnectionCount(count);
+            }, 1L, EnvUtil.getProperty("nacos.metric.grpc.server.connection.interval", Long.class, 15L), TimeUnit.SECONDS);
+        }
     }
     
     public void loadCount(int loadClient, String redirectAddress) {
