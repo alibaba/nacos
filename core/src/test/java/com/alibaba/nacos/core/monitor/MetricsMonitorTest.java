@@ -28,6 +28,8 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -129,5 +131,32 @@ public class MetricsMonitorTest {
         Assert.assertEquals(0.5D, raftApplyReadTimer.totalTime(TimeUnit.MINUTES), 0.01);
         
         Assert.assertEquals(30D, raftApplyReadTimer.totalTime(TimeUnit.SECONDS), 0.01);
+    }
+
+    @Test
+    public void testRefreshModuleConnectionCount() {
+        // refresh
+        Map<String, Integer> map = new HashMap<>();
+        map.put("naming", 10);
+        MetricsMonitor.refreshModuleConnectionCount(map);
+        Assert.assertEquals(1, MetricsMonitor.getModuleConnectionCnt().size());
+        Assert.assertEquals(10, MetricsMonitor.getModuleConnectionCnt().get("naming").get());
+
+        // refresh again
+        map = new HashMap<>();
+        map.put("naming", 11);
+        map.put("config", 1);
+        MetricsMonitor.refreshModuleConnectionCount(map);
+        Assert.assertEquals(2, MetricsMonitor.getModuleConnectionCnt().size());
+        Assert.assertEquals(11, MetricsMonitor.getModuleConnectionCnt().get("naming").get());
+        Assert.assertEquals(1, MetricsMonitor.getModuleConnectionCnt().get("config").get());
+
+        // refresh again
+        map = new HashMap<>();
+        map.put("naming", 1);
+        MetricsMonitor.refreshModuleConnectionCount(map);
+        Assert.assertEquals(2, MetricsMonitor.getModuleConnectionCnt().size());
+        Assert.assertEquals(1, MetricsMonitor.getModuleConnectionCnt().get("naming").get());
+        Assert.assertEquals(0, MetricsMonitor.getModuleConnectionCnt().get("config").get());
     }
 }

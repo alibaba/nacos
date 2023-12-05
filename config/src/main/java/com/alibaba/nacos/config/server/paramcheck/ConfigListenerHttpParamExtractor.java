@@ -16,13 +16,15 @@
 
 package com.alibaba.nacos.config.server.paramcheck;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
-import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.core.exception.ErrorCode;
 import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
 
 import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.List;
@@ -39,18 +41,17 @@ public class ConfigListenerHttpParamExtractor extends AbstractHttpParamExtractor
     static final char LINE_SEPARATOR_CHAR = (char) 1;
     
     @Override
-    public void init() {
-        addTargetRequest(Constants.CONFIG_CONTROLLER_PATH + "/listener", HttpMethod.POST);
-    }
-    
-    @Override
-    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosRuntimeException {
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         String listenConfigs = request.getParameter("Listening-Configs");
         if (StringUtils.isBlank(listenConfigs)) {
             return paramInfos;
         }
-        listenConfigs = URLDecoder.decode(listenConfigs, Constants.ENCODE);
+        try {
+            listenConfigs = URLDecoder.decode(listenConfigs, Constants.ENCODE);
+        } catch (UnsupportedEncodingException e) {
+            throw new NacosRuntimeException(ErrorCode.UnKnowError.getCode(), e);
+        }
         if (StringUtils.isBlank(listenConfigs)) {
             return paramInfos;
         }
@@ -58,7 +59,7 @@ public class ConfigListenerHttpParamExtractor extends AbstractHttpParamExtractor
         for (String line : lines) {
             ParamInfo paramInfo = new ParamInfo();
             String[] words = line.split(Character.toString(WORD_SEPARATOR_CHAR));
-            if (words.length < 3 || words.length > 4) {
+            if (words.length < 2 || words.length > 4) {
                 throw new IllegalArgumentException("invalid probeModify");
             }
             paramInfo.setDataId(words[0]);

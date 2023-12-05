@@ -172,16 +172,14 @@ public class GrpcConnection extends Connection {
         if (this.payloadStreamObserver != null) {
             try {
                 payloadStreamObserver.onCompleted();
-            } catch (Throwable throwable) {
-                //ignore.
+            } catch (Throwable ignored) {
             }
         }
         
         if (this.channel != null && !channel.isShutdown()) {
             try {
                 this.channel.shutdownNow();
-            } catch (Throwable throwable) {
-                //ignore.
+            } catch (Throwable ignored) {
             }
         }
     }

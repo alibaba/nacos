@@ -62,9 +62,7 @@ public class GrpcUtils {
         
         // request body .
         byte[] jsonBytes = convertRequestToByte(request);
-        return payloadBuilder
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
-                .build();
+        return payloadBuilder.setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes))).build();
         
     }
     
@@ -83,8 +81,7 @@ public class GrpcUtils {
         
         Payload.Builder builder = Payload.newBuilder();
         
-        return builder
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
+        return builder.setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .setMetadata(newMeta).build();
         
     }
@@ -99,8 +96,7 @@ public class GrpcUtils {
         byte[] jsonBytes = JacksonUtils.toJsonBytes(response);
         
         Metadata.Builder metaBuilder = Metadata.newBuilder().setType(response.getClass().getSimpleName());
-        return Payload.newBuilder()
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
+        return Payload.newBuilder().setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
                 .setMetadata(metaBuilder.build()).build();
     }
     
@@ -132,50 +128,5 @@ public class GrpcUtils {
             throw new RemoteException(NacosException.SERVER_ERROR,
                     "Unknown payload type:" + payload.getMetadata().getType());
         }
-        
     }
-    
-    public static class PlainRequest {
-        
-        String type;
-        
-        Object body;
-        
-        /**
-         * Getter method for property <tt>type</tt>.
-         *
-         * @return property value of type
-         */
-        public String getType() {
-            return type;
-        }
-        
-        /**
-         * Setter method for property <tt>type</tt>.
-         *
-         * @param type value to be assigned to property type
-         */
-        public void setType(String type) {
-            this.type = type;
-        }
-        
-        /**
-         * Getter method for property <tt>body</tt>.
-         *
-         * @return property value of body
-         */
-        public Object getBody() {
-            return body;
-        }
-        
-        /**
-         * Setter method for property <tt>body</tt>.
-         *
-         * @param body value to be assigned to property body
-         */
-        public void setBody(Object body) {
-            this.body = body;
-        }
-    }
-    
 }

@@ -18,6 +18,7 @@ com.alibaba.nacos.core.paramcheck.impl.SubscribeServiceRequestParamExtractor
 com.alibaba.nacos.core.paramcheck.impl.ServiceQueryRequestParamExtractor
 com.alibaba.nacos.core.paramcheck.impl.ServiceListRequestParamExtractor
 com.alibaba.nacos.core.paramcheck.impl.InstanceRequestParamExtractor
+com.alibaba.nacos.core.paramcheck.impl.PersistentInstanceRequestParamExtractor
 com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor
 com.alibaba.nacos.core.paramcheck.impl.ConfigBatchListenRequestParamExtractor
 com.alibaba.nacos.core.paramcheck.impl.BatchInstanceRequestParamExtractor

@@ -88,6 +88,11 @@ public class ConfigRowMapperInjector {
         RowMapperManager
                 .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName(),
                         ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER);
+    
+        // CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER
+        RowMapperManager
+                .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER.getClass().getCanonicalName(),
+                        ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
         
         // CONFIG_KEY_ROW_MAPPER
         

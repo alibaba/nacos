@@ -35,11 +35,6 @@ import java.util.List;
 public class NamingDefaultHttpParamExtractor extends AbstractHttpParamExtractor {
     
     @Override
-    public void init() {
-        addDefaultTargetRequest("naming");
-    }
-    
-    @Override
     public List<ParamInfo> extractParam(HttpServletRequest request) throws NacosException {
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setIp(getAliasIp(request));

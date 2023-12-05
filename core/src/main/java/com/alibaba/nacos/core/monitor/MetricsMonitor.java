@@ -23,6 +23,9 @@ import io.micrometer.core.instrument.Timer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -48,6 +51,8 @@ public final class MetricsMonitor {
     private static GrpcServerExecutorMetric sdkServerExecutorMetric = new GrpcServerExecutorMetric("grpcSdkServer");
 
     private static GrpcServerExecutorMetric clusterServerExecutorMetric = new GrpcServerExecutorMetric("grpcClusterServer");
+
+    private static Map<String, AtomicInteger> moduleConnectionCnt = new ConcurrentHashMap<>();
 
     static {
         ImmutableTag immutableTag = new ImmutableTag("module", "core");
@@ -234,5 +239,47 @@ public final class MetricsMonitor {
         public String getType() {
             return type;
         }
+    }
+
+    /**
+     * refresh all module connection count.
+     *
+     * @param connectionCnt new connection count.
+     */
+    public static void refreshModuleConnectionCount(Map<String, Integer> connectionCnt) {
+        // refresh all existed module connection cnt and add new module connection count
+        connectionCnt.forEach((module, cnt) -> {
+            AtomicInteger integer = moduleConnectionCnt.get(module);
+            // if exists
+            if (integer != null) {
+                integer.set(cnt);
+            } else {
+                // new module comes
+                AtomicInteger newModuleConnCnt = new AtomicInteger(cnt);
+                moduleConnectionCnt.put(module, newModuleConnCnt);
+                NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor",
+                        Arrays.asList(
+                                new ImmutableTag("module", module),
+                                new ImmutableTag("name", "longConnection")
+                        ),
+                        moduleConnectionCnt.get(module));
+            }
+        });
+        // reset the outdated module connection cnt
+        moduleConnectionCnt.forEach((module, cnt) -> {
+            if (connectionCnt.containsKey(module)) {
+                return;
+            }
+            cnt.set(0);
+        });
+    }
+
+    /**
+     * getter.
+     *
+     * @return moduleConnectionCnt.
+     */
+    public static Map<String, AtomicInteger> getModuleConnectionCnt() {
+        return moduleConnectionCnt;
     }
 }

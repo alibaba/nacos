@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.naming.push;
 
-import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.codehaus.jackson.Version;
-import org.codehaus.jackson.util.VersionUtil;
+import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.core.util.VersionUtil;
 
 /**
  * Client info.
@@ -49,7 +49,7 @@ public class ClientInfo {
         if (versionStartIndex < 0) {
             return Version.unknownVersion();
         }
-        return VersionUtil.parseVersion(versionStr.substring(versionStartIndex + 2));
+        return VersionUtil.parseVersion(versionStr.substring(versionStartIndex + 2), null, null);
     }
     
     public enum ClientType {

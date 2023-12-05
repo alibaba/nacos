@@ -1366,6 +1366,7 @@ class ConfigurationManagement extends React.Component {
                     autoWidth={false}
                     label={locale.exportBtn}
                     popupStyle={{ minWidth: 150 }}
+                    iconSize="xs"
                   >
                     {[
                       {

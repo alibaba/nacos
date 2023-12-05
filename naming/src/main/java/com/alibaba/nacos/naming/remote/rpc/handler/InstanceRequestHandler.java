@@ -27,6 +27,8 @@ import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.InstanceRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
@@ -51,6 +53,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     @Override
     @TpsControl(pointName = "RemoteNamingInstanceRegisterDeregister", name = "RemoteNamingInstanceRegisterDeregister")
     @Secured(action = ActionTypes.WRITE)
+    @ExtractorManager.Extractor(rpcExtractor = InstanceRequestParamExtractor.class)
     public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
         Service service = Service
                 .newService(request.getNamespace(), request.getGroupName(), request.getServiceName(), true);

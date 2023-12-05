@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.3.0-BETA</revision>
+        <revision>2.3.0</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -137,15 +137,11 @@
         
         <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
-        <jackson-core.version>2.12.6</jackson-core.version>
-        <jackson-databind.version>2.12.7.1</jackson-databind.version>
-        <jackson.annotations.version>2.12.6</jackson.annotations.version>
-        <jackson-core-asl.version>1.9.13</jackson-core-asl.version>
         <jjwt.version>0.11.2</jjwt.version>
         <javatuples.version>1.2</javatuples.version>
         <grpc-java.version>1.57.2</grpc-java.version>
-        <proto-google-common-protos.version>2.7.1</proto-google-common-protos.version>
-        <protobuf-java.version>3.21.11</protobuf-java.version>
+        <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
+        <protobuf-java.version>3.22.3</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
         <mockito-all.version>1.10.19</mockito-all.version>
@@ -901,28 +897,6 @@
             </dependency>
             
             <!-- Third-party libs -->
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson-core.version}</version>
-            </dependency>
-            
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson-databind.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.annotations.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-core-asl</artifactId>
-                <version>${jackson-core-asl.version}</version>
-            </dependency>
-            
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
                 <artifactId>jjwt-api</artifactId>

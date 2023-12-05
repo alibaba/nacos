@@ -83,16 +83,6 @@ public class NamingConfig {
     }
     
     @Bean
-    public FilterRegistrationBean<NamingParamCheckFilter> paramCheckFilterRegistration() {
-        FilterRegistrationBean<NamingParamCheckFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(namingParamCheckFilter());
-        registration.addUrlPatterns(URL_PATTERNS, URL_PATTERNS_V2);
-        registration.setName(NAMING_PARAM_CHECK_FILTER);
-        registration.setOrder(10);
-        return registration;
-    }
-    
-    @Bean
     public DistroFilter distroFilter() {
         return new DistroFilter();
     }
@@ -110,10 +100,5 @@ public class NamingConfig {
     @Bean
     public ClientAttributesFilter clientAttributesFilter() {
         return new ClientAttributesFilter();
-    }
-    
-    @Bean
-    public NamingParamCheckFilter namingParamCheckFilter() {
-        return new NamingParamCheckFilter();
     }
 }

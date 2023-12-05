@@ -67,7 +67,7 @@ public final class HttpClientManager {
         LOGGER.warn("[ConfigServer-HttpClientManager] Start destroying NacosRestTemplate");
         try {
             final String httpClientFactoryBeanName = ConfigHttpClientFactory.class.getName();
-            HttpClientBeanHolder.shutdownNacostSyncRest(httpClientFactoryBeanName);
+            HttpClientBeanHolder.shutdownNacosSyncRest(httpClientFactoryBeanName);
             HttpClientBeanHolder.shutdownNacosAsyncRest(httpClientFactoryBeanName);
         } catch (Exception ex) {
             LOGGER.error("[ConfigServer-HttpClientManager] An exception occurred when the HTTP client was closed : {}",

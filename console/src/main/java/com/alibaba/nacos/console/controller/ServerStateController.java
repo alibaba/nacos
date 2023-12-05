@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
@@ -38,6 +40,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/v1/console/server")
+@ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
 public class ServerStateController {
     
     private static final String ANNOUNCEMENT_FILE = "announcement.conf";

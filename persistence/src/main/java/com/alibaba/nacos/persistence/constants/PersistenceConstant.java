@@ -52,7 +52,4 @@ public class PersistenceConstant {
     
     public static final String CONFIG_MODEL_RAFT_GROUP = "nacos_config";
     
-    public static final String OFFSET = "OFFSET";
-    
-    public static final String LIMIT = "LIMIT";
 }

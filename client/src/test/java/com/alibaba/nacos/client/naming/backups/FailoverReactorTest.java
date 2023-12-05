@@ -26,6 +26,7 @@ import org.mockito.Mockito;
 import java.lang.reflect.Field;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 
 public class FailoverReactorTest {
@@ -34,7 +35,7 @@ public class FailoverReactorTest {
     public void testInit() throws NacosException, NoSuchFieldException, IllegalAccessException {
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp");
+        FailoverReactor failoverReactor = new FailoverReactor(holder, UUID.randomUUID().toString());
         Field executorService = FailoverReactor.class.getDeclaredField("executorService");
         executorService.setAccessible(true);
         ScheduledExecutorService o = (ScheduledExecutorService) executorService.get(failoverReactor);
@@ -47,7 +48,7 @@ public class FailoverReactorTest {
     public void testAddDay() throws NacosException {
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp");
+        FailoverReactor failoverReactor = new FailoverReactor(holder, UUID.randomUUID().toString());
         Date date = new Date();
         Date actual = failoverReactor.addDay(date, 1);
         Assert.assertEquals(date.getTime() + 24 * 60 * 60 * 1000, actual.getTime());
@@ -58,7 +59,7 @@ public class FailoverReactorTest {
     public void testIsFailoverSwitch() throws NacosException {
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp");
+        FailoverReactor failoverReactor = new FailoverReactor(holder, UUID.randomUUID().toString());
         Assert.assertFalse(failoverReactor.isFailoverSwitch());
         failoverReactor.shutdown();
         
@@ -68,10 +69,9 @@ public class FailoverReactorTest {
     public void testGetService() throws NacosException {
         ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
         Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp");
+        FailoverReactor failoverReactor = new FailoverReactor(holder, UUID.randomUUID().toString());
         ServiceInfo info = failoverReactor.getService("aa@@bb");
         Assert.assertEquals(new ServiceInfo("aa@@bb").toString(), info.toString());
         failoverReactor.shutdown();
-        
     }
 }
