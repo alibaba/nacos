@@ -19,10 +19,9 @@ package com.alibaba.nacos.plugin.auth.impl.persistence;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
-import com.alibaba.nacos.persistence.repository.embedded.EmbeddedPaginationHelperImpl;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
+import com.alibaba.nacos.plugin.auth.impl.persistence.embedded.AuthEmbeddedPaginationHelperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Component;
@@ -51,7 +50,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     
     @Override
     public Page<PermissionInfo> getPermissions(String role, int pageNo, int pageSize) {
-        PaginationHelper<PermissionInfo> helper = createPaginationHelper();
+        AuthPaginationHelper<PermissionInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM permissions WHERE ";
         
@@ -65,9 +64,8 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
             where = " 1=1 ";
         }
         
-        Page<PermissionInfo> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                        PERMISSION_ROW_MAPPER);
+        Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+                pageNo, pageSize, PERMISSION_ROW_MAPPER);
         
         if (pageInfo == null) {
             pageInfo = new Page<>();
@@ -107,7 +105,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     
     @Override
     public Page<PermissionInfo> findPermissionsLike4Page(String role, int pageNo, int pageSize) {
-        PaginationHelper<PermissionInfo> helper = createPaginationHelper();
+        AuthPaginationHelper<PermissionInfo> helper = createPaginationHelper();
         
         String sqlCountRows = "SELECT count(*) FROM permissions ";
         
@@ -121,9 +119,8 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
             params.add(generateLikeArgument(role));
         }
         
-        Page<PermissionInfo> pageInfo = helper
-                .fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(), pageNo, pageSize,
-                        PERMISSION_ROW_MAPPER);
+        Page<PermissionInfo> pageInfo = helper.fetchPage(sqlCountRows + where, sqlFetchRows + where, params.toArray(),
+                pageNo, pageSize, PERMISSION_ROW_MAPPER);
         
         if (pageInfo == null) {
             pageInfo = new Page<>();
@@ -149,7 +146,7 @@ public class EmbeddedPermissionPersistServiceImpl implements PermissionPersistSe
     }
     
     @Override
-    public <E> PaginationHelper<E> createPaginationHelper() {
-        return new EmbeddedPaginationHelperImpl<>(databaseOperate);
+    public <E> AuthPaginationHelper<E> createPaginationHelper() {
+        return new AuthEmbeddedPaginationHelperImpl<>(databaseOperate);
     }
 }

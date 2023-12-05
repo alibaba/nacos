@@ -59,6 +59,6 @@ public class ConfigDynamicMeterRefreshService {
      */
     @Scheduled(cron = "0 0 0 ? * 1")
     public void resetTopnConfigChangeCount() {
-        MetricsMonitor.getConfigChangeCount().removeAll();
+        MetricsMonitor.getConfigChangeCount().reset();
     }
 }

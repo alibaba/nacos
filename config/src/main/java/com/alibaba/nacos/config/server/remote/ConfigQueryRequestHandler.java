@@ -38,6 +38,8 @@ import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
@@ -77,6 +79,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
     @Override
     @TpsControl(pointName = "ConfigQuery")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     public ConfigQueryResponse handle(ConfigQueryRequest request, RequestMeta meta) throws NacosException {
         
         try {
@@ -161,14 +164,9 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                             }
                             pullEvent = ConfigTraceService.PULL_EVENT;
                             if (configInfoBase == null && content == null) {
-                                // FIXME CacheItem
                                 // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
                                         ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, false, "grpc");
-                                
-                                // pullLog.info("[client-get] clientIp={}, {},
-                                // no data",
-                                // new Object[]{clientIp, groupKey});
                                 
                                 response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                                 return response;
@@ -187,18 +185,12 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                         response.setTag(tag);
                         pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
                         if (configInfoBase == null && content == null) {
-                            // FIXME CacheItem
                             // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
                             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
                                     ConfigTraceService.PULL_TYPE_NOTFOUND, -1, clientIp, false, "grpc");
                             
-                            // pullLog.info("[client-get] clientIp={}, {},
-                            // no data",
-                            // new Object[]{clientIp, groupKey});
-                            
                             response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
                             return response;
-                            
                         }
                     }
                 }
@@ -210,17 +202,10 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     response.setLastModified(lastModified);
                     response.setContent(configInfoBase.getContent());
                     response.setResultCode(ResponseCode.SUCCESS.getCode());
-                    
                 } else {
-                    //read from file
-                    try {
-                        response.setContent(content);
-                        response.setLastModified(lastModified);
-                        response.setResultCode(ResponseCode.SUCCESS.getCode());
-                    } catch (Exception e) {
-                        response.setErrorInfo(ResponseCode.FAIL.getCode(), e.getMessage());
-                        return response;
-                    }
+                    response.setContent(content);
+                    response.setLastModified(lastModified);
+                    response.setResultCode(ResponseCode.SUCCESS.getCode());
                 }
                 
                 LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp, md5, TimeUtils.getCurrentTimeStr());
@@ -251,8 +236,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         if (cacheItem == null) {
             return null;
         }
-        
-        String encryptedDataKey = null;
+        String encryptedDataKey;
         if (isBeta && cacheItem.getConfigCacheBeta() != null) {
             encryptedDataKey = cacheItem.getConfigCacheBeta().getEncryptedDataKey();
         } else {
@@ -270,7 +254,6 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
             }
         }
-        
         return encryptedDataKey;
     }
     

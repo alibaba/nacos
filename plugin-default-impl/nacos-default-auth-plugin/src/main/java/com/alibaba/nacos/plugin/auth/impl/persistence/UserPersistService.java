@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.auth.impl.persistence;
 
 import com.alibaba.nacos.persistence.model.Page;
-import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.util.List;
 
@@ -86,7 +85,7 @@ public interface UserPersistService {
      * create Pagination utils.
      *
      * @param <E> Generic object
-     * @return {@link PaginationHelper}
+     * @return {@link AuthPaginationHelper}
      */
-    <E> PaginationHelper<E> createPaginationHelper();
+    <E> AuthPaginationHelper<E> createPaginationHelper();
 }

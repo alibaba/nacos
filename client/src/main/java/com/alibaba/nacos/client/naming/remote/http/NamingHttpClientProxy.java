@@ -268,7 +268,6 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public boolean serverHealthy() {
-        
         try {
             String result = reqApi(UtilAndComs.nacosUrlBase + "/operator/metrics", new HashMap<>(8), HttpMethod.GET);
             JsonNode json = JacksonUtils.toObj(result);
