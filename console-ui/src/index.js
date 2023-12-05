@@ -29,7 +29,7 @@ import { ConfigProvider, Loading } from '@alifd/next';
 import './lib';
 
 import Layout from './layouts/MainLayout';
-import { LANGUAGE_KEY, REDUX_DEVTOOLS } from './constants';
+import { LANGUAGE_KEY, REDUX_DEVTOOLS, THEME } from './constants';
 
 import Login from './pages/Login';
 import Namespace from './pages/NameSpace';
@@ -50,10 +50,12 @@ import UserManagement from './pages/AuthorityControl/UserManagement';
 import PermissionsManagement from './pages/AuthorityControl/PermissionsManagement';
 import RolesManagement from './pages/AuthorityControl/RolesManagement';
 import Welcome from './pages/Welcome/Welcome';
+import SettingCenter from './pages/SettingCenter';
 
 import reducers from './reducers';
 import { changeLanguage } from './reducers/locale';
 import { getState } from './reducers/base';
+import changeTheme from './theme';
 
 import './index.scss';
 import PropTypes from 'prop-types';
@@ -94,9 +96,10 @@ const MENU = [
   { path: '/userManagement', component: UserManagement },
   { path: '/rolesManagement', component: RolesManagement },
   { path: '/permissionsManagement', component: PermissionsManagement },
+  { path: '/settingCenter', component: SettingCenter },
 ];
 
-@connect(state => ({ ...state.locale, ...state.base }), { changeLanguage, getState })
+@connect(state => ({ ...state.locale, ...state.base }), { changeLanguage, getState, changeTheme })
 class App extends React.Component {
   static propTypes = {
     locale: PropTypes.object,
@@ -104,6 +107,7 @@ class App extends React.Component {
     getState: PropTypes.func,
     loginPageEnabled: PropTypes.string,
     consoleUiEnable: PropTypes.string,
+    changeTheme: PropTypes.func,
   };
 
   constructor(props) {
@@ -118,7 +122,9 @@ class App extends React.Component {
   componentDidMount() {
     this.props.getState();
     const language = localStorage.getItem(LANGUAGE_KEY);
+    const theme = localStorage.getItem(THEME);
     this.props.changeLanguage(language);
+    this.props.changeTheme(theme);
   }
 
   get router() {

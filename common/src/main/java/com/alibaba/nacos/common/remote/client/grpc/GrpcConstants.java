@@ -100,8 +100,7 @@ public class GrpcConstants {
                     GRpcConfigLabel.class)) {
                 try {
                     CONFIG_NAMES.add((String) declaredField.get(null));
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                } catch (IllegalAccessException ignored) {
                 }
             }
         }
