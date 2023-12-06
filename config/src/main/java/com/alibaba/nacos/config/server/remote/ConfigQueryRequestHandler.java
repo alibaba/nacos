@@ -210,15 +210,9 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 
                 LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp, md5, TimeUtils.getCurrentTimeStr());
                 
-                final long delayed = System.currentTimeMillis() - lastModified;
-                
-                if (notify) {
-                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
-                            ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "grpc");
-                } else {
-                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
-                            ConfigTraceService.PULL_TYPE_OK, System.currentTimeMillis(), clientIp, notify, "grpc");
-                }
+                final long delayed = notify ? -1 : System.currentTimeMillis() - lastModified;
+                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
+                        ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "grpc");
             } finally {
                 releaseConfigReadLock(groupKey);
             }
