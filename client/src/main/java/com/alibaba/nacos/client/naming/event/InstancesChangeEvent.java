@@ -19,7 +19,9 @@ package com.alibaba.nacos.client.naming.event;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.notify.Event;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Instances change event.
@@ -41,7 +43,14 @@ public class InstancesChangeEvent extends Event {
     
     private final List<Instance> hosts;
     
-    public InstancesChangeEvent(String eventScope, String serviceName, String groupName, String clusters, List<Instance> hosts) {
+    private Set<Instance> modHosts = new HashSet<Instance>();
+    
+    private Set<Instance> newHosts = new HashSet<Instance>();
+    
+    private Set<Instance> remvHosts = new HashSet<Instance>();
+    
+    public InstancesChangeEvent(String eventScope, String serviceName, String groupName, String clusters,
+            List<Instance> hosts) {
         this.eventScope = eventScope;
         this.serviceName = serviceName;
         this.groupName = groupName;
@@ -68,5 +77,29 @@ public class InstancesChangeEvent extends Event {
     @Override
     public String scope() {
         return this.eventScope;
+    }
+    
+    public Set<Instance> getModHosts() {
+        return modHosts;
+    }
+    
+    public void setModHosts(Set<Instance> modHosts) {
+        this.modHosts = modHosts;
+    }
+    
+    public Set<Instance> getNewHosts() {
+        return newHosts;
+    }
+    
+    public void setNewHosts(Set<Instance> newHosts) {
+        this.newHosts = newHosts;
+    }
+    
+    public Set<Instance> getRemvHosts() {
+        return remvHosts;
+    }
+    
+    public void setRemvHosts(Set<Instance> remvHosts) {
+        this.remvHosts = remvHosts;
     }
 }

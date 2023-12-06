@@ -19,7 +19,6 @@ package com.alibaba.nacos.client.naming.backups;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
@@ -109,12 +108,12 @@ public class FailoverReactor implements Closeable {
                     for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
                         ServiceInfo newService = (ServiceInfo) entry.getValue().getData();
                         ServiceInfo oldService = serviceMap.get(entry.getKey());
-                        if (serviceInfoHolder.isChangedServiceInfo(oldService, newService)) {
-                            NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}",
-                                    JacksonUtils.toJson(newService));
-                            NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
-                                    newService.getGroupName(), newService.getClusters(), newService.getHosts()));
-                        }
+                        serviceInfoHolder.serviceInfoChangedHandle(notifierEventScope, oldService, newService,
+                                instancesChangeEvent -> {
+                                    NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}",
+                                            JacksonUtils.toJson(newService));
+                                    NotifyCenter.publishEvent(instancesChangeEvent);
+                                });
                         failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                     }
                     
@@ -133,13 +132,10 @@ public class FailoverReactor implements Closeable {
                         ServiceInfo oldService = entry.getValue();
                         ServiceInfo newService = serviceInfoMap.get(entry.getKey());
                         if (newService != null) {
-                            boolean changed = serviceInfoHolder.isChangedServiceInfo(oldService, newService);
-                            if (changed) {
-                                NotifyCenter.publishEvent(
-                                        new InstancesChangeEvent(notifierEventScope, newService.getName(),
-                                                newService.getGroupName(), newService.getClusters(),
-                                                newService.getHosts()));
-                            }
+                            serviceInfoHolder.serviceInfoChangedHandle(notifierEventScope, oldService, newService,
+                                    instancesChangeEvent -> {
+                                        NotifyCenter.publishEvent(instancesChangeEvent);
+                                    });
                         }
                     }
                     

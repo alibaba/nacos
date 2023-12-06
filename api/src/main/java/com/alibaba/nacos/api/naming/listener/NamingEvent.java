@@ -18,7 +18,9 @@ package com.alibaba.nacos.api.naming.listener;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Naming Event.
@@ -34,6 +36,12 @@ public class NamingEvent implements Event {
     private String clusters;
     
     private List<Instance> instances;
+    
+    private Set<Instance> modHosts = new HashSet<Instance>();
+    
+    private Set<Instance> newHosts = new HashSet<Instance>();
+    
+    private Set<Instance> remvHosts = new HashSet<Instance>();
     
     public NamingEvent(String serviceName, List<Instance> instances) {
         this.serviceName = serviceName;
@@ -77,5 +85,29 @@ public class NamingEvent implements Event {
     
     public void setClusters(String clusters) {
         this.clusters = clusters;
+    }
+    
+    public Set<Instance> getModHosts() {
+        return modHosts;
+    }
+    
+    public void setModHosts(Set<Instance> modHosts) {
+        this.modHosts = modHosts;
+    }
+    
+    public Set<Instance> getNewHosts() {
+        return newHosts;
+    }
+    
+    public void setNewHosts(Set<Instance> newHosts) {
+        this.newHosts = newHosts;
+    }
+    
+    public Set<Instance> getRemvHosts() {
+        return remvHosts;
+    }
+    
+    public void setRemvHosts(Set<Instance> remvHosts) {
+        this.remvHosts = remvHosts;
     }
 }

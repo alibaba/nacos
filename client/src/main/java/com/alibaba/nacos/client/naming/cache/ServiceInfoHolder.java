@@ -37,9 +37,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Consumer;
 
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
@@ -131,21 +133,18 @@ public class ServiceInfoHolder implements Closeable {
             return oldService;
         }
         serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-        boolean changed = isChangedServiceInfo(oldService, serviceInfo);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
-        if (changed) {
+        this.serviceInfoChangedHandle(notifierEventScope, oldService, serviceInfo, instancesChangeEvent -> {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
             if (!failoverReactor.isFailoverSwitch()) {
-                NotifyCenter.publishEvent(
-                        new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
-                                serviceInfo.getClusters(), serviceInfo.getHosts()));
+                NotifyCenter.publishEvent(instancesChangeEvent);
             }
             DiskCache.write(serviceInfo, cacheDir);
-        }
+        });
         return serviceInfo;
     }
     
@@ -154,80 +153,89 @@ public class ServiceInfoHolder implements Closeable {
     }
     
     /**
-     * isChangedServiceInfo.
+     * serviceInfoChangedHandle
      *
-     * @param oldService old service data
-     * @param newService new service data
-     * @return
+     * @param notifierEventScope
+     * @param oldService         old service data
+     * @param newService         new service data
+     * @param consumer
      */
-    public boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
+    public void serviceInfoChangedHandle(String notifierEventScope, ServiceInfo oldService, ServiceInfo newService,
+            Consumer<InstancesChangeEvent> consumer) {
+        Map<String, Set<Instance>> changedMap = new HashMap<>();
         if (null == oldService) {
             NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(), newService.getKey(),
                     JacksonUtils.toJson(newService.getHosts()));
-            return true;
-        }
-        if (oldService.getLastRefTime() > newService.getLastRefTime()) {
+            changedMap.put("newHosts", new HashSet<>(newService.getHosts()));
+        } else if (oldService.getLastRefTime() > newService.getLastRefTime()) {
             NAMING_LOGGER.warn("out of date data received, old-t: {}, new-t: {}", oldService.getLastRefTime(),
                     newService.getLastRefTime());
-            return false;
-        }
-        boolean changed = false;
-        Map<String, Instance> oldHostMap = new HashMap<>(oldService.getHosts().size());
-        for (Instance host : oldService.getHosts()) {
-            oldHostMap.put(host.toInetAddr(), host);
-        }
-        Map<String, Instance> newHostMap = new HashMap<>(newService.getHosts().size());
-        for (Instance host : newService.getHosts()) {
-            newHostMap.put(host.toInetAddr(), host);
-        }
-        
-        Set<Instance> modHosts = new HashSet<>();
-        Set<Instance> newHosts = new HashSet<>();
-        Set<Instance> remvHosts = new HashSet<>();
-        
-        List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(newHostMap.entrySet());
-        for (Map.Entry<String, Instance> entry : newServiceHosts) {
-            Instance host = entry.getValue();
-            String key = entry.getKey();
-            if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(), oldHostMap.get(key).toString())) {
-                modHosts.add(host);
-                continue;
+        } else {
+            Map<String, Instance> oldHostMap = new HashMap<>(oldService.getHosts().size());
+            for (Instance host : oldService.getHosts()) {
+                oldHostMap.put(host.toInetAddr(), host);
+            }
+            Map<String, Instance> newHostMap = new HashMap<>(newService.getHosts().size());
+            for (Instance host : newService.getHosts()) {
+                newHostMap.put(host.toInetAddr(), host);
             }
             
-            if (!oldHostMap.containsKey(key)) {
-                newHosts.add(host);
-            }
-        }
-        
-        for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
-            Instance host = entry.getValue();
-            String key = entry.getKey();
-            if (newHostMap.containsKey(key)) {
-                continue;
+            Set<Instance> modHosts = new HashSet<>();
+            Set<Instance> newHosts = new HashSet<>();
+            Set<Instance> remvHosts = new HashSet<>();
+            
+            List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(newHostMap.entrySet());
+            for (Map.Entry<String, Instance> entry : newServiceHosts) {
+                Instance host = entry.getValue();
+                String key = entry.getKey();
+                if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(),
+                        oldHostMap.get(key).toString())) {
+                    modHosts.add(host);
+                    continue;
+                }
+                
+                if (!oldHostMap.containsKey(key)) {
+                    newHosts.add(host);
+                }
             }
             
-            //add to remove hosts
-            remvHosts.add(host);
+            for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
+                Instance host = entry.getValue();
+                String key = entry.getKey();
+                if (newHostMap.containsKey(key)) {
+                    continue;
+                }
+                
+                //add to remove hosts
+                remvHosts.add(host);
+            }
+            
+            if (newHosts.size() > 0) {
+                changedMap.put("newHosts", newHosts);
+                NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
+                        JacksonUtils.toJson(newHosts));
+            }
+            
+            if (remvHosts.size() > 0) {
+                changedMap.put("remvHosts", remvHosts);
+                NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
+                        JacksonUtils.toJson(remvHosts));
+            }
+            
+            if (modHosts.size() > 0) {
+                changedMap.put("modHosts", modHosts);
+                NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
+                        JacksonUtils.toJson(modHosts));
+            }
         }
-        
-        if (newHosts.size() > 0) {
-            changed = true;
-            NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
-                    JacksonUtils.toJson(newHosts));
+        if (changedMap.size() > 0) {
+            InstancesChangeEvent instancesChangeEvent = new InstancesChangeEvent(notifierEventScope,
+                    newService.getName(), newService.getGroupName(), newService.getClusters(), newService.getHosts());
+            instancesChangeEvent.setNewHosts(Optional.ofNullable(changedMap.get("newHosts")).orElse(new HashSet<>()));
+            instancesChangeEvent.setRemvHosts(Optional.ofNullable(changedMap.get("remvHosts")).orElse(new HashSet<>()));
+            instancesChangeEvent.setModHosts(Optional.ofNullable(changedMap.get("modHosts")).orElse(new HashSet<>()));
+            consumer.accept(instancesChangeEvent);
         }
-        
-        if (remvHosts.size() > 0) {
-            changed = true;
-            NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
-                    JacksonUtils.toJson(remvHosts));
-        }
-        
-        if (modHosts.size() > 0) {
-            changed = true;
-            NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
-                    JacksonUtils.toJson(modHosts));
-        }
-        return changed;
     }
     
     public String getCacheDir() {
