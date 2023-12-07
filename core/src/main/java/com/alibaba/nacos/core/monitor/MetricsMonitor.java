@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.monitor;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Tag;
@@ -305,8 +306,8 @@ public final class MetricsMonitor {
                         Tag.of("requestClass", requestClass),
                         Tag.of("success", String.valueOf(success)),
                         Tag.of("errorCode", String.valueOf(errorCode)),
-                        Tag.of("throwableClass", throwableClass == null ? "None" : throwableClass),
-                        Tag.of("module", module == null ? "unknown" : module)
+                        Tag.of("throwableClass", StringUtils.isBlank(throwableClass) ? "None" : throwableClass),
+                        Tag.of("module", StringUtils.isBlank(module) ? "unknown" : module)
                 )
         ).record(costTime, TimeUnit.NANOSECONDS);
     }
