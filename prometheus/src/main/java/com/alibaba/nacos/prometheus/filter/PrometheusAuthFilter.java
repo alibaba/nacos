@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.prometheus.filter;
 
+import com.alibaba.nacos.plugin.auth.constant.Constants;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -35,6 +37,7 @@ import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLE
  * @author vividfish
  */
 @Configuration
+@ConditionalOnProperty(value = Constants.Auth.NACOS_CORE_AUTH_ENABLED, havingValue = "true")
 public class PrometheusAuthFilter {
     
     @Bean
