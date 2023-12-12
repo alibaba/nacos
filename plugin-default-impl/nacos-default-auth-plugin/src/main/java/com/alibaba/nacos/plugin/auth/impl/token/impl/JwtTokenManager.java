@@ -49,8 +49,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> implements TokenManager {
     
-    @Deprecated
-    private static final String AUTHORITIES_KEY = "auth";
+    private static final String AUTH_DISABLED_TOKEN = "AUTH_DISABLED";
     
     /**
      * Token validity time(seconds).
@@ -105,7 +104,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
      */
     public String createToken(String userName) {
         if (!authConfigs.isAuthEnabled()) {
-            return StringUtils.EMPTY;
+            return AUTH_DISABLED_TOKEN;
         }
         checkJwtParser();
         return jwtParser.jwtBuilder().setUserName(userName).setExpiredTime(this.tokenValidityInSeconds).compact();
