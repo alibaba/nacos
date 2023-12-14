@@ -87,6 +87,10 @@ public class ConnectionMeta {
      */
     String tenant;
     
+    long firstPushQueueBlockTime = 0;
+    
+    long lastPushQueueBlockTime = 0;
+    
     protected Map<String, String> labels = new HashMap<>();
     
     public String getLabel(String labelKey) {
@@ -290,6 +294,23 @@ public class ConnectionMeta {
     
     public void setTenant(String tenant) {
         this.tenant = tenant;
+    }
+    
+    public void recordPushQueueBlockTimes() {
+        if (this.firstPushQueueBlockTime == 0) {
+            firstPushQueueBlockTime = System.currentTimeMillis();
+        } else {
+            lastPushQueueBlockTime = System.currentTimeMillis();
+        }
+    }
+    
+    public void clearPushQueueBlockTimes() {
+        this.firstPushQueueBlockTime = 0;
+        this.lastPushQueueBlockTime = 0;
+    }
+    
+    public boolean pushQueueBlockTimesLastOver(long timeMillsSeconds) {
+        return this.lastPushQueueBlockTime - this.firstPushQueueBlockTime > timeMillsSeconds;
     }
     
     @Override
