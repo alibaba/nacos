@@ -22,10 +22,10 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.datasource.LocalDataSourceServiceImpl;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -68,14 +68,28 @@ public class ConfigOpsControllerTest {
     @Mock
     DumpService dumpService;
     
+    MockedStatic<DatasourceConfiguration> datasourceConfigurationMockedStatic;
+    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic ;
+    
+    MockedStatic<ApplicationUtils> applicationUtilsMockedStatic;
+    
+    @After
+    public void after() {
+        datasourceConfigurationMockedStatic.close();
+        dynamicDataSourceMockedStatic.close();
+        applicationUtilsMockedStatic.close();
+    }
     @Before
     public void init() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
         ReflectionTestUtils.setField(configOpsController, "dumpService", dumpService);
         mockMvc = MockMvcBuilders.standaloneSetup(configOpsController).build();
+        
+        datasourceConfigurationMockedStatic = Mockito.mockStatic(DatasourceConfiguration.class);
+        dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
+        applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
     }
-    
     @Test
     public void testUpdateLocalCacheFromStore() throws Exception {
         
@@ -96,10 +110,8 @@ public class ConfigOpsControllerTest {
     
     @Test
     public void testDerbyOps() throws Exception {
-        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
-        MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
-        
-        propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
+
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
         dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dataSource);
         LocalDataSourceServiceImpl dataSourceService = Mockito.mock(LocalDataSourceServiceImpl.class);
@@ -112,16 +124,13 @@ public class ConfigOpsControllerTest {
                 .param("sql", "SELECT * FROM TEST");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         Assert.assertEquals("200", JacksonUtils.toObj(actualValue).get("code").toString());
-        propertyUtilMockedStatic.close();
-        dynamicDataSourceMockedStatic.close();
+    
     }
     
     @Test
     public void testImportDerby() throws Exception {
-        MockedStatic<PropertyUtil> propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
-        MockedStatic<ApplicationUtils> applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
-        
-        propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
+
+        datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
                 .thenReturn(Mockito.mock(DatabaseOperate.class));
@@ -131,7 +140,5 @@ public class ConfigOpsControllerTest {
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         Assert.assertEquals(200, actualValue);
         
-        propertyUtilMockedStatic.close();
-        applicationUtilsMockedStatic.close();
     }
 }

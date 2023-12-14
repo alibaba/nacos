@@ -19,8 +19,8 @@ package com.alibaba.nacos.config.server.service.capacity;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
-import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoMapperByMySql;
@@ -29,7 +29,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentMatcher;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -38,7 +37,6 @@ import org.mockito.stubbing.Answer;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -46,13 +44,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
@@ -115,23 +110,17 @@ public class GroupCapacityPersistServiceTest {
     
     @Test
     public void testInsertGroupCapacity() {
-        Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class),
-                argThat((ArgumentMatcher<GeneratedKeyHolder>) keyHolder -> {
-                    List<Map<String, Object>> keyList = new ArrayList<>();
-                    Map<String, Object> keyMap = new HashMap<>();
-                    Number number = 1;
-                    keyMap.put("test", number);
-                    keyList.add(keyMap);
-                    List<Map<String, Object>> expect = keyHolder.getKeyList();
-                    expect.addAll(keyList);
-                    return false;
-                }))).thenReturn(1);
         
+        doReturn(1).when(jdbcTemplate).update(anyString(), eq(""),eq(null),eq(null),eq(null),eq(null),eq(null),eq(null));
+       // when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenReturn(1);
+    
         GroupCapacity capacity = new GroupCapacity();
         capacity.setGroup(GroupCapacityPersistService.CLUSTER);
         Assert.assertTrue(service.insertGroupCapacity(capacity));
         
         capacity.setGroup("test");
+        doReturn(1).when(jdbcTemplate).update(anyString(), eq("test"),eq(null),eq(null),eq(null),eq(null),eq(null),eq(null),eq("test"));
+    
         Assert.assertTrue(service.insertGroupCapacity(capacity));
     }
     
@@ -203,7 +192,6 @@ public class GroupCapacityPersistServiceTest {
     
     @Test
     public void testUpdateGroupCapacity() {
-        final MockedStatic<TimeUtils> timeUtilsMockedStatic = Mockito.mockStatic(TimeUtils.class);
         
         List<Object> argList = CollectionUtils.list();
         
@@ -220,8 +208,8 @@ public class GroupCapacityPersistServiceTest {
         argList.add(maxAggrSize);
         
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        
-        timeUtilsMockedStatic.when(TimeUtils::getCurrentTime).thenReturn(timestamp);
+        MockedStatic<TimeUtils> timeUtilsMockedStatic = Mockito.mockStatic(TimeUtils.class);
+        when(TimeUtils.getCurrentTime()).thenReturn(timestamp);
         argList.add(timestamp);
         
         String group = "test";
@@ -238,6 +226,7 @@ public class GroupCapacityPersistServiceTest {
         });
         Assert.assertTrue(service.updateGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize));
         timeUtilsMockedStatic.close();
+        
     }
     
     @Test

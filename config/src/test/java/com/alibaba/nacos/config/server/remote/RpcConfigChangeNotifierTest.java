@@ -20,10 +20,14 @@ import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RpcPushService;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
+import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -44,13 +48,25 @@ public class RpcConfigChangeNotifierTest {
     @Mock
     private ConnectionManager connectionManager;
     
+    @Mock
+    ControlManagerCenter controlManagerCenter;
+    
+    @Mock
+    TpsControlManager tpsControlManager;
+    MockedStatic<ControlManagerCenter> controlManagerCenterMockedStatic;
+    
     @Before
     public void setUp() {
-        rpcConfigChangeNotifier = new RpcConfigChangeNotifier();
         
+        controlManagerCenterMockedStatic = Mockito.mockStatic(
+                ControlManagerCenter.class);
+        Mockito.when(ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
+        Mockito.when(ControlManagerCenter.getInstance().getTpsControlManager()).thenReturn(tpsControlManager);
+        rpcConfigChangeNotifier = new RpcConfigChangeNotifier();
         ReflectionTestUtils.setField(rpcConfigChangeNotifier, "configChangeListenContext", configChangeListenContext);
         ReflectionTestUtils.setField(rpcConfigChangeNotifier, "rpcPushService", rpcPushService);
         ReflectionTestUtils.setField(rpcConfigChangeNotifier, "connectionManager", connectionManager);
+        
     }
     
     @Test
@@ -61,6 +77,9 @@ public class RpcConfigChangeNotifierTest {
         List<String> betaIps = new ArrayList<>();
         
         betaIps.add("1.1.1.1");
+        
+        
+        
         rpcConfigChangeNotifier.onEvent(new LocalDataChangeEvent(groupKey, true, betaIps));
         rpcConfigChangeNotifier.onEvent(new LocalDataChangeEvent(limitGroupKey));
     }

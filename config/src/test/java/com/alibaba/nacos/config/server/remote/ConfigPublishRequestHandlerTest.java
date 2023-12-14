@@ -21,6 +21,8 @@ import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
@@ -32,6 +34,11 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.StandardEnvironment;
+
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigPublishRequestHandlerTest {
@@ -62,6 +69,7 @@ public class ConfigPublishRequestHandlerTest {
         configPublishRequest.setContent("content");
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
+        when(configInfoPersistService.insertOrUpdate(any(),any(),any(ConfigInfo.class),any(Map.class))).thenReturn(new ConfigOperateResult(true));
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         Assert.assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
     }

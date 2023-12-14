@@ -98,19 +98,9 @@ public class TenantCapacityPersistServiceTest {
     
     @Test
     public void testInsertTenantCapacity() {
-        
-        when(jdbcTemplate.update(any(PreparedStatementCreator.class),
-                argThat((ArgumentMatcher<GeneratedKeyHolder>) keyHolder -> {
-                    List<Map<String, Object>> keyList = new ArrayList<>();
-                    Map<String, Object> keyMap = new HashMap<>();
-                    Number number = 1;
-                    keyMap.put("test", number);
-                    keyList.add(keyMap);
-                    List<Map<String, Object>> expect = keyHolder.getKeyList();
-                    expect.addAll(keyList);
-                    return false;
-                }))).thenReturn(1);
-        
+    
+        when(jdbcTemplate.update(anyString(),  eq("test"), eq(null),eq(null),eq(null),eq(null),eq(null),eq(null),eq("test"))).thenReturn(1);
+    
         TenantCapacity capacity = new TenantCapacity();
         capacity.setTenant("test");
         Assert.assertTrue(service.insertTenantCapacity(capacity));
