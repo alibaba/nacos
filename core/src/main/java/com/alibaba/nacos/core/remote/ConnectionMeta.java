@@ -296,6 +296,9 @@ public class ConnectionMeta {
         this.tenant = tenant;
     }
     
+    /**
+     * recordPushQueueBlockTimes.
+     */
     public void recordPushQueueBlockTimes() {
         if (this.firstPushQueueBlockTime == 0) {
             firstPushQueueBlockTime = System.currentTimeMillis();
@@ -304,11 +307,19 @@ public class ConnectionMeta {
         }
     }
     
+    /**
+     * clear push queue block times.
+     */
     public void clearPushQueueBlockTimes() {
         this.firstPushQueueBlockTime = 0;
         this.lastPushQueueBlockTime = 0;
     }
     
+    /**
+     * check block greater than the specific time.
+     * @param timeMillsSeconds check times.
+     * @return
+     */
     public boolean pushQueueBlockTimesLastOver(long timeMillsSeconds) {
         return this.lastPushQueueBlockTime - this.firstPushQueueBlockTime > timeMillsSeconds;
     }

@@ -69,7 +69,8 @@ public class ConfigPublishRequestHandlerTest {
         configPublishRequest.setContent("content");
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
-        when(configInfoPersistService.insertOrUpdate(any(),any(),any(ConfigInfo.class),any(Map.class))).thenReturn(new ConfigOperateResult(true));
+        when(configInfoPersistService.insertOrUpdate(any(), any(), any(ConfigInfo.class), any(Map.class))).thenReturn(
+                new ConfigOperateResult(true));
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         Assert.assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
     }

@@ -16,11 +16,7 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import com.alibaba.nacos.common.utils.MD5Utils;
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

@@ -100,6 +100,7 @@ public class GrpcConnection extends Connection {
         try {
             future.get();
         } catch (Exception e) {
+            //ignore
         }
         if (exception.get() != null) {
             throw exception.get();

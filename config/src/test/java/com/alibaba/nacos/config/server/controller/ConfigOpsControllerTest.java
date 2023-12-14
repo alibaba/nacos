@@ -69,7 +69,8 @@ public class ConfigOpsControllerTest {
     DumpService dumpService;
     
     MockedStatic<DatasourceConfiguration> datasourceConfigurationMockedStatic;
-    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic ;
+    
+    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
     
     MockedStatic<ApplicationUtils> applicationUtilsMockedStatic;
     
@@ -79,6 +80,7 @@ public class ConfigOpsControllerTest {
         dynamicDataSourceMockedStatic.close();
         applicationUtilsMockedStatic.close();
     }
+    
     @Before
     public void init() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -90,11 +92,12 @@ public class ConfigOpsControllerTest {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         applicationUtilsMockedStatic = Mockito.mockStatic(ApplicationUtils.class);
     }
+    
     @Test
     public void testUpdateLocalCacheFromStore() throws Exception {
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .post(Constants.OPS_CONTROLLER_PATH + "/localCache");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
+                Constants.OPS_CONTROLLER_PATH + "/localCache");
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         Assert.assertEquals(200, actualValue);
     }
@@ -110,7 +113,7 @@ public class ConfigOpsControllerTest {
     
     @Test
     public void testDerbyOps() throws Exception {
-
+        
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         DynamicDataSource dataSource = Mockito.mock(DynamicDataSource.class);
         dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dataSource);
@@ -124,19 +127,19 @@ public class ConfigOpsControllerTest {
                 .param("sql", "SELECT * FROM TEST");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         Assert.assertEquals("200", JacksonUtils.toObj(actualValue).get("code").toString());
-    
+        
     }
     
     @Test
     public void testImportDerby() throws Exception {
-
+        
         datasourceConfigurationMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
                 .thenReturn(Mockito.mock(DatabaseOperate.class));
         MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders
-                .multipart(Constants.OPS_CONTROLLER_PATH + "/data/removal").file(file);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(
+                Constants.OPS_CONTROLLER_PATH + "/data/removal").file(file);
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         Assert.assertEquals(200, actualValue);
         

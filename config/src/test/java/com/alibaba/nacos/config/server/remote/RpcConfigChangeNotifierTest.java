@@ -53,13 +53,13 @@ public class RpcConfigChangeNotifierTest {
     
     @Mock
     TpsControlManager tpsControlManager;
+    
     MockedStatic<ControlManagerCenter> controlManagerCenterMockedStatic;
     
     @Before
     public void setUp() {
         
-        controlManagerCenterMockedStatic = Mockito.mockStatic(
-                ControlManagerCenter.class);
+        controlManagerCenterMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
         Mockito.when(ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
         Mockito.when(ControlManagerCenter.getInstance().getTpsControlManager()).thenReturn(tpsControlManager);
         rpcConfigChangeNotifier = new RpcConfigChangeNotifier();
@@ -72,13 +72,11 @@ public class RpcConfigChangeNotifierTest {
     @Test
     public void testOnEvent() {
         final String groupKey = GroupKey2.getKey("nacos.internal.tps.control_rule_1", "nacos", "tenant");
-        final String limitGroupKey = GroupKey2
-                .getKey("nacos.internal.tps.nacos.internal.connection.limit.rule", "nacos", "tenant");
+        final String limitGroupKey = GroupKey2.getKey("nacos.internal.tps.nacos.internal.connection.limit.rule",
+                "nacos", "tenant");
         List<String> betaIps = new ArrayList<>();
         
         betaIps.add("1.1.1.1");
-        
-        
         
         rpcConfigChangeNotifier.onEvent(new LocalDataChangeEvent(groupKey, true, betaIps));
         rpcConfigChangeNotifier.onEvent(new LocalDataChangeEvent(limitGroupKey));
