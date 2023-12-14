@@ -478,36 +478,7 @@ public class ConfigCacheService {
         }
     }
     
-    /**
-     * Check md5.
-     *
-     * @return return diff result list.
-     */
-    public static List<String> checkMd5() {
-        List<String> diffList = new ArrayList<>();
-        long startTime = System.currentTimeMillis();
-        for (Entry<String/* groupKey */, CacheItem> entry : CACHE.entrySet()) {
-            String groupKey = entry.getKey();
-            String[] dg = GroupKey2.parseKey(groupKey);
-            String dataId = dg[0];
-            String group = dg[1];
-            String tenant = dg[2];
-            try {
-                String localMd5 = ConfigDiskServiceFactory.getInstance()
-                        .getLocalConfigMd5(dataId, group, tenant, ENCODE_UTF8);
-                if (!entry.getValue().getConfigCache().getMd5(ENCODE_UTF8).equals(localMd5)) {
-                    DEFAULT_LOG.warn("[md5-different] dataId:{},group:{}", dataId, group);
-                    diffList.add(groupKey);
-                }
-            } catch (IOException e) {
-                DEFAULT_LOG.error("getLocalConfigMd5 fail,dataId:{},group:{}", dataId, group);
-            }
-        }
-        long endTime = System.currentTimeMillis();
-        DEFAULT_LOG.warn("checkMd5 cost:{}; diffCount:{}", endTime - startTime, diffList.size());
-        return diffList;
-    }
-    
+
     /**
      * Delete config file, and delete cache.
      *

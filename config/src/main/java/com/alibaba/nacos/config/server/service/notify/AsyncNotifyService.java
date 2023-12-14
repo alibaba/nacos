@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
+import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
@@ -200,8 +201,18 @@ public class AsyncNotifyService {
         }
     }
     
-    static class NotifySingleRpcTask extends NotifyTask {
-        
+    static class NotifySingleRpcTask extends AbstractDelayTask {
+    
+        private String dataId;
+    
+        private String group;
+    
+        private String tenant;
+    
+        private long lastModified;
+    
+        private int failCount;
+    
         private Member member;
         
         private boolean isBeta;
@@ -212,7 +223,7 @@ public class AsyncNotifyService {
         
         public NotifySingleRpcTask(String dataId, String group, String tenant, String tag, long lastModified,
                 boolean isBeta, Member member) {
-            super(dataId, group, tenant, lastModified);
+            this(dataId, group, tenant, lastModified);
             this.member = member;
             this.isBeta = isBeta;
             this.tag = tag;
@@ -220,13 +231,21 @@ public class AsyncNotifyService {
         
         public NotifySingleRpcTask(String dataId, String group, String tenant, String tag, long lastModified,
                 boolean isBeta, boolean isBatch, Member member) {
-            super(dataId, group, tenant, lastModified);
+            this(dataId, group, tenant, lastModified);
             this.member = member;
             this.isBeta = isBeta;
             this.tag = tag;
             this.isBatch = isBatch;
         }
-        
+    
+        private NotifySingleRpcTask(String dataId, String group, String tenant, long lastModified) {
+            this.dataId = dataId;
+            this.group = group;
+            this.setTenant(tenant);
+            this.lastModified = lastModified;
+            setTaskInterval(3000L);
+        }
+    
         public boolean isBeta() {
             return isBeta;
         }
@@ -249,6 +268,52 @@ public class AsyncNotifyService {
         
         public void setBatch(boolean batch) {
             isBatch = batch;
+        }
+        
+        public String getDataId() {
+            return dataId;
+        }
+    
+        public void setDataId(String dataId) {
+            this.dataId = dataId;
+        }
+    
+        public String getGroup() {
+            return group;
+        }
+    
+        public void setGroup(String group) {
+            this.group = group;
+        }
+    
+        public int getFailCount() {
+            return failCount;
+        }
+    
+        public void setFailCount(int failCount) {
+            this.failCount = failCount;
+        }
+    
+        public long getLastModified() {
+            return lastModified;
+        }
+    
+        public void setLastModified(long lastModified) {
+            this.lastModified = lastModified;
+        }
+    
+        @Override
+        public void merge(AbstractDelayTask task) {
+            // Perform merge, but do nothing, tasks with the same dataId and group, later will replace the previous
+        
+        }
+    
+        public String getTenant() {
+            return tenant;
+        }
+    
+        public void setTenant(String tenant) {
+            this.tenant = tenant;
         }
     }
     
@@ -343,7 +408,7 @@ public class AsyncNotifyService {
      * @param task notify task
      * @return delay
      */
-    private static int getDelayTime(NotifyTask task) {
+    private static int getDelayTime(NotifySingleRpcTask task) {
         int failCount = task.getFailCount();
         int delay = MIN_RETRY_INTERVAL + failCount * failCount * INCREASE_STEPS;
         if (failCount <= MAX_COUNT) {

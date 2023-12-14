@@ -75,7 +75,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+     * @param databaseOperate
      */
     public EmbeddedHistoryConfigInfoPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;

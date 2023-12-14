@@ -33,6 +33,7 @@ import com.alibaba.nacos.config.server.model.ConfigOperateResult;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.sql.ExternalStorageUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
@@ -229,7 +230,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             }
         }
     }
-    
+
     @Override
     public long addConfigInfoAtomic(final long configId, final String srcIp, final String srcUser,
             final ConfigInfo configInfo, Map<String, Object> configAdvanceInfo) {
@@ -246,7 +247,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         
-        KeyHolder keyHolder = new GeneratedKeyHolder();
+        KeyHolder keyHolder = ExternalStorageUtils.createKeyHolder();
         
         ConfigInfoMapper configInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO);
