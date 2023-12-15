@@ -110,12 +110,7 @@ public class HealthController {
             return false;
         }
     
-        try {
-            return Boolean.parseBoolean(addressServerHealth.toString());
-        } catch (Exception ignore) {
-            return false;
-        }
-        
+        return Boolean.parseBoolean(addressServerHealth.toString());
     }
     
 }
