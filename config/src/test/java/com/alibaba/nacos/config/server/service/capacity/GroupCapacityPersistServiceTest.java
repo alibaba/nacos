@@ -242,7 +242,8 @@ public class GroupCapacityPersistServiceTest {
     
     @Test
     public void testUpdateQuota() {
-        
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        when(TimeUtils.getCurrentTime()).thenReturn(timestamp);
         List<Object> argList = CollectionUtils.list();
         
         Integer quota = 2;
@@ -251,12 +252,8 @@ public class GroupCapacityPersistServiceTest {
         String group = "test2";
         argList.add(group);
         
-        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
-            if (invocationOnMock.getArgument(1).equals(quota) && invocationOnMock.getArgument(3).equals(group)) {
-                return 1;
-            }
-            return 0;
-        });
+        when(jdbcTemplate.update(anyString(), eq(2), eq(timestamp), eq(group))).thenReturn(1);
+        
         Assert.assertTrue(service.updateQuota(group, quota));
     }
     
@@ -264,19 +261,15 @@ public class GroupCapacityPersistServiceTest {
     public void testUpdateMaxSize() {
         
         List<Object> argList = CollectionUtils.list();
-        
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        when(TimeUtils.getCurrentTime()).thenReturn(timestamp);
         Integer maxSize = 3;
         argList.add(maxSize);
         
         String group = "test3";
         argList.add(group);
-        
-        when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
-            if (invocationOnMock.getArgument(1).equals(maxSize) && invocationOnMock.getArgument(3).equals(group)) {
-                return 1;
-            }
-            return 0;
-        });
+        when(jdbcTemplate.update(anyString(), eq(3), eq(timestamp), eq(group))).thenReturn(1);
+    
         Assert.assertTrue(service.updateMaxSize(group, maxSize));
     }
     
