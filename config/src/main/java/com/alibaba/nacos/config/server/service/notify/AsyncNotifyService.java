@@ -19,7 +19,6 @@ package com.alibaba.nacos.config.server.service.notify;
 import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.remote.RequestCallBack;
-import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -28,7 +27,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.remote.ConfigClusterRpcClientProxy;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -66,9 +64,6 @@ public class AsyncNotifyService {
     private static final int MAX_COUNT = 6;
     
     @Autowired
-    private DumpService dumpService;
-    
-    @Autowired
     private ConfigClusterRpcClientProxy configClusterRpcClientProxy;
     
     private ServerMemberManager memberManager;
@@ -102,7 +97,7 @@ public class AsyncNotifyService {
                     String tag = evt.tag;
                     MetricsMonitor.incrementConfigChangeCount(tenant, group, dataId);
                     
-                    Collection<Member> ipList = memberManager.allMembers();
+                    Collection<Member> ipList = memberManager.allMembersWithoutSelf();
                     
                     // In fact, any type of queue here can be
                     Queue<NotifySingleRpcTask> rpcQueue = new LinkedList<>();
@@ -153,24 +148,8 @@ public class AsyncNotifyService {
                 syncRequest.setBatch(task.isBatch);
                 syncRequest.setTenant(task.getTenant());
                 Member member = task.member;
-                if (memberManager.getSelf().equals(member)) {
-                    if (syncRequest.isBeta()) {
-                        dumpService.dumpBeta(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getLastModified(), NetUtils.localIP());
-                    } else if (syncRequest.isBatch()) {
-                        dumpService.dumpBatch(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getLastModified(), NetUtils.localIP());
-                    } else if (StringUtils.isNotBlank(syncRequest.getTag())) {
-                        dumpService.dumpTag(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getTag(), syncRequest.getLastModified(), NetUtils.localIP());
-                    } else {
-                        dumpService.dumpFormal(syncRequest.getDataId(), syncRequest.getGroup(), syncRequest.getTenant(),
-                                syncRequest.getLastModified(), NetUtils.localIP());
-                    }
-                    continue;
-                }
-                String event = getNotifyEvent(task);
                 
+                String event = getNotifyEvent(task);
                 if (memberManager.hasMember(member.getAddress())) {
                     // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
                     boolean unHealthNeedDelay = isUnHealthy(member.getAddress());

@@ -28,7 +28,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
@@ -39,7 +38,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
@@ -68,14 +66,14 @@ public class ConfigCacheService {
     private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
     private static ConfigInfoPersistService configInfoPersistService;
-
+    
     public static ConfigInfoPersistService getConfigInfoPersistService() {
         if (configInfoPersistService == null) {
             configInfoPersistService = ApplicationUtils.getBean(ConfigInfoPersistService.class);
         }
         return configInfoPersistService;
     }
-
+    
     public static int groupCount() {
         return CACHE.size();
     }
@@ -430,7 +428,8 @@ public class ConfigCacheService {
                     aggreds = config.getContent();
                 }
             } else {
-                aggreds = DiskUtil.getConfig(AggrWhitelist.AGGRIDS_METADATA, "DEFAULT_GROUP", StringUtils.EMPTY);
+                aggreds = ConfigDiskServiceFactory.getInstance()
+                        .getContent(AggrWhitelist.AGGRIDS_METADATA, "DEFAULT_GROUP", StringUtils.EMPTY);
             }
             if (aggreds != null) {
                 AggrWhitelist.load(aggreds);
@@ -448,8 +447,8 @@ public class ConfigCacheService {
                     clientIpWhitelist = config.getContent();
                 }
             } else {
-                clientIpWhitelist = DiskUtil.getConfig(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP",
-                        StringUtils.EMPTY);
+                clientIpWhitelist = ConfigDiskServiceFactory.getInstance()
+                        .getContent(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP", StringUtils.EMPTY);
             }
             if (clientIpWhitelist != null) {
                 ClientIpWhiteList.load(clientIpWhitelist);
@@ -461,14 +460,14 @@ public class ConfigCacheService {
         String switchContent = null;
         try {
             if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(SwitchService.SWITCH_META_DATA_ID,
-                        "DEFAULT_GROUP");
+                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(
+                        SwitchService.SWITCH_META_DATA_ID, "DEFAULT_GROUP");
                 if (config != null) {
                     switchContent = config.getContent();
                 }
             } else {
-                switchContent = DiskUtil.getConfig(SwitchService.SWITCH_META_DATA_ID, "DEFAULT_GROUP",
-                        StringUtils.EMPTY);
+                switchContent = ConfigDiskServiceFactory.getInstance()
+                        .getContent(SwitchService.SWITCH_META_DATA_ID, "DEFAULT_GROUP", StringUtils.EMPTY);
             }
             if (switchContent != null) {
                 SwitchService.load(switchContent);
@@ -478,7 +477,7 @@ public class ConfigCacheService {
         }
     }
     
-
+    
     /**
      * Delete config file, and delete cache.
      *
