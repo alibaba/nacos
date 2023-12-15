@@ -126,13 +126,9 @@ public abstract class DumpService {
     
     int total = 0;
     
-    private static final String TRUE_STR = "true";
-    
     private static final String BETA_TABLE_NAME = "config_info_beta";
     
     private static final String TAG_TABLE_NAME = "config_info_tag";
-    
-    Boolean isQuickStart = false;
     
     private int retentionDays = 30;
     
@@ -155,10 +151,11 @@ public abstract class DumpService {
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoTagPersistService = configInfoTagPersistService;
         this.memberManager = memberManager;
-        this.processor = new DumpProcessor(this);
-        this.dumpAllProcessor = new DumpAllProcessor(this);
-        this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
-        this.dumpAllTagProcessor = new DumpAllTagProcessor(this);
+        this.processor = new DumpProcessor(this.configInfoPersistService, this.configInfoBetaPersistService,
+                this.configInfoTagPersistService);
+        this.dumpAllProcessor = new DumpAllProcessor(this.configInfoPersistService);
+        this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this.configInfoBetaPersistService);
+        this.dumpAllTagProcessor = new DumpAllTagProcessor(this.configInfoTagPersistService);
         this.dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
         this.dumpTaskMgr.setDefaultTaskProcessor(processor);
         

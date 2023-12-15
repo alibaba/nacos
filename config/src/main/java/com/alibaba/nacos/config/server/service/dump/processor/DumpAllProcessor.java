@@ -41,9 +41,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  */
 public class DumpAllProcessor implements NacosTaskProcessor {
     
-    public DumpAllProcessor(DumpService dumpService) {
-        this.dumpService = dumpService;
-        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
+    public DumpAllProcessor(ConfigInfoPersistService configInfoPersistService) {
+        this.configInfoPersistService = configInfoPersistService;
     }
     
     @Override
@@ -85,8 +84,6 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     }
     
     static final int PAGE_SIZE = 1000;
-    
-    final DumpService dumpService;
     
     final ConfigInfoPersistService configInfoPersistService;
 }

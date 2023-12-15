@@ -15,6 +15,8 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistS
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
+import com.alibaba.nacos.persistence.datasource.DataSourceService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
@@ -38,6 +40,12 @@ import static org.mockito.Mockito.when;
 public class DumpProcessorTest {
     
     @Mock
+    DynamicDataSource dynamicDataSource;
+    
+    @Mock
+    DataSourceService dataSourceService;
+    
+    @Mock
     ConfigInfoPersistService configInfoPersistService;
     
     @Mock
@@ -50,17 +58,25 @@ public class DumpProcessorTest {
     
     DumpProcessor dumpProcessor;
     
+    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
+    
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     @Before
     public void init() throws Exception {
+        dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         when(EnvUtil.getNacosHome()).thenReturn(System.getProperty("user.home"));
         when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class),
                 eq(false))).thenReturn(false);
+        dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dynamicDataSource);
+    
+        when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
+    
         dumpService = new ExternalDumpService(configInfoPersistService, null, null, null, configInfoBetaPersistService,
                 configInfoTagPersistService, null);
-        dumpProcessor = new DumpProcessor(dumpService);
+        dumpProcessor = new DumpProcessor(configInfoPersistService, configInfoBetaPersistService,
+                configInfoTagPersistService);
         Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
         for (Field filed : declaredFields) {
             if (filed.getName().equals("configDiskService")) {
@@ -77,12 +93,13 @@ public class DumpProcessorTest {
     
     @After
     public void after() {
+        dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         ConfigDiskServiceFactory.getInstance().clearAll();
         ConfigDiskServiceFactory.getInstance().clearAllBatch();
         ConfigDiskServiceFactory.getInstance().clearAllBeta();
         ConfigDiskServiceFactory.getInstance().clearAllTag();
-    
+        
     }
     
     @Test

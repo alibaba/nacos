@@ -33,6 +33,7 @@ import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 
 import org.junit.After;
@@ -79,6 +80,8 @@ public class ConfigPublishRequestHandlerTest {
     
         configPublishRequestHandler = new ConfigPublishRequestHandler(configInfoPersistService,
                 configInfoTagPersistService, configInfoBetaPersistService);
+        DatasourceConfiguration.setEmbeddedStorage(false);
+    
     }
     
     @After
@@ -141,7 +144,7 @@ public class ConfigPublishRequestHandlerTest {
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         Assert.assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(1000L);
+        Thread.sleep(500L);
         Assert.assertTrue(reference.get() != null);
         Assert.assertEquals(dataId, reference.get().dataId);
         Assert.assertEquals(group, reference.get().group);
@@ -179,12 +182,7 @@ public class ConfigPublishRequestHandlerTest {
         RequestMeta requestMeta = new RequestMeta();
         String clientIp = "127.0.0.1";
         requestMeta.setClientIp(clientIp);
-        
-        ConfigInfoStateWrapper configInfoStateWrapper = new ConfigInfoStateWrapper();
-        configInfoStateWrapper.setId(12345678);
-        long timeStamp = System.currentTimeMillis();
-        configInfoStateWrapper.setLastModified(timeStamp);
-        
+  
         AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
         NotifyCenter.registerSubscriber(new Subscriber() {
             
@@ -212,12 +210,12 @@ public class ConfigPublishRequestHandlerTest {
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         Assert.assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(1000L);
+        Thread.sleep(500L);
         Assert.assertTrue(reference.get() != null);
         Assert.assertEquals(dataId, reference.get().dataId);
         Assert.assertEquals(group, reference.get().group);
         Assert.assertEquals(tenant, reference.get().tenant);
-        Assert.assertEquals(timeStamp, reference.get().lastModifiedTs);
+        Assert.assertEquals(timestamp, reference.get().lastModifiedTs);
         Assert.assertFalse(reference.get().isBatch);
         Assert.assertFalse(reference.get().isBeta);
     }
@@ -283,7 +281,7 @@ public class ConfigPublishRequestHandlerTest {
         
         Assert.assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         Assert.assertTrue(response.getMessage().contains("mock error"));
-        Thread.sleep(1000L);
+        Thread.sleep(500L);
         Assert.assertTrue(reference.get() == null);
         
     }
@@ -325,7 +323,7 @@ public class ConfigPublishRequestHandlerTest {
     
         Assert.assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         Assert.assertTrue(response.getMessage().contains("is aggr"));
-        Thread.sleep(1000L);
+        Thread.sleep(500L);
         Assert.assertTrue(reference.get() == null);
     }
     
@@ -351,11 +349,6 @@ public class ConfigPublishRequestHandlerTest {
         RequestMeta requestMeta = new RequestMeta();
         String clientIp = "127.0.0.1";
         requestMeta.setClientIp(clientIp);
-        
-        ConfigInfoStateWrapper configInfoStateWrapper = new ConfigInfoStateWrapper();
-        configInfoStateWrapper.setId(12345678);
-        long timeStamp = System.currentTimeMillis();
-        configInfoStateWrapper.setLastModified(timeStamp);
         
         AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
         NotifyCenter.registerSubscriber(new Subscriber() {
@@ -384,12 +377,12 @@ public class ConfigPublishRequestHandlerTest {
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         Assert.assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(1000L);
+        Thread.sleep(500L);
         Assert.assertTrue(reference.get() != null);
         Assert.assertEquals(dataId, reference.get().dataId);
         Assert.assertEquals(group, reference.get().group);
         Assert.assertEquals(tenant, reference.get().tenant);
-        Assert.assertEquals(timeStamp, reference.get().lastModifiedTs);
+        Assert.assertEquals(timestamp, reference.get().lastModifiedTs);
         Assert.assertFalse(reference.get().isBatch);
         Assert.assertTrue(reference.get().isBeta);
         
@@ -446,7 +439,7 @@ public class ConfigPublishRequestHandlerTest {
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         Assert.assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(1000L);
+        Thread.sleep(500L);
         Assert.assertTrue(reference.get() != null);
         Assert.assertEquals(dataId, reference.get().dataId);
         Assert.assertEquals(group, reference.get().group);
@@ -507,7 +500,7 @@ public class ConfigPublishRequestHandlerTest {
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         Assert.assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(1000L);
+        Thread.sleep(500L);
         Assert.assertTrue(reference.get() != null);
         Assert.assertEquals(dataId, reference.get().dataId);
         Assert.assertEquals(group, reference.get().group);
@@ -567,7 +560,7 @@ public class ConfigPublishRequestHandlerTest {
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
         
         Assert.assertEquals(ResponseCode.SUCCESS.getCode(), response.getResultCode());
-        Thread.sleep(1000L);
+        Thread.sleep(500L);
         Assert.assertTrue(reference.get() != null);
         Assert.assertEquals(dataId, reference.get().dataId);
         Assert.assertEquals(group, reference.get().group);
