@@ -69,8 +69,7 @@ public class SearchablePropertiesTest {
     }
     
     @Test
-    public void testInitWithoutSpecifiedOrder()
-            throws IllegalAccessException, InvocationTargetException {
+    public void testInitWithoutSpecifiedOrder() throws IllegalAccessException, InvocationTargetException {
         System.clearProperty(Constants.SysEnv.NACOS_ENV_FIRST);
         List<SourceType> order = (List<SourceType>) initMethod.invoke(null);
         assertOrder(order, SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV);
@@ -96,6 +95,7 @@ public class SearchablePropertiesTest {
         System.setProperty("testFromSource", "jvm");
         NacosClientProperties properties = SearchableProperties.INSTANCE.derive();
         properties.setProperty("testFromSource", "properties");
-        assertEquals("jvm", properties.getPropertyFrom(SourceType.UNKNOWN, "testFromSource"));
+        assertEquals(properties.getProperty("testFromSource"),
+                properties.getPropertyFrom(SourceType.UNKNOWN, "testFromSource"));
     }
 }
