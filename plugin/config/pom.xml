@@ -28,6 +28,7 @@
     <artifactId>nacos-config-plugin</artifactId>
     <name>nacos-config-plugin ${project.version}</name>
     <url>http://nacos.io</url>
+    <description>Nacos config plugin pom.xml file</description>
 
     <dependencies>
         <dependency>

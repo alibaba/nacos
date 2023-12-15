@@ -64,11 +64,10 @@ public class MapperManager {
     /**
      * The init method.
      */
-    public void loadInitial() {
+    public synchronized void loadInitial() {
         Collection<Mapper> mappers = NacosServiceLoader.load(Mapper.class);
         for (Mapper mapper : mappers) {
-            Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.computeIfAbsent(mapper.getDataSource(), (r) -> new HashMap<>(16));
-            mapperMap.put(mapper.getTableName(), mapper);
+            putMapper(mapper);
             LOGGER.info("[MapperManager] Load Mapper({}) datasource({}) tableName({}) successfully.",
                     mapper.getClass(), mapper.getDataSource(), mapper.getTableName());
         }
@@ -82,10 +81,14 @@ public class MapperManager {
         if (Objects.isNull(mapper)) {
             return;
         }
-        Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.getOrDefault(mapper.getDataSource(), new HashMap<>(16));
-        mapperMap.put(mapper.getTableName(), mapper);
-        MAPPER_SPI_MAP.put(mapper.getDataSource(), mapperMap);
-        LOGGER.warn("[MapperManager] join successfully.");
+        putMapper(mapper);
+        LOGGER.info("[MapperManager] join successfully.");
+    }
+    
+    private static void putMapper(Mapper mapper) {
+        Map<String, Mapper> mapperMap = MAPPER_SPI_MAP.computeIfAbsent(mapper.getDataSource(), key ->
+                new HashMap<>(16));
+        mapperMap.putIfAbsent(mapper.getTableName(), mapper);
     }
     
     /**
@@ -111,7 +114,7 @@ public class MapperManager {
                     "[MapperManager] Failed to find the table ,tableName:" + tableName);
         }
         if (dataSourceLogEnable) {
-            return (R) MapperProxy.createSingleProxy(mapper);
+            return MapperProxy.createSingleProxy(mapper);
         }
         return (R) mapper;
     }

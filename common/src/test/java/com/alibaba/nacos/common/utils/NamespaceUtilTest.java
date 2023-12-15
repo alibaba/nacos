@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -26,6 +27,11 @@ import org.junit.Test;
  * @date 2020/10/13 9:46
  */
 public class NamespaceUtilTest {
+    
+    @After
+    public void tearDown() {
+        NamespaceUtil.setNamespaceDefaultId("");
+    }
     
     @Test
     public void testProcessTenantParameter() {
@@ -44,4 +50,9 @@ public class NamespaceUtilTest {
         Assert.assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbcHasSpace));
     }
     
+    @Test
+    public void testSetNamespaceDefaultId() {
+        NamespaceUtil.setNamespaceDefaultId("Deprecated");
+        Assert.assertEquals("Deprecated", NamespaceUtil.getNamespaceDefaultId());
+    }
 }

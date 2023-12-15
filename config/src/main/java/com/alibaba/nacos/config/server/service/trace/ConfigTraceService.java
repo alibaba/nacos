@@ -17,11 +17,11 @@
 package com.alibaba.nacos.config.server.service.trace;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.concurrent.TimeUnit;
@@ -272,6 +272,8 @@ public class ConfigTraceService {
      * @param type             type
      * @param delayed          delayed
      * @param clientIp         clientIp
+     * @param isNotify         isNotify
+     * @param model            model
      */
     public static void logPullEvent(String dataId, String group, String tenant, String requestIpAppName, long ts,
             String event, String type, long delayed, String clientIp, boolean isNotify, String model) {
@@ -287,7 +289,7 @@ public class ConfigTraceService {
             delayed = 0;
         }
         
-        //localIp | dataid | group | tenant| requestIpAppName| ts | event | type | [delayed] |clientIp| mode,http/grpc
+        // localIp | dataid | group | tenant| requestIpAppName| ts | event | type | [delayed] |clientIp| isNotify | mode（http/grpc)
         LogUtil.TRACE_LOG.info("{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}|{}", InetUtils.getSelfIP(), dataId, group, tenant,
                 requestIpAppName, ts, event, type, delayed, clientIp, isNotify, model);
     }

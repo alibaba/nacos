@@ -40,6 +40,7 @@ class PageTitle extends React.Component {
       <span style={{ display: 'flex', alignItems: 'center', marginLeft: 16 }}>
         {locale.NameSpace.namespace}
         <Copy
+          className="naming-copy"
           style={{
             marginLeft: 16,
             height: 32,
@@ -59,7 +60,10 @@ class PageTitle extends React.Component {
   render() {
     const { title, namespaceId, namespaceName, desc, nameSpace, locale } = this.props;
     return (
-      <div style={{ display: 'flex', alignItems: 'center', marginTop: 8, marginBottom: 8 }}>
+      <div
+        className="page-title"
+        style={{ display: 'flex', alignItems: 'center', marginTop: 8, marginBottom: 8 }}
+      >
         <span style={{ fontSize: 28, height: 40, fontWeight: 500 }}>{title}</span>
         <span style={{ marginLeft: 4 }}>
           {namespaceId && namespaceId !== 'undefined'

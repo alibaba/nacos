@@ -21,19 +21,42 @@ import org.junit.Test;
 
 /**
  * test RandomUtils.
+ *
  * @author zzq
  */
 public class RandomUtilsTest {
     
     @Test
-    public void nextLong() {
+    public void testNextLong() {
         final long result = RandomUtils.nextLong(1L, 199L);
         Assert.assertTrue(result >= 1L && result < 199L);
     }
     
     @Test
-    public void nextInt() {
+    public void testNextLongWithSame() {
+        final long result = RandomUtils.nextLong(1L, 1L);
+        Assert.assertEquals(1L, result);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testNextLongWithIllegalArgumentException() {
+        RandomUtils.nextLong(999L, 199L);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testNextLongWithIllegalArgumentException2() {
+        RandomUtils.nextLong(-10L, 199L);
+    }
+    
+    @Test
+    public void testNextInt() {
         final int result = RandomUtils.nextInt(1, 199);
         Assert.assertTrue(result >= 1 && result < 199);
+    }
+    
+    @Test
+    public void testNextIntWithSame() {
+        final int result = RandomUtils.nextInt(1, 1);
+        Assert.assertEquals(1, result);
     }
 }

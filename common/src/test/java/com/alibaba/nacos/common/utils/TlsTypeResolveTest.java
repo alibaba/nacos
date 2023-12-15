@@ -36,6 +36,8 @@ public class TlsTypeResolveTest {
 
         SslProvider anySsl = TlsTypeResolve.getSslProvider("anySSL");
         Assert.assertEquals(SslProvider.OPENSSL, anySsl);
-
+        
+        SslProvider refcnt = TlsTypeResolve.getSslProvider("openSSL_refcnt");
+        Assert.assertEquals(SslProvider.OPENSSL_REFCNT, refcnt);
     }
 }

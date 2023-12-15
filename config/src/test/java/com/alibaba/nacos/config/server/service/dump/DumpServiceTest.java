@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +32,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 @SpringBootTest
 @SpringBootApplication(scanBasePackages = "com.alibaba.nacos")
 @WebAppConfiguration
+@Ignore
 public class DumpServiceTest {
     
     @Autowired

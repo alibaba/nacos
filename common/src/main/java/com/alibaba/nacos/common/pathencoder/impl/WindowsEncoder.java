@@ -88,7 +88,7 @@ public class WindowsEncoder implements PathEncoder {
     @Override
     public boolean needEncode(String key) {
         if (key == null) {
-            key = "";
+            return false;
         }
         return !PATTERN.matcher(key).matches();
     }

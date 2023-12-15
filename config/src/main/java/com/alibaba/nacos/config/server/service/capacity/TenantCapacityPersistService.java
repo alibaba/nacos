@@ -146,7 +146,7 @@ public class TenantCapacityPersistService {
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, tenantCapacity.getGmtModified());
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantCapacity.getTenant());
-        context.putWhereParameter(FieldConstant.USAGE, tenantCapacity.getUsage());
+        context.putWhereParameter(FieldConstant.USAGE, tenantCapacity.getQuota());
         MapperResult mapperResult = tenantCapacityMapper.incrementUsageWithDefaultQuotaLimit(context);
         
         try {

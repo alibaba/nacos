@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.persistence.repository.extrnal;
 
-import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
@@ -24,7 +23,6 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -87,17 +85,7 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
             return page;
         }
         
-        // fill the sql Page args
-        String fetchSql = sqlFetchRows;
-        if (!fetchSql.contains(PersistenceConstant.LIMIT)) {
-            fetchSql += " LIMIT ?, ?";
-            Object[] newArgs = Arrays.copyOf(args, args.length + 2);
-            newArgs[args.length] = (pageNo - 1) * pageSize;
-            newArgs[args.length + 1] = pageSize;
-            args = newArgs;
-        }
-        
-        List<E> result = jdbcTemplate.query(fetchSql, args, rowMapper);
+        List<E> result = jdbcTemplate.query(sqlFetchRows, args, rowMapper);
         for (E item : result) {
             page.getPageItems().add(item);
         }
