@@ -109,7 +109,6 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                 throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
             }
             
-            final Timestamp time = TimeUtils.getCurrentTime();
             ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
             configInfo.setMd5(request.getCasMd5());
             configInfo.setType(type);
