@@ -34,7 +34,6 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.ParamUtils;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
@@ -44,7 +43,6 @@ import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import org.springframework.stereotype.Component;
 
-import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -109,7 +107,6 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
                 throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
             }
             
-            final Timestamp time = TimeUtils.getCurrentTime();
             ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
             configInfo.setMd5(request.getCasMd5());
             configInfo.setType(type);

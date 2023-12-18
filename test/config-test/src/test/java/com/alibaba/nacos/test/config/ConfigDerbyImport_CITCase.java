@@ -21,8 +21,8 @@ import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.ByteUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
@@ -82,7 +82,7 @@ public class ConfigDerbyImport_CITCase {
             final String queryGroup = "DEFAULT_GROUP";
             final String expectContent = "people.enable=true";
     
-            PersistService persistService = context.getBean(PersistService.class);
+            ConfigInfoPersistService persistService = context.getBean(ConfigInfoPersistService.class);
             ConfigInfo configInfo = persistService.findConfigInfo(queryDataId, queryGroup, "");
             System.out.println(configInfo);
             Assert.assertNotNull(configInfo);

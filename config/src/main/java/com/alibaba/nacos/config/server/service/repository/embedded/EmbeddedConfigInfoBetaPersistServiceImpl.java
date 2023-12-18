@@ -73,7 +73,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+     * @param databaseOperate databaseOperate.
      */
     public EmbeddedConfigInfoBetaPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;

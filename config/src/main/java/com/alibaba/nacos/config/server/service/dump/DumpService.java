@@ -17,6 +17,10 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -24,7 +28,9 @@ import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
+import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllBetaProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllTagProcessor;
@@ -127,13 +133,9 @@ public abstract class DumpService {
     
     int total = 0;
     
-    private static final String TRUE_STR = "true";
-    
     private static final String BETA_TABLE_NAME = "config_info_beta";
     
     private static final String TAG_TABLE_NAME = "config_info_tag";
-    
-    Boolean isQuickStart = false;
     
     private int retentionDays = 30;
     
@@ -156,10 +158,11 @@ public abstract class DumpService {
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoTagPersistService = configInfoTagPersistService;
         this.memberManager = memberManager;
-        this.processor = new DumpProcessor(this);
-        this.dumpAllProcessor = new DumpAllProcessor(this);
-        this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
-        this.dumpAllTagProcessor = new DumpAllTagProcessor(this);
+        this.processor = new DumpProcessor(this.configInfoPersistService, this.configInfoBetaPersistService,
+                this.configInfoTagPersistService);
+        this.dumpAllProcessor = new DumpAllProcessor(this.configInfoPersistService);
+        this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this.configInfoBetaPersistService);
+        this.dumpAllTagProcessor = new DumpAllTagProcessor(this.configInfoTagPersistService);
         this.dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
         this.dumpTaskMgr.setDefaultTaskProcessor(processor);
         
@@ -171,6 +174,29 @@ public abstract class DumpService {
         this.dumpAllTaskMgr.addProcessor(DumpAllTagTask.TASK_ID, dumpAllTagProcessor);
         
         DynamicDataSource.getInstance().getDataSource();
+        
+        NotifyCenter.registerSubscriber(new Subscriber() {
+            
+            @Override
+            public void onEvent(Event event) {
+                // Generate ConfigDataChangeEvent concurrently
+                if (event instanceof ConfigDataChangeEvent) {
+                    ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
+                    
+                    DumpRequest dumpRequest = DumpRequest.create(evt.dataId, evt.group, evt.tenant, evt.lastModifiedTs,
+                            NetUtils.localIP());
+                    dumpRequest.setBeta(evt.isBeta);
+                    dumpRequest.setBatch(evt.isBatch);
+                    dumpRequest.setTag(evt.tag);
+                    DumpService.this.dump(dumpRequest);
+                }
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return ConfigDataChangeEvent.class;
+            }
+        });
     }
     
     public ConfigInfoPersistService getConfigInfoPersistService() {
@@ -187,10 +213,6 @@ public abstract class DumpService {
     
     public HistoryConfigInfoPersistService getHistoryConfigInfoPersistService() {
         return historyConfigInfoPersistService;
-    }
-    
-    public ServerMemberManager getMemberManager() {
-        return memberManager;
     }
     
     /**
@@ -234,13 +256,13 @@ public abstract class DumpService {
                 
                 // update Beta cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
-                DiskUtil.clearAllBeta();
+                ConfigDiskServiceFactory.getInstance().clearAllBeta();
                 if (namespacePersistService.isExistTable(BETA_TABLE_NAME)) {
                     dumpAllBetaProcessor.process(new DumpAllBetaTask());
                 }
                 // update Tag cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-tag.");
-                DiskUtil.clearAllTag();
+                ConfigDiskServiceFactory.getInstance().clearAllTag();
                 if (namespacePersistService.isExistTable(TAG_TABLE_NAME)) {
                     dumpAllTagProcessor.process(new DumpAllTagTask());
                 }
@@ -302,7 +324,7 @@ public abstract class DumpService {
         
         try {
             LogUtil.DEFAULT_LOG.info("start clear all config-info.");
-            DiskUtil.clearAll();
+            ConfigDiskServiceFactory.getInstance().clearAll();
             dumpAllProcessor.process(new DumpAllTask());
         } catch (Exception e) {
             LogUtil.FATAL_LOG.error("dump config fail" + e.getMessage());
@@ -339,6 +361,27 @@ public abstract class DumpService {
     }
     
     /**
+     * dump operation.
+     *
+     * @param dumpRequest dumpRequest.
+     */
+    public void dump(DumpRequest dumpRequest) {
+        if (dumpRequest.isBeta()) {
+            dumpBeta(dumpRequest.getDataId(), dumpRequest.getGroup(), dumpRequest.getTenant(),
+                    dumpRequest.getLastModifiedTs(), dumpRequest.getSourceIp());
+        } else if (dumpRequest.isBatch()) {
+            dumpBatch(dumpRequest.getDataId(), dumpRequest.getGroup(), dumpRequest.getTenant(),
+                    dumpRequest.getLastModifiedTs(), dumpRequest.getSourceIp());
+        } else if (StringUtils.isNotBlank(dumpRequest.getTag())) {
+            dumpTag(dumpRequest.getDataId(), dumpRequest.getGroup(), dumpRequest.getTenant(), dumpRequest.getTag(),
+                    dumpRequest.getLastModifiedTs(), dumpRequest.getSourceIp());
+        } else {
+            dumpFormal(dumpRequest.getDataId(), dumpRequest.getGroup(), dumpRequest.getTenant(),
+                    dumpRequest.getLastModifiedTs(), dumpRequest.getSourceIp());
+        }
+    }
+    
+    /**
      * dump formal config.
      *
      * @param dataId       dataId.
@@ -347,7 +390,7 @@ public abstract class DumpService {
      * @param lastModified lastModified.
      * @param handleIp     handleIp.
      */
-    public void dumpFormal(String dataId, String group, String tenant, long lastModified, String handleIp) {
+    private void dumpFormal(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = dataId + group + tenant;
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, false, false, null, lastModified, handleIp));
@@ -364,7 +407,7 @@ public abstract class DumpService {
      * @param lastModified lastModified.
      * @param handleIp     handleIp.
      */
-    public void dumpBeta(String dataId, String group, String tenant, long lastModified, String handleIp) {
+    private void dumpBeta(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = dataId + group + tenant + "+beta";
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, true, false, false, null, lastModified, handleIp));
@@ -381,7 +424,7 @@ public abstract class DumpService {
      * @param lastModified lastModified.
      * @param handleIp     handleIp.
      */
-    public void dumpBatch(String dataId, String group, String tenant, long lastModified, String handleIp) {
+    private void dumpBatch(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = groupKey + "+batch";
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, true, false, null, lastModified, handleIp));
@@ -398,7 +441,7 @@ public abstract class DumpService {
      * @param lastModified lastModified.
      * @param handleIp     handleIp.
      */
-    public void dumpTag(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
+    private void dumpTag(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = groupKey + "+tag+" + tag;
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, false, true, tag, lastModified, handleIp));
@@ -456,7 +499,6 @@ public abstract class DumpService {
                         }
                     }
                     
-                    final Timestamp time = TimeUtils.getCurrentTime();
                     // merge
                     if (datumList.size() > 0) {
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);

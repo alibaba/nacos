@@ -16,17 +16,21 @@
 
 package com.alibaba.nacos.config.server.service;
 
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.SampleResult;
-import com.alibaba.nacos.config.server.service.notify.NotifyService;
+import com.alibaba.nacos.config.server.service.notify.HttpClientManager;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.common.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -89,8 +93,8 @@ public class ConfigSubService {
             try {
                 completionService.submit(new Job(ip.getAddress(), url, params));
             } catch (Exception e) { // Send request failed.
-                LogUtil.DEFAULT_LOG
-                        .warn("Get client info from {} with exception: {} during submit job", ip, e.getMessage());
+                LogUtil.DEFAULT_LOG.warn("Get client info from {} with exception: {} during submit job", ip,
+                        e.getMessage());
             }
         }
         // Get and merge result.
@@ -175,7 +179,7 @@ public class ConfigSubService {
                 }
                 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
-                RestResult<String> result = NotifyService.invokeURL(urlAll, null, Constants.ENCODE);
+                RestResult<String> result = invokeUrl(urlAll, null, Constants.ENCODE);
                 
                 // Http code 200
                 if (result.ok()) {
@@ -190,6 +194,24 @@ public class ConfigSubService {
                 return null;
             }
         }
+    }
+    
+    /**
+     * invoke url.
+     *
+     * @param url url.
+     * @param headers headers.
+     * @param encoding encoding.
+     * @return result.
+     * @throws Exception Exception.
+     */
+    private static RestResult<String> invokeUrl(String url, List<String> headers, String encoding) throws Exception {
+        Header header = Header.newInstance();
+        header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
+        if (CollectionUtils.isNotEmpty(headers)) {
+            header.addAll(headers);
+        }
+        return HttpClientManager.getNacosRestTemplate().get(url, header, Query.EMPTY, String.class);
     }
     
     public SampleResult getCollectSampleResult(String dataId, String group, String tenant, int sampleTime)

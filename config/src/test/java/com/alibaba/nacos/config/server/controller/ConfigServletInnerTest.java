@@ -28,7 +28,6 @@ import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskServic
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -91,8 +90,6 @@ public class ConfigServletInnerTest {
     
     MockedStatic<ConfigCacheService> configCacheServiceMockedStatic;
     
-    MockedStatic<DiskUtil> diskUtilMockedStatic;
-    
     MockedStatic<PropertyUtil> propertyUtilMockedStatic;
     
     MockedStatic<MD5Util> md5UtilMockedStatic;
@@ -102,7 +99,6 @@ public class ConfigServletInnerTest {
         EnvUtil.setEnvironment(new StandardEnvironment());
         ReflectionTestUtils.setField(configServletInner, "longPollingService", longPollingService);
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
-        diskUtilMockedStatic = Mockito.mockStatic(DiskUtil.class);
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);
         md5UtilMockedStatic = Mockito.mockStatic(MD5Util.class);
@@ -113,9 +109,7 @@ public class ConfigServletInnerTest {
     
     @After
     public void after() {
-        if (diskUtilMockedStatic != null) {
-            diskUtilMockedStatic.close();
-        }
+       
         if (configCacheServiceMockedStatic != null) {
             configCacheServiceMockedStatic.close();
         }
@@ -192,8 +186,6 @@ public class ConfigServletInnerTest {
         // if direct read is false
         propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
         File file = tempFolder.newFile("test.txt");
-        diskUtilMockedStatic.when(() -> DiskUtil.targetBetaFile(anyString(), anyString(), anyString()))
-                .thenReturn(file);
         when(configRocksDbDiskService.getBetaContent("test", "test", "test")).thenReturn(
                 "isBeta:true, direct read: false");
         response = new MockHttpServletResponse();
