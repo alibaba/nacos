@@ -136,7 +136,7 @@ public class NamingGrpcClientProxyTest {
     @Before
     public void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
         System.setProperty(GrpcConstants.GRPC_RETRY_TIMES, "1");
-        System.setProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT, "1000");
+        System.setProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT, "100");
         List<String> serverList = Stream.of(ORIGIN_SERVER, "anotherServer").collect(Collectors.toList());
         when(factory.getServerList()).thenReturn(serverList);
         when(factory.genNextServer()).thenReturn(ORIGIN_SERVER);

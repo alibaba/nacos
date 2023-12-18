@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,27 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.env;
+package com.alibaba.nacos.client.auth.ram.injector;
 
-/**
- * properties source type enum.
- * @author onewe
- */
-public enum SourceType {
+import org.junit.Before;
+import org.junit.Test;
+
+public class AbstractResourceInjectorTest {
+    
+    AbstractResourceInjector injector;
+    
+    @Before
+    public void setUp() {
+        injector = new AbstractResourceInjector() { };
+    }
+    
     /**
-     * get value from properties.
+     * TODO, fill test case after AbstractResourceInjector include default logic.
      */
-    PROPERTIES,
-    /**
-     * get value from jvm args.
-     */
-    JVM,
-    /**
-     * get value from system environment.
-     */
-    ENV,
-    /**
-     * get value from unknown environment, will be search in all properties by orders.
-     */
-    UNKNOWN
+    @Test
+    public void testDoInject() {
+        injector.doInject(null, null, null);
+    }
 }
