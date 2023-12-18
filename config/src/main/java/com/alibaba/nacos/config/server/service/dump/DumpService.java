@@ -173,24 +173,24 @@ public abstract class DumpService {
         this.dumpAllTaskMgr.addProcessor(DumpAllTagTask.TASK_ID, dumpAllTagProcessor);
         
         DynamicDataSource.getInstance().getDataSource();
-    
-        NotifyCenter.registerSubscriber(new Subscriber() {
         
+        NotifyCenter.registerSubscriber(new Subscriber() {
+            
             @Override
             public void onEvent(Event event) {
                 // Generate ConfigDataChangeEvent concurrently
                 if (event instanceof ConfigDataChangeEvent) {
                     ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
                     
-                    DumpRequest dumpRequest = DumpRequest.create(evt.dataId, evt.group,
-                            evt.tenant, evt.lastModifiedTs, NetUtils.localIP());
+                    DumpRequest dumpRequest = DumpRequest.create(evt.dataId, evt.group, evt.tenant, evt.lastModifiedTs,
+                            NetUtils.localIP());
                     dumpRequest.setBeta(evt.isBeta);
                     dumpRequest.setBatch(evt.isBatch);
                     dumpRequest.setTag(evt.tag);
                     DumpService.this.dump(dumpRequest);
                 }
             }
-        
+            
             @Override
             public Class<? extends Event> subscribeType() {
                 return ConfigDataChangeEvent.class;
@@ -359,6 +359,11 @@ public abstract class DumpService {
         return retentionDays;
     }
     
+    /**
+     * dump operation.
+     *
+     * @param dumpRequest dumpRequest.
+     */
     public void dump(DumpRequest dumpRequest) {
         if (dumpRequest.isBeta()) {
             dumpBeta(dumpRequest.getDataId(), dumpRequest.getGroup(), dumpRequest.getTenant(),

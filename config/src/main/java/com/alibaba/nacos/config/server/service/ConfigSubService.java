@@ -93,8 +93,8 @@ public class ConfigSubService {
             try {
                 completionService.submit(new Job(ip.getAddress(), url, params));
             } catch (Exception e) { // Send request failed.
-                LogUtil.DEFAULT_LOG
-                        .warn("Get client info from {} with exception: {} during submit job", ip, e.getMessage());
+                LogUtil.DEFAULT_LOG.warn("Get client info from {} with exception: {} during submit job", ip,
+                        e.getMessage());
             }
         }
         // Get and merge result.
@@ -179,7 +179,7 @@ public class ConfigSubService {
                 }
                 
                 String urlAll = getUrl(ip, url) + "?" + paramUrl;
-                RestResult<String> result = invokeURL(urlAll, null, Constants.ENCODE);
+                RestResult<String> result = invokeUrl(urlAll, null, Constants.ENCODE);
                 
                 // Http code 200
                 if (result.ok()) {
@@ -196,7 +196,16 @@ public class ConfigSubService {
         }
     }
     
-    public static RestResult<String> invokeURL(String url, List<String> headers, String encoding) throws Exception {
+    /**
+     * invoke url.
+     *
+     * @param url url.
+     * @param headers headers.
+     * @param encoding encoding.
+     * @return result.
+     * @throws Exception Exception.
+     */
+    private static RestResult<String> invokeUrl(String url, List<String> headers, String encoding) throws Exception {
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, encoding);
         if (CollectionUtils.isNotEmpty(headers)) {
@@ -204,6 +213,7 @@ public class ConfigSubService {
         }
         return HttpClientManager.getNacosRestTemplate().get(url, header, Query.EMPTY, String.class);
     }
+    
     public SampleResult getCollectSampleResult(String dataId, String group, String tenant, int sampleTime)
             throws Exception {
         List<SampleResult> resultList = new ArrayList<>();

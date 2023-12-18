@@ -25,7 +25,6 @@ import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.SwitchService;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;

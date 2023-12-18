@@ -72,16 +72,15 @@ public class ConfigPublishRequestHandlerTest {
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
-    
     @Before
     public void setUp() {
         aggrWhitelistMockedStatic = Mockito.mockStatic(AggrWhitelist.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-    
+        
         configPublishRequestHandler = new ConfigPublishRequestHandler(configInfoPersistService,
                 configInfoTagPersistService, configInfoBetaPersistService);
         DatasourceConfiguration.setEmbeddedStorage(false);
-    
+        
     }
     
     @After
@@ -93,11 +92,10 @@ public class ConfigPublishRequestHandlerTest {
     /**
      * publish a not-exist config. expect : 1.response return true 2. publish ConfigDataChangeEvent
      *
-     * @throws NacosException
-     * @throws InterruptedException
+     * @throws Exception exception.
      */
     @Test
-    public void testNormalPublishConfigNotCas() throws NacosException, InterruptedException {
+    public void testNormalPublishConfigNotCas() throws Exception {
         String dataId = "testNormalPublishConfigNotCas";
         String group = "group";
         String tenant = "tenant";
@@ -156,13 +154,12 @@ public class ConfigPublishRequestHandlerTest {
     }
     
     /**
-     * publish a exist config
+     * publish a exist config.
      *
-     * @throws NacosException
-     * @throws InterruptedException
+     * @throws Exception exception.
      */
     @Test
-    public void testNormalPublishConfigCas() throws NacosException, InterruptedException {
+    public void testNormalPublishConfigCas() throws Exception {
         String dataId = "testNormalPublishConfigCas";
         String group = "group";
         String tenant = "tenant";
@@ -182,7 +179,7 @@ public class ConfigPublishRequestHandlerTest {
         RequestMeta requestMeta = new RequestMeta();
         String clientIp = "127.0.0.1";
         requestMeta.setClientIp(clientIp);
-  
+        
         AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
         NotifyCenter.registerSubscriber(new Subscriber() {
             
@@ -221,13 +218,12 @@ public class ConfigPublishRequestHandlerTest {
     }
     
     /**
-     * publish a exist config
+     * publish a exist config.
      *
-     * @throws NacosException
-     * @throws InterruptedException
+     * @throws Exception exception.
      */
     @Test
-    public void testNormalPublishConfigCasError() throws NacosException, InterruptedException {
+    public void testNormalPublishConfigCasError() throws Exception {
         String dataId = "testNormalPublishConfigCasError";
         String group = "group";
         String tenant = "tenant";
@@ -288,14 +284,15 @@ public class ConfigPublishRequestHandlerTest {
     
     @Test
     public void testPublishAggrCheckFail() throws NacosException, InterruptedException {
-        String dataId = "testPublishAggrCheckFail";
-        String group = "group";
-        String tenant = "tenant";
-        String content = "content";
+        
         RequestMeta requestMeta = new RequestMeta();
         String clientIp = "127.0.0.1";
         requestMeta.setClientIp(clientIp);
         
+        String dataId = "testPublishAggrCheckFail";
+        String group = "group";
+        String tenant = "tenant";
+        String content = "content";
         ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
         configPublishRequest.setDataId(dataId);
         configPublishRequest.setGroup(group);
@@ -320,7 +317,7 @@ public class ConfigPublishRequestHandlerTest {
             }
         });
         ConfigPublishResponse response = configPublishRequestHandler.handle(configPublishRequest, requestMeta);
-    
+        
         Assert.assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         Assert.assertTrue(response.getMessage().contains("is aggr"));
         Thread.sleep(500L);
@@ -452,21 +449,24 @@ public class ConfigPublishRequestHandlerTest {
     
     @Test
     public void testTagPublishNotCas() throws NacosException, InterruptedException {
-        String dataId = "testTagPublishNotCas";
-        String group = "group";
-        String tenant = "tenant";
-        String content = "content";
-        
         ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
+        String dataId = "testTagPublishNotCas";
+        
         configPublishRequest.setDataId(dataId);
+        String group = "group";
+        
         configPublishRequest.setGroup(group);
+        String tenant = "tenant";
+        
+        configPublishRequest.setTenant(tenant);
+        
         Map<String, String> keyMap = new HashMap<>();
         String srcUser = "src_user111";
         keyMap.put("src_user", srcUser);
         String tag = "testTag";
         keyMap.put("tag", tag);
         configPublishRequest.setAdditionMap(keyMap);
-        configPublishRequest.setTenant(tenant);
+        String content = "content";
         configPublishRequest.setContent(content);
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
@@ -516,9 +516,6 @@ public class ConfigPublishRequestHandlerTest {
     public void testTagPublishCas() throws NacosException, InterruptedException {
         String dataId = "testTagPublishCas";
         String group = "group";
-        String tenant = "tenant";
-        String content = "content";
-        
         ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
         configPublishRequest.setDataId(dataId);
         configPublishRequest.setGroup(group);
@@ -527,9 +524,11 @@ public class ConfigPublishRequestHandlerTest {
         String srcUser = "src_user111";
         keyMap.put("src_user", srcUser);
         String tag = "testTag";
-        keyMap.put("tag", "testTag");
+        keyMap.put("tag", tag);
         configPublishRequest.setAdditionMap(keyMap);
+        String tenant = "tenant";
         configPublishRequest.setTenant(tenant);
+        String content = "content";
         configPublishRequest.setContent(content);
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");

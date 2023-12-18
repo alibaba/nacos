@@ -35,7 +35,6 @@ import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -476,7 +475,6 @@ public class ConfigCacheService {
             DUMP_LOG.error("reload fail:" + SwitchService.SWITCH_META_DATA_ID, e);
         }
     }
-    
     
     /**
      * Delete config file, and delete cache.

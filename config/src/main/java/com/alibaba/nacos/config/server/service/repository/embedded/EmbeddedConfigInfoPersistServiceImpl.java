@@ -139,7 +139,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate
+     * @param databaseOperate databaseOperate.
      * @param idGeneratorManager {@link IdGeneratorManager}
      */
     public EmbeddedConfigInfoPersistServiceImpl(DatabaseOperate databaseOperate, IdGeneratorManager idGeneratorManager,

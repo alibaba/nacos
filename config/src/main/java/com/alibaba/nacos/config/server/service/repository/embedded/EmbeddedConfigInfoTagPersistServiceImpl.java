@@ -73,7 +73,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate
+     * @param databaseOperate databaseOperate.
      */
     public EmbeddedConfigInfoTagPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
