@@ -39,7 +39,7 @@ public class MapperProxy implements InvocationHandler {
     
     private Mapper mapper;
     
-    private static final Map<String, MapperProxy> SINGLE_MAPPER_PROXY_MAP = new ConcurrentHashMap<>(16);
+    private static final Map<String, Mapper> SINGLE_MAPPER_PROXY_MAP = new ConcurrentHashMap<>(16);
     
     public <R> R createProxy(Mapper mapper) {
         this.mapper = mapper;

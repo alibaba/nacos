@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.remote.request.ClientDetectionRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.plugin.control.Loggers;
 
 import java.util.HashSet;
@@ -64,7 +63,6 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
             
             Map<String, Connection> connections = connectionManager.connections;
             int totalCount = connections.size();
-            MetricsMonitor.getLongConnectionMonitor().set(totalCount);
             int currentSdkClientCount = connectionManager.currentSdkClientCount();
             
             Loggers.CONNECTION.info("Long connection metrics detail ,Total count ={}, sdkCount={},clusterCount={}",

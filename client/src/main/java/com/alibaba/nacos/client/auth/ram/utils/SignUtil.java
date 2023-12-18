@@ -50,7 +50,7 @@ public class SignUtil {
         }
     }
     
-    private static byte[] sign(byte[] data, byte[] key, SignUtil.SigningAlgorithm algorithm) throws Exception {
+    static byte[] sign(byte[] data, byte[] key, SignUtil.SigningAlgorithm algorithm) throws Exception {
         try {
             Mac mac = Mac.getInstance(algorithm.toString());
             mac.init(new SecretKeySpec(key, algorithm.toString()));

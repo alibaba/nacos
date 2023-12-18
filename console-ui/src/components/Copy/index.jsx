@@ -16,10 +16,10 @@
 
 import React from 'react';
 import { withRouter } from 'react-router-dom';
-import { Icon, Message } from '@alifd/next';
+import { Message } from '@alifd/next';
 import PropTypes from 'prop-types';
 import { connect } from 'react-redux';
-
+import { FaCopy } from 'react-icons/fa';
 
 @connect(state => ({ ...state.locale }))
 @withRouter
@@ -47,10 +47,9 @@ copyText(locale, value) {
       <div className={className} onClick={() => (showIcon ? '' : this.copyText(locale, value))} style={style}>
         {textNode || value}
         {showIcon && (
-          <Icon
+          <FaCopy
             title={title || '复制'}
             className="copy-icon"
-            size="small"
             type="copy"
             onClick={() => this.copyText(locale, value)}
           />
