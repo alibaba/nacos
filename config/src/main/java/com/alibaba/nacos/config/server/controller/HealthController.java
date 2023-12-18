@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -35,6 +37,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping(Constants.HEALTH_CONTROLLER_PATH)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class HealthController {
     
     private DataSourceService dataSourceService;

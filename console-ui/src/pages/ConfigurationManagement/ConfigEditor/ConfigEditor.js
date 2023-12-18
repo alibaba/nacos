@@ -122,7 +122,7 @@ class ConfigEditor extends React.Component {
           roundedSelection: false,
           readOnly: false,
           lineNumbersMinChars: true,
-          theme: 'vs-dark',
+          theme: 'vs-dark-enhanced',
           wordWrapColumn: 120,
           folding: false,
           showFoldingControls: 'always',
@@ -140,7 +140,7 @@ class ConfigEditor extends React.Component {
         roundedSelection: false,
         readOnly: false,
         lineNumbersMinChars: true,
-        theme: 'vs-dark',
+        theme: 'vs-dark-enhanced',
         wordWrapColumn: 120,
         folding: false,
         showFoldingControls: 'always',
@@ -580,6 +580,7 @@ class ConfigEditor extends React.Component {
       { value: 'yaml', label: 'YAML' },
       { value: 'html', label: 'HTML' },
       { value: 'properties', label: 'Properties' },
+      { value: 'toml', label: 'TOML' },
     ];
     const activeKey = this.state.activeKey.split('-')[0];
 

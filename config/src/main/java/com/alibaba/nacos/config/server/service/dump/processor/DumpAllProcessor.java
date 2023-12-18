@@ -17,19 +17,18 @@
 package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.common.task.NacosTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.SwitchService;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.persistence.model.Page;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 
@@ -41,9 +40,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  */
 public class DumpAllProcessor implements NacosTaskProcessor {
     
-    public DumpAllProcessor(DumpService dumpService) {
-        this.dumpService = dumpService;
-        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
+    public DumpAllProcessor(ConfigInfoPersistService configInfoPersistService) {
+        this.configInfoPersistService = configInfoPersistService;
     }
     
     @Override
@@ -52,42 +50,39 @@ public class DumpAllProcessor implements NacosTaskProcessor {
         long lastMaxId = 0;
         while (lastMaxId < currentMaxId) {
             Page<ConfigInfoWrapper> page = configInfoPersistService.findAllConfigInfoFragment(lastMaxId, PAGE_SIZE);
-            if (page != null && page.getPageItems() != null && !page.getPageItems().isEmpty()) {
-                for (ConfigInfoWrapper cf : page.getPageItems()) {
-                    long id = cf.getId();
-                    lastMaxId = Math.max(id, lastMaxId);
-                    if (cf.getDataId().equals(AggrWhitelist.AGGRIDS_METADATA)) {
-                        AggrWhitelist.load(cf.getContent());
-                    }
-                    
-                    if (cf.getDataId().equals(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA)) {
-                        ClientIpWhiteList.load(cf.getContent());
-                    }
-                    
-                    if (cf.getDataId().equals(SwitchService.SWITCH_META_DATAID)) {
-                        SwitchService.load(cf.getContent());
-                    }
-    
-                    ConfigCacheService.dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
-                            cf.getLastModified(), cf.getType(), cf.getEncryptedDataKey());
-                    
-                    final String content = cf.getContent();
-                    final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-                    LogUtil.DUMP_LOG.info("[dump-all-ok] {}, {}, length={}, md5={}",
-                            GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(),
-                            md5);
-                }
-                DEFAULT_LOG.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
-            } else {
-                lastMaxId += PAGE_SIZE;
+            if (page == null || page.getPageItems() == null || page.getPageItems().isEmpty()) {
+                break;
             }
+            for (ConfigInfoWrapper cf : page.getPageItems()) {
+                long id = cf.getId();
+                lastMaxId = Math.max(id, lastMaxId);
+                if (cf.getDataId().equals(AggrWhitelist.AGGRIDS_METADATA)) {
+                    AggrWhitelist.load(cf.getContent());
+                }
+                
+                if (cf.getDataId().equals(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA)) {
+                    ClientIpWhiteList.load(cf.getContent());
+                }
+                
+                if (cf.getDataId().equals(SwitchService.SWITCH_META_DATA_ID)) {
+                    SwitchService.load(cf.getContent());
+                }
+
+                ConfigCacheService.dump(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
+                        cf.getLastModified(), cf.getType(), cf.getEncryptedDataKey());
+                
+                final String content = cf.getContent();
+                final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
+                LogUtil.DUMP_LOG.info("[dump-all-ok] {}, {}, length={}, md5={}",
+                        GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(), content.length(),
+                        md5);
+            }
+            DEFAULT_LOG.info("[all-dump] {} / {}", lastMaxId, currentMaxId);
         }
         return true;
     }
     
     static final int PAGE_SIZE = 1000;
-    
-    final DumpService dumpService;
     
     final ConfigInfoPersistService configInfoPersistService;
 }

@@ -129,6 +129,8 @@ public class StsCredentialHolderTest {
         stsCredential.setAccessKeySecret("test-sts-sk");
         stsCredential.setSecurityToken("test-sts-token");
         stsCredential.setExpiration(new Date(System.currentTimeMillis() + 1000000));
+        stsCredential.setCode("200");
+        stsCredential.setLastUpdated(new Date());
         return stsCredential;
     }
 }

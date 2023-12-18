@@ -17,7 +17,10 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.utils.IoUtils;
+import com.alibaba.nacos.api.utils.NetUtils;
+import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
@@ -25,20 +28,16 @@ import com.alibaba.nacos.config.server.manager.TaskManager;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
-import com.alibaba.nacos.persistence.model.Page;
+import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllBetaProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllTagProcessor;
-import com.alibaba.nacos.config.server.service.dump.processor.DumpChangeProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpProcessor;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllBetaTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
-import com.alibaba.nacos.config.server.service.dump.task.DumpChangeTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
@@ -52,16 +51,18 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
+import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.sys.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -113,6 +114,11 @@ public abstract class DumpService {
     static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
     
     /**
+     * full dump interval.
+     */
+    static final int DUMP_CHANGE_INTERVAL_IN_SECONDS = 15;
+    
+    /**
      * full dump delay.
      */
     static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
@@ -127,13 +133,9 @@ public abstract class DumpService {
     
     int total = 0;
     
-    private static final String TRUE_STR = "true";
-    
     private static final String BETA_TABLE_NAME = "config_info_beta";
     
     private static final String TAG_TABLE_NAME = "config_info_tag";
-    
-    Boolean isQuickStart = false;
     
     private int retentionDays = 30;
     
@@ -156,10 +158,11 @@ public abstract class DumpService {
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoTagPersistService = configInfoTagPersistService;
         this.memberManager = memberManager;
-        this.processor = new DumpProcessor(this);
-        this.dumpAllProcessor = new DumpAllProcessor(this);
-        this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this);
-        this.dumpAllTagProcessor = new DumpAllTagProcessor(this);
+        this.processor = new DumpProcessor(this.configInfoPersistService, this.configInfoBetaPersistService,
+                this.configInfoTagPersistService);
+        this.dumpAllProcessor = new DumpAllProcessor(this.configInfoPersistService);
+        this.dumpAllBetaProcessor = new DumpAllBetaProcessor(this.configInfoBetaPersistService);
+        this.dumpAllTagProcessor = new DumpAllTagProcessor(this.configInfoTagPersistService);
         this.dumpTaskMgr = new TaskManager("com.alibaba.nacos.server.DumpTaskManager");
         this.dumpTaskMgr.setDefaultTaskProcessor(processor);
         
@@ -171,6 +174,29 @@ public abstract class DumpService {
         this.dumpAllTaskMgr.addProcessor(DumpAllTagTask.TASK_ID, dumpAllTagProcessor);
         
         DynamicDataSource.getInstance().getDataSource();
+        
+        NotifyCenter.registerSubscriber(new Subscriber() {
+            
+            @Override
+            public void onEvent(Event event) {
+                // Generate ConfigDataChangeEvent concurrently
+                if (event instanceof ConfigDataChangeEvent) {
+                    ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
+                    
+                    DumpRequest dumpRequest = DumpRequest.create(evt.dataId, evt.group, evt.tenant, evt.lastModifiedTs,
+                            NetUtils.localIP());
+                    dumpRequest.setBeta(evt.isBeta);
+                    dumpRequest.setBatch(evt.isBatch);
+                    dumpRequest.setTag(evt.tag);
+                    DumpService.this.dump(dumpRequest);
+                }
+            }
+            
+            @Override
+            public Class<? extends Event> subscribeType() {
+                return ConfigDataChangeEvent.class;
+            }
+        });
     }
     
     public ConfigInfoPersistService getConfigInfoPersistService() {
@@ -187,10 +213,6 @@ public abstract class DumpService {
     
     public HistoryConfigInfoPersistService getHistoryConfigInfoPersistService() {
         return historyConfigInfoPersistService;
-    }
-    
-    public ServerMemberManager getMemberManager() {
-        return memberManager;
     }
     
     /**
@@ -227,18 +249,20 @@ public abstract class DumpService {
                 }
             };
             
+            Timestamp currentTime = new Timestamp(System.currentTimeMillis());
+            
             try {
                 dumpConfigInfo(dumpAllProcessor);
                 
                 // update Beta cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
-                DiskUtil.clearAllBeta();
+                ConfigDiskServiceFactory.getInstance().clearAllBeta();
                 if (namespacePersistService.isExistTable(BETA_TABLE_NAME)) {
                     dumpAllBetaProcessor.process(new DumpAllBetaTask());
                 }
                 // update Tag cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-tag.");
-                DiskUtil.clearAllTag();
+                ConfigDiskServiceFactory.getInstance().clearAllTag();
                 if (namespacePersistService.isExistTable(TAG_TABLE_NAME)) {
                     dumpAllTagProcessor.process(new DumpAllTagTask());
                 }
@@ -273,8 +297,8 @@ public abstract class DumpService {
                 };
                 
                 ConfigExecutor.scheduleConfigTask(heartbeat, 0, 10, TimeUnit.SECONDS);
-                
-                long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
+                Random random = new Random();
+                long initialDelay = random.nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
                 LogUtil.DEFAULT_LOG.warn("initialDelay:{}", initialDelay);
                 
                 ConfigExecutor.scheduleConfigTask(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
@@ -284,6 +308,9 @@ public abstract class DumpService {
                 
                 ConfigExecutor.scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
                         TimeUnit.MINUTES);
+                ConfigExecutor.scheduleConfigChangeTask(new DumpChangeConfigWorker(this, currentTime),
+                        random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()), TimeUnit.MILLISECONDS);
+                
             }
             
             ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
@@ -294,60 +321,14 @@ public abstract class DumpService {
     }
     
     private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor) throws IOException {
-        int timeStep = 6;
-        boolean isAllDump = true;
-        // initial dump all
-        FileInputStream fis = null;
-        Timestamp heartheatLastStamp = null;
+        
         try {
-            if (isQuickStart()) {
-                File heartbeatFile = DiskUtil.heartBeatFile();
-                if (heartbeatFile.exists()) {
-                    fis = new FileInputStream(heartbeatFile);
-                    String heartheatTempLast = IoUtils.toString(fis, Constants.ENCODE);
-                    heartheatLastStamp = Timestamp.valueOf(heartheatTempLast);
-                    if (TimeUtils.getCurrentTime().getTime() - heartheatLastStamp.getTime()
-                            < timeStep * 60 * 60 * 1000) {
-                        isAllDump = false;
-                    }
-                }
-            }
-            if (isAllDump) {
-                LogUtil.DEFAULT_LOG.info("start clear all config-info.");
-                DiskUtil.clearAll();
-                dumpAllProcessor.process(new DumpAllTask());
-            } else {
-                Timestamp beforeTimeStamp = getBeforeStamp(heartheatLastStamp, timeStep);
-                DumpChangeProcessor dumpChangeProcessor = new DumpChangeProcessor(this, beforeTimeStamp,
-                        TimeUtils.getCurrentTime());
-                dumpChangeProcessor.process(new DumpChangeTask());
-                Runnable checkMd5Task = () -> {
-                    LogUtil.DEFAULT_LOG.error("start checkMd5Task");
-                    List<String> diffList = ConfigCacheService.checkMd5();
-                    for (String groupKey : diffList) {
-                        String[] dg = GroupKey.parseKey(groupKey);
-                        String dataId = dg[0];
-                        String group = dg[1];
-                        String tenant = dg[2];
-                        ConfigInfoWrapper configInfo = configInfoPersistService.queryConfigInfo(dataId, group, tenant);
-                        ConfigCacheService.dumpChange(dataId, group, tenant, configInfo.getContent(),
-                                configInfo.getLastModified(), configInfo.getEncryptedDataKey());
-                    }
-                    LogUtil.DEFAULT_LOG.error("end checkMd5Task");
-                };
-                ConfigExecutor.scheduleConfigTask(checkMd5Task, 0, 12, TimeUnit.HOURS);
-            }
-        } catch (IOException e) {
+            LogUtil.DEFAULT_LOG.info("start clear all config-info.");
+            ConfigDiskServiceFactory.getInstance().clearAll();
+            dumpAllProcessor.process(new DumpAllTask());
+        } catch (Exception e) {
             LogUtil.FATAL_LOG.error("dump config fail" + e.getMessage());
             throw e;
-        } finally {
-            if (null != fis) {
-                try {
-                    fis.close();
-                } catch (IOException e) {
-                    LogUtil.DEFAULT_LOG.warn("close file failed");
-                }
-            }
         }
     }
     
@@ -358,20 +339,6 @@ public abstract class DumpService {
         cal.add(Calendar.HOUR_OF_DAY, -step);
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return Timestamp.valueOf(format.format(cal.getTime()));
-    }
-    
-    private Boolean isQuickStart() {
-        try {
-            String val;
-            val = EnvUtil.getProperty("isQuickStart");
-            if (TRUE_STR.equals(val)) {
-                isQuickStart = true;
-            }
-            FATAL_LOG.warn("isQuickStart:{}", isQuickStart);
-        } catch (Exception e) {
-            FATAL_LOG.error("read application.properties wrong", e);
-        }
-        return isQuickStart;
     }
     
     private int getRetentionDays() {
@@ -394,6 +361,27 @@ public abstract class DumpService {
     }
     
     /**
+     * dump operation.
+     *
+     * @param dumpRequest dumpRequest.
+     */
+    public void dump(DumpRequest dumpRequest) {
+        if (dumpRequest.isBeta()) {
+            dumpBeta(dumpRequest.getDataId(), dumpRequest.getGroup(), dumpRequest.getTenant(),
+                    dumpRequest.getLastModifiedTs(), dumpRequest.getSourceIp());
+        } else if (dumpRequest.isBatch()) {
+            dumpBatch(dumpRequest.getDataId(), dumpRequest.getGroup(), dumpRequest.getTenant(),
+                    dumpRequest.getLastModifiedTs(), dumpRequest.getSourceIp());
+        } else if (StringUtils.isNotBlank(dumpRequest.getTag())) {
+            dumpTag(dumpRequest.getDataId(), dumpRequest.getGroup(), dumpRequest.getTenant(), dumpRequest.getTag(),
+                    dumpRequest.getLastModifiedTs(), dumpRequest.getSourceIp());
+        } else {
+            dumpFormal(dumpRequest.getDataId(), dumpRequest.getGroup(), dumpRequest.getTenant(),
+                    dumpRequest.getLastModifiedTs(), dumpRequest.getSourceIp());
+        }
+    }
+    
+    /**
      * dump formal config.
      *
      * @param dataId       dataId.
@@ -402,7 +390,7 @@ public abstract class DumpService {
      * @param lastModified lastModified.
      * @param handleIp     handleIp.
      */
-    public void dumpFormal(String dataId, String group, String tenant, long lastModified, String handleIp) {
+    private void dumpFormal(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = dataId + group + tenant;
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, false, false, null, lastModified, handleIp));
@@ -419,7 +407,7 @@ public abstract class DumpService {
      * @param lastModified lastModified.
      * @param handleIp     handleIp.
      */
-    public void dumpBeta(String dataId, String group, String tenant, long lastModified, String handleIp) {
+    private void dumpBeta(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = dataId + group + tenant + "+beta";
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, true, false, false, null, lastModified, handleIp));
@@ -436,7 +424,7 @@ public abstract class DumpService {
      * @param lastModified lastModified.
      * @param handleIp     handleIp.
      */
-    public void dumpBatch(String dataId, String group, String tenant, long lastModified, String handleIp) {
+    private void dumpBatch(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = groupKey + "+batch";
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, true, false, null, lastModified, handleIp));
@@ -453,7 +441,7 @@ public abstract class DumpService {
      * @param lastModified lastModified.
      * @param handleIp     handleIp.
      */
-    public void dumpTag(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
+    private void dumpTag(String dataId, String group, String tenant, String tag, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String taskKey = groupKey + "+tag+" + tag;
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, false, true, tag, lastModified, handleIp));
@@ -511,7 +499,6 @@ public abstract class DumpService {
                         }
                     }
                     
-                    final Timestamp time = TimeUtils.getCurrentTime();
                     // merge
                     if (datumList.size() > 0) {
                         ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);

@@ -21,7 +21,6 @@ import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -36,9 +35,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  */
 public class DumpAllTagProcessor implements NacosTaskProcessor {
     
-    public DumpAllTagProcessor(DumpService dumpService) {
-        this.dumpService = dumpService;
-        this.configInfoTagPersistService = dumpService.getConfigInfoTagPersistService();
+    public DumpAllTagProcessor(ConfigInfoTagPersistService configInfoTagPersistService) {
+        this.configInfoTagPersistService = configInfoTagPersistService;
     }
     
     @Override
@@ -67,8 +65,6 @@ public class DumpAllTagProcessor implements NacosTaskProcessor {
     }
     
     static final int PAGE_SIZE = 1000;
-    
-    final DumpService dumpService;
     
     final ConfigInfoTagPersistService configInfoTagPersistService;
 }

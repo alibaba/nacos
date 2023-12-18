@@ -73,7 +73,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+     * @param  databaseOperate databaseOperate.
      */
     public EmbeddedConfigInfoAggrPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
@@ -342,7 +342,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
         final int startRow = (pageNo - 1) * pageSize;
-        final String sqlCountRows = configInfoAggrMapper.select(Arrays.asList("count(*)"),
+        final String sqlCountRows = configInfoAggrMapper.select(Collections.singletonList("count(*)"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
         
         MapperContext context = new MapperContext();

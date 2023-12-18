@@ -74,17 +74,25 @@ public class ConfigRowMapperInjector {
     public static final ConfigHistoryRowMapper HISTORY_LIST_ROW_MAPPER = new ConfigHistoryRowMapper();
     
     public static final ConfigHistoryDetailRowMapper HISTORY_DETAIL_ROW_MAPPER = new ConfigHistoryDetailRowMapper();
-    
-    public ConfigRowMapperInjector() {
+
+    static {
         injectConfigRowMapper();
     }
     
-    private void injectConfigRowMapper() {
+    public ConfigRowMapperInjector() {
+    }
+
+    private static void injectConfigRowMapper() {
         // CONFIG_INFO_WRAPPER_ROW_MAPPER
         
         RowMapperManager
                 .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName(),
                         ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER);
+    
+        // CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER
+        RowMapperManager
+                .registerRowMapper(ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER.getClass().getCanonicalName(),
+                        ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
         
         // CONFIG_KEY_ROW_MAPPER
         

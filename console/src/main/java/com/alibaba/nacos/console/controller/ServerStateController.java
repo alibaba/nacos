@@ -18,6 +18,8 @@ package com.alibaba.nacos.console.controller;
 
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
+import com.alibaba.nacos.console.paramcheck.ConsoleDefaultHttpParamExtractor;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
@@ -38,9 +40,12 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/v1/console/server")
+@ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
 public class ServerStateController {
     
     private static final String ANNOUNCEMENT_FILE = "announcement.conf";
+    
+    private static final String GUIDE_FILE = "console-guide.conf";
     
     /**
      * Get server state of current server.
@@ -64,5 +69,15 @@ public class ServerStateController {
             announcement = DiskUtils.readFile(announcementFile);
         }
         return RestResultUtils.success(announcement);
+    }
+    
+    @GetMapping("/guide")
+    public RestResult<String> getConsoleUiGuide() {
+        File guideFile = new File(EnvUtil.getConfPath(), GUIDE_FILE);
+        String guideInformation = null;
+        if (guideFile.exists() && guideFile.isFile()) {
+            guideInformation = DiskUtils.readFile(guideFile);
+        }
+        return RestResultUtils.success(guideInformation);
     }
 }

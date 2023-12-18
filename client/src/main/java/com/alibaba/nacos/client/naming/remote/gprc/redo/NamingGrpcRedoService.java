@@ -16,15 +16,19 @@
 
 package com.alibaba.nacos.client.naming.remote.gprc.redo;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.SubscriberRedoData;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 
 import java.util.HashSet;
@@ -47,12 +51,9 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     private static final String REDO_THREAD_NAME = "com.alibaba.nacos.client.naming.grpc.redo";
     
-    private static final int REDO_THREAD = 1;
+    private int redoThreadCount;
     
-    /**
-     * TODO get redo delay from config.
-     */
-    private static final long DEFAULT_REDO_DELAY = 3000L;
+    private long redoDelayTime;
     
     private final ConcurrentMap<String, InstanceRedoData> registeredInstances = new ConcurrentHashMap<>();
     
@@ -62,10 +63,21 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     private volatile boolean connected = false;
     
-    public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy) {
-        this.redoExecutor = new ScheduledThreadPoolExecutor(REDO_THREAD, new NameThreadFactory(REDO_THREAD_NAME));
-        this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this), DEFAULT_REDO_DELAY,
-                DEFAULT_REDO_DELAY, TimeUnit.MILLISECONDS);
+    public NamingGrpcRedoService(NamingGrpcClientProxy clientProxy, NacosClientProperties properties) {
+        setProperties(properties);
+        this.redoExecutor = new ScheduledThreadPoolExecutor(redoThreadCount, new NameThreadFactory(REDO_THREAD_NAME));
+        this.redoExecutor.scheduleWithFixedDelay(new RedoScheduledTask(clientProxy, this), redoDelayTime, redoDelayTime,
+                TimeUnit.MILLISECONDS);
+    }
+    
+    private void setProperties(NacosClientProperties properties) {
+        redoDelayTime = properties.getLong(PropertyKeyConst.REDO_DELAY_TIME, Constants.DEFAULT_REDO_DELAY_TIME);
+        redoThreadCount = properties.getInteger(PropertyKeyConst.REDO_DELAY_THREAD_COUNT,
+                Constants.DEFAULT_REDO_THREAD_COUNT);
+    }
+    
+    public ConcurrentMap<String, InstanceRedoData> getRegisteredInstances() {
+        return registeredInstances;
     }
     
     public boolean isConnected() {
@@ -73,13 +85,13 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     }
     
     @Override
-    public void onConnected() {
+    public void onConnected(Connection connection) {
         connected = true;
         LogUtils.NAMING_LOGGER.info("Grpc connection connect");
     }
     
     @Override
-    public void onDisConnect() {
+    public void onDisConnect(Connection connection) {
         connected = false;
         LogUtils.NAMING_LOGGER.warn("Grpc connection disconnect, mark to redo");
         synchronized (registeredInstances) {
@@ -111,7 +123,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
      *
      * @param serviceName service name
      * @param groupName   group name
-     * @param instances    batch registered instance
+     * @param instances   batch registered instance
      */
     public void cacheInstanceForRedo(String serviceName, String groupName, List<Instance> instances) {
         String key = NamingUtils.getGroupedName(serviceName, groupName);
@@ -305,6 +317,7 @@ public class NamingGrpcRedoService implements ConnectionEventListener {
     
     /**
      * get Cache service.
+     *
      * @return cache service
      */
     public InstanceRedoData getRegisteredInstancesByKey(String combinedServiceName) {

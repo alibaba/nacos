@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.task.engine;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
+import com.alibaba.nacos.common.task.NacosTaskProcessor;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,13 +37,21 @@ public class NacosExecuteTaskExecuteEngineTest {
     
     private NacosExecuteTaskExecuteEngine executeTaskExecuteEngine;
     
+    @Mock
+    NacosTaskProcessor taskProcessor;
+    
+    String cachedProcessor;
+    
     @Before
     public void setUp() {
+        cachedProcessor = System.getProperty("nacos.common.processors");
+        System.setProperty("nacos.common.processors", "1");
         executeTaskExecuteEngine = new NacosExecuteTaskExecuteEngine("TEST", null);
     }
     
     @After
     public void tearDown() throws NacosException {
+        System.setProperty("nacos.common.processors", null == cachedProcessor ? "" : cachedProcessor);
         executeTaskExecuteEngine.shutdown();
     }
     
@@ -56,5 +65,29 @@ public class NacosExecuteTaskExecuteEngineTest {
         verify(task).run();
         assertTrue(executeTaskExecuteEngine.isEmpty());
         assertEquals(0, executeTaskExecuteEngine.size());
+    }
+    
+    @Test
+    public void testAddTaskByProcessor() throws InterruptedException {
+        executeTaskExecuteEngine.addProcessor("test", taskProcessor);
+        executeTaskExecuteEngine.addTask("test", task);
+        verify(taskProcessor).process(task);
+        assertTrue(executeTaskExecuteEngine.isEmpty());
+        assertEquals(0, executeTaskExecuteEngine.size());
+    }
+    
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRemoveTask() {
+        executeTaskExecuteEngine.removeTask(task);
+    }
+    
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetAllTaskKeys() {
+        executeTaskExecuteEngine.getAllTaskKeys();
+    }
+    
+    @Test
+    public void testWorkersStatus() {
+        assertEquals("TEST_0%1, pending tasks: 0\n", executeTaskExecuteEngine.workersStatus());
     }
 }

@@ -20,6 +20,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 public class StsConfigTest {
     
     @After
@@ -29,6 +32,11 @@ public class StsConfigTest {
         StsConfig.getInstance().setCacheSecurityCredentials(true);
         StsConfig.getInstance().setSecurityCredentials(null);
         StsConfig.getInstance().setSecurityCredentialsUrl(null);
+        System.clearProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY);
+        System.clearProperty(IdentifyConstants.REFRESH_TIME_PROPERTY);
+        System.clearProperty(IdentifyConstants.SECURITY_PROPERTY);
+        System.clearProperty(IdentifyConstants.SECURITY_URL_PROPERTY);
+        System.clearProperty(IdentifyConstants.SECURITY_CACHE_PROPERTY);
     }
     
     @Test
@@ -62,6 +70,13 @@ public class StsConfigTest {
     }
     
     @Test
+    public void testGetSecurityCredentialsUrlDefault() {
+        StsConfig.getInstance().setRamRoleName("test");
+        Assert.assertEquals("http://100.100.100.200/latest/meta-data/ram/security-credentials/test",
+                StsConfig.getInstance().getSecurityCredentialsUrl());
+    }
+    
+    @Test
     public void testGetSecurityCredentials() {
         Assert.assertNull(StsConfig.getInstance().getSecurityCredentials());
         String expect = "abc";
@@ -89,4 +104,22 @@ public class StsConfigTest {
         Assert.assertTrue(stsOn);
     }
     
+    @Test
+    public void testFromEnv()
+            throws NoSuchMethodException, IllegalAccessException, InvocationTargetException, InstantiationException {
+        Constructor<StsConfig> constructor = StsConfig.class.getDeclaredConstructor();
+        constructor.setAccessible(true);
+        System.setProperty(IdentifyConstants.RAM_ROLE_NAME_PROPERTY, "test");
+        System.setProperty(IdentifyConstants.REFRESH_TIME_PROPERTY, "3000");
+        System.setProperty(IdentifyConstants.SECURITY_PROPERTY, "abc");
+        System.setProperty(IdentifyConstants.SECURITY_URL_PROPERTY, "localhost");
+        System.setProperty(IdentifyConstants.SECURITY_CACHE_PROPERTY, "false");
+        StsConfig stsConfig = constructor.newInstance();
+        Assert.assertEquals("test", stsConfig.getRamRoleName());
+        Assert.assertEquals(3000, stsConfig.getTimeToRefreshInMillisecond());
+        Assert.assertEquals("abc", stsConfig.getSecurityCredentials());
+        Assert.assertEquals("localhost", stsConfig.getSecurityCredentialsUrl());
+        Assert.assertFalse(stsConfig.isCacheSecurityCredentials());
+        
+    }
 }

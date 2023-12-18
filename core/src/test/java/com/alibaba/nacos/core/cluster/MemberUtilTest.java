@@ -243,7 +243,7 @@ public class MemberUtilTest {
     @Test
     public void testIsBasicInfoChangedForChangedAbilities() {
         Member newMember = buildMember();
-        newMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
+        newMember.setGrpcReportEnabled(true);
         assertTrue(MemberUtil.isBasicInfoChanged(newMember, originalMember));
     }
     

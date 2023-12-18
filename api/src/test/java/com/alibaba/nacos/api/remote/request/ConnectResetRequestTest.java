@@ -27,20 +27,24 @@ public class ConnectResetRequestTest extends BasicRequestTest {
         request.setServerIp("127.0.0.1");
         request.setServerPort("8888");
         request.setRequestId("1");
+        request.setConnectionId("11111_127.0.0.1_8888");
         String json = mapper.writeValueAsString(request);
         Assert.assertNotNull(json);
         Assert.assertTrue(json.contains("\"serverIp\":\"127.0.0.1\""));
         Assert.assertTrue(json.contains("\"serverPort\":\"8888\""));
         Assert.assertTrue(json.contains("\"module\":\"internal\""));
         Assert.assertTrue(json.contains("\"requestId\":\"1\""));
+        Assert.assertTrue(json.contains("\"connectionId\":\"11111_127.0.0.1_8888\""));
     }
     
     @Test
     public void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"serverIp\":\"127.0.0.1\",\"serverPort\":\"8888\",\"module\":\"internal\"}";
+        String json = "{\"headers\":{},\"requestId\":\"1\",\"serverIp\":\"127.0.0.1\",\"serverPort\":\"8888\","
+                + "\"module\":\"internal\",\"connectionId\":\"11111_127.0.0.1_8888\"}";
         ConnectResetRequest result = mapper.readValue(json, ConnectResetRequest.class);
         Assert.assertNotNull(result);
         Assert.assertEquals("127.0.0.1", result.getServerIp());
         Assert.assertEquals("8888", result.getServerPort());
+        Assert.assertEquals("11111_127.0.0.1_8888", result.getConnectionId());
     }
 }

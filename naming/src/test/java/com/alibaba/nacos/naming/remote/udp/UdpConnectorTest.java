@@ -91,7 +91,7 @@ public class UdpConnectorTest {
     
     @Test
     public void testContainAck() {
-        when(ackMap.containsKey(Mockito.anyString())).thenReturn(true);
+        when(ackMap.containsKey("1111")).thenReturn(true);
         Assert.assertTrue(udpConnector.containAck("1111"));
     }
     

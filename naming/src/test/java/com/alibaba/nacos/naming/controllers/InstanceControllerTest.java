@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.naming.BaseTest;
@@ -64,12 +65,12 @@ public class InstanceControllerTest extends BaseTest {
     @Mock
     private HttpServletRequest request;
     
-    private SmartSubscriber subscriber;
-    
-    private volatile boolean eventReceived = false;
-    
     @InjectMocks
     private InstanceController instanceController;
+    
+    private SmartSubscriber subscriber;
+    
+    private volatile Class<? extends Event> eventReceivedClass;
     
     @Before
     public void before() {
@@ -81,12 +82,13 @@ public class InstanceControllerTest extends BaseTest {
                 List<Class<? extends Event>> result = new LinkedList<>();
                 result.add(RegisterInstanceTraceEvent.class);
                 result.add(DeregisterInstanceTraceEvent.class);
+                result.add(UpdateInstanceTraceEvent.class);
                 return result;
             }
             
             @Override
             public void onEvent(Event event) {
-                eventReceived = true;
+                eventReceivedClass = event.getClass();
             }
         };
         NotifyCenter.registerSubscriber(subscriber);
@@ -100,7 +102,8 @@ public class InstanceControllerTest extends BaseTest {
         NotifyCenter.deregisterSubscriber(subscriber);
         NotifyCenter.deregisterPublisher(RegisterInstanceTraceEvent.class);
         NotifyCenter.deregisterPublisher(DeregisterInstanceTraceEvent.class);
-        eventReceived = false;
+        NotifyCenter.deregisterPublisher(UpdateInstanceTraceEvent.class);
+        eventReceivedClass = null;
     }
     
     private void mockRequestParameter(String key, String value) {
@@ -110,29 +113,28 @@ public class InstanceControllerTest extends BaseTest {
     @Test
     public void testRegister() throws Exception {
         assertEquals("ok", instanceController.register(request));
-        verify(instanceServiceV2)
-                .registerInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
-                        any(Instance.class));
+        verify(instanceServiceV2).registerInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
+                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(Instance.class));
         TimeUnit.SECONDS.sleep(1);
-        assertTrue(eventReceived);
+        assertEquals(eventReceivedClass, RegisterInstanceTraceEvent.class);
     }
     
     @Test
     public void testDeregister() throws Exception {
         assertEquals("ok", instanceController.deregister(request));
-        verify(instanceServiceV2)
-                .removeInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
-                        any(Instance.class));
+        verify(instanceServiceV2).removeInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
+                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(Instance.class));
         TimeUnit.SECONDS.sleep(1);
-        assertTrue(eventReceived);
+        assertEquals(eventReceivedClass, DeregisterInstanceTraceEvent.class);
     }
     
     @Test
     public void testUpdate() throws Exception {
         assertEquals("ok", instanceController.update(request));
-        verify(instanceServiceV2)
-                .updateInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
-                        any(Instance.class));
+        verify(instanceServiceV2).updateInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
+                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(Instance.class));
+        TimeUnit.SECONDS.sleep(1);
+        assertEquals(eventReceivedClass, UpdateInstanceTraceEvent.class);
     }
     
     @Test
@@ -144,8 +146,8 @@ public class InstanceControllerTest extends BaseTest {
         String instanceJson = JacksonUtils.toJson(mockInstance);
         mockRequestParameter("instances", instanceJson);
         mockRequestParameter("metadata", "{}");
-        when(instanceServiceV2.batchUpdateMetadata(eq(Constants.DEFAULT_NAMESPACE_ID), any(), anyMap()))
-                .thenReturn(Collections.singletonList("1.1.1.1:3306:unknown:DEFAULT:ephemeral"));
+        when(instanceServiceV2.batchUpdateMetadata(eq(Constants.DEFAULT_NAMESPACE_ID), any(), anyMap())).thenReturn(
+                Collections.singletonList("1.1.1.1:3306:unknown:DEFAULT:ephemeral"));
         ObjectNode actual = instanceController.batchUpdateInstanceMetadata(request);
         assertEquals("1.1.1.1:3306:unknown:DEFAULT:ephemeral", actual.get("updated").get(0).textValue());
     }
@@ -153,8 +155,8 @@ public class InstanceControllerTest extends BaseTest {
     @Test
     public void testBatchDeleteInstanceMetadata() throws Exception {
         mockRequestParameter("metadata", "{}");
-        when(instanceServiceV2.batchDeleteMetadata(eq(Constants.DEFAULT_NAMESPACE_ID), any(), anyMap()))
-                .thenReturn(Collections.singletonList("1.1.1.1:3306:unknown:DEFAULT:ephemeral"));
+        when(instanceServiceV2.batchDeleteMetadata(eq(Constants.DEFAULT_NAMESPACE_ID), any(), anyMap())).thenReturn(
+                Collections.singletonList("1.1.1.1:3306:unknown:DEFAULT:ephemeral"));
         ObjectNode actual = instanceController.batchDeleteInstanceMetadata(request);
         assertEquals("1.1.1.1:3306:unknown:DEFAULT:ephemeral", actual.get("updated").get(0).textValue());
     }
@@ -167,9 +169,8 @@ public class InstanceControllerTest extends BaseTest {
         mockRequestParameter("healthy", "false");
         mockRequestParameter("enabled", "false");
         assertEquals("ok", instanceController.patch(request));
-        verify(instanceServiceV2)
-                .patchInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
-                        any(InstancePatchObject.class));
+        verify(instanceServiceV2).patchInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
+                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(InstancePatchObject.class));
     }
     
     @Test
@@ -179,9 +180,9 @@ public class InstanceControllerTest extends BaseTest {
         instance.setPort(3306);
         ServiceInfo expected = new ServiceInfo();
         expected.setHosts(Collections.singletonList(instance));
-        when(instanceServiceV2
-                .listInstance(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
-                        any(Subscriber.class), eq(StringUtils.EMPTY), eq(false))).thenReturn(expected);
+        when(instanceServiceV2.listInstance(eq(Constants.DEFAULT_NAMESPACE_ID),
+                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), any(Subscriber.class), eq(StringUtils.EMPTY),
+                eq(false))).thenReturn(expected);
         assertEquals(expected, instanceController.list(request));
     }
     
@@ -200,17 +201,16 @@ public class InstanceControllerTest extends BaseTest {
         assertEquals(3306, actual.get("port").intValue());
         assertEquals(UtilsAndCommons.DEFAULT_CLUSTER_NAME, actual.get("clusterName").textValue());
         assertEquals(1.0D, actual.get("weight").doubleValue(), 0.1);
-        assertEquals(true, actual.get("healthy").booleanValue());
+        assertTrue(actual.get("healthy").booleanValue());
         assertEquals("testId", actual.get("instanceId").textValue());
         assertEquals("{}", actual.get("metadata").toString());
     }
     
     @Test
     public void testBeat() throws Exception {
-        when(instanceServiceV2
-                .handleBeat(eq(Constants.DEFAULT_NAMESPACE_ID), eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME),
-                        eq("1.1.1.1"), eq(3306), eq(UtilsAndCommons.DEFAULT_CLUSTER_NAME), any(), any()))
-                .thenReturn(200);
+        when(instanceServiceV2.handleBeat(eq(Constants.DEFAULT_NAMESPACE_ID),
+                eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), eq("1.1.1.1"), eq(3306),
+                eq(UtilsAndCommons.DEFAULT_CLUSTER_NAME), any(), any())).thenReturn(200);
         when(instanceServiceV2.getHeartBeatInterval(eq(Constants.DEFAULT_NAMESPACE_ID),
                 eq(TEST_GROUP_NAME + "@@" + TEST_SERVICE_NAME), eq("1.1.1.1"), eq(3306),
                 eq(UtilsAndCommons.DEFAULT_CLUSTER_NAME))).thenReturn(10000L);

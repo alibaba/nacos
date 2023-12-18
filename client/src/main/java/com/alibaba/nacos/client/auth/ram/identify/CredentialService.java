@@ -101,10 +101,6 @@ public final class CredentialService implements SpasCredentialLoader {
     
     @Override
     public Credentials getCredential() {
-        Credentials localCredential = credentials;
-        if (localCredential.valid()) {
-            return localCredential;
-        }
         return credentials;
     }
     

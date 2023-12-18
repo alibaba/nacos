@@ -24,7 +24,6 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Properties;
 
@@ -40,8 +39,7 @@ public class PropertiesUtilTest {
     
     @Test
     @SuppressWarnings("unchecked")
-    public void testGetPropertiesWithPrefixForMap()
-            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void testGetPropertiesWithPrefixForMap() {
         Map<String, Object> actual = PropertiesUtil.getPropertiesWithPrefixForMap(environment, "nacos.prefix");
         assertEquals(3, actual.size());
         for (Map.Entry<String, Object> entry : actual.entrySet()) {
@@ -64,9 +62,14 @@ public class PropertiesUtilTest {
     }
     
     @Test
-    public void testGetPropertiesWithPrefix()
-            throws ClassNotFoundException, NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    public void testGetPropertiesWithPrefix() {
         Properties actual = PropertiesUtil.getPropertiesWithPrefix(environment, "nacos.prefix");
         assertEquals(3, actual.size());
+    }
+    
+    @Test
+    public void testHandleSpringBinder() {
+        Map properties = PropertiesUtil.handleSpringBinder(environment, "nacos.prefix", Map.class);
+        assertEquals(3, properties.size());
     }
 }

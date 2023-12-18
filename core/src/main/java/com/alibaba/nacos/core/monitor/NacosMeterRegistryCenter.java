@@ -17,32 +17,25 @@
 package com.alibaba.nacos.core.monitor;
 
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
+import io.micrometer.core.instrument.Metrics;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
 
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Metrics unified usage center.
  *
- * <p>
- * FIXME: Bad implemetation, force depend prometheus. No need to new {@link CompositeMeterRegistry}, only should use
- * {@link io.micrometer.core.instrument.Metrics#globalRegistry}. If need to distinguish different scope or module, use
- * name of meters is enough.
- * </p>
- *
  * @author <a href="mailto:liuyixiao0821@gmail.com">liuyixiao</a>
+ * @author xiweng.yy
  */
 @SuppressWarnings("all")
 public final class NacosMeterRegistryCenter {
     
     // stable registries.
-    
     public static final String CORE_STABLE_REGISTRY = "CORE_STABLE_REGISTRY";
     
     public static final String CONFIG_STABLE_REGISTRY = "CONFIG_STABLE_REGISTRY";
@@ -50,31 +43,33 @@ public final class NacosMeterRegistryCenter {
     public static final String NAMING_STABLE_REGISTRY = "NAMING_STABLE_REGISTRY";
     
     // dynamic registries.
-    
     public static final String TOPN_CONFIG_CHANGE_REGISTRY = "TOPN_CONFIG_CHANGE_REGISTRY";
     
     public static final String TOPN_SERVICE_CHANGE_REGISTRY = "TOPN_SERVICE_CHANGE_REGISTRY";
     
+    // control plugin registeres.
+    public static final String CONTROL_DENIED_REGISTRY = "CONTROL_DENIED_REGISTRY";
+    
     private static final ConcurrentHashMap<String, CompositeMeterRegistry> METER_REGISTRIES = new ConcurrentHashMap<>();
     
-    private static PrometheusMeterRegistry PROMETHEUS_METER_REGISTRY = null;
+    private static CompositeMeterRegistry METER_REGISTRY = null;
     
     static {
         try {
-            PROMETHEUS_METER_REGISTRY = ApplicationUtils.getBean(PrometheusMeterRegistry.class);
+            METER_REGISTRY = Metrics.globalRegistry;
         } catch (Throwable t) {
             Loggers.CORE.warn("Metrics init failed :", t);
         }
         registry(CORE_STABLE_REGISTRY, CONFIG_STABLE_REGISTRY, NAMING_STABLE_REGISTRY, TOPN_CONFIG_CHANGE_REGISTRY,
-                TOPN_SERVICE_CHANGE_REGISTRY);
+                TOPN_SERVICE_CHANGE_REGISTRY, CONTROL_DENIED_REGISTRY);
         
     }
     
     private static void registry(String... names) {
         for (String name : names) {
             CompositeMeterRegistry compositeMeterRegistry = new CompositeMeterRegistry();
-            if (PROMETHEUS_METER_REGISTRY != null) {
-                compositeMeterRegistry.add(PROMETHEUS_METER_REGISTRY);
+            if (METER_REGISTRY != null) {
+                compositeMeterRegistry.add(METER_REGISTRY);
             }
             METER_REGISTRIES.put(name, compositeMeterRegistry);
         }

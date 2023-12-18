@@ -95,10 +95,8 @@ public class DefaultPackageScan implements PackageScan {
                     set.add((Class<T>) scanClass);
                 }
             }
-        } catch (IOException e) {
+        } catch (IOException | ClassNotFoundException e) {
             LOGGER.error("scan path: {} failed", packageSearchPath, e);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
         }
         return set;
     }
