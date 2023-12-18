@@ -21,6 +21,8 @@ import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,12 +30,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -79,4 +84,15 @@ public class SecurityProxyTest {
         Assert.assertEquals("ttttttttttttttttt", keyMap.get(NacosAuthLoginConstant.ACCESSTOKEN));
     }
     
+    @Test
+    public void testLoginWithoutAnyPlugin() throws NoSuchFieldException, IllegalAccessException {
+        Field clientAuthPluginManagerField = SecurityProxy.class.getDeclaredField("clientAuthPluginManager");
+        clientAuthPluginManagerField.setAccessible(true);
+        ClientAuthPluginManager clientAuthPluginManager = mock(ClientAuthPluginManager.class);
+        clientAuthPluginManagerField.set(securityProxy, clientAuthPluginManager);
+        when(clientAuthPluginManager.getAuthServiceSpiImplSet()).thenReturn(Collections.emptySet());
+        securityProxy.login(new Properties());
+        Map<String, String> header = securityProxy.getIdentityContext(new RequestResource());
+        Assert.assertTrue(header.isEmpty());
+    }
 }

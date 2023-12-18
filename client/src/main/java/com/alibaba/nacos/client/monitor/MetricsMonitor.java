@@ -42,10 +42,6 @@ public class MetricsMonitor {
         return NACOS_MONITOR.labels("naming", "serviceInfoMapSize");
     }
     
-    public static Gauge.Child getDom2BeatSizeMonitor() {
-        return NACOS_MONITOR.labels("naming", "dom2BeatSize");
-    }
-    
     public static Gauge.Child getListenConfigCountMonitor() {
         return NACOS_MONITOR.labels("config", "listenConfigCount");
     }
