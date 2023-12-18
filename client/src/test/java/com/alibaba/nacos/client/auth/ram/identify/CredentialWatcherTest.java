@@ -75,6 +75,7 @@ public class CredentialWatcherTest {
         System.clearProperty("spas.identity");
         System.clearProperty(IdentifyConstants.ENV_ACCESS_KEY);
         System.clearProperty(IdentifyConstants.ENV_SECRET_KEY);
+        CredentialService.freeInstance();
     }
     
     @Test
