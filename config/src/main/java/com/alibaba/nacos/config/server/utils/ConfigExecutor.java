@@ -69,6 +69,10 @@ public final class ConfigExecutor {
         TIMER_EXECUTOR.scheduleWithFixedDelay(command, initialDelay, delay, unit);
     }
     
+    public static void scheduleConfigChangeTask(Runnable command, long delay, TimeUnit unit) {
+        TIMER_EXECUTOR.schedule(command, delay, unit);
+    }
+    
     public static void scheduleCorrectUsageTask(Runnable runnable, long initialDelay, long delay, TimeUnit unit) {
         CAPACITY_MANAGEMENT_EXECUTOR.scheduleWithFixedDelay(runnable, initialDelay, delay, unit);
     }

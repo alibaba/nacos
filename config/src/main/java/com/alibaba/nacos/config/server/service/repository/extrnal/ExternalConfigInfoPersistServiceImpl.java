@@ -1268,6 +1268,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 .select(Collections.singletonList("tag_name"), Arrays.asList("data_id", "group_id", "tenant_id"));
         try {
             return jt.queryForList(sql, new Object[] {dataId, group, tenant}, String.class);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
         } catch (IncorrectResultSizeDataAccessException e) {
             return null;
         } catch (CannotGetJdbcConnectionException e) {
@@ -1385,18 +1387,18 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     public List<ConfigInfoWrapper> convertChangeConfig(List<Map<String, Object>> list) {
         List<ConfigInfoWrapper> configs = new ArrayList<>();
         for (Map<String, Object> map : list) {
-            Long id = (Long) map.get("id");
+            Long id = ((java.lang.Number) map.get("id")).longValue();
             String dataId = (String) map.get("data_id");
             String group = (String) map.get("group_id");
             String tenant = (String) map.get("tenant_id");
-            String content = (String) map.get("content");
+            String md5 = (String) map.get("md5");
             long mTime = ((LocalDateTime) map.get("gmt_modified")).toInstant(ZoneOffset.ofHours(8)).toEpochMilli();
             ConfigInfoWrapper config = new ConfigInfoWrapper();
             config.setId(id);
             config.setDataId(dataId);
             config.setGroup(group);
+            config.setMd5(md5);
             config.setTenant(tenant);
-            config.setContent(content);
             config.setLastModified(mTime);
             configs.add(config);
         }

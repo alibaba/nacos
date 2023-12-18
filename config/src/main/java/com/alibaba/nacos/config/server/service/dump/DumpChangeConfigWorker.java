@@ -23,11 +23,14 @@ import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Dump change processor.
@@ -55,6 +58,11 @@ public class DumpChangeConfigWorker implements Runnable {
     public void run() {
         
         try {
+            
+            if (!PropertyUtil.isDumpChangeOn()) {
+                LogUtil.DEFAULT_LOG.info("DumpChange task is not open");
+                return;
+            }
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             LogUtil.DEFAULT_LOG.info("DumpChange start ,from time {},current time {}", startTime, currentTime);
             
@@ -96,14 +104,27 @@ public class DumpChangeConfigWorker implements Runnable {
                 List<ConfigInfoWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
                 for (ConfigInfoWrapper cf : changeConfigs) {
-                    ConfigCacheService.dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
-                            cf.getLastModified(), cf.getEncryptedDataKey());
-                    final String content = cf.getContent();
-                    final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
-                    
-                    LogUtil.DEFAULT_LOG.info("[dump-change-check-ok] {}, {}, length={}, md5={}",
-                            new Object[] {GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
-                                    content.length(), md5});
+                    final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
+                    //check md5 & localtimestamp update local disk cache.
+                    boolean newLastModified = cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
+                    String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
+                    boolean md5Update = !localContentMd5.equals(cf.getMd5());
+                    if (newLastModified || md5Update) {
+                        LogUtil.DEFAULT_LOG.info("[dump-change] find change config  {}, {}, md5={}",
+                                new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
+                        ConfigInfoWrapper configInfoWrapper = configInfoPersistService.findConfigInfo(cf.getDataId(),
+                                cf.getGroup(), cf.getTenant());
+                        ConfigCacheService.dumpChange(configInfoWrapper.getDataId(), configInfoWrapper.getGroup(),
+                                configInfoWrapper.getTenant(), configInfoWrapper.getContent(),
+                                configInfoWrapper.getLastModified(), configInfoWrapper.getEncryptedDataKey());
+                        final String content = configInfoWrapper.getContent();
+                        final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_GBK);
+                        final String md5Utf8 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
+                        
+                        LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={},md5UTF8={}",
+                                new Object[] {groupKey, configInfoWrapper.getLastModified(), content.length(), md5,
+                                        md5Utf8});
+                    }
                 }
                 if (changeConfigs.size() < pageSize) {
                     break;
@@ -111,13 +132,19 @@ public class DumpChangeConfigWorker implements Runnable {
                 changeCursorId = changeConfigs.get(changeConfigs.size() - 1).getId();
             }
             
-            ConfigCacheService.reloadConfig();
             long endChangeConfigTime = System.currentTimeMillis();
-            LogUtil.DEFAULT_LOG.info("Check changed configs finished,cost:{},set next start time to {}",
+            LogUtil.DEFAULT_LOG.info(
+                    "Check changed configs finished,cost:{}, next task running will from start time  {}",
                     endChangeConfigTime - startChangeConfigTime, currentTime);
             startTime = currentTime;
         } catch (Throwable e) {
             LogUtil.DEFAULT_LOG.error("Check changed configs error", e);
+        } finally {
+            ConfigExecutor.scheduleConfigChangeTask(this, PropertyUtil.getDumpChangeWorkerInterval(),
+                    TimeUnit.MILLISECONDS);
+            LogUtil.DEFAULT_LOG.info("Next dump change will scheduled after {} millseconds",
+                    PropertyUtil.getDumpChangeWorkerInterval());
+            
         }
     }
 }

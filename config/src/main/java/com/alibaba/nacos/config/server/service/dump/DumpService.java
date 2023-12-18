@@ -45,6 +45,7 @@ import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
@@ -274,8 +275,8 @@ public abstract class DumpService {
                 };
                 
                 ConfigExecutor.scheduleConfigTask(heartbeat, 0, 10, TimeUnit.SECONDS);
-                
-                long initialDelay = new Random().nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
+                Random random = new Random();
+                long initialDelay = random.nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
                 LogUtil.DEFAULT_LOG.warn("initialDelay:{}", initialDelay);
                 
                 ConfigExecutor.scheduleConfigTask(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
@@ -285,8 +286,8 @@ public abstract class DumpService {
                 
                 ConfigExecutor.scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
                         TimeUnit.MINUTES);
-                ConfigExecutor.scheduleConfigTask(new DumpChangeConfigWorker(this, currentTime), 0,
-                        DUMP_CHANGE_INTERVAL_IN_SECONDS, TimeUnit.SECONDS);
+                ConfigExecutor.scheduleConfigChangeTask(new DumpChangeConfigWorker(this, currentTime),
+                        random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()), TimeUnit.MILLISECONDS);
                 
             }
             
