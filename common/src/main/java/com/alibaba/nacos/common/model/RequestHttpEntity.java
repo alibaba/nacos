@@ -42,7 +42,7 @@ public class RequestHttpEntity {
     }
     
     public RequestHttpEntity(Header header, Object body) {
-        this(null, header, null, body);
+        this(null, header, body);
     }
     
     public RequestHttpEntity(Header header, Query query, Object body) {

@@ -38,6 +38,7 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
+    nacosMode: '模式',
     doesNotExist: '您访问的页面不存在',
     configurationManagementVirtual: '配置管理',
     configurationManagement: '配置列表',
@@ -61,6 +62,7 @@ const I18N_CONF = {
     roleManagement: '角色管理',
     privilegeManagement: '权限管理',
     consoleClosed: '控制台已关闭',
+    settingCenter: '设置中心',
   },
   Password: {
     passwordNotConsistent: '两次输入密码不一致',
@@ -666,8 +668,16 @@ const I18N_CONF = {
     readWrite: '读写',
   },
   Components: {
-      copySuccessfully: '复制成功！',
-  }
+    copySuccessfully: '复制成功！',
+  },
+  SettingCenter: {
+    settingTitle: '设置中心',
+    settingTheme: '样式主题',
+    settingLight: '明亮',
+    settingDark: '深色',
+    settingLocale: '系统语言',
+    settingSubmit: '应用',
+  },
 };
 
 export default I18N_CONF;

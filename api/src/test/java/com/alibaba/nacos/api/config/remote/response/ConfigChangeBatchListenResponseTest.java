@@ -44,7 +44,7 @@ public class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.SUCCESS.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));
         assertTrue(json.contains(
-                "\"changedConfigs\":[{\"group\":\"group\",\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}]"));
+                "\"changedConfigs\":[{\"dataId\":\"test_data\",\"group\":\"group\",\"tenant\":\"test_tenant\"}]"));
     }
     
     @Override

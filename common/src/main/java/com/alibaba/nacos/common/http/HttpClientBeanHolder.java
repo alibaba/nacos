@@ -118,7 +118,7 @@ public final class HttpClientBeanHolder {
      * @throws Exception ex
      */
     public static void shutdown(String className) throws Exception {
-        shutdownNacostSyncRest(className);
+        shutdownNacosSyncRest(className);
         shutdownNacosAsyncRest(className);
     }
     
@@ -128,7 +128,7 @@ public final class HttpClientBeanHolder {
      * @param className HttpClientFactory implement class name
      * @throws Exception ex
      */
-    public static void shutdownNacostSyncRest(String className) throws Exception {
+    public static void shutdownNacosSyncRest(String className) throws Exception {
         final NacosRestTemplate nacosRestTemplate = SINGLETON_REST.get(className);
         if (nacosRestTemplate != null) {
             nacosRestTemplate.close();

@@ -24,40 +24,57 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
-import java.util.ServiceConfigurationError;
 import java.util.stream.Collectors;
 
 /**
- * This class is used to discover {@link AbstractAbilityControlManager} implements. All the
- * ability operation will be finish in this singleton.
+ * This class is used to discover {@link AbstractAbilityControlManager} implements. All the ability operation will be
+ * finish in this singleton.
  *
  * @author Daydreamer
  * @date 2022/7/14 19:58
  **/
 public class NacosAbilityManagerHolder {
     
-    /**.
-     * private constructor
+    /**
+     * . private constructor
      */
     private NacosAbilityManagerHolder() {
     }
     
     private static final Logger LOGGER = LoggerFactory.getLogger(NacosAbilityManagerHolder.class);
     
-    /**.
-     * singleton
+    /**
+     * . singleton
      */
     private static AbstractAbilityControlManager abstractAbilityControlManager;
     
-    static {
+    /**
+     * . get nacos ability control manager
+     *
+     * @return BaseAbilityControlManager
+     */
+    public static synchronized AbstractAbilityControlManager getInstance() {
+        if (null == abstractAbilityControlManager) {
+            initAbilityControlManager();
+        }
+        return abstractAbilityControlManager;
+    }
+    
+    /**
+     * . Return the target type of ability manager
+     *
+     * @param clazz clazz
+     * @param <T>   target type
+     * @return AbilityControlManager
+     */
+    public static <T extends AbstractAbilityControlManager> T getInstance(Class<T> clazz) {
+        return clazz.cast(abstractAbilityControlManager);
+    }
+    
+    private static void initAbilityControlManager() {
         // spi discover implement
         Collection<AbstractAbilityControlManager> load = null;
-        try {
-            // if server
-            load = NacosServiceLoader.load(AbstractAbilityControlManager.class);
-        } catch (ServiceConfigurationError e) {
-            throw new RuntimeException("[AbilityControlManager] Cannot find AbilityControlManger");
-        }
+        load = NacosServiceLoader.load(AbstractAbilityControlManager.class);
         // the priority of the server is higher
         List<AbstractAbilityControlManager> collect = load.stream()
                 .sorted(Comparator.comparingInt(AbstractAbilityControlManager::getPriority))
@@ -67,25 +84,5 @@ public class NacosAbilityManagerHolder {
             abstractAbilityControlManager = collect.get(collect.size() - 1);
             LOGGER.info("[AbilityControlManager] Successfully initialize AbilityControlManager");
         }
-    }
-    
-    /**.
-     * get nacos ability control manager
-     *
-     * @return BaseAbilityControlManager
-     */
-    public static AbstractAbilityControlManager getInstance() {
-        return abstractAbilityControlManager;
-    }
-    
-    /**.
-     * Return the target type of ability manager
-     *
-     * @param clazz clazz
-     * @param <T> target type
-     * @return AbilityControlManager
-     */
-    public static <T extends AbstractAbilityControlManager> T getInstance(Class<T> clazz) {
-        return clazz.cast(abstractAbilityControlManager);
     }
 }

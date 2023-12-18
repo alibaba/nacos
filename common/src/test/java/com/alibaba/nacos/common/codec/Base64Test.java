@@ -37,8 +37,16 @@ public class Base64Test {
     @Test
     public void testEncodeNullOrEmpty() {
         byte[] b1 = Base64.encodeBase64(null);
-        Assert.assertEquals(null, b1);
+        Assert.assertNull(b1);
         byte[] b2 = Base64.encodeBase64(new byte[] {});
+        Assert.assertEquals(0, b2.length);
+    }
+    
+    @Test
+    public void testDecodeNullOrEmpty() {
+        byte[] b1 = Base64.decodeBase64(null);
+        Assert.assertNull(b1);
+        byte[] b2 = Base64.decodeBase64(new byte[] {});
         Assert.assertEquals(0, b2.length);
     }
     
@@ -78,5 +86,11 @@ public class Base64Test {
         String s4 = new String(c2);
         Assert.assertEquals("aa~aa?", s3);
         Assert.assertEquals("aa~aa?", s4);
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testEncodeOverMaxLength() {
+        String a = "very large characters to test chunk encoding and see if the result is expected or not";
+        Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, 10);
     }
 }

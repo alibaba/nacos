@@ -17,11 +17,14 @@
 package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.ConnectTimeoutException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -29,10 +32,21 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.SocketTimeoutException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -95,7 +109,7 @@ public class HttpUtilsTest {
         header.addParam(HttpHeaderConsts.CONTENT_TYPE, "text/html");
         
         HttpUtils.initRequestEntity(httpRequest, new byte[] {0, 1, 0, 1}, header);
-    
+        
         HttpEntity entity = httpRequest.getEntity();
         InputStream contentStream = entity.getContent();
         byte[] bytes = new byte[contentStream.available()];
@@ -153,7 +167,7 @@ public class HttpUtilsTest {
     @Test
     public void testInitRequestEntity5() throws Exception {
         HttpDelete httpDelete = new HttpDelete("");
-    
+        
         HttpUtils.initRequestEntity(httpDelete, null, null);
         
         // nothing change
@@ -166,7 +180,7 @@ public class HttpUtilsTest {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
         
         HttpUtils.initRequestFromEntity(httpRequest, Collections.singletonMap("k", "v"), "UTF-8");
-    
+        
         HttpEntity entity = httpRequest.getEntity();
         InputStream contentStream = entity.getContent();
         byte[] bytes = new byte[contentStream.available()];
@@ -177,9 +191,9 @@ public class HttpUtilsTest {
     @Test
     public void testInitRequestFromEntity2() throws Exception {
         BaseHttpMethod.HttpGetWithEntity httpRequest = new BaseHttpMethod.HttpGetWithEntity("");
-    
+        
         HttpUtils.initRequestFromEntity(httpRequest, null, "UTF-8");
-    
+        
         // nothing change
         Assert.assertEquals(new BaseHttpMethod.HttpGetWithEntity("").getEntity(), httpRequest.getEntity());
     }
@@ -227,5 +241,68 @@ public class HttpUtilsTest {
         // % - %25, { - %7B, } - %7D
         Assert.assertEquals("{k,v}", HttpUtils.decode("%7Bk,v%7D", "UTF-8"));
         Assert.assertEquals("{k,v}", HttpUtils.decode("%257Bk,v%257D", "UTF-8"));
+    }
+    
+    @Test
+    public void testEncodingParamsMapWithNullOrEmpty() throws UnsupportedEncodingException {
+        assertNull(HttpUtils.encodingParams((Map<String, String>) null, "UTF-8"));
+        assertNull(HttpUtils.encodingParams(Collections.emptyMap(), "UTF-8"));
+    }
+    
+    @Test
+    public void testEncodingParamsMap() throws UnsupportedEncodingException {
+        Map<String, String> params = new LinkedHashMap<>();
+        params.put("a", "");
+        params.put("b", "x");
+        params.put("uriChar", "=");
+        params.put("chinese", "测试");
+        assertEquals("b=x&uriChar=%3D&chinese=%E6%B5%8B%E8%AF%95&", HttpUtils.encodingParams(params, "UTF-8"));
+    }
+    
+    @Test
+    public void testEncodingParamsListWithNull() throws UnsupportedEncodingException {
+        assertNull(HttpUtils.encodingParams((List<String>) null, "UTF-8"));
+    }
+    
+    @Test
+    public void testEncodingParamsList() throws UnsupportedEncodingException {
+        List<String> params = new LinkedList<>();
+        params.add("a");
+        params.add("");
+        params.add("b");
+        params.add("x");
+        params.add("uriChar");
+        params.add("=");
+        params.add("chinese");
+        params.add("测试");
+        assertEquals("a=&b=x&uriChar=%3D&chinese=%E6%B5%8B%E8%AF%95", HttpUtils.encodingParams(params, "UTF-8"));
+    }
+    
+    @Test
+    public void testBuildUriForEmptyQuery() throws URISyntaxException {
+        URI actual = HttpUtils.buildUri("www.aliyun.com", null);
+        assertEquals("www.aliyun.com", actual.toString());
+        actual = HttpUtils.buildUri("www.aliyun.com", new Query());
+        assertEquals("www.aliyun.com", actual.toString());
+    }
+    
+    @Test
+    public void testBuildUri() throws URISyntaxException {
+        Query query = new Query();
+        query.addParam("a", "");
+        query.addParam("b", "x");
+        query.addParam("uriChar", "=");
+        query.addParam("chinese", "测试");
+        URI actual = HttpUtils.buildUri("www.aliyun.com", query);
+        assertEquals("www.aliyun.com?" + query.toQueryUrl(), actual.toString());
+    }
+    
+    @Test
+    public void testIsTimeoutException() {
+        assertFalse(HttpUtils.isTimeoutException(new NacosRuntimeException(0)));
+        assertTrue(HttpUtils.isTimeoutException(new TimeoutException()));
+        assertTrue(HttpUtils.isTimeoutException(new SocketTimeoutException()));
+        assertTrue(HttpUtils.isTimeoutException(new ConnectTimeoutException()));
+        assertTrue(HttpUtils.isTimeoutException(new NacosRuntimeException(0, new TimeoutException())));
     }
 }

@@ -25,7 +25,7 @@ import com.alibaba.nacos.common.paramcheck.ParamCheckResponse;
 import com.alibaba.nacos.common.paramcheck.ParamCheckerManager;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
-import com.alibaba.nacos.core.paramcheck.RpcParamExtractorManager;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.ServerParamCheckConfig;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.plugin.control.Loggers;
@@ -43,11 +43,20 @@ public class RemoteParamCheckFilter extends AbstractRequestFilter {
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) throws NacosException {
-        String className = request.getClass().getSimpleName();
+        boolean paramCheckEnabled = ServerParamCheckConfig.getInstance().isParamCheckEnabled();
+        if (!paramCheckEnabled) {
+            return null;
+        }
         try {
-            RpcParamExtractorManager extractorManager = RpcParamExtractorManager.getInstance();
-            AbstractRpcParamExtractor extractor = extractorManager.getExtractor(className);
-            List<ParamInfo> paramInfoList = extractor.extractParam(request);
+            ExtractorManager.Extractor extractor = getHandleMethod(handlerClazz).getAnnotation(ExtractorManager.Extractor.class);
+            if (extractor == null) {
+                extractor = (ExtractorManager.Extractor) handlerClazz.getAnnotation(ExtractorManager.Extractor.class);
+                if (extractor == null) {
+                    return null;
+                }
+            }
+            AbstractRpcParamExtractor paramExtractor = ExtractorManager.getRpcExtractor(extractor);
+            List<ParamInfo> paramInfoList = paramExtractor.extractParam(request);
             ParamCheckerManager paramCheckerManager = ParamCheckerManager.getInstance();
             AbstractParamChecker paramChecker = paramCheckerManager.getParamChecker(
                     ServerParamCheckConfig.getInstance().getActiveParamChecker());
