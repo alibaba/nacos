@@ -46,9 +46,10 @@ public class DumpChangeConfigWorker implements Runnable {
     
     Timestamp startTime;
     
-    public DumpChangeConfigWorker(DumpService dumpService, Timestamp startTime) {
-        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
-        this.historyConfigInfoPersistService = dumpService.getHistoryConfigInfoPersistService();
+    public DumpChangeConfigWorker(ConfigInfoPersistService configInfoPersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService, Timestamp startTime) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.startTime = startTime;
     }
     

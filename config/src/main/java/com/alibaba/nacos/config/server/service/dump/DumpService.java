@@ -39,6 +39,7 @@ import com.alibaba.nacos.config.server.service.dump.task.DumpAllBetaTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
+import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
 import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
@@ -106,6 +107,8 @@ public abstract class DumpService {
     
     protected ConfigInfoTagPersistService configInfoTagPersistService;
     
+    protected MergeDatumService mergeDatumService;
+    
     protected final ServerMemberManager memberManager;
     
     /**
@@ -150,13 +153,15 @@ public abstract class DumpService {
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoAggrPersistService configInfoAggrPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager) {
+            ConfigInfoTagPersistService configInfoTagPersistService, MergeDatumService mergeDatumService,
+            ServerMemberManager memberManager) {
         this.configInfoPersistService = configInfoPersistService;
         this.namespacePersistService = namespacePersistService;
         this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.configInfoAggrPersistService = configInfoAggrPersistService;
         this.configInfoBetaPersistService = configInfoBetaPersistService;
         this.configInfoTagPersistService = configInfoTagPersistService;
+        this.mergeDatumService = mergeDatumService;
         this.memberManager = memberManager;
         this.processor = new DumpProcessor(this.configInfoPersistService, this.configInfoBetaPersistService,
                 this.configInfoTagPersistService);
@@ -199,22 +204,6 @@ public abstract class DumpService {
         });
     }
     
-    public ConfigInfoPersistService getConfigInfoPersistService() {
-        return configInfoPersistService;
-    }
-    
-    public ConfigInfoBetaPersistService getConfigInfoBetaPersistService() {
-        return configInfoBetaPersistService;
-    }
-    
-    public ConfigInfoTagPersistService getConfigInfoTagPersistService() {
-        return configInfoTagPersistService;
-    }
-    
-    public HistoryConfigInfoPersistService getHistoryConfigInfoPersistService() {
-        return historyConfigInfoPersistService;
-    }
-    
     /**
      * initialize.
      *
@@ -222,8 +211,21 @@ public abstract class DumpService {
      */
     protected abstract void init() throws Throwable;
     
-    protected void dumpOperate(DumpProcessor processor, DumpAllProcessor dumpAllProcessor,
-            DumpAllBetaProcessor dumpAllBetaProcessor, DumpAllTagProcessor dumpAllTagProcessor) throws NacosException {
+    void clearConfigHistory() {
+        LOGGER.warn("clearConfigHistory start");
+        if (canExecute()) {
+            try {
+                Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
+                int pageSize = 1000;
+                LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
+                historyConfigInfoPersistService.removeConfigHistory(startTime, pageSize);
+            } catch (Throwable e) {
+                LOGGER.error("clearConfigHistory error : {}", e.toString());
+            }
+        }
+    }
+    
+    protected void dumpOperate() throws NacosException {
         String dumpFileContext = "CONFIG_DUMP_TO_FILE";
         TimerContext.start(dumpFileContext);
         try {
@@ -236,17 +238,7 @@ public abstract class DumpService {
             Runnable dumpAllTag = () -> dumpAllTaskMgr.addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
             
             Runnable clearConfigHistory = () -> {
-                LOGGER.warn("clearConfigHistory start");
-                if (canExecute()) {
-                    try {
-                        Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
-                        int pageSize = 1000;
-                        LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
-                        historyConfigInfoPersistService.removeConfigHistory(startTime, pageSize);
-                    } catch (Throwable e) {
-                        LOGGER.error("clearConfigHistory error : {}", e.toString());
-                    }
-                }
+                clearConfigHistory();
             };
             
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
@@ -271,10 +263,10 @@ public abstract class DumpService {
                 List<ConfigInfoChanged> configList = configInfoAggrPersistService.findAllAggrGroup();
                 if (configList != null && !configList.isEmpty()) {
                     total = configList.size();
-                    List<List<ConfigInfoChanged>> splitList = splitList(configList, INIT_THREAD_COUNT);
+                    List<List<ConfigInfoChanged>> splitList = mergeDatumService.splitList(configList,
+                            INIT_THREAD_COUNT);
                     for (List<ConfigInfoChanged> list : splitList) {
-                        MergeAllDataWorker work = new MergeAllDataWorker(list);
-                        work.start();
+                        mergeDatumService.executeConfigsMerge(list);
                     }
                     LOGGER.info("server start, schedule merge end.");
                 }
@@ -308,8 +300,10 @@ public abstract class DumpService {
                 
                 ConfigExecutor.scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
                         TimeUnit.MINUTES);
-                ConfigExecutor.scheduleConfigChangeTask(new DumpChangeConfigWorker(this, currentTime),
-                        random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()), TimeUnit.MILLISECONDS);
+                ConfigExecutor.scheduleConfigChangeTask(
+                        new DumpChangeConfigWorker(this.configInfoPersistService, this.historyConfigInfoPersistService,
+                                currentTime), random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
+                        TimeUnit.MILLISECONDS);
                 
             }
             
@@ -451,85 +445,6 @@ public abstract class DumpService {
     
     public void dumpAll() {
         dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
-    }
-    
-    static List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
-        List<List<ConfigInfoChanged>> result = new ArrayList<>(count);
-        for (int i = 0; i < count; i++) {
-            result.add(new ArrayList<>());
-        }
-        for (int i = 0; i < list.size(); i++) {
-            ConfigInfoChanged config = list.get(i);
-            result.get(i % count).add(config);
-        }
-        return result;
-    }
-    
-    class MergeAllDataWorker extends Thread {
-        
-        static final int PAGE_SIZE = 10000;
-        
-        private List<ConfigInfoChanged> configInfoList;
-        
-        public MergeAllDataWorker(List<ConfigInfoChanged> configInfoList) {
-            super("MergeAllDataWorker");
-            this.configInfoList = configInfoList;
-        }
-        
-        @Override
-        public void run() {
-            if (!canExecute()) {
-                return;
-            }
-            for (ConfigInfoChanged configInfo : configInfoList) {
-                String dataId = configInfo.getDataId();
-                String group = configInfo.getGroup();
-                String tenant = configInfo.getTenant();
-                try {
-                    List<ConfigInfoAggr> datumList = new ArrayList<>();
-                    int rowCount = configInfoAggrPersistService.aggrConfigInfoCount(dataId, group, tenant);
-                    int pageCount = (int) Math.ceil(rowCount * 1.0 / PAGE_SIZE);
-                    for (int pageNo = 1; pageNo <= pageCount; pageNo++) {
-                        Page<ConfigInfoAggr> page = configInfoAggrPersistService.findConfigInfoAggrByPage(dataId, group,
-                                tenant, pageNo, PAGE_SIZE);
-                        if (page != null) {
-                            datumList.addAll(page.getPageItems());
-                            LOGGER.info("[merge-query] {}, {}, size/total={}/{}", dataId, group, datumList.size(),
-                                    rowCount);
-                        }
-                    }
-                    
-                    // merge
-                    if (datumList.size() > 0) {
-                        ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
-                        String aggrContent = cf.getContent();
-                        String localContentMD5 = ConfigCacheService.getContentMd5(GroupKey.getKey(dataId, group));
-                        String aggrConetentMD5 = MD5Utils.md5Hex(aggrContent, Constants.ENCODE);
-                        
-                        if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
-                            configInfoPersistService.insertOrUpdate(null, null, cf, null);
-                            LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
-                                    datumList.size(), cf.getContent().length(), cf.getMd5(),
-                                    ContentUtils.truncateContent(cf.getContent()));
-                        }
-                    } else {
-                        // remove config info
-                        configInfoPersistService.removeConfigInfo(dataId, group, tenant, InetUtils.getSelfIP(), null);
-                        LOGGER.warn(
-                                "[merge-delete] delete config info because no datum. dataId=" + dataId + ", groupId="
-                                        + group);
-                    }
-                    
-                } catch (Throwable e) {
-                    LOGGER.info("[merge-error] " + dataId + ", " + group + ", " + e.toString(), e);
-                }
-                FINISHED.incrementAndGet();
-                if (FINISHED.get() % 100 == 0) {
-                    LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
-                }
-            }
-            LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
-        }
     }
     
     /**
