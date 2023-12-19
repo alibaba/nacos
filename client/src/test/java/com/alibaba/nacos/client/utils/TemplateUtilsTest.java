@@ -22,6 +22,13 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.util.concurrent.Callable;
+
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class TemplateUtilsTest {
     
     @Test
@@ -41,6 +48,16 @@ public class TemplateUtilsTest {
     }
     
     @Test
+    public void testStringNotEmptyAndThenExecuteException() {
+        String word = "run";
+        Runnable task = Mockito.mock(Runnable.class);
+        doThrow(new RuntimeException("test")).when(task).run();
+        TemplateUtils.stringNotEmptyAndThenExecute(word, task);
+        Mockito.verify(task, Mockito.times(1)).run();
+        // NO exception thrown
+    }
+    
+    @Test
     public void testStringEmptyAndThenExecuteSuccess() {
         String word = "   ";
         String actual = TemplateUtils.stringEmptyAndThenExecute(word, () -> "call");
@@ -56,6 +73,14 @@ public class TemplateUtilsTest {
     }
     
     @Test
+    public void testStringEmptyAndThenExecuteException() throws Exception {
+        Callable callable = mock(Callable.class);
+        when(callable.call()).thenThrow(new RuntimeException("test"));
+        String actual = TemplateUtils.stringEmptyAndThenExecute(null, callable);
+        assertNull(actual);
+    }
+    
+    @Test
     public void testStringBlankAndThenExecuteSuccess() {
         String word = "success";
         String actual = TemplateUtils.stringBlankAndThenExecute(word, () -> "call");
@@ -68,5 +93,13 @@ public class TemplateUtilsTest {
         final String expect = "call";
         String actual = TemplateUtils.stringBlankAndThenExecute(word, () -> expect);
         Assert.assertEquals(expect, actual);
+    }
+    
+    @Test
+    public void testStringBlankAndThenExecuteException() throws Exception {
+        Callable callable = mock(Callable.class);
+        when(callable.call()).thenThrow(new RuntimeException("test"));
+        String actual = TemplateUtils.stringBlankAndThenExecute(null, callable);
+        assertNull(actual);
     }
 }
