@@ -33,7 +33,7 @@ import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
+import com.alibaba.nacos.client.config.proxy.ClientWorkerProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingGrpcRedoServiceTraceProxy;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.ServiceInfoUpdateService;
@@ -93,7 +93,7 @@ public class TraceDynamicProxyTest {
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, serverListManager, nacosClientProperties);
-        ClientWorkerTraceProxy traceProxy = TraceDynamicProxy.getClientWorkerTraceProxy(clientWorker);
+        ClientWorkerProxy traceProxy = TraceDynamicProxy.getClientWorkerTraceProxy(clientWorker);
         
         Listener listener = new AbstractListener() {
             @Override
@@ -135,7 +135,7 @@ public class TraceDynamicProxyTest {
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, serverListManager, nacosClientProperties);
-        ClientWorkerTraceProxy traceProxy = TraceDynamicProxy.getClientWorkerTraceProxy(clientWorker);
+        ClientWorkerProxy traceProxy = TraceDynamicProxy.getClientWorkerTraceProxy(clientWorker);
         
         String dataId = "a";
         String group = "b";
@@ -196,7 +196,7 @@ public class TraceDynamicProxyTest {
         declaredField.setAccessible(true);
         declaredField.set(clientWorker, client);
         
-        ClientWorkerTraceProxy traceProxy = TraceDynamicProxy.getClientWorkerTraceProxy(clientWorker);
+        ClientWorkerProxy traceProxy = TraceDynamicProxy.getClientWorkerTraceProxy(clientWorker);
         
         Assert.assertTrue(traceProxy.isHealthServer());
         Assert.assertEquals("Nacos.client.config.service / isHealthServer",
@@ -213,7 +213,7 @@ public class TraceDynamicProxyTest {
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, serverListManager, nacosClientProperties);
-        ClientWorkerTraceProxy traceProxy = TraceDynamicProxy.getClientWorkerTraceProxy(clientWorker);
+        ClientWorkerProxy traceProxy = TraceDynamicProxy.getClientWorkerTraceProxy(clientWorker);
         
         String dataId = "a";
         String group = "b";

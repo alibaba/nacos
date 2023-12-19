@@ -43,16 +43,16 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
-import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
+import com.alibaba.nacos.client.config.proxy.ClientWorkerProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
-import com.alibaba.nacos.client.monitor.config.ConfigRpcTransportClientTraceProxy;
+import com.alibaba.nacos.client.config.proxy.ConfigRpcTransportClientProxy;
+import com.alibaba.nacos.client.monitor.config.ConfigRpcTransportClientProxyTraceDelegate;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
-import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
@@ -103,7 +103,7 @@ import static com.alibaba.nacos.api.common.Constants.ENCODE;
  *
  * @author Nacos
  */
-public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
+public class ClientWorker implements ClientWorkerProxy {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
@@ -130,7 +130,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
     
     private long timeout;
     
-    private final ConfigRpcTransportClientTraceProxy agent;
+    protected final ConfigRpcTransportClientProxy agent;
     
     private int taskPenaltyTime;
     
@@ -154,8 +154,8 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
      */
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
-      
-        CacheData cache = TraceDynamicProxy.getClientWorkerTraceProxy(this).addCacheDataIfAbsent(dataId, group);
+        
+        CacheData cache = addCacheDataIfAbsent(dataId, group);
         
         synchronized (cache) {
             
@@ -182,8 +182,8 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
             throws NacosException {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
-      
-        CacheData cache = TraceDynamicProxy.getClientWorkerTraceProxy(this).addCacheDataIfAbsent(dataId, group, tenant);
+        
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             for (Listener listener : listeners) {
@@ -212,7 +212,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache = TraceDynamicProxy.getClientWorkerTraceProxy(this).addCacheDataIfAbsent(dataId, group, tenant);
+        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
         
         synchronized (cache) {
             cache.setEncryptedDataKey(encryptedDataKey);
@@ -466,7 +466,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         return this.agent.queryConfig(dataId, group, tenant, readTimeout, notify);
     }
     
-    private String blank2defaultGroup(String group) {
+    protected String blank2defaultGroup(String group) {
         return StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group.trim();
     }
     
@@ -477,7 +477,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         
         init(properties);
         
-        agent = TraceDynamicProxy.getConfigRpcTransportClientTraceProxy(
+        agent = new ConfigRpcTransportClientProxyTraceDelegate(
                 new ConfigRpcTransportClient(properties, serverListManager));
         int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Math.max(count, MIN_THREAD_NUM),
@@ -596,7 +596,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         return agent.isHealthServer();
     }
     
-    public class ConfigRpcTransportClient extends ConfigTransportClient implements ConfigRpcTransportClientTraceProxy {
+    public class ConfigRpcTransportClient extends ConfigTransportClient implements ConfigRpcTransportClientProxy {
         
         Map<String, ExecutorService> multiTaskExecutor = new HashMap<>();
         
@@ -1114,7 +1114,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
                     rpcClient = ensureRpcClient(String.valueOf(cacheData.getTaskId()));
                 }
             }
-          
+            
             ConfigQueryResponse response = (ConfigQueryResponse) agent.requestProxy(rpcClient, request, readTimeouts);
             
             ConfigResponse configResponse = new ConfigResponse();
@@ -1158,7 +1158,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
         }
         
         private Response requestProxy(RpcClient rpcClientInner, Request request) throws NacosException {
-            return agent.requestProxy(rpcClientInner, request, 3000L);
+            return requestProxy(rpcClientInner, request, 3000L);
         }
         
         /**
@@ -1189,7 +1189,7 @@ public class ClientWorker implements Closeable, ClientWorkerTraceProxy {
             
             long start = System.currentTimeMillis();
             Response rpcResponse = rpcClientInner.request(request, timeoutMills);
-
+            
             long cost = System.currentTimeMillis() - start;
             // Metrics
             ConfigMetrics.recordRpcCostDurationTimer(rpcClientInner.getConnectionType().getType(),

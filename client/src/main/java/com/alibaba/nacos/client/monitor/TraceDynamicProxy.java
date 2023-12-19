@@ -26,13 +26,11 @@ import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.CacheData;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
-import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
-import com.alibaba.nacos.client.monitor.config.ConfigRpcTransportClientTraceProxy;
+import com.alibaba.nacos.client.config.proxy.ClientWorkerProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.client.monitor.naming.NamingGrpcRedoServiceTraceProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingTrace;
@@ -43,7 +41,6 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -52,7 +49,6 @@ import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
 import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
-import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 
@@ -70,9 +66,10 @@ public class TraceDynamicProxy {
     
     // Config module
     
-    public static ClientWorkerTraceProxy getClientWorkerTraceProxy(ClientWorker clientWorker) {
-        return (ClientWorkerTraceProxy) Proxy.newProxyInstance(TraceDynamicProxy.class.getClassLoader(),
-                new Class[] {ClientWorkerTraceProxy.class}, (proxy, method, args) -> {
+    // TODO: Remove this method
+    public static ClientWorkerProxy getClientWorkerTraceProxy(ClientWorker clientWorker) {
+        return (ClientWorkerProxy) Proxy.newProxyInstance(TraceDynamicProxy.class.getClassLoader(),
+                new Class[] {ClientWorkerProxy.class}, (proxy, method, args) -> {
                     String methodName = method.getName();
                     
                     SpanBuilder spanBuilder = ConfigTrace.getClientConfigServiceSpanBuilder(methodName);
@@ -303,195 +300,6 @@ public class TraceDynamicProxy {
                     
                     try {
                         return method.invoke(clientWorker, args);
-                    } catch (InvocationTargetException e) {
-                        throw e.getTargetException();
-                    }
-                    
-                });
-    }
-    
-    public static ConfigRpcTransportClientTraceProxy getConfigRpcTransportClientTraceProxy(
-            ClientWorker.ConfigRpcTransportClient configRpcTransportClient) {
-        return (ConfigRpcTransportClientTraceProxy) Proxy.newProxyInstance(TraceDynamicProxy.class.getClassLoader(),
-                new Class[] {ConfigRpcTransportClientTraceProxy.class}, (proxy, method, args) -> {
-                    String methodName = method.getName();
-                    
-                    SpanBuilder spanBuilder = ConfigTrace.getClientConfigWorkerSpanBuilder(methodName);
-                    spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE,
-                            configRpcTransportClient.getClass().getName());
-                    spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, methodName);
-                    spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, configRpcTransportClient.getName());
-                    
-                    switch (methodName) {
-                        case "queryConfig": {
-                            Object result;
-                            Span span = spanBuilder.startSpan();
-                            try (Scope ignored = span.makeCurrent()) {
-                                
-                                if (span.isRecording()) {
-                                    span.setAttribute(NacosSemanticAttributes.DATA_ID, (String) args[0]);
-                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
-                                    span.setAttribute(NacosSemanticAttributes.TENANT, (String) args[2]);
-                                    span.setAttribute(NacosSemanticAttributes.TIMEOUT_MS, (long) args[3]);
-                                    span.setAttribute(NacosSemanticAttributes.NOTIFY, (boolean) args[4]);
-                                }
-                                
-                                result = method.invoke(configRpcTransportClient, args);
-                                
-                                if (span.isRecording() && result != null) {
-                                    ConfigResponse configResponse = (ConfigResponse) result;
-                                    if (configResponse.getConfigType() == null) {
-                                        span.setStatus(StatusCode.ERROR, "Config not found");
-                                    } else {
-                                        span.setStatus(StatusCode.OK, "Query Config success");
-                                    }
-                                }
-                                
-                            } catch (InvocationTargetException e) {
-                                Throwable targetException = e.getTargetException();
-                                span.recordException(targetException);
-                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
-                                throw targetException;
-                            } finally {
-                                span.end();
-                            }
-                            
-                            return result;
-                        }
-                        case "publishConfig": {
-                            Object result;
-                            Span span = spanBuilder.startSpan();
-                            try (Scope ignored = span.makeCurrent()) {
-                                
-                                if (span.isRecording()) {
-                                    span.setAttribute(NacosSemanticAttributes.DATA_ID, (String) args[0]);
-                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
-                                    span.setAttribute(NacosSemanticAttributes.TENANT, (String) args[2]);
-                                    span.setAttribute(NacosSemanticAttributes.APPLICATION_NAME, (String) args[3]);
-                                    span.setAttribute(NacosSemanticAttributes.TAG, (String) args[4]);
-                                    span.setAttribute(NacosSemanticAttributes.CONTENT, (String) args[6]);
-                                    span.setAttribute(NacosSemanticAttributes.CONFIG_TYPE, (String) args[9]);
-                                }
-                                
-                                result = method.invoke(configRpcTransportClient, args);
-                                
-                                if (span.isRecording() && result != null) {
-                                    boolean publishResult = (boolean) result;
-                                    if (publishResult) {
-                                        span.setStatus(StatusCode.OK, "Publish config success");
-                                    } else {
-                                        span.setStatus(StatusCode.ERROR, "Publish config failed");
-                                    }
-                                }
-                                
-                            } catch (InvocationTargetException e) {
-                                Throwable targetException = e.getTargetException();
-                                span.recordException(targetException);
-                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
-                                throw targetException;
-                            } finally {
-                                span.end();
-                            }
-                            
-                            return result;
-                        }
-                        case "removeConfig": {
-                            Object result;
-                            Span span = spanBuilder.startSpan();
-                            try (Scope ignored = span.makeCurrent()) {
-                                
-                                if (span.isRecording()) {
-                                    span.setAttribute(NacosSemanticAttributes.DATA_ID, (String) args[0]);
-                                    span.setAttribute(NacosSemanticAttributes.GROUP, (String) args[1]);
-                                    span.setAttribute(NacosSemanticAttributes.TENANT, (String) args[2]);
-                                    span.setAttribute(NacosSemanticAttributes.TAG, (String) args[3]);
-                                }
-                                
-                                result = method.invoke(configRpcTransportClient, args);
-                                
-                                if (span.isRecording() && result != null) {
-                                    boolean removeResult = (boolean) result;
-                                    if (removeResult) {
-                                        span.setStatus(StatusCode.OK, "Remove config success");
-                                    } else {
-                                        span.setStatus(StatusCode.ERROR, "Remove config failed");
-                                    }
-                                }
-                                
-                            } catch (InvocationTargetException e) {
-                                Throwable targetException = e.getTargetException();
-                                span.recordException(targetException);
-                                span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
-                                throw targetException;
-                            } finally {
-                                span.end();
-                            }
-                            
-                            return result;
-                        }
-                        default:
-                            break;
-                    }
-                    
-                    String requestProxyMethodName = "requestProxy";
-                    if (requestProxyMethodName.equals(methodName)) {
-                        spanBuilder = ConfigTrace.getClientConfigRpcSpanBuilder("GRPC");
-                        spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE,
-                                configRpcTransportClient.getClass().getName());
-                        spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, methodName);
-                        spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME,
-                                configRpcTransportClient.getName());
-                        spanBuilder.setAttribute(NacosSemanticAttributes.TIMEOUT_MS,
-                                args.length > 2 ? (long) args[2] : 3000L);
-                        
-                        Object result;
-                        Span span = spanBuilder.startSpan();
-                        
-                        try (Scope ignored = span.makeCurrent()) {
-                            
-                            if (span.isRecording()) {
-                                RpcClient rpcClientInner = (RpcClient) args[0];
-                                Request request = (Request) args[1];
-                                // Inject the context into the request headers.
-                                TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
-                                        .inject(Context.current(), request.getHeaders(),
-                                                TraceMonitor.getRpcContextSetter());
-                                
-                                span.setAttribute(SemanticAttributes.RPC_SYSTEM,
-                                        rpcClientInner.getConnectionType().getType().toLowerCase());
-                                if (rpcClientInner.getCurrentServer() != null) {
-                                    span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
-                                            rpcClientInner.getCurrentServer().getAddress());
-                                }
-                            }
-                            
-                            result = method.invoke(configRpcTransportClient, args);
-                            
-                            if (span.isRecording() && result != null) {
-                                Response rpcResponse = (Response) result;
-                                if (rpcResponse.isSuccess()) {
-                                    span.setStatus(StatusCode.OK);
-                                } else {
-                                    span.setStatus(StatusCode.ERROR,
-                                            rpcResponse.getErrorCode() + ": " + rpcResponse.getMessage());
-                                }
-                                span.setAttribute(SemanticAttributes.RPC_GRPC_STATUS_CODE, rpcResponse.getResultCode());
-                            }
-                            
-                        } catch (InvocationTargetException e) {
-                            Throwable targetException = e.getTargetException();
-                            span.recordException(targetException);
-                            span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
-                            throw targetException;
-                        } finally {
-                            span.end();
-                        }
-                        
-                        return result;
-                    }
-                    
-                    try {
-                        return method.invoke(configRpcTransportClient, args);
                     } catch (InvocationTargetException e) {
                         throw e.getTargetException();
                     }

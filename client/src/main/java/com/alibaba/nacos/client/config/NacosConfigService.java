@@ -36,12 +36,12 @@ import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
-import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceProxy;
-import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
+import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceDelegate;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.utils.StringUtils;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -76,7 +76,7 @@ public class NacosConfigService implements ConfigService {
     /**
      * long polling.
      */
-    private final ClientWorkerTraceProxy worker;
+    private final ClientWorker worker;
     
     private String namespace;
     
@@ -91,8 +91,7 @@ public class NacosConfigService implements ConfigService {
         ServerListManager serverListManager = new ServerListManager(clientProperties);
         serverListManager.start();
         
-        this.worker = TraceDynamicProxy.getClientWorkerTraceProxy(
-                new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties));
+        this.worker = new ClientWorkerTraceDelegate(this.configFilterChainManager, serverListManager, clientProperties);
         // will be deleted in 2.0 later versions
         agent = TraceDynamicProxy.getHttpAgentTraceProxy(new ServerHttpAgent(serverListManager));
         
@@ -224,7 +223,7 @@ public class NacosConfigService implements ConfigService {
         cr.setContent(content);
         
         String encryptedDataKey = getSnapshotWithTrace(agent.getName(), dataId, group, tenant, true);
-
+        
         cr.setEncryptedDataKey(encryptedDataKey);
         configFilterChainManager.doFilter(null, cr);
         content = cr.getContent();

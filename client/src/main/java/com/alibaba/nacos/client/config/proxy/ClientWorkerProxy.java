@@ -16,7 +16,7 @@
  *
  */
 
-package com.alibaba.nacos.client.monitor.config;
+package com.alibaba.nacos.client.config.proxy;
 
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -27,17 +27,14 @@ import com.alibaba.nacos.common.lifecycle.Closeable;
 import java.util.List;
 
 /**
- * {@link com.alibaba.nacos.client.config.impl.ClientWorker} interface for dynamic proxy to trace the ClientWorker by
- * OpenTelemetry.
+ * proxy interface for ClientWorker.
  *
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
-public interface ClientWorkerTraceProxy extends Closeable {
-    
-    // Methods for Service level config span
+public interface ClientWorkerProxy extends Closeable {
     
     /**
-     * Add listener to config. For trace dynamic proxy.
+     * Add listener to config.
      *
      * @param dataId           dataId
      * @param group            group
@@ -50,7 +47,7 @@ public interface ClientWorkerTraceProxy extends Closeable {
             List<? extends Listener> listeners) throws NacosException;
     
     /**
-     * Add listener to config. For trace dynamic proxy.
+     * Add listener to config.
      *
      * @param dataId    dataId
      * @param group     group
@@ -60,7 +57,7 @@ public interface ClientWorkerTraceProxy extends Closeable {
     void addTenantListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException;
     
     /**
-     * Remove listener from config. For trace dynamic proxy.
+     * Remove listener from config.
      *
      * @param dataId   dataId
      * @param group    group
@@ -69,7 +66,7 @@ public interface ClientWorkerTraceProxy extends Closeable {
     void removeTenantListener(String dataId, String group, Listener listener);
     
     /**
-     * Remove all listeners from config. For trace dynamic proxy.
+     * Remove all listeners from config.
      *
      * @param dataId      dataId
      * @param group       group
@@ -83,7 +80,7 @@ public interface ClientWorkerTraceProxy extends Closeable {
             throws NacosException;
     
     /**
-     * Remove all listeners from config. For trace dynamic proxy.
+     * Remove all listeners from config.
      *
      * @param dataId dataId
      * @param group  group
@@ -95,7 +92,7 @@ public interface ClientWorkerTraceProxy extends Closeable {
     boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException;
     
     /**
-     * Remove all listeners from config. For trace dynamic proxy.
+     * Remove all listeners from config.
      *
      * @param dataId           dataId
      * @param group            group
@@ -135,7 +132,7 @@ public interface ClientWorkerTraceProxy extends Closeable {
     CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException;
     
     /**
-     * Check whether the server is health. For trace dynamic proxy.
+     * Check whether the server is health.
      *
      * @return boolean
      */
@@ -144,14 +141,14 @@ public interface ClientWorkerTraceProxy extends Closeable {
     // Other necessary methods
     
     /**
-     * Get agent tenant. For trace dynamic proxy.
+     * Get agent tenant.
      *
      * @return tenant
      */
     String getAgentTenant();
     
     /**
-     * Get agent name. For trace dynamic proxy.
+     * Get agent name.
      *
      * @return name
      */
