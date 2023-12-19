@@ -25,12 +25,14 @@ import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 
@@ -228,7 +230,7 @@ public class ConnectionManager {
     }
     
     /**
-     * regresh connection active time.
+     * refresh connection active time.
      *
      * @param connectionId connectionId.
      */
@@ -249,8 +251,20 @@ public class ConnectionManager {
         // Start UnHealthy Connection Expel Task.
         RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(() -> {
             runtimeConnectionEjector.doEject();
+            MetricsMonitor.getLongConnectionMonitor().set(connections.size());
         }, 1000L, 3000L, TimeUnit.MILLISECONDS);
-        
+
+        Boolean enabled = EnvUtil.getProperty("nacos.metric.grpc.server.connection.enabled", Boolean.class, true);
+        if (enabled) {
+            RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(() -> {
+                Map<String, Integer> count = new HashMap<>(16);
+                connections.forEach((id, connection) -> {
+                    String module = connection.getLabels().getOrDefault(RemoteConstants.LABEL_MODULE, "unknown");
+                    count.put(module, count.getOrDefault(module, 0) + 1);
+                });
+                MetricsMonitor.refreshModuleConnectionCount(count);
+            }, 1L, EnvUtil.getProperty("nacos.metric.grpc.server.connection.interval", Long.class, 15L), TimeUnit.SECONDS);
+        }
     }
     
     public void loadCount(int loadClient, String redirectAddress) {
@@ -259,12 +273,13 @@ public class ConnectionManager {
     }
     
     /**
-     * send load request to spefic connetionId.
+     * send load request to specific connectionId.
      *
      * @param connectionId    connection id of client.
      * @param redirectAddress server address to redirect.
+     * @return whether remove connection.
      */
-    public void loadSingle(String connectionId, String redirectAddress) {
+    public boolean loadSingle(String connectionId, String redirectAddress) {
         Connection connection = getConnection(connectionId);
         
         if (connection != null) {
@@ -274,6 +289,7 @@ public class ConnectionManager {
                     String[] split = redirectAddress.split(Constants.COLON);
                     connectResetRequest.setServerIp(split[0]);
                     connectResetRequest.setServerPort(split[1]);
+                    connectResetRequest.setConnectionId(connectionId);
                 }
                 try {
                     connection.request(connectResetRequest, 3000L);
@@ -281,9 +297,11 @@ public class ConnectionManager {
                     unregister(connectionId);
                 } catch (Exception e) {
                     LOGGER.error("error occurs when expel connection, connectionId: {} ", connectionId, e);
+                    return false;
                 }
             }
         }
+        return true;
         
     }
     

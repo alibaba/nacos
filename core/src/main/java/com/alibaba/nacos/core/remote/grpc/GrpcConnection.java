@@ -17,6 +17,7 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.remote.DefaultRequestFuture;
 import com.alibaba.nacos.api.remote.RequestCallBack;
@@ -25,14 +26,20 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
+import com.alibaba.nacos.common.remote.exception.ConnectionBusyException;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.RpcAckCallbackSynchronizer;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.plugin.control.ControlManagerCenter;
+import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
+import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * grpc connection.
@@ -46,26 +53,86 @@ public class GrpcConnection extends Connection {
     
     private Channel channel;
     
+    private static TpsControlManager tpsControlManager;
+    
     public GrpcConnection(ConnectionMeta metaInfo, StreamObserver streamObserver, Channel channel) {
         super(metaInfo);
         this.streamObserver = streamObserver;
         this.channel = channel;
     }
     
-    private void sendRequestNoAck(Request request) throws NacosException {
-        try {
+    /**
+     * send request without ack.
+     *
+     * @param request request data.
+     * @throws NacosException NacosException
+     */
+    public void sendRequestNoAck(Request request) throws NacosException {
+        sendQueueBlockCheck();
+        final AtomicReference<NacosRuntimeException> exception = new AtomicReference<>();
+        final DefaultRequestFuture future = new DefaultRequestFuture(this.getMetaInfo().getConnectionId(), "0");
+        this.channel.eventLoop().execute(() -> {
             //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
             synchronized (streamObserver) {
-                
-                Payload payload = GrpcUtils.convert(request);
-                traceIfNecessary(payload);
-                streamObserver.onNext(payload);
+                try {
+                    Payload payload = GrpcUtils.convert(request);
+                    traceIfNecessary(payload);
+                    streamObserver.onNext(payload);
+                    future.setResponse(new Response() {
+                        @Override
+                        public String getMessage() {
+                            return "";
+                        }
+                    });
+                } catch (Throwable e) {
+                    if (e instanceof StatusRuntimeException) {
+                        exception.set(new ConnectionAlreadyClosedException(e));
+                    } else if (e instanceof IllegalStateException) {
+                        exception.set(new ConnectionAlreadyClosedException(e));
+                    } else {
+                        exception.set(new NacosRuntimeException(NacosException.SERVER_ERROR, e));
+                    }
+                    future.setFailResult(exception.get());
+                }
+            
             }
+        });
+        try {
+            future.get();
         } catch (Exception e) {
-            if (e instanceof StatusRuntimeException) {
-                throw new ConnectionAlreadyClosedException(e);
+            //ignore
+        }
+        if (exception.get() != null) {
+            throw exception.get();
+        }
+    
+    }
+    
+    private void sendQueueBlockCheck() {
+        if (streamObserver instanceof ServerCallStreamObserver) {
+            // if bytes on queue is greater than  32k ,isReady will return false.
+            // queue type: grpc write queue,flowed controller queue etc.
+            // this 32k threshold is fixed with static final.
+            // see io.grpc.internal.AbstractStream.TransportState.DEFAULT_ONREADY_THRESHOLD
+            boolean ready = ((ServerCallStreamObserver<?>) streamObserver).isReady();
+            if (!ready) {
+                if (tpsControlManager == null) {
+                    synchronized (GrpcConnection.class.getClass()) {
+                        if (tpsControlManager == null) {
+                            tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
+                            tpsControlManager.registerTpsPoint("SERVER_PUSH_BLOCK");
+                        }
+                    }
+                }
+                TpsCheckRequest tpsCheckRequest = new TpsCheckRequest("SERVER_PUSH_BLOCK",
+                        this.getMetaInfo().getConnectionId(), this.getMetaInfo().getClientIp());
+                //record block only.
+                tpsControlManager.check(tpsCheckRequest);
+                getMetaInfo().recordPushQueueBlockTimes();
+                throw new ConnectionBusyException("too much bytes on sending queue of this stream.");
+            } else {
+                getMetaInfo().clearPushQueueBlockTimes();
             }
-            throw e;
         }
     }
     
@@ -127,8 +194,12 @@ public class GrpcConnection extends Connection {
             if (isTraced()) {
                 Loggers.REMOTE_DIGEST.warn("[{}] try to close connection ", connectionId);
             }
-            
-            closeBiStream();
+    
+            try {
+                closeBiStream();
+            } catch (Throwable e) {
+                Loggers.REMOTE_DIGEST.warn("[{}] connection  close bi stream exception  : {}", connectionId, e);
+            }
             channel.close();
             
         } catch (Exception e) {

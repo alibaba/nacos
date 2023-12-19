@@ -96,6 +96,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         batchInstancePublishInfo.setInstancePublishInfos(resultList);
         client.addServiceInstance(singleton, batchInstancePublishInfo);
         client.setLastUpdatedTime();
+        client.recalculateRevision();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientRegisterServiceEvent(singleton, clientId));
         NotifyCenter.publishEvent(
                 new MetadataEvent.InstanceMetadataEvent(singleton, batchInstancePublishInfo.getMetadataId(), false));

@@ -69,7 +69,9 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                 if (tpsCheckRequest == null) {
                     tpsCheckRequest = new TpsCheckRequest();
                 }
-                tpsCheckRequest.setPointName(pointName);
+                if (StringUtils.isBlank(tpsCheckRequest.getPointName())) {
+                    tpsCheckRequest.setPointName(pointName);
+                }
                 
                 TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
                 

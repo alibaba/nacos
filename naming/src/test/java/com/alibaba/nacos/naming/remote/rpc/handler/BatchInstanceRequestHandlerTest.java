@@ -53,6 +53,8 @@ public class BatchInstanceRequestHandlerTest {
     public void testHandle() throws NacosException {
         BatchInstanceRequest batchInstanceRequest = new BatchInstanceRequest();
         batchInstanceRequest.setType(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
+        batchInstanceRequest.setServiceName("service1");
+        batchInstanceRequest.setGroupName("group1");
         List<Instance> instanceList = new ArrayList<>();
         Instance instance = new Instance();
         instanceList.add(instance);

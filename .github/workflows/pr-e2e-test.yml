@@ -62,7 +62,7 @@ jobs:
       - name: Build and save docker images
         id: build-images
         run: |
-          mv nacos-server-*-SNAPSHOT.tar.gz nacos-e2e/cicd/build
+          mv nacos-server-*.tar.gz nacos-e2e/cicd/build
           cd nacos-e2e/cicd/build
           version=${{ github.event.pull_request.number || github.ref_name }}-$(uuidgen)
           mkdir versionlist
@@ -171,7 +171,7 @@ jobs:
           ask-config: "${{ secrets.ASK_CONFIG_VIRGINA }}"
           test-version: "${{ matrix.version }}"
           test-code-git: "https://github.com/nacos-group/nacos-e2e.git"
-          test-code-branch: "master"
+          test-code-branch: "main"
           test-code-path: "java/nacos-2X"
           test-cmd: 'mvn clean test -B'
           job-id: ${{ strategy.job-index }}

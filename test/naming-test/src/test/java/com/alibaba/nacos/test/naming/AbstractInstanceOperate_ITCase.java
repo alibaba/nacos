@@ -351,7 +351,7 @@ public abstract class AbstractInstanceOperate_ITCase {
     public void registerEphemeralInstanceWithInvalidClusterName() throws Exception {
         expectedException.expect(Exception.class);
         expectedException.expectMessage(
-                "Param 'cluster' is illegal, Chinese characters and ',' should not appear in the param");
+                "Param 'cluster' is illegal, illegal characters should not appear in the param.");
         
         String serviceName = NamingBase.randomDomainName();
         Instance instance = new Instance();
@@ -376,7 +376,7 @@ public abstract class AbstractInstanceOperate_ITCase {
     public void registerPersistentInstanceWithInvalidClusterName() throws Exception {
         expectedException.expect(NacosException.class);
         expectedException.expectMessage(
-                "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
+                "Param 'cluster' is illegal, illegal characters should not appear in the param.");
         
         String serviceName = NamingBase.randomDomainName();
         Instance instance = new Instance();

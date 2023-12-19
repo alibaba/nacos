@@ -17,24 +17,23 @@
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.api.config.listener.AbstractListener;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
+import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.model.RestResult;
-import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.config.server.model.event.RaftDbErrorRecoverEvent;
-import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedStoragePersistServiceImpl;
-import com.alibaba.nacos.config.server.service.repository.PersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
+import com.alibaba.nacos.config.server.service.repository.embedded.EmbeddedConfigInfoPersistServiceImpl;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.raft.utils.JRaftConstants;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.sys.utils.InetUtils;
-
 import com.alibaba.nacos.test.base.BaseClusterTest;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.Assert;
@@ -76,10 +75,10 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         ConfigurableApplicationContext context7 = applications.get("8847");
         ConfigurableApplicationContext context8 = applications.get("8848");
         ConfigurableApplicationContext context9 = applications.get("8849");
-        
-        PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
-        PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
-        PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
+    
+        ConfigInfoPersistService operate7 = context7.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
+        ConfigInfoPersistService operate8 = context8.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
+        ConfigInfoPersistService operate9 = context9.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
         
         String s7 = operate7.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
         String s8 = operate8.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
@@ -102,10 +101,10 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         ConfigurableApplicationContext context7 = applications.get("8847");
         ConfigurableApplicationContext context8 = applications.get("8848");
         ConfigurableApplicationContext context9 = applications.get("8849");
-        
-        PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
-        PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
-        PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
+    
+        ConfigInfoPersistService operate7 = context7.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
+        ConfigInfoPersistService operate8 = context8.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
+        ConfigInfoPersistService operate9 = context9.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
         
         String s7 = operate7.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
         String s8 = operate8.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
@@ -127,10 +126,10 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         ConfigurableApplicationContext context7 = applications.get("8847");
         ConfigurableApplicationContext context8 = applications.get("8848");
         ConfigurableApplicationContext context9 = applications.get("8849");
-        
-        PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
-        PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
-        PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
+    
+        ConfigInfoPersistService operate7 = context7.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
+        ConfigInfoPersistService operate8 = context8.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
+        ConfigInfoPersistService operate9 = context9.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
         
         String s7 = operate7.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
         String s8 = operate8.findConfigInfo("raft_test", "cluster_test_2", "").getContent();
@@ -152,10 +151,10 @@ public class ConfigDerbyRaft_DITCase extends BaseClusterTest {
         ConfigurableApplicationContext context7 = applications.get("8847");
         ConfigurableApplicationContext context8 = applications.get("8848");
         ConfigurableApplicationContext context9 = applications.get("8849");
-        
-        PersistService operate7 = context7.getBean(EmbeddedStoragePersistServiceImpl.class);
-        PersistService operate8 = context8.getBean(EmbeddedStoragePersistServiceImpl.class);
-        PersistService operate9 = context9.getBean(EmbeddedStoragePersistServiceImpl.class);
+    
+        ConfigInfoPersistService operate7 = context7.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
+        ConfigInfoPersistService operate8 = context8.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
+        ConfigInfoPersistService operate9 = context9.getBean(EmbeddedConfigInfoPersistServiceImpl.class);
         
         String s7 = operate7.findConfigInfo("raft_test", "cluster_test_1", "").getContent();
         String s8 = operate8.findConfigInfo("raft_test", "cluster_test_1", "").getContent();

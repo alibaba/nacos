@@ -54,12 +54,14 @@ public class ConfigChangeConfigs extends Subscriber<ServerConfigChangeEvent> {
         try {
             Map<String, Properties> newProperties = new HashMap<>(3);
             Properties properties = PropertiesUtil.getPropertiesWithPrefix(EnvUtil.getEnvironment(), PREFIX);
-            for (String each : properties.stringPropertyNames()) {
-                int typeIndex = each.indexOf('.');
-                String type = each.substring(0, typeIndex);
-                String subKey = each.substring(typeIndex + 1);
-                newProperties.computeIfAbsent(type, key -> new Properties())
-                        .setProperty(subKey, properties.getProperty(each));
+            if (properties != null) {
+                for (String each : properties.stringPropertyNames()) {
+                    int typeIndex = each.indexOf('.');
+                    String type = each.substring(0, typeIndex);
+                    String subKey = each.substring(typeIndex + 1);
+                    newProperties.computeIfAbsent(type, key -> new Properties())
+                            .setProperty(subKey, properties.getProperty(each));
+                }
             }
             configPluginProperties = newProperties;
         } catch (Exception e) {

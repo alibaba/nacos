@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.common.utils;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -26,7 +23,6 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.StringTokenizer;
 
 /**
@@ -36,7 +32,7 @@ import java.util.StringTokenizer;
  * @author zzq
  */
 public class StringUtils {
-
+    
     private StringUtils() {
     }
     
@@ -130,6 +126,29 @@ public class StringUtils {
     }
     
     /**
+     * <p>Returns either the passed in CharSequence, or if the CharSequence is
+     * empty or {@code null} or whitespace only, the value of {@code defaultStr}.</p>
+     *
+     * @param str        the CharSequence to check, may be null, may be whitespace only
+     * @param defaultStr the default CharSequence to return if the input is empty ("") or {@code null}, may be null
+     * @return the passed in CharSequence, or the default
+     */
+    public static String defaultIfBlank(String str, String defaultStr) {
+        return isBlank(str) ? defaultStr : str;
+    }
+    
+    /**
+     * <p>Returns either the passed in CharSequence, or if the CharSequence is
+     * empty or {@code null} or whitespace only, the value of {@code EmptyString}.</p>
+     *
+     * @param str the CharSequence to check, may be null, may be whitespace only
+     * @return the passed in CharSequence, or the empty string
+     */
+    public static String defaultEmptyIfBlank(String str) {
+        return defaultIfBlank(str, EMPTY);
+    }
+    
+    /**
      * <p>Compares two CharSequences, returning {@code true} if they represent
      * equal sequences of characters.</p>
      *
@@ -201,108 +220,6 @@ public class StringUtils {
         }
         
         return stringBuilder.toString();
-    }
-    
-    public static String escapeJavaScript(String str) {
-        return escapeJavaStyleString(str, true, true);
-    }
-    
-    private static String escapeJavaStyleString(String str, boolean escapeSingleQuotes, boolean escapeForwardSlash) {
-        if (str == null) {
-            return null;
-        }
-        try {
-            StringWriter writer = new StringWriter(str.length() * 2);
-            escapeJavaStyleString(writer, str, escapeSingleQuotes, escapeForwardSlash);
-            return writer.toString();
-        } catch (IOException ioe) {
-            // this should never ever happen while writing to a StringWriter
-            return null;
-        }
-    }
-    
-    private static void escapeJavaStyleString(Writer out, String str, boolean escapeSingleQuote,
-            boolean escapeForwardSlash) throws IOException {
-        if (out == null) {
-            throw new IllegalArgumentException("The Writer must not be null");
-        }
-        if (str == null) {
-            return;
-        }
-        int sz;
-        sz = str.length();
-        for (int i = 0; i < sz; i++) {
-            char ch = str.charAt(i);
-            
-            // handle unicode
-            if (ch > 0xfff) {
-                out.write("\\u" + hex(ch));
-            } else if (ch > 0xff) {
-                out.write("\\u0" + hex(ch));
-            } else if (ch > 0x7f) {
-                out.write("\\u00" + hex(ch));
-            } else if (ch < 32) {
-                switch (ch) {
-                    case '\b':
-                        out.write('\\');
-                        out.write('b');
-                        break;
-                    case '\n':
-                        out.write('\\');
-                        out.write('n');
-                        break;
-                    case '\t':
-                        out.write('\\');
-                        out.write('t');
-                        break;
-                    case '\f':
-                        out.write('\\');
-                        out.write('f');
-                        break;
-                    case '\r':
-                        out.write('\\');
-                        out.write('r');
-                        break;
-                    default:
-                        if (ch > 0xf) {
-                            out.write("\\u00" + hex(ch));
-                        } else {
-                            out.write("\\u000" + hex(ch));
-                        }
-                        break;
-                }
-            } else {
-                switch (ch) {
-                    case '\'':
-                        if (escapeSingleQuote) {
-                            out.write('\\');
-                        }
-                        out.write('\'');
-                        break;
-                    case '"':
-                        out.write('\\');
-                        out.write('"');
-                        break;
-                    case '\\':
-                        out.write('\\');
-                        out.write('\\');
-                        break;
-                    case '/':
-                        if (escapeForwardSlash) {
-                            out.write('\\');
-                        }
-                        out.write('/');
-                        break;
-                    default:
-                        out.write(ch);
-                        break;
-                }
-            }
-        }
-    }
-    
-    private static String hex(char ch) {
-        return Integer.toHexString(ch).toUpperCase(Locale.ENGLISH);
     }
     
     /**
@@ -400,7 +317,7 @@ public class StringUtils {
         }
         if (ignoreCase) {
             String lowerCaseStr = str.toString().toLowerCase();
-            String lowerCasePrefix = str.toString().toLowerCase();
+            String lowerCasePrefix = prefix.toString().toLowerCase();
             return lowerCaseStr.startsWith(lowerCasePrefix);
         } else {
             return str.toString().startsWith(prefix.toString());
@@ -480,10 +397,6 @@ public class StringUtils {
         return str.split(separatorChars);
     }
     
-    private static String[] tokenizeLocaleSource(String localeSource) {
-        return tokenizeToStringArray(localeSource, "_ ", false, false);
-    }
-    
     /**
      * Tokenize the given {@code String} into a {@code String} array via a {@link StringTokenizer}.
      *
@@ -542,7 +455,7 @@ public class StringUtils {
      * {@code String} is not {@code null}, its length is greater than 0, and it contains at least one non-whitespace
      * character.
      *
-     * @param str the {@code String} to check (may be {@code null})
+     * @param str the {@code String} to check (maybe {@code null})
      * @return {@code true} if the {@code String} is not {@code null}, its length is greater than 0, and it does not
      * contain whitespace only
      * @see Character#isWhitespace
@@ -698,7 +611,7 @@ public class StringUtils {
      * <p>Note: this method returns {@code true} for a {@code String} that
      * purely consists of whitespace.
      *
-     * @param str the {@code String} to check (may be {@code null})
+     * @param str the {@code String} to check (maybe {@code null})
      * @return {@code true} if the {@code String} is not {@code null} and has length
      * @see #hasText(String)
      */
@@ -710,7 +623,7 @@ public class StringUtils {
      * Take a {@code String} that is a delimited list and convert it into a {@code String} array.
      *
      * <p>A single {@code delimiter} may consist of more than one character,
-     * but it will still be considered as a single delimiter string, rather than as bunch of potential delimiter
+     * but it will still be considered as a single delimiter string, rather than as a bunch of potential delimiter
      * characters, in contrast to {@link #tokenizeToStringArray}.
      *
      * @param str       the input {@code String} (potentially {@code null} or empty)
@@ -727,7 +640,7 @@ public class StringUtils {
      * Take a {@code String} that is a delimited list and convert it into a {@code String} array.
      *
      * <p>A single {@code delimiter} may consist of more than one character,
-     * but it will still be considered as a single delimiter string, rather than as bunch of potential delimiter
+     * but it will still be considered as a single delimiter string, rather than as a bunch of potential delimiter
      * characters, in contrast to {@link #tokenizeToStringArray}.
      *
      * @param str           the input {@code String} (potentially {@code null} or empty)
@@ -853,9 +766,9 @@ public class StringUtils {
     }
     
     /**
-     * Extract the filename from the given Java resource path, e.g. {@code "mypath/myfile.txt" &rarr; "myfile.txt"}.
+     * Extract the filename from the given Java resource path, e.g. {@code "myPath/myFile.txt" &rarr; "myFile.txt"}.
      *
-     * @param path the file path (may be {@code null})
+     * @param path the file path (maybe {@code null})
      * @return the extracted filename, or {@code null} if none
      */
     
@@ -876,21 +789,17 @@ public class StringUtils {
      * @return the capitalized {@code String}
      */
     public static String capitalize(String str) {
-        return changeFirstCharacterCase(str, true);
+        return changeFirstCharacterCase(str);
     }
     
-    private static String changeFirstCharacterCase(String str, boolean capitalize) {
+    private static String changeFirstCharacterCase(String str) {
         if (!hasLength(str)) {
             return str;
         }
         
         char baseChar = str.charAt(0);
         char updatedChar;
-        if (capitalize) {
-            updatedChar = Character.toUpperCase(baseChar);
-        } else {
-            updatedChar = Character.toLowerCase(baseChar);
-        }
+        updatedChar = Character.toUpperCase(baseChar);
         if (baseChar == updatedChar) {
             return str;
         }

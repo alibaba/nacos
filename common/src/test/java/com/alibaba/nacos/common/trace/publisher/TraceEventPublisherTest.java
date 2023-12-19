@@ -30,7 +30,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TraceEventPublisherTest {
@@ -56,7 +58,8 @@ public class TraceEventPublisherTest {
     
     @Test
     public void testAddSubscriber() {
-        traceEventPublisher.addSubscriber(subscriber, TraceTestEvent.TraceTestEvent1.class);
+        when(subscriber.subscribeType()).thenReturn(TraceTestEvent.TraceTestEvent1.class);
+        traceEventPublisher.addSubscriber(subscriber);
         traceEventPublisher.addSubscriber(smartSubscriber, TraceTestEvent.TraceTestEvent2.class);
         TraceTestEvent.TraceTestEvent1 traceTestEvent1 = new TraceTestEvent.TraceTestEvent1();
         TraceTestEvent.TraceTestEvent2 traceTestEvent2 = new TraceTestEvent.TraceTestEvent2();
@@ -81,6 +84,13 @@ public class TraceEventPublisherTest {
         traceEventPublisher.publish(traceTestEvent1);
         ThreadUtils.sleep(500L);
         verify(subscriber).onEvent(traceTestEvent1);
+        verify(smartSubscriber, never()).onEvent(traceTestEvent1);
+        reset(subscriber);
+        when(subscriber.subscribeType()).thenReturn(TraceTestEvent.TraceTestEvent1.class);
+        traceEventPublisher.removeSubscriber(subscriber);
+        traceEventPublisher.publish(traceTestEvent1);
+        ThreadUtils.sleep(500L);
+        verify(subscriber, never()).onEvent(traceTestEvent1);
         verify(smartSubscriber, never()).onEvent(traceTestEvent1);
     }
     

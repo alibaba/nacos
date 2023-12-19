@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
+
 import java.util.List;
 
 /**
@@ -43,17 +45,11 @@ public abstract class AbstractMapper implements Mapper {
         sql.append(getTableName());
         sql.append(" ");
         
-        if (where.size() == 0) {
+        if (CollectionUtils.isEmpty(where)) {
             return sql.toString();
         }
         
-        sql.append("WHERE ");
-        for (int i = 0; i < where.size(); i++) {
-            sql.append(where.get(i)).append(" = ").append("?");
-            if (i != where.size() - 1) {
-                sql.append(" AND ");
-            }
-        }
+        appendWhereClause(where, sql);
         return sql.toString();
     }
     
@@ -100,18 +96,13 @@ public abstract class AbstractMapper implements Mapper {
             }
         }
         
-        if (where.size() == 0) {
+        if (CollectionUtils.isEmpty(where)) {
             return sql.toString();
         }
         
-        sql.append(" WHERE ");
+        sql.append(" ");
+        appendWhereClause(where, sql);
         
-        for (int i = 0; i < where.size(); i++) {
-            sql.append(where.get(i)).append(" = ").append("?");
-            if (i != where.size() - 1) {
-                sql.append(" AND ");
-            }
-        }
         return sql.toString();
     }
     
@@ -143,6 +134,17 @@ public abstract class AbstractMapper implements Mapper {
             return sql.toString();
         }
         
+        appendWhereClause(where, sql);
+        
+        return sql.toString();
+    }
+    
+    @Override
+    public String[] getPrimaryKeyGeneratedKeys() {
+        return new String[] {"id"};
+    }
+    
+    private void appendWhereClause(List<String> where, StringBuilder sql) {
         sql.append("WHERE ");
         for (int i = 0; i < where.size(); i++) {
             sql.append(where.get(i)).append(" = ").append("?");
@@ -150,11 +152,5 @@ public abstract class AbstractMapper implements Mapper {
                 sql.append(" AND ");
             }
         }
-        return sql.toString();
-    }
-    
-    @Override
-    public String[] getPrimaryKeyGeneratedKeys() {
-        return new String[]{"id"};
     }
 }

@@ -16,30 +16,35 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.grpc.auto.BiRequestStreamGrpc;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.grpc.auto.RequestGrpc;
+import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.api.remote.request.ConnectionSetupRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
+import com.alibaba.nacos.api.remote.request.SetupAckRequest;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
+import com.alibaba.nacos.api.remote.response.SetupAckResponse;
+import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
-import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.LoggerUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
-import com.alibaba.nacos.common.utils.TlsTypeResolve;
 import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
-import com.google.common.base.Optional;
+import com.alibaba.nacos.common.utils.TlsTypeResolve;
+import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
@@ -49,7 +54,6 @@ import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
-
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContextBuilder;
 import io.grpc.netty.shaded.io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import io.grpc.stub.StreamObserver;
@@ -57,8 +61,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -77,6 +84,16 @@ public abstract class GrpcClient extends RpcClient {
     private final GrpcClientConfig clientConfig;
     
     private ThreadPoolExecutor grpcExecutor;
+    
+    /**
+     * Block to wait setup success response.
+     */
+    private final RecAbilityContext recAbilityContext = new RecAbilityContext(null);
+    
+    /**
+     * for receiving server abilities.
+     */
+    private SetupRequestHandler setupRequestHandler;
     
     @Override
     public ConnectionType getConnectionType() {
@@ -109,6 +126,7 @@ public abstract class GrpcClient extends RpcClient {
     public GrpcClient(GrpcClientConfig clientConfig) {
         super(clientConfig);
         this.clientConfig = clientConfig;
+        initSetupHandler();
     }
     
     /**
@@ -120,6 +138,15 @@ public abstract class GrpcClient extends RpcClient {
     public GrpcClient(GrpcClientConfig clientConfig, ServerListFactory serverListFactory) {
         super(clientConfig, serverListFactory);
         this.clientConfig = clientConfig;
+        initSetupHandler();
+    }
+    
+    /**
+     * setup handler.
+     */
+    private void initSetupHandler() {
+        // register to handler setup request
+        setupRequestHandler = new SetupRequestHandler(this.recAbilityContext);
     }
     
     /**
@@ -168,7 +195,7 @@ public abstract class GrpcClient extends RpcClient {
      * @param managedChannelTemp channel.
      * @return if server check success,return a non-null stub.
      */
-    private RequestGrpc.RequestFutureStub createNewChannelStub(ManagedChannel managedChannelTemp) {
+    protected RequestGrpc.RequestFutureStub createNewChannelStub(ManagedChannel managedChannelTemp) {
         return RequestGrpc.newFutureStub(managedChannelTemp);
     }
     
@@ -182,8 +209,8 @@ public abstract class GrpcClient extends RpcClient {
     private ManagedChannel createNewManagedChannel(String serverIp, int serverPort) {
         LOGGER.info("grpc client connection server:{} ip,serverPort:{},grpcTslConfig:{}", serverIp, serverPort,
                 JacksonUtils.toJson(clientConfig.tlsConfig()));
-        ManagedChannelBuilder<?> managedChannelBuilder = buildChannel(serverIp, serverPort, buildSslContext()).executor(
-                        grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())
+        ManagedChannelBuilder<?> managedChannelBuilder = buildChannel(serverIp, serverPort, buildSslContext())
+                .executor(grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())
                 .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
                 .maxInboundMessageSize(clientConfig.maxInboundMessageSize())
                 .keepAliveTime(clientConfig.channelKeepAlive(), TimeUnit.MILLISECONDS)
@@ -210,9 +237,6 @@ public abstract class GrpcClient extends RpcClient {
      */
     private Response serverCheck(String ip, int port, RequestGrpc.RequestFutureStub requestBlockingStub) {
         try {
-            if (requestBlockingStub == null) {
-                return null;
-            }
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);
@@ -247,6 +271,11 @@ public abstract class GrpcClient extends RpcClient {
                     if (request != null) {
                         
                         try {
+                            if (request instanceof SetupAckRequest) {
+                                // there is no connection ready this time
+                                setupRequestHandler.requestReply(request, null);
+                                return;
+                            }
                             Response response = handleServerRequest(request);
                             if (response != null) {
                                 response.setRequestId(request.getRequestId());
@@ -259,8 +288,8 @@ public abstract class GrpcClient extends RpcClient {
                         } catch (Exception e) {
                             LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Handle server request exception: {}",
                                     grpcConn.getConnectionId(), payload.toString(), e.getMessage());
-                            Response errResponse = ErrorResponse.build(NacosException.CLIENT_ERROR,
-                                    "Handle server request error");
+                            Response errResponse = ErrorResponse
+                                    .build(NacosException.CLIENT_ERROR, "Handle server request error");
                             errResponse.setRequestId(request.getRequestId());
                             sendResponse(errResponse);
                         }
@@ -271,6 +300,8 @@ public abstract class GrpcClient extends RpcClient {
                     
                     LoggerUtils.printIfErrorEnabled(LOGGER, "[{}]Error to process server push response: {}",
                             grpcConn.getConnectionId(), payload.getBody().getValue().toStringUtf8());
+                    // remove and notify
+                    recAbilityContext.release(null);
                 }
             }
             
@@ -323,6 +354,8 @@ public abstract class GrpcClient extends RpcClient {
     
     @Override
     public Connection connectToServer(ServerInfo serverInfo) {
+        // the newest connection id
+        String connectionId = "";
         try {
             if (grpcExecutor == null) {
                 this.grpcExecutor = createGrpcExecutor(serverInfo.getServerIp());
@@ -330,42 +363,197 @@ public abstract class GrpcClient extends RpcClient {
             int port = serverInfo.getServerPort() + rpcPortOffset();
             ManagedChannel managedChannel = createNewManagedChannel(serverInfo.getServerIp(), port);
             RequestGrpc.RequestFutureStub newChannelStubTemp = createNewChannelStub(managedChannel);
-            if (newChannelStubTemp != null) {
-                
-                Response response = serverCheck(serverInfo.getServerIp(), port, newChannelStubTemp);
-                if (response == null || !(response instanceof ServerCheckResponse)) {
-                    shuntDownChannel(managedChannel);
+            
+            Response response = serverCheck(serverInfo.getServerIp(), port, newChannelStubTemp);
+            if (!(response instanceof ServerCheckResponse)) {
+                shuntDownChannel(managedChannel);
+                return null;
+            }
+            // submit ability table as soon as possible
+            // ability table will be null if server doesn't support ability table
+            ServerCheckResponse serverCheckResponse = (ServerCheckResponse) response;
+            connectionId = serverCheckResponse.getConnectionId();
+            
+            BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc
+                    .newStub(newChannelStubTemp.getChannel());
+            GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
+            grpcConn.setConnectionId(connectionId);
+            // if not supported, it will be false
+            if (serverCheckResponse.isSupportAbilityNegotiation()) {
+                // mark
+                this.recAbilityContext.reset(grpcConn);
+                // promise null if no abilities receive
+                grpcConn.setAbilityTable(null);
+            }
+            
+            //create stream request and bind connection event to this connection.
+            StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);
+            
+            // stream observer to send response to server
+            grpcConn.setPayloadStreamObserver(payloadStreamObserver);
+            grpcConn.setGrpcFutureServiceStub(newChannelStubTemp);
+            grpcConn.setChannel(managedChannel);
+            //send a  setup request.
+            ConnectionSetupRequest conSetupRequest = new ConnectionSetupRequest();
+            conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
+            conSetupRequest.setLabels(super.getLabels());
+            // set ability table
+            conSetupRequest
+                    .setAbilityTable(NacosAbilityManagerHolder.getInstance().getCurrentNodeAbilities(abilityMode()));
+            conSetupRequest.setTenant(super.getTenant());
+            grpcConn.sendRequest(conSetupRequest);
+            // wait for response
+            if (recAbilityContext.isNeedToSync()) {
+                // try to wait for notify response
+                recAbilityContext.await(this.clientConfig.capabilityNegotiationTimeout(), TimeUnit.MILLISECONDS);
+                // if no server abilities receiving, then reconnect
+                if (!recAbilityContext.check(grpcConn)) {
                     return null;
                 }
-                
-                BiRequestStreamGrpc.BiRequestStreamStub biRequestStreamStub = BiRequestStreamGrpc.newStub(
-                        newChannelStubTemp.getChannel());
-                GrpcConnection grpcConn = new GrpcConnection(serverInfo, grpcExecutor);
-                grpcConn.setConnectionId(((ServerCheckResponse) response).getConnectionId());
-                
-                //create stream request and bind connection event to this connection.
-                StreamObserver<Payload> payloadStreamObserver = bindRequestStream(biRequestStreamStub, grpcConn);
-                
-                // stream observer to send response to server
-                grpcConn.setPayloadStreamObserver(payloadStreamObserver);
-                grpcConn.setGrpcFutureServiceStub(newChannelStubTemp);
-                grpcConn.setChannel(managedChannel);
-                //send a  setup request.
-                ConnectionSetupRequest conSetupRequest = new ConnectionSetupRequest();
-                conSetupRequest.setClientVersion(VersionUtils.getFullClientVersion());
-                conSetupRequest.setLabels(super.getLabels());
-                conSetupRequest.setAbilities(super.clientAbilities);
-                conSetupRequest.setTenant(super.getTenant());
-                grpcConn.sendRequest(conSetupRequest);
-                //wait to register connection setup
+            } else {
+                // leave for adapting old version server
+                // registration is considered successful by default after 100ms
+                // wait to register connection setup
                 Thread.sleep(100L);
-                return grpcConn;
             }
-            return null;
+            return grpcConn;
         } catch (Exception e) {
             LOGGER.error("[{}]Fail to connect to server!,error={}", GrpcClient.this.getName(), e);
+            // remove and notify
+            recAbilityContext.release(null);
         }
         return null;
+    }
+    
+    /**
+     * ability mode: sdk client or cluster client.
+     *
+     * @return mode
+     */
+    protected abstract AbilityMode abilityMode();
+    
+    @Override
+    protected void afterReset(ConnectResetRequest request) {
+        recAbilityContext.release(null);
+    }
+    
+    /**
+     * This is for receiving server abilities.
+     */
+    static class RecAbilityContext {
+        
+        /**
+         * connection waiting for server abilities.
+         */
+        private volatile Connection connection;
+        
+        /**
+         * way to block client.
+         */
+        private volatile CountDownLatch blocker;
+        
+        private volatile boolean needToSync = false;
+        
+        public RecAbilityContext(Connection connection) {
+            this.connection = connection;
+            this.blocker = new CountDownLatch(1);
+        }
+        
+        /**
+         * whether to sync for ability table.
+         *
+         * @return whether to sync for ability table.
+         */
+        public boolean isNeedToSync() {
+            return this.needToSync;
+        }
+        
+        /**
+         * reset with new connection which is waiting for ability table.
+         *
+         * @param connection new connection which is waiting for ability table.
+         */
+        public void reset(Connection connection) {
+            this.connection = connection;
+            this.blocker = new CountDownLatch(1);
+            this.needToSync = true;
+        }
+        
+        /**
+         * notify sync by abilities.
+         *
+         * @param abilities abilities.
+         */
+        public void release(Map<String, Boolean> abilities) {
+            if (this.connection != null) {
+                this.connection.setAbilityTable(abilities);
+                // avoid repeat setting
+                this.connection = null;
+            }
+            if (this.blocker != null) {
+                blocker.countDown();
+            }
+            this.needToSync = false;
+        }
+        
+        /**
+         * await for abilities.
+         *
+         * @param timeout timeout.
+         * @param unit    unit.
+         * @throws InterruptedException by blocker.
+         */
+        public void await(long timeout, TimeUnit unit) throws InterruptedException {
+            if (this.blocker != null) {
+                this.blocker.await(timeout, unit);
+            }
+            this.needToSync = false;
+        }
+        
+        /**
+         * check whether receive abilities.
+         *
+         * @param connection conn.
+         * @return whether receive abilities.
+         */
+        public boolean check(Connection connection) {
+            if (!connection.isAbilitiesSet()) {
+                LOGGER.error(
+                        "Client don't receive server abilities table even empty table but server supports ability negotiation."
+                                + " You can check if it is need to adjust the timeout of ability negotiation by property: {}"
+                                + " if always fail to connect.",
+                        GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT);
+                connection.setAbandon(true);
+                connection.close();
+                return false;
+            }
+            return true;
+        }
+    }
+    
+    /**
+     * Setup response handler.
+     */
+    class SetupRequestHandler implements ServerRequestHandler {
+        
+        private final RecAbilityContext abilityContext;
+        
+        public SetupRequestHandler(RecAbilityContext abilityContext) {
+            this.abilityContext = abilityContext;
+        }
+        
+        @Override
+        public Response requestReply(Request request, Connection connection) {
+            // if finish setup
+            if (request instanceof SetupAckRequest) {
+                SetupAckRequest setupAckRequest = (SetupAckRequest) request;
+                // remove and count down
+                recAbilityContext
+                        .release(Optional.ofNullable(setupAckRequest.getAbilityTable()).orElse(new HashMap<>(0)));
+                return new SetupAckResponse();
+            }
+            return null;
+        }
     }
     
     private ManagedChannelBuilder buildChannel(String serverIp, int port, Optional<SslContext> sslContext) {
@@ -382,7 +570,7 @@ public abstract class GrpcClient extends RpcClient {
         
         RpcClientTlsConfig tlsConfig = clientConfig.tlsConfig();
         if (!tlsConfig.getEnableTls()) {
-            return Optional.absent();
+            return Optional.empty();
         }
         try {
             SslContextBuilder builder = GrpcSslContexts.forClient();
@@ -407,8 +595,8 @@ public abstract class GrpcClient extends RpcClient {
             }
             
             if (tlsConfig.getMutualAuthEnable()) {
-                if (StringUtils.isBlank(tlsConfig.getCertChainFile()) || StringUtils.isBlank(
-                        tlsConfig.getCertPrivateKey())) {
+                if (StringUtils.isBlank(tlsConfig.getCertChainFile()) || StringUtils
+                        .isBlank(tlsConfig.getCertPrivateKey())) {
                     throw new IllegalArgumentException("client certChainFile or certPrivateKey must be not null");
                 }
                 Resource certChainFile = resourceLoader.getResource(tlsConfig.getCertChainFile());

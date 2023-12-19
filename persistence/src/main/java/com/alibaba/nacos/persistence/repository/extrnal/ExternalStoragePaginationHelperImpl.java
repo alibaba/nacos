@@ -57,8 +57,8 @@ public class ExternalStoragePaginationHelperImpl<E> implements PaginationHelper 
     }
     
     @Override
-    public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, final Object[] args,
-            final int pageNo, final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
+    public Page<E> fetchPage(final String sqlCountRows, final String sqlFetchRows, Object[] args, final int pageNo,
+            final int pageSize, final Long lastMaxId, final RowMapper rowMapper) {
         if (pageNo <= 0 || pageSize <= 0) {
             throw new IllegalArgumentException("pageNo and pageSize must be greater than zero");
         }

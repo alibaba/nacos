@@ -127,7 +127,7 @@ public class AbstractNamingClientProxyTest {
         }
         
         @Override
-        public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters, int udpPort,
+        public ServiceInfo queryInstancesOfService(String serviceName, String groupName, String clusters,
                 boolean healthyOnly) throws NacosException {
             return null;
         }

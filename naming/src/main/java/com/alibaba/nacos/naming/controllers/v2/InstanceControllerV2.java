@@ -33,8 +33,11 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.DeregisterInstanceReason;
 import com.alibaba.nacos.common.trace.event.naming.DeregisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
+import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
 import com.alibaba.nacos.naming.core.InstancePatchObject;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
@@ -46,6 +49,10 @@ import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
 import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
 import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
+import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
+import com.alibaba.nacos.naming.paramcheck.NamingInstanceBeatHttpParamExtractor;
+import com.alibaba.nacos.naming.paramcheck.NamingInstanceListHttpParamExtractor;
+import com.alibaba.nacos.naming.paramcheck.NamingInstanceMetadataBatchHttpParamExtractor;
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
@@ -83,6 +90,7 @@ import static com.alibaba.nacos.naming.misc.UtilsAndCommons.DEFAULT_CLUSTER_NAME
 @NacosApi
 @RestController
 @RequestMapping(UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
+@ExtractorManager.Extractor(httpExtractor = NamingDefaultHttpParamExtractor.class)
 public class InstanceControllerV2 {
     
     @Autowired
@@ -96,6 +104,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PostMapping
+    @TpsControl(pointName = "NamingInstanceRegister", name = "HttpNamingInstanceRegister")
     @Secured(action = ActionTypes.WRITE)
     public Result<String> register(InstanceForm instanceForm) throws NacosException {
         // check param
@@ -103,10 +112,12 @@ public class InstanceControllerV2 {
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.registerInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm), instance);
-        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(), "",
-                false, instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
-                instance.getIp(), instance.getPort()));
+        instanceServiceV2.registerInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
+                instance);
+        NotifyCenter.publishEvent(
+                new RegisterInstanceTraceEvent(System.currentTimeMillis(), "", false, instanceForm.getNamespaceId(),
+                        instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
+                        instance.getPort()));
         return Result.success("ok");
     }
     
@@ -115,6 +126,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @DeleteMapping
+    @TpsControl(pointName = "NamingInstanceDeregister", name = "HttpNamingInstanceDeregister")
     @Secured(action = ActionTypes.WRITE)
     public Result<String> deregister(InstanceForm instanceForm) throws NacosException {
         // check param
@@ -122,9 +134,10 @@ public class InstanceControllerV2 {
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm), instance);
-        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "",
-                false, DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+        instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
+                instance);
+        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(), "", false,
+                DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
                 instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
@@ -134,6 +147,7 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PutMapping
+    @TpsControl(pointName = "NamingInstanceUpdate", name = "HttpNamingInstanceUpdate")
     @Secured(action = ActionTypes.WRITE)
     public Result<String> update(InstanceForm instanceForm) throws NacosException {
         // check param
@@ -141,7 +155,12 @@ public class InstanceControllerV2 {
         checkWeight(instanceForm.getWeight());
         // build instance
         Instance instance = buildInstance(instanceForm);
-        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm), instance);
+        instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
+                instance);
+        NotifyCenter.publishEvent(
+                new UpdateInstanceTraceEvent(System.currentTimeMillis(), "", instanceForm.getNamespaceId(),
+                        instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
+                        instance.getPort(), instance.getMetadata()));
         return Result.success("ok");
     }
     
@@ -150,18 +169,21 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PutMapping(value = "/metadata/batch")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
     public Result<InstanceMetadataBatchOperationVo> batchUpdateInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
         
         List<Instance> targetInstances = parseBatchInstances(form.getInstances());
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(form.getMetadata());
-        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form), form.getConsistencyType(), targetInstances);
-    
-        List<String> operatedInstances = instanceServiceV2
-                .batchUpdateMetadata(form.getNamespaceId(), instanceOperationInfo, targetMetadata);
-    
+        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form),
+                form.getConsistencyType(), targetInstances);
+        
+        List<String> operatedInstances = instanceServiceV2.batchUpdateMetadata(form.getNamespaceId(),
+                instanceOperationInfo, targetMetadata);
+        
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
         return Result.success(new InstanceMetadataBatchOperationVo(ipList));
     }
@@ -171,15 +193,18 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @DeleteMapping("/metadata/batch")
+    @TpsControl(pointName = "NamingInstanceMetadataUpdate", name = "HttpNamingInstanceMetadataBatchUpdate")
     @Secured(action = ActionTypes.WRITE)
+    @ExtractorManager.Extractor(httpExtractor = NamingInstanceMetadataBatchHttpParamExtractor.class)
     public Result<InstanceMetadataBatchOperationVo> batchDeleteInstanceMetadata(InstanceMetadataBatchOperationForm form)
             throws NacosException {
         form.validate();
         List<Instance> targetInstances = parseBatchInstances(form.getInstances());
         Map<String, String> targetMetadata = UtilsAndCommons.parseMetadata(form.getMetadata());
-        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form), form.getConsistencyType(), targetInstances);
-        List<String> operatedInstances = instanceServiceV2
-                .batchDeleteMetadata(form.getNamespaceId(), instanceOperationInfo, targetMetadata);
+        InstanceOperationInfo instanceOperationInfo = buildOperationInfo(buildCompositeServiceName(form),
+                form.getConsistencyType(), targetInstances);
+        List<String> operatedInstances = instanceServiceV2.batchDeleteMetadata(form.getNamespaceId(),
+                instanceOperationInfo, targetMetadata);
         ArrayList<String> ipList = new ArrayList<>(operatedInstances);
         return Result.success(new InstanceMetadataBatchOperationVo(ipList));
     }
@@ -248,6 +273,7 @@ public class InstanceControllerV2 {
     
     /**
      * Get all instance of input service.
+     *
      * @param namespaceId   namespace id
      * @param groupName     group name
      * @param serviceName   service name
@@ -260,8 +286,11 @@ public class InstanceControllerV2 {
      * @param clientVersion [header] clientVersion
      */
     @GetMapping("/list")
+    @TpsControl(pointName = "NamingServiceSubscribe", name = "HttpNamingServiceSubscribe")
     @Secured(action = ActionTypes.READ)
-    public Result<ServiceInfo> list(@RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+    @ExtractorManager.Extractor(httpExtractor = NamingInstanceListHttpParamExtractor.class)
+    public Result<ServiceInfo> list(
+            @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "clusterName", defaultValue = StringUtils.EMPTY) String clusterName,
@@ -277,7 +306,8 @@ public class InstanceControllerV2 {
         String compositeServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         Subscriber subscriber = new Subscriber(ip + ":" + port, userAgent, app, ip, namespaceId, compositeServiceName,
                 port, clusterName);
-        return Result.success(instanceServiceV2.listInstance(namespaceId, compositeServiceName, subscriber, clusterName, healthyOnly));
+        return Result.success(instanceServiceV2.listInstance(namespaceId, compositeServiceName, subscriber, clusterName,
+                healthyOnly));
     }
     
     /**
@@ -292,15 +322,17 @@ public class InstanceControllerV2 {
      * @throws NacosException any error during get
      */
     @GetMapping
+    @TpsControl(pointName = "NamingInstanceQuery", name = "HttpNamingInstanceQuery")
     @Secured(action = ActionTypes.READ)
-    public Result<InstanceDetailInfoVo> detail(@RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
+    public Result<InstanceDetailInfoVo> detail(
+            @RequestParam(value = "namespaceId", defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam(value = "groupName", defaultValue = Constants.DEFAULT_GROUP) String groupName,
             @RequestParam("serviceName") String serviceName,
             @RequestParam(value = "clusterName", defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
             @RequestParam("ip") String ip, @RequestParam("port") Integer port) throws NacosException {
-    
+        
         String compositeServiceName = NamingUtils.getGroupedName(serviceName, groupName);
-    
+        
         Instance instance = instanceServiceV2.getInstance(namespaceId, compositeServiceName, clusterName, ip, port);
         
         InstanceDetailInfoVo instanceDetailInfoVo = new InstanceDetailInfoVo();
@@ -329,7 +361,9 @@ public class InstanceControllerV2 {
      */
     @CanDistro
     @PutMapping("/beat")
+    @TpsControl(pointName = "HttpHealthCheck", name = "HttpHealthCheck")
     @Secured(action = ActionTypes.WRITE)
+    @ExtractorManager.Extractor(httpExtractor = NamingInstanceBeatHttpParamExtractor.class)
     public ObjectNode beat(@RequestParam(defaultValue = Constants.DEFAULT_NAMESPACE_ID) String namespaceId,
             @RequestParam String serviceName, @RequestParam(defaultValue = StringUtils.EMPTY) String ip,
             @RequestParam(defaultValue = UtilsAndCommons.DEFAULT_CLUSTER_NAME) String clusterName,
@@ -357,8 +391,8 @@ public class InstanceControllerV2 {
         Loggers.SRV_LOG.debug("[CLIENT-BEAT] full arguments: beat: {}, serviceName: {}, namespaceId: {}", clientBeat,
                 serviceName, namespaceId);
         BeatInfoInstanceBuilder builder = BeatInfoInstanceBuilder.newBuilder();
-        int resultCode = instanceServiceV2
-                .handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat, builder);
+        int resultCode = instanceServiceV2.handleBeat(namespaceId, serviceName, ip, port, clusterName, clientBeat,
+                builder);
         result.put(CommonParams.CODE, resultCode);
         result.put(SwitchEntry.CLIENT_BEAT_INTERVAL,
                 instanceServiceV2.getHeartBeatInterval(namespaceId, serviceName, ip, port, clusterName));
@@ -402,24 +436,20 @@ public class InstanceControllerV2 {
     private void checkWeight(Double weight) throws NacosException {
         if (weight > com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE
                 || weight < com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE) {
-            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.WEIGHT_ERROR, "instance format invalid: The weights range from "
-                    + com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE + " to "
-                    + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
+            throw new NacosApiException(HttpStatus.BAD_REQUEST.value(), ErrorCode.WEIGHT_ERROR,
+                    "instance format invalid: The weights range from "
+                            + com.alibaba.nacos.naming.constants.Constants.MIN_WEIGHT_VALUE + " to "
+                            + com.alibaba.nacos.naming.constants.Constants.MAX_WEIGHT_VALUE);
         }
     }
     
     private Instance buildInstance(InstanceForm instanceForm) throws NacosException {
-        Instance instance = InstanceBuilder.newBuilder()
-                .setServiceName(buildCompositeServiceName(instanceForm))
-                .setIp(instanceForm.getIp())
-                .setClusterName(instanceForm.getClusterName())
-                .setPort(instanceForm.getPort())
-                .setHealthy(instanceForm.getHealthy())
-                .setWeight(instanceForm.getWeight())
-                .setEnabled(instanceForm.getEnabled())
+        Instance instance = InstanceBuilder.newBuilder().setServiceName(buildCompositeServiceName(instanceForm))
+                .setIp(instanceForm.getIp()).setClusterName(instanceForm.getClusterName())
+                .setPort(instanceForm.getPort()).setHealthy(instanceForm.getHealthy())
+                .setWeight(instanceForm.getWeight()).setEnabled(instanceForm.getEnabled())
                 .setMetadata(UtilsAndCommons.parseMetadata(instanceForm.getMetadata()))
-                .setEphemeral(instanceForm.getEphemeral())
-                .build();
+                .setEphemeral(instanceForm.getEphemeral()).build();
         if (instanceForm.getEphemeral() == null) {
             instance.setEphemeral((switchDomain.isDefaultInstanceEphemeral()));
         }
