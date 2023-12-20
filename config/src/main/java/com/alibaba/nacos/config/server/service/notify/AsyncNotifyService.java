@@ -98,7 +98,7 @@ public class AsyncNotifyService {
         });
     }
     
-    private void handleConfigDataChangeEvent(Event event) {
+    void handleConfigDataChangeEvent(Event event) {
         if (event instanceof ConfigDataChangeEvent) {
             ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
             long dumpTs = evt.lastModifiedTs;
@@ -128,6 +128,50 @@ public class AsyncNotifyService {
         return !memberManager.stateCheck(targetIp, HEALTHY_CHECK_STATUS);
     }
     
+    void executeAsyncRpcTask(Queue<NotifySingleRpcTask> queue) {
+        while (!queue.isEmpty()) {
+            NotifySingleRpcTask task = queue.poll();
+            
+            ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
+            syncRequest.setDataId(task.getDataId());
+            syncRequest.setGroup(task.getGroup());
+            syncRequest.setBeta(task.isBeta());
+            syncRequest.setLastModified(task.getLastModified());
+            syncRequest.setTag(task.getTag());
+            syncRequest.setBatch(task.isBatch());
+            syncRequest.setTenant(task.getTenant());
+            Member member = task.member;
+            
+            String event = getNotifyEvent(task);
+            if (memberManager.hasMember(member.getAddress())) {
+                // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
+                boolean unHealthNeedDelay = isUnHealthy(member.getAddress());
+                if (unHealthNeedDelay) {
+                    // target ip is unhealthy, then put it in the notification list
+                    ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
+                            task.getLastModified(), InetUtils.getSelfIP(), event,
+                            ConfigTraceService.NOTIFY_TYPE_UNHEALTH, 0, member.getAddress());
+                    // get delay time and set fail count to the task
+                    asyncTaskExecute(task);
+                } else {
+                    
+                    // grpc report data change only
+                    try {
+                        configClusterRpcClientProxy.syncConfigChange(member, syncRequest,
+                                new AsyncRpcNotifyCallBack(AsyncNotifyService.this, task));
+                    } catch (Exception e) {
+                        MetricsMonitor.getConfigNotifyException().increment();
+                        asyncTaskExecute(task);
+                    }
+                    
+                }
+            } else {
+                //No nothing if  member has offline.
+            }
+            
+        }
+    }
+    
     public class AsyncRpcTask implements Runnable {
         
         private Queue<NotifySingleRpcTask> queue;
@@ -138,47 +182,7 @@ public class AsyncNotifyService {
         
         @Override
         public void run() {
-            while (!queue.isEmpty()) {
-                NotifySingleRpcTask task = queue.poll();
-                
-                ConfigChangeClusterSyncRequest syncRequest = new ConfigChangeClusterSyncRequest();
-                syncRequest.setDataId(task.getDataId());
-                syncRequest.setGroup(task.getGroup());
-                syncRequest.setBeta(task.isBeta());
-                syncRequest.setLastModified(task.getLastModified());
-                syncRequest.setTag(task.getTag());
-                syncRequest.setBatch(task.isBatch());
-                syncRequest.setTenant(task.getTenant());
-                Member member = task.member;
-                
-                String event = getNotifyEvent(task);
-                if (memberManager.hasMember(member.getAddress())) {
-                    // start the health check and there are ips that are not monitored, put them directly in the notification queue, otherwise notify
-                    boolean unHealthNeedDelay = isUnHealthy(member.getAddress());
-                    if (unHealthNeedDelay) {
-                        // target ip is unhealthy, then put it in the notification list
-                        ConfigTraceService.logNotifyEvent(task.getDataId(), task.getGroup(), task.getTenant(), null,
-                                task.getLastModified(), InetUtils.getSelfIP(), event,
-                                ConfigTraceService.NOTIFY_TYPE_UNHEALTH, 0, member.getAddress());
-                        // get delay time and set fail count to the task
-                        asyncTaskExecute(task);
-                    } else {
-                        
-                        // grpc report data change only
-                        try {
-                            configClusterRpcClientProxy.syncConfigChange(member, syncRequest,
-                                    new AsyncRpcNotifyCallBack(AsyncNotifyService.this, task));
-                        } catch (Exception e) {
-                            MetricsMonitor.getConfigNotifyException().increment();
-                            asyncTaskExecute(task);
-                        }
-                        
-                    }
-                } else {
-                    //No nothing if  member has offline.
-                }
-                
-            }
+            executeAsyncRpcTask(queue);
         }
     }
     
