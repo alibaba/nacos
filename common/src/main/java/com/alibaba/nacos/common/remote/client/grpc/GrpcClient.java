@@ -33,10 +33,10 @@ import com.alibaba.nacos.api.remote.response.SetupAckResponse;
 import com.alibaba.nacos.common.ability.discover.NacosAbilityManagerHolder;
 import com.alibaba.nacos.common.packagescan.resource.Resource;
 import com.alibaba.nacos.common.remote.ConnectionType;
+import com.alibaba.nacos.common.remote.TlsConfig;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -163,7 +163,7 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
-            RpcClientTlsConfig tlsConfig) {
+            TlsConfig tlsConfig) {
         this(DefaultGrpcClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize)
                 .setTlsConfig(tlsConfig).setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build());
     }
@@ -567,8 +567,8 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     private Optional<SslContext> buildSslContext() {
-        
-        RpcClientTlsConfig tlsConfig = clientConfig.tlsConfig();
+    
+        TlsConfig tlsConfig = clientConfig.tlsConfig();
         if (!tlsConfig.getEnableTls()) {
             return Optional.empty();
         }

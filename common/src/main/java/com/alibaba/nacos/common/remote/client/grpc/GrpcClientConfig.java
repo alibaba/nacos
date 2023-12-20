@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.common.remote.TlsConfig;
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 
@@ -81,13 +82,13 @@ public interface GrpcClientConfig extends RpcClientConfig {
      * @return channelKeepAliveTimeout.
      */
     long channelKeepAliveTimeout();
-
+    
     /**
-     *  getTlsConfig.
+     * getTlsConfig.
      *
      * @return TlsConfig.
      */
-    RpcClientTlsConfig tlsConfig();
+    TlsConfig tlsConfig();
 
     /**
      *Set TlsConfig.

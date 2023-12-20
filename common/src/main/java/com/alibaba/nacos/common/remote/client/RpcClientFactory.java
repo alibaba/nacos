@@ -122,7 +122,7 @@ public class RpcClientFactory {
     }
     
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-            Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+            Map<String, String> labels, RpcClusterClientTlsConfig tlsConfig) {
         return createClusterClient(clientName, connectionType, null, null, labels, tlsConfig);
     }
     
@@ -151,14 +151,14 @@ public class RpcClientFactory {
      * @param tlsConfig          tlsConfig.
      * @return
      */
-    
+
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
             Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
-            RpcClientTlsConfig tlsConfig) {
+            RpcClusterClientTlsConfig tlsConfig) {
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
-        
+    
         return CLIENT_MAP.computeIfAbsent(clientName,
                 clientNameInner -> new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels,
                         tlsConfig));

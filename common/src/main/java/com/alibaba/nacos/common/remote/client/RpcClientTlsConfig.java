@@ -39,10 +39,6 @@ public class RpcClientTlsConfig extends TlsConfig {
                     properties.getProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE)));
         }
 
-        if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_PROVIDER)) {
-            tlsConfig.setSslProvider(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_PROVIDER));
-        }
-
         if (properties.containsKey(RpcConstants.RPC_CLIENT_MUTUAL_AUTH)) {
             tlsConfig.setMutualAuthEnable(Boolean.parseBoolean(
                     properties.getProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH)));

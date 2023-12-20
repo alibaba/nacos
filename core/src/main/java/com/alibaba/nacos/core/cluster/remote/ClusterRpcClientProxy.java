@@ -25,6 +25,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.RpcClusterClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.cluster.Member;
@@ -152,10 +153,9 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
      * Using {@link EnvUtil#getAvailableProcessors(int)} to build cluster clients' grpc thread pool.
      */
     private RpcClient buildRpcClient(ConnectionType type, Map<String, String> labels, String memberClientKey) {
-        RpcClient clusterClient = RpcClientFactory
-                .createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
-                        EnvUtil.getAvailableProcessors(8), labels);
-        return clusterClient;
+        RpcClusterClientTlsConfig config = RpcClusterClientTlsConfig.createConfig();
+        return RpcClientFactory.createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
+                EnvUtil.getAvailableProcessors(8), labels, config);
     }
     
     /**

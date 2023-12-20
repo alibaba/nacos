@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
+import com.alibaba.nacos.common.remote.TlsConfig;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
@@ -32,39 +33,39 @@ import java.util.concurrent.TimeUnit;
  */
 public class DefaultGrpcClientConfig implements GrpcClientConfig {
     
-    private String name;
+    private final String name;
     
-    private int retryTimes;
+    private final int retryTimes;
     
-    private long timeOutMills;
+    private final long timeOutMills;
     
-    private long connectionKeepAlive;
+    private final long connectionKeepAlive;
     
-    private long channelKeepAliveTimeout;
+    private final long channelKeepAliveTimeout;
     
-    private long threadPoolKeepAlive;
+    private final long threadPoolKeepAlive;
     
-    private int threadPoolCoreSize;
+    private final int threadPoolCoreSize;
     
-    private int threadPoolMaxSize;
+    private final int threadPoolMaxSize;
     
-    private long serverCheckTimeOut;
+    private final long serverCheckTimeOut;
     
-    private int threadPoolQueueSize;
+    private final int threadPoolQueueSize;
     
-    private int maxInboundMessageSize;
+    private final int maxInboundMessageSize;
     
-    private int channelKeepAlive;
+    private final int channelKeepAlive;
     
-    private int healthCheckRetryTimes;
+    private final int healthCheckRetryTimes;
     
-    private long healthCheckTimeOut;
+    private final long healthCheckTimeOut;
     
-    private long capabilityNegotiationTimeout;
+    private final long capabilityNegotiationTimeout;
     
-    private Map<String, String> labels;
+    private final Map<String, String> labels;
     
-    private RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+    private TlsConfig tlsConfig = new TlsConfig();
     
     /**
      * constructor.
@@ -173,7 +174,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     }
     
     @Override
-    public RpcClientTlsConfig tlsConfig() {
+    public TlsConfig tlsConfig() {
         return tlsConfig;
     }
     
@@ -236,10 +237,10 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         private long healthCheckTimeOut = 3000L;
         
         private long capabilityNegotiationTimeout = 5000L;
-        
-        private Map<String, String> labels = new HashMap<>();
-        
-        private RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+    
+        private final Map<String, String> labels = new HashMap<>();
+    
+        private TlsConfig tlsConfig = new TlsConfig();
         
         private Builder() {
         }
@@ -442,14 +443,14 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
             this.labels.putAll(labels);
             return this;
         }
-        
+    
         /**
          * set tlsConfig.
          *
          * @param tlsConfig tls of client.
          * @return
          */
-        public Builder setTlsConfig(RpcClientTlsConfig tlsConfig) {
+        public Builder setTlsConfig(TlsConfig tlsConfig) {
             this.tlsConfig = tlsConfig;
             return this;
         }
