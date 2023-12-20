@@ -26,8 +26,7 @@ public class RpcConstantsTest {
     
     @Test
     public void testGetRpcParams() {
-        Class clazz = RpcConstants.class;
-        Field[] declaredFields = clazz.getDeclaredFields();
+        Field[] declaredFields = RpcConstants.class.getDeclaredFields();
         int i = 0;
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
@@ -37,5 +36,19 @@ public class RpcConstantsTest {
             }
         }
         assertEquals(i, RpcConstants.getRpcParams().size());
+    }
+    
+    @Test
+    public void testGetClusterRpcParams() {
+        Field[] declaredFields = RpcConstants.class.getDeclaredFields();
+        int i = 0;
+        for (Field declaredField : declaredFields) {
+            declaredField.setAccessible(true);
+            if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
+                    RpcConstants.RpcClusterConfigLabel.class)) {
+                i++;
+            }
+        }
+        assertEquals(i, RpcConstants.getClusterRpcParams().size());
     }
 }

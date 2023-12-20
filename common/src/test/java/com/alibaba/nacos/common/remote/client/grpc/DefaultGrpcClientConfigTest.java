@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -255,7 +255,7 @@ public class DefaultGrpcClientConfigTest {
     
     @Test
     public void testSetTlsConfig() {
-        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setTlsConfig(tlsConfig);
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();
@@ -264,7 +264,7 @@ public class DefaultGrpcClientConfigTest {
     
     @Test
     public void testSetTlsConfigDirectly() {
-        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();
         config.setTlsConfig(tlsConfig);

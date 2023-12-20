@@ -31,7 +31,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.Channel;
@@ -76,7 +76,7 @@ public class GrpcClientTest {
     protected GrpcClient grpcClient;
     
     @Mock
-    RpcClientTlsConfig tlsConfig;
+    RpcSdkClientTlsConfig tlsConfig;
     
     protected RpcClient.ServerInfo serverInfo;
     
@@ -176,8 +176,8 @@ public class GrpcClientTest {
         BiRequestStreamGrpc.BiRequestStreamStub stub = mock(BiRequestStreamGrpc.BiRequestStreamStub.class);
         GrpcConnection grpcConnection = mock(GrpcConnection.class);
         when(stub.requestBiStream(any())).thenAnswer((Answer<StreamObserver<Payload>>) invocationOnMock -> {
-            ((StreamObserver<Payload>) invocationOnMock.getArgument(0))
-                    .onNext(GrpcUtils.convert(new SetupAckRequest()));
+            ((StreamObserver<Payload>) invocationOnMock.getArgument(0)).onNext(
+                    GrpcUtils.convert(new SetupAckRequest()));
             return null;
         });
         setCurrentConnection(grpcConnection, grpcClient);
@@ -191,8 +191,8 @@ public class GrpcClientTest {
         BiRequestStreamGrpc.BiRequestStreamStub stub = mock(BiRequestStreamGrpc.BiRequestStreamStub.class);
         GrpcConnection grpcConnection = mock(GrpcConnection.class);
         when(stub.requestBiStream(any())).thenAnswer((Answer<StreamObserver<Payload>>) invocationOnMock -> {
-            ((StreamObserver<Payload>) invocationOnMock.getArgument(0))
-                    .onNext(GrpcUtils.convert(new ConnectResetRequest()));
+            ((StreamObserver<Payload>) invocationOnMock.getArgument(0)).onNext(
+                    GrpcUtils.convert(new ConnectResetRequest()));
             return null;
         });
         grpcClient.registerServerRequestHandler((request, connection) -> {
@@ -212,8 +212,8 @@ public class GrpcClientTest {
         BiRequestStreamGrpc.BiRequestStreamStub stub = mock(BiRequestStreamGrpc.BiRequestStreamStub.class);
         GrpcConnection grpcConnection = mock(GrpcConnection.class);
         when(stub.requestBiStream(any())).thenAnswer((Answer<StreamObserver<Payload>>) invocationOnMock -> {
-            ((StreamObserver<Payload>) invocationOnMock.getArgument(0))
-                    .onNext(GrpcUtils.convert(new ConnectResetRequest()));
+            ((StreamObserver<Payload>) invocationOnMock.getArgument(0)).onNext(
+                    GrpcUtils.convert(new ConnectResetRequest()));
             return null;
         });
         grpcClient.registerServerRequestHandler((request, connection) -> null);
@@ -228,8 +228,8 @@ public class GrpcClientTest {
         BiRequestStreamGrpc.BiRequestStreamStub stub = mock(BiRequestStreamGrpc.BiRequestStreamStub.class);
         GrpcConnection grpcConnection = mock(GrpcConnection.class);
         when(stub.requestBiStream(any())).thenAnswer((Answer<StreamObserver<Payload>>) invocationOnMock -> {
-            ((StreamObserver<Payload>) invocationOnMock.getArgument(0))
-                    .onNext(GrpcUtils.convert(new ConnectResetRequest()));
+            ((StreamObserver<Payload>) invocationOnMock.getArgument(0)).onNext(
+                    GrpcUtils.convert(new ConnectResetRequest()));
             return null;
         });
         grpcClient.registerServerRequestHandler((request, connection) -> {
@@ -325,9 +325,8 @@ public class GrpcClientTest {
     private void invokeBindRequestStream(GrpcClient grpcClient, BiRequestStreamGrpc.BiRequestStreamStub stub,
             GrpcConnection grpcConnection)
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method bindRequestStreamMethod = GrpcClient.class
-                .getDeclaredMethod("bindRequestStream", BiRequestStreamGrpc.BiRequestStreamStub.class,
-                        GrpcConnection.class);
+        Method bindRequestStreamMethod = GrpcClient.class.getDeclaredMethod("bindRequestStream",
+                BiRequestStreamGrpc.BiRequestStreamStub.class, GrpcConnection.class);
         bindRequestStreamMethod.setAccessible(true);
         bindRequestStreamMethod.invoke(grpcClient, stub, grpcConnection);
     }

@@ -17,12 +17,12 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.common.remote.CommunicationType;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilter;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilterServiceLoader;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptor;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptorServiceLoader;
-import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
-import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilderSingleton;
+import com.alibaba.nacos.core.remote.grpc.negotiator.tls.ProtocolNegotiatorBuilderManager;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -44,8 +44,6 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Service
 public class GrpcSdkServer extends BaseGrpcServer {
-    
-    private NacosGrpcProtocolNegotiator protocolNegotiator;
     
     @Override
     public int rpcPortOffset() {
@@ -78,8 +76,8 @@ public class GrpcSdkServer extends BaseGrpcServer {
     
     @Override
     protected int getMaxInboundMessageSize() {
-        Integer property = EnvUtil
-                .getProperty(GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY, Integer.class);
+        Integer property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.SDK_MAX_INBOUND_MSG_SIZE_PROPERTY,
+                Integer.class);
         if (property != null) {
             return property;
         }
@@ -106,7 +104,8 @@ public class GrpcSdkServer extends BaseGrpcServer {
     
     @Override
     protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
-        protocolNegotiator = ProtocolNegotiatorBuilderSingleton.getSingleton().build();
+        protocolNegotiator = ProtocolNegotiatorBuilderManager.getInstance()
+                .buildGrpcProtocolNegotiator(CommunicationType.SDK);
         return Optional.ofNullable(protocolNegotiator);
     }
     
@@ -114,8 +113,8 @@ public class GrpcSdkServer extends BaseGrpcServer {
     protected List<ServerInterceptor> getSeverInterceptors() {
         List<ServerInterceptor> result = new LinkedList<>();
         result.addAll(super.getSeverInterceptors());
-        result.addAll(NacosGrpcServerInterceptorServiceLoader
-                .loadServerInterceptors(NacosGrpcServerInterceptor.SDK_INTERCEPTOR));
+        result.addAll(NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors(
+                NacosGrpcServerInterceptor.SDK_INTERCEPTOR));
         return result;
     }
     
@@ -123,24 +122,9 @@ public class GrpcSdkServer extends BaseGrpcServer {
     protected List<ServerTransportFilter> getServerTransportFilters() {
         List<ServerTransportFilter> result = new LinkedList<>();
         result.addAll(super.getServerTransportFilters());
-        result.addAll(NacosGrpcServerTransportFilterServiceLoader
-                .loadServerTransportFilters(NacosGrpcServerTransportFilter.SDK_FILTER));
+        result.addAll(NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters(
+                NacosGrpcServerTransportFilter.SDK_FILTER));
         return result;
     }
     
-    /**
-     * reload ssl context.
-     */
-    public void reloadProtocolNegotiator() {
-        if (protocolNegotiator != null) {
-            try {
-                protocolNegotiator.reloadNegotiator();
-            } catch (Throwable throwable) {
-                Loggers.REMOTE
-                        .info("Nacos {} Rpc server reload negotiator fail at port {}.", this.getClass().getSimpleName(),
-                                getServicePort());
-                throw throwable;
-            }
-        }
-    }
 }

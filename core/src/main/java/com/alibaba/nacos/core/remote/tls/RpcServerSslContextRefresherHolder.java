@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.remote.tls;
 
+import com.alibaba.nacos.common.remote.CommunicationType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -23,52 +24,90 @@ import com.alibaba.nacos.core.utils.Loggers;
 import java.util.Collection;
 
 /**
- * ssl context refresher spi holder.
+ * Holder for managing instances of {@link RpcServerSslContextRefresher}. This class is responsible for initializing and
+ * providing instances of the SSL context refresher based on the communication type (SDK or Cluster).
  *
  * @author liuzunfei
- * @version $Id: RequestFilters.java, v 0.1 2023年03月17日 12:00 PM liuzunfei Exp $
+ * @version $Id: RpcServerSslContextRefresherHolder.java, v 0.1 2023年03月17日 12:00 PM liuzunfei Exp $
  */
 public class RpcServerSslContextRefresherHolder {
     
-    private static RpcServerSslContextRefresher instance;
+    /**
+     * The instance of {@link RpcServerSslContextRefresher} for SDK communication.
+     */
+    private static RpcServerSslContextRefresher sdkInstance;
     
-    private static volatile boolean init = false;
+    /**
+     * The instance of {@link RpcServerSslContextRefresher} for Cluster communication.
+     */
+    private static RpcServerSslContextRefresher clusterInstance;
     
-    public static RpcServerSslContextRefresher getInstance() {
-        if (init) {
-            return instance;
-        }
+    static {
+        init();
+    }
+    
+    /**
+     * Gets the instance of {@link RpcServerSslContextRefresher} for SDK communication.
+     *
+     * @return The instance of {@link RpcServerSslContextRefresher} for SDK communication.
+     */
+    public static RpcServerSslContextRefresher getSdkInstance() {
+        return sdkInstance;
+    }
+    
+    /**
+     * Gets the instance of {@link RpcServerSslContextRefresher} for Cluster communication.
+     *
+     * @return The instance of {@link RpcServerSslContextRefresher} for Cluster communication.
+     */
+    public static RpcServerSslContextRefresher getClusterInstance() {
+        return clusterInstance;
+    }
+    
+    /**
+     * Initializes the holder by loading SSL context refreshers and matching them with the configured types (SDK and
+     * Cluster).
+     */
+    private static void init() {
         synchronized (RpcServerSslContextRefresherHolder.class) {
-            if (init) {
-                return instance;
-            }
-            RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
-            String sslContextRefresher = rpcServerTlsConfig.getSslContextRefresher();
-            if (StringUtils.isNotBlank(sslContextRefresher)) {
-                Collection<RpcServerSslContextRefresher> load = NacosServiceLoader
-                        .load(RpcServerSslContextRefresher.class);
-                for (RpcServerSslContextRefresher contextRefresher : load) {
-                    if (sslContextRefresher.equals(contextRefresher.getName())) {
-                        instance = contextRefresher;
-                        Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} Founded->{}", sslContextRefresher,
-                                contextRefresher.getClass().getSimpleName());
-                        break;
-                    }
-                }
-                if (instance == null) {
-                    Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} not found", sslContextRefresher);
-                }
-                
-            } else {
-                Loggers.REMOTE
-                        .info("No RpcServerSslContextRefresher specified,Ssl Context auto refresh not supported.");
-            }
-            
+            Collection<RpcServerSslContextRefresher> refreshers = NacosServiceLoader.load(
+                    RpcServerSslContextRefresher.class);
+            doInit(refreshers, RpcSdkServerTlsConfig.getInstance(), sdkInstance, CommunicationType.SDK.getType());
+            doInit(refreshers, RpcClusterServerTlsConfig.getInstance(), clusterInstance,
+                    CommunicationType.CLUSTER.getType());
             Loggers.REMOTE.info("RpcServerSslContextRefresher init end");
-            init = true;
         }
-        
-        return instance;
+    }
+    
+    /**
+     * Initializes the SSL context refresher instance based on the specified configuration and communication type.
+     *
+     * @param refreshers        Collection of SSL context refreshers to choose from.
+     * @param serverTlsConfig   Configuration instance for the SSL context refresher.
+     * @param instance          The instance to be initialized based on the configuration.
+     * @param communicationType The type of communication (SDK or Cluster).
+     */
+    private static void doInit(Collection<RpcServerSslContextRefresher> refreshers, RpcServerTlsConfig serverTlsConfig,
+            RpcServerSslContextRefresher instance, String communicationType) {
+        String refresherName = serverTlsConfig.getSslContextRefresher();
+        if (StringUtils.isNotBlank(refresherName)) {
+            for (RpcServerSslContextRefresher contextRefresher : refreshers) {
+                if (refresherName.equals(contextRefresher.getName())) {
+                    instance = contextRefresher;
+                    Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} for {} Founded -> {}.", refresherName,
+                            communicationType, contextRefresher.getClass().getSimpleName());
+                    break;
+                }
+            }
+            if (instance == null) {
+                Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} for {} not found", refresherName,
+                        communicationType);
+            }
+        } else {
+            Loggers.REMOTE.info(
+                    "No {} communication type RpcServerSslContextRefresher specified, Ssl Context auto refresh not supported.",
+                    communicationType);
+        }
     }
     
 }

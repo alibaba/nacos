@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.TlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashMap;
@@ -32,39 +33,39 @@ import java.util.concurrent.TimeUnit;
  */
 public class DefaultGrpcClientConfig implements GrpcClientConfig {
     
-    private String name;
+    private final String name;
     
-    private int retryTimes;
+    private final int retryTimes;
     
-    private long timeOutMills;
+    private final long timeOutMills;
     
-    private long connectionKeepAlive;
+    private final long connectionKeepAlive;
     
-    private long channelKeepAliveTimeout;
+    private final long channelKeepAliveTimeout;
     
-    private long threadPoolKeepAlive;
+    private final long threadPoolKeepAlive;
     
-    private int threadPoolCoreSize;
+    private final int threadPoolCoreSize;
     
-    private int threadPoolMaxSize;
+    private final int threadPoolMaxSize;
     
-    private long serverCheckTimeOut;
+    private final long serverCheckTimeOut;
     
-    private int threadPoolQueueSize;
+    private final int threadPoolQueueSize;
     
-    private int maxInboundMessageSize;
+    private final int maxInboundMessageSize;
     
-    private int channelKeepAlive;
+    private final int channelKeepAlive;
     
-    private int healthCheckRetryTimes;
+    private final int healthCheckRetryTimes;
     
-    private long healthCheckTimeOut;
+    private final long healthCheckTimeOut;
     
-    private long capabilityNegotiationTimeout;
+    private final long capabilityNegotiationTimeout;
     
-    private Map<String, String> labels;
+    private final Map<String, String> labels;
     
-    private RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+    private TlsConfig tlsConfig = new TlsConfig();
     
     /**
      * constructor.
@@ -173,11 +174,11 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     }
     
     @Override
-    public RpcClientTlsConfig tlsConfig() {
+    public TlsConfig tlsConfig() {
         return tlsConfig;
     }
     
-    public void setTlsConfig(RpcClientTlsConfig tlsConfig) {
+    public void setTlsConfig(TlsConfig tlsConfig) {
         this.tlsConfig = tlsConfig;
     }
     
@@ -237,9 +238,9 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         
         private long capabilityNegotiationTimeout = 5000L;
         
-        private Map<String, String> labels = new HashMap<>();
+        private final Map<String, String> labels = new HashMap<>();
         
-        private RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+        private TlsConfig tlsConfig = new TlsConfig();
         
         private Builder() {
         }
@@ -261,53 +262,53 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.timeOutMills = Long.parseLong(properties.getProperty(GrpcConstants.GRPC_TIMEOUT_MILLS));
             }
             if (properties.containsKey(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME)) {
-                this.connectionKeepAlive = Long
-                        .parseLong(properties.getProperty(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME));
+                this.connectionKeepAlive = Long.parseLong(
+                        properties.getProperty(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME));
             }
             if (properties.containsKey(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME)) {
-                this.threadPoolKeepAlive = Long
-                        .parseLong(properties.getProperty(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME));
+                this.threadPoolKeepAlive = Long.parseLong(
+                        properties.getProperty(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME));
             }
             if (properties.containsKey(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE)) {
-                this.threadPoolCoreSize = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE));
+                this.threadPoolCoreSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE));
             }
             if (properties.containsKey(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE)) {
-                this.threadPoolMaxSize = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE));
+                this.threadPoolMaxSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE));
             }
             if (properties.containsKey(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT)) {
-                this.serverCheckTimeOut = Long
-                        .parseLong(properties.getProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT));
+                this.serverCheckTimeOut = Long.parseLong(
+                        properties.getProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT));
             }
             if (properties.containsKey(GrpcConstants.GRPC_QUEUESIZE)) {
                 this.threadPoolQueueSize = Integer.parseInt(properties.getProperty(GrpcConstants.GRPC_QUEUESIZE));
             }
             if (properties.containsKey(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE)) {
-                this.maxInboundMessageSize = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE));
+                this.maxInboundMessageSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE));
             }
             if (properties.containsKey(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME)) {
-                this.channelKeepAlive = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME));
+                this.channelKeepAlive = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME));
             }
             if (properties.containsKey(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT)) {
-                this.capabilityNegotiationTimeout = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT));
+                this.capabilityNegotiationTimeout = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT));
             }
             if (properties.containsKey(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES)) {
-                this.healthCheckRetryTimes = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES));
+                this.healthCheckRetryTimes = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES));
             }
             if (properties.containsKey(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT)) {
-                this.healthCheckTimeOut = Long
-                        .parseLong(properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT));
+                this.healthCheckTimeOut = Long.parseLong(
+                        properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT));
             }
             if (properties.containsKey(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT)) {
-                this.channelKeepAliveTimeout = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
+                this.channelKeepAliveTimeout = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
             }
-            this.tlsConfig = RpcClientTlsConfig.properties(properties);
+            this.tlsConfig = RpcSdkClientTlsConfig.properties(properties);
             return this;
         }
         
@@ -449,7 +450,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
          * @param tlsConfig tls of client.
          * @return
          */
-        public Builder setTlsConfig(RpcClientTlsConfig tlsConfig) {
+        public Builder setTlsConfig(TlsConfig tlsConfig) {
             this.tlsConfig = tlsConfig;
             return this;
         }

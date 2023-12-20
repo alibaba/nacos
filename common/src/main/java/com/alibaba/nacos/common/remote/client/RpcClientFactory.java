@@ -76,7 +76,7 @@ public class RpcClientFactory {
     }
     
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
-            RpcClientTlsConfig tlsConfig) {
+            RpcSdkClientTlsConfig tlsConfig) {
         return createClient(clientName, connectionType, null, null, labels, tlsConfig);
         
     }
@@ -97,7 +97,7 @@ public class RpcClientFactory {
      * @return rpc client.
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
-            Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+            Integer threadPoolMaxSize, Map<String, String> labels, RpcSdkClientTlsConfig tlsConfig) {
         
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
@@ -110,30 +110,41 @@ public class RpcClientFactory {
     }
     
     /**
-     * create a rpc client.
+     * Creates an RPC client for cluster communication with default thread pool settings.
      *
-     * @param clientName     client name.
-     * @param connectionType client type.
-     * @return rpc client.
+     * @param clientName     The name of the client.
+     * @param connectionType The type of client connection.
+     * @param labels         Additional labels for RPC-related attributes.
+     * @return An RPC client for cluster communication.
      */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
             Map<String, String> labels) {
         return createClusterClient(clientName, connectionType, null, null, labels);
     }
     
+    /**
+     * Creates an RPC client for cluster communication with TLS configuration.
+     *
+     * @param clientName     The name of the client.
+     * @param connectionType The type of client connection.
+     * @param labels         Additional labels for RPC-related attributes.
+     * @param tlsConfig      TLS configuration for secure communication.
+     * @return An RPC client for cluster communication with TLS configuration.
+     */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
-            Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+            Map<String, String> labels, RpcClusterClientTlsConfig tlsConfig) {
         return createClusterClient(clientName, connectionType, null, null, labels, tlsConfig);
     }
     
     /**
-     * create a rpc client.
+     * Creates an RPC client for cluster communication with custom thread pool settings.
      *
-     * @param clientName         client name.
-     * @param connectionType     client type.
-     * @param threadPoolCoreSize grpc thread pool core size
-     * @param threadPoolMaxSize  grpc thread pool max size
-     * @return rpc client.
+     * @param clientName         The name of the client.
+     * @param connectionType     The type of client connection.
+     * @param threadPoolCoreSize The core size of the gRPC thread pool.
+     * @param threadPoolMaxSize  The maximum size of the gRPC thread pool.
+     * @param labels             Additional labels for RPC-related attributes.
+     * @return An RPC client for cluster communication with custom thread pool settings.
      */
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
             Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
@@ -151,10 +162,9 @@ public class RpcClientFactory {
      * @param tlsConfig          tlsConfig.
      * @return
      */
-    
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
             Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
-            RpcClientTlsConfig tlsConfig) {
+            RpcClusterClientTlsConfig tlsConfig) {
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
