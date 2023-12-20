@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.config.server.service.dump.processor;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -60,8 +76,6 @@ public class DumpAllProcessorTest extends TestCase {
 
     MockedStatic<EnvUtil> envUtilMockedStatic;
 
-    DumpProcessor dumpProcessor;
-
     @Before
     public void init() throws Exception {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
@@ -83,29 +97,25 @@ public class DumpAllProcessorTest extends TestCase {
     private static int newConfigCount = 1;
 
     private ConfigInfoWrapper createNewConfig(int id) {
-        String dataId = "dataIdTime" + newConfigCount;
-        String group = "groupTime" + newConfigCount;
-        String tenant = "tenantTime" + newConfigCount;
-        String content = "content " + newConfigCount;
-        newConfigCount++;
         ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
+        String dataId = "dataIdTime" + newConfigCount;
         configInfoWrapper.setDataId(dataId);
+        String group = "groupTime" + newConfigCount;
         configInfoWrapper.setGroup(group);
+        String tenant = "tenantTime" + newConfigCount;
         configInfoWrapper.setTenant(tenant);
+        String content = "content " + newConfigCount;
         configInfoWrapper.setContent(content);
         configInfoWrapper.setId(id);
+        newConfigCount++;
         return configInfoWrapper;
     }
+
     @Test
     public void testDumpAll() throws IOException {
         ConfigInfoWrapper configInfoWrapper1 = createNewConfig(1);
         ConfigInfoWrapper configInfoWrapper2 = createNewConfig(2);
-
-
         long timestamp = System.currentTimeMillis();
-        long latterTimestamp = timestamp + 999;
-        long earlierTimestamp = timestamp - 999;
-        String encryptedDataKey = "encryptedDataKey";
         configInfoWrapper1.setLastModified(timestamp);
         configInfoWrapper2.setLastModified(timestamp);
         Page<ConfigInfoWrapper> page = new Page<>();
@@ -116,7 +126,7 @@ public class DumpAllProcessorTest extends TestCase {
                 .collect(Collectors.toCollection(ArrayList::new));
         page.setPageItems(list);
 
-        Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(2l);
+        Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(2L);
         Mockito.when(configInfoPersistService.findAllConfigInfoFragment(0, 1000))
                 .thenReturn(page);
 
@@ -124,10 +134,13 @@ public class DumpAllProcessorTest extends TestCase {
         String groupKey2 = GroupKey2.getKey(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(), configInfoWrapper2.getTenant());
         // For config 1, assign a latter time, to make sure that it would be updated.
         // For config 2, assign an earlier time, to make sure that it is not be updated.
-        String md5_1 = MD5Utils.md5Hex(configInfoWrapper1.getContent(), "UTF-8");
-        String md5_2 = MD5Utils.md5Hex(configInfoWrapper2.getContent(), "UTF-8");
-        ConfigCacheService.updateMd5(groupKey1, md5_1, latterTimestamp, encryptedDataKey);
-        ConfigCacheService.updateMd5(groupKey2, md5_2, earlierTimestamp, encryptedDataKey);
+        String md51 = MD5Utils.md5Hex(configInfoWrapper1.getContent(), "UTF-8");
+        String md52 = MD5Utils.md5Hex(configInfoWrapper2.getContent(), "UTF-8");
+        long latterTimestamp = timestamp + 999;
+        long earlierTimestamp = timestamp - 999;
+        String encryptedDataKey = "testEncryptedDataKey";
+        ConfigCacheService.updateMd5(groupKey1, md51, latterTimestamp, encryptedDataKey);
+        ConfigCacheService.updateMd5(groupKey2, md52, earlierTimestamp, encryptedDataKey);
 
         DumpAllTask dumpAllTask = new DumpAllTask();
         boolean process = dumpAllProcessor.process(dumpAllTask);
@@ -138,7 +151,7 @@ public class DumpAllProcessorTest extends TestCase {
                 configInfoWrapper1.getDataId(),
                 configInfoWrapper1.getGroup(),
                 configInfoWrapper1.getTenant()));
-        Assert.assertEquals(md5_1, contentCache1.getConfigCache().getMd5Utf8());
+        Assert.assertEquals(md51, contentCache1.getConfigCache().getMd5Utf8());
         // check if config1 is updated
         Assert.assertTrue(timestamp < contentCache1.getConfigCache().getLastModifiedTs());
         //check disk
