@@ -16,15 +16,15 @@
  *
  */
 
-package com.alibaba.nacos.client.monitor.config;
+package com.alibaba.nacos.client.monitor.delegate.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
-import com.alibaba.nacos.client.config.proxy.ConfigRpcTransportClientProxy;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
+import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import io.opentelemetry.api.trace.Span;

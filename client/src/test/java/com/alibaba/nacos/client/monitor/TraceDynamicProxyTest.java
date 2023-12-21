@@ -33,7 +33,7 @@ import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.config.proxy.ClientWorkerProxy;
+import com.alibaba.nacos.client.monitor.delegate.config.ClientWorkerProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingGrpcRedoServiceTraceProxy;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.ServiceInfoUpdateService;

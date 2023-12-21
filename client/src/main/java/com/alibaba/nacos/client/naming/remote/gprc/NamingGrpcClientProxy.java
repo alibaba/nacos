@@ -41,9 +41,9 @@ import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
 import com.alibaba.nacos.client.monitor.TraceMonitor;
-import com.alibaba.nacos.client.monitor.naming.NamingGrpcRedoServiceTraceProxy;
+import com.alibaba.nacos.client.monitor.delegate.ServerRequestHandlerTraceDelegate;
+import com.alibaba.nacos.client.monitor.delegate.naming.NamingGrpcRedoServiceTraceDelegate;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
@@ -95,9 +95,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private final RpcClient rpcClient;
     
-    private final NamingGrpcRedoService redoServiceInstance;
-    
-    private final NamingGrpcRedoServiceTraceProxy redoService;
+    private final NamingGrpcRedoService redoService;
     
     public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
             NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
@@ -111,17 +109,16 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
         labels.put(Constants.APPNAME, AppNameUtils.getAppName());
         this.rpcClient = RpcClientFactory.createClient(uuid, ConnectionType.GRPC, labels,
                 RpcClientTlsConfig.properties(properties.asProperties()));
-        this.redoServiceInstance = new NamingGrpcRedoService(this);
-        this.redoService = TraceDynamicProxy.getNamingGrpcRedoServiceTraceProxy(this.redoServiceInstance);
+        this.redoService = new NamingGrpcRedoServiceTraceDelegate(this);
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
         start(serverListFactory, serviceInfoHolder);
     }
     
     private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
         rpcClient.serverListFactory(serverListFactory);
-        rpcClient.registerConnectionListener(redoServiceInstance);
+        rpcClient.registerConnectionListener(redoService);
         rpcClient.registerServerRequestHandler(
-                TraceDynamicProxy.getServerRequestHandlerTraceProxy(new NamingPushRequestHandler(serviceInfoHolder)));
+                ServerRequestHandlerTraceDelegate.warp(new NamingPushRequestHandler(serviceInfoHolder)));
         rpcClient.start();
         NotifyCenter.registerSubscriber(this);
     }

@@ -42,11 +42,12 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
-import com.alibaba.nacos.client.config.proxy.ClientWorkerProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
-import com.alibaba.nacos.client.config.proxy.ConfigRpcTransportClientProxy;
-import com.alibaba.nacos.client.monitor.config.ConfigRpcTransportClientProxyTraceDelegate;
+import com.alibaba.nacos.client.monitor.delegate.ServerRequestHandlerTraceDelegate;
+import com.alibaba.nacos.client.monitor.delegate.config.ClientWorkerProxy;
+import com.alibaba.nacos.client.monitor.delegate.config.ClientWorkerTraceDelegate;
+import com.alibaba.nacos.client.monitor.delegate.config.ConfigRpcTransportClientProxy;
+import com.alibaba.nacos.client.monitor.delegate.config.ConfigRpcTransportClientProxyTraceDelegate;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.client.utils.EnvUtil;
@@ -155,7 +156,8 @@ public class ClientWorker implements ClientWorkerProxy {
     public void addListeners(String dataId, String group, List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
         
-        CacheData cache = addCacheDataIfAbsent(dataId, group);
+        // addCacheDataIfAbsent
+        CacheData cache = ClientWorkerTraceDelegate.AddCacheDataWarp.warp(this, dataId, group);
         
         synchronized (cache) {
             
@@ -183,7 +185,8 @@ public class ClientWorker implements ClientWorkerProxy {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        // addCacheDataIfAbsent
+        CacheData cache = ClientWorkerTraceDelegate.AddCacheDataWarp.warp(this, dataId, group, tenant);
         
         synchronized (cache) {
             for (Listener listener : listeners) {
@@ -212,7 +215,8 @@ public class ClientWorker implements ClientWorkerProxy {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
         
-        CacheData cache = addCacheDataIfAbsent(dataId, group, tenant);
+        // addCacheDataIfAbsent
+        CacheData cache = ClientWorkerTraceDelegate.AddCacheDataWarp.warp(this, dataId, group, tenant);
         
         synchronized (cache) {
             cache.setEncryptedDataKey(encryptedDataKey);
@@ -683,55 +687,51 @@ public class ClientWorker implements ClientWorkerProxy {
             /*
              * Register Config Change /Config ReSync Handler
              */
-            rpcClientInner.registerServerRequestHandler(
-                    TraceDynamicProxy.getServerRequestHandlerTraceProxy((request) -> {
-                        if (request instanceof ConfigChangeNotifyRequest) {
-                            final long start = System.currentTimeMillis();
-                            
-                            ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
-                            LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
-                                    rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
-                                    configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
-                            String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
-                                    configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
-                            
-                            CacheData cacheData = cacheMap.get().get(groupKey);
-                            if (cacheData != null) {
-                                synchronized (cacheData) {
-                                    cacheData.getReceiveNotifyChanged().set(true);
-                                    cacheData.setConsistentWithServer(false);
-                                    notifyListenConfig();
-                                }
-                            }
-                            
-                            // metrics
-                            ConfigMetrics.incServerRequestHandleCounter();
-                            ConfigMetrics.recordHandleServerRequestCostDurationTimer(
-                                    ConfigChangeNotifyRequest.class.getSimpleName(),
-                                    System.currentTimeMillis() - start);
-                            
-                            return new ConfigChangeNotifyResponse();
+            rpcClientInner.registerServerRequestHandler(ServerRequestHandlerTraceDelegate.warp((request) -> {
+                if (request instanceof ConfigChangeNotifyRequest) {
+                    final long start = System.currentTimeMillis();
+                    
+                    ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
+                    LOGGER.info("[{}] [server-push] config changed. dataId={}, group={},tenant={}",
+                            rpcClientInner.getName(), configChangeNotifyRequest.getDataId(),
+                            configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                    String groupKey = GroupKey.getKeyTenant(configChangeNotifyRequest.getDataId(),
+                            configChangeNotifyRequest.getGroup(), configChangeNotifyRequest.getTenant());
+                    
+                    CacheData cacheData = cacheMap.get().get(groupKey);
+                    if (cacheData != null) {
+                        synchronized (cacheData) {
+                            cacheData.getReceiveNotifyChanged().set(true);
+                            cacheData.setConsistentWithServer(false);
+                            notifyListenConfig();
                         }
-                        return null;
-                    }));
+                    }
+                    
+                    // metrics
+                    ConfigMetrics.incServerRequestHandleCounter();
+                    ConfigMetrics.recordHandleServerRequestCostDurationTimer(
+                            ConfigChangeNotifyRequest.class.getSimpleName(), System.currentTimeMillis() - start);
+                    
+                    return new ConfigChangeNotifyResponse();
+                }
+                return null;
+            }));
             
-            rpcClientInner.registerServerRequestHandler(
-                    TraceDynamicProxy.getServerRequestHandlerTraceProxy((request) -> {
-                        if (request instanceof ClientConfigMetricRequest) {
-                            final long start = System.currentTimeMillis();
-                            
-                            ClientConfigMetricResponse response = new ClientConfigMetricResponse();
-                            response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
-                            
-                            // metrics
-                            ConfigMetrics.incServerRequestHandleCounter();
-                            ConfigMetrics.recordHandleServerRequestCostDurationTimer(
-                                    ClientConfigMetricRequest.class.getSimpleName(),
-                                    System.currentTimeMillis() - start);
-                            return response;
-                        }
-                        return null;
-                    }));
+            rpcClientInner.registerServerRequestHandler(ServerRequestHandlerTraceDelegate.warp((request) -> {
+                if (request instanceof ClientConfigMetricRequest) {
+                    final long start = System.currentTimeMillis();
+                    
+                    ClientConfigMetricResponse response = new ClientConfigMetricResponse();
+                    response.setMetrics(getMetrics(((ClientConfigMetricRequest) request).getMetricsKeys()));
+                    
+                    // metrics
+                    ConfigMetrics.incServerRequestHandleCounter();
+                    ConfigMetrics.recordHandleServerRequestCostDurationTimer(
+                            ClientConfigMetricRequest.class.getSimpleName(), System.currentTimeMillis() - start);
+                    return response;
+                }
+                return null;
+            }));
             
             rpcClientInner.registerConnectionListener(new ConnectionEventListener() {
                 

@@ -27,7 +27,6 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigRequest;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.http.HttpAgent;
-import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.impl.LocalEncryptedDataKeyProcessor;
@@ -35,9 +34,9 @@ import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.config.utils.ParamUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
-import com.alibaba.nacos.client.monitor.config.ClientWorkerTraceDelegate;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
+import com.alibaba.nacos.client.monitor.delegate.config.ClientWorkerTraceDelegate;
+import com.alibaba.nacos.client.monitor.delegate.config.ServerHttpAgentTraceDelegate;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
@@ -93,7 +92,7 @@ public class NacosConfigService implements ConfigService {
         
         this.worker = new ClientWorkerTraceDelegate(this.configFilterChainManager, serverListManager, clientProperties);
         // will be deleted in 2.0 later versions
-        agent = TraceDynamicProxy.getHttpAgentTraceProxy(new ServerHttpAgent(serverListManager));
+        agent = new ServerHttpAgentTraceDelegate(serverListManager);
         
     }
     

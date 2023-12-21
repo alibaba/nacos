@@ -16,7 +16,7 @@
  *
  */
 
-package com.alibaba.nacos.client.config.proxy;
+package com.alibaba.nacos.client.monitor.delegate.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;

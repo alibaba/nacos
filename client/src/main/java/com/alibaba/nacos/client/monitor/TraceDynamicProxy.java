@@ -18,20 +18,16 @@
 
 package com.alibaba.nacos.client.monitor;
 
-import com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
-import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
-import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.http.HttpAgent;
 import com.alibaba.nacos.client.config.impl.CacheData;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
-import com.alibaba.nacos.client.config.proxy.ClientWorkerProxy;
 import com.alibaba.nacos.client.monitor.config.ConfigTrace;
+import com.alibaba.nacos.client.monitor.delegate.config.ClientWorkerProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingGrpcRedoServiceTraceProxy;
 import com.alibaba.nacos.client.monitor.naming.NamingTrace;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
@@ -41,13 +37,10 @@ import com.alibaba.nacos.client.naming.remote.gprc.redo.data.InstanceRedoData;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.HttpMethod;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.VersionUtils;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
-import io.opentelemetry.api.trace.SpanKind;
 import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Scope;
 import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
@@ -304,94 +297,6 @@ public class TraceDynamicProxy {
                         throw e.getTargetException();
                     }
                     
-                });
-    }
-    
-    public static ServerRequestHandler getServerRequestHandlerTraceProxy(ServerRequestHandler serverRequestHandler) {
-        return (ServerRequestHandler) Proxy.newProxyInstance(TraceDynamicProxy.class.getClassLoader(),
-                new Class[] {ServerRequestHandler.class}, (proxy, method, args) -> {
-                    String methodName = method.getName();
-                    
-                    String requestReplyMethodName = "requestReply";
-                    if (requestReplyMethodName.equals(methodName) && args[0] != null) {
-                        
-                        Object result;
-                        Request request = (Request) args[0];
-                        String moduleName = request.getModule();
-                        
-                        String spanName = TraceMonitor.getNacosClientRequestFromServerSpanName() + " / " + moduleName;
-                        SpanBuilder spanBuilder = TraceMonitor.getTracer().spanBuilder(spanName);
-                        
-                        // SpanKind.SERVER means incoming span rather than the span in the server side.
-                        // See https://opentelemetry.io/docs/specs/otel/trace/api/#spankind
-                        spanBuilder.setSpanKind(SpanKind.SERVER);
-                        spanBuilder.setAttribute(NacosSemanticAttributes.CLIENT_VERSION,
-                                VersionUtils.getFullClientVersion());
-                        spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE,
-                                serverRequestHandler.getClass().getName());
-                        spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, methodName);
-                        spanBuilder.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_ID,
-                                request.getRequestId());
-                        spanBuilder.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_MODULE, moduleName);
-                        
-                        Span span = spanBuilder.startSpan();
-                        try (Scope ignored = span.makeCurrent()) {
-                            
-                            if (span.isRecording()) {
-                                if (request instanceof ConfigChangeNotifyRequest) {
-                                    ConfigChangeNotifyRequest configChangeNotifyRequest = (ConfigChangeNotifyRequest) request;
-                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_ID,
-                                            configChangeNotifyRequest.getRequestId());
-                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_DATA_ID,
-                                            configChangeNotifyRequest.getDataId());
-                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_GROUP,
-                                            configChangeNotifyRequest.getGroup());
-                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_TENANT,
-                                            configChangeNotifyRequest.getTenant());
-                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_TYPE,
-                                            ConfigChangeNotifyRequest.class.getSimpleName());
-                                    
-                                } else if (request instanceof ClientConfigMetricRequest) {
-                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_TYPE,
-                                            ClientConfigMetricRequest.class.getSimpleName());
-                                    
-                                } else if (request instanceof NotifySubscriberRequest) {
-                                    NotifySubscriberRequest notifySubscriberRequest = (NotifySubscriberRequest) request;
-                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_NAMESPACE,
-                                            notifySubscriberRequest.getNamespace());
-                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_SERVICE_NAME,
-                                            notifySubscriberRequest.getServiceName());
-                                    if (notifySubscriberRequest.getServiceInfo() != null) {
-                                        span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_GROUP,
-                                                notifySubscriberRequest.getServiceInfo().getGroupName());
-                                        span.setAttribute(
-                                                NacosSemanticAttributes.RequestAttributes.REQUEST_SERVICE_CLUSTER_NAME,
-                                                notifySubscriberRequest.getServiceInfo().getClusters());
-                                    }
-                                    span.setAttribute(NacosSemanticAttributes.RequestAttributes.REQUEST_TYPE,
-                                            NotifySubscriberRequest.class.getSimpleName());
-                                    
-                                }
-                            }
-                            
-                            result = method.invoke(serverRequestHandler, args);
-                            
-                        } catch (InvocationTargetException e) {
-                            Throwable targetException = e.getTargetException();
-                            span.recordException(targetException);
-                            span.setStatus(StatusCode.ERROR, targetException.getClass().getSimpleName());
-                            throw targetException;
-                        } finally {
-                            span.end();
-                        }
-                        return result;
-                    }
-                    
-                    try {
-                        return method.invoke(serverRequestHandler, args);
-                    } catch (InvocationTargetException e) {
-                        throw e.getTargetException();
-                    }
                 });
     }
     

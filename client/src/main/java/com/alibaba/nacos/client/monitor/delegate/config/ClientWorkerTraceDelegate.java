@@ -16,7 +16,7 @@
  *
  */
 
-package com.alibaba.nacos.client.monitor.config;
+package com.alibaba.nacos.client.monitor.delegate.config;
 
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -26,6 +26,7 @@ import com.alibaba.nacos.client.config.impl.CacheData;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.monitor.config.ConfigTrace;
 import com.alibaba.nacos.common.constant.NacosSemanticAttributes;
 import io.opentelemetry.api.trace.Span;
 import io.opentelemetry.api.trace.SpanBuilder;
@@ -36,7 +37,7 @@ import io.opentelemetry.semconv.trace.attributes.SemanticAttributes;
 import java.util.List;
 
 /**
- * Opentelemetry Trace delegate for {@link com.alibaba.nacos.client.config.proxy.ClientWorkerProxy}.
+ * Opentelemetry Trace delegate for {@link ClientWorker}.
  *
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
@@ -61,19 +62,6 @@ public class ClientWorkerTraceDelegate extends ClientWorker {
         return spanBuilder;
     }
     
-    /**
-     * Init Worker level SpanBuilder with method name.
-     *
-     * @param methodName method name
-     * @return SpanBuilder
-     */
-    private SpanBuilder initWorkerSpanBuilder(String methodName) {
-        SpanBuilder spanBuilder = ConfigTrace.getClientConfigWorkerSpanBuilder(methodName);
-        spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, super.getClass().getName());
-        spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, methodName);
-        spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, super.getAgentName());
-        return spanBuilder;
-    }
     
     /**
      * Add listeners for data.
@@ -91,22 +79,11 @@ public class ClientWorkerTraceDelegate extends ClientWorker {
                 span.setAttribute(NacosSemanticAttributes.GROUP, group);
             }
             
-            group = super.blank2defaultGroup(group);
-            
-            CacheData cache = this.addCacheDataIfAbsent(dataId, group);
-            
-            synchronized (cache) {
-                for (Listener listener : listeners) {
-                    cache.addListener(listener);
-                }
-                cache.setDiscard(false);
-                cache.setConsistentWithServer(false);
-                super.agent.notifyListenConfig();
-            }
+            super.addListeners(dataId, group, listeners);
             
         } catch (Exception e) {
             span.recordException(e);
-            span.setStatus(StatusCode.ERROR, "Add listeners failed");
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
             span.end();
@@ -135,21 +112,7 @@ public class ClientWorkerTraceDelegate extends ClientWorker {
                 span.setAttribute(NacosSemanticAttributes.CONTENT, content);
             }
             
-            group = super.blank2defaultGroup(group);
-            String tenant = super.agent.getTenant();
-            
-            CacheData cache = this.addCacheDataIfAbsent(dataId, group, tenant);
-            
-            synchronized (cache) {
-                cache.setEncryptedDataKey(encryptedDataKey);
-                cache.setContent(content);
-                for (Listener listener : listeners) {
-                    cache.addListener(listener);
-                }
-                cache.setDiscard(false);
-                cache.setConsistentWithServer(false);
-                super.agent.notifyListenConfig();
-            }
+            super.addTenantListenersWithContent(dataId, group, content, encryptedDataKey, listeners);
             
         } catch (Exception e) {
             span.recordException(e);
@@ -179,19 +142,7 @@ public class ClientWorkerTraceDelegate extends ClientWorker {
                 span.setAttribute(NacosSemanticAttributes.GROUP, group);
             }
             
-            group = super.blank2defaultGroup(group);
-            String tenant = super.agent.getTenant();
-            
-            CacheData cache = this.addCacheDataIfAbsent(dataId, group, tenant);
-            
-            synchronized (cache) {
-                for (Listener listener : listeners) {
-                    cache.addListener(listener);
-                }
-                cache.setDiscard(false);
-                cache.setConsistentWithServer(false);
-                super.agent.notifyListenConfig();
-            }
+            super.addTenantListeners(dataId, group, listeners);
             
         } catch (Exception e) {
             span.recordException(e);
@@ -370,78 +321,6 @@ public class ClientWorkerTraceDelegate extends ClientWorker {
     }
     
     /**
-     * Add cache data if absent.
-     *
-     * @param dataId data id if data
-     * @param group  group of data
-     * @return cache data
-     */
-    @Override
-    public CacheData addCacheDataIfAbsent(String dataId, String group) {
-        Span span = initWorkerSpanBuilder("addCacheDataIfAbsent").startSpan();
-        CacheData result;
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, super.getAgentTenant());
-            }
-            
-            result = super.addCacheDataIfAbsent(dataId, group);
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.CONTENT, result.getContent());
-            }
-            return result;
-            
-        } catch (Exception e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-    }
-    
-    /**
-     * Add cache data if absent.
-     *
-     * @param dataId data id if data
-     * @param group  group of data
-     * @param tenant tenant of data
-     * @return cache data
-     * @throws NacosException NacosException
-     */
-    @Override
-    public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
-        Span span = initWorkerSpanBuilder("addCacheDataIfAbsent").startSpan();
-        CacheData result;
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
-                span.setAttribute(NacosSemanticAttributes.GROUP, group);
-                span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
-            }
-            
-            result = super.addCacheDataIfAbsent(dataId, group, tenant);
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.CONTENT, result.getContent());
-            }
-            return result;
-            
-        } catch (Exception e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
-    }
-    
-    /**
      * Check whether the server is health.
      *
      * @return boolean
@@ -465,10 +344,100 @@ public class ClientWorkerTraceDelegate extends ClientWorker {
             
         } catch (Exception e) {
             span.recordException(e);
-            span.setStatus(StatusCode.ERROR, "Server is not health");
+            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
             throw e;
         } finally {
             span.end();
+        }
+    }
+    
+    public static class AddCacheDataWarp {
+        
+        private static final String METHOD_NAME = "addCacheDataIfAbsent";
+        
+        /**
+         * Init Worker level SpanBuilder with method name.
+         *
+         * @param clientWorker ClientWorker
+         * @return SpanBuilder
+         */
+        private static SpanBuilder initWorkerSpanBuilder(ClientWorker clientWorker) {
+            SpanBuilder spanBuilder = ConfigTrace.getClientConfigWorkerSpanBuilder(METHOD_NAME);
+            spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, clientWorker.getClass().getName());
+            spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, METHOD_NAME);
+            spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, clientWorker.getAgentName());
+            return spanBuilder;
+        }
+        
+        /**
+         * Warp addCacheDataIfAbsent for tracing.
+         *
+         * @param clientWorker ClientWorker
+         * @param dataId       dataId
+         * @param group        group
+         * @return CacheData
+         */
+        public static CacheData warp(ClientWorker clientWorker, String dataId, String group) {
+            Span span = initWorkerSpanBuilder(clientWorker).startSpan();
+            CacheData result;
+            try (Scope ignored = span.makeCurrent()) {
+                
+                if (span.isRecording()) {
+                    span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                    span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                    span.setAttribute(NacosSemanticAttributes.TENANT, clientWorker.getAgentTenant());
+                }
+                
+                result = clientWorker.addCacheDataIfAbsent(dataId, group);
+                
+                if (span.isRecording()) {
+                    span.setAttribute(NacosSemanticAttributes.CONTENT, result.getContent());
+                }
+                return result;
+                
+            } catch (Exception e) {
+                span.recordException(e);
+                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                throw e;
+            } finally {
+                span.end();
+            }
+        }
+        
+        /**
+         * Warp addCacheDataIfAbsent for tracing with tenant.
+         *
+         * @param clientWorker ClientWorker
+         * @param dataId       dataId
+         * @param group        group
+         * @param tenant       tenant
+         * @return CacheData
+         */
+        public static CacheData warp(ClientWorker clientWorker, String dataId, String group, String tenant) {
+            Span span = initWorkerSpanBuilder(clientWorker).startSpan();
+            CacheData result;
+            try (Scope ignored = span.makeCurrent()) {
+                
+                if (span.isRecording()) {
+                    span.setAttribute(NacosSemanticAttributes.DATA_ID, dataId);
+                    span.setAttribute(NacosSemanticAttributes.GROUP, group);
+                    span.setAttribute(NacosSemanticAttributes.TENANT, tenant);
+                }
+                
+                result = clientWorker.addCacheDataIfAbsent(dataId, group);
+                
+                if (span.isRecording()) {
+                    span.setAttribute(NacosSemanticAttributes.CONTENT, result.getContent());
+                }
+                return result;
+                
+            } catch (Exception e) {
+                span.recordException(e);
+                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                throw e;
+            } finally {
+                span.end();
+            }
         }
     }
 }
