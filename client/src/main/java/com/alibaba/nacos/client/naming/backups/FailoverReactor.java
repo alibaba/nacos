@@ -41,21 +41,21 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  * @author nkorange
  */
 public class FailoverReactor implements Closeable {
-
+    
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<>();
-
+    
     private boolean failoverSwitchEnable;
-
+    
     private final ServiceInfoHolder serviceInfoHolder;
-
+    
     private final ScheduledExecutorService executorService;
-
+    
     private FailoverDataSource failoverDataSource;
-
+    
     private String notifierEventScope;
-
+    
     private HashMap<String, Meter> meterMap = new HashMap<>(10);
-
+    
     public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
         this.notifierEventScope = notifierEventScope;
@@ -74,18 +74,18 @@ public class FailoverReactor implements Closeable {
         });
         this.init();
     }
-
+    
     /**
      * Init.
      */
     public void init() {
-
+        
         executorService.scheduleWithFixedDelay(new FailoverSwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
-
+        
     }
-
+    
     class FailoverSwitchRefresher implements Runnable {
-
+        
         @Override
         public void run() {
             try {
@@ -111,16 +111,16 @@ public class FailoverReactor implements Closeable {
                         }
                         failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
                     }
-
+                    
                     if (failoverMap.size() > 0) {
                         failoverServiceCntMetrics();
                         serviceMap = failoverMap;
                     }
-
+                    
                     failoverSwitchEnable = true;
                     return;
                 }
-
+                
                 if (failoverSwitchEnable && !fSwitch.getEnabled()) {
                     Map<String, ServiceInfo> serviceInfoMap = serviceInfoHolder.getServiceInfoMap();
                     for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
@@ -136,7 +136,7 @@ public class FailoverReactor implements Closeable {
                             }
                         }
                     }
-
+                    
                     serviceMap.clear();
                     failoverSwitchEnable = false;
                     failoverServiceCntMetricsClear();
@@ -147,26 +147,26 @@ public class FailoverReactor implements Closeable {
             }
         }
     }
-
+    
     public boolean isFailoverSwitch() {
         return failoverSwitchEnable;
     }
-
+    
     public boolean isFailoverSwitch(String serviceName) {
         return failoverSwitchEnable && serviceMap.containsKey(serviceName) && serviceMap.get(serviceName).ipCount() > 0;
     }
-
+    
     public ServiceInfo getService(String key) {
         ServiceInfo serviceInfo = serviceMap.get(key);
-
+        
         if (serviceInfo == null) {
             serviceInfo = new ServiceInfo();
             serviceInfo.setName(key);
         }
-
+        
         return serviceInfo;
     }
-
+    
     /**
      * Add day.
      *
@@ -180,7 +180,7 @@ public class FailoverReactor implements Closeable {
         startDT.add(Calendar.DAY_OF_MONTH, num);
         return startDT.getTime();
     }
-
+    
     /**
      * shutdown ThreadPool.
      *
@@ -193,7 +193,7 @@ public class FailoverReactor implements Closeable {
         ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
-
+    
     private void failoverServiceCntMetrics() {
         try {
             for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
@@ -209,7 +209,7 @@ public class FailoverReactor implements Closeable {
             NAMING_LOGGER.info("[NA] registerFailoverServiceCnt fail.", e);
         }
     }
-
+    
     private void failoverServiceCntMetricsClear() {
         try {
             for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
