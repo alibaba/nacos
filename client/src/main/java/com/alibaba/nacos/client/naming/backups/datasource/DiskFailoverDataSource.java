@@ -24,17 +24,11 @@ import com.alibaba.nacos.client.naming.backups.NamingFailoverData;
 import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
-import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.StringReader;
-import java.net.URLDecoder;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
@@ -66,7 +60,7 @@ public class DiskFailoverDataSource implements FailoverDataSource {
     private long lastModifiedMillis = 0L;
     
     public DiskFailoverDataSource() {
-        failoverDir = CacheDirUtil.gettCacheDir() + FAILOVER_DIR;
+        failoverDir = CacheDirUtil.getCacheDir() + FAILOVER_DIR;
     }
     
     class FailoverFileReader implements Runnable {
@@ -75,13 +69,9 @@ public class DiskFailoverDataSource implements FailoverDataSource {
         public void run() {
             Map<String, FailoverData> domMap = new HashMap<>(200);
             
-            BufferedReader reader = null;
             try {
-                
                 File cacheDir = new File(failoverDir);
-                if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                    throw new IllegalStateException("failed to create cache dir: " + failoverDir);
-                }
+                DiskCache.createFileIfAbsent(cacheDir, true);
                 
                 File[] files = cacheDir.listFiles();
                 if (files == null) {
@@ -97,36 +87,8 @@ public class DiskFailoverDataSource implements FailoverDataSource {
                         continue;
                     }
                     
-                    ServiceInfo dom = null;
-                    
-                    try {
-                        dom = new ServiceInfo(URLDecoder.decode(file.getName(), StandardCharsets.UTF_8.name()));
-                        String dataString = ConcurrentDiskUtil.getFileContent(file,
-                                Charset.defaultCharset().toString());
-                        reader = new BufferedReader(new StringReader(dataString));
-                        
-                        String json;
-                        if ((json = reader.readLine()) != null) {
-                            try {
-                                dom = JacksonUtils.toObj(json, ServiceInfo.class);
-                            } catch (Exception e) {
-                                NAMING_LOGGER.error("[NA] error while parsing cached dom : {}", json, e);
-                            }
-                        }
-                        
-                    } catch (Exception e) {
-                        NAMING_LOGGER.error("[NA] failed to read cache for dom: {}", file.getName(), e);
-                    } finally {
-                        try {
-                            if (reader != null) {
-                                reader.close();
-                            }
-                        } catch (Exception e) {
-                            //ignore
-                        }
-                    }
-                    if (dom != null && !CollectionUtils.isEmpty(dom.getHosts())) {
-                        domMap.put(dom.getKey(), NamingFailoverData.newNamingFailoverData(dom));
+                    for (Map.Entry<String, ServiceInfo> entry : DiskCache.parseServiceInfoFromCache(file).entrySet()) {
+                        domMap.put(entry.getKey(), NamingFailoverData.newNamingFailoverData(entry.getValue()));
                     }
                 }
             } catch (Exception e) {
@@ -152,8 +114,8 @@ public class DiskFailoverDataSource implements FailoverDataSource {
             
             if (lastModifiedMillis < modified) {
                 lastModifiedMillis = modified;
-                String failover = ConcurrentDiskUtil.getFileContent(switchFile.getPath(),
-                        Charset.defaultCharset().toString());
+                String failover = ConcurrentDiskUtil
+                        .getFileContent(switchFile.getPath(), Charset.defaultCharset().toString());
                 if (!StringUtils.isEmpty(failover)) {
                     String[] lines = failover.split(DiskCache.getLineSeparator());
                     

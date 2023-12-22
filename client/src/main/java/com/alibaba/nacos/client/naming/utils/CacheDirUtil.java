@@ -69,7 +69,7 @@ public class CacheDirUtil {
         return cacheDir;
     }
     
-    public static String gettCacheDir() {
+    public static String getCacheDir() {
         return cacheDir;
     }
 }
