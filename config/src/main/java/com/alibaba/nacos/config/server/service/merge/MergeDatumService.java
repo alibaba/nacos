@@ -24,16 +24,15 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
-import com.alibaba.nacos.config.server.utils.GroupKey;
-import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
-import com.alibaba.nacos.persistence.constants.PersistenceConstant;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.ContentUtils;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
+import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
+import com.alibaba.nacos.persistence.constants.PersistenceConstant;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
@@ -42,7 +41,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -83,7 +81,14 @@ public class MergeDatumService {
                         configInfoTagPersistService, this));
     }
     
-    public  List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
+    /**
+     * splitList.
+     *
+     * @param list  list to split.
+     * @param count count expect to be split.
+     * @return
+     */
+    public List<List<ConfigInfoChanged>> splitList(List<ConfigInfoChanged> list, int count) {
         List<List<ConfigInfoChanged>> result = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             result.add(new ArrayList<>());
@@ -95,7 +100,6 @@ public class MergeDatumService {
         return result;
     }
     
-    
     /**
      * Called after data changes to add aggregation tasks.
      */
@@ -105,18 +109,6 @@ public class MergeDatumService {
         }
         MergeDataTask task = new MergeDataTask(dataId, groupId, tenant, clientIp);
         mergeTasks.addTask(task.getId(), task);
-    }
-    
-    /**
-     * Merge all.
-     */
-    public void mergeAll() {
-        if (!canExecute()) {
-            return;
-        }
-        for (ConfigInfoChanged item : configInfoAggrPersistService.findAllAggrGroup()) {
-            addMergeTask(item.getDataId(), item.getGroup(), item.getTenant(), InetUtils.getSelfIP());
-        }
     }
     
     private boolean canExecute() {
@@ -180,10 +172,11 @@ public class MergeDatumService {
         LOGGER.info("[all-merge-dump] {} / {}", FINISHED.get(), total);
     }
     
-    public void executeConfigsMerge(List<ConfigInfoChanged> configInfoList){
+    public void executeConfigsMerge(List<ConfigInfoChanged> configInfoList) {
         new MergeAllDataWorker(configInfoList).start();
     }
-    public  class MergeAllDataWorker extends Thread {
+    
+    public class MergeAllDataWorker extends Thread {
         
         static final int PAGE_SIZE = 10000;
         

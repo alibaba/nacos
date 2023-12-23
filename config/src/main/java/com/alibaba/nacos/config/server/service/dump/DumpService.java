@@ -21,15 +21,10 @@ import com.alibaba.nacos.api.utils.NetUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.manager.TaskManager;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
 import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
-import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllBetaProcessor;
 import com.alibaba.nacos.config.server.service.dump.processor.DumpAllProcessor;
@@ -40,16 +35,12 @@ import com.alibaba.nacos.config.server.service.dump.task.DumpAllTagTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpAllTask;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
-import com.alibaba.nacos.config.server.service.merge.MergeTaskProcessor;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
-import com.alibaba.nacos.config.server.utils.ContentUtils;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
-import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
@@ -57,9 +48,7 @@ import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.sys.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,12 +56,10 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
@@ -117,11 +104,6 @@ public abstract class DumpService {
     static final int DUMP_ALL_INTERVAL_IN_MINUTE = 6 * 60;
     
     /**
-     * full dump interval.
-     */
-    static final int DUMP_CHANGE_INTERVAL_IN_SECONDS = 15;
-    
-    /**
      * full dump delay.
      */
     static final int INITIAL_DELAY_IN_MINUTE = 6 * 60;
@@ -129,8 +111,6 @@ public abstract class DumpService {
     private TaskManager dumpTaskMgr;
     
     private TaskManager dumpAllTaskMgr;
-    
-    static final AtomicInteger FINISHED = new AtomicInteger();
     
     static final int INIT_THREAD_COUNT = 10;
     
@@ -184,17 +164,7 @@ public abstract class DumpService {
             
             @Override
             public void onEvent(Event event) {
-                // Generate ConfigDataChangeEvent concurrently
-                if (event instanceof ConfigDataChangeEvent) {
-                    ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
-                    
-                    DumpRequest dumpRequest = DumpRequest.create(evt.dataId, evt.group, evt.tenant, evt.lastModifiedTs,
-                            NetUtils.localIP());
-                    dumpRequest.setBeta(evt.isBeta);
-                    dumpRequest.setBatch(evt.isBatch);
-                    dumpRequest.setTag(evt.tag);
-                    DumpService.this.dump(dumpRequest);
-                }
+                handleConfigDataChange(event);
             }
             
             @Override
@@ -202,6 +172,20 @@ public abstract class DumpService {
                 return ConfigDataChangeEvent.class;
             }
         });
+    }
+    
+    void handleConfigDataChange(Event event) {
+        // Generate ConfigDataChangeEvent concurrently
+        if (event instanceof ConfigDataChangeEvent) {
+            ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
+            
+            DumpRequest dumpRequest = DumpRequest.create(evt.dataId, evt.group, evt.tenant, evt.lastModifiedTs,
+                    NetUtils.localIP());
+            dumpRequest.setBeta(evt.isBeta);
+            dumpRequest.setBatch(evt.isBatch);
+            dumpRequest.setTag(evt.tag);
+            DumpService.this.dump(dumpRequest);
+        }
     }
     
     /**
@@ -223,6 +207,51 @@ public abstract class DumpService {
                 LOGGER.error("clearConfigHistory error : {}", e.toString());
             }
         }
+        
+    }
+    
+    /**
+     * config history clear.
+     */
+    class ConfigHistoryClear implements Runnable {
+        
+        @Override
+        public void run() {
+            clearConfigHistory();
+        }
+    }
+    
+    /**
+     * config history clear.
+     */
+    class DumpAllProcessorRunner implements Runnable {
+        
+        @Override
+        public void run() {
+            dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
+        }
+    }
+    
+    /**
+     * dump all beta processor runner.
+     */
+    class DumpAllBetaProcessorRunner implements Runnable {
+        
+        @Override
+        public void run() {
+            dumpAllTaskMgr.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
+        }
+    }
+    
+    /**
+     * dump all tag processor runner.
+     */
+    class DumpAllTagProcessorRunner implements Runnable {
+        
+        @Override
+        public void run() {
+            dumpAllTaskMgr.addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
+        }
     }
     
     protected void dumpOperate() throws NacosException {
@@ -230,16 +259,6 @@ public abstract class DumpService {
         TimerContext.start(dumpFileContext);
         try {
             LogUtil.DEFAULT_LOG.warn("DumpService start");
-            
-            Runnable dumpAll = () -> dumpAllTaskMgr.addTask(DumpAllTask.TASK_ID, new DumpAllTask());
-            
-            Runnable dumpAllBeta = () -> dumpAllTaskMgr.addTask(DumpAllBetaTask.TASK_ID, new DumpAllBetaTask());
-            
-            Runnable dumpAllTag = () -> dumpAllTaskMgr.addTask(DumpAllTagTask.TASK_ID, new DumpAllTagTask());
-            
-            Runnable clearConfigHistory = () -> {
-                clearConfigHistory();
-            };
             
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             
@@ -278,28 +297,19 @@ public abstract class DumpService {
                         e);
             }
             if (!EnvUtil.getStandaloneMode()) {
-                Runnable heartbeat = () -> {
-                    String heartBeatTime = TimeUtils.getCurrentTime().toString();
-                    // write disk
-                    try {
-                        DiskUtil.saveHeartBeatToDisk(heartBeatTime);
-                    } catch (IOException e) {
-                        LogUtil.FATAL_LOG.error("save heartbeat fail" + e.getMessage());
-                    }
-                };
                 
-                ConfigExecutor.scheduleConfigTask(heartbeat, 0, 10, TimeUnit.SECONDS);
                 Random random = new Random();
                 long initialDelay = random.nextInt(INITIAL_DELAY_IN_MINUTE) + 10;
                 LogUtil.DEFAULT_LOG.warn("initialDelay:{}", initialDelay);
                 
-                ConfigExecutor.scheduleConfigTask(dumpAll, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
+                ConfigExecutor.scheduleConfigTask(new DumpAllProcessorRunner(), initialDelay,
+                        DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
                 
-                ConfigExecutor.scheduleConfigTask(dumpAllBeta, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
-                        TimeUnit.MINUTES);
+                ConfigExecutor.scheduleConfigTask(new DumpAllBetaProcessorRunner(), initialDelay,
+                        DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
                 
-                ConfigExecutor.scheduleConfigTask(dumpAllTag, initialDelay, DUMP_ALL_INTERVAL_IN_MINUTE,
-                        TimeUnit.MINUTES);
+                ConfigExecutor.scheduleConfigTask(new DumpAllTagProcessorRunner(), initialDelay,
+                        DUMP_ALL_INTERVAL_IN_MINUTE, TimeUnit.MINUTES);
                 ConfigExecutor.scheduleConfigChangeTask(
                         new DumpChangeConfigWorker(this.configInfoPersistService, this.historyConfigInfoPersistService,
                                 currentTime), random.nextInt((int) PropertyUtil.getDumpChangeWorkerInterval()),
@@ -307,7 +317,7 @@ public abstract class DumpService {
                 
             }
             
-            ConfigExecutor.scheduleConfigTask(clearConfigHistory, 10, 10, TimeUnit.MINUTES);
+            ConfigExecutor.scheduleConfigTask(new ConfigHistoryClear(), 10, 10, TimeUnit.MINUTES);
         } finally {
             TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
         }
@@ -386,7 +396,7 @@ public abstract class DumpService {
      */
     private void dumpFormal(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        String taskKey = dataId + group + tenant;
+        String taskKey = groupKey;
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, false, false, false, null, lastModified, handleIp));
         DUMP_LOG.info("[dump] add formal task. groupKey={}", groupKey);
         
@@ -403,7 +413,7 @@ public abstract class DumpService {
      */
     private void dumpBeta(String dataId, String group, String tenant, long lastModified, String handleIp) {
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        String taskKey = dataId + group + tenant + "+beta";
+        String taskKey = groupKey + "+beta";
         dumpTaskMgr.addTask(taskKey, new DumpTask(groupKey, true, false, false, null, lastModified, handleIp));
         DUMP_LOG.info("[dump] add beta task. groupKey={}", groupKey);
         

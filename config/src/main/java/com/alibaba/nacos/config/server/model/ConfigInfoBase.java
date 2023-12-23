@@ -56,7 +56,7 @@ public class ConfigInfoBase implements Serializable, Comparable<ConfigInfoBase> 
         this.group = group;
         this.content = content;
         if (this.content != null) {
-            this.md5 = MD5Utils.md5Hex(this.content, Constants.ENCODE);
+            this.md5 = MD5Utils.md5Hex(this.content, Constants.PERSIST_ENCODE);
         }
     }
     

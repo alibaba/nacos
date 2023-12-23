@@ -24,13 +24,11 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCache;
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
 
@@ -411,68 +409,6 @@ public class ConfigCacheService {
             return false;
         } finally {
             releaseWriteLock(groupKey);
-        }
-    }
-    
-    /**
-     * Reload config.
-     */
-    public static void reloadConfig() {
-        String aggreds = null;
-        try {
-            if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
-                        "DEFAULT_GROUP");
-                if (config != null) {
-                    aggreds = config.getContent();
-                }
-            } else {
-                aggreds = ConfigDiskServiceFactory.getInstance()
-                        .getContent(AggrWhitelist.AGGRIDS_METADATA, "DEFAULT_GROUP", StringUtils.EMPTY);
-            }
-            if (aggreds != null) {
-                AggrWhitelist.load(aggreds);
-            }
-        } catch (IOException e) {
-            DUMP_LOG.error("reload fail:" + AggrWhitelist.AGGRIDS_METADATA, e);
-        }
-        
-        String clientIpWhitelist = null;
-        try {
-            if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(
-                        ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
-                if (config != null) {
-                    clientIpWhitelist = config.getContent();
-                }
-            } else {
-                clientIpWhitelist = ConfigDiskServiceFactory.getInstance()
-                        .getContent(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP", StringUtils.EMPTY);
-            }
-            if (clientIpWhitelist != null) {
-                ClientIpWhiteList.load(clientIpWhitelist);
-            }
-        } catch (IOException e) {
-            DUMP_LOG.error("reload fail:" + ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, e);
-        }
-        
-        String switchContent = null;
-        try {
-            if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(
-                        SwitchService.SWITCH_META_DATA_ID, "DEFAULT_GROUP");
-                if (config != null) {
-                    switchContent = config.getContent();
-                }
-            } else {
-                switchContent = ConfigDiskServiceFactory.getInstance()
-                        .getContent(SwitchService.SWITCH_META_DATA_ID, "DEFAULT_GROUP", StringUtils.EMPTY);
-            }
-            if (switchContent != null) {
-                SwitchService.load(switchContent);
-            }
-        } catch (IOException e) {
-            DUMP_LOG.error("reload fail:" + SwitchService.SWITCH_META_DATA_ID, e);
         }
     }
     
@@ -868,7 +804,7 @@ public class ConfigCacheService {
      * @param ips4Beta       ips4Beta.
      * @param lastModifiedTs lastModifiedTs.
      */
-    public static void updateBetaIpList(String groupKey, List<String> ips4Beta, long lastModifiedTs) {
+    private static void updateBetaIpList(String groupKey, List<String> ips4Beta, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initBetaCacheIfEmpty();
         cache.setBeta(true);
@@ -884,7 +820,7 @@ public class ConfigCacheService {
      * @param groupKey       groupKey.
      * @param lastModifiedTs lastModifiedTs.
      */
-    public static void updateBetaTimeStamp(String groupKey, long lastModifiedTs) {
+    private static void updateBetaTimeStamp(String groupKey, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initBetaCacheIfEmpty();
         cache.getConfigCacheBeta().setLastModifiedTs(lastModifiedTs);

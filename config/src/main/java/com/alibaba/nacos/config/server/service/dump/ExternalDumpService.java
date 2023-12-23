@@ -52,10 +52,11 @@ public class ExternalDumpService extends DumpService {
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoAggrPersistService configInfoAggrPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService,MergeDatumService mergeDatumService, ServerMemberManager memberManager) {
+            ConfigInfoTagPersistService configInfoTagPersistService, MergeDatumService mergeDatumService,
+            ServerMemberManager memberManager) {
         super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
                 configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService,
-                 mergeDatumService, memberManager);
+                mergeDatumService, memberManager);
     }
     
     @PostConstruct

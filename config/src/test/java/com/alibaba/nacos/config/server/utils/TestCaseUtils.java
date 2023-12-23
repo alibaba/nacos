@@ -17,10 +17,13 @@
 package com.alibaba.nacos.config.server.utils;
 
 import org.mockito.Mockito;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.JdbcTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
+
+import java.util.HashMap;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -29,6 +32,7 @@ public class TestCaseUtils {
     
     /**
      * create mocked transaction template with transact ability.
+     *
      * @return
      */
     public static TransactionTemplate createMockTransactionTemplate() {
@@ -39,5 +43,19 @@ public class TestCaseUtils {
         TransactionTemplate transactionTemplate = new TransactionTemplate(transactionManager);
         return transactionTemplate;
         
+    }
+    
+    /**
+     * create mocked transaction template with transact ability.
+     *
+     * @return
+     */
+    public static GeneratedKeyHolder createGeneratedKeyHolder(long wantedId) {
+        GeneratedKeyHolder generatedKeyHolder = new GeneratedKeyHolder();
+        HashMap<String, Object> objectObjectHashMap = new HashMap<>();
+        objectObjectHashMap.put("whatever", wantedId);
+        generatedKeyHolder.getKeyList().add(objectObjectHashMap);
+        
+        return generatedKeyHolder;
     }
 }

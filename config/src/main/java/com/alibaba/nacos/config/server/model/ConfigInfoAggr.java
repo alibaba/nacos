@@ -45,21 +45,6 @@ public class ConfigInfoAggr implements Serializable {
     
     private String content;
     
-    public ConfigInfoAggr(String dataId, String group, String datumId, String content) {
-        this.dataId = dataId;
-        this.group = group;
-        this.datumId = datumId;
-        this.content = content;
-    }
-    
-    public ConfigInfoAggr(String dataId, String group, String datumId, String appName, String content) {
-        this.dataId = dataId;
-        this.group = group;
-        this.datumId = datumId;
-        this.appName = appName;
-        this.content = content;
-    }
-    
     public ConfigInfoAggr() {
     
     }
