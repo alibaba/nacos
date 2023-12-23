@@ -16,32 +16,42 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
+import com.alibaba.nacos.core.remote.CommunicationType;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilder;
+import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
+
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Default optional tls protocol negotiator builder.
  *
  * @author xiweng.yy
  */
-public class DefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiatorBuilder {
+public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiatorBuilder {
     
-    public static final String TYPE_DEFAULT_TLS = "DEFAULT_TLS";
+    public static final String SDK_TYPE_DEFAULT_TLS = "SDK_DEFAULT_TLS";
     
     @Override
     public NacosGrpcProtocolNegotiator build() {
-        RpcServerTlsConfig rpcServerTlsConfig = RpcServerTlsConfig.getInstance();
-        if (rpcServerTlsConfig.getEnableTls()) {
-            SslContext sslContext = DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
-            return new OptionalTlsProtocolNegotiator(sslContext, rpcServerTlsConfig.getCompatibility());
+        RpcServerTlsConfig config = RpcSdkServerTlsConfig.getInstance();
+        if (config.getEnableTls()) {
+            SslContext sslContext = DefaultTlsContextBuilder.getSslContext(config);
+            return new OptionalTlsProtocolNegotiator(sslContext, config);
         }
         return null;
     }
     
     @Override
     public String type() {
-        return TYPE_DEFAULT_TLS;
+        return SDK_TYPE_DEFAULT_TLS;
+    }
+    
+    @Override
+    public List<CommunicationType> supportCommunicationTypes() {
+        return Collections.singletonList(CommunicationType.SDK);
     }
 }

@@ -17,10 +17,6 @@
 package com.alibaba.nacos.core.remote.tls;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.PropertiesUtil;
 
 /**
  * Grpc config.
@@ -29,25 +25,9 @@ import com.alibaba.nacos.sys.utils.PropertiesUtil;
  */
 public class RpcServerTlsConfig extends TlsConfig {
     
-    public static final String PREFIX = "nacos.remote.server.rpc.tls";
-    
-    private static RpcServerTlsConfig instance;
-    
     private String sslContextRefresher = "";
     
     private Boolean compatibility = true;
-    
-    public static synchronized RpcServerTlsConfig getInstance() {
-        if (null == instance) {
-            instance = PropertiesUtil.handleSpringBinder(EnvUtil.getEnvironment(), PREFIX, RpcServerTlsConfig.class);
-            if (instance == null) {
-                Loggers.REMOTE.debug("TLS configuration is empty, use default value");
-                instance = new RpcServerTlsConfig();
-            }
-        }
-        Loggers.REMOTE.info("Nacos Rpc server tls config:{}", JacksonUtils.toJson(instance));
-        return instance;
-    }
     
     public Boolean getCompatibility() {
         return compatibility;

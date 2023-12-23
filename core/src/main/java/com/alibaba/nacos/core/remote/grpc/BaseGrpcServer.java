@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.CompressorRegistry;
@@ -52,6 +53,11 @@ import java.util.concurrent.TimeUnit;
  * @version $Id: BaseGrpcServer.java, v 0.1 2020年07月13日 3:42 PM liuzunfei Exp $
  */
 public abstract class BaseGrpcServer extends BaseRpcServer {
+    
+    /**
+     * The ProtocolNegotiator instance used for communication.
+     */
+    protected NacosGrpcProtocolNegotiator protocolNegotiator;
     
     private Server server;
     
@@ -115,6 +121,15 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
      * reload protocol negotiator If necessary.
      */
     public void reloadProtocolNegotiator() {
+        if (protocolNegotiator != null) {
+            try {
+                protocolNegotiator.reloadNegotiator();
+            } catch (Throwable throwable) {
+                Loggers.REMOTE.info("Nacos {} Rpc server reload negotiator fail at port {}.",
+                        this.getClass().getSimpleName(), getServicePort());
+                throw throwable;
+            }
+        }
     }
     
     protected long getPermitKeepAliveTime() {

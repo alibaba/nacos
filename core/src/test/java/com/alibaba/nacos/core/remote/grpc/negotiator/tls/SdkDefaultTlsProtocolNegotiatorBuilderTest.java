@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -29,24 +29,24 @@ import java.lang.reflect.Field;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-public class DefaultTlsProtocolNegotiatorBuilderTest {
+public class SdkDefaultTlsProtocolNegotiatorBuilderTest {
     
     private ConfigurableEnvironment environment;
     
-    private DefaultTlsProtocolNegotiatorBuilder builder;
+    private SdkDefaultTlsProtocolNegotiatorBuilder builder;
     
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-        builder = new DefaultTlsProtocolNegotiatorBuilder();
+        builder = new SdkDefaultTlsProtocolNegotiatorBuilder();
     }
     
     @After
     public void tearDown() throws Exception {
-        RpcServerTlsConfig.getInstance().setEnableTls(false);
-        RpcServerTlsConfig.getInstance().setCertChainFile(null);
-        RpcServerTlsConfig.getInstance().setCertPrivateKey(null);
+        RpcSdkServerTlsConfig.getInstance().setEnableTls(false);
+        RpcSdkServerTlsConfig.getInstance().setCertChainFile(null);
+        RpcSdkServerTlsConfig.getInstance().setCertPrivateKey(null);
         clearRpcServerTlsConfigInstance();
     }
     
@@ -57,14 +57,14 @@ public class DefaultTlsProtocolNegotiatorBuilderTest {
     
     @Test
     public void testBuildEnabled() {
-        RpcServerTlsConfig.getInstance().setEnableTls(true);
-        RpcServerTlsConfig.getInstance().setCertPrivateKey("test-server-key.pem");
-        RpcServerTlsConfig.getInstance().setCertChainFile("test-server-cert.pem");
+        RpcSdkServerTlsConfig.getInstance().setEnableTls(true);
+        RpcSdkServerTlsConfig.getInstance().setCertPrivateKey("test-server-key.pem");
+        RpcSdkServerTlsConfig.getInstance().setCertChainFile("test-server-cert.pem");
         assertNotNull(builder.build());
     }
     
     private static void clearRpcServerTlsConfigInstance() throws Exception {
-        Field instanceField = RpcServerTlsConfig.class.getDeclaredField("instance");
+        Field instanceField = RpcSdkServerTlsConfig.class.getDeclaredField("instance");
         instanceField.setAccessible(true);
         instanceField.set(null, null);
     }

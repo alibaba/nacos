@@ -17,19 +17,23 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
+import com.alibaba.nacos.core.remote.CommunicationType;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilter;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilterServiceLoader;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptor;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptorServiceLoader;
+import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilderManager;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerTransportFilter;
+import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -56,8 +60,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getKeepAliveTime() {
-        Long property = EnvUtil
-                .getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY, Long.class);
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY,
+                Long.class);
         if (property != null) {
             return property;
         }
@@ -66,12 +70,18 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getKeepAliveTimeout() {
-        Long property = EnvUtil
-                .getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY, Long.class);
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY,
+                Long.class);
         if (property != null) {
             return property;
         }
         return super.getKeepAliveTimeout();
+    }
+    
+    @Override
+    protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
+        protocolNegotiator = ProtocolNegotiatorBuilderManager.getInstance().get(CommunicationType.CLUSTER);
+        return Optional.ofNullable(protocolNegotiator);
     }
     
     @Override
