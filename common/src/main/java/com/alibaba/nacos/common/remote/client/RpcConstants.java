@@ -33,42 +33,42 @@ import java.util.Set;
  */
 public class RpcConstants {
 
-    public static final String NACOS_CLIENT_RPC = "nacos.remote.client.rpc";
+    public static final String NACOS_SDK_CLIENT_RPC = "nacos.remote.sdk.client.rpc";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_ENABLE = NACOS_CLIENT_RPC + ".tls.enable";
+    public static final String RPC_SDK_CLIENT_TLS_ENABLE = NACOS_SDK_CLIENT_RPC + ".tls.enable";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_PROVIDER = NACOS_CLIENT_RPC + ".tls.provider";
+    public static final String RPC_SDK_CLIENT_TLS_PROVIDER = NACOS_SDK_CLIENT_RPC + ".tls.provider";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_MUTUAL_AUTH = NACOS_CLIENT_RPC + ".tls.mutualAuth";
+    public static final String RPC_SDK_CLIENT_MUTUAL_AUTH = NACOS_SDK_CLIENT_RPC + ".tls.mutualAuth";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_PROTOCOLS = NACOS_CLIENT_RPC + ".tls.protocols";
+    public static final String RPC_SDK_CLIENT_TLS_PROTOCOLS = NACOS_SDK_CLIENT_RPC + ".tls.protocols";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_CIPHERS = NACOS_CLIENT_RPC + ".tls.ciphers";
+    public static final String RPC_SDK_CLIENT_TLS_CIPHERS = NACOS_SDK_CLIENT_RPC + ".tls.ciphers";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_CERT_CHAIN_PATH = NACOS_CLIENT_RPC + ".tls.certChainFile";
+    public static final String RPC_SDK_CLIENT_TLS_CERT_CHAIN_PATH = NACOS_SDK_CLIENT_RPC + ".tls.certChainFile";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_CERT_KEY = NACOS_CLIENT_RPC + ".tls.certPrivateKey";
+    public static final String RPC_SDK_CLIENT_TLS_CERT_KEY = NACOS_SDK_CLIENT_RPC + ".tls.certPrivateKey";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_TRUST_PWD = NACOS_CLIENT_RPC + ".tls.certPrivateKeyPassword";
+    public static final String RPC_SDK_CLIENT_TLS_TRUST_PWD = NACOS_SDK_CLIENT_RPC + ".tls.certPrivateKeyPassword";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH =
-            NACOS_CLIENT_RPC + ".tls.trustCollectionChainPath";
+    public static final String RPC_SDK_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH =
+            NACOS_SDK_CLIENT_RPC + ".tls.trustCollectionChainPath";
 
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_TRUST_ALL = NACOS_CLIENT_RPC + ".tls.trustAll";
+    public static final String RPC_SDK_CLIENT_TLS_TRUST_ALL = NACOS_SDK_CLIENT_RPC + ".tls.trustAll";
 
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
 
-    public static final String NACOS_CLUSTER_CLIENT_RPC = "nacos.remote.client.rpc";
+    public static final String NACOS_CLUSTER_CLIENT_RPC = "nacos.remote.cluster.client.rpc";
 
     @RpcClusterConfigLabel
     public static final String RPC_CLUSTER_CLIENT_TLS_ENABLE = NACOS_CLUSTER_CLIENT_RPC + ".tls.enable";

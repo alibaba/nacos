@@ -27,7 +27,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -45,23 +45,23 @@ import java.util.concurrent.TimeUnit;
 import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 
 /**
+ * NamingCompatibilityServiceTls_ITCase.
  * @author githucheng2978.
  * @date .
  **/
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {
-        "server.servlet.context-path=/nacos",
-        RpcServerTlsConfig.PREFIX+".enableTls=true",
-        RpcServerTlsConfig.PREFIX+".compatibility=true",
-        RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
-        RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem",
-},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
+        RpcSdkServerTlsConfig.PREFIX + ".enableTls=true", RpcSdkServerTlsConfig.PREFIX + ".compatibility=true",
+        RpcSdkServerTlsConfig.PREFIX + ".certChainFile=test-server-cert.pem", RpcSdkServerTlsConfig.PREFIX
+        + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NamingCompatibilityServiceTls_ITCase {
 
     private NamingMaintainService namingMaintainService;
+
     private NamingService namingService;
+
     private Instance instance;
+
     private String serviceName;
 
     @LocalServerPort
@@ -170,7 +170,7 @@ public class NamingCompatibilityServiceTls_ITCase {
 
         Assert.assertTrue(namingMaintainService.deleteService(serviceName));
     }
-    
+
     @After
     public void tearDown() throws NacosException {
         namingMaintainService.shutDown();
