@@ -16,10 +16,6 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator;
 
-import com.alibaba.nacos.core.remote.CommunicationType;
-
-import java.util.List;
-
 /**
  * Protocol negotiator builder.
  *
@@ -40,14 +36,4 @@ public interface ProtocolNegotiatorBuilder {
      * @return type
      */
     String type();
-    
-    /**
-     * Get a list of supported communication types by the ProtocolNegotiator.
-     *
-     * <p>The communication types represent the different types of communication
-     * scenarios that the ProtocolNegotiator can handle.</p>
-     *
-     * @return List of supported CommunicationType values.
-     */
-    List<CommunicationType> supportCommunicationTypes();
 }

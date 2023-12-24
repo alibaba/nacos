@@ -16,15 +16,11 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.core.remote.CommunicationType;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilder;
 import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
-
-import java.util.Collections;
-import java.util.List;
 
 /**
  * Default optional tls protocol negotiator builder.
@@ -48,10 +44,5 @@ public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiato
     @Override
     public String type() {
         return SDK_TYPE_DEFAULT_TLS;
-    }
-    
-    @Override
-    public List<CommunicationType> supportCommunicationTypes() {
-        return Collections.singletonList(CommunicationType.SDK);
     }
 }

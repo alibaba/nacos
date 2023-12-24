@@ -16,19 +16,15 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.core.remote.CommunicationType;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilder;
 import com.alibaba.nacos.core.remote.tls.RpcClusterServerTlsConfig;
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 
-import java.util.Collections;
-import java.util.List;
-
 /**
- * The {@code ClusterDefaultTlsProtocolNegotiatorBuilder} class is an implementation of the
- * {@link ProtocolNegotiatorBuilder} interface for constructing a ProtocolNegotiator specifically for cluster-to-cluster
+ * The {@code ClusterDefaultTlsProtocolNegotiatorBuilder} class is an implementation of the {@link
+ * ProtocolNegotiatorBuilder} interface for constructing a ProtocolNegotiator specifically for cluster-to-cluster
  * communication with TLS encryption.
  *
  * <p>It defines the type as {@code CLUSTER_DEFAULT_TLS} and supports communication types for clusters.
@@ -42,10 +38,6 @@ import java.util.List;
  *
  * <p>The {@code type()} method returns the unique identifier {@code CLUSTER_TYPE_DEFAULT_TLS} for this negotiator
  * builder.
- * </p>
- *
- * <p>The {@code supportCommunicationTypes()} method returns a list containing the supported communication type
- * {@link CommunicationType#CLUSTER} for cluster communication.
  * </p>
  *
  * <p>Example Usage:
@@ -92,17 +84,6 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegot
     @Override
     public String type() {
         return CLUSTER_TYPE_DEFAULT_TLS;
-    }
-    
-    /**
-     * Returns a list containing the supported communication type {@link CommunicationType#CLUSTER} for cluster
-     * communication.
-     *
-     * @return List of supported communication types.
-     */
-    @Override
-    public List<CommunicationType> supportCommunicationTypes() {
-        return Collections.singletonList(CommunicationType.CLUSTER);
     }
 }
 

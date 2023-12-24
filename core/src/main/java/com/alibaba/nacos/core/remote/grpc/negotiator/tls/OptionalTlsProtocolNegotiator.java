@@ -47,7 +47,7 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
     
     private SslContext sslContext;
     
-    public OptionalTlsProtocolNegotiator(SslContext sslContext,RpcServerTlsConfig config) {
+    public OptionalTlsProtocolNegotiator(SslContext sslContext, RpcServerTlsConfig config) {
         this.sslContext = sslContext;
         this.config = config;
         this.supportPlainText = config.getCompatibility();
@@ -82,20 +82,19 @@ public class OptionalTlsProtocolNegotiator implements NacosGrpcProtocolNegotiato
     }
     
     private ProtocolNegotiationEvent getDefPne() {
-        ProtocolNegotiationEvent protocolNegotiationEvent = null;
         try {
             Field aDefault = ProtocolNegotiationEvent.class.getDeclaredField("DEFAULT");
             aDefault.setAccessible(true);
-            return (ProtocolNegotiationEvent) aDefault.get(protocolNegotiationEvent);
+            return (ProtocolNegotiationEvent) aDefault.get(null);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return protocolNegotiationEvent;
+        return null;
     }
     
     public class PortUnificationServerHandler extends ByteToMessageDecoder {
         
-        private ProtocolNegotiationEvent pne;
+        private final ProtocolNegotiationEvent pne;
         
         private final ChannelHandler ssl;
         
