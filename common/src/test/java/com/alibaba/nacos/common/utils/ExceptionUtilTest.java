@@ -24,36 +24,36 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ExceptionUtilTest {
-    
+
     NacosRuntimeException nacosRuntimeException;
-    
+
     @Before
     public void setUp() {
         RuntimeException caused = new RuntimeException("I'm caused exception.");
         nacosRuntimeException = new NacosRuntimeException(500, "Test", caused);
-        
+
     }
-    
+
     @Test
     public void testGetAllExceptionMsg() {
         String msg = ExceptionUtil.getAllExceptionMsg(nacosRuntimeException);
         assertEquals("caused: errCode: 500, errMsg: Test ;caused: I'm caused exception.;", msg);
     }
-    
+
     @Test
     public void testGetCause() {
         assertEquals("I'm caused exception.", ExceptionUtil.getCause(nacosRuntimeException).getMessage());
         NacosRuntimeException nreWithoutCaused = new NacosRuntimeException(500);
         assertEquals(nreWithoutCaused, ExceptionUtil.getCause(nreWithoutCaused));
     }
-    
+
     @Test
     public void testGetStackTrace() {
         assertEquals("", ExceptionUtil.getStackTrace(null));
         String stackTrace = ExceptionUtil.getStackTrace(nacosRuntimeException);
         assertTrue(stackTrace.contains(
-                "com.alibaba.nacos.api.exception.runtime.NacosRuntimeException: errCode: 500, errMsg: Test \n"));
+                "com.alibaba.nacos.api.exception.runtime.NacosRuntimeException: errCode: 500, errMsg: Test"));
         assertTrue(stackTrace.contains("at "));
-        assertTrue(stackTrace.contains("Caused by: java.lang.RuntimeException: I'm caused exception.\n"));
+        assertTrue(stackTrace.contains("Caused by: java.lang.RuntimeException: I'm caused exception."));
     }
 }

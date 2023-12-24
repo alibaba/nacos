@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.core.remote.grpc.negotiator;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
@@ -34,36 +50,38 @@ import static com.alibaba.nacos.core.remote.grpc.negotiator.tls.SdkDefaultTlsPro
  * @date 2023/12/23
  */
 public class ProtocolNegotiatorBuilderManager {
-    
+
     /**
      * Property key for configuring the ProtocolNegotiator type for cluster communication.
      */
     private static final String CLUSTER_TYPE_PROPERTY_KEY = "nacos.remote.cluster.server.rpc.protocol.negotiator.type";
-    
+
     /**
      * Property key for configuring the ProtocolNegotiator type for SDK communication.
      */
     private static final String SDK_TYPE_PROPERTY_KEY = "nacos.remote.sdk.server.rpc.protocol.negotiator.type";
-    
+
     /**
      * Singleton instance of ProtocolNegotiatorBuilderManager.
      */
     private static final ProtocolNegotiatorBuilderManager INSTANCE = new ProtocolNegotiatorBuilderManager();
-    
+
     /**
      * Map to store ProtocolNegotiatorBuilders by their types.
      */
-    private static final Map<String, ProtocolNegotiatorBuilder> BUILDER_MAP = new HashMap<>();
-    
+    private static Map<String, ProtocolNegotiatorBuilder> builderMap;
+
     /**
      * Map to store the actual ProtocolNegotiator types used for different CommunicationTypes.
      */
-    private static final Map<CommunicationType, String> ACTUAL_TYPE_MAP = new HashMap<>();
-    
+    private static Map<CommunicationType, String> actualTypeMap;
+
     /**
      * Private constructor to enforce singleton pattern.
      */
     private ProtocolNegotiatorBuilderManager() {
+        builderMap = new HashMap<>();
+        actualTypeMap = new HashMap<>();
         initActualTypeMap();
         try {
             initAllBuilders();
@@ -72,35 +90,35 @@ public class ProtocolNegotiatorBuilderManager {
             initDefaultBuilder();
         }
     }
-    
+
     /**
      * Initialize all ProtocolNegotiatorBuilders using the SPI mechanism.
      */
     private void initAllBuilders() {
         for (ProtocolNegotiatorBuilder each : NacosServiceLoader.load(ProtocolNegotiatorBuilder.class)) {
-            BUILDER_MAP.put(each.type(), each);
+            builderMap.put(each.type(), each);
             Loggers.REMOTE.info("Load ProtocolNegotiatorBuilder {} for type {}", each.getClass().getCanonicalName(),
                     each.type());
         }
     }
-    
+
     /**
      * Initialize the mapping of CommunicationType to actual ProtocolNegotiator type from configuration properties.
      */
     private void initActualTypeMap() {
-        ACTUAL_TYPE_MAP.put(CommunicationType.SDK, EnvUtil.getProperty(SDK_TYPE_PROPERTY_KEY, SDK_TYPE_DEFAULT_TLS));
-        ACTUAL_TYPE_MAP.put(CommunicationType.CLUSTER,
+        actualTypeMap.put(CommunicationType.SDK, EnvUtil.getProperty(SDK_TYPE_PROPERTY_KEY, SDK_TYPE_DEFAULT_TLS));
+        actualTypeMap.put(CommunicationType.CLUSTER,
                 EnvUtil.getProperty(CLUSTER_TYPE_PROPERTY_KEY, CLUSTER_TYPE_DEFAULT_TLS));
     }
-    
+
     /**
      * Initialize default ProtocolNegotiatorBuilders in case loading from SPI fails.
      */
     private void initDefaultBuilder() {
-        BUILDER_MAP.put(SDK_TYPE_DEFAULT_TLS, new SdkDefaultTlsProtocolNegotiatorBuilder());
-        BUILDER_MAP.put(CLUSTER_TYPE_PROPERTY_KEY, new ClusterDefaultTlsProtocolNegotiatorBuilder());
+        builderMap.put(SDK_TYPE_DEFAULT_TLS, new SdkDefaultTlsProtocolNegotiatorBuilder());
+        builderMap.put(CLUSTER_TYPE_PROPERTY_KEY, new ClusterDefaultTlsProtocolNegotiatorBuilder());
     }
-    
+
     /**
      * Get the singleton instance of ProtocolNegotiatorBuilderManager.
      *
@@ -109,7 +127,7 @@ public class ProtocolNegotiatorBuilderManager {
     public static ProtocolNegotiatorBuilderManager getInstance() {
         return INSTANCE;
     }
-    
+
     /**
      * Get the ProtocolNegotiator for the specified CommunicationType.
      *
@@ -117,16 +135,16 @@ public class ProtocolNegotiatorBuilderManager {
      * @return The ProtocolNegotiator instance.
      */
     public NacosGrpcProtocolNegotiator get(CommunicationType communicationType) {
-        String actualType = ACTUAL_TYPE_MAP.get(communicationType);
+        String actualType = actualTypeMap.get(communicationType);
         if (StringUtils.isBlank(actualType)) {
             Loggers.REMOTE.warn("Not found actualType for communicationType {}.", communicationType);
             return null;
         }
-        ProtocolNegotiatorBuilder builder = BUILDER_MAP.get(actualType);
+        ProtocolNegotiatorBuilder builder = builderMap.get(actualType);
         if (Objects.isNull(builder)) {
             Loggers.REMOTE.warn("Not found ProtocolNegotiatorBuilder for actualType {}.", actualType);
             return null;
         }
-        return BUILDER_MAP.get(actualType).build();
+        return builderMap.get(actualType).build();
     }
 }

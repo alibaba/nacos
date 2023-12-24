@@ -25,9 +25,13 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
 import com.alibaba.nacos.test.ConfigCleanUtils;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -40,23 +44,17 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- *  use  configPublishRequest for  communication verification between client and server
+ * use  configPublishRequest for  communication verification between client and server.
  *
  * @author githubcheng2978
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {Nacos.class},
-        properties = {
-                "nacos.standalone=true",
-                RpcServerTlsConfig.PREFIX+".mutualAuthEnable=true",
-                RpcServerTlsConfig.PREFIX+".compatibility=false",
-                RpcServerTlsConfig.PREFIX+".enableTls=true",
-                RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
-                RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem",
-                RpcServerTlsConfig.PREFIX+".trustCollectionCertFile=test-ca-cert.pem",
-
-        },
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
+        RpcSdkServerTlsConfig.PREFIX + ".mutualAuthEnable=true", RpcSdkServerTlsConfig.PREFIX + ".compatibility=false",
+        RpcSdkServerTlsConfig.PREFIX + ".enableTls=true",
+        RpcSdkServerTlsConfig.PREFIX + ".certChainFile=test-server-cert.pem",
+        RpcSdkServerTlsConfig.PREFIX + ".certPrivateKey=test-server-key.pem", RpcSdkServerTlsConfig.PREFIX
+        + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigIntegrationV2MutualAuth_CITCase {
 
     @LocalServerPort
@@ -65,13 +63,13 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
     public static AtomicInteger increment = new AtomicInteger(100);
 
     @BeforeClass
-    public static   void beforeClass() throws IOException {
+    public static void beforeClass() throws IOException {
         ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV2MutualAuth_CITCase.class.getSimpleName());
 
     }
 
     @After
-    public  void cleanClientCache() throws Exception {
+    public void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
 
@@ -85,7 +83,8 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
         tlsConfig.setCertChainFile("test-client-cert.pem");
         tlsConfig.setCertPrivateKey("test-client-key.pem");
         tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
-        RpcClient client = RpcClientFactory.createClient("testMutualAuth", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
+        RpcClient client = RpcClientFactory.createClient("testMutualAuth", ConnectionType.GRPC,
+                Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
 
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
@@ -97,8 +96,8 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
         String content = UUID.randomUUID().toString();
 
         configPublishRequest.setContent(content);
-        configPublishRequest.setGroup("test-group"+increment.getAndIncrement());
-        configPublishRequest.setDataId("test-data"+increment.getAndIncrement());
+        configPublishRequest.setGroup("test-group" + increment.getAndIncrement());
+        configPublishRequest.setDataId("test-data" + increment.getAndIncrement());
         configPublishRequest.setRequestId(content);
         Response response = connection.request(configPublishRequest, TimeUnit.SECONDS.toMillis(5));
         Assert.assertTrue(response.isSuccess());
@@ -111,7 +110,8 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
-        RpcClient client = RpcClientFactory.createClient("testServerMutualAuthNoly", ConnectionType.GRPC, Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
+        RpcClient client = RpcClientFactory.createClient("testServerMutualAuthNoly", ConnectionType.GRPC,
+                Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
 
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");

@@ -23,7 +23,7 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -47,14 +47,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author githubcheng2978.
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = {Nacos.class},
-        properties = {
-                "nacos.standalone=true",
-                RpcServerTlsConfig.PREFIX+".enableTls=true",
-                RpcServerTlsConfig.PREFIX+".compatibility=false",
-                RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
-                RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
+        RpcSdkServerTlsConfig.PREFIX + ".enableTls=true", RpcSdkServerTlsConfig.PREFIX + ".compatibility=false",
+        RpcSdkServerTlsConfig.PREFIX + ".certChainFile=test-server-cert.pem", RpcSdkServerTlsConfig.PREFIX
+        + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
 
     public static AtomicInteger increment = new AtomicInteger(100);
@@ -62,7 +58,6 @@ public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
     @BeforeClass
     public static void beforeClass() throws IOException {
         ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceNoComTlsGrpcClient_CITCase.class.getSimpleName());
-
     }
 
     @BeforeClass
@@ -83,7 +78,8 @@ public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
         String content = UUID.randomUUID().toString();
         String dataId = "test-group" + increment.getAndIncrement();
         String groupId = "test-data" + increment.getAndIncrement();
-        boolean b = configService.publishConfig("test-group" + increment.getAndIncrement(), "test-data" + increment.getAndIncrement(), content);
+        boolean b = configService.publishConfig("test-group" + increment.getAndIncrement(),
+                "test-data" + increment.getAndIncrement(), content);
         CountDownLatch latch = new CountDownLatch(1);
         configService.addListener(dataId, groupId, new AbstractConfigChangeListener() {
             @Override
@@ -101,7 +97,7 @@ public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
     }
 
     @Test
-    public void test_e_TlsServerAndPlainClient()  throws Exception {
+    public void test_e_TlsServerAndPlainClient() throws Exception {
         Properties propertiesfalse = new Properties();
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "false");
         propertiesfalse.put("serverAddr", "127.0.0.1");
