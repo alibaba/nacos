@@ -73,11 +73,11 @@ public class NacosConfigV2MutualAuth_CITCase {
     @Ignore("TODO, Fix cert expired problem")
     public void test_d_MutualAuth() throws Exception {
         Properties propertiesfalse = new Properties();
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_MUTUAL_AUTH, "true");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_KEY, "test-client-key.pem");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH, "test-client-cert.pem");
+        propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "true");
+        propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_MUTUAL_AUTH, "true");
+        propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_CERT_KEY, "test-client-key.pem");
+        propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
+        propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_CERT_CHAIN_PATH, "test-client-cert.pem");
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
         String dataId = "test-group" + increment.getAndIncrement();
@@ -104,8 +104,8 @@ public class NacosConfigV2MutualAuth_CITCase {
     public void test_d_MutualAuthButClientNot() throws Exception {
 
         Properties propertiesfalse = new Properties();
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-client-cert.pem");
+        propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "true");
+        propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-client-cert.pem");
 
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);

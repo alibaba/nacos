@@ -70,9 +70,9 @@ public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
     @Ignore("TODO, Fix cert expired problem")
     public void test_e_TlsServerAndTlsClient() throws Exception {
         Properties properties = new Properties();
-        properties.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
-        properties.put(RpcConstants.RPC_CLIENT_TLS_PROVIDER, "openssl");
-        properties.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
+        properties.put(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "true");
+        properties.put(RpcConstants.RPC_SDK_CLIENT_TLS_PROVIDER, "openssl");
+        properties.put(RpcConstants.RPC_SDK_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
         properties.put("serverAddr", "127.0.0.1");
         ConfigService configService = new NacosConfigService(properties);
         String content = UUID.randomUUID().toString();
@@ -99,7 +99,7 @@ public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
     @Test
     public void test_e_TlsServerAndPlainClient() throws Exception {
         Properties propertiesfalse = new Properties();
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "false");
+        propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "false");
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
         String dataId = "test-group" + increment.getAndIncrement();
