@@ -64,7 +64,6 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
 
     @Test
     public void testBuildTlsEnabled() {
-        MutablePropertySources propertySources = environment.getPropertySources();
         Properties properties = new Properties();
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".enableTls", "true");
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".compatibility", "false");
@@ -73,6 +72,7 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".trustCollectionCertFile", "test-ca-cert.pem");
 
         PropertiesPropertySource propertySource = new PropertiesPropertySource("myPropertySource", properties);
+        MutablePropertySources propertySources = environment.getPropertySources();
         propertySources.addLast(propertySource);
 
         NacosGrpcProtocolNegotiator negotiator = builder.build();

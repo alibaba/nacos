@@ -16,11 +16,6 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-/**
- * @author shikui@tiduyun.com
- * @date 2023/12/25
- */
-
 import com.alibaba.nacos.core.remote.CommunicationType;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.tls.RpcClusterServerTlsConfig;
@@ -50,7 +45,6 @@ public class ProtocolNegotiatorBuilderManagerTest {
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
-        MutablePropertySources propertySources = environment.getPropertySources();
         Properties properties = new Properties();
         properties.setProperty(RpcSdkServerTlsConfig.PREFIX + ".enableTls", "true");
         properties.setProperty(RpcSdkServerTlsConfig.PREFIX + ".compatibility", "false");
@@ -63,6 +57,7 @@ public class ProtocolNegotiatorBuilderManagerTest {
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".certPrivateKey", "test-server-key.pem");
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".trustCollectionCertFile", "test-ca-cert.pem");
 
+        MutablePropertySources propertySources = environment.getPropertySources();
         PropertiesPropertySource propertySource = new PropertiesPropertySource("myPropertySource", properties);
         propertySources.addLast(propertySource);
         EnvUtil.setEnvironment(environment);
