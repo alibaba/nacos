@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.grpc.negotiator;
+package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.remote.CommunicationType;
-import com.alibaba.nacos.core.remote.grpc.negotiator.tls.ClusterDefaultTlsProtocolNegotiatorBuilder;
-import com.alibaba.nacos.core.remote.grpc.negotiator.tls.SdkDefaultTlsProtocolNegotiatorBuilder;
+import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
+import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilder;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 

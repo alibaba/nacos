@@ -22,7 +22,7 @@ import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilter;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilterServiceLoader;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptor;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptorServiceLoader;
-import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilderManager;
+import com.alibaba.nacos.core.remote.grpc.negotiator.tls.ProtocolNegotiatorBuilderManager;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
