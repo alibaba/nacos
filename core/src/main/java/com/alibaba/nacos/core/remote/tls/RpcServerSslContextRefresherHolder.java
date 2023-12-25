@@ -30,22 +30,22 @@ import java.util.Collection;
  * @version $Id: RpcServerSslContextRefresherHolder.java, v 0.1 2023年03月17日 12:00 PM liuzunfei Exp $
  */
 public class RpcServerSslContextRefresherHolder {
-    
+
     /**
      * The instance of {@link RpcServerSslContextRefresher} for SDK communication.
      */
     private static RpcServerSslContextRefresher sdkInstance;
-    
+
     /**
      * The instance of {@link RpcServerSslContextRefresher} for Cluster communication.
      */
     private static RpcServerSslContextRefresher clusterInstance;
-    
+
     /**
      * Flag indicating whether the holder has been initialized.
      */
     private static volatile boolean init = false;
-    
+
     /**
      * Gets the instance of {@link RpcServerSslContextRefresher} for SDK communication.
      *
@@ -55,7 +55,7 @@ public class RpcServerSslContextRefresherHolder {
         init();
         return sdkInstance;
     }
-    
+
     /**
      * Gets the instance of {@link RpcServerSslContextRefresher} for Cluster communication.
      *
@@ -65,7 +65,7 @@ public class RpcServerSslContextRefresherHolder {
         init();
         return clusterInstance;
     }
-    
+
     /**
      * Initializes the holder by loading SSL context refreshers and matching them with the configured types (SDK and
      * Cluster).
@@ -78,57 +78,55 @@ public class RpcServerSslContextRefresherHolder {
             if (init) {
                 return;
             }
-            RpcSdkServerTlsConfig rpcSdkServerTlsConfig = RpcSdkServerTlsConfig.getInstance();
-            RpcClusterServerTlsConfig rpcClusterServerTlsConfig = RpcClusterServerTlsConfig.getInstance();
-            String sdkSslContextRefresher = rpcSdkServerTlsConfig.getSslContextRefresher();
-            String clusterSslContextRefresher = rpcClusterServerTlsConfig.getSslContextRefresher();
-            if (StringUtils.isBlank(sdkSslContextRefresher)) {
+            RpcSdkServerTlsConfig sdkConfig = RpcSdkServerTlsConfig.getInstance();
+            RpcClusterServerTlsConfig clusterConfig = RpcClusterServerTlsConfig.getInstance();
+            String sdkRefresher = sdkConfig.getSslContextRefresher();
+            String clusterRefresher = clusterConfig.getSslContextRefresher();
+            if (StringUtils.isBlank(sdkRefresher)) {
                 Loggers.REMOTE.info(
                         "No SDK communication type RpcServerSslContextRefresher specified, Ssl Context auto refresh not supported.");
             } else {
-                Loggers.REMOTE.info("Configured SDK communication type RpcServerSslContextRefresher: {}",
-                        sdkSslContextRefresher);
+                Loggers.REMOTE.info("Configured SDK communication type RpcServerSslContextRefresher: {}.",
+                        sdkRefresher);
             }
-            
-            if (StringUtils.isBlank(clusterSslContextRefresher)) {
+
+            if (StringUtils.isBlank(clusterRefresher)) {
                 Loggers.REMOTE.info(
                         "No cluster communication type RpcServerSslContextRefresher specified, Ssl Context auto refresh not supported.");
             } else {
-                Loggers.REMOTE.info("Configured Cluster communication type RpcServerSslContextRefresher: {}",
-                        clusterSslContextRefresher);
+                Loggers.REMOTE.info("Configured Cluster communication type RpcServerSslContextRefresher: {}.",
+                        clusterRefresher);
             }
             Collection<RpcServerSslContextRefresher> load = NacosServiceLoader.load(RpcServerSslContextRefresher.class);
             for (RpcServerSslContextRefresher contextRefresher : load) {
-                if (sdkSslContextRefresher.equals(contextRefresher.getName())) {
+                if (sdkRefresher.equals(contextRefresher.getName())) {
                     sdkInstance = contextRefresher;
-                    Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} for SDK Founded -> {}",
-                            sdkSslContextRefresher, contextRefresher.getClass().getSimpleName());
+                    Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} for SDK Founded -> {}.", sdkRefresher,
+                            contextRefresher.getClass().getSimpleName());
                     break;
                 }
             }
-            
+
             for (RpcServerSslContextRefresher contextRefresher : load) {
-                if (clusterSslContextRefresher.equals(contextRefresher.getName())) {
+                if (clusterRefresher.equals(contextRefresher.getName())) {
                     clusterInstance = contextRefresher;
                     Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} for Cluster Founded -> {}",
-                            clusterSslContextRefresher, contextRefresher.getClass().getSimpleName());
+                            clusterRefresher, contextRefresher.getClass().getSimpleName());
                     break;
                 }
             }
-            
+
             if (sdkInstance == null) {
-                Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} for SDK not found",
-                        sdkSslContextRefresher);
+                Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} for SDK not found", sdkRefresher);
             }
-            
+
             if (clusterInstance == null) {
-                Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} for Cluster not found",
-                        clusterSslContextRefresher);
+                Loggers.REMOTE.info("RpcServerSslContextRefresher of Name {} for Cluster not found", clusterRefresher);
             }
-            
+
             Loggers.REMOTE.info("RpcServerSslContextRefresher init end");
             init = true;
         }
     }
-    
+
 }

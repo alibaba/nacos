@@ -23,22 +23,21 @@ import java.lang.reflect.Field;
 import static org.junit.Assert.assertEquals;
 
 public class RpcConstantsTest {
-    
+
     @Test
     public void testGetRpcParams() {
-        Class clazz = RpcConstants.class;
-        Field[] declaredFields = clazz.getDeclaredFields();
+        Field[] declaredFields = RpcConstants.class.getDeclaredFields();
         int i = 0;
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
             if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    RpcConstants.RpcConfigLabel.class)) {
+                    RpcConstants.RpcSdkConfigLabel.class)) {
                 i++;
             }
         }
-        assertEquals(i, RpcConstants.getRpcParams().size());
+        assertEquals(i, RpcConstants.getSdkRpcParams().size());
     }
-    
+
     @Test
     public void testGetClusterRpcParams() {
         Field[] declaredFields = RpcConstants.class.getDeclaredFields();

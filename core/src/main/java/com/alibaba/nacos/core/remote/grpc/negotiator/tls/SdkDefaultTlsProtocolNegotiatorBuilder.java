@@ -23,14 +23,48 @@ import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 
 /**
- * Default optional tls protocol negotiator builder.
+ * The {@code SdkDefaultTlsProtocolNegotiatorBuilder} class is an implementation of the
+ * {@link ProtocolNegotiatorBuilder} interface for constructing a ProtocolNegotiator specifically for SDK-to-Server
+ * communication with optional TLS encryption.
+ *
+ * <p>It defines the type as {@code SDK_DEFAULT_TLS} and supports communication types for SDKs.
+ * </p>
+ *
+ * <p>The {@code build()} method constructs and returns a {@link NacosGrpcProtocolNegotiator} instance based on the
+ * configuration provided by the {@link RpcSdkServerTlsConfig} class. If TLS encryption is enabled, it creates an
+ * {@link OptionalTlsProtocolNegotiator} with the corresponding SSL context and configuration; otherwise, it returns
+ * null.
+ * </p>
+ *
+ * <p>The {@code type()} method returns the unique identifier {@code SDK_TYPE_DEFAULT_TLS} for this negotiator builder.
+ * </p>
+ *
+ * <p>Example Usage:
+ * <pre>{@code
+ * ProtocolNegotiatorBuilder builder = new SdkDefaultTlsProtocolNegotiatorBuilder();
+ * NacosGrpcProtocolNegotiator negotiator = builder.build();
+ * }</pre>
+ * </p>
  *
  * @author xiweng.yy
+ * @date 2023/12/23
+ * @see ProtocolNegotiatorBuilder
+ * @see NacosGrpcProtocolNegotiator
+ * @see RpcSdkServerTlsConfig
+ * @see OptionalTlsProtocolNegotiator
  */
 public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiatorBuilder {
-    
+
+    /**
+     * The unique identifier for this negotiator builder.
+     */
     public static final String SDK_TYPE_DEFAULT_TLS = "SDK_DEFAULT_TLS";
-    
+
+    /**
+     * Constructs and returns a ProtocolNegotiator for SDK-to-Server communication with optional TLS encryption.
+     *
+     * @return ProtocolNegotiator, or null if TLS is not enabled.
+     */
     @Override
     public NacosGrpcProtocolNegotiator build() {
         RpcServerTlsConfig config = RpcSdkServerTlsConfig.getInstance();
@@ -40,7 +74,12 @@ public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiato
         }
         return null;
     }
-    
+
+    /**
+     * Returns the unique identifier {@code SDK_TYPE_DEFAULT_TLS} for this negotiator builder.
+     *
+     * @return The type identifier.
+     */
     @Override
     public String type() {
         return SDK_TYPE_DEFAULT_TLS;

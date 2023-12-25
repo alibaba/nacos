@@ -35,35 +35,35 @@ public class RpcConstants {
 
     public static final String NACOS_SDK_CLIENT_RPC = "nacos.remote.sdk.client.rpc";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_TLS_ENABLE = NACOS_SDK_CLIENT_RPC + ".tls.enable";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_TLS_PROVIDER = NACOS_SDK_CLIENT_RPC + ".tls.provider";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_MUTUAL_AUTH = NACOS_SDK_CLIENT_RPC + ".tls.mutualAuth";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_TLS_PROTOCOLS = NACOS_SDK_CLIENT_RPC + ".tls.protocols";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_TLS_CIPHERS = NACOS_SDK_CLIENT_RPC + ".tls.ciphers";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_TLS_CERT_CHAIN_PATH = NACOS_SDK_CLIENT_RPC + ".tls.certChainFile";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_TLS_CERT_KEY = NACOS_SDK_CLIENT_RPC + ".tls.certPrivateKey";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_TLS_TRUST_PWD = NACOS_SDK_CLIENT_RPC + ".tls.certPrivateKeyPassword";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH =
             NACOS_SDK_CLIENT_RPC + ".tls.trustCollectionChainPath";
 
-    @RpcConfigLabel
+    @RpcSdkConfigLabel
     public static final String RPC_SDK_CLIENT_TLS_TRUST_ALL = NACOS_SDK_CLIENT_RPC + ".tls.trustAll";
 
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
@@ -104,19 +104,12 @@ public class RpcConstants {
 
     private static final Set<String> CLUSTER_CONFIG_NAMES = new HashSet<>();
 
-    @Documented
-    @Target(ElementType.FIELD)
-    @Retention(RetentionPolicy.RUNTIME)
-    protected @interface RpcConfigLabel {
-
-    }
-
     static {
         Field[] declaredFields = RpcConstants.class.getDeclaredFields();
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
             if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    RpcConfigLabel.class)) {
+                    RpcSdkConfigLabel.class)) {
                 try {
                     CONFIG_NAMES.add((String) declaredField.get(null));
                 } catch (IllegalAccessException ignored) {
@@ -136,11 +129,18 @@ public class RpcConstants {
         }
     }
 
-    public static Set<String> getClusterRpcParams() {
+    public static Set<String> getSdkRpcParams() {
         return Collections.unmodifiableSet(CONFIG_NAMES);
     }
 
-    public static Set<String> getRpcParams() {
+    @Documented
+    @Target(ElementType.FIELD)
+    @Retention(RetentionPolicy.RUNTIME)
+    protected @interface RpcSdkConfigLabel {
+
+    }
+
+    public static Set<String> getClusterRpcParams() {
         return Collections.unmodifiableSet(CONFIG_NAMES);
     }
 
