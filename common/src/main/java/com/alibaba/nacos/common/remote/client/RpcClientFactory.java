@@ -151,7 +151,6 @@ public class RpcClientFactory {
         return createClusterClient(clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
 
-
     /**
      * createClusterClient.
      *
@@ -163,7 +162,6 @@ public class RpcClientFactory {
      * @param tlsConfig          tlsConfig.
      * @return
      */
-
     public static RpcClient createClusterClient(String clientName, ConnectionType connectionType,
             Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
             RpcClusterClientTlsConfig tlsConfig) {
