@@ -58,7 +58,10 @@ public class RpcSdkServerTlsConfig extends RpcServerTlsConfig {
     /**
      * The singleton instance of the RpcSdkServerTlsConfig class.
      */
-    protected static RpcSdkServerTlsConfig instance;
+    private static RpcSdkServerTlsConfig instance;
+
+    private RpcSdkServerTlsConfig() {
+    }
 
     /**
      * Retrieves the singleton instance of RpcSdkServerTlsConfig, loading the TLS configuration from the environment

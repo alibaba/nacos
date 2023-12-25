@@ -82,8 +82,6 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
     private void resetInstance() throws NoSuchFieldException, IllegalAccessException {
         Field instanceField = RpcClusterServerTlsConfig.class.getDeclaredField("instance");
         instanceField.setAccessible(true);
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
         instanceField.set(null, null);
     }
 }

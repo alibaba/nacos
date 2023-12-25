@@ -58,7 +58,10 @@ public class RpcClusterServerTlsConfig extends RpcServerTlsConfig {
     /**
      * The singleton instance of the RpcClusterServerTlsConfig class.
      */
-    protected static RpcClusterServerTlsConfig instance;
+    private static RpcClusterServerTlsConfig instance;
+
+    private RpcClusterServerTlsConfig() {
+    }
 
     /**
      * Retrieves the singleton instance of RpcClusterServerTlsConfig, loading the TLS configuration from the environment
