@@ -65,21 +65,6 @@ public class ConfigRpcTransportClientProxyTraceDelegate implements ConfigRpcTran
     }
     
     /**
-     * Init Rpc level SpanBuilder with method name.
-     *
-     * @param methodName method name
-     * @return SpanBuilder
-     */
-    private SpanBuilder initRpcSpanBuilder(String methodName) {
-        SpanBuilder spanBuilder = ConfigTrace.getClientConfigRpcSpanBuilder(methodName);
-        spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE,
-                this.configRpcTransportClientImpl.getClass().getName());
-        spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, methodName);
-        spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, this.configRpcTransportClientImpl.getName());
-        return spanBuilder;
-    }
-    
-    /**
      * Query config from server.
      *
      * @param dataId       dataId
@@ -223,54 +208,18 @@ public class ConfigRpcTransportClientProxyTraceDelegate implements ConfigRpcTran
     }
     
     /**
-     * Request proxy.
+     * Rpc request.
      *
      * @param rpcClientInner rpcClientInner
      * @param request        request
      * @param timeoutMills   timeoutMills
-     * @return Response
      * @throws NacosException NacosException
      */
     @Override
-    public Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills) throws NacosException {
-        Span span = initRpcSpanBuilder("requestProxy").startSpan();
-        Response result;
-        try (Scope ignored = span.makeCurrent()) {
-            
-            if (span.isRecording()) {
-                span.setAttribute(NacosSemanticAttributes.TIMEOUT_MS, timeoutMills);
-                span.setAttribute(SemanticAttributes.RPC_SYSTEM,
-                        rpcClientInner.getConnectionType().getType().toLowerCase());
-                if (rpcClientInner.getCurrentServer() != null) {
-                    span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
-                            rpcClientInner.getCurrentServer().getAddress());
-                }
-                TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
-                        .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
-            }
-            
-            result = this.configRpcTransportClientImpl.requestProxy(rpcClientInner, request, timeoutMills);
-            
-            if (span.isRecording()) {
-                if (result == null) {
-                    span.setStatus(StatusCode.ERROR, "Request failed: result is null");
-                } else if (result.isSuccess()) {
-                    span.setStatus(StatusCode.OK, "Request success");
-                } else {
-                    span.setStatus(StatusCode.ERROR,
-                            "Request failed: " + result.getErrorCode() + ": " + result.getMessage());
-                }
-            }
-            return result;
-            
-        } catch (Exception e) {
-            span.recordException(e);
-            span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
-            throw e;
-        } finally {
-            span.end();
-        }
+    public Response rpcRequest(RpcClient rpcClientInner, Request request, long timeoutMills) throws NacosException {
+        return RequestProxyWarp.warp(configRpcTransportClientImpl, rpcClientInner, request, timeoutMills);
     }
+    
     
     /**
      * Notify listen config.
@@ -360,4 +309,74 @@ public class ConfigRpcTransportClientProxyTraceDelegate implements ConfigRpcTran
     public void shutdown() throws NacosException {
         this.configRpcTransportClientImpl.shutdown();
     }
+    
+    public static class RequestProxyWarp {
+        
+        private static final String METHOD_NAME = "requestProxy";
+        
+        /**
+         * Init Rpc level SpanBuilder with method name.
+         *
+         * @param client rpc client
+         * @return SpanBuilder
+         */
+        private static SpanBuilder initRpcSpanBuilder(ConfigRpcTransportClientProxy client, String rpcType) {
+            SpanBuilder spanBuilder = ConfigTrace.getClientConfigRpcSpanBuilder(rpcType);
+            spanBuilder.setAttribute(SemanticAttributes.CODE_NAMESPACE, client.getClass().getName());
+            spanBuilder.setAttribute(SemanticAttributes.CODE_FUNCTION, METHOD_NAME);
+            spanBuilder.setAttribute(NacosSemanticAttributes.AGENT_NAME, client.getName());
+            return spanBuilder;
+        }
+        
+        /**
+         * Warp requestProxy for tracing.
+         *
+         * @param client         rpc client
+         * @param rpcClientInner rpcClientInner
+         * @param request        request
+         * @param timeoutMills   timeoutMills
+         * @return CacheData
+         */
+        public static Response warp(ConfigRpcTransportClientProxy client, RpcClient rpcClientInner, Request request,
+                long timeoutMills) throws NacosException {
+            String rpcSystem = rpcClientInner.getConnectionType().getType();
+            Span span = initRpcSpanBuilder(client, rpcSystem).startSpan();
+            Response result;
+            try (Scope ignored = span.makeCurrent()) {
+                
+                if (span.isRecording()) {
+                    span.setAttribute(NacosSemanticAttributes.TIMEOUT_MS, timeoutMills);
+                    span.setAttribute(SemanticAttributes.RPC_SYSTEM, rpcSystem.toLowerCase());
+                    if (rpcClientInner.getCurrentServer() != null) {
+                        span.setAttribute(NacosSemanticAttributes.SERVER_ADDRESS,
+                                rpcClientInner.getCurrentServer().getAddress());
+                    }
+                    TraceMonitor.getOpenTelemetry().getPropagators().getTextMapPropagator()
+                            .inject(Context.current(), request.getHeaders(), TraceMonitor.getRpcContextSetter());
+                }
+                
+                result = client.rpcRequest(rpcClientInner, request, timeoutMills);
+                
+                if (span.isRecording()) {
+                    if (result == null) {
+                        span.setStatus(StatusCode.ERROR, "Request failed: result is null");
+                    } else if (result.isSuccess()) {
+                        span.setStatus(StatusCode.OK, "Request success");
+                    } else {
+                        span.setStatus(StatusCode.ERROR,
+                                "Request failed: " + result.getErrorCode() + ": " + result.getMessage());
+                    }
+                }
+                return result;
+                
+            } catch (Exception e) {
+                span.recordException(e);
+                span.setStatus(StatusCode.ERROR, e.getClass().getSimpleName());
+                throw e;
+            } finally {
+                span.end();
+            }
+        }
+    }
+    
 }

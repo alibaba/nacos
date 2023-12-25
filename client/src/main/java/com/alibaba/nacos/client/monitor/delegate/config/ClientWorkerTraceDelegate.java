@@ -182,7 +182,7 @@ public class ClientWorkerTraceDelegate extends ClientWorker {
     }
     
     /**
-     * Remove all listeners from config.
+     * Get config from server.
      *
      * @param dataId      dataId
      * @param group       group

@@ -1115,7 +1115,7 @@ public class ClientWorker implements ClientWorkerProxy {
                 }
             }
             
-            ConfigQueryResponse response = (ConfigQueryResponse) agent.requestProxy(rpcClient, request, readTimeouts);
+            ConfigQueryResponse response = (ConfigQueryResponse) requestProxy(rpcClient, request, readTimeouts);
             
             ConfigResponse configResponse = new ConfigResponse();
             if (response.isSuccess()) {
@@ -1161,8 +1161,14 @@ public class ClientWorker implements ClientWorkerProxy {
             return requestProxy(rpcClientInner, request, 3000L);
         }
         
+        private Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
+                throws NacosException {
+            return ConfigRpcTransportClientProxyTraceDelegate.RequestProxyWarp.warp(this, rpcClientInner, request,
+                    timeoutMills);
+        }
+        
         /**
-         * request proxy. This method is set to public for trace dynamic proxy.
+         * request proxy.
          *
          * @param rpcClientInner rpc client.
          * @param request        request.
@@ -1170,8 +1176,7 @@ public class ClientWorker implements ClientWorkerProxy {
          * @throws NacosException nacos exception.
          */
         @Override
-        public Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills)
-                throws NacosException {
+        public Response rpcRequest(RpcClient rpcClientInner, Request request, long timeoutMills) throws NacosException {
             try {
                 request.putAllHeader(super.getSecurityHeaders(resourceBuild(request)));
                 request.putAllHeader(super.getCommonHeader());

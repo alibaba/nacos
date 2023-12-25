@@ -66,7 +66,7 @@ public interface ClientWorkerProxy extends Closeable {
     void removeTenantListener(String dataId, String group, Listener listener);
     
     /**
-     * Remove all listeners from config.
+     * Get config from server.
      *
      * @param dataId      dataId
      * @param group       group

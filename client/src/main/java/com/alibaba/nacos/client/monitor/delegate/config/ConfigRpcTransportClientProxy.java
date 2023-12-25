@@ -29,7 +29,8 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * proxy interface for {@link com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient}.
+ * Since {@link com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient} is an anonymous inner class,
+ * we should make sure it implements this interface to delegate its methods for tracing.
  *
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
@@ -80,18 +81,15 @@ public interface ConfigRpcTransportClientProxy extends Closeable {
      */
     boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException;
     
-    // Methods for Rpc level config span
-    
     /**
-     * Request proxy.
+     * Rpc request.
      *
      * @param rpcClientInner rpcClientInner
      * @param request        request
      * @param timeoutMills   timeoutMills
-     * @return Response
      * @throws NacosException NacosException
      */
-    Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills) throws NacosException;
+    Response rpcRequest(RpcClient rpcClientInner, Request request, long timeoutMills) throws NacosException;
     
     // Other necessary methods
     
