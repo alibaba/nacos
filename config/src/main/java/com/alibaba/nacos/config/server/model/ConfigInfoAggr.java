@@ -90,17 +90,6 @@ public class ConfigInfoAggr implements Serializable {
     }
     
     @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((content == null) ? 0 : content.hashCode());
-        result = prime * result + ((dataId == null) ? 0 : dataId.hashCode());
-        result = prime * result + ((datumId == null) ? 0 : datumId.hashCode());
-        result = prime * result + ((group == null) ? 0 : group.hashCode());
-        return result;
-    }
-    
-    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
