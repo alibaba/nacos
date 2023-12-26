@@ -23,7 +23,7 @@ import org.springframework.core.env.StandardEnvironment;
 
 import java.util.stream.IntStream;
 
-public class SnowFlowerIdGeneratorTest {
+public class SnowFlowerInstanceIdGeneratorTest {
 
     @Test
     public void nextId() {

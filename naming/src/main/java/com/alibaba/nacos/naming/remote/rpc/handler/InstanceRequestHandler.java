@@ -57,7 +57,7 @@ public class InstanceRequestHandler extends RequestHandler<InstanceRequest, Inst
     public InstanceResponse handle(InstanceRequest request, RequestMeta meta) throws NacosException {
         Service service = Service
                 .newService(request.getNamespace(), request.getGroupName(), request.getServiceName(), true);
-        InstanceUtil.setInstanceIdIfEmpty(request.getInstance(), service.getGroupedServiceName());
+        InstanceUtil.setInstanceIdIfEmpty(request.getInstance());
         switch (request.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
                 return registerInstance(service, request, meta);

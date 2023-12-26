@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.pojo.instance.DefaultInstanceIdGenerator;
+import com.alibaba.nacos.naming.pojo.instance.InstanceIdGeneratorManager;
 
 import java.util.HashMap;
 import java.util.List;
@@ -109,13 +109,10 @@ public final class InstanceUtil {
      * If the instance id is empty, use the default-instance-id-generator method to set the instance id.
      *
      * @param instance    instance from request
-     * @param groupedServiceName groupedServiceName from service
      */
-    public static void setInstanceIdIfEmpty(Instance instance, String groupedServiceName) {
+    public static void setInstanceIdIfEmpty(Instance instance) {
         if (null != instance && StringUtils.isEmpty(instance.getInstanceId())) {
-            DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(groupedServiceName,
-                    instance.getClusterName(), instance.getIp(), instance.getPort());
-            instance.setInstanceId(idGenerator.generateInstanceId());
+            instance.setInstanceId(InstanceIdGeneratorManager.generateInstanceId(instance));
         }
     }
     
@@ -123,12 +120,11 @@ public final class InstanceUtil {
      * Batch set instance id if empty.
      *
      * @param instances   instances from request
-     * @param groupedServiceName groupedServiceName from service
      */
-    public static void batchSetInstanceIdIfEmpty(List<Instance> instances, String groupedServiceName) {
+    public static void batchSetInstanceIdIfEmpty(List<Instance> instances) {
         if (null != instances) {
             for (Instance instance : instances) {
-                setInstanceIdIfEmpty(instance, groupedServiceName);
+                setInstanceIdIfEmpty(instance);
             }
         }
     }

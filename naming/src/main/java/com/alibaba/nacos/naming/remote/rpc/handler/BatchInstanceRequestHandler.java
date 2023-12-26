@@ -53,7 +53,7 @@ public class BatchInstanceRequestHandler extends RequestHandler<BatchInstanceReq
     public BatchInstanceResponse handle(BatchInstanceRequest request, RequestMeta meta) throws NacosException {
         Service service = Service.newService(request.getNamespace(), request.getGroupName(), request.getServiceName(),
                 true);
-        InstanceUtil.batchSetInstanceIdIfEmpty(request.getInstances(), service.getGroupedServiceName());
+        InstanceUtil.batchSetInstanceIdIfEmpty(request.getInstances());
         switch (request.getType()) {
             case NamingRemoteConstants.BATCH_REGISTER_INSTANCE:
                 return batchRegisterInstance(service, request, meta);

@@ -16,17 +16,27 @@
 
 package com.alibaba.nacos.api.naming.spi.generator;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+
 /**
  * Generator SPI for Instance Id.
  *
  * @author xiweng.yy
  */
-public interface IdGenerator {
+public interface InstanceIdGenerator {
     
     /**
      * Generate instance id.
      *
+     * @param instance instance
      * @return instance id
      */
-    String generateInstanceId();
+    String generateInstanceId(Instance instance);
+    
+    /**
+     * Generator type.
+     *
+     * @return type
+     */
+    String type();
 }

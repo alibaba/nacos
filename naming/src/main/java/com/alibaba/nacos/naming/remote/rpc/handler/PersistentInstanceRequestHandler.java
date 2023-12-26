@@ -59,7 +59,7 @@ public class PersistentInstanceRequestHandler extends RequestHandler<PersistentI
     public InstanceResponse handle(PersistentInstanceRequest request, RequestMeta meta) throws NacosException {
         Service service = Service.newService(request.getNamespace(), request.getGroupName(), request.getServiceName(),
                 false);
-        InstanceUtil.setInstanceIdIfEmpty(request.getInstance(), service.getGroupedServiceName());
+        InstanceUtil.setInstanceIdIfEmpty(request.getInstance());
         switch (request.getType()) {
             case NamingRemoteConstants.REGISTER_INSTANCE:
                 return registerInstance(service, request, meta);

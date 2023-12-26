@@ -16,16 +16,22 @@
 
 package com.alibaba.nacos.naming.pojo.instance;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-public class DefaultInstanceIdGeneratorTest {
+public class DefaultInstanceInstanceIdGeneratorTest {
     
     @Test
     public void testGenerateInstanceId() {
-        DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator("service", "cluster", "1.1.1.1", 1000);
-        assertThat(idGenerator.generateInstanceId(), is("1.1.1.1#1000#cluster#service"));
+        final DefaultInstanceIdGenerator instanceIdGenerator = new DefaultInstanceIdGenerator();
+        Instance instance = new Instance();
+        instance.setServiceName("service");
+        instance.setClusterName("cluster");
+        instance.setIp("1.1.1.1");
+        instance.setPort(1000);
+        assertThat(instanceIdGenerator.generateInstanceId(instance), is("1.1.1.1#1000#cluster#service"));
     }
 }
