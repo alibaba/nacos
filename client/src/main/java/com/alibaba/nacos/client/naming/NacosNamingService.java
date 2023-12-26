@@ -27,7 +27,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
+import com.alibaba.nacos.client.monitor.delegate.naming.NamingClientProxyTraceDelegate;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.Balancer;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
@@ -100,7 +100,7 @@ public class NacosNamingService implements NamingService {
         NotifyCenter.registerToPublisher(InstancesChangeEvent.class, 16384);
         NotifyCenter.registerSubscriber(changeNotifier);
         this.serviceInfoHolder = new ServiceInfoHolder(namespace, this.notifierEventScope, nacosClientProperties);
-        this.clientProxy = TraceDynamicProxy.getNamingClientProxyTraceProxy(
+        this.clientProxy = new NamingClientProxyTraceDelegate(
                 new NamingClientProxyDelegate(this.namespace, serviceInfoHolder, nacosClientProperties,
                         changeNotifier));
     }

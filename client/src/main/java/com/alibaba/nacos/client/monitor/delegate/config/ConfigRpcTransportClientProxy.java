@@ -16,7 +16,7 @@
  *
  */
 
-package com.alibaba.nacos.client.monitor.config;
+package com.alibaba.nacos.client.monitor.delegate.config;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.Request;
@@ -29,17 +29,15 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import java.util.concurrent.ScheduledExecutorService;
 
 /**
- * {@link com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient} interface for dynamic proxy to
- * trace the ClientWorker.ConfigRpcTransportClient by OpenTelemetry.
+ * Since {@link com.alibaba.nacos.client.config.impl.ClientWorker.ConfigRpcTransportClient} is an anonymous inner class,
+ * we should make sure it implements this interface to delegate its methods for tracing.
  *
  * @author <a href="https://github.com/FAWC438">FAWC438</a>
  */
-public interface ConfigRpcTransportClientTraceProxy extends Closeable {
-    
-    // Methods for Worker level config span
+public interface ConfigRpcTransportClientProxy extends Closeable {
     
     /**
-     * Query config from server. For trace dynamic proxy.
+     * Query config from server.
      *
      * @param dataId       dataId
      * @param group        group
@@ -53,7 +51,7 @@ public interface ConfigRpcTransportClientTraceProxy extends Closeable {
             throws NacosException;
     
     /**
-     * Publish config to server. For trace dynamic proxy.
+     * Publish config to server.
      *
      * @param dataId           dataId
      * @param group            group
@@ -72,7 +70,7 @@ public interface ConfigRpcTransportClientTraceProxy extends Closeable {
             String content, String encryptedDataKey, String casMd5, String type) throws NacosException;
     
     /**
-     * Remove config from server. For trace dynamic proxy.
+     * Remove config from server.
      *
      * @param dataId dataId
      * @param group  group
@@ -83,10 +81,8 @@ public interface ConfigRpcTransportClientTraceProxy extends Closeable {
      */
     boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException;
     
-    // Methods for Rpc level config span
-    
     /**
-     * Request proxy. For trace dynamic proxy.
+     * Rpc request.
      *
      * @param rpcClientInner rpcClientInner
      * @param request        request
@@ -94,24 +90,24 @@ public interface ConfigRpcTransportClientTraceProxy extends Closeable {
      * @return Response
      * @throws NacosException NacosException
      */
-    Response requestProxy(RpcClient rpcClientInner, Request request, long timeoutMills) throws NacosException;
+    Response rpcRequest(RpcClient rpcClientInner, Request request, long timeoutMills) throws NacosException;
     
     // Other necessary methods
     
     /**
-     * Notify listen config. For trace dynamic proxy.
+     * Notify listen config.
      */
     void notifyListenConfig();
     
     /**
-     * Get tenant. For trace dynamic proxy.
+     * Get tenant.
      *
      * @return tenant
      */
     String getTenant();
     
     /**
-     * Remove cache. For trace dynamic proxy.
+     * Remove cache.
      *
      * @param dataId dataId
      * @param group  group
@@ -119,35 +115,35 @@ public interface ConfigRpcTransportClientTraceProxy extends Closeable {
     void removeCache(String dataId, String group);
     
     /**
-     * Get agent name. For trace dynamic proxy.
+     * Get agent name.
      *
      * @return agent name
      */
     String getName();
     
     /**
-     * Get server list manager. For trace dynamic proxy.
+     * Get server list manager.
      *
      * @return server list manager
      */
     ServerListManager getServerListManager();
     
     /**
-     * Set executor. For trace dynamic proxy.
+     * Set executor.
      *
      * @param executor executor
      */
     void setExecutor(ScheduledExecutorService executor);
     
     /**
-     * Start agent. For trace dynamic proxy.
+     * Start agent.
      *
      * @throws NacosException NacosException
      */
     void start() throws NacosException;
     
     /**
-     * Check whether the server is health. For trace dynamic proxy.
+     * Check whether the server is health.
      *
      * @return boolean
      */

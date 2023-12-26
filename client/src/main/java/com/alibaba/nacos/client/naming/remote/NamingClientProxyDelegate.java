@@ -24,7 +24,7 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.monitor.TraceDynamicProxy;
+import com.alibaba.nacos.client.monitor.delegate.naming.NamingClientProxyTraceDelegate;
 import com.alibaba.nacos.client.monitor.naming.NamingMetrics;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.core.ServerListManager;
@@ -81,9 +81,9 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
         this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(),
                 NamingHttpClientManager.getInstance().getNacosRestTemplate());
         initSecurityProxy(properties);
-        this.httpClientProxy = TraceDynamicProxy.getNamingClientProxyTraceProxy(
+        this.httpClientProxy = new NamingClientProxyTraceDelegate(
                 new NamingHttpClientProxy(namespace, securityProxy, serverListManager, properties));
-        this.grpcClientProxy = TraceDynamicProxy.getNamingClientProxyTraceProxy(
+        this.grpcClientProxy = new NamingClientProxyTraceDelegate(
                 new NamingGrpcClientProxy(namespace, securityProxy, serverListManager, properties, serviceInfoHolder));
     }
     
