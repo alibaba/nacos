@@ -32,6 +32,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -47,14 +48,15 @@ import org.mockito.junit.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigEncryptionFilterTest1 {
     
-    private static ConfigEncryptionFilter configEncryptionFilter;
+    private ConfigEncryptionFilter configEncryptionFilter;
     
-    private static EncryptionPluginService mockEncryptionPluginService;
+    private EncryptionPluginService mockEncryptionPluginService;
     
     @Mock
     private IConfigFilterChain iConfigFilterChain;
     
-    static {
+    @Before
+    public void setUp() throws Exception {
         mockEncryptionPluginService = new EncryptionPluginService() {
             
             private static final String ALGORITHM = "AES";
