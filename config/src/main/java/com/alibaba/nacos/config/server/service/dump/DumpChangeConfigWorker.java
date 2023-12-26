@@ -53,6 +53,12 @@ public class DumpChangeConfigWorker implements Runnable {
         this.startTime = startTime;
     }
     
+    int pageSize = 100;
+    
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
+    }
+    
     /**
      * do check change.
      */
@@ -69,7 +75,6 @@ public class DumpChangeConfigWorker implements Runnable {
             
             LogUtil.DEFAULT_LOG.info("Start to check delete configs from  time {}", startTime);
             
-            int pageSize = 100;
             long startDeletedConfigTime = System.currentTimeMillis();
             LogUtil.DEFAULT_LOG.info("Check delete configs from  time {}", startTime);
             
@@ -79,7 +84,7 @@ public class DumpChangeConfigWorker implements Runnable {
                 List<ConfigInfoWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize);
                 for (ConfigInfo configInfo : configDeleted) {
-                    if (configInfoPersistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
+                    if (configInfoPersistService.findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant()) == null) {
                         ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(),
                                 configInfo.getTenant());

@@ -40,7 +40,6 @@ import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -93,11 +92,14 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_TAG);
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        
-        return this.jt.queryForObject(
-                configInfoTagMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "gmt_modified"),
-                        Arrays.asList("data_id", "group_id", "tenant_id", "tag_id")),
-                new Object[] {dataId, group, tenantTmp, tag}, CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
+        try {
+            return this.jt.queryForObject(
+                    configInfoTagMapper.select(Arrays.asList("id", "data_id", "group_id", "tenant_id", "gmt_modified"),
+                            Arrays.asList("data_id", "group_id", "tenant_id", "tag_id")),
+                    new Object[] {dataId, group, tenantTmp, tag}, CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
     }
     
     private ConfigOperateResult getTagOperateResult(String dataId, String group, String tenant, String tag) {
@@ -137,9 +139,10 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public ConfigOperateResult insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser) {
-        try {
+        if (findConfigInfo4TagState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag)
+                == null) {
             return addConfigInfo4Tag(configInfo, tag, srcIp, srcUser);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+        } else {
             return updateConfigInfo4Tag(configInfo, tag, srcIp, srcUser);
         }
     }
@@ -147,9 +150,10 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public ConfigOperateResult insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser) {
-        try {
+        if (findConfigInfo4TagState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag)
+                == null) {
             return addConfigInfo4Tag(configInfo, tag, srcIp, srcUser);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+        } else {
             return updateConfigInfo4TagCas(configInfo, tag, srcIp, srcUser);
         }
     }
@@ -259,7 +263,7 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         String sql = configInfoTagMapper.count(null);
         Integer result = jt.queryForObject(sql, Integer.class);
         if (result == null) {
-            throw new IllegalArgumentException("configInfoBetaCount error");
+            throw new IllegalArgumentException("configInfoTagCount error");
         }
         return result;
     }

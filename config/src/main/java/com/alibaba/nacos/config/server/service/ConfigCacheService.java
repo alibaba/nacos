@@ -26,10 +26,8 @@ import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCache;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.common.collect.Lists;
 
 import java.io.IOException;
@@ -62,21 +60,8 @@ public class ConfigCacheService {
      */
     private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
-    private static ConfigInfoPersistService configInfoPersistService;
-    
-    public static ConfigInfoPersistService getConfigInfoPersistService() {
-        if (configInfoPersistService == null) {
-            configInfoPersistService = ApplicationUtils.getBean(ConfigInfoPersistService.class);
-        }
-        return configInfoPersistService;
-    }
-    
     public static int groupCount() {
         return CACHE.size();
-    }
-    
-    public static boolean hasGroupKey(String groupKey) {
-        return CACHE.containsKey(groupKey);
     }
     
     /**
