@@ -50,6 +50,10 @@ public class NamingClientProxyTraceDelegate implements NamingClientProxy {
     
     private final String namingClientType;
     
+    private final String grpcType = "grpc";
+    
+    private final String httpType = "http";
+    
     /**
      * Constructor with a naming client proxy. This class will delegate all method for Opentelemetry trace.
      *
@@ -75,7 +79,8 @@ public class NamingClientProxyTraceDelegate implements NamingClientProxy {
      */
     private SpanBuilder initSpanBuilder(String methodName) {
         SpanBuilder spanBuilder;
-        if (namingClientType.equals("grpc") || namingClientType.equals("http")) {
+        
+        if (namingClientType.equals(grpcType) || namingClientType.equals(httpType)) {
             spanBuilder = NamingTrace.getClientNamingWorkerSpanBuilder(methodName);
         } else {
             spanBuilder = NamingTrace.getClientNamingServiceSpanBuilder(methodName);
@@ -422,9 +427,9 @@ public class NamingClientProxyTraceDelegate implements NamingClientProxy {
         try (Scope ignored = span.makeCurrent()) {
             
             if (span.isRecording()) {
-                if (namingClientType.equals("grpc")) {
+                if (namingClientType.equals(grpcType)) {
                     span.setAttribute(SemanticAttributes.RPC_SYSTEM, "grpc");
-                } else if (namingClientType.equals("http")) {
+                } else if (namingClientType.equals(httpType)) {
                     span.setAttribute(SemanticAttributes.HTTP_METHOD, HttpMethod.GET);
                 }
                 span.setAttribute(NacosSemanticAttributes.PAGE_NO, pageNo);

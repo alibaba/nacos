@@ -87,6 +87,7 @@ public interface ConfigRpcTransportClientProxy extends Closeable {
      * @param rpcClientInner rpcClientInner
      * @param request        request
      * @param timeoutMills   timeoutMills
+     * @return Response
      * @throws NacosException NacosException
      */
     Response rpcRequest(RpcClient rpcClientInner, Request request, long timeoutMills) throws NacosException;
