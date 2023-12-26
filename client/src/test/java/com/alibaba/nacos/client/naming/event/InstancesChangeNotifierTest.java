@@ -118,12 +118,12 @@ public class InstancesChangeNotifierTest {
         String group = "a";
         String name = "b";
         String clusters = "c";
-        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
         InstancesChangeEvent event1 = Mockito.mock(InstancesChangeEvent.class);
         when(event1.getClusters()).thenReturn(clusters);
         when(event1.getGroupName()).thenReturn(group);
         when(event1.getServiceName()).thenReturn(name);
         EventListener listener = Mockito.mock(EventListener.class);
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
         instancesChangeNotifier.registerListener(group, name + "c", clusters, listener);
         instancesChangeNotifier.onEvent(event1);
         Mockito.verify(listener, never()).onEvent(any());
