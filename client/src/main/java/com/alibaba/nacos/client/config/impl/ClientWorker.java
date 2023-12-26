@@ -44,7 +44,6 @@ import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.config.ConfigMetrics;
 import com.alibaba.nacos.client.monitor.delegate.ServerRequestHandlerTraceDelegate;
-import com.alibaba.nacos.client.monitor.delegate.config.ClientWorkerProxy;
 import com.alibaba.nacos.client.monitor.delegate.config.ClientWorkerTraceDelegate;
 import com.alibaba.nacos.client.monitor.delegate.config.ConfigRpcTransportClientProxy;
 import com.alibaba.nacos.client.monitor.delegate.config.ConfigRpcTransportClientProxyTraceDelegate;
@@ -104,7 +103,7 @@ import static com.alibaba.nacos.api.common.Constants.ENCODE;
  *
  * @author Nacos
  */
-public class ClientWorker implements ClientWorkerProxy {
+public class ClientWorker {
     
     private static final Logger LOGGER = LogUtils.logger(ClientWorker.class);
     
@@ -179,7 +178,6 @@ public class ClientWorker implements ClientWorkerProxy {
      * @param listeners listeners
      * @throws NacosException nacos exception
      */
-    @Override
     public void addTenantListeners(String dataId, String group, List<? extends Listener> listeners)
             throws NacosException {
         group = blank2defaultGroup(group);
@@ -209,7 +207,6 @@ public class ClientWorker implements ClientWorkerProxy {
      * @param listeners        listeners
      * @throws NacosException nacos exception
      */
-    @Override
     public void addTenantListenersWithContent(String dataId, String group, String content, String encryptedDataKey,
             List<? extends Listener> listeners) throws NacosException {
         group = blank2defaultGroup(group);
@@ -263,7 +260,6 @@ public class ClientWorker implements ClientWorkerProxy {
      * @param group    group of data
      * @param listener listener
      */
-    @Override
     public void removeTenantListener(String dataId, String group, Listener listener) {
         group = blank2defaultGroup(group);
         String tenant = agent.getTenant();
@@ -307,7 +303,6 @@ public class ClientWorker implements ClientWorkerProxy {
      * @return success or not.
      * @throws NacosException exception to throw.
      */
-    @Override
     public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
         return agent.removeConfig(dataId, group, tenant, tag);
     }
@@ -327,7 +322,6 @@ public class ClientWorker implements ClientWorkerProxy {
      * @return success or not.
      * @throws NacosException exception throw.
      */
-    @Override
     public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
             String content, String encryptedDataKey, String casMd5, String type) throws NacosException {
         return agent.publishConfig(dataId, group, tenant, appName, tag, betaIps, content, encryptedDataKey, casMd5,
@@ -341,7 +335,6 @@ public class ClientWorker implements ClientWorkerProxy {
      * @param group  group of data
      * @return cache data
      */
-    @Override
     public CacheData addCacheDataIfAbsent(String dataId, String group) {
         
         CacheData cache = getCache(dataId, group);
@@ -386,7 +379,6 @@ public class ClientWorker implements ClientWorkerProxy {
      * @param tenant tenant of data
      * @return cache data
      */
-    @Override
     public CacheData addCacheDataIfAbsent(String dataId, String group, String tenant) throws NacosException {
         
         CacheData cache = getCache(dataId, group, tenant);
@@ -461,7 +453,6 @@ public class ClientWorker implements ClientWorkerProxy {
         return cacheMap.get().get(GroupKey.getKeyTenant(dataId, group, tenant));
     }
     
-    @Override
     public ConfigResponse getServerConfig(String dataId, String group, String tenant, long readTimeout, boolean notify)
             throws NacosException {
         if (StringUtils.isBlank(group)) {
@@ -579,7 +570,9 @@ public class ClientWorker implements ClientWorkerProxy {
         return values;
     }
     
-    @Override
+    /**
+     * Shutdown ClientWorker.
+     */
     public void shutdown() throws NacosException {
         String className = this.getClass().getName();
         LOGGER.info("{} do shutdown begin", className);
@@ -595,7 +588,6 @@ public class ClientWorker implements ClientWorkerProxy {
      * @return true: that means has at least one connected rpc client. false: that means does not have any connected rpc
      * client.
      */
-    @Override
     public boolean isHealthServer() {
         return agent.isHealthServer();
     }
@@ -1305,12 +1297,10 @@ public class ClientWorker implements ClientWorkerProxy {
         
     }
     
-    @Override
     public String getAgentName() {
         return this.agent.getName();
     }
     
-    @Override
     public String getAgentTenant() {
         return this.agent.getTenant();
     }
