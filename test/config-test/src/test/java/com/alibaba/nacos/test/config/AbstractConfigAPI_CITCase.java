@@ -75,23 +75,23 @@ public abstract class AbstractConfigAPI_CITCase {
     
     @LocalServerPort
     private int port;
-
+    
     private EncryptionPluginService mockEncryptionPluginService;
-
+    
     @Before
     public void initEncryptionPluginService() {
         mockEncryptionPluginService = new EncryptionPluginService() {
-
+            
             private static final String ALGORITHM = "AES";
-
+            
             private static final String AES_PKCS5P = "AES/ECB/PKCS5Padding";
-
+            
             // 随机生成密钥-用来加密数据内容
             private final String contentKey = generateKey();
-
+            
             // 随机生成密钥-用来加密密钥
             private final String theKeyOfContentKey = generateKey();
-
+            
             private String generateKey() {
                 SecureRandom secureRandom = new SecureRandom();
                 KeyGenerator keyGenerator;
@@ -105,43 +105,43 @@ public abstract class AbstractConfigAPI_CITCase {
                 byte[] keyBytes = secretKey.getEncoded();
                 return Base64.encodeBase64String(keyBytes);
             }
-
+            
             @Override
             public String encrypt(String secretKey, String content) {
                 return Base64.encodeBase64String(aes(Cipher.ENCRYPT_MODE, content, secretKey));
             }
-
+            
             @Override
             public String decrypt(String secretKey, String content) {
-                if(StringUtils.isBlank(secretKey)){
+                if (StringUtils.isBlank(secretKey)) {
                     return null;
                 }
                 return aesDecrypt(content, secretKey);
             }
-
+            
             @Override
             public String generateSecretKey() {
                 return contentKey;
             }
-
+            
             @Override
             public String algorithmName() {
                 return ALGORITHM.toLowerCase();
             }
-
+            
             @Override
             public String encryptSecretKey(String secretKey) {
                 return Base64.encodeBase64String(aes(Cipher.ENCRYPT_MODE, generateSecretKey(), theKeyOfContentKey));
             }
-
+            
             @Override
             public String decryptSecretKey(String secretKey) {
-                if(StringUtils.isBlank(secretKey)){
+                if (StringUtils.isBlank(secretKey)) {
                     return null;
                 }
                 return aesDecrypt(secretKey, theKeyOfContentKey);
             }
-
+            
             private byte[] aes(int mode, String content, String key) {
                 try {
                     return aesBytes(mode, content.getBytes(StandardCharsets.UTF_8), key);
@@ -149,7 +149,7 @@ public abstract class AbstractConfigAPI_CITCase {
                     throw new RuntimeException(e);
                 }
             }
-
+            
             private byte[] aesBytes(int mode, byte[] content, String key) {
                 SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), ALGORITHM);
                 Cipher cipher = null;
@@ -161,7 +161,7 @@ public abstract class AbstractConfigAPI_CITCase {
                     throw new RuntimeException(e);
                 }
             }
-
+            
             private String aesDecrypt(String content, String key) {
                 byte[] bytes = aesBytes(Cipher.DECRYPT_MODE, Base64.decodeBase64(content), key);
                 return new String(bytes, StandardCharsets.UTF_8);
@@ -220,7 +220,7 @@ public abstract class AbstractConfigAPI_CITCase {
         System.out.println(value);
         Assert.assertNull(value);
     }
-
+    
     /**
      * @TCDescription : nacos_正常推送&获取加密数据
      * @TestStep :

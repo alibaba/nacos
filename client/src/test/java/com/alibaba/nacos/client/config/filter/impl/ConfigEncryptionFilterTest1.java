@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
@@ -5,6 +21,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.encryption.EncryptionPluginManager;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
+
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -12,6 +29,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
 import org.apache.commons.codec.binary.Base64;
 import org.junit.Assert;
 import org.junit.Test;
@@ -28,27 +46,27 @@ import org.mockito.junit.MockitoJUnitRunner;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigEncryptionFilterTest1 {
-
+    
     private static ConfigEncryptionFilter configEncryptionFilter;
-
+    
     private static EncryptionPluginService mockEncryptionPluginService;
-
+    
     @Mock
     private IConfigFilterChain iConfigFilterChain;
-
+    
     static {
         mockEncryptionPluginService = new EncryptionPluginService() {
-
+            
             private static final String ALGORITHM = "AES";
-
+            
             private static final String AES_PKCS5P = "AES/ECB/PKCS5Padding";
-
+            
             // 随机生成密钥-用来加密数据内容
             private final String contentKey = generateKey();
-
+            
             // 随机生成密钥-用来加密密钥
             private final String theKeyOfContentKey = generateKey();
-
+            
             private String generateKey() {
                 SecureRandom secureRandom = new SecureRandom();
                 KeyGenerator keyGenerator;
@@ -62,12 +80,12 @@ public class ConfigEncryptionFilterTest1 {
                 byte[] keyBytes = secretKey.getEncoded();
                 return Base64.encodeBase64String(keyBytes);
             }
-
+            
             @Override
             public String encrypt(String secretKey, String content) {
                 return Base64.encodeBase64String(aes(Cipher.ENCRYPT_MODE, content, secretKey));
             }
-
+            
             @Override
             public String decrypt(String secretKey, String content) {
                 if (StringUtils.isBlank(secretKey)) {
@@ -75,22 +93,22 @@ public class ConfigEncryptionFilterTest1 {
                 }
                 return aesDecrypt(content, secretKey);
             }
-
+            
             @Override
             public String generateSecretKey() {
                 return contentKey;
             }
-
+            
             @Override
             public String algorithmName() {
                 return ALGORITHM.toLowerCase();
             }
-
+            
             @Override
             public String encryptSecretKey(String secretKey) {
                 return Base64.encodeBase64String(aes(Cipher.ENCRYPT_MODE, generateSecretKey(), theKeyOfContentKey));
             }
-
+            
             @Override
             public String decryptSecretKey(String secretKey) {
                 if (StringUtils.isBlank(secretKey)) {
@@ -98,7 +116,7 @@ public class ConfigEncryptionFilterTest1 {
                 }
                 return aesDecrypt(secretKey, theKeyOfContentKey);
             }
-
+            
             private byte[] aes(int mode, String content, String key) {
                 try {
                     return aesBytes(mode, content.getBytes(StandardCharsets.UTF_8), key);
@@ -106,7 +124,7 @@ public class ConfigEncryptionFilterTest1 {
                     throw new RuntimeException(e);
                 }
             }
-
+            
             private byte[] aesBytes(int mode, byte[] content, String key) {
                 SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), ALGORITHM);
                 Cipher cipher = null;
@@ -118,33 +136,31 @@ public class ConfigEncryptionFilterTest1 {
                     throw new RuntimeException(e);
                 }
             }
-
+            
             private String aesDecrypt(String content, String key) {
                 byte[] bytes = aesBytes(Cipher.DECRYPT_MODE, Base64.decodeBase64(content), key);
                 return new String(bytes, StandardCharsets.UTF_8);
             }
         };
         EncryptionPluginManager.join(mockEncryptionPluginService);
-
+        
         configEncryptionFilter = new ConfigEncryptionFilter();
     }
-
+    
     @Test
     public void testDoFilterEncryptedData() throws NacosException {
         String dataId = "cipher-aes-test";
         String content = "nacos";
-        final String encryptionContent = mockEncryptionPluginService.encrypt(mockEncryptionPluginService.generateSecretKey(),
-                content);
-        final String theKeyOfContentKey = mockEncryptionPluginService.encryptSecretKey(
-                mockEncryptionPluginService.generateSecretKey());
-
+        final String encryptionContent = mockEncryptionPluginService.encrypt(mockEncryptionPluginService.generateSecretKey(), content);
+        final String theKeyOfContentKey = mockEncryptionPluginService.encryptSecretKey(mockEncryptionPluginService.generateSecretKey());
+        
         ConfigRequest configRequest = new ConfigRequest();
         configRequest.setDataId(dataId);
         configRequest.setContent(content);
         configEncryptionFilter.doFilter(configRequest, null, iConfigFilterChain);
         Assert.assertEquals(configRequest.getContent(), encryptionContent);
         Assert.assertEquals(configRequest.getEncryptedDataKey(), theKeyOfContentKey);
-
+        
         ConfigResponse configResponse = new ConfigResponse();
         configResponse.setDataId(dataId);
         configResponse.setContent(encryptionContent);
@@ -153,20 +169,20 @@ public class ConfigEncryptionFilterTest1 {
         Assert.assertEquals(configResponse.getContent(), content);
         Assert.assertEquals(configResponse.getEncryptedDataKey(), mockEncryptionPluginService.generateSecretKey());
     }
-
+    
     @Test
     public void testDoFilter() throws NacosException {
         String dataId = "test";
         String content = "nacos";
-
+        
         ConfigRequest configRequest = new ConfigRequest();
         configRequest.setDataId(dataId);
         configRequest.setContent(content);
-
+        
         configEncryptionFilter.doFilter(configRequest, null, iConfigFilterChain);
         Assert.assertEquals(configRequest.getContent(), content);
         Assert.assertEquals(configRequest.getEncryptedDataKey(), "");
-
+        
         ConfigResponse configResponse = new ConfigResponse();
         configResponse.setDataId(dataId);
         configResponse.setContent(content);
@@ -175,7 +191,7 @@ public class ConfigEncryptionFilterTest1 {
         Assert.assertEquals(configResponse.getContent(), content);
         Assert.assertEquals(configResponse.getEncryptedDataKey(), "");
     }
-
+    
     @Test
     public void testGetOrder() {
         int order = configEncryptionFilter.getOrder();
