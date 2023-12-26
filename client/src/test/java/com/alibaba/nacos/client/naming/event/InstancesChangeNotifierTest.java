@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.naming.event;
 
+import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
@@ -25,9 +26,13 @@ import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executor;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
 public class InstancesChangeNotifierTest {
     
@@ -45,7 +50,7 @@ public class InstancesChangeNotifierTest {
         Assert.assertEquals(group, subscribeServices.get(0).getGroupName());
         Assert.assertEquals(name, subscribeServices.get(0).getName());
         Assert.assertEquals(clusters, subscribeServices.get(0).getClusters());
-    
+        
         List<Instance> hosts = new ArrayList<>();
         Instance ins = new Instance();
         hosts.add(ins);
@@ -68,6 +73,9 @@ public class InstancesChangeNotifierTest {
         instancesChangeNotifier.deregisterListener(group, name, clusters, listener);
         
         List<ServiceInfo> subscribeServices2 = instancesChangeNotifier.getSubscribeServices();
+        Assert.assertEquals(0, subscribeServices2.size());
+        
+        instancesChangeNotifier.deregisterListener(group, name, clusters, listener);
         Assert.assertEquals(0, subscribeServices2.size());
     }
     
@@ -96,12 +104,50 @@ public class InstancesChangeNotifierTest {
         
         instancesChangeNotifier.registerListener(group, name, clusters, listener);
         InstancesChangeEvent event1 = Mockito.mock(InstancesChangeEvent.class);
-        Mockito.when(event1.getClusters()).thenReturn(clusters);
-        Mockito.when(event1.getGroupName()).thenReturn(group);
-        Mockito.when(event1.getServiceName()).thenReturn(name);
+        when(event1.getClusters()).thenReturn(clusters);
+        when(event1.getGroupName()).thenReturn(group);
+        when(event1.getServiceName()).thenReturn(name);
         
         instancesChangeNotifier.onEvent(event1);
         Mockito.verify(listener, times(1)).onEvent(any());
+    }
+    
+    @Test
+    public void testOnEventWithoutListener() {
+        String eventScope = "scope-001";
+        String group = "a";
+        String name = "b";
+        String clusters = "c";
+        InstancesChangeEvent event1 = Mockito.mock(InstancesChangeEvent.class);
+        when(event1.getClusters()).thenReturn(clusters);
+        when(event1.getGroupName()).thenReturn(group);
+        when(event1.getServiceName()).thenReturn(name);
+        EventListener listener = Mockito.mock(EventListener.class);
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
+        instancesChangeNotifier.registerListener(group, name + "c", clusters, listener);
+        instancesChangeNotifier.onEvent(event1);
+        Mockito.verify(listener, never()).onEvent(any());
+    }
+    
+    @Test
+    public void testOnEventByExecutor() {
+        String eventScope = "scope-001";
+        String group = "a";
+        String name = "b";
+        String clusters = "c";
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
+        AbstractEventListener listener = Mockito.mock(AbstractEventListener.class);
+        Executor executor = mock(Executor.class);
+        when(listener.getExecutor()).thenReturn(executor);
+        
+        instancesChangeNotifier.registerListener(group, name, clusters, listener);
+        InstancesChangeEvent event1 = Mockito.mock(InstancesChangeEvent.class);
+        when(event1.getClusters()).thenReturn(clusters);
+        when(event1.getGroupName()).thenReturn(group);
+        when(event1.getServiceName()).thenReturn(name);
+        
+        instancesChangeNotifier.onEvent(event1);
+        Mockito.verify(executor).execute(any());
     }
     
     @Test

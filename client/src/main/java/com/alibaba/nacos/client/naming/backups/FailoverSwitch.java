@@ -26,14 +26,10 @@ public class FailoverSwitch {
     /**
      * Failover switch enable.
      */
-    private boolean enabled;
+    private final boolean enabled;
     
     public boolean getEnabled() {
         return enabled;
-    }
-    
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
     }
     
     public FailoverSwitch(boolean enabled) {

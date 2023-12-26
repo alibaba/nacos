@@ -24,12 +24,14 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 public class DiskCacheTest {
     
@@ -59,6 +61,7 @@ public class DiskCacheTest {
             for (File each : file.listFiles()) {
                 each.delete();
             }
+            file.delete();
         }
     }
     
@@ -69,6 +72,54 @@ public class DiskCacheTest {
         assertEquals(1, actual.size());
         assertTrue(actual.containsKey(serviceInfo.getKey()));
         assertServiceInfo(actual.get(serviceInfo.getKey()), serviceInfo);
+    }
+    
+    @Test
+    public void testWriteCacheWithErrorPath() {
+        File file = new File(CACHE_DIR, serviceInfo.getKeyEncoded());
+        try {
+            file.mkdirs();
+            DiskCache.write(serviceInfo, CACHE_DIR);
+            assertTrue(file.isDirectory());
+        } finally {
+            file.delete();
+        }
+    }
+    
+    @Test
+    public void testReadCacheForAllSituation() {
+        String dir = DiskCacheTest.class.getResource("/").getPath() + "/disk_cache_test";
+        Map<String, ServiceInfo> actual = DiskCache.read(dir);
+        assertEquals(2, actual.size());
+        assertTrue(actual.containsKey("legal@@no_name@@file"));
+        assertEquals("1.1.1.1", actual.get("legal@@no_name@@file").getHosts().get(0).getIp());
+        assertTrue(actual.containsKey("legal@@with_name@@file"));
+        assertEquals("1.1.1.1", actual.get("legal@@with_name@@file").getHosts().get(0).getIp());
+    }
+    
+    @Test
+    public void testReadCacheForNullFile() {
+        Map<String, ServiceInfo> actual = DiskCache.read(null);
+        assertTrue(actual.isEmpty());
+    }
+    
+    @Test
+    public void testParseServiceInfoFromNonExistFile() throws UnsupportedEncodingException {
+        File file = new File("non%40%40exist%40%40file");
+        Map<String, ServiceInfo> actual = DiskCache.parseServiceInfoFromCache(file);
+        assertTrue(actual.isEmpty());
+    }
+    
+    @Test(expected = IllegalStateException.class)
+    public void testCreateFileIfAbsentForDir() throws Throwable {
+        File file = mock(File.class);
+        DiskCache.createFileIfAbsent(file, true);
+    }
+    
+    @Test(expected = IllegalStateException.class)
+    public void testCreateFileIfAbsentForFile() throws Throwable {
+        File file = mock(File.class);
+        DiskCache.createFileIfAbsent(file, false);
     }
     
     private void assertServiceInfo(ServiceInfo actual, ServiceInfo expected) {

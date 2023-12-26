@@ -26,12 +26,12 @@ public class FailoverData {
     /**
      * failover type,naming or config.
      */
-    private DataType dataType;
+    private final DataType dataType;
     
     /**
      * failover data.
      */
-    private Object data;
+    private final Object data;
     
     public FailoverData(DataType dataType, Object data) {
         this.data = data;
@@ -53,15 +53,7 @@ public class FailoverData {
         return dataType;
     }
     
-    public void setDataType(DataType dataType) {
-        this.dataType = dataType;
-    }
-    
     public Object getData() {
         return data;
-    }
-    
-    public void setData(Object data) {
-        this.data = data;
     }
 }
