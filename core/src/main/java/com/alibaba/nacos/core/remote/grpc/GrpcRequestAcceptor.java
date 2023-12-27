@@ -195,15 +195,13 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                     responseObserver.onNext(payloadResponse);
                     responseObserver.onCompleted();
                 }, 1000L, TimeUnit.MILLISECONDS);
-                MetricsMonitor.recordGrpcRequestEvent(type, false,
-                        response.getErrorCode(), null, request.getModule(), System.nanoTime() - startTime);
             } else {
                 traceIfNecessary(payloadResponse, false);
                 responseObserver.onNext(payloadResponse);
                 responseObserver.onCompleted();
-                MetricsMonitor.recordGrpcRequestEvent(type, true,
-                        response.getErrorCode(), null, request.getModule(), System.nanoTime() - startTime);
             }
+            MetricsMonitor.recordGrpcRequestEvent(type, response.isSuccess(),
+                    response.getErrorCode(), null, request.getModule(), System.nanoTime() - startTime);
         } catch (Throwable e) {
             Loggers.REMOTE_DIGEST
                     .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,
