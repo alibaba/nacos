@@ -40,6 +40,7 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -77,7 +78,7 @@ public class DumpChangeConfigWorkerTest {
     public void init() throws Exception {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        when(EnvUtil.getNacosHome()).thenReturn(System.getProperty("user.home"));
+        when(EnvUtil.getNacosHome()).thenReturn(System.getProperty("user.home") + File.separator + "tmp");
         when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class),
                 eq(false))).thenReturn(false);
         dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dynamicDataSource);
@@ -99,13 +100,21 @@ public class DumpChangeConfigWorkerTest {
     }
     
     @After
-    public void after() {
+    public void after() throws IllegalAccessException {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         ConfigDiskServiceFactory.getInstance().clearAll();
         ConfigDiskServiceFactory.getInstance().clearAllBatch();
         ConfigDiskServiceFactory.getInstance().clearAllBeta();
         ConfigDiskServiceFactory.getInstance().clearAllTag();
+        
+        Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
+        for (Field filed : declaredFields) {
+            if (filed.getName().equals("configDiskService")) {
+                filed.setAccessible(true);
+                filed.set(null, null);
+            }
+        }
     }
     
     @Test
