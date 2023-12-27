@@ -180,7 +180,6 @@ public class ConfigEncryptionFilterTest1 {
         ConfigRequest configRequest = new ConfigRequest();
         configRequest.setDataId(dataId);
         configRequest.setContent(content);
-        
         configEncryptionFilter.doFilter(configRequest, null, iConfigFilterChain);
         Assert.assertEquals(configRequest.getContent(), content);
         Assert.assertEquals(configRequest.getEncryptedDataKey(), "");
