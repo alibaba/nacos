@@ -122,22 +122,24 @@ public class DumpChangeConfigWorkerTest {
         //mock delete first page
         List<ConfigInfoWrapper> firstPageDeleted = new ArrayList<>();
         Timestamp startTime = dumpChangeConfigWorker.startTime;
-        firstPageDeleted.add(createConfigInfoWrapper(1, startTime.getTime() + 1));
-        firstPageDeleted.add(createConfigInfoWrapper(2, startTime.getTime() + 2));
-        firstPageDeleted.add(createConfigInfoWrapper(3, startTime.getTime() + 3));
+        String dataIdPrefix = "d12345";
         
+        firstPageDeleted.add(createConfigInfoWrapper(dataIdPrefix, 1, startTime.getTime() + 1));
+        firstPageDeleted.add(createConfigInfoWrapper(dataIdPrefix, 2, startTime.getTime() + 2));
+        firstPageDeleted.add(createConfigInfoWrapper(dataIdPrefix, 3, startTime.getTime() + 3));
         //pre set cache for id1
-        ConfigCacheService.dumpWithMd5("dataId" + 1, "group" + 1, "tenant" + 1, "content", "md5",
-                System.currentTimeMillis(), "json", "encrykey");
-        Assert.assertEquals("encrykey",
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+        preSetCache(dataIdPrefix, 1, System.currentTimeMillis());
+        Assert.assertEquals("encrykey" + 1,
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getEncryptedDataKey());
         Mockito.when(historyConfigInfoPersistService.findDeletedConfig(eq(startTime), eq(0L), eq(3)))
                 .thenReturn(firstPageDeleted);
         //mock delete config query is null
-        Mockito.when(configInfoPersistService.findConfigInfoState(eq("dataId" + 1), eq("group" + 1), eq("tenant" + 1)))
+        Mockito.when(
+                        configInfoPersistService.findConfigInfoState(eq(dataIdPrefix + 1), eq("group" + 1), eq("tenant" + 1)))
                 .thenReturn(null);
-        Mockito.when(configInfoPersistService.findConfigInfoState(eq("dataId" + 2), eq("group" + 2), eq("tenant" + 2)))
+        Mockito.when(
+                        configInfoPersistService.findConfigInfoState(eq(dataIdPrefix + 2), eq("group" + 2), eq("tenant" + 2)))
                 .thenReturn(null);
         dumpChangeConfigWorker.run();
         
@@ -145,7 +147,7 @@ public class DumpChangeConfigWorkerTest {
         Mockito.verify(historyConfigInfoPersistService, times(1)).findDeletedConfig(eq(startTime), eq(3L), eq(3));
         //expect cache to be cleared.
         Assert.assertNull(
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1)));
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1)));
     }
     
     @Test
@@ -155,33 +157,34 @@ public class DumpChangeConfigWorkerTest {
         //mock delete first page
         
         Timestamp startTime = dumpChangeConfigWorker.startTime;
-        
+        String dataIdPrefix = "dataId6789087";
         //pre set cache for id1 with old timestamp
-        preSetCache(1, startTime.getTime() - 1);
+        preSetCache(dataIdPrefix, 1, startTime.getTime() - 1);
         
         Assert.assertEquals(startTime.getTime() - 1,
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getLastModifiedTs());
         List<ConfigInfoWrapper> firstChanged = new ArrayList<>();
-        firstChanged.add(createConfigInfoWrapper(1, startTime.getTime() + 1));
+        firstChanged.add(createConfigInfoWrapper(dataIdPrefix, 1, startTime.getTime() + 1));
         
         Mockito.when(configInfoPersistService.findChangeConfig(eq(startTime), eq(0L), eq(3))).thenReturn(firstChanged);
         
         //mock change config query obj
         //1 timestamp-new&content-new
-        ConfigInfoWrapper configInfoWrapperNewForId1 = createConfigInfoWrapper(1, startTime.getTime() + 2);
+        ConfigInfoWrapper configInfoWrapperNewForId1 = createConfigInfoWrapper(dataIdPrefix, 1,
+                startTime.getTime() + 2);
         configInfoWrapperNewForId1.setContent("content" + System.currentTimeMillis());
-        Mockito.when(configInfoPersistService.findConfigInfo(eq("dataId" + 1), eq("group" + 1), eq("tenant" + 1)))
+        Mockito.when(configInfoPersistService.findConfigInfo(eq(dataIdPrefix + 1), eq("group" + 1), eq("tenant" + 1)))
                 .thenReturn(configInfoWrapperNewForId1);
         
         dumpChangeConfigWorker.run();
         
         //expect cache to be cleared.
         Assert.assertEquals(startTime.getTime() + 2,
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getLastModifiedTs());
         Assert.assertEquals(MD5Utils.md5Hex(configInfoWrapperNewForId1.getContent(), "UTF-8"),
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getMd5Utf8());
     }
     
@@ -192,32 +195,33 @@ public class DumpChangeConfigWorkerTest {
         //mock delete first page
         
         Timestamp startTime = dumpChangeConfigWorker.startTime;
-        
+        String dataIdPrefix = "dataIdnewtimestamp";
         //pre set cache for id1 with old timestamp
-        preSetCache(1, startTime.getTime() - 1);
+        preSetCache(dataIdPrefix, 1, startTime.getTime() - 1);
         
         Assert.assertEquals(startTime.getTime() - 1,
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getLastModifiedTs());
         List<ConfigInfoWrapper> firstChanged = new ArrayList<>();
-        firstChanged.add(createConfigInfoWrapper(1, startTime.getTime() + 1));
+        firstChanged.add(createConfigInfoWrapper(dataIdPrefix, 1, startTime.getTime() + 1));
         
         Mockito.when(configInfoPersistService.findChangeConfig(eq(startTime), eq(0L), eq(3))).thenReturn(firstChanged);
         
         //mock change config query obj
         //1 timestamp-new&content-old
-        ConfigInfoWrapper configInfoWrapperNewForId1 = createConfigInfoWrapper(1, startTime.getTime() + 2);
-        Mockito.when(configInfoPersistService.findConfigInfo(eq("dataId" + 1), eq("group" + 1), eq("tenant" + 1)))
+        ConfigInfoWrapper configInfoWrapperNewForId1 = createConfigInfoWrapper(dataIdPrefix, 1,
+                startTime.getTime() + 2);
+        Mockito.when(configInfoPersistService.findConfigInfo(eq(dataIdPrefix + 1), eq("group" + 1), eq("tenant" + 1)))
                 .thenReturn(configInfoWrapperNewForId1);
         
         dumpChangeConfigWorker.run();
         
         //expect cache
         Assert.assertEquals(startTime.getTime() + 2,
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getLastModifiedTs());
         Assert.assertEquals(MD5Utils.md5Hex(configInfoWrapperNewForId1.getContent(), "UTF-8"),
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getMd5Utf8());
         
     }
@@ -229,33 +233,35 @@ public class DumpChangeConfigWorkerTest {
         //mock delete first page
         
         Timestamp startTime = dumpChangeConfigWorker.startTime;
+        String dataIdPrefix = "dataIdOldTimestamp";
         
         //pre set cache for id1 with old timestamp
-        preSetCache(1, startTime.getTime() - 1);
+        preSetCache(dataIdPrefix, 1, startTime.getTime() - 1);
         
         Assert.assertEquals(startTime.getTime() - 1,
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getLastModifiedTs());
         List<ConfigInfoWrapper> firstChanged = new ArrayList<>();
-        firstChanged.add(createConfigInfoWrapper(1, startTime.getTime() - 2));
+        firstChanged.add(createConfigInfoWrapper(dataIdPrefix, 1, startTime.getTime() - 2));
         
         Mockito.when(configInfoPersistService.findChangeConfig(eq(startTime), eq(0L), eq(3))).thenReturn(firstChanged);
         
         //mock change config query obj
         //1 timestamp-new&content-new
-        ConfigInfoWrapper configInfoWrapperNewForId1 = createConfigInfoWrapper(1, startTime.getTime() - 2);
+        ConfigInfoWrapper configInfoWrapperNewForId1 = createConfigInfoWrapper(dataIdPrefix, 1,
+                startTime.getTime() - 2);
         configInfoWrapperNewForId1.setContent("content" + System.currentTimeMillis());
-        Mockito.when(configInfoPersistService.findConfigInfo(eq("dataId" + 1), eq("group" + 1), eq("tenant" + 1)))
+        Mockito.when(configInfoPersistService.findConfigInfo(eq(dataIdPrefix + 1), eq("group" + 1), eq("tenant" + 1)))
                 .thenReturn(configInfoWrapperNewForId1);
         
         dumpChangeConfigWorker.run();
         
         //expect cache to be cleared.
         Assert.assertEquals(startTime.getTime() - 1,
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getLastModifiedTs());
         Assert.assertEquals(MD5Utils.md5Hex("content" + 1, "UTF-8"),
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getMd5Utf8());
         
     }
@@ -267,45 +273,47 @@ public class DumpChangeConfigWorkerTest {
         //mock delete first page
         
         Timestamp startTime = dumpChangeConfigWorker.startTime;
+        String dataIdPrefix = "dataIdEqualsTimestampMd5Update";
         
         //pre set cache for id1 with old timestamp
-        preSetCache(1, startTime.getTime() - 1);
+        preSetCache(dataIdPrefix, 1, startTime.getTime() - 1);
         
         Assert.assertEquals(startTime.getTime() - 1,
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getLastModifiedTs());
         List<ConfigInfoWrapper> firstChanged = new ArrayList<>();
-        firstChanged.add(createConfigInfoWrapper(1, startTime.getTime() - 1));
+        firstChanged.add(createConfigInfoWrapper(dataIdPrefix, 1, startTime.getTime() - 1));
         
         Mockito.when(configInfoPersistService.findChangeConfig(eq(startTime), eq(0L), eq(3))).thenReturn(firstChanged);
         
         //mock change config query obj
         //1 timestamp-new&content-new
-        ConfigInfoWrapper configInfoWrapperNewForId1 = createConfigInfoWrapper(1, startTime.getTime() - 1);
+        ConfigInfoWrapper configInfoWrapperNewForId1 = createConfigInfoWrapper(dataIdPrefix, 1,
+                startTime.getTime() - 1);
         configInfoWrapperNewForId1.setContent("content" + System.currentTimeMillis());
-        Mockito.when(configInfoPersistService.findConfigInfo(eq("dataId" + 1), eq("group" + 1), eq("tenant" + 1)))
+        Mockito.when(configInfoPersistService.findConfigInfo(eq(dataIdPrefix + 1), eq("group" + 1), eq("tenant" + 1)))
                 .thenReturn(configInfoWrapperNewForId1);
         
         dumpChangeConfigWorker.run();
         
         //expect cache to be cleared.
         Assert.assertEquals(startTime.getTime() - 1,
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getLastModifiedTs());
         Assert.assertEquals(MD5Utils.md5Hex(configInfoWrapperNewForId1.getContent(), "UTF-8"),
-                ConfigCacheService.getContentCache(GroupKey.getKeyTenant("dataId" + 1, "group" + 1, "tenant" + 1))
+                ConfigCacheService.getContentCache(GroupKey.getKeyTenant(dataIdPrefix + 1, "group" + 1, "tenant" + 1))
                         .getConfigCache().getMd5Utf8());
         
     }
     
-    private void preSetCache(long id, long timeStamp) {
-        ConfigCacheService.dumpWithMd5("dataId" + id, "group" + id, "tenant" + id, "content" + id,
+    private void preSetCache(String dataIdPrefix, long id, long timeStamp) {
+        ConfigCacheService.dumpWithMd5(dataIdPrefix + id, "group" + id, "tenant" + id, "content" + id,
                 MD5Utils.md5Hex("content" + id, "UTF-8"), timeStamp, "json", "encrykey" + id);
     }
     
-    private ConfigInfoWrapper createConfigInfoWrapper(long id, long timeStamp) {
+    private ConfigInfoWrapper createConfigInfoWrapper(String dataIdPreFix, long id, long timeStamp) {
         ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
-        configInfoWrapper.setDataId("dataId" + id);
+        configInfoWrapper.setDataId(dataIdPreFix + id);
         configInfoWrapper.setGroup("group" + id);
         configInfoWrapper.setTenant("tenant" + id);
         configInfoWrapper.setContent("content" + id);
