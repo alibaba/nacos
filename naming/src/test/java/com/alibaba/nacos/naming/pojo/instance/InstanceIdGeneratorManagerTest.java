@@ -23,8 +23,6 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.mock.env.MockEnvironment;
 
@@ -35,10 +33,6 @@ import static com.alibaba.nacos.api.common.Constants.SNOWFLAKE_INSTANCE_ID_GENER
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
 
 /**
  * InstanceIdGeneratorManagerTest.
@@ -48,14 +42,14 @@ import static org.mockito.Mockito.when;
 @RunWith(MockitoJUnitRunner.class)
 public class InstanceIdGeneratorManagerTest {
     
-    @Mock
-    MockEnvironment env;
+    static {
+        MockEnvironment environment = new MockEnvironment();
+        environment.setProperty("nacos.core.snowflake.worker-id", "-1");
+        EnvUtil.setEnvironment(environment);
+    }
     
     @Test
     public void testGenerateSnowFlakeInstanceId() {
-        MockEnvironment env = Mockito.mock(MockEnvironment.class);
-        EnvUtil.setEnvironment(env);
-        when(env.getProperty(anyString(), eq(Integer.class), anyInt())).thenReturn(-1);
         Instance instance = new Instance();
         Map<String, String> metaData = new HashMap<>(1);
         metaData.put(PreservedMetadataKeys.INSTANCE_ID_GENERATOR, SNOWFLAKE_INSTANCE_ID_GENERATOR);
@@ -70,10 +64,6 @@ public class InstanceIdGeneratorManagerTest {
     
     @Test
     public void testGenerateInstanceId() {
-        MockEnvironment env = Mockito.mock(MockEnvironment.class);
-        EnvUtil.setEnvironment(env);
-        when(env.getProperty(anyString(), eq(Integer.class), anyInt())).thenReturn(-1);
-        
         Instance instance = new Instance();
         instance.setServiceName("service");
         instance.setClusterName("cluster");
