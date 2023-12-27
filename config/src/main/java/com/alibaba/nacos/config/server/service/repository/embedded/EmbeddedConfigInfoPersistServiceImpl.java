@@ -229,7 +229,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     @Override
     public ConfigOperateResult insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo,
             Map<String, Object> configAdvanceInfo) {
-        if (Objects.isNull(findConfigInfo(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
+        if (Objects.isNull(findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
             return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
         } else {
             return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
@@ -239,7 +239,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     @Override
     public ConfigOperateResult insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo,
             Map<String, Object> configAdvanceInfo) {
-        if (Objects.isNull(findConfigInfo(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
+        if (Objects.isNull(findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
             return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
         } else {
             return updateConfigInfoCas(configInfo, srcIp, srcUser, configAdvanceInfo);

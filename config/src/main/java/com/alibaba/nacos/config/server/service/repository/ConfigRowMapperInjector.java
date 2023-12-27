@@ -244,14 +244,23 @@ public class ConfigRowMapperInjector {
             info.setTenant(rs.getString("tenant_id"));
             info.setAppName(rs.getString("app_name"));
             info.setBetaIps(rs.getString("beta_ips"));
-            info.setContent(rs.getString("content"));
             
-            info.setId(rs.getLong("id"));
-            
-            info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
-            
-            info.setMd5(rs.getString("md5"));
-            
+            try {
+                info.setContent(rs.getString("content"));
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setId(rs.getLong("id"));
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setMd5(rs.getString("md5"));
+            } catch (SQLException ignore) {
+            }
             try {
                 info.setEncryptedDataKey(rs.getString("encrypted_data_key"));
             } catch (SQLException ignore) {
@@ -346,7 +355,7 @@ public class ConfigRowMapperInjector {
         @Override
         public ConfigAdvanceInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
             ConfigAdvanceInfo info = new ConfigAdvanceInfo();
-            info.setCreateTime(rs.getTimestamp("gmt_create").getTime());
+            info.setCreateTime(rs.getTimestamp("gmt_modified").getTime());
             info.setModifyTime(rs.getTimestamp("gmt_modified").getTime());
             info.setCreateUser(rs.getString("src_user"));
             info.setCreateIp(rs.getString("src_ip"));
