@@ -357,6 +357,8 @@
                         <exclude>**/predefined-classes-config.json</exclude>
                         <exclude>**/serialization-config.json</exclude>
                         <exclude>**/filter-config.json</exclude>
+                        <exclude>**/disk_cache_test/**</exclude>
+                        <exclude>**/failover_test/**</exclude>
                     </excludes>
                 </configuration>
                 <executions>

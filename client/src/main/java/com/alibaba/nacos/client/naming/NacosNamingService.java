@@ -69,6 +69,7 @@ public class NacosNamingService implements NamingService {
      */
     private String namespace;
     
+    @Deprecated
     private String logName;
     
     private ServiceInfoHolder serviceInfoHolder;
@@ -107,6 +108,7 @@ public class NacosNamingService implements NamingService {
                 changeNotifier);
     }
     
+    @Deprecated
     private void initLogName(NacosClientProperties properties) {
         logName = properties.getProperty(UtilAndComs.NACOS_NAMING_LOG_NAME, DEFAULT_NAMING_LOG_FILE_PATH);
     }
@@ -494,7 +496,7 @@ public class NacosNamingService implements NamingService {
     
     private void checkAndStripGroupNamePrefix(Instance instance, String groupName) throws NacosException {
         String serviceName = instance.getServiceName();
-        if (serviceName != null) {
+        if (NamingUtils.isServiceNameCompatibilityMode(serviceName)) {
             String groupNameOfInstance = NamingUtils.getGroupName(serviceName);
             if (!groupName.equals(groupNameOfInstance)) {
                 throw new NacosException(NacosException.CLIENT_INVALID_PARAM, String.format(

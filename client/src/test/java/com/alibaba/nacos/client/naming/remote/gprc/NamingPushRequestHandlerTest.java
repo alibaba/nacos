@@ -21,6 +21,7 @@ package com.alibaba.nacos.client.naming.remote.gprc;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest;
 import com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse;
+import com.alibaba.nacos.api.remote.request.HealthCheckRequest;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
@@ -47,5 +48,13 @@ public class NamingPushRequestHandlerTest {
         //then
         Assert.assertTrue(response instanceof NotifySubscriberResponse);
         verify(holder, times(1)).processServiceInfo(info);
+    }
+    
+    @Test
+    public void testRequestReplyOtherType() {
+        ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
+        NamingPushRequestHandler handler = new NamingPushRequestHandler(holder);
+        Assert.assertNull(
+                handler.requestReply(new HealthCheckRequest(), new TestConnection(new RpcClient.ServerInfo())));
     }
 }

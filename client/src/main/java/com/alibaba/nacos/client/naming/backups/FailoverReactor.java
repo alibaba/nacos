@@ -29,9 +29,7 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
 
-import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -60,7 +58,7 @@ public class FailoverReactor implements Closeable {
     
     private String notifierEventScope;
     
-    private HashMap<String, Meter> meterMap = new HashMap<>(10);
+    private Map<String, Meter> meterMap = new HashMap<>(10);
     
     public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
@@ -85,9 +83,7 @@ public class FailoverReactor implements Closeable {
      * Init.
      */
     public void init() {
-        
         executorService.scheduleWithFixedDelay(new FailoverSwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
-        
     }
     
     class FailoverSwitchRefresher implements Runnable {
@@ -146,7 +142,6 @@ public class FailoverReactor implements Closeable {
                     serviceMap.clear();
                     failoverSwitchEnable = false;
                     failoverServiceCntMetricsClear();
-                    return;
                 }
             } catch (Exception e) {
                 NAMING_LOGGER.error("FailoverSwitchRefresher run err", e);
@@ -170,20 +165,6 @@ public class FailoverReactor implements Closeable {
     }
     
     /**
-     * Add day.
-     *
-     * @param date start time
-     * @param num  add day number
-     * @return new date
-     */
-    public Date addDay(Date date, int num) {
-        Calendar startDT = Calendar.getInstance();
-        startDT.setTime(date);
-        startDT.add(Calendar.DAY_OF_MONTH, num);
-        return startDT.getTime();
-    }
-    
-    /**
      * shutdown ThreadPool.
      *
      * @throws NacosException Nacos exception
@@ -200,10 +181,10 @@ public class FailoverReactor implements Closeable {
         try {
             for (Map.Entry<String, ServiceInfo> entry : failoverMap.entrySet()) {
                 String serviceName = entry.getKey();
-                Gauge register = Gauge.builder("nacos_naming_client_failover_instances",
-                                ((ServiceInfo) failoverMap.get(serviceName)).ipCount(), Integer::intValue)
-                        .tag("service_name", serviceName).description("Nacos failover data service count")
-                        .register(Metrics.globalRegistry);
+                Gauge register = Gauge
+                        .builder("nacos_naming_client_failover_instances", failoverMap.get(serviceName).ipCount(),
+                                Integer::intValue).tag("service_name", serviceName)
+                        .description("Nacos failover data service count").register(Metrics.globalRegistry);
                 meterMap.put(serviceName, register);
             }
         } catch (Exception e) {
