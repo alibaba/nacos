@@ -33,6 +33,7 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import junit.framework.TestCase;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -91,6 +92,12 @@ public class DumpAllProcessorTest extends TestCase {
                 configInfoTagPersistService, null, null);
         
         dumpAllProcessor = new DumpAllProcessor(configInfoPersistService);
+    }
+    
+    @After
+    public void after() throws Exception {
+        dynamicDataSourceMockedStatic.close();
+        envUtilMockedStatic.close();
     }
     
     private static int newConfigCount = 1;
