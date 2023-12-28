@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.config.server.service.repository.embedded;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -6,7 +22,6 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigOperateResult;
-import com.alibaba.nacos.config.server.utils.TestCaseUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
@@ -21,9 +36,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -38,7 +51,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-
+/**
+ *  test for embedded config tag.
+ * @author shiyiyue
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 public class EmbeddedConfigInfoTagPersistServiceImplTest {
     
@@ -47,15 +63,9 @@ public class EmbeddedConfigInfoTagPersistServiceImplTest {
     @Mock
     private DataSourceService dataSourceService;
     
-    @Mock
-    private JdbcTemplate jdbcTemplate;
-    
-    private TransactionTemplate transactionTemplate = TestCaseUtils.createMockTransactionTemplate();
-    
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     MockedStatic<EmbeddedStorageContextHolder> embeddedStorageContextHolderMockedStatic;
-    
     
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
     
@@ -85,7 +95,6 @@ public class EmbeddedConfigInfoTagPersistServiceImplTest {
         embeddedStorageContextHolderMockedStatic.close();
     }
     
-    
     @Test
     public void testInsertOrUpdateTagOfAdd() {
         String dataId = "dataId111222";
@@ -104,6 +113,7 @@ public class EmbeddedConfigInfoTagPersistServiceImplTest {
         
         Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null).thenReturn(configInfoStateWrapper);
+        
         String srcIp = "ip345678";
         String srcUser = "user1234567";
         ConfigOperateResult configOperateResult = embeddedConfigInfoTagPersistService.insertOrUpdateTag(configInfo, tag,
