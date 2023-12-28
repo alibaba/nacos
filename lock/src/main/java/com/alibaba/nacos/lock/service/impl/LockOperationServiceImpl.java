@@ -156,6 +156,7 @@ public class LockOperationServiceImpl extends RequestProcessor4CP implements Loc
                     lockInstance.getLockType(), paramSize, e.getMessage());
             throw e;
         } catch (Exception e) {
+            LOGGER.error("lock fail.", e);
             throw new NacosLockException("tryLock error.", e);
         }
     }
