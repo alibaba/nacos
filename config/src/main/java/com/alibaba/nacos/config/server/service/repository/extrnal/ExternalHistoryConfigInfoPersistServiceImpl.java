@@ -40,6 +40,7 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -136,7 +137,7 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         MapperContext context = new MapperContext();
-        context.putWhereParameter(FieldConstant.GMT_MODIFIED, startTime);
+        context.putWhereParameter(FieldConstant.START_TIME, startTime);
         context.putWhereParameter(FieldConstant.LIMIT_SIZE, limitSize);
         MapperResult mapperResult = historyConfigInfoMapper.removeConfigHistory(context);
         PaginationHelper<Object> paginationHelper = createPaginationHelper();
@@ -204,10 +205,13 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             ConfigHistoryInfo historyInfo = jt.queryForObject(sqlFetchRows, new Object[] {nid},
                     HISTORY_DETAIL_ROW_MAPPER);
             return historyInfo;
+        } catch (EmptyResultDataAccessException emptyResultDataAccessException) {
+            return null;
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[detail-config-history] error, nid:{}", new Object[] {nid}, e);
             throw e;
         }
+        
     }
     
     @Override
@@ -221,6 +225,8 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
             ConfigHistoryInfo historyInfo = jt.queryForObject(sqlFetchRows.getSql(),
                     sqlFetchRows.getParamList().toArray(), HISTORY_DETAIL_ROW_MAPPER);
             return historyInfo;
+        } catch (EmptyResultDataAccessException emptyResultDataAccessException) {
+            return null;
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[detail-previous-config-history] error, id:{}", new Object[] {id}, e);
             throw e;

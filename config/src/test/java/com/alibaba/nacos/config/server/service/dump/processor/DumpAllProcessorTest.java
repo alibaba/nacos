@@ -33,6 +33,7 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import junit.framework.TestCase;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -43,39 +44,38 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DumpAllProcessorTest extends TestCase {
-
+    
     @Mock
     DynamicDataSource dynamicDataSource;
-
+    
     @Mock
     DataSourceService dataSourceService;
-
+    
     @Mock
     ConfigInfoBetaPersistService configInfoBetaPersistService;
-
+    
     @Mock
     ConfigInfoTagPersistService configInfoTagPersistService;
-
+    
     DumpAllProcessor dumpAllProcessor;
-
+    
     ExternalDumpService dumpService;
-
+    
     MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-
+    
     @Mock
     ConfigInfoPersistService configInfoPersistService;
-
+    
     MockedStatic<EnvUtil> envUtilMockedStatic;
-
+    
     @Before
     public void init() throws Exception {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
@@ -85,17 +85,23 @@ public class DumpAllProcessorTest extends TestCase {
         when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class),
                 eq(false))).thenReturn(false);
         dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dynamicDataSource);
-
+        
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
-
+        
         dumpService = new ExternalDumpService(configInfoPersistService, null, null, null, configInfoBetaPersistService,
-                configInfoTagPersistService, null);
-
+                configInfoTagPersistService, null, null);
+        
         dumpAllProcessor = new DumpAllProcessor(configInfoPersistService);
     }
-
+    
+    @After
+    public void after() throws Exception {
+        dynamicDataSourceMockedStatic.close();
+        envUtilMockedStatic.close();
+    }
+    
     private static int newConfigCount = 1;
-
+    
     private ConfigInfoWrapper createNewConfig(int id) {
         ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
         String dataId = "dataIdTime" + newConfigCount;
@@ -110,7 +116,7 @@ public class DumpAllProcessorTest extends TestCase {
         newConfigCount++;
         return configInfoWrapper;
     }
-
+    
     @Test
     public void testDumpAll() throws IOException {
         ConfigInfoWrapper configInfoWrapper1 = createNewConfig(1);
@@ -122,16 +128,16 @@ public class DumpAllProcessorTest extends TestCase {
         page.setTotalCount(2);
         page.setPagesAvailable(2);
         page.setPageNumber(1);
-        ArrayList<ConfigInfoWrapper> list = Stream.of(configInfoWrapper1, configInfoWrapper2)
-                .collect(Collectors.toCollection(ArrayList::new));
+        List<ConfigInfoWrapper> list = Arrays.asList(configInfoWrapper1, configInfoWrapper2);
         page.setPageItems(list);
-
+        
         Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(2L);
-        Mockito.when(configInfoPersistService.findAllConfigInfoFragment(0, 1000))
-                .thenReturn(page);
-
-        String groupKey1 = GroupKey2.getKey(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(), configInfoWrapper1.getTenant());
-        String groupKey2 = GroupKey2.getKey(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(), configInfoWrapper2.getTenant());
+        Mockito.when(configInfoPersistService.findAllConfigInfoFragment(0, 1000)).thenReturn(page);
+        
+        String groupKey1 = GroupKey2.getKey(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(),
+                configInfoWrapper1.getTenant());
+        String groupKey2 = GroupKey2.getKey(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(),
+                configInfoWrapper2.getTenant());
         // For config 1, assign a latter time, to make sure that it would be updated.
         // For config 2, assign an earlier time, to make sure that it is not be updated.
         String md51 = MD5Utils.md5Hex(configInfoWrapper1.getContent(), "UTF-8");
@@ -139,41 +145,42 @@ public class DumpAllProcessorTest extends TestCase {
         long latterTimestamp = timestamp + 999;
         long earlierTimestamp = timestamp - 999;
         String encryptedDataKey = "testEncryptedDataKey";
-        ConfigCacheService.updateMd5(groupKey1, md51, latterTimestamp, encryptedDataKey);
-        ConfigCacheService.updateMd5(groupKey2, md52, earlierTimestamp, encryptedDataKey);
-
+        ConfigCacheService.dumpWithMd5(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(),
+                configInfoWrapper1.getTenant(), configInfoWrapper1.getContent(), md51, latterTimestamp, "json",
+                encryptedDataKey);
+        ConfigCacheService.dumpWithMd5(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(),
+                configInfoWrapper2.getTenant(), configInfoWrapper2.getContent(), md52, earlierTimestamp, "json",
+                encryptedDataKey);
+        
         DumpAllTask dumpAllTask = new DumpAllTask();
         boolean process = dumpAllProcessor.process(dumpAllTask);
         Assert.assertTrue(process);
-
+        
         //Check cache
-        CacheItem contentCache1 = ConfigCacheService.getContentCache(GroupKey2.getKey(
-                configInfoWrapper1.getDataId(),
-                configInfoWrapper1.getGroup(),
-                configInfoWrapper1.getTenant()));
+        CacheItem contentCache1 = ConfigCacheService.getContentCache(
+                GroupKey2.getKey(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(),
+                        configInfoWrapper1.getTenant()));
         Assert.assertEquals(md51, contentCache1.getConfigCache().getMd5Utf8());
         // check if config1 is updated
         Assert.assertTrue(timestamp < contentCache1.getConfigCache().getLastModifiedTs());
         //check disk
-        String contentFromDisk1 = ConfigDiskServiceFactory.getInstance().getContent(
-                configInfoWrapper1.getDataId(),
-                configInfoWrapper1.getGroup(),
-                configInfoWrapper1.getTenant());
+        String contentFromDisk1 = ConfigDiskServiceFactory.getInstance()
+                .getContent(configInfoWrapper1.getDataId(), configInfoWrapper1.getGroup(),
+                        configInfoWrapper1.getTenant());
         Assert.assertEquals(configInfoWrapper1.getContent(), contentFromDisk1);
-
+        
         //Check cache
-        CacheItem contentCache2 = ConfigCacheService.getContentCache(GroupKey2.getKey(
-                configInfoWrapper2.getDataId(),
-                configInfoWrapper2.getGroup(),
-                configInfoWrapper2.getTenant()));
-        Assert.assertEquals(MD5Utils.md5Hex(configInfoWrapper2.getContent(), "UTF-8"), contentCache2.getConfigCache().getMd5Utf8());
+        CacheItem contentCache2 = ConfigCacheService.getContentCache(
+                GroupKey2.getKey(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(),
+                        configInfoWrapper2.getTenant()));
+        Assert.assertEquals(MD5Utils.md5Hex(configInfoWrapper2.getContent(), "UTF-8"),
+                contentCache2.getConfigCache().getMd5Utf8());
         // check if config2 is updated
         Assert.assertEquals(timestamp, contentCache2.getConfigCache().getLastModifiedTs());
         //check disk
-        String contentFromDisk2 = ConfigDiskServiceFactory.getInstance().getContent(
-                configInfoWrapper2.getDataId(),
-                configInfoWrapper2.getGroup(),
-                configInfoWrapper2.getTenant());
+        String contentFromDisk2 = ConfigDiskServiceFactory.getInstance()
+                .getContent(configInfoWrapper2.getDataId(), configInfoWrapper2.getGroup(),
+                        configInfoWrapper2.getTenant());
         Assert.assertEquals(configInfoWrapper2.getContent(), contentFromDisk2);
     }
 }

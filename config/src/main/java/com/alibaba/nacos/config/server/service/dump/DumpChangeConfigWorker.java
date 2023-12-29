@@ -46,10 +46,17 @@ public class DumpChangeConfigWorker implements Runnable {
     
     Timestamp startTime;
     
-    public DumpChangeConfigWorker(DumpService dumpService, Timestamp startTime) {
-        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
-        this.historyConfigInfoPersistService = dumpService.getHistoryConfigInfoPersistService();
+    public DumpChangeConfigWorker(ConfigInfoPersistService configInfoPersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService, Timestamp startTime) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.startTime = startTime;
+    }
+    
+    int pageSize = 100;
+    
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
     }
     
     /**
@@ -68,7 +75,6 @@ public class DumpChangeConfigWorker implements Runnable {
             
             LogUtil.DEFAULT_LOG.info("Start to check delete configs from  time {}", startTime);
             
-            int pageSize = 100;
             long startDeletedConfigTime = System.currentTimeMillis();
             LogUtil.DEFAULT_LOG.info("Check delete configs from  time {}", startTime);
             
@@ -78,7 +84,7 @@ public class DumpChangeConfigWorker implements Runnable {
                 List<ConfigInfoWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize);
                 for (ConfigInfo configInfo : configDeleted) {
-                    if (configInfoPersistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
+                    if (configInfoPersistService.findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant()) == null) {
                         ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(),
                                 configInfo.getTenant());

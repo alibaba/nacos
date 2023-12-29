@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.config.server.service.dump;
 
+import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnExternalStorage;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
@@ -47,18 +48,21 @@ public class ExternalDumpService extends DumpService {
      * @param memberManager {@link ServerMemberManager}
      */
     public ExternalDumpService(ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService, HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            NamespacePersistService namespacePersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoAggrPersistService configInfoAggrPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager) {
+            ConfigInfoTagPersistService configInfoTagPersistService, MergeDatumService mergeDatumService,
+            ServerMemberManager memberManager) {
         super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, memberManager);
+                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService,
+                mergeDatumService, memberManager);
     }
     
     @PostConstruct
     @Override
     protected void init() throws Throwable {
-        dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
+        dumpOperate();
     }
     
     @Override

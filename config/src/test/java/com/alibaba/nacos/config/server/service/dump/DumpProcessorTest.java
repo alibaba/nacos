@@ -86,11 +86,11 @@ public class DumpProcessorTest {
         when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class),
                 eq(false))).thenReturn(false);
         dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dynamicDataSource);
-    
+        
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
-    
+        
         dumpService = new ExternalDumpService(configInfoPersistService, null, null, null, configInfoBetaPersistService,
-                configInfoTagPersistService, null);
+                configInfoTagPersistService, null, null);
         dumpProcessor = new DumpProcessor(configInfoPersistService, configInfoBetaPersistService,
                 configInfoTagPersistService);
         Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
