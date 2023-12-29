@@ -130,7 +130,8 @@ public class ServiceInfoHolder implements Closeable {
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
-            NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {},", serviceKey);
+            NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {}, " 
+                    + "pushEmptyProtection: {}, hosts: {}", serviceKey, pushEmptyProtection, serviceInfo.getHosts());
             return oldService;
         }
         serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
@@ -148,9 +149,7 @@ public class ServiceInfoHolder implements Closeable {
                                 serviceInfo.getClusters(), serviceInfo.getHosts()));
             }
             DiskCache.write(serviceInfo, cacheDir);
-        } else {
-            NAMING_LOGGER.info("process service info but nothing changed, serviceKey: {},", serviceKey);
-        }    
+        }
         return serviceInfo;
     }
     
