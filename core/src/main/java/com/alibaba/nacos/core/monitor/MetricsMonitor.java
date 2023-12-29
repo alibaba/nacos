@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.core.monitor;
 
+import com.alibaba.nacos.common.utils.StringUtils;
 import io.micrometer.core.instrument.DistributionSummary;
 import io.micrometer.core.instrument.ImmutableTag;
 import io.micrometer.core.instrument.Tag;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -281,5 +283,32 @@ public final class MetricsMonitor {
      */
     public static Map<String, AtomicInteger> getModuleConnectionCnt() {
         return moduleConnectionCnt;
+    }
+
+    /**
+     * record request event.
+     *
+     * @param requestClass      requestClass
+     * @param success           success
+     * @param errorCode         errorCode
+     * @param throwableClass    throwableClass
+     * @param module            module
+     * @param costTime              cost
+     */
+    public static void recordGrpcRequestEvent(String requestClass,
+                                              boolean success,
+                                              int errorCode,
+                                              String throwableClass,
+                                              String module,
+                                              long costTime) {
+        NacosMeterRegistryCenter.timer(METER_REGISTRY, "grpc_server_requests",
+                Arrays.asList(
+                        Tag.of("requestClass", requestClass),
+                        Tag.of("success", String.valueOf(success)),
+                        Tag.of("errorCode", String.valueOf(errorCode)),
+                        Tag.of("throwableClass", StringUtils.isBlank(throwableClass) ? "None" : throwableClass),
+                        Tag.of("module", StringUtils.isBlank(module) ? "unknown" : module)
+                )
+        ).record(costTime, TimeUnit.NANOSECONDS);
     }
 }
