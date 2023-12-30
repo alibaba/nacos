@@ -40,6 +40,7 @@ public class SdkDefaultTlsProtocolNegotiatorBuilderTest {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         builder = new SdkDefaultTlsProtocolNegotiatorBuilder();
+        setStaticField(RpcSdkServerTlsConfig.class, null, "instance");
     }
     
     @After
@@ -47,7 +48,7 @@ public class SdkDefaultTlsProtocolNegotiatorBuilderTest {
         RpcSdkServerTlsConfig.getInstance().setEnableTls(false);
         RpcSdkServerTlsConfig.getInstance().setCertChainFile(null);
         RpcSdkServerTlsConfig.getInstance().setCertPrivateKey(null);
-        clearRpcServerTlsConfigInstance();
+        setStaticField(RpcSdkServerTlsConfig.class, null, "instance");
     }
     
     @Test
@@ -63,9 +64,13 @@ public class SdkDefaultTlsProtocolNegotiatorBuilderTest {
         assertNotNull(builder.build());
     }
     
-    private static void clearRpcServerTlsConfigInstance() throws Exception {
-        Field instanceField = RpcSdkServerTlsConfig.class.getDeclaredField("instance");
-        instanceField.setAccessible(true);
-        instanceField.set(null, null);
+    private void setStaticField(Class<?> target, Object obj, String fieldName) {
+        try {
+            Field instanceField = target.getDeclaredField(fieldName);
+            instanceField.setAccessible(true);
+            instanceField.set(null, obj);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 }
