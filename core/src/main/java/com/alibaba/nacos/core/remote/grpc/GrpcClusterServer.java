@@ -80,7 +80,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
 
     @Override
     protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
-        protocolNegotiator = ProtocolNegotiatorBuilderManager.getInstance().get(CommunicationType.CLUSTER);
+        protocolNegotiator = ProtocolNegotiatorBuilderManager.getInstance().buildGrpcProtocolNegotiator(CommunicationType.CLUSTER);
         return Optional.ofNullable(protocolNegotiator);
     }
 

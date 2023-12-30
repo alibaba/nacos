@@ -104,7 +104,7 @@ public class GrpcSdkServer extends BaseGrpcServer {
 
     @Override
     protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
-        protocolNegotiator = ProtocolNegotiatorBuilderManager.getInstance().get(CommunicationType.SDK);
+        protocolNegotiator = ProtocolNegotiatorBuilderManager.getInstance().buildGrpcProtocolNegotiator(CommunicationType.SDK);
         return Optional.ofNullable(protocolNegotiator);
     }
 

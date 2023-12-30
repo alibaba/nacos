@@ -84,7 +84,7 @@ public class ProtocolNegotiatorBuilderManager {
         actualTypeMap = new HashMap<>();
         initActualTypeMap();
         try {
-            initAllBuilders();
+            initBuilders();
         } catch (Exception e) {
             Loggers.REMOTE.warn("Load ProtocolNegotiatorBuilder failed, use default ProtocolNegotiatorBuilder", e);
             initDefaultBuilder();
@@ -94,7 +94,7 @@ public class ProtocolNegotiatorBuilderManager {
     /**
      * Initialize all ProtocolNegotiatorBuilders using the SPI mechanism.
      */
-    private void initAllBuilders() {
+    private void initBuilders() {
         for (ProtocolNegotiatorBuilder each : NacosServiceLoader.load(ProtocolNegotiatorBuilder.class)) {
             builderMap.put(each.type(), each);
             Loggers.REMOTE.info("Load ProtocolNegotiatorBuilder {} for type {}", each.getClass().getCanonicalName(),
@@ -134,7 +134,7 @@ public class ProtocolNegotiatorBuilderManager {
      * @param communicationType The CommunicationType for which the ProtocolNegotiator is requested.
      * @return The ProtocolNegotiator instance.
      */
-    public NacosGrpcProtocolNegotiator get(CommunicationType communicationType) {
+    public NacosGrpcProtocolNegotiator buildGrpcProtocolNegotiator(CommunicationType communicationType) {
         String actualType = actualTypeMap.get(communicationType);
         if (StringUtils.isBlank(actualType)) {
             Loggers.REMOTE.warn("Not found actualType for communicationType {}.", communicationType);
@@ -145,6 +145,6 @@ public class ProtocolNegotiatorBuilderManager {
             Loggers.REMOTE.warn("Not found ProtocolNegotiatorBuilder for actualType {}.", actualType);
             return null;
         }
-        return builderMap.get(actualType).build();
+        return builder.build();
     }
 }
