@@ -16,114 +16,77 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.core.remote.BaseRpcServer;
 import com.alibaba.nacos.core.remote.tls.RpcClusterServerTlsConfig;
 import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
-import com.alibaba.nacos.core.remote.tls.RpcServerSslContextRefresher;
 import com.alibaba.nacos.core.remote.tls.RpcServerSslContextRefresherHolder;
-import com.alibaba.nacos.core.remote.tls.SslContextChangeAware;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MutablePropertySources;
-import org.springframework.core.env.PropertiesPropertySource;
-import org.springframework.mock.env.MockEnvironment;
 
-import java.util.Properties;
+import java.lang.reflect.Field;
 
 import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.when;
 
 /**
- * Test RpcServerSslContextRefresherHolderTest.
+ * Test RpcServerSslContextRefresherHolder.
  *
  * @author stone-98
  */
+@RunWith(MockitoJUnitRunner.class)
 public class RpcServerSslContextRefresherHolderTest {
 
+    @Mock
     private ConfigurableEnvironment environment;
+
+    @Mock
+    private RpcSdkServerTlsConfig sdkRpcConfig;
+
+    @Mock
+    private RpcClusterServerTlsConfig clusterConfig;
 
     @Before
     public void setUp() {
-        environment = new MockEnvironment();
-        MutablePropertySources propertySources = environment.getPropertySources();
-        Properties properties = new Properties();
-        properties.setProperty(RpcSdkServerTlsConfig.PREFIX + ".sslContextRefresher", "sdk-test-refresher");
-        properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".sslContextRefresher", "cluster-test-refresher");
-
-        PropertiesPropertySource propertySource = new PropertiesPropertySource("myPropertySource", properties);
-        propertySources.addLast(propertySource);
+        reset();
         EnvUtil.setEnvironment(environment);
     }
 
     @After
     public void tearDown() {
+        reset();
     }
 
     @Test
     public void testInit() {
-        // Call init to initialize the holders
+        setStaticField(RpcSdkServerTlsConfig.class, sdkRpcConfig, "instance");
+        setStaticField(RpcClusterServerTlsConfig.class, clusterConfig, "instance");
+        when(sdkRpcConfig.getSslContextRefresher()).thenReturn("sdk-refresher-test");
+        when(clusterConfig.getSslContextRefresher()).thenReturn("cluster-refresher-test");
         RpcServerSslContextRefresherHolder.init();
-
-        // Check if instances are not null after initialization
         assertNotNull(RpcServerSslContextRefresherHolder.getClusterInstance());
         assertNotNull(RpcServerSslContextRefresherHolder.getSdkInstance());
     }
 
-    public static class SdkRpcServerSslContextRefresherTest implements RpcServerSslContextRefresher {
-
-        @Override
-        public SslContextChangeAware refresh(BaseRpcServer baseRpcServer) {
-            return new SslContextChangeAware() {
-                @Override
-                public void init(BaseRpcServer baseRpcServer) {
-
-                }
-
-                @Override
-                public void onSslContextChange() {
-
-                }
-
-                @Override
-                public void shutdown() {
-
-                }
-            };
-        }
-
-        @Override
-        public String getName() {
-            return "sdk-test-refresher";
-        }
+    private void reset() {
+        setStaticField(RpcSdkServerTlsConfig.class, sdkRpcConfig, "instance");
+        setStaticField(RpcClusterServerTlsConfig.class, clusterConfig, "instance");
+        setStaticField(RpcServerSslContextRefresherHolder.class, null, "clusterInstance");
+        setStaticField(RpcServerSslContextRefresherHolder.class, null, "sdkInstance");
+        setStaticField(RpcServerSslContextRefresherHolder.class, false, "init");
     }
 
-    public static class ClusterRpcServerSslContextRefresherTest implements RpcServerSslContextRefresher {
-
-        @Override
-        public SslContextChangeAware refresh(BaseRpcServer baseRpcServer) {
-            return new SslContextChangeAware() {
-                @Override
-                public void init(BaseRpcServer baseRpcServer) {
-
-                }
-
-                @Override
-                public void onSslContextChange() {
-
-                }
-
-                @Override
-                public void shutdown() {
-
-                }
-            };
-        }
-
-        @Override
-        public String getName() {
-            return "cluster-test-refresher";
+    private void setStaticField(Class<?> target, Object obj, String fieldName) {
+        try {
+            Field instanceField = target.getDeclaredField(fieldName);
+            instanceField.setAccessible(true);
+            instanceField.set(null, obj);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
         }
     }
 }

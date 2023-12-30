@@ -54,12 +54,12 @@ public class ProtocolNegotiatorBuilderManager {
     /**
      * Property key for configuring the ProtocolNegotiator type for cluster communication.
      */
-    private static final String CLUSTER_TYPE_PROPERTY_KEY = "nacos.remote.cluster.server.rpc.protocol.negotiator.type";
+    public static final String CLUSTER_TYPE_PROPERTY_KEY = "nacos.remote.cluster.server.rpc.protocol.negotiator.type";
 
     /**
      * Property key for configuring the ProtocolNegotiator type for SDK communication.
      */
-    private static final String SDK_TYPE_PROPERTY_KEY = "nacos.remote.sdk.server.rpc.protocol.negotiator.type";
+    public static final String SDK_TYPE_PROPERTY_KEY = "nacos.remote.sdk.server.rpc.protocol.negotiator.type";
 
     /**
      * Singleton instance of ProtocolNegotiatorBuilderManager.
