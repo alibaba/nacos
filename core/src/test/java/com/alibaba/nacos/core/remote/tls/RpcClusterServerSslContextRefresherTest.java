@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.remote.tls;
 
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 
-public  class ClusterRpcServerSslContextRefresherTest implements RpcServerSslContextRefresher {
+public  class RpcClusterServerSslContextRefresherTest implements RpcServerSslContextRefresher {
 
     @Override
     public SslContextChangeAware refresh(BaseRpcServer baseRpcServer) {
