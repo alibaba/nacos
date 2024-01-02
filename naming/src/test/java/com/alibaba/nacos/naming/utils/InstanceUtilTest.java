@@ -92,15 +92,15 @@ public class InstanceUtilTest {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
         instance.setPort(8890);
-        instance.setServiceName("test");
+        String groupedServiceName = "test";
         instance.setClusterName("testCluster");
-        InstanceUtil.setInstanceIdIfEmpty(instance);
+        InstanceUtil.setInstanceIdIfEmpty(instance, groupedServiceName);
         assertNotNull(instance.getInstanceId());
         assertEquals(instance.getInstanceId(), InstanceIdGeneratorManager.generateInstanceId(instance));
         String customInsId = "customInstanceId_1";
         Instance instance1 = new Instance();
         instance1.setInstanceId(customInsId);
-        InstanceUtil.setInstanceIdIfEmpty(instance1);
+        InstanceUtil.setInstanceIdIfEmpty(instance1, groupedServiceName);
         assertEquals(instance1.getInstanceId(), customInsId);
     }
     
@@ -116,7 +116,7 @@ public class InstanceUtilTest {
         instances.add(instance1);
         instances.add(instance2);
         instances.add(instance3);
-        InstanceUtil.batchSetInstanceIdIfEmpty(instances);
+        InstanceUtil.batchSetInstanceIdIfEmpty(instances, "test");
         assertNotNull(instance1.getInstanceId());
         assertNotNull(instance2.getInstanceId());
         assertNotNull(instance3.getInstanceId());

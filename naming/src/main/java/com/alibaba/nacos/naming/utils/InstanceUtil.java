@@ -87,7 +87,7 @@ public final class InstanceUtil {
 
     /**
      * Deepcopy one instance.
-     * 
+     *
      * @param source instance to be deepcopy
      */
     public static Instance deepCopy(Instance source) {
@@ -109,9 +109,13 @@ public final class InstanceUtil {
      * If the instance id is empty, use the default-instance-id-generator method to set the instance id.
      *
      * @param instance    instance from request
+     * @param groupedServiceName groupedServiceName from service
      */
-    public static void setInstanceIdIfEmpty(Instance instance) {
+    public static void setInstanceIdIfEmpty(Instance instance, String groupedServiceName) {
         if (null != instance && StringUtils.isEmpty(instance.getInstanceId())) {
+            if (StringUtils.isBlank(instance.getServiceName())) {
+                instance.setServiceName(groupedServiceName);
+            }
             instance.setInstanceId(InstanceIdGeneratorManager.generateInstanceId(instance));
         }
     }
@@ -120,11 +124,12 @@ public final class InstanceUtil {
      * Batch set instance id if empty.
      *
      * @param instances   instances from request
+     * @param groupedServiceName groupedServiceName from service
      */
-    public static void batchSetInstanceIdIfEmpty(List<Instance> instances) {
+    public static void batchSetInstanceIdIfEmpty(List<Instance> instances, String groupedServiceName) {
         if (null != instances) {
             for (Instance instance : instances) {
-                setInstanceIdIfEmpty(instance);
+                setInstanceIdIfEmpty(instance, groupedServiceName);
             }
         }
     }
