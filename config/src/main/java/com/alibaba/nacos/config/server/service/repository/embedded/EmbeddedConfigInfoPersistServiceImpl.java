@@ -127,7 +127,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     
     private final IdGeneratorManager idGeneratorManager;
     
-    private MapperManager mapperManager;
+    MapperManager mapperManager;
     
     private HistoryConfigInfoPersistService historyConfigInfoPersistService;
     
@@ -184,11 +184,11 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     private ConfigOperateResult getConfigInfoOperateResult(String dataId, String group, String tenant) {
-        ConfigInfoStateWrapper configInfo4Beta = this.findConfigInfoState(dataId, group, tenant);
-        if (configInfo4Beta == null) {
+        ConfigInfoStateWrapper configInfo4 = this.findConfigInfoState(dataId, group, tenant);
+        if (configInfo4 == null) {
             return new ConfigOperateResult(false);
         }
-        return new ConfigOperateResult(configInfo4Beta.getId(), configInfo4Beta.getLastModified());
+        return new ConfigOperateResult(configInfo4.getId(), configInfo4.getLastModified());
         
     }
     
@@ -256,7 +256,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
-        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
+        final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE);
         final String encryptedDataKey =
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
@@ -338,7 +338,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             configAdvanceInfo.put("type", type);
             configAdvanceInfo.put("desc", configInfo.getDesc());
             try {
-                ConfigInfo foundCfg = findConfigInfo(configInfo2Save.getDataId(), configInfo2Save.getGroup(),
+                ConfigInfoStateWrapper foundCfg = findConfigInfoState(configInfo2Save.getDataId(), configInfo2Save.getGroup(),
                         configInfo2Save.getTenant());
                 if (foundCfg != null) {
                     throw new Throwable("DuplicateKeyException: config already exists, should be overridden");
@@ -363,6 +363,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                         skipitem.put("dataId", skipConfigInfo.getDataId());
                         skipitem.put("group", skipConfigInfo.getGroup());
                         skipData.add(skipitem);
+                        skipCount++;
                     }
                     break;
                 } else if (SameConfigPolicy.SKIP.equals(policy)) {
@@ -586,7 +587,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
         final String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
-        
+        final String encryptedDataKey =
+                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         Timestamp time = new Timestamp(System.currentTimeMillis());
@@ -602,7 +604,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         context.putUpdateParameter(FieldConstant.EFFECT, effect);
         context.putUpdateParameter(FieldConstant.TYPE, type);
         context.putUpdateParameter(FieldConstant.C_SCHEMA, schema);
-        
+        context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY,encryptedDataKey);
         context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());
         context.putWhereParameter(FieldConstant.GROUP_ID, configInfo.getGroup());
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);
