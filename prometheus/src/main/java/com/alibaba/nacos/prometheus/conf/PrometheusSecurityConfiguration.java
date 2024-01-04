@@ -16,12 +16,8 @@
 
 package com.alibaba.nacos.prometheus.conf;
 
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.web.builders.WebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 
 import static com.alibaba.nacos.prometheus.api.ApiConstants.PROMETHEUS_CONTROLLER_NAMESPACE_PATH;
