@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.control.tps.barrier;
 
+import com.alibaba.nacos.plugin.control.tps.MonitorType;
 import com.alibaba.nacos.plugin.control.tps.TpsMetrics;
 import com.alibaba.nacos.plugin.control.tps.request.BarrierCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
@@ -57,9 +58,12 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     @Override
     public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest) {
-        
+        long count = rateCounter.getCount(barrierCheckRequest.getTimestamp());
+        long maxCount = getMaxCount();
+        if (MonitorType.INTERCEPT.getType().equals(getMonitorType()) && maxCount >= 0 && count >= maxCount) {
+            return new TpsCheckResponse(false, TpsResultCode.DENY_BY_POINT, "tps over limit :" + maxCount);
+        }
         rateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
-        
         return new TpsCheckResponse(true, TpsResultCode.PASS_BY_POINT, "success");
     }
     
@@ -108,5 +112,4 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
             this.setMonitorType(ruleDetail.getMonitorType());
         }
     }
-    
 }
