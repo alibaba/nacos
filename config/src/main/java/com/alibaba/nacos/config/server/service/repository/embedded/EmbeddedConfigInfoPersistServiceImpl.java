@@ -229,7 +229,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     @Override
     public ConfigOperateResult insertOrUpdate(String srcIp, String srcUser, ConfigInfo configInfo,
             Map<String, Object> configAdvanceInfo) {
-        if (Objects.isNull(findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
+        if (Objects.isNull(
+                findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
             return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
         } else {
             return updateConfigInfo(configInfo, srcIp, srcUser, configAdvanceInfo);
@@ -239,7 +240,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     @Override
     public ConfigOperateResult insertOrUpdateCas(String srcIp, String srcUser, ConfigInfo configInfo,
             Map<String, Object> configAdvanceInfo) {
-        if (Objects.isNull(findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
+        if (Objects.isNull(
+                findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()))) {
             return addConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo);
         } else {
             return updateConfigInfoCas(configInfo, srcIp, srcUser, configAdvanceInfo);
@@ -338,8 +340,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             configAdvanceInfo.put("type", type);
             configAdvanceInfo.put("desc", configInfo.getDesc());
             try {
-                ConfigInfoStateWrapper foundCfg = findConfigInfoState(configInfo2Save.getDataId(), configInfo2Save.getGroup(),
-                        configInfo2Save.getTenant());
+                ConfigInfoStateWrapper foundCfg = findConfigInfoState(configInfo2Save.getDataId(),
+                        configInfo2Save.getGroup(), configInfo2Save.getTenant());
                 if (foundCfg != null) {
                     throw new Throwable("DuplicateKeyException: config already exists, should be overridden");
                 }
@@ -604,7 +606,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         context.putUpdateParameter(FieldConstant.EFFECT, effect);
         context.putUpdateParameter(FieldConstant.TYPE, type);
         context.putUpdateParameter(FieldConstant.C_SCHEMA, schema);
-        context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY,encryptedDataKey);
+        context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY, encryptedDataKey);
         context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());
         context.putWhereParameter(FieldConstant.GROUP_ID, configInfo.getGroup());
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);

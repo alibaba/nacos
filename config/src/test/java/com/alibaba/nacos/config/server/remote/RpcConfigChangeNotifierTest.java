@@ -81,7 +81,7 @@ public class RpcConfigChangeNotifierTest {
         
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         envUtilMockedStatic.when(
-                        () -> EnvUtil.getProperty(eq("nacos.config.push.maxRetryTime"), eq(Integer.class), anyInt()))
+                () -> EnvUtil.getProperty(eq("nacos.config.push.maxRetryTime"), eq(Integer.class), anyInt()))
                 .thenReturn(3);
         controlManagerCenterMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
         Mockito.when(ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
@@ -131,7 +131,7 @@ public class RpcConfigChangeNotifierTest {
         
         rpcConfigChangeNotifier.onEvent(new LocalDataChangeEvent(groupKey, true, betaIps));
         //wait rpc push executed.
-        Thread.sleep(50l);
+        Thread.sleep(50L);
         //expect rpc push task run.
         Mockito.verify(rpcPushService, times(1)).pushWithCallback(eq("con1"), any(ConfigChangeNotifyRequest.class),
                 any(RpcConfigChangeNotifier.RpcPushCallback.class), any(Executor.class));
@@ -145,8 +145,7 @@ public class RpcConfigChangeNotifierTest {
         MockedStatic<ConfigExecutor> configExecutorMockedStatic = Mockito.mockStatic(ConfigExecutor.class);
         try {
             RpcConfigChangeNotifier.RpcPushTask task = Mockito.mock(RpcConfigChangeNotifier.RpcPushTask.class);
-            RpcConfigChangeNotifier.RpcPushCallback rpcPushCallback = new RpcConfigChangeNotifier.RpcPushCallback(task,
-                    tpsControlManager, connectionManager);
+            
             Mockito.when(task.getConnectionId()).thenReturn("testconn1");
             Mockito.when(connectionManager.getConnection(eq("testconn1")))
                     .thenReturn(Mockito.mock(GrpcConnection.class));
@@ -157,7 +156,8 @@ public class RpcConfigChangeNotifierTest {
             //mock task not overtimes and receive exception on callback
             Mockito.when(task.isOverTimes()).thenReturn(false);
             Mockito.when(task.getTryTimes()).thenReturn(2);
-            
+            RpcConfigChangeNotifier.RpcPushCallback rpcPushCallback = new RpcConfigChangeNotifier.RpcPushCallback(task,
+                    tpsControlManager, connectionManager);
             rpcPushCallback.onFail(new RuntimeException());
             
             //expect config push fail be recorded.
@@ -182,12 +182,15 @@ public class RpcConfigChangeNotifierTest {
         
     }
     
+    static final String POINT_CONFIG_PUSH = "CONFIG_PUSH_COUNT";
+    
+    static final String POINT_CONFIG_PUSH_SUCCESS = "CONFIG_PUSH_SUCCESS";
+    
+    static final String POINT_CONFIG_PUSH_FAIL = "CONFIG_PUSH_FAIL";
+    
     @Test
     public void testRegisterTpsPoint() {
         
-        String POINT_CONFIG_PUSH = "CONFIG_PUSH_COUNT";
-        String POINT_CONFIG_PUSH_SUCCESS = "CONFIG_PUSH_SUCCESS";
-        String POINT_CONFIG_PUSH_FAIL = "CONFIG_PUSH_FAIL";
         rpcConfigChangeNotifier.registerTpsPoint();
         Mockito.verify(tpsControlManager, Mockito.times(1)).registerTpsPoint(eq(POINT_CONFIG_PUSH));
         Mockito.verify(tpsControlManager, Mockito.times(1)).registerTpsPoint(eq(POINT_CONFIG_PUSH_SUCCESS));

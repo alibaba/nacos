@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.controller;
 
-import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
@@ -28,7 +27,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
@@ -41,7 +39,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.servlet.ServletContext;
-
 import java.sql.Timestamp;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -118,11 +115,11 @@ public class CapacityControllerTest {
                 .param("tenant", "");
         String actualValue2 = mockMvc.perform(builder2).andReturn().getResponse().getContentAsString();
         System.out.println(actualValue2);
-    
+        
         // tenant is blank& group is null
         when(capacityService.getCapacityWithDefault(eq("g1"), eq("123"))).thenThrow(new NullPointerException());
         MockHttpServletRequestBuilder builder3 = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_PATH)
-                .param("tenant", "123").param("group","g1");
+                .param("tenant", "123").param("group", "g1");
         String actualValue3 = mockMvc.perform(builder3).andReturn().getResponse().getContentAsString();
         System.out.println(actualValue3);
     }

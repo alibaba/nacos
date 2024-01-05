@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -362,7 +361,5 @@ public class TenantCapacityPersistServiceTest {
         Assert.assertEquals(maxAggrCount, groupCapacity.getMaxAggrCount().intValue());
         Assert.assertEquals(maxAggrSize, groupCapacity.getMaxAggrSize().intValue());
         Assert.assertEquals(tenant, groupCapacity.getTenant());
-        
-        
     }
 }

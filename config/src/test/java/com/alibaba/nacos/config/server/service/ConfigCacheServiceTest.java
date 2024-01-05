@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -83,12 +99,12 @@ public class ConfigCacheServiceTest {
         
         //modified ts and content and md5
         String contentNew = content + "11";
-        String newMd5 = MD5Utils.md5Hex(contentNew, "UTF-8");
         long newTs = System.currentTimeMillis() + 12L;
         ConfigCacheService.dump(dataId, group, tenant, contentNew, newTs, type, encryptedDataKey);
         //expect save to disk invoked.
         Mockito.verify(configDiskService, times(1)).saveToDisk(eq(dataId), eq(group), eq(tenant), eq(contentNew));
         Assert.assertEquals(newTs, contentCache1.getConfigCache().getLastModifiedTs());
+        String newMd5 = MD5Utils.md5Hex(contentNew, "UTF-8");
         Assert.assertEquals(newMd5, contentCache1.getConfigCache().getMd5Utf8());
         
         //modified ts old
@@ -222,7 +238,6 @@ public class ConfigCacheServiceTest {
         Assert.assertNull(betaCacheAfterRemove);
     }
     
-    
     @Test
     public void testDumpTag() throws Exception {
         String dataId = "dataIdtestDumpTag133323";
@@ -230,7 +245,6 @@ public class ConfigCacheServiceTest {
         String tenant = "tenant112";
         String content = "mockContnet11";
         String tag = "tag12345";
-        String md5 = MD5Utils.md5Hex(content, "UTF-8");
         String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String encryptedDataKey = "key12345";
         long ts = System.currentTimeMillis();
@@ -243,6 +257,7 @@ public class ConfigCacheServiceTest {
         CacheItem contentCache = ConfigCacheService.getContentCache(groupKey);
         ConfigCache configCacheTag = contentCache.getConfigCacheTags().get(tag);
         Assert.assertEquals(ts, configCacheTag.getLastModifiedTs());
+        String md5 = MD5Utils.md5Hex(content, "UTF-8");
         Assert.assertEquals(md5, configCacheTag.getMd5Utf8());
         
         //ts newer ,md5 update
@@ -296,6 +311,5 @@ public class ConfigCacheServiceTest {
         Map<String, ConfigCache> configCacheTags = ConfigCacheService.getContentCache(groupKey).getConfigCacheTags();
         Assert.assertNull(configCacheTags);
     }
-    
     
 }

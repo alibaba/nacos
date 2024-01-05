@@ -316,8 +316,6 @@ public class GroupCapacityPersistServiceTest {
         Assert.assertEquals(maxAggrCount, groupCapacity.getMaxAggrCount().intValue());
         Assert.assertEquals(maxAggrSize, groupCapacity.getMaxAggrSize().intValue());
         Assert.assertEquals(group, groupCapacity.getGroup());
-        
-        
     }
     
     @Test

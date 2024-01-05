@@ -172,13 +172,8 @@ public class LongPollingService {
     public void addLongPollingClient(HttpServletRequest req, HttpServletResponse rsp, Map<String, String> clientMd5Map,
             int probeRequestSize) {
         
-        String str = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
         String noHangUpFlag = req.getHeader(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER);
-        int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
-        int minLongPoolingTimeout = SwitchService.getSwitchInteger("MIN_LONG_POOLING_TIMEOUT", 10000);
         
-        // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
-        long timeout = Math.max(minLongPoolingTimeout, Long.parseLong(str) - delayTime);
         long start = System.currentTimeMillis();
         List<String> changedGroups = MD5Util.compareMd5(req, rsp, clientMd5Map);
         if (changedGroups.size() > 0) {
@@ -202,12 +197,19 @@ public class LongPollingService {
         ConnectionCheckResponse connectionCheckResponse = checkLimit(req);
         if (!connectionCheckResponse.isSuccess()) {
             RpcScheduledExecutor.CONTROL_SCHEDULER.schedule(
-                    () -> generate503Response(asyncContext, rsp, connectionCheckResponse.getMessage()), 1000L + new Random().nextInt(2000), TimeUnit.MILLISECONDS);
+                    () -> generate503Response(asyncContext, rsp, connectionCheckResponse.getMessage()),
+                    1000L + new Random().nextInt(2000), TimeUnit.MILLISECONDS);
             return;
         }
-    
+        
         String appName = req.getHeader(RequestUtil.CLIENT_APPNAME_HEADER);
         String tag = req.getHeader("Vipserver-Tag");
+        int delayTime = SwitchService.getSwitchInteger(SwitchService.FIXED_DELAY_TIME, 500);
+        int minLongPoolingTimeout = SwitchService.getSwitchInteger("MIN_LONG_POOLING_TIMEOUT", 10000);
+        
+        // Add delay time for LoadBalance, and one response is returned 500 ms in advance to avoid client timeout.
+        String requestLongPollingTimeOut = req.getHeader(LongPollingService.LONG_POLLING_HEADER);
+        long timeout = Math.max(minLongPoolingTimeout, Long.parseLong(requestLongPollingTimeOut) - delayTime);
         ConfigExecutor.executeLongPolling(
                 new ClientLongPolling(asyncContext, clientMd5Map, ip, probeRequestSize, timeout, appName, tag));
     }

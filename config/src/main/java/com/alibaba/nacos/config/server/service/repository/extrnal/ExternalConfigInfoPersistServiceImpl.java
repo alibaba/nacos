@@ -628,8 +628,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             context.putUpdateParameter(FieldConstant.EFFECT, effect);
             context.putUpdateParameter(FieldConstant.TYPE, type);
             context.putUpdateParameter(FieldConstant.C_SCHEMA, schema);
-            context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY,encryptedDataKey);
-    
+            context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY, encryptedDataKey);
             context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());
             context.putWhereParameter(FieldConstant.GROUP_ID, configInfo.getGroup());
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);

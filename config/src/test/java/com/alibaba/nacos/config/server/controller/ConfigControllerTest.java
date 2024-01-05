@@ -41,7 +41,6 @@ import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.checkerframework.checker.units.qual.C;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -182,8 +181,7 @@ public class ConfigControllerTest {
         String group = "group34567";
         String tenant = "tenant45678";
         resultInfos.add(new ConfigInfo(dataId, group, tenant));
-        Mockito.when(
-                        configInfoPersistService.removeConfigInfoByIds(eq(Arrays.asList(1L, 2L)), anyString(), eq(null)))
+        Mockito.when(configInfoPersistService.removeConfigInfoByIds(eq(Arrays.asList(1L, 2L)), anyString(), eq(null)))
                 .thenReturn(resultInfos);
         AtomicReference<ConfigDataChangeEvent> reference = new AtomicReference<>();
         NotifyCenter.registerSubscriber(new Subscriber() {
@@ -380,20 +378,20 @@ public class ConfigControllerTest {
         String group = "group2";
         String tenant = "tenant234";
         String appname = "appname2";
-        List<ConfigAllInfo> dataList = new ArrayList<>();
         ConfigAllInfo configAllInfo = new ConfigAllInfo();
         configAllInfo.setDataId(dataId);
         configAllInfo.setGroup(group);
         configAllInfo.setTenant(tenant);
         configAllInfo.setContent("contet45678");
         configAllInfo.setAppName(appname);
+        List<ConfigAllInfo> dataList = new ArrayList<>();
         dataList.add(configAllInfo);
         
         Mockito.when(configInfoPersistService.findAllConfigInfo4Export(eq(dataId), eq(group), eq(tenant), eq(appname),
                 eq(Arrays.asList(1L, 2L)))).thenReturn(dataList);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_PATH)
-                .param("export", "true").param("dataId", dataId).param("group", group).param("tenant", tenant).param("appName",appname)
-                .param("ids", "1,2");
+                .param("export", "true").param("dataId", dataId).param("group", group).param("tenant", tenant)
+                .param("appName", appname).param("ids", "1,2");
         
         int actualValue = mockmvc.perform(builder).andReturn().getResponse().getStatus();
         
@@ -406,19 +404,19 @@ public class ConfigControllerTest {
         String group = "group2";
         String tenant = "tenant234";
         String appname = "appname2";
-        List<ConfigAllInfo> dataList = new ArrayList<>();
         ConfigAllInfo configAllInfo = new ConfigAllInfo();
         configAllInfo.setDataId(dataId);
         configAllInfo.setGroup(group);
         configAllInfo.setTenant(tenant);
         configAllInfo.setAppName(appname);
         configAllInfo.setContent("content1234");
+        List<ConfigAllInfo> dataList = new ArrayList<>();
         dataList.add(configAllInfo);
         Mockito.when(configInfoPersistService.findAllConfigInfo4Export(eq(dataId), eq(group), eq(tenant), eq(appname),
                 eq(Arrays.asList(1L, 2L)))).thenReturn(dataList);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_PATH)
-                .param("exportV2", "true").param("dataId", dataId).param("group", group).param("tenant", tenant).param("appName", appname)
-                .param("ids", "1,2");
+                .param("exportV2", "true").param("dataId", dataId).param("group", group).param("tenant", tenant)
+                .param("appName", appname).param("ids", "1,2");
         
         int actualValue = mockmvc.perform(builder).andReturn().getResponse().getStatus();
         
@@ -458,7 +456,6 @@ public class ConfigControllerTest {
     
     @Test
     public void testImportAndPublishConfigV2() throws Exception {
-        MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class);
         List<ZipUtils.ZipItem> zipItems = new ArrayList<>();
         String dataId = "dataId23456.json";
         String group = "group132";
@@ -476,7 +473,7 @@ public class ConfigControllerTest {
         ZipUtils.UnZipResult unziped = new ZipUtils.UnZipResult(zipItems,
                 new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, YamlParserUtil.dumpObject(configMetadata)));
         MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
-        
+        MockedStatic<ZipUtils> zipUtilsMockedStatic = Mockito.mockStatic(ZipUtils.class);
         zipUtilsMockedStatic.when(() -> ZipUtils.unzip(eq(file.getBytes()))).thenReturn(unziped);
         when(namespacePersistService.tenantInfoCountByTenantId("public")).thenReturn(1);
         Map<String, Object> map = new HashMap<>();

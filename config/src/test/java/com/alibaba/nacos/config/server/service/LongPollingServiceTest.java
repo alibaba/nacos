@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -10,7 +26,6 @@ import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
-import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,7 +53,6 @@ import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LongPollingServiceTest {
-    
     
     LongPollingService longPollingService;
     
@@ -82,11 +96,6 @@ public class LongPollingServiceTest {
     @Test
     public void testAddLongPollingClientHasNotEqualsMd5() throws IOException {
         
-        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
-        PrintWriter printWriter = Mockito.mock(PrintWriter.class);
-        Mockito.when(httpServletResponse.getWriter()).thenReturn(printWriter);
-        
         Map<String, String> clientMd5Map = new HashMap<>();
         String group = "group";
         String tenant = "tenat";
@@ -98,8 +107,8 @@ public class LongPollingServiceTest {
         clientMd5Map.put(groupKeyEquals, md5Equals0);
         String md5NotEquals1 = MD5Utils.md5Hex("countNotEquals", "UTF-8");
         clientMd5Map.put(groupKeyNotEquals, md5NotEquals1);
-        int propSize = 3;
         
+        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("5000");
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
                 .thenReturn(null);
@@ -107,11 +116,15 @@ public class LongPollingServiceTest {
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         
         configCacheServiceMockedStatic.when(
-                        () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
+                () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
                 .thenReturn(false);
         configCacheServiceMockedStatic.when(
-                        () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
+                () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
                 .thenReturn(true);
+        HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
+        PrintWriter printWriter = Mockito.mock(PrintWriter.class);
+        Mockito.when(httpServletResponse.getWriter()).thenReturn(printWriter);
+        int propSize = 3;
         longPollingService.addLongPollingClient(httpServletRequest, httpServletResponse, clientMd5Map, propSize);
         
         String responseString = MD5Util.compareMd5ResultString(Arrays.asList(groupKeyNotEquals));
@@ -127,21 +140,19 @@ public class LongPollingServiceTest {
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         connectionCheckResponse.setSuccess(false);
         Mockito.when(connectionControlManager.check(any())).thenReturn(connectionCheckResponse);
-        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         PrintWriter printWriter = Mockito.mock(PrintWriter.class);
         Mockito.when(httpServletResponse.getWriter()).thenReturn(printWriter);
-    
-        Map<String, String> clientMd5Map = new HashMap<>();
-        int propSize = 3;
         
+        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("5000");
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
                 .thenReturn(null);
         String clientIp = "192.168.0.1";
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         Mockito.when(httpServletRequest.startAsync()).thenReturn(Mockito.mock(AsyncContext.class));
-        
+        int propSize = 3;
+        Map<String, String> clientMd5Map = new HashMap<>();
         longPollingService.addLongPollingClient(httpServletRequest, httpServletResponse, clientMd5Map, propSize);
         Thread.sleep(3000L);
         //expect response not returned
@@ -155,8 +166,6 @@ public class LongPollingServiceTest {
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         connectionCheckResponse.setSuccess(true);
         Mockito.when(connectionControlManager.check(any())).thenReturn(connectionCheckResponse);
-        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         
         Map<String, String> clientMd5Map = new HashMap<>();
         String group = "group";
@@ -169,7 +178,7 @@ public class LongPollingServiceTest {
         clientMd5Map.put(groupKeyEquals, md5Equals0);
         String md5NotEquals1 = MD5Utils.md5Hex("countNotEquals1", "UTF-8");
         clientMd5Map.put(groupKeyNotEquals, md5NotEquals1);
-        int propSize = 3;
+        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("5000");
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
@@ -178,11 +187,13 @@ public class LongPollingServiceTest {
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         Mockito.when(httpServletRequest.startAsync()).thenReturn(Mockito.mock(AsyncContext.class));
         configCacheServiceMockedStatic.when(
-                        () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
+                () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
                 .thenReturn(true);
         configCacheServiceMockedStatic.when(
-                        () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
+                () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
                 .thenReturn(true);
+        int propSize = 3;
+        HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         longPollingService.addLongPollingClient(httpServletRequest, httpServletResponse, clientMd5Map, propSize);
         
         //expect response not returned
@@ -196,22 +207,22 @@ public class LongPollingServiceTest {
     @Test
     public void testReceiveDataChangeEventAndNotify() throws Exception {
         configExecutorMocked.close();
-        String dataIdChanged = "dataIdChanged";
-        String group = "group";
-        String tenant = "tenant";
-        String groupKeyChanged = GroupKey.getKeyTenant(dataIdChanged, group, tenant);
         
         //mock connection no limit
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         connectionCheckResponse.setSuccess(true);
         Mockito.when(connectionControlManager.check(any())).thenReturn(connectionCheckResponse);
+        
+        String dataIdChanged = "dataIdChanged";
+        String group = "group";
+        String tenant = "tenant";
+        String groupKeyChanged = GroupKey.getKeyTenant(dataIdChanged, group, tenant);
+        Map<String, String> clientMd5Map = new HashMap<>();
+        clientMd5Map.put(groupKeyChanged, "mockMd5");
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         PrintWriter printWriter = Mockito.mock(PrintWriter.class);
         Mockito.when(httpServletResponse.getWriter()).thenReturn(printWriter);
-        
-        Map<String, String> clientMd5Map = new HashMap<>();
-        clientMd5Map.put(groupKeyChanged, "mockMd5");
         
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("5000");
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
@@ -262,13 +273,13 @@ public class LongPollingServiceTest {
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         connectionCheckResponse.setSuccess(true);
         Mockito.when(connectionControlManager.check(any())).thenReturn(connectionCheckResponse);
-        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
-        HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         
         Map<String, String> clientMd5Map = new HashMap<>();
         clientMd5Map.put(groupKeyChanged, "md5");
         switchServiceMockedStatic.when(() -> SwitchService.getSwitchInteger(eq("MIN_LONG_POOLING_TIMEOUT"), eq(10000)))
                 .thenReturn(1000);
+        HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
+        
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("1000");
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
                 .thenReturn(null);
@@ -280,7 +291,7 @@ public class LongPollingServiceTest {
         
         configCacheServiceMockedStatic.when(
                 () -> ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), eq(null))).thenReturn(true);
-        
+        HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         longPollingService.addLongPollingClient(httpServletRequest, httpServletResponse, clientMd5Map, 3);
         
         //wait time out condition arrived.

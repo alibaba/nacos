@@ -110,24 +110,26 @@ public class ClientMetricsControllerTest {
     
     @Test
     public void testClusterMetricsCallBack() {
-        Map<String, Object> responseMap = new HashMap<>();
-        CountDownLatch latch = new CountDownLatch(5);
-        String dataId = "d1";
-        String group = "g1";
-        String tenant = "t1";
-        String ip = "192.168.0.1";
+        
         Member m1 = new Member();
         m1.setIp("127.0.0.1");
         m1.setPort(8848);
         
-        ClientMetricsController.ClusterMetricsCallBack clusterMetricsCallBack = new ClientMetricsController.ClusterMetricsCallBack(
-                responseMap, latch, dataId, group, tenant, ip, m1);
         //success result
         RestResult<Map> result1 = new RestResult<>();
         HashMap<String, Object> stringObjectHashMap = new HashMap<>();
         stringObjectHashMap.put("test", "md5..");
         result1.setData(stringObjectHashMap);
         result1.setCode(200);
+        
+        CountDownLatch latch = new CountDownLatch(5);
+        String dataId = "d1";
+        String group = "g1";
+        String tenant = "t1";
+        String ip = "192.168.0.1";
+        Map<String, Object> responseMap = new HashMap<>();
+        ClientMetricsController.ClusterMetricsCallBack clusterMetricsCallBack = new ClientMetricsController.ClusterMetricsCallBack(
+                responseMap, latch, dataId, group, tenant, ip, m1);
         clusterMetricsCallBack.onReceive(result1);
         //fail result
         RestResult<Map> result2 = new RestResult<>();
