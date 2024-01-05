@@ -323,7 +323,7 @@ public class ConfigInfoMapperByDerbyTest {
         Object effect = "effect";
         Object type = "type";
         Object schema = "schema";
-        
+        String encrypedDataKey = "key5678";
         context.putUpdateParameter(FieldConstant.CONTENT, newContent);
         context.putUpdateParameter(FieldConstant.MD5, newMD5);
         context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
@@ -335,8 +335,8 @@ public class ConfigInfoMapperByDerbyTest {
         context.putUpdateParameter(FieldConstant.EFFECT, effect);
         context.putUpdateParameter(FieldConstant.TYPE, type);
         context.putUpdateParameter(FieldConstant.C_SCHEMA, schema);
-        
-        Object dataId = "dataId";
+        context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY, encrypedDataKey);
+        Object dataId = "dataId00";
         Object group = "group";
         Object md5 = "md5";
         
@@ -347,10 +347,10 @@ public class ConfigInfoMapperByDerbyTest {
         
         MapperResult mapperResult = configInfoMapperByDerby.updateConfigInfoAtomicCas(context);
         Assert.assertEquals(mapperResult.getSql(), "UPDATE config_info SET "
-                + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
+                + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=?,encrypted_data_key=? "
                 + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
                 new Object[] {newContent, newMD5, srcIp, srcUser, time, appNameTmp, desc, use, effect, type, schema,
-                        dataId, group, tenantId, md5});
+                        encrypedDataKey, dataId, group, tenantId, md5});
     }
 }
