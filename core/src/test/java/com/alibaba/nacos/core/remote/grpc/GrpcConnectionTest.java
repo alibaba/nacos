@@ -105,7 +105,7 @@ public class GrpcConnectionTest {
         Mockito.doReturn(true).when(streamObserver).isReady();
         
         try {
-            connection.request(new NotifySubscriberRequest(), 3000L);
+            connection.request(new NotifySubscriberRequest(), 1000L);
             Assert.assertTrue(false);
         } catch (Exception e) {
             Assert.assertTrue(e instanceof ConnectionAlreadyClosedException);
