@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2020 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,27 +18,33 @@ package com.alibaba.nacos.naming.pojo.instance;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.spi.generator.InstanceIdGenerator;
+import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
 
-import static com.alibaba.nacos.api.common.Constants.DEFAULT_INSTANCE_ID_GENERATOR;
 import static com.alibaba.nacos.api.common.Constants.NAMING_INSTANCE_ID_SPLITTER;
+import static com.alibaba.nacos.api.common.Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR;
 
 /**
- * Default instance id generator.
+ * SnowFlake InstanceId Generator..
  *
- * @author xiweng.yy
+ * @author : huangtianhui
  */
-public class DefaultInstanceIdGenerator implements InstanceIdGenerator {
+public class SnowFlakeInstanceIdGenerator implements InstanceIdGenerator {
+    
+    private static final SnowFlowerIdGenerator SNOW_FLOWER_ID_GENERATOR = new SnowFlowerIdGenerator();
+    
+    static {
+        SNOW_FLOWER_ID_GENERATOR.init();
+    }
     
     @Override
     public String generateInstanceId(Instance instance) {
-        return instance.getIp() + NAMING_INSTANCE_ID_SPLITTER
-                + instance.getPort() + NAMING_INSTANCE_ID_SPLITTER
+        return SNOW_FLOWER_ID_GENERATOR.nextId() + NAMING_INSTANCE_ID_SPLITTER
                 + instance.getClusterName() + NAMING_INSTANCE_ID_SPLITTER
                 + instance.getServiceName();
     }
     
     @Override
     public String type() {
-        return DEFAULT_INSTANCE_ID_GENERATOR;
+        return SNOWFLAKE_INSTANCE_ID_GENERATOR;
     }
 }
