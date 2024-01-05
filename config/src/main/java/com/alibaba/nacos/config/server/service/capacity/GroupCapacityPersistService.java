@@ -79,7 +79,7 @@ public class GroupCapacityPersistService {
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
-    private static final class GroupCapacityRowMapper implements RowMapper<GroupCapacity> {
+    static final class GroupCapacityRowMapper implements RowMapper<GroupCapacity> {
         
         @Override
         public GroupCapacity mapRow(ResultSet rs, int rowNum) throws SQLException {

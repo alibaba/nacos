@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -32,6 +33,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
@@ -40,6 +42,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,6 +104,16 @@ public class TenantCapacityPersistServiceTest {
         TenantCapacity capacity = new TenantCapacity();
         capacity.setTenant("test");
         Assert.assertTrue(service.insertTenantCapacity(capacity));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq("test"), eq(null), eq(null), eq(null), eq(null), eq(null), eq(null),
+                eq("test"))).thenThrow(new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.insertTenantCapacity(capacity);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -113,6 +127,16 @@ public class TenantCapacityPersistServiceTest {
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test"), eq(1))).thenReturn(1);
         
         Assert.assertTrue(service.incrementUsageWithDefaultQuotaLimit(tenantCapacity));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test"), eq(1))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.incrementUsageWithDefaultQuotaLimit(tenantCapacity);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -125,6 +149,16 @@ public class TenantCapacityPersistServiceTest {
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test2"))).thenReturn(1);
         
         Assert.assertTrue(service.incrementUsageWithQuotaLimit(tenantCapacity));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test2"))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.incrementUsageWithQuotaLimit(tenantCapacity);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -137,6 +171,16 @@ public class TenantCapacityPersistServiceTest {
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenReturn(1);
         
         Assert.assertTrue(service.incrementUsage(tenantCapacity));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.incrementUsage(tenantCapacity);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -149,6 +193,16 @@ public class TenantCapacityPersistServiceTest {
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test4"))).thenReturn(1);
         
         Assert.assertTrue(service.decrementUsage(tenantCapacity));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test4"))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.decrementUsage(tenantCapacity);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -207,6 +261,16 @@ public class TenantCapacityPersistServiceTest {
             return 0;
         });
         Assert.assertTrue(service.updateQuota(tenant, quota));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), any(Object.class))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.updateQuota(tenant, quota);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -217,6 +281,16 @@ public class TenantCapacityPersistServiceTest {
         
         when(jdbcTemplate.update(anyString(), eq(tenant), eq(timestamp), eq(tenant))).thenReturn(1);
         Assert.assertTrue(service.correctUsage(tenant, timestamp));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(tenant), eq(timestamp), eq(tenant))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.correctUsage(tenant, timestamp);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -235,6 +309,16 @@ public class TenantCapacityPersistServiceTest {
         
         Assert.assertEquals(list.size(), ret.size());
         Assert.assertEquals(tenantCapacity.getTenant(), ret.get(0).getTenant());
+        
+        //mock get connection fail
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}), any(RowMapper.class))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.getCapacityList4CorrectUsage(lastId, pageSize);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -242,5 +326,43 @@ public class TenantCapacityPersistServiceTest {
         
         when(jdbcTemplate.update(any(PreparedStatementCreator.class))).thenReturn(1);
         Assert.assertTrue(service.deleteTenantCapacity("test"));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(any(PreparedStatementCreator.class))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.deleteTenantCapacity("test");
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testTenantCapacityRowMapper() throws SQLException {
+        TenantCapacityPersistService.TenantCapacityRowMapper groupCapacityRowMapper = new TenantCapacityPersistService.TenantCapacityRowMapper();
+        ResultSet rs = Mockito.mock(ResultSet.class);
+        int quota = 12345;
+        Mockito.when(rs.getInt(eq("quota"))).thenReturn(quota);
+        int usage = 1244;
+        Mockito.when(rs.getInt(eq("usage"))).thenReturn(usage);
+        int maxSize = 123;
+        Mockito.when(rs.getInt(eq("max_size"))).thenReturn(maxSize);
+        int maxAggrCount = 123;
+        Mockito.when(rs.getInt(eq("max_aggr_count"))).thenReturn(maxAggrCount);
+        int maxAggrSize = 123;
+        Mockito.when(rs.getInt(eq("max_aggr_size"))).thenReturn(maxAggrSize);
+        String tenant = "testTeat";
+        Mockito.when(rs.getString(eq("tenant_id"))).thenReturn(tenant);
+        
+        TenantCapacity groupCapacity = groupCapacityRowMapper.mapRow(rs, 1);
+        Assert.assertEquals(quota, groupCapacity.getQuota().intValue());
+        Assert.assertEquals(usage, groupCapacity.getUsage().intValue());
+        Assert.assertEquals(maxSize, groupCapacity.getMaxSize().intValue());
+        Assert.assertEquals(maxAggrCount, groupCapacity.getMaxAggrCount().intValue());
+        Assert.assertEquals(maxAggrSize, groupCapacity.getMaxAggrSize().intValue());
+        Assert.assertEquals(tenant, groupCapacity.getTenant());
+        
+        
     }
 }

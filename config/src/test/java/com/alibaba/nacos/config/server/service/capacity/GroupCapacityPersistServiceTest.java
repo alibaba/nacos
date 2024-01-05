@@ -35,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.core.RowMapper;
@@ -43,6 +44,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -167,6 +170,16 @@ public class GroupCapacityPersistServiceTest {
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test"), eq(1))).thenReturn(1);
         
         Assert.assertTrue(service.incrementUsageWithDefaultQuotaLimit(groupCapacity));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test"), eq(1))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.incrementUsageWithDefaultQuotaLimit(groupCapacity);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -178,6 +191,16 @@ public class GroupCapacityPersistServiceTest {
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test2"))).thenReturn(1);
         
         Assert.assertTrue(service.incrementUsageWithQuotaLimit(groupCapacity));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test2"))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.incrementUsageWithQuotaLimit(groupCapacity);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -190,6 +213,16 @@ public class GroupCapacityPersistServiceTest {
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenReturn(1);
         
         Assert.assertTrue(service.incrementUsage(groupCapacity));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test3"))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.incrementUsage(groupCapacity);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -201,6 +234,16 @@ public class GroupCapacityPersistServiceTest {
         when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test4"))).thenReturn(1);
         
         Assert.assertTrue(service.decrementUsage(groupCapacity));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(timestamp), eq("test4"))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.decrementUsage(groupCapacity);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -238,6 +281,43 @@ public class GroupCapacityPersistServiceTest {
         });
         Assert.assertTrue(service.updateGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize));
         
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), any(Object.class))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.updateGroupCapacity(group, quota, maxSize, maxAggrCount, maxAggrSize);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
+    }
+    
+    @Test
+    public void testGroupCapacityRowMapper() throws SQLException {
+        GroupCapacityPersistService.GroupCapacityRowMapper groupCapacityRowMapper = new GroupCapacityPersistService.GroupCapacityRowMapper();
+        ResultSet rs = Mockito.mock(ResultSet.class);
+        int quota = 12345;
+        Mockito.when(rs.getInt(eq("quota"))).thenReturn(quota);
+        int usage = 1244;
+        Mockito.when(rs.getInt(eq("usage"))).thenReturn(usage);
+        int maxSize = 123;
+        Mockito.when(rs.getInt(eq("max_size"))).thenReturn(maxSize);
+        int maxAggrCount = 123;
+        Mockito.when(rs.getInt(eq("max_aggr_count"))).thenReturn(maxAggrCount);
+        int maxAggrSize = 123;
+        Mockito.when(rs.getInt(eq("max_aggr_size"))).thenReturn(maxAggrSize);
+        String group = "testG";
+        Mockito.when(rs.getString(eq("group_id"))).thenReturn(group);
+        
+        GroupCapacity groupCapacity = groupCapacityRowMapper.mapRow(rs, 1);
+        Assert.assertEquals(quota, groupCapacity.getQuota().intValue());
+        Assert.assertEquals(usage, groupCapacity.getUsage().intValue());
+        Assert.assertEquals(maxSize, groupCapacity.getMaxSize().intValue());
+        Assert.assertEquals(maxAggrCount, groupCapacity.getMaxAggrCount().intValue());
+        Assert.assertEquals(maxAggrSize, groupCapacity.getMaxAggrSize().intValue());
+        Assert.assertEquals(group, groupCapacity.getGroup());
+        
+        
     }
     
     @Test
@@ -269,7 +349,7 @@ public class GroupCapacityPersistServiceTest {
         String group = "test3";
         argList.add(group);
         when(jdbcTemplate.update(anyString(), eq(3), eq(timestamp), eq(group))).thenReturn(1);
-    
+        
         Assert.assertTrue(service.updateMaxSize(group, maxSize));
     }
     
@@ -285,6 +365,16 @@ public class GroupCapacityPersistServiceTest {
         group = "test";
         when(jdbcTemplate.update(anyString(), eq(group), eq(timestamp), eq(group))).thenReturn(1);
         Assert.assertTrue(service.correctUsage(group, timestamp));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(anyString(), eq(group), eq(timestamp), eq(group))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.correctUsage(group, timestamp);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -303,6 +393,16 @@ public class GroupCapacityPersistServiceTest {
         
         Assert.assertEquals(list.size(), ret.size());
         Assert.assertEquals(groupCapacity.getGroup(), ret.get(0).getGroup());
+        
+        //mock get connection fail
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, pageSize}), any(RowMapper.class))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.getCapacityList4CorrectUsage(lastId, pageSize);
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
     
     @Test
@@ -310,5 +410,15 @@ public class GroupCapacityPersistServiceTest {
         
         when(jdbcTemplate.update(any(PreparedStatementCreator.class))).thenReturn(1);
         Assert.assertTrue(service.deleteGroupCapacity("test"));
+        
+        //mock get connection fail
+        when(jdbcTemplate.update(any(PreparedStatementCreator.class))).thenThrow(
+                new CannotGetJdbcConnectionException("conn fail"));
+        try {
+            service.deleteGroupCapacity("test");
+            Assert.assertTrue(false);
+        } catch (Exception e) {
+            Assert.assertEquals("conn fail", e.getMessage());
+        }
     }
 }

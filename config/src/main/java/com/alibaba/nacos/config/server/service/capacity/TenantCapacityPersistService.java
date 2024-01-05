@@ -76,7 +76,7 @@ public class TenantCapacityPersistService {
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
-    private static final class TenantCapacityRowMapper implements RowMapper<TenantCapacity> {
+    final static class TenantCapacityRowMapper implements RowMapper<TenantCapacity> {
         
         @Override
         public TenantCapacity mapRow(ResultSet rs, int rowNum) throws SQLException {

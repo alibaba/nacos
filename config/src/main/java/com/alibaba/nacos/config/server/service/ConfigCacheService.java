@@ -28,6 +28,7 @@ import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.common.collect.Lists;
 
 import java.io.IOException;
@@ -144,7 +145,7 @@ public class ConfigCacheService {
                         || errMsg.contains(DISK_QUOTA_EN)) {
                     // Protect from disk full.
                     FATAL_LOG.error("Local Disk Full,Exit", ioe);
-                    System.exit(0);
+                    EnvUtil.systemExit();
                 }
             }
             return false;
@@ -322,75 +323,6 @@ public class ConfigCacheService {
             return true;
         } catch (IOException ioe) {
             DUMP_LOG.error("[dump-tag-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
-            return false;
-        } finally {
-            releaseWriteLock(groupKey);
-        }
-    }
-    
-    /**
-     * 保存配置文件，并缓存md5.
-     */
-    public static boolean dumpChange(String dataId, String group, String tenant, String content, long lastModifiedTs,
-            String encryptedDataKey) {
-        final String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        
-        makeSure(groupKey, encryptedDataKey);
-        final int lockResult = tryWriteLock(groupKey);
-        
-        if (lockResult < 0) {
-            DUMP_LOG.warn("[dump-error] write lock failed. {}", groupKey);
-            return false;
-        }
-        
-        try {
-            
-            //check timestamp
-            boolean lastModifiedOutdated = lastModifiedTs < ConfigCacheService.getLastModifiedTs(groupKey);
-            if (lastModifiedOutdated) {
-                DUMP_LOG.warn("[dump-change-ignore] timestamp is outdated,groupKey={}", groupKey);
-                return true;
-            }
-            
-            boolean newLastModified = lastModifiedTs > ConfigCacheService.getLastModifiedTs(groupKey);
-            
-            String md5 = MD5Utils.md5Hex(content, ENCODE_UTF8);
-            
-            //check md5 & update local disk cache.
-            String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
-            boolean md5Changed = !md5.equals(localContentMd5);
-            if (md5Changed) {
-                if (!PropertyUtil.isDirectRead()) {
-                    DUMP_LOG.info("[dump-change] md5 changed, save to disk cache ,groupKey={}, md5={}", groupKey, md5);
-                    ConfigDiskServiceFactory.getInstance().saveToDisk(dataId, group, tenant, content);
-                } else {
-                    //ignore to save disk cache in direct model
-                }
-            } else {
-                DUMP_LOG.warn("[dump-change-ignore] ignore to save to disk cache. md5 consistent,groupKey={}, md5={}",
-                        groupKey, md5);
-            }
-            
-            //check  md5 and timestamp & update local jvm cache.
-            if (md5Changed) {
-                DUMP_LOG.info(
-                        "[dump-change] md5 changed, update md5 and timestamp in jvm cache ,groupKey={},newMd5={},oldMd5={},lastModifiedTs={}",
-                        groupKey, md5, localContentMd5, lastModifiedTs);
-                updateMd5(groupKey, md5, lastModifiedTs, encryptedDataKey);
-            } else if (newLastModified) {
-                DUMP_LOG.info(
-                        "[dump-change] md5 consistent ,timestamp changed, update timestamp only in jvm cache ,groupKey={}, md5={},lastModifiedTs={}",
-                        groupKey, md5, lastModifiedTs);
-                updateTimeStamp(groupKey, lastModifiedTs, encryptedDataKey);
-            } else {
-                DUMP_LOG.warn(
-                        "[dump-change-ignore] ignore to save to jvm cache. md5 consistent and no new timestamp changed.groupKey={}",
-                        groupKey);
-            }
-            
-            return true;
-        } catch (IOException ioe) {
-            DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
             return false;
         } finally {
             releaseWriteLock(groupKey);
@@ -652,12 +584,6 @@ public class ConfigCacheService {
     public static long getBetaLastModifiedTs(String groupKey) {
         CacheItem item = CACHE.get(groupKey);
         return (null != item && item.getConfigCacheBeta() != null) ? item.getConfigCacheBeta().getLastModifiedTs() : 0L;
-    }
-    
-    public static long getBatchLastModifiedTs(String groupKey) {
-        CacheItem item = CACHE.get(groupKey);
-        return (null != item && item.getConfigCacheBatch() != null) ? item.getConfigCacheBatch().getLastModifiedTs()
-                : 0L;
     }
     
     public static long getTagLastModifiedTs(String groupKey, String tag) {
