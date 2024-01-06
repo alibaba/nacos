@@ -109,7 +109,6 @@ public class LongPollingServiceTest {
         clientMd5Map.put(groupKeyNotEquals, md5NotEquals1);
         
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("5000");
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
                 .thenReturn(null);
         String clientIp = "192.168.0.1";
@@ -145,7 +144,6 @@ public class LongPollingServiceTest {
         Mockito.when(httpServletResponse.getWriter()).thenReturn(printWriter);
         
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("5000");
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
                 .thenReturn(null);
         String clientIp = "192.168.0.1";
