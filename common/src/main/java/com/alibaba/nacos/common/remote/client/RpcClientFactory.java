@@ -76,7 +76,7 @@ public class RpcClientFactory {
     }
 
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
-            RpcClientTlsConfig tlsConfig) {
+            RpcSdkClientTlsConfig tlsConfig) {
         return createClient(clientName, connectionType, null, null, labels, tlsConfig);
 
     }
@@ -97,7 +97,7 @@ public class RpcClientFactory {
      * @return rpc client.
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
-            Integer threadPoolMaxSize, Map<String, String> labels, RpcClientTlsConfig tlsConfig) {
+            Integer threadPoolMaxSize, Map<String, String> labels, RpcSdkClientTlsConfig tlsConfig) {
 
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());

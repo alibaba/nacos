@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashMap;
@@ -178,7 +178,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         return tlsConfig;
     }
     
-    public void setTlsConfig(RpcClientTlsConfig tlsConfig) {
+    public void setTlsConfig(TlsConfig tlsConfig) {
         this.tlsConfig = tlsConfig;
     }
     
@@ -308,7 +308,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.channelKeepAliveTimeout = Integer
                         .parseInt(properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
             }
-            this.tlsConfig = RpcClientTlsConfig.properties(properties);
+            this.tlsConfig = RpcSdkClientTlsConfig.properties(properties);
             return this;
         }
         

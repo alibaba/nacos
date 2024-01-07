@@ -25,7 +25,7 @@ import java.util.Properties;
  *
  * @author githubcheng2978
  */
-public class RpcClientTlsConfig extends TlsConfig {
+public class RpcSdkClientTlsConfig extends TlsConfig {
 
     /**
      * get tls config from properties.
@@ -33,8 +33,8 @@ public class RpcClientTlsConfig extends TlsConfig {
      * @param properties Properties.
      * @return tls of config.
      */
-    public static RpcClientTlsConfig properties(Properties properties) {
-        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+    public static RpcSdkClientTlsConfig properties(Properties properties) {
+        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         if (properties.containsKey(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE)) {
             tlsConfig.setEnableTls(
                     Boolean.parseBoolean(properties.getProperty(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE)));

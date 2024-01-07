@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
 import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.test.ConfigCleanUtils;
@@ -95,7 +95,7 @@ public class ConfigIntegrationV3_CITCase {
 
     @Test
     public void test_f_ServerTlsTrustAll() throws Exception {
-        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustAll(true);
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
@@ -123,7 +123,7 @@ public class ConfigIntegrationV3_CITCase {
         serverInfo.setServerIp("127.0.0.1");
 
         serverInfo.setServerPort(EnvUtil.getPort());
-        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         RpcClient clientTrustCa = RpcClientFactory.createClient("testServerTlsTrustCa", ConnectionType.GRPC,

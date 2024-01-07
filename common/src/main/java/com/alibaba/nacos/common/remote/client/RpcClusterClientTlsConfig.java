@@ -30,7 +30,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
  * </p>
  * <ul>
  *     <li>{@code nacos.remote.cluster.client.rpc.tls.enable}: Enable or disable TLS. Default is {@code false}.</li>
- *     <li>{@code nacos.remote.cluster.client.rpc.tls.sslProvider}: Specify the SSL provider.</li>
+ *     <li>{@code nacos.remote.cluster.client.rpc.tls.Provider}: Specify the SSL provider.</li>
  *     <li>{@code nacos.remote.cluster.client.rpc.tls.mutualAuth}: Enable or disable mutual authentication. Default is {@code false}.</li>
  *     <li>{@code nacos.remote.cluster.client.rpc.tls.protocols}: Specify the TLS protocols.</li>
  *     <li>{@code nacos.remote.cluster.client.rpc.tls.ciphers}: Specify the TLS ciphers.</li>

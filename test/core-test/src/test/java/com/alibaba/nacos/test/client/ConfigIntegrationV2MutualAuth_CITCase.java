@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
 import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
 import com.alibaba.nacos.test.ConfigCleanUtils;
 import org.junit.After;
@@ -77,7 +77,7 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
     @Ignore("TODO, fix the cert expired problem")
     public void test_d_MutualAuth() throws Exception {
 
-        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setMutualAuthEnable(true);
         tlsConfig.setCertChainFile("test-client-cert.pem");
@@ -107,7 +107,7 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
     @Test
     public void test_e_ServerMutualAuthOnly() throws Exception {
 
-        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         RpcClient client = RpcClientFactory.createClient("testServerMutualAuthNoly", ConnectionType.GRPC,

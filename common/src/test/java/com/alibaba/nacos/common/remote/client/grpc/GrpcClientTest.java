@@ -31,7 +31,7 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.google.common.util.concurrent.ListenableFuture;
 import io.grpc.Channel;
@@ -76,7 +76,7 @@ public class GrpcClientTest {
     protected GrpcClient grpcClient;
     
     @Mock
-    RpcClientTlsConfig tlsConfig;
+    RpcSdkClientTlsConfig tlsConfig;
     
     protected RpcClient.ServerInfo serverInfo;
     
