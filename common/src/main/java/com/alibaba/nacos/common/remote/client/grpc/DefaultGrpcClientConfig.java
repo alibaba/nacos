@@ -237,9 +237,9 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         private long healthCheckTimeOut = 3000L;
         
         private long capabilityNegotiationTimeout = 5000L;
-    
+        
         private final Map<String, String> labels = new HashMap<>();
-    
+        
         private TlsConfig tlsConfig = new TlsConfig();
         
         private Builder() {
@@ -443,7 +443,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
             this.labels.putAll(labels);
             return this;
         }
-    
+        
         /**
          * set tlsConfig.
          *

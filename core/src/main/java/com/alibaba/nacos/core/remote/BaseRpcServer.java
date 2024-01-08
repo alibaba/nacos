@@ -44,17 +44,17 @@ public abstract class BaseRpcServer {
     public void start() throws Exception {
         String serverName = getClass().getSimpleName();
         Loggers.REMOTE.info("Nacos {} Rpc server starting at port {}", serverName, getServicePort());
-    
+        
         startServer();
-    
+        
         if (RpcServerSslContextRefresherHolder.getSdkInstance() != null) {
             RpcServerSslContextRefresherHolder.getSdkInstance().refresh(this);
         }
-    
+        
         if (RpcServerSslContextRefresherHolder.getClusterInstance() != null) {
             RpcServerSslContextRefresherHolder.getClusterInstance().refresh(this);
         }
-    
+        
         Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", serverName, getServicePort());
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             Loggers.REMOTE.info("Nacos {} Rpc server stopping", serverName);
@@ -65,7 +65,7 @@ public abstract class BaseRpcServer {
                 Loggers.REMOTE.error("Nacos {} Rpc server stopped fail...", serverName, e);
             }
         }));
-    
+        
     }
     
     /**
