@@ -44,12 +44,12 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Service
 public class GrpcClusterServer extends BaseGrpcServer {
-
+    
     @Override
     public int rpcPortOffset() {
         return Constants.CLUSTER_GRPC_PORT_DEFAULT_OFFSET;
     }
-
+    
     @Override
     public ThreadPoolExecutor getRpcExecutor() {
         if (!GlobalExecutor.clusterRpcExecutor.allowsCoreThreadTimeOut()) {
@@ -57,7 +57,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
         }
         return GlobalExecutor.clusterRpcExecutor;
     }
-
+    
     @Override
     protected long getKeepAliveTime() {
         Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY,
@@ -67,7 +67,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
         }
         return super.getKeepAliveTime();
     }
-
+    
     @Override
     protected long getKeepAliveTimeout() {
         Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY,
@@ -77,13 +77,14 @@ public class GrpcClusterServer extends BaseGrpcServer {
         }
         return super.getKeepAliveTimeout();
     }
-
+    
     @Override
     protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
-        protocolNegotiator = ProtocolNegotiatorBuilderManager.getInstance().buildGrpcProtocolNegotiator(CommunicationType.CLUSTER);
+        protocolNegotiator = ProtocolNegotiatorBuilderManager.getInstance()
+                .buildGrpcProtocolNegotiator(CommunicationType.CLUSTER);
         return Optional.ofNullable(protocolNegotiator);
     }
-
+    
     @Override
     protected long getPermitKeepAliveTime() {
         Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_PERMIT_KEEP_ALIVE_TIME, Long.class);
@@ -92,7 +93,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
         }
         return super.getPermitKeepAliveTime();
     }
-
+    
     @Override
     protected int getMaxInboundMessageSize() {
         Integer property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY,
@@ -100,7 +101,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
         if (property != null) {
             return property;
         }
-
+        
         int size = super.getMaxInboundMessageSize();
         if (Loggers.REMOTE.isWarnEnabled()) {
             Loggers.REMOTE.warn("Recommended use '{}' property instead '{}', now property value is {}",
@@ -109,7 +110,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
         }
         return size;
     }
-
+    
     @Override
     protected List<ServerInterceptor> getSeverInterceptors() {
         List<ServerInterceptor> result = new LinkedList<>();
@@ -118,7 +119,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
                 NacosGrpcServerInterceptor.CLUSTER_INTERCEPTOR));
         return result;
     }
-
+    
     @Override
     protected List<ServerTransportFilter> getServerTransportFilters() {
         List<ServerTransportFilter> result = new LinkedList<>();

@@ -53,27 +53,27 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootTest(classes = {Nacos.class}, properties = {"server.servlet.context-path=/nacos",
         RpcSdkServerTlsConfig.PREFIX + ".compatibility=false", RpcSdkServerTlsConfig.PREFIX + ".enableTls=true",
         RpcSdkServerTlsConfig.PREFIX + ".certChainFile=test-server-cert.pem", RpcSdkServerTlsConfig.PREFIX
-        + ".certPrivateKey=test-server-key.pem",}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+        + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Ignore("TODO, Fix cert expired problem")
 public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
-
+    
     public static AtomicInteger increment = new AtomicInteger(100);
-
+    
     @LocalServerPort
     private int port;
-
+    
     @BeforeClass
     public static void beforeClass() throws IOException {
         ConfigCleanUtils.changeToNewTestNacosHome(
                 ConfigIntegrationV1ServerNonCompatibility_CITCase.class.getSimpleName());
     }
-
+    
     @BeforeClass
     @AfterClass
     public static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
-
+    
     @Test
     public void test_a_TlsServer() throws Exception {
         RpcClient client = RpcClientFactory.createClient("testTlsServer", ConnectionType.GRPC,
@@ -81,11 +81,11 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
         serverInfo.setServerPort(port);
-
+        
         Connection connection = client.connectToServer(serverInfo);
         Assert.assertNull(connection);
     }
-
+    
     @Test
     public void test_b_ServerTlsTrustAll() throws Exception {
         RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
@@ -94,7 +94,7 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
         serverInfo.setServerPort(port);
-
+        
         RpcClient clientTrustCa = RpcClientFactory.createClient("testServerTlsTrustCa", ConnectionType.GRPC,
                 Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
         Connection connectionTrustCa = clientTrustCa.connectToServer(serverInfo);
@@ -103,19 +103,19 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
         configPublishRequest.setContent(content);
         configPublishRequest.setGroup("test-group" + increment.getAndIncrement());
         configPublishRequest.setDataId("test-data" + increment.getAndIncrement());
-
+        
         Response response = connectionTrustCa.request(configPublishRequest, TimeUnit.SECONDS.toMillis(3));
         Assert.assertTrue(response.isSuccess());
         connectionTrustCa.close();
     }
-
+    
     @Test
     public void test_c_ServerTlsTrustCa() throws Exception {
-
+        
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
         serverInfo.setServerPort(port);
-
+        
         RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
@@ -124,7 +124,7 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
         Connection connectionTrustCa = clientTrustCa.connectToServer(serverInfo);
         ConfigPublishRequest configPublishRequestCa = new ConfigPublishRequest();
         String contentCa = UUID.randomUUID().toString();
-
+        
         configPublishRequestCa.setContent(contentCa);
         configPublishRequestCa.setGroup("test-group" + increment.getAndIncrement());
         configPublishRequestCa.setDataId("test-data" + increment.getAndIncrement());

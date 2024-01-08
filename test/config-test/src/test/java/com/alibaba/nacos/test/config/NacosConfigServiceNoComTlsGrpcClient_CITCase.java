@@ -52,20 +52,20 @@ import java.util.concurrent.atomic.AtomicInteger;
         RpcSdkServerTlsConfig.PREFIX + ".certChainFile=test-server-cert.pem", RpcSdkServerTlsConfig.PREFIX
         + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
-
+    
     public static AtomicInteger increment = new AtomicInteger(100);
-
+    
     @BeforeClass
     public static void beforeClass() throws IOException {
         ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceNoComTlsGrpcClient_CITCase.class.getSimpleName());
     }
-
+    
     @BeforeClass
     @AfterClass
     public static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
-
+    
     @Test
     @Ignore("TODO, Fix cert expired problem")
     public void test_e_TlsServerAndTlsClient() throws Exception {
@@ -95,7 +95,7 @@ public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
         latch.await(5, TimeUnit.SECONDS);
         Assert.assertTrue(b);
     }
-
+    
     @Test
     public void test_e_TlsServerAndPlainClient() throws Exception {
         Properties propertiesfalse = new Properties();

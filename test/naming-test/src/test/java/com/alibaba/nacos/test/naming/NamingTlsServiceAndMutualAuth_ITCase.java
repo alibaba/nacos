@@ -58,11 +58,11 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
         + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Ignore("TODO, Fix cert expired problem")
 public class NamingTlsServiceAndMutualAuth_ITCase {
-
-
+    
+    
     @LocalServerPort
     private int port;
-
+    
     @Test
     public void test_a_MutualAuth() throws NacosException {
         String serviceName = randomDomainName();
@@ -91,10 +91,10 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
         Assert.assertEquals(instances.size(), 1);
         Assert.assertEquals("2.0", instances.get(0).getMetadata().get("version"));
         namingService.shutDown();
-
+        
     }
-
-
+    
+    
     @Test(expected = NacosException.class)
     public void test_b_MutualAuthClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
@@ -115,9 +115,9 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
         instance.setMetadata(map);
         namingService.registerInstance(serviceName, instance);
         namingService.shutDown();
-
+        
     }
-
+    
     @Test(expected = NacosException.class)
     public void test_c_MutualAuthClientTrustALl() throws NacosException {
         String serviceName = randomDomainName();
@@ -139,7 +139,7 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
         namingService.registerInstance(serviceName, instance);
         namingService.shutDown();
     }
-
+    
     @After
     public void after() {
         System.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "");

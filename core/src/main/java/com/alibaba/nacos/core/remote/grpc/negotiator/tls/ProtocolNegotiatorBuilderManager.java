@@ -50,32 +50,32 @@ import static com.alibaba.nacos.core.remote.grpc.negotiator.tls.SdkDefaultTlsPro
  * @date 2023/12/23
  */
 public class ProtocolNegotiatorBuilderManager {
-
+    
     /**
      * Property key for configuring the ProtocolNegotiator type for cluster communication.
      */
     public static final String CLUSTER_TYPE_PROPERTY_KEY = "nacos.remote.cluster.server.rpc.protocol.negotiator.type";
-
+    
     /**
      * Property key for configuring the ProtocolNegotiator type for SDK communication.
      */
     public static final String SDK_TYPE_PROPERTY_KEY = "nacos.remote.sdk.server.rpc.protocol.negotiator.type";
-
+    
     /**
      * Singleton instance of ProtocolNegotiatorBuilderManager.
      */
     private static final ProtocolNegotiatorBuilderManager INSTANCE = new ProtocolNegotiatorBuilderManager();
-
+    
     /**
      * Map to store ProtocolNegotiatorBuilders by their types.
      */
     private static Map<String, ProtocolNegotiatorBuilder> builderMap;
-
+    
     /**
      * Map to store the actual ProtocolNegotiator types used for different CommunicationTypes.
      */
     private static Map<CommunicationType, String> actualTypeMap;
-
+    
     /**
      * Private constructor to enforce singleton pattern.
      */
@@ -90,7 +90,7 @@ public class ProtocolNegotiatorBuilderManager {
             initDefaultBuilder();
         }
     }
-
+    
     /**
      * Initialize all ProtocolNegotiatorBuilders using the SPI mechanism.
      */
@@ -101,7 +101,7 @@ public class ProtocolNegotiatorBuilderManager {
                     each.type());
         }
     }
-
+    
     /**
      * Initialize the mapping of CommunicationType to actual ProtocolNegotiator type from configuration properties.
      */
@@ -110,7 +110,7 @@ public class ProtocolNegotiatorBuilderManager {
         actualTypeMap.put(CommunicationType.CLUSTER,
                 EnvUtil.getProperty(CLUSTER_TYPE_PROPERTY_KEY, CLUSTER_TYPE_DEFAULT_TLS));
     }
-
+    
     /**
      * Initialize default ProtocolNegotiatorBuilders in case loading from SPI fails.
      */
@@ -118,7 +118,7 @@ public class ProtocolNegotiatorBuilderManager {
         builderMap.put(SDK_TYPE_DEFAULT_TLS, new SdkDefaultTlsProtocolNegotiatorBuilder());
         builderMap.put(CLUSTER_TYPE_PROPERTY_KEY, new ClusterDefaultTlsProtocolNegotiatorBuilder());
     }
-
+    
     /**
      * Get the singleton instance of ProtocolNegotiatorBuilderManager.
      *
@@ -127,7 +127,7 @@ public class ProtocolNegotiatorBuilderManager {
     public static ProtocolNegotiatorBuilderManager getInstance() {
         return INSTANCE;
     }
-
+    
     /**
      * Get the ProtocolNegotiator for the specified CommunicationType.
      *

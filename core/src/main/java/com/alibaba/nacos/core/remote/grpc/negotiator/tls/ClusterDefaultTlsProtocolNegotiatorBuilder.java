@@ -23,8 +23,8 @@ import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 
 /**
- * The {@code ClusterDefaultTlsProtocolNegotiatorBuilder} class is an implementation of the {@link
- * ProtocolNegotiatorBuilder} interface for constructing a ProtocolNegotiator specifically for cluster-to-cluster
+ * The {@code ClusterDefaultTlsProtocolNegotiatorBuilder} class is an implementation of the
+ * {@link ProtocolNegotiatorBuilder} interface for constructing a ProtocolNegotiator specifically for cluster-to-cluster
  * communication with TLS encryption.
  *
  * <p>It defines the type as {@code CLUSTER_DEFAULT_TLS} and supports communication types for clusters.

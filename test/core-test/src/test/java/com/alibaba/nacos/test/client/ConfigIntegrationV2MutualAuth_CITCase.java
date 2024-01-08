@@ -56,27 +56,27 @@ import java.util.concurrent.atomic.AtomicInteger;
         RpcSdkServerTlsConfig.PREFIX + ".certPrivateKey=test-server-key.pem", RpcSdkServerTlsConfig.PREFIX
         + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigIntegrationV2MutualAuth_CITCase {
-
+    
     @LocalServerPort
     private int port;
-
+    
     public static AtomicInteger increment = new AtomicInteger(100);
-
+    
     @BeforeClass
     public static void beforeClass() throws IOException {
         ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV2MutualAuth_CITCase.class.getSimpleName());
-
+        
     }
-
+    
     @After
     public void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
-
+    
     @Test
     @Ignore("TODO, fix the cert expired problem")
     public void test_d_MutualAuth() throws Exception {
-
+        
         RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setMutualAuthEnable(true);
@@ -85,16 +85,16 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
         tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         RpcClient client = RpcClientFactory.createClient("testMutualAuth", ConnectionType.GRPC,
                 Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
-
+        
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
         serverInfo.setServerPort(port);
-
+        
         Connection connection = client.connectToServer(serverInfo);
         ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
-
+        
         String content = UUID.randomUUID().toString();
-
+        
         configPublishRequest.setContent(content);
         configPublishRequest.setGroup("test-group" + increment.getAndIncrement());
         configPublishRequest.setDataId("test-data" + increment.getAndIncrement());
@@ -103,16 +103,16 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
         Assert.assertTrue(response.isSuccess());
         connection.close();
     }
-
+    
     @Test
     public void test_e_ServerMutualAuthOnly() throws Exception {
-
+        
         RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         RpcClient client = RpcClientFactory.createClient("testServerMutualAuthNoly", ConnectionType.GRPC,
                 Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
-
+        
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
         serverInfo.setServerPort(port);

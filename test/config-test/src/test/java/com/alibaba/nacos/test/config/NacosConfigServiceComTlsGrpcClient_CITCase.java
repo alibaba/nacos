@@ -54,20 +54,20 @@ import java.util.concurrent.atomic.AtomicInteger;
         RpcSdkServerTlsConfig.PREFIX + ".certChainFile=test-server-cert.pem", RpcSdkServerTlsConfig.PREFIX
         + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NacosConfigServiceComTlsGrpcClient_CITCase {
-
+    
     public static AtomicInteger increment = new AtomicInteger(100);
-
+    
     @BeforeClass
     public static void beforeClass() throws IOException {
         ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceComTlsGrpcClient_CITCase.class.getSimpleName());
     }
-
+    
     @BeforeClass
     @AfterClass
     public static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
-
+    
     @Test
     public void test_e_TlsServerAndPlainClient() throws Exception {
         Properties propertiesfalse = new Properties();

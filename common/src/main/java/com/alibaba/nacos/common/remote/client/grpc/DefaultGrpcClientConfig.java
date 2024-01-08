@@ -262,51 +262,51 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.timeOutMills = Long.parseLong(properties.getProperty(GrpcConstants.GRPC_TIMEOUT_MILLS));
             }
             if (properties.containsKey(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME)) {
-                this.connectionKeepAlive = Long
-                        .parseLong(properties.getProperty(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME));
+                this.connectionKeepAlive = Long.parseLong(
+                        properties.getProperty(GrpcConstants.GRPC_CONNECT_KEEP_ALIVE_TIME));
             }
             if (properties.containsKey(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME)) {
-                this.threadPoolKeepAlive = Long
-                        .parseLong(properties.getProperty(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME));
+                this.threadPoolKeepAlive = Long.parseLong(
+                        properties.getProperty(GrpcConstants.GRPC_THREADPOOL_KEEPALIVETIME));
             }
             if (properties.containsKey(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE)) {
-                this.threadPoolCoreSize = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE));
+                this.threadPoolCoreSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_THREADPOOL_CORE_SIZE));
             }
             if (properties.containsKey(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE)) {
-                this.threadPoolMaxSize = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE));
+                this.threadPoolMaxSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_THREADPOOL_MAX_SIZE));
             }
             if (properties.containsKey(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT)) {
-                this.serverCheckTimeOut = Long
-                        .parseLong(properties.getProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT));
+                this.serverCheckTimeOut = Long.parseLong(
+                        properties.getProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT));
             }
             if (properties.containsKey(GrpcConstants.GRPC_QUEUESIZE)) {
                 this.threadPoolQueueSize = Integer.parseInt(properties.getProperty(GrpcConstants.GRPC_QUEUESIZE));
             }
             if (properties.containsKey(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE)) {
-                this.maxInboundMessageSize = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE));
+                this.maxInboundMessageSize = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_MAX_INBOUND_MESSAGE_SIZE));
             }
             if (properties.containsKey(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME)) {
-                this.channelKeepAlive = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME));
+                this.channelKeepAlive = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIME));
             }
             if (properties.containsKey(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT)) {
-                this.capabilityNegotiationTimeout = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT));
+                this.capabilityNegotiationTimeout = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT));
             }
             if (properties.containsKey(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES)) {
-                this.healthCheckRetryTimes = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES));
+                this.healthCheckRetryTimes = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_RETRY_TIMES));
             }
             if (properties.containsKey(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT)) {
-                this.healthCheckTimeOut = Long
-                        .parseLong(properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT));
+                this.healthCheckTimeOut = Long.parseLong(
+                        properties.getProperty(GrpcConstants.GRPC_HEALTHCHECK_TIMEOUT));
             }
             if (properties.containsKey(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT)) {
-                this.channelKeepAliveTimeout = Integer
-                        .parseInt(properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
+                this.channelKeepAliveTimeout = Integer.parseInt(
+                        properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
             }
             this.tlsConfig = RpcSdkClientTlsConfig.properties(properties);
             return this;

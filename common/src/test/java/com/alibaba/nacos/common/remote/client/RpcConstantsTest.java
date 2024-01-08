@@ -23,7 +23,7 @@ import java.lang.reflect.Field;
 import static org.junit.Assert.assertEquals;
 
 public class RpcConstantsTest {
-
+    
     @Test
     public void testGetRpcParams() {
         Field[] declaredFields = RpcConstants.class.getDeclaredFields();
@@ -37,7 +37,7 @@ public class RpcConstantsTest {
         }
         assertEquals(i, RpcConstants.getSdkRpcParams().size());
     }
-
+    
     @Test
     public void testGetClusterRpcParams() {
         Field[] declaredFields = RpcConstants.class.getDeclaredFields();

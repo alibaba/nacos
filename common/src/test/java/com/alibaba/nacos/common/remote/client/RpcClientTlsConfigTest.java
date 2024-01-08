@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class RpcClientTlsConfigTest {
-
+    
     @Test
     public void testEnableTls() {
         Properties properties = new Properties();
@@ -32,7 +32,7 @@ public class RpcClientTlsConfigTest {
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertTrue(tlsConfig.getEnableTls());
     }
-
+    
     @Test
     public void testSslProvider() {
         Properties properties = new Properties();
@@ -40,7 +40,7 @@ public class RpcClientTlsConfigTest {
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("provider", tlsConfig.getSslProvider());
     }
-
+    
     @Test
     public void testMutualAuthEnable() {
         Properties properties = new Properties();
@@ -48,7 +48,7 @@ public class RpcClientTlsConfigTest {
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertTrue(tlsConfig.getMutualAuthEnable());
     }
-
+    
     @Test
     public void testProtocols() {
         Properties properties = new Properties();
@@ -56,7 +56,7 @@ public class RpcClientTlsConfigTest {
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("protocols", tlsConfig.getProtocols());
     }
-
+    
     @Test
     public void testCiphers() {
         Properties properties = new Properties();
@@ -64,7 +64,7 @@ public class RpcClientTlsConfigTest {
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("ciphers", tlsConfig.getCiphers());
     }
-
+    
     @Test
     public void testTrustCollectionCertFile() {
         Properties properties = new Properties();
@@ -72,7 +72,7 @@ public class RpcClientTlsConfigTest {
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("trustCollectionCertFile", tlsConfig.getTrustCollectionCertFile());
     }
-
+    
     @Test
     public void testCertChainFile() {
         Properties properties = new Properties();
@@ -80,7 +80,7 @@ public class RpcClientTlsConfigTest {
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("certChainFile", tlsConfig.getCertChainFile());
     }
-
+    
     @Test
     public void testCertPrivateKey() {
         Properties properties = new Properties();
@@ -88,7 +88,7 @@ public class RpcClientTlsConfigTest {
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("certPrivateKey", tlsConfig.getCertPrivateKey());
     }
-
+    
     @Test
     public void testTrustAll() {
         Properties properties = new Properties();
@@ -96,7 +96,7 @@ public class RpcClientTlsConfigTest {
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertTrue(tlsConfig.getTrustAll());
     }
-
+    
     @Test
     public void testCertPrivateKeyPassword() {
         Properties properties = new Properties();

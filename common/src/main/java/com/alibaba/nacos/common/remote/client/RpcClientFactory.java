@@ -34,11 +34,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version $Id: RpcClientFactory.java, v 0.1 2020年07月14日 3:41 PM liuzunfei Exp $
  */
 public class RpcClientFactory {
-
+    
     private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
-
+    
     private static final Map<String, RpcClient> CLIENT_MAP = new ConcurrentHashMap<>();
-
+    
     /**
      * get all client.
      *
@@ -47,7 +47,7 @@ public class RpcClientFactory {
     public static Set<Map.Entry<String, RpcClient>> getAllClientEntries() {
         return CLIENT_MAP.entrySet();
     }
-
+    
     /**
      * shut down client.
      *
@@ -59,11 +59,11 @@ public class RpcClientFactory {
             rpcClient.shutdown();
         }
     }
-
+    
     public static RpcClient getClient(String clientName) {
         return CLIENT_MAP.get(clientName);
     }
-
+    
     /**
      * create a rpc client.
      *
@@ -74,18 +74,18 @@ public class RpcClientFactory {
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels) {
         return createClient(clientName, connectionType, null, null, labels);
     }
-
+    
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
             RpcSdkClientTlsConfig tlsConfig) {
         return createClient(clientName, connectionType, null, null, labels, tlsConfig);
-
+        
     }
-
+    
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
             Integer threadPoolMaxSize, Map<String, String> labels) {
         return createClient(clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
-
+    
     /**
      * create a rpc client.
      *
@@ -98,17 +98,17 @@ public class RpcClientFactory {
      */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,
             Integer threadPoolMaxSize, Map<String, String> labels, RpcSdkClientTlsConfig tlsConfig) {
-
+    
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
-
+    
         return CLIENT_MAP.computeIfAbsent(clientName, clientNameInner -> {
             LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
             return new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
         });
     }
-
+    
     /**
      * Creates an RPC client for cluster communication with default thread pool settings.
      *
@@ -121,7 +121,7 @@ public class RpcClientFactory {
             Map<String, String> labels) {
         return createClusterClient(clientName, connectionType, null, null, labels);
     }
-
+    
     /**
      * Creates an RPC client for cluster communication with TLS configuration.
      *
@@ -135,7 +135,7 @@ public class RpcClientFactory {
             Map<String, String> labels, RpcClusterClientTlsConfig tlsConfig) {
         return createClusterClient(clientName, connectionType, null, null, labels, tlsConfig);
     }
-
+    
     /**
      * Creates an RPC client for cluster communication with custom thread pool settings.
      *
@@ -150,7 +150,7 @@ public class RpcClientFactory {
             Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels) {
         return createClusterClient(clientName, connectionType, threadPoolCoreSize, threadPoolMaxSize, labels, null);
     }
-
+    
     /**
      * createClusterClient.
      *
@@ -168,7 +168,7 @@ public class RpcClientFactory {
         if (!ConnectionType.GRPC.equals(connectionType)) {
             throw new UnsupportedOperationException("unsupported connection type :" + connectionType.getType());
         }
-
+    
         return CLIENT_MAP.computeIfAbsent(clientName,
                 clientNameInner -> new GrpcClusterClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels,
                         tlsConfig));

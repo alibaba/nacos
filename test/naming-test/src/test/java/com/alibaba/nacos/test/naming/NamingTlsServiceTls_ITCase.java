@@ -55,14 +55,14 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
         + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Ignore("TODO, Fix cert expired problem")
 public class NamingTlsServiceTls_ITCase {
-
-
+    
+    
     @LocalServerPort
     private int port;
-
+    
     @Test(expected = NacosException.class)
     public void Tls_a_ServerAndPlainClient() throws NacosException {
-
+        
         Instance instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
@@ -74,9 +74,9 @@ public class NamingTlsServiceTls_ITCase {
         map.put("version", "2.0");
         namingService.registerInstance(randomDomainName(), instance);
         namingService.shutDown();
-
+        
     }
-
+    
     @Test
     public void Tls_b_ServerAndTlsClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
@@ -103,9 +103,9 @@ public class NamingTlsServiceTls_ITCase {
         Assert.assertEquals(instances.size(), 1);
         Assert.assertEquals("2.0", instances.get(0).getMetadata().get("version"));
         namingService.shutDown();
-
+        
     }
-
+    
     @Test
     public void Tls_c_ServerAndTlsClientAll() throws NacosException {
         String serviceName = randomDomainName();

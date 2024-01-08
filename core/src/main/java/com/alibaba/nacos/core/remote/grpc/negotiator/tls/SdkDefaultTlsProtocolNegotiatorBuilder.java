@@ -54,12 +54,12 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
  * @see OptionalTlsProtocolNegotiator
  */
 public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiatorBuilder {
-
+    
     /**
      * The unique identifier for this negotiator builder.
      */
     public static final String SDK_TYPE_DEFAULT_TLS = "SDK_DEFAULT_TLS";
-
+    
     /**
      * Constructs and returns a ProtocolNegotiator for SDK-to-Server communication with optional TLS encryption.
      *
@@ -74,7 +74,7 @@ public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiato
         }
         return null;
     }
-
+    
     /**
      * Returns the unique identifier {@code SDK_TYPE_DEFAULT_TLS} for this negotiator builder.
      *

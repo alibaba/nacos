@@ -42,25 +42,25 @@ import static org.mockito.Mockito.when;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class RpcServerSslContextRefresherHolderTest {
-
+    
     @Mock
     private ConfigurableEnvironment environment;
-
+    
     @Mock
     private RpcSdkServerTlsConfig sdkRpcConfig;
-
+    
     @Mock
     private RpcClusterServerTlsConfig clusterConfig;
-
+    
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(environment);
     }
-
+    
     @After
     public void tearDown() {
     }
-
+    
     @Test
     public void testInit() {
         when(sdkRpcConfig.getSslContextRefresher()).thenReturn("sdk-refresher-test");
@@ -71,7 +71,7 @@ public class RpcServerSslContextRefresherHolderTest {
         assertNotNull(RpcServerSslContextRefresherHolder.getClusterInstance());
         assertNotNull(RpcServerSslContextRefresherHolder.getSdkInstance());
     }
-
+    
     private void setStaticField(Class<?> target, Object obj, String fieldName) {
         try {
             Field instanceField = target.getDeclaredField(fieldName);
@@ -81,7 +81,7 @@ public class RpcServerSslContextRefresherHolderTest {
             e.printStackTrace();
         }
     }
-
+    
     private void invokeStaticMethod(String methodName) {
         try {
             Class<?> clazz = RpcServerSslContextRefresherHolder.class;

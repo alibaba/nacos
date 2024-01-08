@@ -145,8 +145,8 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     }
     
     protected int getMaxInboundMessageSize() {
-        Integer property = EnvUtil
-                .getProperty(GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY, Integer.class);
+        Integer property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.MAX_INBOUND_MSG_SIZE_PROPERTY,
+                Integer.class);
         if (property != null) {
             return property;
         }
@@ -164,39 +164,37 @@ public abstract class BaseGrpcServer extends BaseRpcServer {
     }
     
     private void addServices(MutableHandlerRegistry handlerRegistry, ServerInterceptor... serverInterceptor) {
-        
+    
         // unary common call register.
         final MethodDescriptor<Payload, Payload> unaryPayloadMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.UNARY).setFullMethodName(MethodDescriptor
-                        .generateFullMethodName(GrpcServerConstants.REQUEST_SERVICE_NAME,
+                .setType(MethodDescriptor.MethodType.UNARY).setFullMethodName(
+                        MethodDescriptor.generateFullMethodName(GrpcServerConstants.REQUEST_SERVICE_NAME,
                                 GrpcServerConstants.REQUEST_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-        
+    
         final ServerCallHandler<Payload, Payload> payloadHandler = ServerCalls.asyncUnaryCall(
                 (request, responseObserver) -> grpcCommonRequestAcceptor.request(request, responseObserver));
-        
-        final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition
-                .builder(GrpcServerConstants.REQUEST_SERVICE_NAME).addMethod(unaryPayloadMethod, payloadHandler)
-                .build();
+    
+        final ServerServiceDefinition serviceDefOfUnaryPayload = ServerServiceDefinition.builder(
+                GrpcServerConstants.REQUEST_SERVICE_NAME).addMethod(unaryPayloadMethod, payloadHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfUnaryPayload, serverInterceptor));
-        
+    
         // bi stream register.
         final ServerCallHandler<Payload, Payload> biStreamHandler = ServerCalls.asyncBidiStreamingCall(
                 (responseObserver) -> grpcBiStreamRequestAcceptor.requestBiStream(responseObserver));
-        
+    
         final MethodDescriptor<Payload, Payload> biStreamMethod = MethodDescriptor.<Payload, Payload>newBuilder()
-                .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(MethodDescriptor
-                        .generateFullMethodName(GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME,
+                .setType(MethodDescriptor.MethodType.BIDI_STREAMING).setFullMethodName(
+                        MethodDescriptor.generateFullMethodName(GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME,
                                 GrpcServerConstants.REQUEST_BI_STREAM_METHOD_NAME))
                 .setRequestMarshaller(ProtoUtils.marshaller(Payload.newBuilder().build()))
                 .setResponseMarshaller(ProtoUtils.marshaller(Payload.getDefaultInstance())).build();
-        
-        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition
-                .builder(GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler)
-                .build();
+    
+        final ServerServiceDefinition serviceDefOfBiStream = ServerServiceDefinition.builder(
+                GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME).addMethod(biStreamMethod, biStreamHandler).build();
         handlerRegistry.addService(ServerInterceptors.intercept(serviceDefOfBiStream, serverInterceptor));
-        
+    
     }
     
     @Override

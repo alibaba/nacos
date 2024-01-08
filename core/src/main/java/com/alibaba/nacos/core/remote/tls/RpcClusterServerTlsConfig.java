@@ -49,20 +49,20 @@ import com.alibaba.nacos.sys.utils.PropertiesUtil;
  * @see RpcServerTlsConfig
  */
 public class RpcClusterServerTlsConfig extends RpcServerTlsConfig {
-
+    
     /**
      * The property key prefix for TLS configuration.
      */
     public static final String PREFIX = "nacos.remote.cluster.server.rpc.tls";
-
+    
     /**
      * The singleton instance of the RpcClusterServerTlsConfig class.
      */
     private static RpcClusterServerTlsConfig instance;
-
+    
     private RpcClusterServerTlsConfig() {
     }
-
+    
     /**
      * Retrieves the singleton instance of RpcClusterServerTlsConfig, loading the TLS configuration from the environment
      * using Spring Binder. If the configuration is empty, it falls back to default values.

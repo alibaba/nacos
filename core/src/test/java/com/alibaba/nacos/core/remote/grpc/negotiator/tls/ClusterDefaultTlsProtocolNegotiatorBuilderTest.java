@@ -40,28 +40,28 @@ import static org.junit.Assert.assertNull;
  * @date 2023/12/25
  */
 public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
-
+    
     private ConfigurableEnvironment environment;
-
+    
     private ClusterDefaultTlsProtocolNegotiatorBuilder builder;
-
+    
     @Before
     public void setUp() {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         builder = new ClusterDefaultTlsProtocolNegotiatorBuilder();
     }
-
+    
     @After
     public void tearDown() throws NoSuchFieldException, IllegalAccessException {
         resetInstance();
     }
-
+    
     @Test
     public void testBuildTlsDisabled() {
         assertNull(builder.build());
     }
-
+    
     @Test
     public void testBuildTlsEnabled() {
         Properties properties = new Properties();
@@ -70,15 +70,15 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".certChainFile", "test-server-cert.pem");
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".certPrivateKey", "test-server-key.pem");
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".trustCollectionCertFile", "test-ca-cert.pem");
-
+        
         PropertiesPropertySource propertySource = new PropertiesPropertySource("myPropertySource", properties);
         MutablePropertySources propertySources = environment.getPropertySources();
         propertySources.addLast(propertySource);
-
+        
         NacosGrpcProtocolNegotiator negotiator = builder.build();
         assertNotNull(negotiator);
     }
-
+    
     private void resetInstance() throws NoSuchFieldException, IllegalAccessException {
         Field instanceField = RpcClusterServerTlsConfig.class.getDeclaredField("instance");
         instanceField.setAccessible(true);

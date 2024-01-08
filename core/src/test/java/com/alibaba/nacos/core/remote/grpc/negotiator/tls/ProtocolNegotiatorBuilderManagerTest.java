@@ -40,7 +40,7 @@ import static org.junit.Assert.assertNotNull;
  * @author stone-98
  */
 public class ProtocolNegotiatorBuilderManagerTest {
-
+    
     @Before
     public void setUp() throws Exception {
         ConfigurableEnvironment environment = new MockEnvironment();
@@ -55,7 +55,7 @@ public class ProtocolNegotiatorBuilderManagerTest {
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".certChainFile", "test-server-cert.pem");
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".certPrivateKey", "test-server-key.pem");
         properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".trustCollectionCertFile", "test-ca-cert.pem");
-
+        
         MutablePropertySources propertySources = environment.getPropertySources();
         PropertiesPropertySource propertySource = new PropertiesPropertySource("myPropertySource", properties);
         propertySources.addLast(propertySource);
@@ -63,25 +63,25 @@ public class ProtocolNegotiatorBuilderManagerTest {
         setStaticField(RpcSdkServerTlsConfig.class, null, "instance");
         setStaticField(RpcClusterServerTlsConfig.class, null, "instance");
     }
-
+    
     @After
     public void tearDown() throws Exception {
     }
-
+    
     @Test
     public void testGetSdkNegotiator() {
         ProtocolNegotiatorBuilderManager manager = ProtocolNegotiatorBuilderManager.getInstance();
         NacosGrpcProtocolNegotiator negotiator = manager.buildGrpcProtocolNegotiator(CommunicationType.SDK);
         assertNotNull("SDK ProtocolNegotiator should not be null", negotiator);
     }
-
+    
     @Test
     public void testGetClusterNegotiator() {
         ProtocolNegotiatorBuilderManager manager = ProtocolNegotiatorBuilderManager.getInstance();
         NacosGrpcProtocolNegotiator negotiator = manager.buildGrpcProtocolNegotiator(CommunicationType.CLUSTER);
         assertNotNull("Cluster ProtocolNegotiator should not be null", negotiator);
     }
-
+    
     private void setStaticField(Class<?> target, Object obj, String fieldName) {
         try {
             Field instanceField = target.getDeclaredField(fieldName);

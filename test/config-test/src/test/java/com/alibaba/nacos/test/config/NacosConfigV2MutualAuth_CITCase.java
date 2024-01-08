@@ -54,21 +54,21 @@ import java.util.concurrent.atomic.AtomicInteger;
         RpcSdkServerTlsConfig.PREFIX + ".certPrivateKey=test-server-key.pem", RpcSdkServerTlsConfig.PREFIX
         + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NacosConfigV2MutualAuth_CITCase {
-
-
+    
+    
     public static AtomicInteger increment = new AtomicInteger(100);
-
+    
     @BeforeClass
     public static void beforeClass() throws IOException {
         ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigV2MutualAuth_CITCase.class.getSimpleName());
-
+        
     }
-
+    
     @After
     public void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
-
+    
     @Test
     @Ignore("TODO, Fix cert expired problem")
     public void test_d_MutualAuth() throws Exception {
@@ -99,14 +99,14 @@ public class NacosConfigV2MutualAuth_CITCase {
         latch2.await(5, TimeUnit.SECONDS);
         Assert.assertTrue(res);
     }
-
+    
     @Test
     public void test_d_MutualAuthButClientNot() throws Exception {
-
+        
         Properties propertiesfalse = new Properties();
         propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "true");
         propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-client-cert.pem");
-
+        
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
         String dataId = "test-group" + increment.getAndIncrement();
