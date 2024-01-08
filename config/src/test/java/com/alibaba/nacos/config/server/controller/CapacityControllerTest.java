@@ -39,7 +39,6 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.servlet.ServletContext;
-
 import java.sql.Timestamp;
 
 import static org.mockito.ArgumentMatchers.eq;
@@ -49,7 +48,7 @@ import static org.mockito.Mockito.when;
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
 public class CapacityControllerTest {
-
+    
     @InjectMocks
     CapacityController capacityController;
     
@@ -70,8 +69,8 @@ public class CapacityControllerTest {
     }
     
     @Test
-    public void testGetCapacity() throws Exception {
-    
+    public void testGetCapacityNormal() throws Exception {
+        
         Capacity capacity = new Capacity();
         capacity.setId(1L);
         capacity.setMaxAggrCount(1);
@@ -96,13 +95,42 @@ public class CapacityControllerTest {
     }
     
     @Test
-    public void testUpdateCapacity1x() throws Exception {
+    public void testGetCapacityException() throws Exception {
+        
+        Capacity capacity = new Capacity();
+        capacity.setId(1L);
+        capacity.setMaxAggrCount(1);
+        capacity.setMaxSize(1);
+        capacity.setMaxAggrSize(1);
+        capacity.setGmtCreate(new Timestamp(1));
+        capacity.setGmtModified(new Timestamp(2));
+        when(capacityService.getCapacityWithDefault(eq("test"), eq("test"))).thenReturn(capacity);
+        // tenant & group is null
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_PATH);
+        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        System.out.println(actualValue);
+        
+        // tenant is blank& group is null
+        MockHttpServletRequestBuilder builder2 = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_PATH)
+                .param("tenant", "");
+        String actualValue2 = mockMvc.perform(builder2).andReturn().getResponse().getContentAsString();
+        System.out.println(actualValue2);
+        
+        // tenant is blank& group is null
+        when(capacityService.getCapacityWithDefault(eq("g1"), eq("123"))).thenThrow(new NullPointerException());
+        MockHttpServletRequestBuilder builder3 = MockMvcRequestBuilders.get(Constants.CAPACITY_CONTROLLER_PATH)
+                .param("tenant", "123").param("group", "g1");
+        String actualValue3 = mockMvc.perform(builder3).andReturn().getResponse().getContentAsString();
+        System.out.println(actualValue3);
+    }
     
+    @Test
+    public void testUpdateCapacity1x() throws Exception {
+        
         when(capacityService.insertOrUpdateCapacity("test", "test", 1, 1, 1, 1)).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH)
-                .param("group", "test").param("tenant", "test")
-                .param("quota", "1").param("maxSize", "1")
+                .param("group", "test").param("tenant", "test").param("quota", "1").param("maxSize", "1")
                 .param("maxAggrCount", "1").param("maxAggrSize", "1");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();
@@ -140,8 +168,7 @@ public class CapacityControllerTest {
         when(capacityService.insertOrUpdateCapacity("test", "test", 1, 1, 1, 1)).thenReturn(false);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.CAPACITY_CONTROLLER_PATH)
-                .param("group", "test").param("tenant", "test")
-                .param("quota", "1").param("maxSize", "1")
+                .param("group", "test").param("tenant", "test").param("quota", "1").param("maxSize", "1")
                 .param("maxAggrCount", "1").param("maxAggrSize", "1");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         String code = JacksonUtils.toObj(actualValue).get("code").toString();

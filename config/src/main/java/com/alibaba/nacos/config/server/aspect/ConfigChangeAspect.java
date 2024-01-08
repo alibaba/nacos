@@ -332,8 +332,8 @@ public class ConfigChangeAspect {
                 retVal = pjp.proceed(args);
             }
         } catch (Throwable e) {
-            LOGGER.warn("config change plugin proceed failed {}", e.getMessage());
-            configChangeResponse.setMsg("config change plugin proceed failed " + e.getMessage());
+            LOGGER.warn("config change join point failed {}", e.getMessage());
+            configChangeResponse.setMsg("config change join point fail" + e.getMessage());
             retVal = wrapErrorResp(configChangeResponse);
         }
         

@@ -77,8 +77,10 @@ public class GrpcConnectionTest {
         String ip = "1.1.1.1";
         ConnectionMeta connectionMeta = new ConnectionMeta("connectId" + System.currentTimeMillis(), ip, ip, 8888, 9848,
                 "GRPC", "", "", new HashMap<>());
-        
+        Mockito.when(channel.isOpen()).thenReturn(true);
+        Mockito.when(channel.isActive()).thenReturn(true);
         connection = new GrpcConnection(connectionMeta, streamObserver, channel);
+        connection.setTraced(true);
         
     }
     
@@ -105,7 +107,7 @@ public class GrpcConnectionTest {
         Mockito.doReturn(true).when(streamObserver).isReady();
         
         try {
-            connection.request(new NotifySubscriberRequest(), 3000L);
+            connection.request(new NotifySubscriberRequest(), 1000L);
             Assert.assertTrue(false);
         } catch (Exception e) {
             Assert.assertTrue(e instanceof ConnectionAlreadyClosedException);
@@ -132,7 +134,7 @@ public class GrpcConnectionTest {
     public void testNormal() {
         Mockito.doReturn(new DefaultEventLoop()).when(channel).eventLoop();
         Mockito.doReturn(true).when(streamObserver).isReady();
-        
+        Assert.assertTrue(connection.isConnected());
         try {
             new Thread(new Runnable() {
                 @Override
@@ -198,6 +200,15 @@ public class GrpcConnectionTest {
         }
         
         Assert.assertTrue(connection.getMetaInfo().pushQueueBlockTimesLastOver(3000));
+        
+    }
+    
+    @Test
+    public void testClose() {
+        
+        Mockito.doThrow(new IllegalStateException()).when(streamObserver).onCompleted();
+        connection.close();
+        Mockito.verify(channel, Mockito.times(1)).close();
         
     }
 }

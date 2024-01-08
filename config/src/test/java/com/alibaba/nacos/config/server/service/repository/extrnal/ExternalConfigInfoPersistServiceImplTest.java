@@ -395,12 +395,12 @@ public class ExternalConfigInfoPersistServiceImplTest {
         String srcUser = "srcUser";
         //mock update config info cas
         Mockito.when(
-                        jdbcTemplate.update(anyString(), eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)),
-                                eq(srcIp), eq(srcUser), any(Timestamp.class), eq(configInfoWrapperOld.getAppName()),
-                                eq(configAdvanceInfo.get("desc")), eq(configAdvanceInfo.get("use")),
-                                eq(configAdvanceInfo.get("effect")), eq(configAdvanceInfo.get("type")),
-                                eq(configAdvanceInfo.get("schema")), eq(dataId), eq(group), eq(tenant), eq(casMd5)))
-                .thenReturn(1);
+                jdbcTemplate.update(anyString(), eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)),
+                        eq(srcIp), eq(srcUser), any(Timestamp.class), eq(configInfoWrapperOld.getAppName()),
+                        eq(configAdvanceInfo.get("desc")), eq(configAdvanceInfo.get("use")),
+                        eq(configAdvanceInfo.get("effect")), eq(configAdvanceInfo.get("type")),
+                        eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant),
+                        eq(casMd5))).thenReturn(1);
         
         //mock insert config tags.
         Mockito.when(jdbcTemplate.update(
@@ -422,7 +422,8 @@ public class ExternalConfigInfoPersistServiceImplTest {
                         eq(srcUser), any(Timestamp.class), eq(configInfoWrapperOld.getAppName()),
                         eq(configAdvanceInfo.get("desc")), eq(configAdvanceInfo.get("use")),
                         eq(configAdvanceInfo.get("effect")), eq(configAdvanceInfo.get("type")),
-                        eq(configAdvanceInfo.get("schema")), eq(dataId), eq(group), eq(tenant), eq(casMd5));
+                        eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant),
+                        eq(casMd5));
         
         //expect update config tags
         Mockito.verify(jdbcTemplate, times(1)).update(eq(

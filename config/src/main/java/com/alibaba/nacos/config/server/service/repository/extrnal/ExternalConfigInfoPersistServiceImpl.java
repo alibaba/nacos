@@ -609,7 +609,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         String effect = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("effect");
         String type = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("type");
         String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
-        
+        final String encryptedDataKey =
+                configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         try {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
@@ -627,7 +628,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             context.putUpdateParameter(FieldConstant.EFFECT, effect);
             context.putUpdateParameter(FieldConstant.TYPE, type);
             context.putUpdateParameter(FieldConstant.C_SCHEMA, schema);
-            
+            context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY, encryptedDataKey);
             context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());
             context.putWhereParameter(FieldConstant.GROUP_ID, configInfo.getGroup());
             context.putWhereParameter(FieldConstant.TENANT_ID, tenantTmp);

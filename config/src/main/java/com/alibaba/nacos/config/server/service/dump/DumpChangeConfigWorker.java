@@ -120,9 +120,12 @@ public class DumpChangeConfigWorker implements Runnable {
                                 new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
                         ConfigInfoWrapper configInfoWrapper = configInfoPersistService.findConfigInfo(cf.getDataId(),
                                 cf.getGroup(), cf.getTenant());
-                        ConfigCacheService.dumpChange(configInfoWrapper.getDataId(), configInfoWrapper.getGroup(),
+                        LogUtil.DUMP_LOG.info("[dump-change] find change config  {}, {}, md5={}",
+                                new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
+                        ConfigCacheService.dump(configInfoWrapper.getDataId(), configInfoWrapper.getGroup(),
                                 configInfoWrapper.getTenant(), configInfoWrapper.getContent(),
-                                configInfoWrapper.getLastModified(), configInfoWrapper.getEncryptedDataKey());
+                                configInfoWrapper.getLastModified(), configInfoWrapper.getType(),
+                                configInfoWrapper.getEncryptedDataKey());
                         final String content = configInfoWrapper.getContent();
                         final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_GBK);
                         final String md5Utf8 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
