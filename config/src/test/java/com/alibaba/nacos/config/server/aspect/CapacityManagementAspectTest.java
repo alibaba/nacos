@@ -118,14 +118,6 @@ public class CapacityManagementAspectTest {
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
         Mockito.verify(configInfoPersistService, Mockito.times(0)).findConfigInfo(any(), any(), any());
         assert localMockResult.equals(mockProceedingJoinPointResult);
-        
-        //test with update
-        ConfigInfoWrapper mockConfigInfoWrapper = new ConfigInfoWrapper();
-        mockConfigInfoWrapper.setTenant(mockTenant);
-        mockConfigInfoWrapper.setDataId(mockDataId);
-        mockConfigInfoWrapper.setGroup(mockGroup);
-        mockConfigInfoWrapper.setContent(mockContent);
-        when(configInfoPersistService.findConfigInfo(any(), any(), any())).thenReturn(mockConfigInfoWrapper);
     }
     @Test
     public void TestAroundSyncUpdateConfigAllForInsertAspect1() throws Throwable {
