@@ -122,7 +122,7 @@ public class CapacityManagementAspectTest {
     }
     
     @Test
-    public void TestAroundSyncUpdateConfigAllForInsertAspect1() throws Throwable {
+    public void TestAroundSyncUpdateConfigAllForInsertAspectOne() throws Throwable {
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         //test with insert
@@ -141,7 +141,7 @@ public class CapacityManagementAspectTest {
         Mockito.verify(proceedingJoinPoint, Mockito.times(0)).proceed();
     }
     @Test
-    public void TestAroundSyncUpdateConfigAllForInsertAspect2Tenant() throws Throwable {
+    public void TestAroundSyncUpdateConfigAllForInsertAspectTwoTenant() throws Throwable {
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         //test with insert
@@ -167,7 +167,7 @@ public class CapacityManagementAspectTest {
     }
     
     @Test
-    public void TestAroundSyncUpdateConfigAllForInsertAspect2Group() throws Throwable {
+    public void TestAroundSyncUpdateConfigAllForInsertAspectTwoGroup() throws Throwable {
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         //test with insert
@@ -191,7 +191,7 @@ public class CapacityManagementAspectTest {
         Mockito.verify(proceedingJoinPoint, Mockito.times(1)).proceed();
     }
     @Test
-    public void TestAroundSyncUpdateConfigAllForInsertAspect3Tenant() throws Throwable {
+    public void TestAroundSyncUpdateConfigAllForInsertAspectThreeTenant() throws Throwable {
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         //test with insert
@@ -236,7 +236,7 @@ public class CapacityManagementAspectTest {
     }
     
     @Test
-    public void TestAroundSyncUpdateConfigAllForInsertAspect3Group() throws Throwable {
+    public void TestAroundSyncUpdateConfigAllForInsertAspectThreeGroup() throws Throwable {
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         //test with insert
