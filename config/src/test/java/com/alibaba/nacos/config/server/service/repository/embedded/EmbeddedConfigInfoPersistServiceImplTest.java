@@ -1019,7 +1019,7 @@ public class EmbeddedConfigInfoPersistServiceImplTest {
         int pageSize = 100;
         //execute return mock obj
         Page<ConfigInfoWrapper> returnConfigPage = embeddedConfigInfoPersistService.findAllConfigInfoFragment(lastId,
-                pageSize);
+                pageSize, true);
         //expect check
         Assert.assertEquals(mockConfigs, returnConfigPage.getPageItems());
         

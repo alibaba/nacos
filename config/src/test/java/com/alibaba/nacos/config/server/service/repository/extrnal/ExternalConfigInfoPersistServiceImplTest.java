@@ -1256,7 +1256,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         int pageSize = 100;
         //execute return mock obj
         Page<ConfigInfoWrapper> returnConfigPage = externalConfigInfoPersistService.findAllConfigInfoFragment(lastId,
-                pageSize);
+                pageSize, true);
         
         //expect check
         Assert.assertEquals(mockConfigs, returnConfigPage.getPageItems());
@@ -1264,7 +1264,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("mock fail"));
         try {
-            externalConfigInfoPersistService.findAllConfigInfoFragment(lastId, pageSize);
+            externalConfigInfoPersistService.findAllConfigInfoFragment(lastId, pageSize, true);
             Assert.assertTrue(false);
         } catch (Exception e) {
             Assert.assertEquals("mock fail", e.getMessage());

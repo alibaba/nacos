@@ -149,12 +149,20 @@ public class ConfigInfoMapperByDerbyTest {
     
     @Test
     public void testFindAllConfigInfoFragment() {
-        MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfoFragment(context);
+        //with content
+        MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfoFragment(context, true);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info "
                         + "WHERE id > ? ORDER BY id ASC OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
                         + " ROWS ONLY");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id});
+        //with out content
+        MapperResult mapperResult2 = configInfoMapperByDerby.findAllConfigInfoFragment(context, false);
+        Assert.assertEquals(mapperResult2.getSql(),
+                "SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type FROM config_info "
+                        + "WHERE id > ? ORDER BY id ASC OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult2.getParamList().toArray(), new Object[] {id});
     }
     
     @Test

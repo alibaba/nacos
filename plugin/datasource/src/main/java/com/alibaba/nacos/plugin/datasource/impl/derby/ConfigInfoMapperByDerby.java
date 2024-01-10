@@ -77,8 +77,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
                 + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET " + context.getStartRow()
                 + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY ) "
                 + "g, config_info t  WHERE g.id = t.id ";
-        return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID)));
+        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
     
     @Override
@@ -91,12 +90,11 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public MapperResult findAllConfigInfoFragment(MapperContext context) {
+    public MapperResult findAllConfigInfoFragment(MapperContext context, boolean needContent) {
         
-        return new MapperResult(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info WHERE id > ? "
-                        + "ORDER BY id ASC OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-                        + context.getPageSize() + " ROWS ONLY",
+        return new MapperResult("SELECT id,data_id,group_id,tenant_id,app_name," + (needContent ? "content," : "")
+                + "md5,gmt_modified,type FROM config_info WHERE id > ? " + "ORDER BY id ASC OFFSET "
+                + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.ID)));
     }
     
@@ -276,7 +274,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     public String getDataSource() {
         return DataSourceConstant.DERBY;
     }
-
+    
     @Override
     public MapperResult findChangeConfig(MapperContext context) {
         String sql =

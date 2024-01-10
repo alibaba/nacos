@@ -149,11 +149,19 @@ public class ConfigInfoMapperByMySqlTest {
     
     @Test
     public void testFindAllConfigInfoFragment() {
-        MapperResult mapperResult = configInfoMapperByMySql.findAllConfigInfoFragment(context);
-        Assert.assertEquals(mapperResult.getSql(),
+        //with content
+        MapperResult mapperResult = configInfoMapperByMySql.findAllConfigInfoFragment(context, true);
+        Assert.assertEquals(
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize);
+                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize,
+                mapperResult.getSql());
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id});
+        
+        MapperResult mapperResult2 = configInfoMapperByMySql.findAllConfigInfoFragment(context, false);
+        Assert.assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type,encrypted_data_key "
+                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize,
+                mapperResult2.getSql());
+        Assert.assertArrayEquals(mapperResult2.getParamList().toArray(), new Object[] {id});
     }
     
     @Test

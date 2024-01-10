@@ -93,11 +93,11 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     }
     
     @Override
-    public MapperResult findAllConfigInfoFragment(MapperContext context) {
+    public MapperResult findAllConfigInfoFragment(MapperContext context, boolean needContent) {
         
-        String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + context.getStartRow() + ","
-                + context.getPageSize();
+        String sql = "SELECT id,data_id,group_id,tenant_id,app_name," + (needContent ? "content," : "")
+                + "md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id > ? ORDER BY id ASC LIMIT "
+                + context.getStartRow() + "," + context.getPageSize();
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID)));
     }
     
