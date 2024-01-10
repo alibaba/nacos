@@ -50,7 +50,7 @@ public class LocalSimpleCountRateCounter extends RateCounter {
             startTime = RateCounter.getTrimMillsOfHour(now);
         } else {
             //second default
-            getTrimMillsOfSecond(now);
+            startTime=getTrimMillsOfSecond(now);
         }
     }
     
