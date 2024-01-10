@@ -59,7 +59,7 @@ public class ProtocolNegotiatorBuilderManager {
     /**
      * Property key for configuring the ProtocolNegotiator type for SDK communication.
      */
-    public static final String SDK_TYPE_PROPERTY_KEY = "nacos.remote.sdk.server.rpc.protocol.negotiator.type";
+    public static final String SDK_TYPE_PROPERTY_KEY = "nacos.remote.server.rpc.protocol.negotiator.type";
     
     /**
      * Singleton instance of ProtocolNegotiatorBuilderManager.

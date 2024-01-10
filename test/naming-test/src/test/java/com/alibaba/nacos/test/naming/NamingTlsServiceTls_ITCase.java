@@ -80,8 +80,8 @@ public class NamingTlsServiceTls_ITCase {
     @Test
     public void Tls_b_ServerAndTlsClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "true");
-        System.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
         Instance instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
@@ -109,8 +109,8 @@ public class NamingTlsServiceTls_ITCase {
     @Test
     public void Tls_c_ServerAndTlsClientAll() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "true");
-        System.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_TRUST_ALL, "true");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL, "true");
         Instance instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
