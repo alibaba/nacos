@@ -19,7 +19,7 @@ package com.alibaba.nacos.core.model.vo;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class IdGeneratorVOTest {
+public class InstanceIdGeneratorVOTest {
     
     @Test
     public void test() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2020 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,29 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.config.server.model;
+package com.alibaba.nacos.api.naming.spi.generator;
+
+import com.alibaba.nacos.api.naming.pojo.Instance;
 
 /**
- * Auth type.
+ * Generator SPI for Instance Id.
  *
- * @author Nacos
+ * @author xiweng.yy
  */
-public enum AuthType {
+public interface InstanceIdGenerator {
+    
     /**
-     * Auth type.
+     * Generate instance id.
+     *
+     * @param instance instance
+     * @return instance id
      */
-    GROUP,
-    GROUP_DATAID,
-    TENANT_GROUP,
-    TENANT
+    String generateInstanceId(Instance instance);
+    
+    /**
+     * Generator type.
+     *
+     * @return type
+     */
+    String type();
 }

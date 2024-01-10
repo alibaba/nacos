@@ -19,25 +19,25 @@ package com.alibaba.nacos.config.server.model;
 import java.io.Serializable;
 
 /**
- * RestPageResult.
+ * check config has listener.
  *
- * @author Nacos
+ * @author shiyiyue
  */
-public class RestPageResult<T> implements Serializable {
-
-    private static final long serialVersionUID = -8048577763828650575L;
+public class ListenerCheckResult implements Serializable {
+    
+    private boolean hasListener;
     
     private int code;
     
     private String message;
     
-    private int total;
+    public boolean isHasListener() {
+        return hasListener;
+    }
     
-    private int pageSize;
-    
-    private int currentPage;
-    
-    private T data;
+    public void setHasListener(boolean hasListener) {
+        this.hasListener = hasListener;
+    }
     
     public int getCode() {
         return code;
@@ -54,41 +54,4 @@ public class RestPageResult<T> implements Serializable {
     public void setMessage(String message) {
         this.message = message;
     }
-    
-    public int getTotal() {
-        return total;
-    }
-    
-    public void setTotal(int total) {
-        this.total = total;
-    }
-    
-    public int getPageSize() {
-        return pageSize;
-    }
-    
-    public void setPageSize(int pageSize) {
-        this.pageSize = pageSize;
-    }
-    
-    public int getCurrentPage() {
-        return currentPage;
-    }
-    
-    public void setCurrentPage(int currentPage) {
-        this.currentPage = currentPage;
-    }
-    
-    public T getData() {
-        return data;
-    }
-    
-    public void setData(T data) {
-        this.data = data;
-    }
-    
-    public static long getSerialversionuid() {
-        return serialVersionUID;
-    }
-    
 }

@@ -39,7 +39,8 @@ import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * grpc connection.
@@ -69,43 +70,33 @@ public class GrpcConnection extends Connection {
      */
     public void sendRequestNoAck(Request request) throws NacosException {
         sendQueueBlockCheck();
-        final AtomicReference<NacosRuntimeException> exception = new AtomicReference<>();
-        final DefaultRequestFuture future = new DefaultRequestFuture(this.getMetaInfo().getConnectionId(), "0");
-        this.channel.eventLoop().execute(() -> {
+        Future<Boolean> executeFuture = this.channel.eventLoop().submit(() -> {
             //StreamObserver#onNext() is not thread-safe,synchronized is required to avoid direct memory leak.
             synchronized (streamObserver) {
                 try {
                     Payload payload = GrpcUtils.convert(request);
                     traceIfNecessary(payload);
                     streamObserver.onNext(payload);
-                    future.setResponse(new Response() {
-                        @Override
-                        public String getMessage() {
-                            return "";
-                        }
-                    });
+                    return true;
                 } catch (Throwable e) {
                     if (e instanceof StatusRuntimeException) {
-                        exception.set(new ConnectionAlreadyClosedException(e));
+                        throw new ConnectionAlreadyClosedException(e);
                     } else if (e instanceof IllegalStateException) {
-                        exception.set(new ConnectionAlreadyClosedException(e));
-                    } else {
-                        exception.set(new NacosRuntimeException(NacosException.SERVER_ERROR, e));
+                        throw new ConnectionAlreadyClosedException(e);
                     }
-                    future.setFailResult(exception.get());
+                    throw new NacosRuntimeException(NacosException.SERVER_ERROR, e);
                 }
-            
             }
         });
         try {
-            future.get();
-        } catch (Exception e) {
-            //ignore
+            executeFuture.get();
+        } catch (Throwable throwable) {
+            if (throwable instanceof ExecutionException && throwable.getCause() != null
+                    && throwable.getCause() instanceof NacosRuntimeException) {
+                throw (NacosRuntimeException) throwable.getCause();
+            }
+            throw new NacosRuntimeException(NacosException.SERVER_ERROR, throwable);
         }
-        if (exception.get() != null) {
-            throw exception.get();
-        }
-    
     }
     
     private void sendQueueBlockCheck() {
@@ -144,8 +135,8 @@ public class GrpcConnection extends Connection {
                 Loggers.REMOTE_DIGEST.info("[{}]Send request to client ,payload={}", connectionId,
                         payload.toByteString().toStringUtf8());
             } catch (Throwable throwable) {
-                Loggers.REMOTE_DIGEST
-                        .warn("[{}]Send request to client trace error, ,error={}", connectionId, throwable);
+                Loggers.REMOTE_DIGEST.warn("[{}]Send request to client trace error, ,error={}", connectionId,
+                        throwable);
             }
         }
     }
@@ -194,7 +185,7 @@ public class GrpcConnection extends Connection {
             if (isTraced()) {
                 Loggers.REMOTE_DIGEST.warn("[{}] try to close connection ", connectionId);
             }
-    
+            
             try {
                 closeBiStream();
             } catch (Throwable e) {

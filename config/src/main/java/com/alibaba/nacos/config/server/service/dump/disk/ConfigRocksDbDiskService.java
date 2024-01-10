@@ -59,11 +59,11 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     private void createDirIfNotExist(String dir) {
         File roskDataDir = new File(EnvUtil.getNacosHome(), "rocksdata");
         if (!roskDataDir.exists()) {
-            roskDataDir.mkdir();
+            roskDataDir.mkdirs();
         }
         File baseDir = new File(EnvUtil.getNacosHome(), dir);
         if (!baseDir.exists()) {
-            baseDir.mkdir();
+            baseDir.mkdirs();
         }
     }
     

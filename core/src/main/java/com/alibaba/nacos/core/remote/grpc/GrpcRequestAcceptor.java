@@ -25,8 +25,10 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerCheckRequest;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -75,6 +77,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         
         traceIfNecessary(grpcRequest, true);
         String type = grpcRequest.getMetadata().getType();
+        long startTime = System.nanoTime();
         
         //server is on starting.
         if (!ApplicationUtils.isStarted()) {
@@ -84,6 +87,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             responseObserver.onNext(payloadResponse);
             
             responseObserver.onCompleted();
+            MetricsMonitor.recordGrpcRequestEvent(type, false,
+                    NacosException.INVALID_SERVER_STATUS, null, null, System.nanoTime() - startTime);
             return;
         }
 
@@ -93,6 +98,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             traceIfNecessary(serverCheckResponseP, false);
             responseObserver.onNext(serverCheckResponseP);
             responseObserver.onCompleted();
+            MetricsMonitor.recordGrpcRequestEvent(type, true,
+                    0, null, null, System.nanoTime() - startTime);
             return;
         }
         
@@ -105,6 +112,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
+            MetricsMonitor.recordGrpcRequestEvent(type, false,
+                    NacosException.NO_HANDLER, null, null, System.nanoTime() - startTime);
             return;
         }
         
@@ -119,6 +128,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
+            MetricsMonitor.recordGrpcRequestEvent(type, false,
+                    NacosException.UN_REGISTER, null, null, System.nanoTime() - startTime);
             return;
         }
         
@@ -132,6 +143,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
+            MetricsMonitor.recordGrpcRequestEvent(type, false,
+                    NacosException.BAD_GATEWAY, e.getClass().getSimpleName(), null, System.nanoTime() - startTime);
             return;
         }
         
@@ -142,6 +155,9 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
+
+            MetricsMonitor.recordGrpcRequestEvent(type, false,
+                    NacosException.BAD_GATEWAY, null, null, System.nanoTime() - startTime);
             return;
         }
         
@@ -154,6 +170,9 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
+
+            MetricsMonitor.recordGrpcRequestEvent(type, false,
+                    NacosException.BAD_GATEWAY, null, null, System.nanoTime() - startTime);
             return;
         }
         
@@ -181,6 +200,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
                 responseObserver.onNext(payloadResponse);
                 responseObserver.onCompleted();
             }
+            MetricsMonitor.recordGrpcRequestEvent(type, response.isSuccess(),
+                    response.getErrorCode(), null, request.getModule(), System.nanoTime() - startTime);
         } catch (Throwable e) {
             Loggers.REMOTE_DIGEST
                     .error("[{}] Fail to handle request from connection [{}] ,error message :{}", "grpc", connectionId,
@@ -189,6 +210,8 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             traceIfNecessary(payloadResponse, false);
             responseObserver.onNext(payloadResponse);
             responseObserver.onCompleted();
+            MetricsMonitor.recordGrpcRequestEvent(type, false,
+                    ResponseCode.FAIL.getCode(), e.getClass().getSimpleName(), request.getModule(), System.nanoTime() - startTime);
         }
         
     }

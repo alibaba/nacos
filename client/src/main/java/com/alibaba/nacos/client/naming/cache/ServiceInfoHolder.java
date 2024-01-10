@@ -123,11 +123,15 @@ public class ServiceInfoHolder implements Closeable {
     public ServiceInfo processServiceInfo(ServiceInfo serviceInfo) {
         String serviceKey = serviceInfo.getKey();
         if (serviceKey == null) {
+            NAMING_LOGGER.warn("process service info but serviceKey is null, service host: {}",
+                    JacksonUtils.toJson(serviceInfo.getHosts()));
             return null;
         }
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
+            NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {}, " 
+                    + "pushEmptyProtection: {}, hosts: {}", serviceKey, pushEmptyProtection, serviceInfo.getHosts());
             return oldService;
         }
         serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
