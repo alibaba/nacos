@@ -53,7 +53,14 @@ public abstract class RateCounter {
      * @return
      */
     public abstract long add(long timestamp, long count);
-    
+    /**
+     * add intercepted count for the second of timestamp.
+     * @param timestamp timestamp
+     * @param count count
+     * @return
+     */
+    public abstract long addInterceptedCount(long timestamp, long count) ;
+
     /**
      * get count of the second of timestamp.
      *

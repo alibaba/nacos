@@ -59,6 +59,11 @@ public class LocalSimpleCountRateCounter extends RateCounter {
         return createSlotIfAbsent(timestamp).countHolder.count.addAndGet(count);
     }
 
+    @Override
+    public long addInterceptedCount(long timestamp, long count) {
+        return createSlotIfAbsent(timestamp).countHolder.interceptedCount.addAndGet(count);
+    }
+
     public void minus(long timestamp, long count) {
         AtomicLong currentCount = createSlotIfAbsent(timestamp).countHolder.count;
         currentCount.addAndGet(count * -1);
