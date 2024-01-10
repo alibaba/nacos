@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.core.remote.CommunicationType;
+import com.alibaba.nacos.common.remote.CommunicationType;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.tls.RpcClusterServerTlsConfig;
 import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
