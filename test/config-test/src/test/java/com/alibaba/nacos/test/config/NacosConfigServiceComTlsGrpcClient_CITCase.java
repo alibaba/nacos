@@ -71,7 +71,7 @@ public class NacosConfigServiceComTlsGrpcClient_CITCase {
     @Test
     public void test_e_TlsServerAndPlainClient() throws Exception {
         Properties propertiesfalse = new Properties();
-        propertiesfalse.put(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "false");
+        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "false");
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
         String dataId = "test-group" + increment.getAndIncrement();

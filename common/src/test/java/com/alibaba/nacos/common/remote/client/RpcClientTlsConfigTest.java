@@ -28,7 +28,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testEnableTls() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_ENABLE, "true");
+        properties.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertTrue(tlsConfig.getEnableTls());
     }
@@ -36,7 +36,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testSslProvider() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_PROVIDER, "provider");
+        properties.setProperty(RpcConstants.RPC_CLIENT_TLS_PROVIDER, "provider");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("provider", tlsConfig.getSslProvider());
     }
@@ -44,7 +44,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testMutualAuthEnable() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_MUTUAL_AUTH, "true");
+        properties.setProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH, "true");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertTrue(tlsConfig.getMutualAuthEnable());
     }
@@ -52,7 +52,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testProtocols() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_PROTOCOLS, "protocols");
+        properties.setProperty(RpcConstants.RPC_CLIENT_TLS_PROTOCOLS, "protocols");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("protocols", tlsConfig.getProtocols());
     }
@@ -60,7 +60,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testCiphers() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_CIPHERS, "ciphers");
+        properties.setProperty(RpcConstants.RPC_CLIENT_TLS_CIPHERS, "ciphers");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("ciphers", tlsConfig.getCiphers());
     }
@@ -68,7 +68,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testTrustCollectionCertFile() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "trustCollectionCertFile");
+        properties.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "trustCollectionCertFile");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("trustCollectionCertFile", tlsConfig.getTrustCollectionCertFile());
     }
@@ -76,7 +76,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testCertChainFile() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_CERT_CHAIN_PATH, "certChainFile");
+        properties.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH, "certChainFile");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("certChainFile", tlsConfig.getCertChainFile());
     }
@@ -84,7 +84,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testCertPrivateKey() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_CERT_KEY, "certPrivateKey");
+        properties.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY, "certPrivateKey");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("certPrivateKey", tlsConfig.getCertPrivateKey());
     }
@@ -92,7 +92,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testTrustAll() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_TRUST_ALL, "true");
+        properties.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL, "true");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertTrue(tlsConfig.getTrustAll());
     }
@@ -100,7 +100,7 @@ public class RpcClientTlsConfigTest {
     @Test
     public void testCertPrivateKeyPassword() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.RPC_SDK_CLIENT_TLS_TRUST_PWD, "trustPwd");
+        properties.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_PWD, "trustPwd");
         RpcSdkClientTlsConfig tlsConfig = RpcSdkClientTlsConfig.properties(properties);
         assertEquals("trustPwd", tlsConfig.getCertPrivateKeyPassword());
     }

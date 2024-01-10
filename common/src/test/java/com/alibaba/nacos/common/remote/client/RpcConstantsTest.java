@@ -31,11 +31,11 @@ public class RpcConstantsTest {
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
             if (declaredField.getType().equals(String.class) && null != declaredField.getAnnotation(
-                    RpcConstants.RpcSdkConfigLabel.class)) {
+                    RpcConstants.RpcConfigLabel.class)) {
                 i++;
             }
         }
-        assertEquals(i, RpcConstants.getSdkRpcParams().size());
+        assertEquals(i, RpcConstants.getRpcParams().size());
     }
     
     @Test
