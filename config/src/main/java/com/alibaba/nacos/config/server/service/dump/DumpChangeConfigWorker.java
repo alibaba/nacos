@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -81,15 +81,15 @@ public class DumpChangeConfigWorker implements Runnable {
             long deleteCursorId = 0L;
             
             while (true) {
-                List<ConfigInfoWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
+                List<ConfigHistoryInfo> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize);
-                for (ConfigInfo configInfo : configDeleted) {
-                    if (configInfoPersistService.findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
-                            configInfo.getTenant()) == null) {
-                        ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(),
-                                configInfo.getTenant());
+                for (ConfigHistoryInfo configHistoryInfo : configDeleted) {
+                    if (configInfoPersistService.findConfigInfoState(configHistoryInfo.getDataId(),
+                            configHistoryInfo.getGroup(), configHistoryInfo.getTenant()) == null) {
+                        ConfigCacheService.remove(configHistoryInfo.getDataId(), configHistoryInfo.getGroup(),
+                                configHistoryInfo.getTenant());
                         LogUtil.DEFAULT_LOG.info("[dump-delete-ok] {}",
-                                new Object[] {GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup())});
+                                GroupKey2.getKey(configHistoryInfo.getDataId(), configHistoryInfo.getGroup()));
                     }
                 }
                 if (configDeleted.size() < pageSize) {

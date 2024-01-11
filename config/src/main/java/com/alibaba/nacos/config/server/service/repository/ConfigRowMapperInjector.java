@@ -75,6 +75,8 @@ public class ConfigRowMapperInjector {
     
     public static final ConfigHistoryDetailRowMapper HISTORY_DETAIL_ROW_MAPPER = new ConfigHistoryDetailRowMapper();
     
+    public static final ConfigHistoryBaseRowMapper HISTORY_BASE_ROW_MAPPER = new ConfigHistoryBaseRowMapper();
+    
     static {
         injectConfigRowMapper();
     }
@@ -169,6 +171,12 @@ public class ConfigRowMapperInjector {
         RowMapperManager.registerRowMapper(
                 ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER.getClass().getCanonicalName(),
                 ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER);
+        
+        // HISTORY_BASE_ROW_MAPPER
+        
+        RowMapperManager.registerRowMapper(
+                ConfigRowMapperInjector.HISTORY_BASE_ROW_MAPPER.getClass().getCanonicalName(),
+                ConfigRowMapperInjector.HISTORY_BASE_ROW_MAPPER);
     }
     
     public static final class ConfigInfoWrapperRowMapper implements RowMapper<ConfigInfoWrapper> {
@@ -552,6 +560,19 @@ public class ConfigRowMapperInjector {
             } catch (SQLException ignore) {
             
             }
+            return configHistoryInfo;
+        }
+    }
+    
+    public static final class ConfigHistoryBaseRowMapper implements RowMapper<ConfigHistoryInfo> {
+        
+        @Override
+        public ConfigHistoryInfo mapRow(ResultSet rs, int rowNum) throws SQLException {
+            ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+            configHistoryInfo.setId(rs.getLong("nid"));
+            configHistoryInfo.setDataId(rs.getString("data_id"));
+            configHistoryInfo.setGroup(rs.getString("group_id"));
+            configHistoryInfo.setTenant(rs.getString("tenant_id"));
             return configHistoryInfo;
         }
     }

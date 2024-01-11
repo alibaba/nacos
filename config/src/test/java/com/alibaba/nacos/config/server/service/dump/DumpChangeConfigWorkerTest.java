@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
@@ -26,7 +27,6 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistServi
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -58,9 +58,6 @@ public class DumpChangeConfigWorkerTest {
     
     @Mock
     DynamicDataSource dynamicDataSource;
-    
-    @Mock
-    DataSourceService dataSourceService;
     
     @Mock
     ConfigInfoPersistService configInfoPersistService;
@@ -129,13 +126,13 @@ public class DumpChangeConfigWorkerTest {
         PropertyUtil.setDumpChangeOn(true);
         dumpChangeConfigWorker.setPageSize(3);
         //mock delete first page
-        List<ConfigInfoWrapper> firstPageDeleted = new ArrayList<>();
+        List<ConfigHistoryInfo> firstPageDeleted = new ArrayList<>();
         Timestamp startTime = dumpChangeConfigWorker.startTime;
         String dataIdPrefix = "d12345";
         
-        firstPageDeleted.add(createConfigInfoWrapper(dataIdPrefix, 1, startTime.getTime() + 1));
-        firstPageDeleted.add(createConfigInfoWrapper(dataIdPrefix, 2, startTime.getTime() + 2));
-        firstPageDeleted.add(createConfigInfoWrapper(dataIdPrefix, 3, startTime.getTime() + 3));
+        firstPageDeleted.add(createConfigHistoryInfo(dataIdPrefix, 1, startTime.getTime() + 1));
+        firstPageDeleted.add(createConfigHistoryInfo(dataIdPrefix, 2, startTime.getTime() + 2));
+        firstPageDeleted.add(createConfigHistoryInfo(dataIdPrefix, 3, startTime.getTime() + 3));
         //pre set cache for id1
         preSetCache(dataIdPrefix, 1, System.currentTimeMillis());
         Assert.assertEquals("encrykey" + 1,
@@ -329,5 +326,16 @@ public class DumpChangeConfigWorkerTest {
         configInfoWrapper.setId(id);
         configInfoWrapper.setLastModified(timeStamp);
         return configInfoWrapper;
+    }
+    
+    private ConfigHistoryInfo createConfigHistoryInfo(String dataIdPreFix, long id, long timeStamp) {
+        ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
+        configHistoryInfo.setDataId(dataIdPreFix + id);
+        configHistoryInfo.setGroup("group" + id);
+        configHistoryInfo.setTenant("tenant" + id);
+        configHistoryInfo.setContent("content" + id);
+        configHistoryInfo.setId(id);
+        configHistoryInfo.setLastModifiedTime(new Timestamp(timeStamp));
+        return configHistoryInfo;
     }
 }
