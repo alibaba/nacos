@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.notify.Event;
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.MapUtil;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
@@ -34,6 +35,7 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.AbstractConsistencyProtocol;
+import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.raft.exception.NoSuchRaftGroupException;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alipay.sofa.jraft.Node;
@@ -134,7 +136,8 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
                     final Long term = event.getTerm();
                     final List<String> raftClusterInfo = event.getRaftClusterInfo();
                     final String errMsg = event.getErrMsg();
-                    
+    
+                    checkRaftClusterCorrect(raftClusterInfo);
                     // Leader information needs to be selectively updated. If it is valid data,
                     // the information in the protocol metadata is updated.
                     MapUtil.putIfValNoEmpty(properties, MetadataKey.LEADER_META_DATA, leader);
@@ -144,7 +147,7 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
                     
                     value.put(groupId, properties);
                     metaData.load(value);
-                    
+
                     // The metadata information is injected into the metadata information of the node
                     injectProtocolMetaData(metaData);
                 }
@@ -155,6 +158,20 @@ public class JRaftProtocol extends AbstractConsistencyProtocol<RaftConfig, Reque
                 }
                 
             });
+        }
+    }
+    
+    private void checkRaftClusterCorrect(List<String> raftClusterInfo){
+        if (CollectionUtils.isNotEmpty(raftClusterInfo)){
+            //check raft clusters info is Correct compared to the current allmembers
+            //when cluster allmembers is inconsistent with snapshot clusters
+            Set<String> allMembers = ProtocolManager.toCPMembersInfo(memberManager.allMembers());
+            for (String raftPeer : raftClusterInfo){
+                if (!allMembers.contains(raftPeer)){
+                    memberChange(allMembers);
+                    return;
+                }
+            }
         }
     }
     
