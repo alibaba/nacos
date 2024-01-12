@@ -196,4 +196,9 @@ public class Constants {
     
     public static final String ALL_PATTERN = "*";
     
+    /**
+     * Since 1.4.7, For some situation like java agent using nacos-client which can't use env ram info.
+     */
+    public static final String DEFAULT_USE_RAM_INFO_PARSING = "true";
+    
 }
