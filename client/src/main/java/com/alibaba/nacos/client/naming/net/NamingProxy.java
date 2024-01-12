@@ -38,7 +38,7 @@ import com.alibaba.nacos.client.naming.utils.SignUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
-import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.client.utils.RamUtil;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -70,7 +70,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -748,33 +747,16 @@ public class NamingProxy implements Closeable {
     
     public String getAccessKey() {
         if (properties == null) {
-            
             return SpasAdapter.getAk();
         }
-        
-        return TemplateUtils
-                .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.ACCESS_KEY), new Callable<String>() {
-                    
-                    @Override
-                    public String call() {
-                        return SpasAdapter.getAk();
-                    }
-                });
+        return RamUtil.getAccessKey(properties);
     }
     
     public String getSecretKey() {
         if (properties == null) {
-            
             return SpasAdapter.getSk();
         }
-        
-        return TemplateUtils
-                .stringEmptyAndThenExecute(properties.getProperty(PropertyKeyConst.SECRET_KEY), new Callable<String>() {
-                    @Override
-                    public String call() throws Exception {
-                        return SpasAdapter.getSk();
-                    }
-                });
+        return RamUtil.getSecretKey(properties);
     }
     
     public void setProperties(Properties properties) {

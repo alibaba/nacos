@@ -48,4 +48,9 @@ public interface SystemPropertyKeyConst {
      * It is also supported by the -D parameter.
      */
     String IS_USE_ENDPOINT_PARSING_RULE = "nacos.use.endpoint.parsing.rule";
+    
+    /**
+     * Since 1.4.7, For some situation like java agent using nacos-client which can't use env ram info.
+     */
+    String IS_USE_RAM_INFO_PARSING = "nacos.use.ram.info.parsing";
 }

@@ -74,6 +74,11 @@ public class PropertyKeyConst {
     public static final String PUSH_RECEIVER_UDP_PORT = "push.receiver.udp.port";
     
     /**
+     * Since 1.4.7, For some situation like java agent using nacos-client which can't use env ram info.
+     */
+    public static final String IS_USE_RAM_INFO_PARSING = "isUseRamInfoParsing";
+    
+    /**
      * Get the key value of some variable value from the system property.
      */
     public static class SystemEnv {
