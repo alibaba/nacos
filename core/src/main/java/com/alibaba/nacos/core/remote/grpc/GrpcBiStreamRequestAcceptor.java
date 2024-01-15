@@ -138,10 +138,15 @@ public class GrpcBiStreamRequestAcceptor extends BiRequestStreamGrpc.BiRequestSt
                         }
                     } else {
                         try {
-                            // finish register, tell client has set up successfully
-                            // async response without client ack
-                            connection.sendRequestNoAck(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
-                                    .getCurrentNodeAbilities(AbilityMode.SERVER)));
+                            // server sends abilities only when:
+                            //      1. client sends setUpRequest with its abilities table
+                            //      2. client sends setUpRequest with empty table
+                            if (setUpRequest.getAbilityTable() != null) {
+                                // finish register, tell client has set up successfully
+                                // async response without client ack
+                                connection.sendRequestNoAck(new SetupAckRequest(NacosAbilityManagerHolder.getInstance()
+                                        .getCurrentNodeAbilities(AbilityMode.SERVER)));
+                            }
                         } catch (Exception e) {
                             // nothing to do
                             
