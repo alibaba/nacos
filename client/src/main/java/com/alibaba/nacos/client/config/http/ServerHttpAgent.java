@@ -28,6 +28,7 @@ import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.RamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.HttpClientConfig;
@@ -322,19 +323,8 @@ public class ServerHttpAgent implements HttpAgent {
             StsConfig.getInstance().setRamRoleName(ramRoleName);
         }
         
-        String ak = properties.getProperty(PropertyKeyConst.ACCESS_KEY);
-        if (StringUtils.isBlank(ak)) {
-            accessKey = SpasAdapter.getAk();
-        } else {
-            accessKey = ak;
-        }
-        
-        String sk = properties.getProperty(PropertyKeyConst.SECRET_KEY);
-        if (StringUtils.isBlank(sk)) {
-            secretKey = SpasAdapter.getSk();
-        } else {
-            secretKey = sk;
-        }
+        accessKey = RamUtil.getAccessKey(properties);
+        secretKey = RamUtil.getSecretKey(properties);
     }
     
     private void initMaxRetry(Properties properties) {

@@ -16,6 +16,10 @@
   -->
 
 <Configuration status="WARN">
+    <Properties>
+        <Property name="userHome" value="${sys:user.home}"/>
+        <Property name="logPath" value="${sys:JM.LOG.PATH:-${userHome}}"/>
+    </Properties>
     <Appenders>
         <RollingFile name="CONFIG_LOG_FILE" fileName="${sys:JM.LOG.PATH}/nacos/config.log"
             filePattern="${sys:JM.LOG.PATH}/nacos/config.log.%d{yyyy-MM-dd}.%i">
@@ -28,7 +32,12 @@
                 <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
             </Policies>
             
-            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}">
+                <Delete basePath="${logPath}/nacos" maxDepth="1" testMode="${sys:JM.LOG.RETAIN.DURATION.OFF:-true}">
+                    <IfFileName glob="config.log.*.*" />
+                    <IfLastModified age="${sys:JM.LOG.RETAIN.DURATION:-P180D}" />
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
     
         <Async name="ASYNC_CONFIG" bufferSize="1024" blocking="false">
@@ -46,14 +55,20 @@
                 <SizeBasedTriggeringPolicy size="${sys:JM.LOG.FILE.SIZE:-10MB}"/>
             </Policies>
             
-            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}"/>
+            <DefaultRolloverStrategy max="${sys:JM.LOG.RETAIN.COUNT:-7}">
+                <Delete basePath="${logPath}/nacos" maxDepth="1" testMode="${sys:JM.LOG.RETAIN.DURATION.OFF:-true}">
+                    <IfFileName glob="naming.log.*.*" />
+                    <IfLastModified age="${sys:JM.LOG.RETAIN.DURATION:-P180D}" />
+                </Delete>
+            </DefaultRolloverStrategy>
         </RollingFile>
+
+        <Async name="ASYNC_NAMING" bufferSize="1024" blocking="false">
+            <AppenderRef ref="NAMING_LOG_FILE"/>
+        </Async>
     </Appenders>
-    
-    <Async name="ASYNC_NAMING" bufferSize="1024" blocking="false">
-        <AppenderRef ref="NAMING_LOG_FILE"/>
-    </Async>
-    
+
+
     <Loggers>
         <Logger name="com.alibaba.nacos.client" level="${sys:com.alibaba.nacos.config.log.level:-info}"
             additivity="false">
