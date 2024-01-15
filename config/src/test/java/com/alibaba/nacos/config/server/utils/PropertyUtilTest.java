@@ -51,6 +51,10 @@ public class PropertyUtilTest {
     @After
     public void after() {
         envUtilMockedStatic.close();
+        File file = new File(mockMem);
+        if (file.exists()) {
+            file.delete();
+        }
     }
     
     @Test

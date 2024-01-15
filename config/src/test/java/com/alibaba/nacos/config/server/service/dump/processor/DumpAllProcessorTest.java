@@ -269,4 +269,5 @@ public class DumpAllProcessorTest extends TestCase {
                         configInfoWrapper2.getTenant());
         Assert.assertEquals(configInfoWrapperSingle2.getContent(), contentFromDisk2);
     }
+
 }

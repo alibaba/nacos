@@ -853,7 +853,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
-    public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize) {
+    public List<ConfigInfoStateWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize) {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         
@@ -864,7 +864,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         
         MapperResult mapperResult = configInfoMapper.findChangeConfig(context);
         return databaseOperate.queryMany(mapperResult.getSql(), mapperResult.getParamList().toArray(),
-                CONFIG_INFO_WRAPPER_ROW_MAPPER);
+                CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
         
     }
     

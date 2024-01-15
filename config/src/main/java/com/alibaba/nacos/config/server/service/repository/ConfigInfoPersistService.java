@@ -344,7 +344,7 @@ public interface ConfigInfoPersistService {
      * @param pageSize  pageSize
      * @return {@link ConfigInfoWrapper} list
      */
-    List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize);
+    List<ConfigInfoStateWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize);
     
     /**
      * Query tag list.

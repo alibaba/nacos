@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -81,9 +81,9 @@ public class DumpChangeConfigWorker implements Runnable {
             long deleteCursorId = 0L;
             
             while (true) {
-                List<ConfigInfoWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
+                List<ConfigInfoStateWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize);
-                for (ConfigInfo configInfo : configDeleted) {
+                for (ConfigInfoStateWrapper configInfo : configDeleted) {
                     if (configInfoPersistService.findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant()) == null) {
                         ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(),
@@ -107,9 +107,9 @@ public class DumpChangeConfigWorker implements Runnable {
             long changeCursorId = 0L;
             while (true) {
                 LogUtil.DEFAULT_LOG.info("Check changed configs from  time {},lastMaxId={}", startTime, changeCursorId);
-                List<ConfigInfoWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime,
+                List<ConfigInfoStateWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
-                for (ConfigInfoWrapper cf : changeConfigs) {
+                for (ConfigInfoStateWrapper cf : changeConfigs) {
                     final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
                     //check md5 & localtimestamp update local disk cache.
                     boolean newLastModified = cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
@@ -151,7 +151,7 @@ public class DumpChangeConfigWorker implements Runnable {
         } finally {
             ConfigExecutor.scheduleConfigChangeTask(this, PropertyUtil.getDumpChangeWorkerInterval(),
                     TimeUnit.MILLISECONDS);
-            LogUtil.DEFAULT_LOG.info("Next dump change will scheduled after {} millseconds",
+            LogUtil.DEFAULT_LOG.info("Next dump change will scheduled after {} milliseconds",
                     PropertyUtil.getDumpChangeWorkerInterval());
             
         }

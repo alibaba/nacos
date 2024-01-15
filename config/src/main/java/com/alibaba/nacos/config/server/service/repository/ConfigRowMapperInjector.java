@@ -222,7 +222,11 @@ public class ConfigRowMapperInjector {
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
             info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
-            
+            try {
+                info.setMd5(rs.getString("md5"));
+            } catch (SQLException e) {
+                // ignore
+            }
             try {
                 info.setId(rs.getLong("id"));
             } catch (SQLException e) {

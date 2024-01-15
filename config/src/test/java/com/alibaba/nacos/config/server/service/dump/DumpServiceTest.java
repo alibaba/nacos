@@ -28,6 +28,7 @@ import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistSe
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -91,6 +92,8 @@ public class DumpServiceTest {
     
     MockedStatic<ConfigExecutor> configExecutorMocked;
     
+    MockedStatic<PropertyUtil> propertyUtilMockedStatic;
+    
     private DumpService dumpService;
     
     @Mock
@@ -103,6 +106,10 @@ public class DumpServiceTest {
     @Before
     public void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+        propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
+        propertyUtilMockedStatic.when(() -> PropertyUtil.getAllDumpPageSize()).thenReturn(100);
+        propertyUtilMockedStatic.when(() -> PropertyUtil.getDumpChangeWorkerInterval()).thenReturn(1000 * 60L);
+        
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", dataSourceService);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", dataSourceService);
         dumpService = new ExternalDumpService(configInfoPersistService, namespacePersistService,
@@ -116,6 +123,7 @@ public class DumpServiceTest {
     public void after() {
         envUtilMockedStatic.close();
         configExecutorMocked.close();
+        propertyUtilMockedStatic.close();
     }
     
     @Test
@@ -177,9 +185,11 @@ public class DumpServiceTest {
         result.add(Arrays.asList(noDatum));
         Mockito.when(mergeDatumService.splitList(anyList(), anyInt())).thenReturn(result);
         Mockito.doNothing().when(mergeDatumService).executeConfigsMerge(anyList());
+        Mockito.when(configInfoPersistService.findConfigMaxId()).thenReturn(300L);
         dumpService.dumpOperate();
         
-        // expect dump formal,beta,tag to be invoked.
+        // expect dump
+        Mockito.verify(configInfoPersistService, times(1)).findAllConfigInfoFragment(0, 100, true);
         Mockito.verify(configInfoPersistService, times(1)).findConfigMaxId();
         Mockito.verify(configInfoBetaPersistService, times(1)).configInfoBetaCount();
         Mockito.verify(configInfoTagPersistService, times(1)).configInfoTagCount();
