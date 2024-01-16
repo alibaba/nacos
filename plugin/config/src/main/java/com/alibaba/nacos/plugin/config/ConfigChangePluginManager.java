@@ -23,12 +23,13 @@ import com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.Comparator;
 import java.util.Map;
+import java.util.Collection;
 import java.util.Optional;
-import java.util.PriorityQueue;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.Comparator;
 
 /**
  * All config change plugin manager.
@@ -39,7 +40,7 @@ public class ConfigChangePluginManager {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChangePluginManager.class);
     
-    private static final Integer PLUGIN_SERVICE_COUNT = 2;
+    private static final Integer PLUGIN_SERVICE_COUNT = 4;
     
     private static final Integer POINT_CUT_TYPE_COUNT = ConfigChangePointCutTypes.values().length;
     
@@ -51,10 +52,10 @@ public class ConfigChangePluginManager {
             PLUGIN_SERVICE_COUNT);
     
     /**
-     * The relationship of config change pointcut type and the queue of {@link ConfigChangePluginService} will pointcut
+     * The relationship of config change pointcut type and the list of {@link ConfigChangePluginService} will pointcut
      * it, default capacity is the count of pointcutTypes.
      */
-    private static Map<ConfigChangePointCutTypes, PriorityQueue<ConfigChangePluginService>> priorityQueueMap = new ConcurrentHashMap<>(
+    private static final Map<ConfigChangePointCutTypes, List<ConfigChangePluginService>> CONFIG_CHANGE_PLUGIN_SERVICES_MAP = new ConcurrentHashMap<>(
             POINT_CUT_TYPE_COUNT);
     
     private static final ConfigChangePluginManager INSTANCE = new ConfigChangePluginManager();
@@ -83,8 +84,10 @@ public class ConfigChangePluginManager {
             // map the relationship of pointcut and plugin service
             addPluginServiceByPointCut(each);
         }
+        // sort plugin service
+        sortPluginServiceByPointCut();
     }
-    
+
     public static ConfigChangePluginManager getInstance() {
         return INSTANCE;
     }
@@ -118,23 +121,29 @@ public class ConfigChangePluginManager {
      * @param pointcutName pointcut method name,detail see {@link ConfigChangePointCutTypes}.
      * @return
      */
-    public static PriorityQueue<ConfigChangePluginService> findPluginServiceQueueByPointcut(
+    public static List<ConfigChangePluginService> findPluginServicesByPointcut(
             ConfigChangePointCutTypes pointcutName) {
-        return priorityQueueMap.getOrDefault(pointcutName, new PriorityQueue<>());
+        return CONFIG_CHANGE_PLUGIN_SERVICES_MAP.getOrDefault(pointcutName, new ArrayList<>());
     }
     
-    private static boolean addPluginServiceByPointCut(ConfigChangePluginService configChangePluginService) {
+    private static void addPluginServiceByPointCut(ConfigChangePluginService configChangePluginService) {
         ConfigChangePointCutTypes[] pointcutNames = configChangePluginService.pointcutMethodNames();
         for (ConfigChangePointCutTypes name : pointcutNames) {
-            PriorityQueue<ConfigChangePluginService> configChangePluginServicePriorityQueue = priorityQueueMap
+            List<ConfigChangePluginService> configChangePluginServiceList = CONFIG_CHANGE_PLUGIN_SERVICES_MAP
                     .get(name);
-            if (configChangePluginServicePriorityQueue == null) {
-                configChangePluginServicePriorityQueue = new PriorityQueue<>(PLUGIN_SERVICE_COUNT,
-                        Comparator.comparingInt(ConfigChangePluginService::getOrder));
+            if (configChangePluginServiceList == null) {
+                configChangePluginServiceList = new ArrayList<>(PLUGIN_SERVICE_COUNT);
             }
-            configChangePluginServicePriorityQueue.add(configChangePluginService);
-            priorityQueueMap.put(name, configChangePluginServicePriorityQueue);
+            configChangePluginServiceList.add(configChangePluginService);
+            CONFIG_CHANGE_PLUGIN_SERVICES_MAP.put(name, configChangePluginServiceList);
         }
-        return true;
+    }
+
+    private static void sortPluginServiceByPointCut() {
+        CONFIG_CHANGE_PLUGIN_SERVICES_MAP.forEach((type, pluginServices) -> {
+            List<ConfigChangePluginService> sortedList = new ArrayList<>(pluginServices);
+            sortedList.sort(Comparator.comparingInt(ConfigChangePluginService::getOrder));
+            CONFIG_CHANGE_PLUGIN_SERVICES_MAP.put(type, sortedList);
+        });
     }
 }
