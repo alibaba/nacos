@@ -83,9 +83,6 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     
     @Override
     public MapperResult findAllConfigInfoBaseFetchRows(MapperContext context) {
-        String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
-        final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
-        
         String sql = "SELECT t.id,data_id,group_id,content,md5"
                 + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) "
                 + " g, config_info t  WHERE g.id = t.id ";
