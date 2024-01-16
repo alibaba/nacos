@@ -722,6 +722,12 @@ public class ConfigCacheService {
     
     private static final int TRY_GET_LOCK_TIMES = 9;
     
+    /**
+     * try config read lock with spin of try get lock times.
+     *
+     * @param groupKey group key of config.
+     * @return
+     */
     public static int tryConfigReadLock(String groupKey) {
         
         // Lock failed by default.
