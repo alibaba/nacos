@@ -24,22 +24,16 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCache;
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.utils.DiskUtil;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
-import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.common.collect.Lists;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
@@ -67,21 +61,8 @@ public class ConfigCacheService {
      */
     private static final ConcurrentHashMap<String, CacheItem> CACHE = new ConcurrentHashMap<>();
     
-    private static ConfigInfoPersistService configInfoPersistService;
-
-    public static ConfigInfoPersistService getConfigInfoPersistService() {
-        if (configInfoPersistService == null) {
-            configInfoPersistService = ApplicationUtils.getBean(ConfigInfoPersistService.class);
-        }
-        return configInfoPersistService;
-    }
-
     public static int groupCount() {
         return CACHE.size();
-    }
-    
-    public static boolean hasGroupKey(String groupKey) {
-        return CACHE.containsKey(groupKey);
     }
     
     /**
@@ -164,7 +145,7 @@ public class ConfigCacheService {
                         || errMsg.contains(DISK_QUOTA_EN)) {
                     // Protect from disk full.
                     FATAL_LOG.error("Local Disk Full,Exit", ioe);
-                    System.exit(0);
+                    EnvUtil.systemExit();
                 }
             }
             return false;
@@ -346,166 +327,6 @@ public class ConfigCacheService {
         } finally {
             releaseWriteLock(groupKey);
         }
-    }
-    
-    /**
-     * 保存配置文件，并缓存md5.
-     */
-    public static boolean dumpChange(String dataId, String group, String tenant, String content, long lastModifiedTs,
-            String encryptedDataKey) {
-        final String groupKey = GroupKey2.getKey(dataId, group, tenant);
-        
-        makeSure(groupKey, encryptedDataKey);
-        final int lockResult = tryWriteLock(groupKey);
-        
-        if (lockResult < 0) {
-            DUMP_LOG.warn("[dump-error] write lock failed. {}", groupKey);
-            return false;
-        }
-        
-        try {
-            
-            //check timestamp
-            boolean lastModifiedOutdated = lastModifiedTs < ConfigCacheService.getLastModifiedTs(groupKey);
-            if (lastModifiedOutdated) {
-                DUMP_LOG.warn("[dump-change-ignore] timestamp is outdated,groupKey={}", groupKey);
-                return true;
-            }
-            
-            boolean newLastModified = lastModifiedTs > ConfigCacheService.getLastModifiedTs(groupKey);
-            
-            String md5 = MD5Utils.md5Hex(content, ENCODE_UTF8);
-            
-            //check md5 & update local disk cache.
-            String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
-            boolean md5Changed = !md5.equals(localContentMd5);
-            if (md5Changed) {
-                if (!PropertyUtil.isDirectRead()) {
-                    DUMP_LOG.info("[dump-change] md5 changed, save to disk cache ,groupKey={}, md5={}", groupKey, md5);
-                    ConfigDiskServiceFactory.getInstance().saveToDisk(dataId, group, tenant, content);
-                } else {
-                    //ignore to save disk cache in direct model
-                }
-            } else {
-                DUMP_LOG.warn("[dump-change-ignore] ignore to save to disk cache. md5 consistent,groupKey={}, md5={}",
-                        groupKey, md5);
-            }
-            
-            //check  md5 and timestamp & update local jvm cache.
-            if (md5Changed) {
-                DUMP_LOG.info(
-                        "[dump-change] md5 changed, update md5 and timestamp in jvm cache ,groupKey={},newMd5={},oldMd5={},lastModifiedTs={}",
-                        groupKey, md5, localContentMd5, lastModifiedTs);
-                updateMd5(groupKey, md5, lastModifiedTs, encryptedDataKey);
-            } else if (newLastModified) {
-                DUMP_LOG.info(
-                        "[dump-change] md5 consistent ,timestamp changed, update timestamp only in jvm cache ,groupKey={}, md5={},lastModifiedTs={}",
-                        groupKey, md5, lastModifiedTs);
-                updateTimeStamp(groupKey, lastModifiedTs, encryptedDataKey);
-            } else {
-                DUMP_LOG.warn(
-                        "[dump-change-ignore] ignore to save to jvm cache. md5 consistent and no new timestamp changed.groupKey={}",
-                        groupKey);
-            }
-            
-            return true;
-        } catch (IOException ioe) {
-            DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe.toString(), ioe);
-            return false;
-        } finally {
-            releaseWriteLock(groupKey);
-        }
-    }
-    
-    /**
-     * Reload config.
-     */
-    public static void reloadConfig() {
-        String aggreds = null;
-        try {
-            if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(AggrWhitelist.AGGRIDS_METADATA,
-                        "DEFAULT_GROUP");
-                if (config != null) {
-                    aggreds = config.getContent();
-                }
-            } else {
-                aggreds = DiskUtil.getConfig(AggrWhitelist.AGGRIDS_METADATA, "DEFAULT_GROUP", StringUtils.EMPTY);
-            }
-            if (aggreds != null) {
-                AggrWhitelist.load(aggreds);
-            }
-        } catch (IOException e) {
-            DUMP_LOG.error("reload fail:" + AggrWhitelist.AGGRIDS_METADATA, e);
-        }
-        
-        String clientIpWhitelist = null;
-        try {
-            if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(
-                        ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP");
-                if (config != null) {
-                    clientIpWhitelist = config.getContent();
-                }
-            } else {
-                clientIpWhitelist = DiskUtil.getConfig(ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, "DEFAULT_GROUP",
-                        StringUtils.EMPTY);
-            }
-            if (clientIpWhitelist != null) {
-                ClientIpWhiteList.load(clientIpWhitelist);
-            }
-        } catch (IOException e) {
-            DUMP_LOG.error("reload fail:" + ClientIpWhiteList.CLIENT_IP_WHITELIST_METADATA, e);
-        }
-        
-        String switchContent = null;
-        try {
-            if (DatasourceConfiguration.isEmbeddedStorage()) {
-                ConfigInfoBase config = getConfigInfoPersistService().findConfigInfoBase(SwitchService.SWITCH_META_DATA_ID,
-                        "DEFAULT_GROUP");
-                if (config != null) {
-                    switchContent = config.getContent();
-                }
-            } else {
-                switchContent = DiskUtil.getConfig(SwitchService.SWITCH_META_DATA_ID, "DEFAULT_GROUP",
-                        StringUtils.EMPTY);
-            }
-            if (switchContent != null) {
-                SwitchService.load(switchContent);
-            }
-        } catch (IOException e) {
-            DUMP_LOG.error("reload fail:" + SwitchService.SWITCH_META_DATA_ID, e);
-        }
-    }
-    
-    /**
-     * Check md5.
-     *
-     * @return return diff result list.
-     */
-    public static List<String> checkMd5() {
-        List<String> diffList = new ArrayList<>();
-        long startTime = System.currentTimeMillis();
-        for (Entry<String/* groupKey */, CacheItem> entry : CACHE.entrySet()) {
-            String groupKey = entry.getKey();
-            String[] dg = GroupKey2.parseKey(groupKey);
-            String dataId = dg[0];
-            String group = dg[1];
-            String tenant = dg[2];
-            try {
-                String localMd5 = ConfigDiskServiceFactory.getInstance()
-                        .getLocalConfigMd5(dataId, group, tenant, ENCODE_UTF8);
-                if (!entry.getValue().getConfigCache().getMd5(ENCODE_UTF8).equals(localMd5)) {
-                    DEFAULT_LOG.warn("[md5-different] dataId:{},group:{}", dataId, group);
-                    diffList.add(groupKey);
-                }
-            } catch (IOException e) {
-                DEFAULT_LOG.error("getLocalConfigMd5 fail,dataId:{},group:{}", dataId, group);
-            }
-        }
-        long endTime = System.currentTimeMillis();
-        DEFAULT_LOG.warn("checkMd5 cost:{}; diffCount:{}", endTime - startTime, diffList.size());
-        return diffList;
     }
     
     /**
@@ -765,12 +586,6 @@ public class ConfigCacheService {
         return (null != item && item.getConfigCacheBeta() != null) ? item.getConfigCacheBeta().getLastModifiedTs() : 0L;
     }
     
-    public static long getBatchLastModifiedTs(String groupKey) {
-        CacheItem item = CACHE.get(groupKey);
-        return (null != item && item.getConfigCacheBatch() != null) ? item.getConfigCacheBatch().getLastModifiedTs()
-                : 0L;
-    }
-    
     public static long getTagLastModifiedTs(String groupKey, String tag) {
         CacheItem item = CACHE.get(groupKey);
         if (item.getConfigCacheTags() == null || !item.getConfigCacheTags().containsKey(tag)) {
@@ -900,7 +715,7 @@ public class ConfigCacheService {
      * @param ips4Beta       ips4Beta.
      * @param lastModifiedTs lastModifiedTs.
      */
-    public static void updateBetaIpList(String groupKey, List<String> ips4Beta, long lastModifiedTs) {
+    private static void updateBetaIpList(String groupKey, List<String> ips4Beta, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initBetaCacheIfEmpty();
         cache.setBeta(true);
@@ -916,7 +731,7 @@ public class ConfigCacheService {
      * @param groupKey       groupKey.
      * @param lastModifiedTs lastModifiedTs.
      */
-    public static void updateBetaTimeStamp(String groupKey, long lastModifiedTs) {
+    private static void updateBetaTimeStamp(String groupKey, long lastModifiedTs) {
         CacheItem cache = makeSure(groupKey, null);
         cache.initBetaCacheIfEmpty();
         cache.getConfigCacheBeta().setLastModifiedTs(lastModifiedTs);

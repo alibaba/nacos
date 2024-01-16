@@ -25,7 +25,6 @@ import com.alibaba.nacos.config.server.service.AggrWhitelist;
 import com.alibaba.nacos.config.server.service.ClientIpWhiteList;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.SwitchService;
-import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
@@ -41,9 +40,8 @@ import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
  */
 public class DumpAllProcessor implements NacosTaskProcessor {
     
-    public DumpAllProcessor(DumpService dumpService) {
-        this.dumpService = dumpService;
-        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
+    public DumpAllProcessor(ConfigInfoPersistService configInfoPersistService) {
+        this.configInfoPersistService = configInfoPersistService;
     }
     
     @Override
@@ -85,8 +83,6 @@ public class DumpAllProcessor implements NacosTaskProcessor {
     }
     
     static final int PAGE_SIZE = 1000;
-    
-    final DumpService dumpService;
     
     final ConfigInfoPersistService configInfoPersistService;
 }

@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.client.naming.cache;
 
-import com.alibaba.nacos.common.utils.IoUtils;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -68,39 +66,14 @@ public class ConcurrentDiskUtil {
      * @throws IOException IOException
      */
     public static String getFileContent(File file, String charsetName) throws IOException {
-        RandomAccessFile fis = null;
-        FileLock rlock = null;
-        try {
-            fis = new RandomAccessFile(file, READ_ONLY);
-            FileChannel fcin = fis.getChannel();
-            int i = 0;
-            do {
-                try {
-                    rlock = fcin.tryLock(0L, Long.MAX_VALUE, true);
-                } catch (Exception e) {
-                    ++i;
-                    if (i > RETRY_COUNT) {
-                        NAMING_LOGGER.error("[NA] read " + file.getName() + " fail;retryed time: " + i, e);
-                        throw new IOException("read " + file.getAbsolutePath() + " conflict");
-                    }
-                    sleep(SLEEP_BASETIME * i);
-                    NAMING_LOGGER.warn("read " + file.getName() + " conflict;retry time: " + i);
-                }
-            } while (null == rlock);
+        try (RandomAccessFile fis = new RandomAccessFile(file, READ_ONLY);
+                FileChannel fcin = fis.getChannel();
+                FileLock rlock = tryLock(file, fcin, true)) {
             int fileSize = (int) fcin.size();
             ByteBuffer byteBuffer = ByteBuffer.allocate(fileSize);
             fcin.read(byteBuffer);
             byteBuffer.flip();
             return byteBufferToString(byteBuffer, charsetName);
-        } finally {
-            if (rlock != null) {
-                rlock.release();
-                rlock = null;
-            }
-            if (fis != null) {
-                IoUtils.closeQuietly(fis);
-                fis = null;
-            }
         }
     }
     
@@ -132,27 +105,9 @@ public class ConcurrentDiskUtil {
         if (!file.exists() && !file.createNewFile()) {
             return false;
         }
-        FileChannel channel = null;
-        FileLock lock = null;
-        RandomAccessFile raf = null;
-        try {
-            raf = new RandomAccessFile(file, READ_WRITE);
-            channel = raf.getChannel();
-            int i = 0;
-            do {
-                try {
-                    lock = channel.tryLock();
-                } catch (Exception e) {
-                    ++i;
-                    if (i > RETRY_COUNT) {
-                        NAMING_LOGGER.error("[NA] write {} fail;retryed time:{}", file.getName(), i);
-                        throw new IOException("write " + file.getAbsolutePath() + " conflict", e);
-                    }
-                    sleep(SLEEP_BASETIME * i);
-                    NAMING_LOGGER.warn("write " + file.getName() + " conflict;retry time: " + i);
-                }
-            } while (null == lock);
-            
+        try (RandomAccessFile raf = new RandomAccessFile(file, READ_WRITE);
+                FileChannel channel = raf.getChannel();
+                FileLock lock = tryLock(file, channel, false)) {
             byte[] contentBytes = content.getBytes(charsetName);
             ByteBuffer sendBuffer = ByteBuffer.wrap(contentBytes);
             while (sendBuffer.hasRemaining()) {
@@ -161,32 +116,6 @@ public class ConcurrentDiskUtil {
             channel.truncate(contentBytes.length);
         } catch (FileNotFoundException e) {
             throw new IOException("file not exist");
-        } finally {
-            if (lock != null) {
-                try {
-                    lock.release();
-                    lock = null;
-                } catch (IOException e) {
-                    NAMING_LOGGER.warn("close wrong", e);
-                }
-            }
-            if (channel != null) {
-                try {
-                    channel.close();
-                    channel = null;
-                } catch (IOException e) {
-                    NAMING_LOGGER.warn("close wrong", e);
-                }
-            }
-            if (raf != null) {
-                try {
-                    raf.close();
-                    raf = null;
-                } catch (IOException e) {
-                    NAMING_LOGGER.warn("close wrong", e);
-                }
-            }
-            
         }
         return true;
     }
@@ -214,6 +143,25 @@ public class ConcurrentDiskUtil {
             // set the interrupted flag
             Thread.currentThread().interrupt();
         }
+    }
+    
+    private static FileLock tryLock(File file, FileChannel channel, boolean shared) throws IOException {
+        FileLock result = null;
+        int i = 0;
+        do {
+            try {
+                result = channel.tryLock(0L, Long.MAX_VALUE, shared);
+            } catch (Exception e) {
+                ++i;
+                if (i > RETRY_COUNT) {
+                    NAMING_LOGGER.error("[NA] read " + file.getName() + " fail;retryed time: " + i, e);
+                    throw new IOException("read " + file.getAbsolutePath() + " conflict");
+                }
+                sleep(SLEEP_BASETIME * i);
+                NAMING_LOGGER.warn("read " + file.getName() + " conflict;retry time: " + i);
+            }
+        } while (null == result);
+        return result;
     }
     
 }

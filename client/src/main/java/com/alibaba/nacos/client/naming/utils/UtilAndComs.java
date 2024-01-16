@@ -43,8 +43,10 @@ public class UtilAndComs {
     
     public static final int REQUEST_DOMAIN_RETRY_COUNT = 3;
     
+    @Deprecated
     public static final String NACOS_NAMING_LOG_NAME = "com.alibaba.nacos.naming.log.filename";
     
+    @Deprecated
     public static final String NACOS_NAMING_LOG_LEVEL = "com.alibaba.nacos.naming.log.level";
     
     public static final int DEFAULT_POLLING_THREAD_COUNT =

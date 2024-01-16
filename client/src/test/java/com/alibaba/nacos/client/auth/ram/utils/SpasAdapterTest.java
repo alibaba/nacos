@@ -69,23 +69,20 @@ public class SpasAdapterTest {
         Assert.assertEquals(2, map1.size());
         Assert.assertEquals(SpasAdapter.signWithHmacSha1Encrypt("bb+aa+" + map1.get("Timestamp"), "123"),
                 map1.get("Spas-Signature"));
-        
-        // TODO BUG fix
-        //  Map<String, String> param2 = new HashMap<>();
-        //  param2.put("tenant", "");
-        //  param2.put("group", "aa");
-        //  final Map<String, String> map2 = SpasAdapter.getSignHeaders(param2, "123");
-        //  Assert.assertEquals(2, map2.size());
-        //  Assert.assertEquals(SpasAdapter.signWithHmacSha1Encrypt("aa" + "+" + map2.get("Timestamp"), "123"),
-        //  map2.get("Spas-Signature"));
-        
-        //  Map<String, String> param3 = new HashMap<>();
-        //  param3.put("tenant", "bb");
-        //  param3.put("group", "");
-        //  final Map<String, String> map3 = SpasAdapter.getSignHeaders(param3, "123");
-        //  Assert.assertEquals(2, map3.size());
-        //  Assert.assertEquals(SpasAdapter.signWithHmacSha1Encrypt(map3.get("Timestamp"), "123"),
-        //   map3.get("Spas-Signature"));
     }
     
+    @Test
+    public void testGetSignHeadersWithoutTenant() {
+        Map<String, String> param1 = new HashMap<>();
+        param1.put("group", "aa");
+        final Map<String, String> map1 = SpasAdapter.getSignHeaders(param1, "123");
+        Assert.assertEquals(2, map1.size());
+        Assert.assertEquals(SpasAdapter.signWithHmacSha1Encrypt("aa+" + map1.get("Timestamp"), "123"),
+                map1.get("Spas-Signature"));
+    }
+    
+    @Test(expected = Exception.class)
+    public void testSignWithHmacSha1EncryptWithException() {
+        SpasAdapter.signWithHmacSha1Encrypt(null, "123");
+    }
 }

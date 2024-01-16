@@ -19,6 +19,7 @@
 package com.alibaba.nacos.client.naming.remote.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
 import org.junit.Assert;
@@ -27,8 +28,12 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.Map;
 
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
@@ -41,7 +46,7 @@ public class NamingHttpClientManagerTest {
     
     @Test
     public void testGetPrefix() {
-        Assert.assertEquals(HTTP_PREFIX, NamingHttpClientManager.getInstance().getPrefix());
+        assertEquals(HTTP_PREFIX, NamingHttpClientManager.getInstance().getPrefix());
     }
     
     @Test
@@ -62,7 +67,22 @@ public class NamingHttpClientManagerTest {
         NamingHttpClientManager.getInstance().shutdown();
         // then
         verify(mockHttpClientRequest, times(1)).close();
-        
     }
     
+    @Test
+    public void testShutdownWithException() throws Exception {
+        String key = "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory";
+        try {
+            HttpClientBeanHolder.shutdownNacosSyncRest(key);
+        } catch (Exception ignored) {
+        }
+        Field field = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
+        field.setAccessible(true);
+        Map<String, NacosRestTemplate> map = (Map<String, NacosRestTemplate>) field.get(null);
+        NacosRestTemplate mockRest = mock(NacosRestTemplate.class);
+        map.put(key, mockRest);
+        doThrow(new RuntimeException("test")).when(mockRest).close();
+        NamingHttpClientManager.getInstance().shutdown();
+        assertEquals(mockRest, map.remove(key));
+    }
 }
