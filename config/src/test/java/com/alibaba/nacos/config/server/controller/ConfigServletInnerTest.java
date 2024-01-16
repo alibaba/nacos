@@ -18,16 +18,11 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
-import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -50,7 +45,6 @@ import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +52,6 @@ import java.util.Map;
 
 import static com.alibaba.nacos.config.server.utils.RequestUtil.CLIENT_APPNAME_HEADER;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -70,15 +63,6 @@ public class ConfigServletInnerTest {
     
     @Mock
     private LongPollingService longPollingService;
-    
-    @Mock
-    private ConfigInfoPersistService configInfoPersistService;
-    
-    @Mock
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
-    @Mock
-    private ConfigInfoTagPersistService configInfoTagPersistService;
     
     @Mock
     private ConfigRocksDbDiskService configRocksDbDiskService;
@@ -164,15 +148,6 @@ public class ConfigServletInnerTest {
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentCache(anyString()))
                 .thenReturn(cacheItem);
         
-        // if direct read is true
-        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(true);
-        ConfigInfoBetaWrapper configInfoBetaWrapper = new ConfigInfoBetaWrapper();
-        configInfoBetaWrapper.setDataId("test");
-        configInfoBetaWrapper.setGroup("test");
-        configInfoBetaWrapper.setContent("isBeta:true, direct read: true");
-        when(configInfoBetaPersistService.findConfigInfo4Beta(anyString(), anyString(), anyString())).thenReturn(
-                configInfoBetaWrapper);
-        
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr("localhost:8080");
         request.addHeader(CLIENT_APPNAME_HEADER, "test");
@@ -184,8 +159,7 @@ public class ConfigServletInnerTest {
         Assert.assertEquals("isBeta:true, direct read: true", response.getContentAsString());
         
         // if direct read is false
-        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
-        File file = tempFolder.newFile("test.txt");
+        tempFolder.newFile("test.txt");
         when(configRocksDbDiskService.getBetaContent("test", "test", "test")).thenReturn(
                 "isBeta:true, direct read: false");
         response = new MockHttpServletResponse();
@@ -213,14 +187,6 @@ public class ConfigServletInnerTest {
         configCacheServiceMockedStatic.when(() -> ConfigCacheService.getContentCache(anyString()))
                 .thenReturn(cacheItem);
         
-        // if tag is blank and direct read is true
-        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(true);
-        ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
-        configInfoWrapper.setDataId("test");
-        configInfoWrapper.setGroup("test");
-        configInfoWrapper.setContent("tag is blank and direct read is true");
-        when(configInfoPersistService.findConfigInfo(anyString(), anyString(), anyString())).thenReturn(
-                configInfoWrapper);
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr("localhost:8080");
         request.addHeader(CLIENT_APPNAME_HEADER, "test");
@@ -230,8 +196,7 @@ public class ConfigServletInnerTest {
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("tag is blank and direct read is true", response.getContentAsString());
         
-        // if tag is blank and direct read is false
-        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
+        // if tag is blank
         response = new MockHttpServletResponse();
         when(configRocksDbDiskService.getContent("test", "test", "test")).thenReturn(
                 "tag is blank and direct read is false");
@@ -240,23 +205,12 @@ public class ConfigServletInnerTest {
                 "localhost");
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("tag is blank and direct read is false", response.getContentAsString());
-        
-        // if tag is not blank and direct read is true
-        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(true);
+       
         ConfigInfoTagWrapper configInfoTagWrapper = new ConfigInfoTagWrapper();
         configInfoTagWrapper.setDataId("test");
         configInfoTagWrapper.setGroup("test");
         configInfoTagWrapper.setContent("tag is not blank and direct read is true");
-        when(configInfoTagPersistService.findConfigInfo4Tag(anyString(), anyString(), anyString(),
-                anyString())).thenReturn(configInfoTagWrapper);
-        response = new MockHttpServletResponse();
-        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "test", "true",
-                "localhost");
-        Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
-        Assert.assertEquals("tag is not blank and direct read is true", response.getContentAsString());
-        
-        // if tag is not blank and direct read is false
-        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
+        // if tag is not blank
         response = new MockHttpServletResponse();
         when(configRocksDbDiskService.getTagContent("test", "test", "test", "testTag")).thenReturn(
                 "tag is not blank and direct read is true");
@@ -265,20 +219,7 @@ public class ConfigServletInnerTest {
         Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
         Assert.assertEquals("tag is not blank and direct read is true", response.getContentAsString());
         
-        // if use auto tag and direct read is true
-        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(true);
-        request.addHeader("Vipserver-Tag", "auto-tag-test");
-        configInfoTagWrapper.setContent("auto tag mode and direct read is true");
-        when(configInfoTagPersistService.findConfigInfo4Tag(anyString(), anyString(), anyString(),
-                eq("auto-tag-test"))).thenReturn(configInfoTagWrapper);
-        response = new MockHttpServletResponse();
-        actualValue = configServletInner.doGetConfig(request, response, "test", "test", "test", "", "true",
-                "localhost");
-        Assert.assertEquals(HttpServletResponse.SC_OK + "", actualValue);
-        Assert.assertEquals("auto tag mode and direct read is true", response.getContentAsString());
-        
         // if use auto tag and direct read is false
-        propertyUtilMockedStatic.when(PropertyUtil::isDirectRead).thenReturn(false);
         when(configRocksDbDiskService.getTagContent("test", "test", "test", "auto-tag-test")).thenReturn(
                 "use auto tag and direct read is false");
         response = new MockHttpServletResponse();

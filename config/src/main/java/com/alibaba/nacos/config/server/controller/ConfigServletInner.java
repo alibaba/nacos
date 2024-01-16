@@ -32,14 +32,10 @@ import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.trace.ConfigTraceService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.config.server.utils.MD5Util;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.config.server.utils.Protocol;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
 import com.alibaba.nacos.config.server.utils.TimeUtils;
@@ -77,19 +73,8 @@ public class ConfigServletInner {
     
     private final LongPollingService longPollingService;
     
-    private final ConfigInfoPersistService configInfoPersistService;
-    
-    private final ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
-    private final ConfigInfoTagPersistService configInfoTagPersistService;
-    
-    public ConfigServletInner(LongPollingService longPollingService, ConfigInfoPersistService configInfoPersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService) {
+    public ConfigServletInner(LongPollingService longPollingService) {
         this.longPollingService = longPollingService;
-        this.configInfoPersistService = configInfoPersistService;
-        this.configInfoBetaPersistService = configInfoBetaPersistService;
-        this.configInfoTagPersistService = configInfoTagPersistService;
     }
     
     /**
@@ -160,7 +145,7 @@ public class ConfigServletInner {
         String autoTag = request.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
         
         String requestIpApp = RequestUtil.getAppName(request);
-        int lockResult = tryConfigReadLock(groupKey);
+        int lockResult = ConfigCacheService.tryConfigReadLock(groupKey);
         
         final String requestIp = RequestUtil.getRemoteIp(request);
         boolean isBeta = false;
@@ -194,12 +179,7 @@ public class ConfigServletInner {
                     pullEvent = ConfigTraceService.PULL_EVENT_BETA;
                     md5 = configCacheBeta.getMd5(acceptCharset);
                     lastModified = configCacheBeta.getLastModifiedTs();
-                    
-                    if (PropertyUtil.isDirectRead()) {
-                        configInfoBase = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
-                    } else {
-                        content = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
-                    }
+                    content = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
                     response.setHeader("isBeta", "true");
                 } else {
                     if (StringUtils.isBlank(tag)) {
@@ -212,13 +192,8 @@ public class ConfigServletInner {
                                 }
                                 
                             }
-                            if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant,
-                                        autoTag);
-                            } else {
-                                content = ConfigDiskServiceFactory.getInstance()
-                                        .getTagContent(dataId, group, tenant, autoTag);
-                            }
+                            content = ConfigDiskServiceFactory.getInstance()
+                                    .getTagContent(dataId, group, tenant, autoTag);
                             pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
                             response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
                                     URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
@@ -226,11 +201,7 @@ public class ConfigServletInner {
                             pullEvent = ConfigTraceService.PULL_EVENT;
                             md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
                             lastModified = cacheItem.getConfigCache().getLastModifiedTs();
-                            if (PropertyUtil.isDirectRead()) {
-                                configInfoBase = configInfoPersistService.findConfigInfo(dataId, group, tenant);
-                            } else {
-                                content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
-                            }
+                            content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
                             if (configInfoBase == null && content == null) {
                                 // FIXME CacheItem
                                 // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
@@ -247,11 +218,7 @@ public class ConfigServletInner {
                     } else {
                         md5 = cacheItem.getTagMd5(tag, acceptCharset);
                         lastModified = cacheItem.getTagLastModified(tag);
-                        if (PropertyUtil.isDirectRead()) {
-                            configInfoBase = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant, tag);
-                        } else {
-                            content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
-                        }
+                        content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
                         pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
                         
                         if (configInfoBase == null && content == null) {
@@ -278,26 +245,17 @@ public class ConfigServletInner {
                 response.setDateHeader("Last-Modified", lastModified);
                 putEncryptedDataKeyHeader(response, tag, clientIp, acceptCharset, cacheItem, isBeta, autoTag);
                 PrintWriter out;
-                if (PropertyUtil.isDirectRead()) {
-                    Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId,
-                            configInfoBase.getEncryptedDataKey(), configInfoBase.getContent());
-                    out = response.getWriter();
-                    if (isV2) {
-                        out.print(JacksonUtils.toJson(Result.success(pair.getSecond())));
-                    } else {
-                        out.print(pair.getSecond());
-                    }
+                
+                String encryptedDataKey = response.getHeader("Encrypted-Data-Key");
+                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
+                String decryptContent = pair.getSecond();
+                out = response.getWriter();
+                if (isV2) {
+                    out.print(JacksonUtils.toJson(Result.success(decryptContent)));
                 } else {
-                    String encryptedDataKey = response.getHeader("Encrypted-Data-Key");
-                    Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
-                    String decryptContent = pair.getSecond();
-                    out = response.getWriter();
-                    if (isV2) {
-                        out.print(JacksonUtils.toJson(Result.success(decryptContent)));
-                    } else {
-                        out.print(decryptContent);
-                    }
+                    out.print(decryptContent);
                 }
+                
                 out.flush();
                 out.close();
                 
@@ -307,7 +265,7 @@ public class ConfigServletInner {
                 ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
                         ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
             } finally {
-                releaseConfigReadLock(groupKey);
+                ConfigCacheService.releaseReadLock(groupKey);
             }
         } else if (lockResult == 0) {
             
@@ -325,10 +283,6 @@ public class ConfigServletInner {
         }
         
         return HttpServletResponse.SC_OK + "";
-    }
-    
-    private static void releaseConfigReadLock(String groupKey) {
-        ConfigCacheService.releaseReadLock(groupKey);
     }
     
     private String get404Result(HttpServletResponse response, boolean isV2) throws IOException {
@@ -352,44 +306,6 @@ public class ConfigServletInner {
             writer.println("requested file is being modified, please try later.");
         }
         return HttpServletResponse.SC_CONFLICT + "";
-    }
-    
-    /**
-     * Try to add read lock.
-     *
-     * @param groupKey groupKey string value.
-     * @return 0 - No data and failed. Positive number - lock succeeded. Negative number - lock failed。
-     */
-    private static int tryConfigReadLock(String groupKey) {
-        
-        // Lock failed by default.
-        int lockResult = -1;
-        
-        // Try to get lock times, max value: 10;
-        for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
-            lockResult = ConfigCacheService.tryReadLock(groupKey);
-            
-            // The data is non-existent.
-            if (0 == lockResult) {
-                break;
-            }
-            
-            // Success
-            if (lockResult > 0) {
-                break;
-            }
-            
-            // Retry.
-            if (i > 0) {
-                try {
-                    Thread.sleep(1);
-                } catch (Exception e) {
-                    LogUtil.PULL_CHECK_LOG.error("An Exception occurred while thread sleep", e);
-                }
-            }
-        }
-        
-        return lockResult;
     }
     
     private void putEncryptedDataKeyHeader(HttpServletResponse response, String tag, String clientIp, String charset,
