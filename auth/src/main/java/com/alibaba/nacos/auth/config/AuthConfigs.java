@@ -92,7 +92,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
      */
     @PostConstruct
     public void validate() throws NacosException {
-        if (!authEnabled || EnvUtil.getStandaloneMode()) {
+        if (!authEnabled) {
             return;
         }
         if (StringUtils.isEmpty(nacosAuthSystemType)) {
