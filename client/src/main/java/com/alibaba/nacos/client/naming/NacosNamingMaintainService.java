@@ -32,6 +32,7 @@ import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.Map;
@@ -86,12 +87,8 @@ public class NacosNamingMaintainService implements NamingMaintainService {
     }
     
     private void initSecurityProxy(Properties properties) {
-        this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.client.naming.maintainService.security");
-            t.setDaemon(true);
-            return t;
-        });
+        this.executorService = new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.client.naming.maintainService.security"));
         this.securityProxy.login(properties);
         this.executorService
                 .scheduleWithFixedDelay(() -> securityProxy.login(properties), 0, SECURITY_INFO_REFRESH_INTERVAL_MILLS,
