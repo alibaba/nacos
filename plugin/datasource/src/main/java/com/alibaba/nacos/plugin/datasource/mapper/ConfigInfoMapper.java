@@ -136,10 +136,9 @@ public interface ConfigInfoMapper extends Mapper {
      * > ? ORDER BY id ASC LIMIT startRow,pageSize
      *
      * @param context     The context of startRow, pageSize
-     * @param needContent need content or not.
      * @return The sql of querying all config info.
      */
-    MapperResult findAllConfigInfoFragment(MapperContext context, boolean needContent);
+    MapperResult findAllConfigInfoFragment(MapperContext context);
     
     /**
      * Query change config. <br/>The default sql: SELECT data_id, group_id, tenant_id, app_name, content,
