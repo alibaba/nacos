@@ -318,7 +318,7 @@ public class ConfigCacheServiceTest {
     
     @Test
     public void testTryConfigReadLock() throws Exception {
-        String dataId = "1234testTryConfigReadLock";
+        String dataId = "123testTryConfigReadLock";
         String group = "1234";
         String tenant = "1234";
         CacheItem cacheItem = Mockito.mock(CacheItem.class);
