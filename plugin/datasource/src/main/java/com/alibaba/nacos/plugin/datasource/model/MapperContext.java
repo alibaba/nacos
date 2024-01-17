@@ -86,7 +86,7 @@ public class MapperContext {
      * @param value Value to be associated with the specified key
      */
     public void putContextParameter(String key, String value) {
-        this.whereParamMap.put(key, value);
+        this.contextParamMap.put(key, value);
     }
     
     /**
