@@ -22,9 +22,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.auth.annotation.Secured;
-import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
@@ -88,77 +86,76 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
         
         int lockResult = ConfigCacheService.tryConfigReadLock(groupKey);
         String pullEvent = ConfigTraceService.PULL_EVENT;
-        ConfigQueryResponse response = new ConfigQueryResponse();
+        String pullType = ConfigTraceService.PULL_TYPE_OK;
         
-        boolean isBeta = false;
-        if (lockResult > 0) {
+        ConfigQueryResponse response = new ConfigQueryResponse();
+        CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
+        
+        if (lockResult > 0 && cacheItem != null) {
             try {
-                String md5 = Constants.NULL;
                 long lastModified = 0L;
-                CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
-                if (cacheItem != null) {
-                    
-                    isBeta = cacheItem.isBeta() && cacheItem.getIps4Beta() != null && cacheItem.getIps4Beta()
-                            .contains(clientIp) && cacheItem.getConfigCacheBeta() != null;
-                    
-                    String configType = cacheItem.getType();
-                    response.setContentType((null != configType) ? configType : "text");
-                }
-                String content = null;
+                boolean isBeta = cacheItem.isBeta() && cacheItem.getIps4Beta() != null && cacheItem.getIps4Beta()
+                        .contains(clientIp) && cacheItem.getConfigCacheBeta() != null;
+                String configType = cacheItem.getType();
+                response.setContentType((null != configType) ? configType : "text");
+                
+                String content;
+                String md5;
+                String encryptedDataKey;
                 if (isBeta) {
                     md5 = cacheItem.getConfigCacheBeta().getMd5(acceptCharset);
                     lastModified = cacheItem.getConfigCacheBeta().getLastModifiedTs();
                     content = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
                     pullEvent = ConfigTraceService.PULL_EVENT_BETA;
+                    encryptedDataKey = cacheItem.getConfigCacheBeta().getEncryptedDataKey();
                     response.setBeta(true);
                 } else {
                     if (StringUtils.isBlank(tag)) {
                         if (isUseTag(cacheItem, autoTag)) {
-                            if (cacheItem != null) {
-                                md5 = cacheItem.getTagMd5(autoTag, acceptCharset);
-                                lastModified = cacheItem.getTagLastModified(autoTag);
-                            }
-                            
+                            md5 = cacheItem.getTagMd5(autoTag, acceptCharset);
+                            lastModified = cacheItem.getTagLastModified(autoTag);
+                            encryptedDataKey = cacheItem.getTagEncryptedDataKey(autoTag);
                             content = ConfigDiskServiceFactory.getInstance()
                                     .getTagContent(dataId, group, tenant, autoTag);
-                            
                             pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
                             response.setTag(URLEncoder.encode(autoTag, ENCODE_UTF8));
                             
                         } else {
                             md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
                             lastModified = cacheItem.getConfigCache().getLastModifiedTs();
+                            encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
                             content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
                             pullEvent = ConfigTraceService.PULL_EVENT;
                         }
                     } else {
-                        if (cacheItem != null) {
-                            md5 = cacheItem.getTagMd5(tag, acceptCharset);
-                            lastModified = cacheItem.getTagLastModified(tag);
-                        }
+                        md5 = cacheItem.getTagMd5(tag, acceptCharset);
+                        lastModified = cacheItem.getTagLastModified(tag);
+                        encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
                         content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
-                        
                         response.setTag(tag);
                         pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
                     }
                 }
                 
                 response.setMd5(md5);
-                String encryptedDataKey = getEncryptedDataKey(tag, clientIp, cacheItem, isBeta, autoTag);
                 response.setEncryptedDataKey(encryptedDataKey);
                 response.setContent(content);
                 response.setLastModified(lastModified);
-                response.setResultCode(ResponseCode.SUCCESS.getCode());
-                
+                if (content == null) {
+                    pullType = ConfigTraceService.PULL_TYPE_NOTFOUND;
+                    response.setErrorInfo(ConfigQueryResponse.CONFIG_NOT_FOUND, "config data not exist");
+                } else {
+                    response.setResultCode(ResponseCode.SUCCESS.getCode());
+                }
                 LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, clientIp, md5, TimeUtils.getCurrentTimeStr());
                 
                 final long delayed = notify ? -1 : System.currentTimeMillis() - lastModified;
-                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
-                        ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "grpc");
+                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent, pullType,
+                        delayed, clientIp, notify, "grpc");
             } finally {
                 ConfigCacheService.releaseReadLock(groupKey);
             }
-        } else if (lockResult == 0) {
+        } else if (lockResult == 0 || cacheItem == null) {
             
             //CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
@@ -171,32 +168,6 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                     "requested file is being modified, please try later.");
         }
         return response;
-    }
-    
-    private String getEncryptedDataKey(String tag, String clientIp, CacheItem cacheItem, boolean isBeta,
-            String autoTag) {
-        if (cacheItem == null) {
-            return null;
-        }
-        String encryptedDataKey;
-        if (isBeta && cacheItem.getConfigCacheBeta() != null) {
-            encryptedDataKey = cacheItem.getConfigCacheBeta().getEncryptedDataKey();
-        } else {
-            if (StringUtils.isBlank(tag)) {
-                if (isUseTag(cacheItem, autoTag)) {
-                    encryptedDataKey = cacheItem.getTagEncryptedDataKey(autoTag);
-                } else if (cacheItem.isBatch && cacheItem.delimiter >= InternetAddressUtil.ipToInt(clientIp)
-                        && cacheItem.getConfigCacheBatch() != null) {
-                    // batch
-                    encryptedDataKey = cacheItem.getConfigCacheBatch().getEncryptedDataKey();
-                } else {
-                    encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
-                }
-            } else {
-                encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
-            }
-        }
-        return encryptedDataKey;
     }
     
     private static boolean isUseTag(CacheItem cacheItem, String tag) {

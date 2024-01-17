@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
+import static com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse.CONFIG_NOT_FOUND;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -59,6 +60,8 @@ public class ConfigQueryRequestHandlerTest {
     String dataId = "dataId" + System.currentTimeMillis();
     
     String group = "group" + System.currentTimeMillis();
+    
+    String tenant = "tenant" + System.currentTimeMillis();
     
     String content = "content" + System.currentTimeMillis();
     
@@ -78,7 +81,7 @@ public class ConfigQueryRequestHandlerTest {
         configDiskServiceFactoryMockedStatic = Mockito.mockStatic(ConfigDiskServiceFactory.class);
         configQueryRequestHandler = new ConfigQueryRequestHandler();
         final String groupKey = GroupKey2.getKey(dataId, group, "");
-        when(ConfigCacheService.tryReadLock(groupKey)).thenReturn(1);
+        when(ConfigCacheService.tryConfigReadLock(groupKey)).thenReturn(1);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);
         
     }
@@ -196,7 +199,7 @@ public class ConfigQueryRequestHandlerTest {
         //check content&md5
         Assert.assertNull(response.getContent());
         Assert.assertNull(response.getMd5());
-        Assert.assertEquals(response.getErrorCode(), ConfigQueryResponse.CONFIG_NOT_FOUND);
+        Assert.assertEquals(response.getErrorCode(), CONFIG_NOT_FOUND);
         Assert.assertNull(response.getEncryptedDataKey());
         
         //check flags.
@@ -307,4 +310,49 @@ public class ConfigQueryRequestHandlerTest {
         Assert.assertEquals(response.getTag(), autoTag);
         
     }
+    
+    /**
+     * get normal config from local disk.
+     *
+     * @throws Exception Exception.
+     */
+    @Test
+    public void testGetConfigNotExistAndConflict() throws Exception {
+        
+        String dataId = "dataId" + System.currentTimeMillis();
+        String group = "group" + System.currentTimeMillis();
+        String tenant = "tenant" + System.currentTimeMillis();
+        //test config not exist
+        configCacheServiceMockedStatic.when(
+                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(0);
+        final String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(null);
+        
+        ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
+        configQueryRequest.setDataId(dataId);
+        configQueryRequest.setGroup(group);
+        configQueryRequest.setTenant(tenant);
+        RequestMeta requestMeta = new RequestMeta();
+        requestMeta.setClientIp("127.0.0.1");
+        
+        ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
+        Assert.assertEquals(CONFIG_NOT_FOUND, response.getErrorCode());
+        Assert.assertEquals(null, response.getContent());
+        Assert.assertEquals(null, response.getMd5());
+        Assert.assertFalse(response.isBeta());
+        Assert.assertNull(response.getTag());
+        
+        //test config conflict
+        when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(new CacheItem(groupKey));
+        configCacheServiceMockedStatic.when(
+                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(-1);
+        ConfigQueryResponse responseConflict = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
+        Assert.assertEquals(ConfigQueryResponse.CONFIG_QUERY_CONFLICT, responseConflict.getErrorCode());
+        Assert.assertEquals(null, responseConflict.getContent());
+        Assert.assertEquals(null, responseConflict.getMd5());
+        Assert.assertFalse(responseConflict.isBeta());
+        Assert.assertNull(responseConflict.getTag());
+        
+    }
+    
 }

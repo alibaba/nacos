@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.MediaType;
-import com.alibaba.nacos.common.utils.InternetAddressUtil;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -28,7 +27,6 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.enums.FileTypeEnum;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCache;
-import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.LongPollingService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
@@ -130,8 +128,7 @@ public class ConfigServletInner {
      * Execute to get config [API V1] or [API V2].
      */
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
-            String tenant, String tag, String isNotify, String clientIp, boolean isV2)
-            throws IOException, ServletException {
+            String tenant, String tag, String isNotify, String clientIp, boolean isV2) throws IOException {
         
         boolean notify = StringUtils.isNotBlank(isNotify) && Boolean.parseBoolean(isNotify);
         
@@ -146,52 +143,43 @@ public class ConfigServletInner {
         
         String requestIpApp = RequestUtil.getAppName(request);
         int lockResult = ConfigCacheService.tryConfigReadLock(groupKey);
+        CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
         
         final String requestIp = RequestUtil.getRemoteIp(request);
-        boolean isBeta = false;
-        if (lockResult > 0) {
-            // LockResult > 0 means cacheItem is not null and other thread can`t delete this cacheItem
+        if (lockResult > 0 && cacheItem != null) {
             try {
-                String md5 = Constants.NULL;
-                long lastModified = 0L;
-                CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
-                if (cacheItem.isBeta() && cacheItem.getConfigCacheBeta() != null && cacheItem.getIps4Beta() != null
-                        && cacheItem.getIps4Beta().contains(clientIp)) {
-                    isBeta = true;
-                }
+                long lastModified;
+                boolean isBeta =
+                        cacheItem.isBeta() && cacheItem.getConfigCacheBeta() != null && cacheItem.getIps4Beta() != null
+                                && cacheItem.getIps4Beta().contains(clientIp);
                 
                 final String configType =
                         (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
                 response.setHeader(com.alibaba.nacos.api.common.Constants.CONFIG_TYPE, configType);
                 FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
                 String contentTypeHeader = fileTypeEnum.getContentType();
-                response.setHeader(HttpHeaderConsts.CONTENT_TYPE, contentTypeHeader);
-                
-                if (isV2) {
-                    response.setHeader(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
-                }
-                
+                response.setHeader(HttpHeaderConsts.CONTENT_TYPE,
+                        isV2 ? MediaType.APPLICATION_JSON : contentTypeHeader);
                 String pullEvent;
-                String content = null;
-                ConfigInfoBase configInfoBase = null;
+                String content;
+                String md5;
+                String encryptedDataKey;
                 if (isBeta) {
                     ConfigCache configCacheBeta = cacheItem.getConfigCacheBeta();
                     pullEvent = ConfigTraceService.PULL_EVENT_BETA;
                     md5 = configCacheBeta.getMd5(acceptCharset);
                     lastModified = configCacheBeta.getLastModifiedTs();
+                    encryptedDataKey = configCacheBeta.getEncryptedDataKey();
                     content = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
                     response.setHeader("isBeta", "true");
                 } else {
                     if (StringUtils.isBlank(tag)) {
                         if (isUseTag(cacheItem, autoTag)) {
-                            if (cacheItem.getConfigCacheTags() != null) {
-                                ConfigCache configCacheTag = cacheItem.getConfigCacheTags().get(autoTag);
-                                if (configCacheTag != null) {
-                                    md5 = configCacheTag.getMd5(acceptCharset);
-                                    lastModified = configCacheTag.getLastModifiedTs();
-                                }
-                                
-                            }
+                            
+                            ConfigCache configCacheTag = cacheItem.getConfigCacheTags().get(autoTag);
+                            md5 = configCacheTag.getMd5(acceptCharset);
+                            lastModified = configCacheTag.getLastModifiedTs();
+                            encryptedDataKey = configCacheTag.getEncryptedDataKey();
                             content = ConfigDiskServiceFactory.getInstance()
                                     .getTagContent(dataId, group, tenant, autoTag);
                             pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
@@ -201,41 +189,25 @@ public class ConfigServletInner {
                             pullEvent = ConfigTraceService.PULL_EVENT;
                             md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
                             lastModified = cacheItem.getConfigCache().getLastModifiedTs();
+                            encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
                             content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
-                            if (configInfoBase == null && content == null) {
-                                // FIXME CacheItem
-                                // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
-                                        ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
-                                
-                                // pullLog.info("[client-get] clientIp={}, {},
-                                // no data",
-                                // new Object[]{clientIp, groupKey});
-                                
-                                return get404Result(response, isV2);
-                            }
                         }
                     } else {
                         md5 = cacheItem.getTagMd5(tag, acceptCharset);
                         lastModified = cacheItem.getTagLastModified(tag);
+                        encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
+                        
                         content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
                         pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
-                        
-                        if (configInfoBase == null && content == null) {
-                            // FIXME CacheItem
-                            // No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
-                            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
-                                    ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
-                            
-                            // pullLog.info("[client-get] clientIp={}, {},
-                            // no data",
-                            // new Object[]{clientIp, groupKey});
-                            
-                            return get404Result(response, isV2);
-                        }
                     }
                 }
                 
+                if (content == null) {
+                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
+                            ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
+                    return get404Result(response, isV2);
+                    
+                }
                 response.setHeader(Constants.CONTENT_MD5, md5);
                 
                 // Disable cache.
@@ -243,10 +215,10 @@ public class ConfigServletInner {
                 response.setDateHeader("Expires", 0);
                 response.setHeader("Cache-Control", "no-cache,no-store");
                 response.setDateHeader("Last-Modified", lastModified);
-                putEncryptedDataKeyHeader(response, tag, clientIp, acceptCharset, cacheItem, isBeta, autoTag);
+                if (encryptedDataKey != null) {
+                    response.setHeader("Encrypted-Data-Key", encryptedDataKey);
+                }
                 PrintWriter out;
-                
-                String encryptedDataKey = response.getHeader("Encrypted-Data-Key");
                 Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
                 String decryptContent = pair.getSecond();
                 out = response.getWriter();
@@ -267,19 +239,16 @@ public class ConfigServletInner {
             } finally {
                 ConfigCacheService.releaseReadLock(groupKey);
             }
-        } else if (lockResult == 0) {
+        } else if (lockResult == 0 || cacheItem == null) {
             
-            // FIXME CacheItem No longer exists. It is impossible to simply calculate the push delayed. Here, simply record it as - 1.
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT,
                     ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
-            
             return get404Result(response, isV2);
             
         } else {
             
             PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
             return get409Result(response, isV2);
-            
         }
         
         return HttpServletResponse.SC_OK + "";
@@ -306,37 +275,6 @@ public class ConfigServletInner {
             writer.println("requested file is being modified, please try later.");
         }
         return HttpServletResponse.SC_CONFLICT + "";
-    }
-    
-    private void putEncryptedDataKeyHeader(HttpServletResponse response, String tag, String clientIp, String charset,
-            CacheItem cacheItem, boolean isBeta, String autoTag) {
-        if (cacheItem == null) {
-            return;
-        }
-        
-        String encryptedDataKey = null;
-        if (isBeta && cacheItem.getConfigCacheBeta() != null) {
-            encryptedDataKey = cacheItem.getConfigCacheBeta().getEncryptedDataKey();
-        } else {
-            if (org.apache.commons.lang.StringUtils.isBlank(tag)) {
-                if (isUseTag(cacheItem, autoTag)) {
-                    // autoTag
-                    encryptedDataKey = cacheItem.getTagEncryptedDataKey(autoTag);
-                } else if (cacheItem.isBatch && cacheItem.delimiter >= InternetAddressUtil.ipToInt(clientIp)
-                        && cacheItem.getConfigCacheBatch() != null) {
-                    // batch
-                    encryptedDataKey = cacheItem.getConfigCacheBatch().getEncryptedDataKey();
-                } else {
-                    encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
-                }
-            } else {
-                encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
-            }
-        }
-        
-        if (org.apache.commons.lang.StringUtils.isNotBlank(encryptedDataKey)) {
-            response.setHeader("Encrypted-Data-Key", encryptedDataKey);
-        }
     }
     
     private static boolean isUseTag(CacheItem cacheItem, String tag) {
