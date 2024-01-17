@@ -48,6 +48,7 @@ import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -454,12 +455,7 @@ public class ClientWorker implements Closeable {
         agent = new ConfigRpcTransportClient(properties, serverListManager);
         int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
         ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Math.max(count, MIN_THREAD_NUM),
-                r -> {
-                    Thread t = new Thread(r);
-                    t.setName("com.alibaba.nacos.client.Worker");
-                    t.setDaemon(true);
-                    return t;
-                });
+                new NameThreadFactory("com.alibaba.nacos.client.Worker"));
         agent.setExecutor(executorService);
         agent.start();
         
