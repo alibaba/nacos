@@ -198,11 +198,11 @@ jobs:
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
               RESOURCE_LIMITS:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
               RESOURCE_REQUIRE:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
 
       - uses: actions/upload-artifact@v3
         if: always()
@@ -251,11 +251,11 @@ jobs:
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
               RESOURCE_LIMITS:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
               RESOURCE_REQUIRE:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
       - uses: actions/upload-artifact@v3
         if: always()
         name: Upload test log
@@ -305,11 +305,11 @@ jobs:
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
               RESOURCE_LIMITS:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
               RESOURCE_REQUIRE:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
       - uses: actions/upload-artifact@v3
         if: always()
         name: Upload test log
@@ -358,11 +358,11 @@ jobs:
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
               RESOURCE_LIMITS:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
               RESOURCE_REQUIRE:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
       - uses: actions/upload-artifact@v3
         if: always()
         name: Upload test log
@@ -409,11 +409,11 @@ jobs:
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
               RESOURCE_LIMITS:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
               RESOURCE_REQUIRE:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
       - uses: actions/upload-artifact@v3
         if: always()
         name: Upload test log
@@ -462,11 +462,11 @@ jobs:
             CONTAINER:
               IMAGE: cloudnativeofalibabacloud/test-runner:v0.0.4
               RESOURCE_LIMITS:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
               RESOURCE_REQUIRE:
-                cpu: 8
-                memory: 8Gi
+                cpu: 2
+                memory: 2Gi
       - uses: actions/upload-artifact@v3
         if: always()
         name: Upload test log
