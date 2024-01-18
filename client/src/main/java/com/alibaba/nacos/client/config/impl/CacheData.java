@@ -28,6 +28,7 @@ import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListene
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.NumberUtils;
@@ -73,12 +74,9 @@ public class CacheData {
         if (scheduledExecutor == null) {
             synchronized (CacheData.class) {
                 if (scheduledExecutor == null) {
-                    scheduledExecutor = new ScheduledThreadPoolExecutor(1, r -> {
-                        Thread t = new Thread(r);
-                        t.setName("com.alibaba.nacos.client.notify.block.monitor");
-                        t.setDaemon(true);
-                        return t;
-                    }, new ThreadPoolExecutor.DiscardPolicy());
+                    scheduledExecutor = new ScheduledThreadPoolExecutor(1,
+                            new NameThreadFactory("com.alibaba.nacos.client.notify.block.monitor"),
+                            new ThreadPoolExecutor.DiscardPolicy());
                     scheduledExecutor.setRemoveOnCancelPolicy(true);
                 }
             }

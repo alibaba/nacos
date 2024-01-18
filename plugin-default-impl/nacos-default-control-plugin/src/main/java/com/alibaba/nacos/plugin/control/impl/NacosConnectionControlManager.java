@@ -62,7 +62,7 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
         Map<String, Integer> metricsTotalCount = metricsCollectorList.stream().collect(
                 Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
         int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();
-        if (totalCount > totalCountLimit) {
+        if (totalCount >= totalCountLimit) {
             connectionCheckResponse.setSuccess(false);
             connectionCheckResponse.setCode(ConnectionCheckCode.DENY_BY_TOTAL_OVER);
         }

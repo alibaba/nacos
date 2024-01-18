@@ -17,7 +17,6 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.PropertiesConstant;
-import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
@@ -238,14 +237,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     
     public static boolean isStandaloneMode() {
         return EnvUtil.getStandaloneMode();
-    }
-    
-    // Determines whether to read the data directly
-    // if use mysql, Reduce database read pressure
-    // if use raft+derby, Reduce leader read pressure
-    
-    public static boolean isDirectRead() {
-        return EnvUtil.getStandaloneMode() && DatasourceConfiguration.isEmbeddedStorage();
     }
     
     private void loadSetting() {
