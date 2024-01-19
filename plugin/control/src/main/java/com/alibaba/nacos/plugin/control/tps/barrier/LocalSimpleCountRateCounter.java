@@ -60,8 +60,13 @@ public class LocalSimpleCountRateCounter extends RateCounter {
     }
 
     @Override
-    public long addInterceptedCount(long timestamp, long count) {
-        return createSlotIfAbsent(timestamp).countHolder.interceptedCount.addAndGet(count);
+    public boolean tryAdd(long timestamp, long countDelta, long upperLimit) {
+        if (createSlotIfAbsent(timestamp).countHolder.count.addAndGet(countDelta) <= upperLimit) {
+            return true;
+        } else {
+            createSlotIfAbsent(timestamp).countHolder.interceptedCount.addAndGet(countDelta);
+            return false;
+        }
     }
 
     public void minus(long timestamp, long count) {

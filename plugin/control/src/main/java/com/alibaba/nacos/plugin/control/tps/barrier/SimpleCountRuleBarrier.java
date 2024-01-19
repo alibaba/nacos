@@ -58,10 +58,9 @@ public abstract class SimpleCountRuleBarrier extends RuleBarrier {
     
     @Override
     public TpsCheckResponse applyTps(BarrierCheckRequest barrierCheckRequest) {
-        long count = rateCounter.add(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
         long maxCount = getMaxCount();
-        if (MonitorType.INTERCEPT.getType().equals(getMonitorType()) && maxCount >= 0 && count > maxCount) {
-            rateCounter.addInterceptedCount(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount());
+        boolean accepted =  rateCounter.tryAdd(barrierCheckRequest.getTimestamp(), barrierCheckRequest.getCount(), maxCount);;
+        if (MonitorType.INTERCEPT.getType().equals(getMonitorType()) && !accepted) {
             return new TpsCheckResponse(false, TpsResultCode.DENY_BY_POINT, "tps over limit :" + maxCount);
         }
         return new TpsCheckResponse(true, TpsResultCode.PASS_BY_POINT, "success");

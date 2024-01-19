@@ -58,10 +58,11 @@ public abstract class RateCounter {
      * add intercepted count for the second of timestamp.
      *
      * @param timestamp timestamp
-     * @param count count
+     * @param countDelta count
+     * @param upperLimit upperLimit
      * @return
      */
-    public abstract long addInterceptedCount(long timestamp, long count);
+    public abstract boolean tryAdd(long timestamp, long countDelta, long upperLimit);
 
     /**
      * get count of the second of timestamp.
