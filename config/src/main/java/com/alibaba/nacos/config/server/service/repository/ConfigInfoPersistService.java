@@ -245,7 +245,7 @@ public interface ConfigInfoPersistService {
      * @return config max id
      */
     long findConfigMaxId();
-
+    
     /**
      * Query configuration information by primary key ID.
      *
@@ -315,11 +315,12 @@ public interface ConfigInfoPersistService {
     /**
      * Query all config info.
      *
-     * @param lastMaxId last max id
-     * @param pageSize  page size
+     * @param lastMaxId   last max id
+     * @param pageSize    page size
+     * @param needContent need content or not.
      * @return {@link Page} with {@link ConfigInfoWrapper} generation
      */
-    Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize);
+    Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize, boolean needContent);
     
     /**
      * Query config info.
@@ -334,7 +335,7 @@ public interface ConfigInfoPersistService {
      */
     Page<ConfigInfo> findConfigInfoLike4Page(final int pageNo, final int pageSize, final String dataId,
             final String group, final String tenant, final Map<String, Object> configAdvanceInfo);
-
+    
     /**
      * Query change config.order by id asc.
      *
@@ -343,7 +344,7 @@ public interface ConfigInfoPersistService {
      * @param pageSize  pageSize
      * @return {@link ConfigInfoWrapper} list
      */
-    List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize);
+    List<ConfigInfoStateWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize);
     
     /**
      * Query tag list.
