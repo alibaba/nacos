@@ -27,13 +27,13 @@ public class ConfigChangeConfigsTest {
     }
     
     @Test
-    public void testEnable(){
+    public void testEnable() {
         Assert.assertTrue(Boolean.parseBoolean(configChangeConfigs
                 .getPluginProperties("mockPlugin").getProperty("enabled")));
     }
     
     @Test
-    public void testUpgradeEnable(){
+    public void testUpgradeEnable() {
         environment.setProperty("nacos.core.config.plugin.mockPlugin.enabled", "false");
         configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
         Assert.assertFalse(Boolean.parseBoolean(configChangeConfigs
