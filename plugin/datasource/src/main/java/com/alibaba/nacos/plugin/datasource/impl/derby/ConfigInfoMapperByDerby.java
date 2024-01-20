@@ -19,6 +19,7 @@ package com.alibaba.nacos.plugin.datasource.impl.derby;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
@@ -77,8 +78,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
                 + " ( SELECT id FROM config_info WHERE tenant_id LIKE ? ORDER BY id OFFSET " + context.getStartRow()
                 + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY ) "
                 + "g, config_info t  WHERE g.id = t.id ";
-        return new MapperResult(sql,
-                CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID)));
+        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
     
     @Override
@@ -92,11 +92,11 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     
     @Override
     public MapperResult findAllConfigInfoFragment(MapperContext context) {
-        
-        return new MapperResult(
-                "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info WHERE id > ? "
-                        + "ORDER BY id ASC OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
-                        + context.getPageSize() + " ROWS ONLY",
+        String contextParameter = context.getContextParameter(ContextConstant.NEED_CONTENT);
+        boolean needContent = contextParameter != null && Boolean.parseBoolean(contextParameter);
+        return new MapperResult("SELECT id,data_id,group_id,tenant_id,app_name," + (needContent ? "content," : "")
+                + "md5,gmt_modified,type FROM config_info WHERE id > ? " + "ORDER BY id ASC OFFSET "
+                + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.ID)));
     }
     
@@ -276,7 +276,7 @@ public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInf
     public String getDataSource() {
         return DataSourceConstant.DERBY;
     }
-
+    
     @Override
     public MapperResult findChangeConfig(MapperContext context) {
         String sql =

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
+import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -149,12 +150,23 @@ public class ConfigInfoMapperByDerbyTest {
     
     @Test
     public void testFindAllConfigInfoFragment() {
+        //with content
+        context.putContextParameter(ContextConstant.NEED_CONTENT, "true");
         MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfoFragment(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info "
                         + "WHERE id > ? ORDER BY id ASC OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
                         + " ROWS ONLY");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id});
+        //with out content
+        context.putContextParameter(ContextConstant.NEED_CONTENT, "false");
+    
+        MapperResult mapperResult2 = configInfoMapperByDerby.findAllConfigInfoFragment(context);
+        Assert.assertEquals(mapperResult2.getSql(),
+                "SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type FROM config_info "
+                        + "WHERE id > ? ORDER BY id ASC OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult2.getParamList().toArray(), new Object[] {id});
     }
     
     @Test

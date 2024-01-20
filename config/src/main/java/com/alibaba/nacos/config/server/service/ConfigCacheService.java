@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
+import static com.alibaba.nacos.config.server.constant.Constants.PERSIST_ENCODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
@@ -72,6 +73,7 @@ public class ConfigCacheService {
      * @param group          group string value.
      * @param tenant         tenant string value.
      * @param content        content string value.
+     * @param md5            md5 of persist.
      * @param lastModifiedTs lastModifiedTs.
      * @param type           file type.
      * @return dumpChange success or not.
@@ -100,7 +102,7 @@ public class ConfigCacheService {
             boolean newLastModified = lastModifiedTs > ConfigCacheService.getLastModifiedTs(groupKey);
             
             if (md5 == null) {
-                md5 = MD5Utils.md5Hex(content, ENCODE_UTF8);
+                md5 = MD5Utils.md5Hex(content, PERSIST_ENCODE);
             }
             
             //check md5 & update local disk cache.

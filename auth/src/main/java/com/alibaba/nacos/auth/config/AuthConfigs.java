@@ -98,6 +98,9 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
         if (StringUtils.isEmpty(nacosAuthSystemType)) {
             throw new NacosException(AuthErrorCode.INVALID_TYPE.getCode(), AuthErrorCode.INVALID_TYPE.getMsg());
         }
+        if (EnvUtil.getStandaloneMode()) {
+            return;
+        }
         if (StringUtils.isEmpty(serverIdentityKey) || StringUtils.isEmpty(serverIdentityValue)) {
             throw new NacosException(AuthErrorCode.EMPTY_IDENTITY.getCode(), AuthErrorCode.EMPTY_IDENTITY.getMsg());
         }

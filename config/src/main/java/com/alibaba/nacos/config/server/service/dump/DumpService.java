@@ -53,7 +53,6 @@ import com.alibaba.nacos.sys.utils.TimerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -263,7 +262,7 @@ public abstract class DumpService {
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             
             try {
-                dumpConfigInfo(dumpAllProcessor);
+                dumpAllConfigInfoOnStartup(dumpAllProcessor);
                 
                 // update Beta cache
                 LogUtil.DEFAULT_LOG.info("start clear all config-info-beta.");
@@ -324,12 +323,12 @@ public abstract class DumpService {
         
     }
     
-    private void dumpConfigInfo(DumpAllProcessor dumpAllProcessor) throws IOException {
+    private void dumpAllConfigInfoOnStartup(DumpAllProcessor dumpAllProcessor) {
         
         try {
             LogUtil.DEFAULT_LOG.info("start clear all config-info.");
             ConfigDiskServiceFactory.getInstance().clearAll();
-            dumpAllProcessor.process(new DumpAllTask());
+            dumpAllProcessor.process(new DumpAllTask(true));
         } catch (Exception e) {
             LogUtil.FATAL_LOG.error("dump config fail" + e.getMessage());
             throw e;
