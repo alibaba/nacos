@@ -27,6 +27,7 @@ import org.junit.Test;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 /**
  * ConfigChangePluginManagerTests.
@@ -197,11 +198,7 @@ public class ConfigChangePluginManagerTests {
     }
 
     private boolean isSorted(List<ConfigChangePluginService> list) {
-        for (int i = 0; i < list.size() - 1; i++) {
-            if (list.get(i).getOrder() > list.get(i + 1).getOrder()) {
-                return false;
-            }
-        }
-        return true;
+        return IntStream.range(0, list.size() - 1)
+                .allMatch(i -> list.get(i).getOrder() <= list.get(i + 1).getOrder());
     }
 }

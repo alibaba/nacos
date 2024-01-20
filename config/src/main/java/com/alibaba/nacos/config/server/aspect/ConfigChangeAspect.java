@@ -354,14 +354,14 @@ public class ConfigChangeAspect {
     
     private List<ConfigChangePluginService> getPluginServices(
             ConfigChangePointCutTypes configChangePointCutType) {
-        List<ConfigChangePluginService> pluginServicePriorityQueue = ConfigChangePluginManager
+        List<ConfigChangePluginService> pluginServicePriorityList = ConfigChangePluginManager
                 .findPluginServicesByPointcut(configChangePointCutType);
-        if (pluginServicePriorityQueue == null) {
+        if (pluginServicePriorityList == null) {
             return new ArrayList<>();
         }
-        for (ConfigChangePluginService each : pluginServicePriorityQueue) {
+        for (ConfigChangePluginService each : pluginServicePriorityList) {
             if (isEnabled(each)) {
-                return pluginServicePriorityQueue;
+                return pluginServicePriorityList;
             }
         }
         return new ArrayList<>();
