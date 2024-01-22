@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
+import com.alibaba.nacos.common.remote.CommunicationType;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.remote.CommunicationType;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilder;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -29,7 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static com.alibaba.nacos.core.remote.grpc.negotiator.tls.ClusterDefaultTlsProtocolNegotiatorBuilder.CLUSTER_TYPE_DEFAULT_TLS;
-import static com.alibaba.nacos.core.remote.grpc.negotiator.tls.SdkDefaultTlsProtocolNegotiatorBuilder.SDK_TYPE_DEFAULT_TLS;
+import static com.alibaba.nacos.core.remote.grpc.negotiator.tls.SdkDefaultTlsProtocolNegotiatorBuilder.TYPE_DEFAULT_TLS;
 
 /**
  * Manager for ProtocolNegotiatorBuilder instances, responsible for loading, managing, and providing
@@ -106,7 +106,7 @@ public class ProtocolNegotiatorBuilderManager {
      * Initialize the mapping of CommunicationType to actual ProtocolNegotiator type from configuration properties.
      */
     private void initActualTypeMap() {
-        actualTypeMap.put(CommunicationType.SDK, EnvUtil.getProperty(SDK_TYPE_PROPERTY_KEY, SDK_TYPE_DEFAULT_TLS));
+        actualTypeMap.put(CommunicationType.SDK, EnvUtil.getProperty(SDK_TYPE_PROPERTY_KEY, TYPE_DEFAULT_TLS));
         actualTypeMap.put(CommunicationType.CLUSTER,
                 EnvUtil.getProperty(CLUSTER_TYPE_PROPERTY_KEY, CLUSTER_TYPE_DEFAULT_TLS));
     }
@@ -115,8 +115,8 @@ public class ProtocolNegotiatorBuilderManager {
      * Initialize default ProtocolNegotiatorBuilders in case loading from SPI fails.
      */
     private void initDefaultBuilder() {
-        builderMap.put(SDK_TYPE_DEFAULT_TLS, new SdkDefaultTlsProtocolNegotiatorBuilder());
-        builderMap.put(CLUSTER_TYPE_PROPERTY_KEY, new ClusterDefaultTlsProtocolNegotiatorBuilder());
+        builderMap.put(TYPE_DEFAULT_TLS, new SdkDefaultTlsProtocolNegotiatorBuilder());
+        builderMap.put(CLUSTER_TYPE_DEFAULT_TLS, new ClusterDefaultTlsProtocolNegotiatorBuilder());
     }
     
     /**

@@ -58,7 +58,7 @@ public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiato
     /**
      * The unique identifier for this negotiator builder.
      */
-    public static final String SDK_TYPE_DEFAULT_TLS = "SDK_DEFAULT_TLS";
+    public static final String TYPE_DEFAULT_TLS = "DEFAULT_TLS";
     
     /**
      * Constructs and returns a ProtocolNegotiator for SDK-to-Server communication with optional TLS encryption.
@@ -82,6 +82,6 @@ public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiato
      */
     @Override
     public String type() {
-        return SDK_TYPE_DEFAULT_TLS;
+        return TYPE_DEFAULT_TLS;
     }
 }
