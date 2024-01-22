@@ -66,7 +66,8 @@ public class RpcSdkClientTlsConfig extends TlsConfig {
         }
         
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL)) {
-            tlsConfig.setTrustAll(Boolean.parseBoolean(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL)));
+            tlsConfig.setTrustAll(
+                    Boolean.parseBoolean(properties.getProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL)));
         }
         
         if (properties.containsKey(RpcConstants.RPC_CLIENT_TLS_TRUST_PWD)) {
