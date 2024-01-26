@@ -220,13 +220,8 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 client.addServiceInstance(singleton, batchInstancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
-            } else if (!(publishInfo instanceof BatchInstancePublishInfo)) {
-                // 2. old client is single publish, new client is batch publish
-                client.addServiceInstance(singleton, batchInstancePublishInfo);
-                NotifyCenter.publishEvent(
-                        new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
-            } else {
-                // 3. old client is batch publish, new client is the same
+            } else if (publishInfo instanceof BatchInstancePublishInfo) {
+                // 2. old client is batch publish, new client is the same
                 BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) publishInfo;
                 boolean result = batchInstancePublishInfo.equals(targetInstanceInfo);
                 if (!result) {
@@ -234,6 +229,11 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                     NotifyCenter.publishEvent(
                             new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
                 }
+            } else {
+                // 3. old client is single publish or other, new client is batch publish
+                client.addServiceInstance(singleton, batchInstancePublishInfo);
+                NotifyCenter.publishEvent(
+                        new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
         }
     }
