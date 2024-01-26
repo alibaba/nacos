@@ -87,11 +87,9 @@ public class ServiceInfoUpdateService implements Closeable {
         if (properties == null) {
             return count;
         }
-        count = Math.min(
-                ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_MAX_THREAD_COUNT), count),
-                count);
+        count = Math.min(properties.getInteger(PropertyKeyConst.NAMING_POLLING_MAX_THREAD_COUNT, count), count);
         count = Math.max(count, MIN_THREAD_NUM);
-        return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT), count);
+        return properties.getInteger(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT, count);
     }
     
     /**

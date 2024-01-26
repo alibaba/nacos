@@ -466,10 +466,9 @@ public class ClientWorker implements Closeable {
         if (properties == null) {
             return count;
         }
-        count = Math.min(count,
-                ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CLIENT_WORKER_MAX_THREAD_COUNT), count));
+        count = Math.min(count, properties.getInteger(PropertyKeyConst.CLIENT_WORKER_MAX_THREAD_COUNT, count));
         count = Math.max(count, MIN_THREAD_NUM);
-        return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.CLIENT_WORKER_THREAD_COUNT), count);
+        return properties.getInteger(PropertyKeyConst.CLIENT_WORKER_THREAD_COUNT, count);
     }
     
     private void refreshContentAndCheck(String groupKey, boolean notify) {
