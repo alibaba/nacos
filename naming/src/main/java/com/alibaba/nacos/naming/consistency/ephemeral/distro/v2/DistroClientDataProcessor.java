@@ -214,16 +214,26 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
             BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
-            BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) client
-                    .getInstancePublishInfo(singleton);
-            boolean result = false;
-            if (targetInstanceInfo != null) {
-                result = batchInstancePublishInfo.equals(targetInstanceInfo);
-            }
-            if (!result) {
+            InstancePublishInfo publishInfo = client.getInstancePublishInfo(singleton);
+            // 1. old client is null publish
+            if (publishInfo == null) {
                 client.addServiceInstance(singleton, batchInstancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+            } else if (!(publishInfo instanceof BatchInstancePublishInfo)) {
+                // 2. old client is single publish, new client is batch publish
+                client.addServiceInstance(singleton, batchInstancePublishInfo);
+                NotifyCenter.publishEvent(
+                        new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+            } else {
+                // 3. old client is batch publish, new client is the same
+                BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) publishInfo;
+                boolean result = batchInstancePublishInfo.equals(targetInstanceInfo);
+                if (!result) {
+                    client.addServiceInstance(singleton, batchInstancePublishInfo);
+                    NotifyCenter.publishEvent(
+                            new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                }
             }
         }
     }
