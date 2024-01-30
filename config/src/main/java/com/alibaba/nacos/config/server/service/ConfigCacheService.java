@@ -27,7 +27,7 @@ import com.alibaba.nacos.config.server.model.ConfigCache;
 import com.alibaba.nacos.config.server.model.event.LocalDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.google.common.collect.Lists;
 
@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
+import static com.alibaba.nacos.config.server.constant.Constants.PERSIST_ENCODE;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DEFAULT_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.DUMP_LOG;
 import static com.alibaba.nacos.config.server.utils.LogUtil.FATAL_LOG;
@@ -72,6 +73,7 @@ public class ConfigCacheService {
      * @param group          group string value.
      * @param tenant         tenant string value.
      * @param content        content string value.
+     * @param md5            md5 of persist.
      * @param lastModifiedTs lastModifiedTs.
      * @param type           file type.
      * @return dumpChange success or not.
@@ -100,20 +102,16 @@ public class ConfigCacheService {
             boolean newLastModified = lastModifiedTs > ConfigCacheService.getLastModifiedTs(groupKey);
             
             if (md5 == null) {
-                md5 = MD5Utils.md5Hex(content, ENCODE_UTF8);
+                md5 = MD5Utils.md5Hex(content, PERSIST_ENCODE);
             }
             
             //check md5 & update local disk cache.
             String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
             boolean md5Changed = !md5.equals(localContentMd5);
             if (md5Changed) {
-                if (!PropertyUtil.isDirectRead()) {
-                    DUMP_LOG.info("[dump] md5 changed, save to disk cache ,groupKey={}, newMd5={},oldMd5={}", groupKey,
-                            md5, localContentMd5);
-                    ConfigDiskServiceFactory.getInstance().saveToDisk(dataId, group, tenant, content);
-                } else {
-                    //ignore to save disk cache in direct model
-                }
+                DUMP_LOG.info("[dump] md5 changed, save to disk cache ,groupKey={}, newMd5={},oldMd5={}", groupKey, md5,
+                        localContentMd5);
+                ConfigDiskServiceFactory.getInstance().saveToDisk(dataId, group, tenant, content);
             } else {
                 DUMP_LOG.warn("[dump-ignore] ignore to save to disk cache. md5 consistent,groupKey={}, md5={}",
                         groupKey, md5);
@@ -214,15 +212,10 @@ public class ConfigCacheService {
             String localContentBetaMd5 = ConfigCacheService.getContentBetaMd5(groupKey);
             boolean md5Changed = !md5.equals(localContentBetaMd5);
             if (md5Changed) {
-                if (!PropertyUtil.isDirectRead()) {
-                    DUMP_LOG.info(
-                            "[dump-beta] md5 changed, update md5 in local disk cache. groupKey={}, newMd5={}, oldMd5={}",
-                            groupKey, md5, localContentBetaMd5);
-                    
-                    ConfigDiskServiceFactory.getInstance().saveBetaToDisk(dataId, group, tenant, content);
-                } else {
-                    //
-                }
+                DUMP_LOG.info(
+                        "[dump-beta] md5 changed, update md5 in local disk cache. groupKey={}, newMd5={}, oldMd5={}",
+                        groupKey, md5, localContentBetaMd5);
+                ConfigDiskServiceFactory.getInstance().saveBetaToDisk(dataId, group, tenant, content);
             }
             
             //md5 , ip list  timestamp check  and update local jvm cache.
@@ -298,11 +291,7 @@ public class ConfigCacheService {
             boolean md5Changed = !md5.equals(localContentTagMd5);
             
             if (md5Changed) {
-                if (!PropertyUtil.isDirectRead()) {
-                    ConfigDiskServiceFactory.getInstance().saveTagToDisk(dataId, group, tenant, tag, content);
-                } else {
-                    //
-                }
+                ConfigDiskServiceFactory.getInstance().saveTagToDisk(dataId, group, tenant, tag, content);
             }
             
             if (md5Changed) {
@@ -354,10 +343,9 @@ public class ConfigCacheService {
         }
         
         try {
-            if (!PropertyUtil.isDirectRead()) {
-                DUMP_LOG.info("[dump] remove  local disk cache,groupKey={} ", groupKey);
-                ConfigDiskServiceFactory.getInstance().removeConfigInfo(dataId, group, tenant);
-            }
+            DUMP_LOG.info("[dump] remove  local disk cache,groupKey={} ", groupKey);
+            ConfigDiskServiceFactory.getInstance().removeConfigInfo(dataId, group, tenant);
+            
             CACHE.remove(groupKey);
             DUMP_LOG.info("[dump] remove  local jvm cache,groupKey={} ", groupKey);
             
@@ -394,10 +382,8 @@ public class ConfigCacheService {
         }
         
         try {
-            if (!PropertyUtil.isDirectRead()) {
-                DUMP_LOG.info("[remove-beta-ok] remove beta in local disk cache,groupKey={} ", groupKey);
-                ConfigDiskServiceFactory.getInstance().removeConfigInfo4Beta(dataId, group, tenant);
-            }
+            DUMP_LOG.info("[remove-beta-ok] remove beta in local disk cache,groupKey={} ", groupKey);
+            ConfigDiskServiceFactory.getInstance().removeConfigInfo4Beta(dataId, group, tenant);
             NotifyCenter.publishEvent(new LocalDataChangeEvent(groupKey, true, CACHE.get(groupKey).getIps4Beta()));
             CACHE.get(groupKey).removeBeta();
             DUMP_LOG.info("[remove-beta-ok] remove beta in local jvm cache,groupKey={} ", groupKey);
@@ -434,10 +420,8 @@ public class ConfigCacheService {
         }
         
         try {
-            if (!PropertyUtil.isDirectRead()) {
-                DUMP_LOG.info("[remove-tag-ok] remove tag in local disk cache,tag={},groupKey={} ", tag, groupKey);
-                ConfigDiskServiceFactory.getInstance().removeConfigInfo4Tag(dataId, group, tenant, tag);
-            }
+            DUMP_LOG.info("[remove-tag-ok] remove tag in local disk cache,tag={},groupKey={} ", tag, groupKey);
+            ConfigDiskServiceFactory.getInstance().removeConfigInfo4Tag(dataId, group, tenant, tag);
             
             CacheItem ci = CACHE.get(groupKey);
             if (ci.getConfigCacheTags() != null) {
@@ -736,6 +720,46 @@ public class ConfigCacheService {
         cache.initBetaCacheIfEmpty();
         cache.getConfigCacheBeta().setLastModifiedTs(lastModifiedTs);
         
+    }
+    
+    private static final int TRY_GET_LOCK_TIMES = 9;
+    
+    /**
+     * try config read lock with spin of try get lock times.
+     *
+     * @param groupKey group key of config.
+     * @return
+     */
+    public static int tryConfigReadLock(String groupKey) {
+        
+        // Lock failed by default.
+        int lockResult = -1;
+        
+        // Try to get lock times, max value: 10;
+        for (int i = TRY_GET_LOCK_TIMES; i >= 0; --i) {
+            lockResult = ConfigCacheService.tryReadLock(groupKey);
+            
+            // The data is non-existent.
+            if (0 == lockResult) {
+                break;
+            }
+            
+            // Success
+            if (lockResult > 0) {
+                break;
+            }
+            
+            // Retry.
+            if (i > 0) {
+                try {
+                    Thread.sleep(1);
+                } catch (Exception e) {
+                    LogUtil.PULL_CHECK_LOG.error("An Exception occurred while thread sleep", e);
+                }
+            }
+        }
+        
+        return lockResult;
     }
 }
 

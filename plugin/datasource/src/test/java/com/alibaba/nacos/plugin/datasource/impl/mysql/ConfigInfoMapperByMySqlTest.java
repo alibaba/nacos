@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -149,11 +150,22 @@ public class ConfigInfoMapperByMySqlTest {
     
     @Test
     public void testFindAllConfigInfoFragment() {
+        //with content
+        context.putContextParameter(ContextConstant.NEED_CONTENT, "true");
+        
         MapperResult mapperResult = configInfoMapperByMySql.findAllConfigInfoFragment(context);
-        Assert.assertEquals(mapperResult.getSql(),
+        Assert.assertEquals(
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize);
+                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize,
+                mapperResult.getSql());
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id});
+        
+        context.putContextParameter(ContextConstant.NEED_CONTENT, "false");
+        MapperResult mapperResult2 = configInfoMapperByMySql.findAllConfigInfoFragment(context);
+        Assert.assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type,encrypted_data_key "
+                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize,
+                mapperResult2.getSql());
+        Assert.assertArrayEquals(mapperResult2.getParamList().toArray(), new Object[] {id});
     }
     
     @Test
