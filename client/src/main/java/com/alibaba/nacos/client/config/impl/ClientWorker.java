@@ -453,12 +453,22 @@ public class ClientWorker implements Closeable {
         init(properties);
         
         agent = new ConfigRpcTransportClient(properties, serverListManager);
-        int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Math.max(count, MIN_THREAD_NUM),
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(
+                initWorkerThreadCount(properties),
                 new NameThreadFactory("com.alibaba.nacos.client.Worker"));
         agent.setExecutor(executorService);
         agent.start();
         
+    }
+    
+    private int initWorkerThreadCount(NacosClientProperties properties) {
+        int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
+        if (properties == null) {
+            return count;
+        }
+        count = Math.min(count, properties.getInteger(PropertyKeyConst.CLIENT_WORKER_MAX_THREAD_COUNT, count));
+        count = Math.max(count, MIN_THREAD_NUM);
+        return properties.getInteger(PropertyKeyConst.CLIENT_WORKER_THREAD_COUNT, count);
     }
     
     private void refreshContentAndCheck(String groupKey, boolean notify) {
