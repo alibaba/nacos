@@ -132,7 +132,7 @@
         <commons-io.version>2.7</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>1.7.26</slf4j-api.version>
-        <logback.version>1.2.13</logback.version>
+        <logback.version>1.4.12</logback.version>
         <log4j.version>2.17.1</log4j.version>
         
         <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
