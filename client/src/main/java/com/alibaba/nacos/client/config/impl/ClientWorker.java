@@ -155,14 +155,16 @@ public class ClientWorker implements Closeable {
         group = blank2defaultGroup(group);
         CacheData cache = addCacheDataIfAbsent(dataId, group);
         synchronized (cache) {
-            
             for (Listener listener : listeners) {
                 cache.addListener(listener);
             }
             cache.setDiscard(false);
             cache.setConsistentWithServer(false);
+            // make sure cache exists in cacheMap
+            if (getCache(dataId, group) != cache) {
+                putCache(GroupKey.getKey(dataId, group), cache);
+            }
             agent.notifyListenConfig();
-            
         }
     }
     
@@ -185,6 +187,10 @@ public class ClientWorker implements Closeable {
             }
             cache.setDiscard(false);
             cache.setConsistentWithServer(false);
+            // ensure cache present in cacheMap
+            if (getCache(dataId, group, tenant) != cache) {
+                putCache(GroupKey.getKeyTenant(dataId, group, tenant), cache);
+            }
             agent.notifyListenConfig();
         }
         
@@ -213,6 +219,10 @@ public class ClientWorker implements Closeable {
             }
             cache.setDiscard(false);
             cache.setConsistentWithServer(false);
+            // make sure cache exists in cacheMap
+            if (getCache(dataId, group, tenant) != cache) {
+                putCache(GroupKey.getKeyTenant(dataId, group, tenant), cache);
+            }
             agent.notifyListenConfig();
         }
         
@@ -403,6 +413,20 @@ public class ClientWorker implements Closeable {
         return cache;
     }
     
+    /**
+     * Put cache.
+     *
+     * @param key   groupKey
+     * @param cache cache
+     */
+    private void putCache(String key, CacheData cache) {
+        synchronized (cacheMap) {
+            Map<String, CacheData> copy = new HashMap<>(this.cacheMap.get());
+            copy.put(key, cache);
+            cacheMap.set(copy);
+        }
+    }
+    
     private void increaseTaskIdCount(int taskId) {
         taskIdCacheCountList.get(taskId).incrementAndGet();
     }
@@ -453,12 +477,22 @@ public class ClientWorker implements Closeable {
         init(properties);
         
         agent = new ConfigRpcTransportClient(properties, serverListManager);
-        int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(Math.max(count, MIN_THREAD_NUM),
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(
+                initWorkerThreadCount(properties),
                 new NameThreadFactory("com.alibaba.nacos.client.Worker"));
         agent.setExecutor(executorService);
         agent.start();
         
+    }
+    
+    private int initWorkerThreadCount(NacosClientProperties properties) {
+        int count = ThreadUtils.getSuitableThreadCount(THREAD_MULTIPLE);
+        if (properties == null) {
+            return count;
+        }
+        count = Math.min(count, properties.getInteger(PropertyKeyConst.CLIENT_WORKER_MAX_THREAD_COUNT, count));
+        count = Math.max(count, MIN_THREAD_NUM);
+        return properties.getInteger(PropertyKeyConst.CLIENT_WORKER_THREAD_COUNT, count);
     }
     
     private void refreshContentAndCheck(String groupKey, boolean notify) {
