@@ -53,7 +53,7 @@ public class RpcSdkServerTlsConfig extends RpcServerTlsConfig {
     /**
      * The property key prefix for SDK TLS configuration.
      */
-    public static final String PREFIX = "nacos.remote.sdk.server.rpc.tls";
+    public static final String PREFIX = "nacos.remote.server.rpc.tls";
     
     /**
      * The singleton instance of the RpcSdkServerTlsConfig class.
