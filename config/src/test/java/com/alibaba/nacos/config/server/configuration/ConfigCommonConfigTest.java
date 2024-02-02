@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,12 +38,20 @@ public class ConfigCommonConfigTest {
     private ConfigCommonConfig commonConfig;
     
     private MockEnvironment environment;
+
+    private int maxPushRetryTimesOld;
     
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         commonConfig = ConfigCommonConfig.getInstance();
+        maxPushRetryTimesOld = commonConfig.getMaxPushRetryTimes();
+    }
+
+    @After
+    public void tearDown() {
+        commonConfig.setMaxPushRetryTimes(maxPushRetryTimesOld);
     }
     
     @Test
@@ -52,10 +61,8 @@ public class ConfigCommonConfigTest {
     
     @Test
     public void setMaxPushRetryTimes() {
-        int maxPushRetryTimesOld = commonConfig.getMaxPushRetryTimes();
         commonConfig.setMaxPushRetryTimes(100);
         assertEquals(100, commonConfig.getMaxPushRetryTimes());
-        commonConfig.setMaxPushRetryTimes(maxPushRetryTimesOld);
     }
     
     @Test
