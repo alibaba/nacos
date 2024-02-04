@@ -87,6 +87,12 @@ public class HistoryService {
         }
         // check if history config match the input
         checkHistoryInfoPermission(configHistoryInfo, dataId, group, namespaceId);
+        
+        String encryptedDataKey = configHistoryInfo.getEncryptedDataKey();
+        Pair<String, String> pair = EncryptionHandler
+                .decryptHandler(dataId, encryptedDataKey, configHistoryInfo.getContent());
+        configHistoryInfo.setContent(pair.getSecond());
+        
         return configHistoryInfo;
     }
     

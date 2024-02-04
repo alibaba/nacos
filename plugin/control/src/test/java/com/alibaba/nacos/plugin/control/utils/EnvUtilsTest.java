@@ -16,12 +16,18 @@
 
 package com.alibaba.nacos.plugin.control.utils;
 
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
 
 public class EnvUtilsTest {
+    
+    @After
+    public void tearDown() throws Exception {
+        System.clearProperty("nacos.home");
+    }
     
     @Test
     public void test() {

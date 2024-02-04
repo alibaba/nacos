@@ -25,8 +25,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
 import java.util.Optional;
-import java.util.PriorityQueue;
+import java.util.stream.IntStream;
 
 /**
  * ConfigChangePluginManagerTests.
@@ -94,28 +95,91 @@ public class ConfigChangePluginManagerTests {
                 return new ConfigChangePointCutTypes[]{ConfigChangePointCutTypes.IMPORT_BY_HTTP, ConfigChangePointCutTypes.PUBLISH_BY_RPC};
             }
         });
+        ConfigChangePluginManager.join(new ConfigChangePluginService() {
+            @Override
+            public void execute(ConfigChangeRequest configChangeRequest, ConfigChangeResponse configChangeResponse) {
+                // ignore
+            }
+
+            @Override
+            public ConfigChangeExecuteTypes executeType() {
+                return ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE;
+            }
+
+            @Override
+            public String getServiceType() {
+                return "test3";
+            }
+
+            @Override
+            public int getOrder() {
+                return 400;
+            }
+
+            @Override
+            public ConfigChangePointCutTypes[] pointcutMethodNames() {
+                return new ConfigChangePointCutTypes[]{ConfigChangePointCutTypes.IMPORT_BY_HTTP, ConfigChangePointCutTypes.PUBLISH_BY_RPC,
+                        ConfigChangePointCutTypes.REMOVE_BATCH_HTTP, ConfigChangePointCutTypes.REMOVE_BY_RPC,
+                        ConfigChangePointCutTypes.REMOVE_BY_HTTP};
+            }
+        });
+
+        ConfigChangePluginManager.join(new ConfigChangePluginService() {
+            @Override
+            public void execute(ConfigChangeRequest configChangeRequest, ConfigChangeResponse configChangeResponse) {
+                // ignore
+            }
+
+            @Override
+            public ConfigChangeExecuteTypes executeType() {
+                return ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE;
+            }
+
+            @Override
+            public String getServiceType() {
+                return "test4";
+            }
+
+            @Override
+            public int getOrder() {
+                return 600;
+            }
+
+            @Override
+            public ConfigChangePointCutTypes[] pointcutMethodNames() {
+                return new ConfigChangePointCutTypes[]{ConfigChangePointCutTypes.PUBLISH_BY_HTTP, ConfigChangePointCutTypes.REMOVE_BATCH_HTTP,
+                        ConfigChangePointCutTypes.REMOVE_BY_RPC, ConfigChangePointCutTypes.REMOVE_BY_HTTP};
+            }
+        });
+        
     }
 
     @Test
     public void testFindPluginServiceQueueByPointcut() {
-        PriorityQueue<ConfigChangePluginService> configChangePluginServicePriorityQueue = ConfigChangePluginManager
-                .findPluginServiceQueueByPointcut(ConfigChangePointCutTypes.PUBLISH_BY_HTTP);
-        Assert.assertEquals(1, configChangePluginServicePriorityQueue.size());
-        configChangePluginServicePriorityQueue = ConfigChangePluginManager
-                .findPluginServiceQueueByPointcut(ConfigChangePointCutTypes.PUBLISH_BY_RPC);
-        Assert.assertEquals(2, configChangePluginServicePriorityQueue.size());
-        configChangePluginServicePriorityQueue = ConfigChangePluginManager
-                .findPluginServiceQueueByPointcut(ConfigChangePointCutTypes.IMPORT_BY_HTTP);
-        Assert.assertEquals(1, configChangePluginServicePriorityQueue.size());
-        configChangePluginServicePriorityQueue = ConfigChangePluginManager
-                .findPluginServiceQueueByPointcut(ConfigChangePointCutTypes.REMOVE_BATCH_HTTP);
-        Assert.assertEquals(0, configChangePluginServicePriorityQueue.size());
-        configChangePluginServicePriorityQueue = ConfigChangePluginManager
-                .findPluginServiceQueueByPointcut(ConfigChangePointCutTypes.REMOVE_BY_RPC);
-        Assert.assertEquals(0, configChangePluginServicePriorityQueue.size());
-        configChangePluginServicePriorityQueue = ConfigChangePluginManager
-                .findPluginServiceQueueByPointcut(ConfigChangePointCutTypes.REMOVE_BY_HTTP);
-        Assert.assertEquals(0, configChangePluginServicePriorityQueue.size());
+        List<ConfigChangePluginService> configChangePluginServices = ConfigChangePluginManager
+                .findPluginServicesByPointcut(ConfigChangePointCutTypes.PUBLISH_BY_HTTP);
+        Assert.assertEquals(2, configChangePluginServices.size());
+        Assert.assertTrue(isSorted(configChangePluginServices));
+        configChangePluginServices = ConfigChangePluginManager
+                .findPluginServicesByPointcut(ConfigChangePointCutTypes.PUBLISH_BY_RPC);
+        Assert.assertEquals(3, configChangePluginServices.size());
+        Assert.assertTrue(isSorted(configChangePluginServices));
+        configChangePluginServices = ConfigChangePluginManager
+                .findPluginServicesByPointcut(ConfigChangePointCutTypes.IMPORT_BY_HTTP);
+        Assert.assertEquals(2, configChangePluginServices.size());
+        Assert.assertTrue(isSorted(configChangePluginServices));
+        configChangePluginServices = ConfigChangePluginManager
+                .findPluginServicesByPointcut(ConfigChangePointCutTypes.REMOVE_BATCH_HTTP);
+        Assert.assertEquals(2, configChangePluginServices.size());
+        Assert.assertTrue(isSorted(configChangePluginServices));
+        configChangePluginServices = ConfigChangePluginManager
+                .findPluginServicesByPointcut(ConfigChangePointCutTypes.REMOVE_BY_RPC);
+        Assert.assertEquals(2, configChangePluginServices.size());
+        Assert.assertTrue(isSorted(configChangePluginServices));
+        configChangePluginServices = ConfigChangePluginManager
+                .findPluginServicesByPointcut(ConfigChangePointCutTypes.REMOVE_BY_HTTP);
+        Assert.assertEquals(2, configChangePluginServices.size());
+        Assert.assertTrue(isSorted(configChangePluginServices));
     }
 
     @Test
@@ -126,6 +190,15 @@ public class ConfigChangePluginManagerTests {
         configChangePluginServiceOptional = ConfigChangePluginManager.getInstance().findPluginServiceImpl("test2");
         Assert.assertTrue(configChangePluginServiceOptional.isPresent());
         configChangePluginServiceOptional = ConfigChangePluginManager.getInstance().findPluginServiceImpl("test3");
+        Assert.assertTrue(configChangePluginServiceOptional.isPresent());
+        configChangePluginServiceOptional = ConfigChangePluginManager.getInstance().findPluginServiceImpl("test4");
+        Assert.assertTrue(configChangePluginServiceOptional.isPresent());
+        configChangePluginServiceOptional = ConfigChangePluginManager.getInstance().findPluginServiceImpl("test5");
         Assert.assertFalse(configChangePluginServiceOptional.isPresent());
+    }
+
+    private boolean isSorted(List<ConfigChangePluginService> list) {
+        return IntStream.range(0, list.size() - 1)
+                .allMatch(i -> list.get(i).getOrder() <= list.get(i + 1).getOrder());
     }
 }
