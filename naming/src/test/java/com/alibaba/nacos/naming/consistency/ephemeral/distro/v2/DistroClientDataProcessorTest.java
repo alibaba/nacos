@@ -306,9 +306,6 @@ public class DistroClientDataProcessorTest {
         info = client.getInstancePublishInfo(ServiceManager.getInstance().getSingleton(singleton));
         assertEquals(info.getIp(), "127.0.0.1");
         assertEquals(info.getPort(), 8080);
-
-        // recover
-        when(applicationContext.getBean(Serializer.class)).thenReturn(serializer);
     }
 
     private ClientSyncData createSingleForBatchTest(int revision) {
