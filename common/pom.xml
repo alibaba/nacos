@@ -73,7 +73,13 @@
             <artifactId>mysql-connector-java</artifactId>
             <scope>test</scope>
         </dependency>
-
+    
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>listenablefuture</artifactId>
+            <version>1.0</version>
+        </dependency>
+        
     </dependencies>
     <build>
         <resources>
