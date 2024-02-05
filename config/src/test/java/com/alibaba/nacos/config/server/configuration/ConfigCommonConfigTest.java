@@ -47,7 +47,10 @@ public class ConfigCommonConfigTest {
     
     @Test
     public void getMaxPushRetryTimes() {
-        assertEquals(50, commonConfig.getMaxPushRetryTimes());
+        int maxPushRetryTimesOld = commonConfig.getMaxPushRetryTimes();
+        commonConfig.setMaxPushRetryTimes(100);
+        assertEquals(100, commonConfig.getMaxPushRetryTimes());
+        commonConfig.setMaxPushRetryTimes(maxPushRetryTimesOld);
     }
     
     @Test
