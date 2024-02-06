@@ -55,17 +55,25 @@ public class CacheData {
     
     private static final Logger LOGGER = LogUtils.logger(CacheData.class);
     
-    private static long notifyWarnTimeout = 60000;
+    private static final long DEFAULT_NOTIF_WARN_TIMEOUTS = 60000;
+    
+    private static long notifyWarnTimeout = DEFAULT_NOTIF_WARN_TIMEOUTS;
     
     static {
+        initNotifyWarnTimeout();
+    }
+    
+    static long initNotifyWarnTimeout() {
         String notifyTimeouts = System.getProperty("nacos.listener.notify.warn.timeout");
         if (StringUtils.isNotBlank(notifyTimeouts) && NumberUtils.isDigits(notifyTimeouts)) {
             notifyWarnTimeout = Long.valueOf(notifyTimeouts);
             LOGGER.info("config listener notify warn timeout millis is set to {}", notifyWarnTimeout);
         } else {
-            LOGGER.info("config listener notify warn timeout millis use default {} millis ", notifyWarnTimeout);
-            
+            LOGGER.info("config listener notify warn timeout millis use default {} millis ",
+                    DEFAULT_NOTIF_WARN_TIMEOUTS);
+            notifyWarnTimeout = DEFAULT_NOTIF_WARN_TIMEOUTS;
         }
+        return notifyWarnTimeout;
     }
     
     static ScheduledThreadPoolExecutor scheduledExecutor;
@@ -594,8 +602,7 @@ public class CacheData {
         }
         
         ManagerListenerWrap(Listener listener, String md5, String lastContent) {
-            this.listener = listener;
-            this.lastCallMd5 = md5;
+            this(listener, md5);
             this.lastContent = lastContent;
         }
         
