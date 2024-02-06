@@ -378,12 +378,12 @@ public class ClientWorkerTest {
         
         Properties prop = new Properties();
         String tenant = "c";
-       
+        
         prop.put(NAMESPACE, tenant);
         ServerListManager agent = Mockito.mock(ServerListManager.class);
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(null, agent, nacosClientProperties);
-       
+        
         AtomicReference<Map<String, CacheData>> cacheMapMocked = Mockito.mock(AtomicReference.class);
         Field cacheMap = ClientWorker.class.getDeclaredField("cacheMap");
         cacheMap.setAccessible(true);
@@ -501,17 +501,33 @@ public class ClientWorkerTest {
         String tenant = "tenant122324";
         //mock discards cache
         String dataIdDiscard = "dataIdDiscard" + System.currentTimeMillis();
-        CacheData cacheDataDiscard = discardCache(agent.getName(), dataIdDiscard, group, tenant);
+        
+        CacheData cacheDataDiscard = discardCache(filter, agent.getName(), dataIdDiscard, group, tenant);
         cacheDatas.add(cacheDataDiscard);
         //mock use local cache
         String dataIdUseLocalCache = "dataIdUseLocalCache" + System.currentTimeMillis();
-        CacheData cacheUseLocalCache = useLocalCache(agent.getName(), dataIdUseLocalCache, group, tenant,
+        CacheData cacheUseLocalCache = useLocalCache(filter, agent.getName(), dataIdUseLocalCache, group, tenant,
                 "content" + System.currentTimeMillis());
+        Assert.assertFalse(cacheUseLocalCache.isUseLocalConfigInfo());
+        
         cacheDatas.add(cacheUseLocalCache);
         
         //mock normal cache
         String dataIdNormal = "dataIdNormal" + System.currentTimeMillis();
-        CacheData cacheNormal = normalNotConsistentCache(agent.getName(), dataIdNormal, group, tenant);
+        CacheData cacheNormal = normalNotConsistentCache(filter, agent.getName(), dataIdNormal, group, tenant);
+        AtomicReference<String> normalContent = new AtomicReference<>();
+        cacheNormal.addListener(new Listener() {
+            @Override
+            public Executor getExecutor() {
+                return null;
+            }
+            
+            @Override
+            public void receiveConfigInfo(String configInfo) {
+                System.out.println(configInfo);
+                normalContent.set(configInfo);
+            }
+        });
         cacheDatas.add(cacheNormal);
         cacheNormal.setInitializing(false);
         Map<String, CacheData> cacheDataMapMocked = Mockito.mock(Map.class);
@@ -549,11 +565,19 @@ public class ClientWorkerTest {
         configQueryResponse.setContentType(ConfigType.JSON.getType());
         Mockito.when(rpcClientInner.request(any(ConfigQueryRequest.class), anyLong())).thenReturn(configQueryResponse);
         (clientWorker.getAgent()).executeConfigListen();
+        //assert
+        //use local cache.
+        Assert.assertTrue(cacheUseLocalCache.isUseLocalConfigInfo());
+        //discard cache to be deleted.
+        Assert.assertFalse(cacheMapMocked.get().containsKey(GroupKey.getKeyTenant(dataIdDiscard, group, tenant)));
+        //normal cache listener be notified.
+        Assert.assertEquals(configQueryResponse.getContent(), normalContent.get());
         
     }
     
-    private CacheData discardCache(String envName, String dataId, String group, String tenant) {
-        CacheData cacheData = new CacheData(null, envName, dataId, group, tenant);
+    private CacheData discardCache(ConfigFilterChainManager filter, String envName, String dataId, String group,
+            String tenant) {
+        CacheData cacheData = new CacheData(filter, envName, dataId, group, tenant);
         cacheData.setDiscard(true);
         cacheData.setConsistentWithServer(false);
         File file = Mockito.mock(File.class);
@@ -563,32 +587,21 @@ public class ClientWorkerTest {
         return cacheData;
     }
     
-    private CacheData normalNotConsistentCache(String envName, String dataId, String group, String tenant)
-            throws NacosException {
-        CacheData cacheData = new CacheData(null, envName, dataId, group, tenant);
+    private CacheData normalNotConsistentCache(ConfigFilterChainManager filter, String envName, String dataId,
+            String group, String tenant) throws NacosException {
+        CacheData cacheData = new CacheData(filter, envName, dataId, group, tenant);
         cacheData.setDiscard(false);
         cacheData.setConsistentWithServer(false);
         File file = Mockito.mock(File.class);
         Mockito.when(file.exists()).thenReturn(false);
         localConfigInfoProcessorMockedStatic.when(
                 () -> LocalConfigInfoProcessor.getFailoverFile(envName, dataId, group, tenant)).thenReturn(file);
-        cacheData.addListener(new Listener() {
-            @Override
-            public Executor getExecutor() {
-                return null;
-            }
-            
-            @Override
-            public void receiveConfigInfo(String configInfo) {
-            
-            }
-        });
         return cacheData;
     }
     
-    private CacheData useLocalCache(String envName, String dataId, String group, String tenant,
-            String failOverContent) {
-        CacheData cacheData = new CacheData(null, envName, dataId, group, tenant);
+    private CacheData useLocalCache(ConfigFilterChainManager filter, String envName, String dataId, String group,
+            String tenant, String failOverContent) {
+        CacheData cacheData = new CacheData(filter, envName, dataId, group, tenant);
         cacheData.setDiscard(true);
         File file = Mockito.mock(File.class);
         Mockito.when(file.exists()).thenReturn(true);
