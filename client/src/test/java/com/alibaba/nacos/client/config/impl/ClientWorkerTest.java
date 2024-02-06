@@ -54,8 +54,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.File;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -64,20 +64,16 @@ import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicReference;
 
+import static com.alibaba.nacos.api.annotation.NacosProperties.NAMESPACE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
-
-import static com.alibaba.nacos.api.annotation.NacosProperties.NAMESPACE;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -87,12 +83,12 @@ public class ClientWorkerTest {
     
     MockedStatic<LocalConfigInfoProcessor> localConfigInfoProcessorMockedStatic;
     
-    
     private static final String TEST_NAMESPACE = "TEST_NAMESPACE";
     
     private ClientWorker clientWorker;
     
     private ClientWorker clientWorkerSpy;
+    
     @Mock
     RpcClient rpcClient;
     
