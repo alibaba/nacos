@@ -29,13 +29,20 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+
+@RunWith(MockitoJUnitRunner.class)
 public class NacosConfigServiceTest {
     
     private NacosConfigService nacosConfigService;
@@ -64,7 +71,7 @@ public class NacosConfigServiceTest {
     }
     
     @Test
-    public void testGetConfig() throws NacosException {
+    public void testGetConfigFromServer() throws NacosException {
         final String dataId = "1";
         final String group = "2";
         final String tenant = "";
@@ -77,6 +84,87 @@ public class NacosConfigServiceTest {
         Assert.assertEquals("aa", config);
         Mockito.verify(mockWoker, Mockito.times(1)).getServerConfig(dataId, group, tenant, timeout, false);
         
+    }
+    
+    @Test
+    public void testGetConfigFromFailOver() throws NacosException {
+        final String dataId = "1failover";
+        final String group = "2";
+        final String tenant = "";
+        
+        MockedStatic<LocalConfigInfoProcessor> localConfigInfoProcessorMockedStatic = Mockito.mockStatic(
+                LocalConfigInfoProcessor.class);
+        try {
+            String contentFailOver = "failOverContent" + System.currentTimeMillis();
+            localConfigInfoProcessorMockedStatic.when(
+                    () -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
+                    .thenReturn(contentFailOver);
+            final int timeout = 3000;
+            
+            final String config = nacosConfigService.getConfig(dataId, group, timeout);
+            Assert.assertEquals(contentFailOver, config);
+        } finally {
+            localConfigInfoProcessorMockedStatic.close();
+        }
+    }
+    
+    @Test
+    public void testGetConfigFromLocalCache() throws NacosException {
+        final String dataId = "1localcache";
+        final String group = "2";
+        final String tenant = "";
+        
+        MockedStatic<LocalConfigInfoProcessor> localConfigInfoProcessorMockedStatic = Mockito.mockStatic(
+                LocalConfigInfoProcessor.class);
+        try {
+            String contentFailOver = "localCacheContent" + System.currentTimeMillis();
+            //fail over null
+            localConfigInfoProcessorMockedStatic.when(
+                    () -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
+                    .thenReturn(null);
+            //snapshot content
+            localConfigInfoProcessorMockedStatic.when(
+                    () -> LocalConfigInfoProcessor.getSnapshot(any(), eq(dataId), eq(group), eq(tenant)))
+                    .thenReturn(contentFailOver);
+            //form server error.
+            final int timeout = 3000;
+            Mockito.when(mockWoker.getServerConfig(dataId, group, "", timeout, false)).thenThrow(new NacosException());
+            
+            final String config = nacosConfigService.getConfig(dataId, group, timeout);
+            Assert.assertEquals(contentFailOver, config);
+        } finally {
+            localConfigInfoProcessorMockedStatic.close();
+        }
+        
+    }
+    
+    @Test
+    public void testGetConfig403() throws NacosException {
+        final String dataId = "1localcache403";
+        final String group = "2";
+        final String tenant = "";
+        
+        MockedStatic<LocalConfigInfoProcessor> localConfigInfoProcessorMockedStatic = Mockito.mockStatic(
+                LocalConfigInfoProcessor.class);
+        try {
+            //fail over null
+            localConfigInfoProcessorMockedStatic.when(
+                    () -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
+                    .thenReturn(null);
+            
+            //form server error.
+            final int timeout = 3000;
+            Mockito.when(mockWoker.getServerConfig(dataId, group, "", timeout, false))
+                    .thenThrow(new NacosException(NacosException.NO_RIGHT, "no right"));
+            try {
+                nacosConfigService.getConfig(dataId, group, timeout);
+                Assert.assertTrue(false);
+            } catch (NacosException e) {
+                Assert.assertEquals(NacosException.NO_RIGHT, e.getErrCode());
+            }
+        } finally {
+            localConfigInfoProcessorMockedStatic.close();
+        }
     }
     
     @Test
@@ -98,37 +186,33 @@ public class NacosConfigServiceTest {
             }
         };
         
-        ConfigResponse response = new ConfigResponse();
-        response.setContent(content);
-        response.setConfigType("bb");
-        Mockito.when(mockWoker.getServerConfig(dataId, group, "", timeout, false)).thenReturn(response);
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
         Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ServerListManager()) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP
             }
-    
+            
             @Override
             public String getName() {
                 return "TestConfigTransportClient";
             }
-    
+            
             @Override
             public void notifyListenConfig() {
                 // NOOP
             }
-    
+            
             @Override
             public void executeConfigListen() {
                 // NOOP
             }
-    
+            
             @Override
             public void removeCache(String dataId, String group) {
                 // NOOP
             }
-    
+            
             @Override
             public ConfigResponse queryConfig(String dataId, String group, String tenant, long readTimeous,
                     boolean notify) throws NacosException {
@@ -139,14 +223,14 @@ public class NacosConfigServiceTest {
                 configResponse.setTenant(tenant);
                 return configResponse;
             }
-    
+            
             @Override
             public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
                     String betaIps, String content, String encryptedDataKey, String casMd5, String type)
                     throws NacosException {
                 return false;
             }
-    
+            
             @Override
             public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
                 return false;
