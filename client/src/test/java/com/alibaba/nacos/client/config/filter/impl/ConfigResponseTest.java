@@ -29,17 +29,19 @@ public class ConfigResponseTest {
         String group = "group";
         String tenant = "n";
         String content = "abc";
+        String type = "yaml";
         
         configResponse.setContent(content);
         configResponse.setDataId(dataId);
         configResponse.setGroup(group);
         configResponse.setTenant(tenant);
+        configResponse.setConfigType(type);
         
         Assert.assertEquals(dataId, configResponse.getDataId());
         Assert.assertEquals(group, configResponse.getGroup());
         Assert.assertEquals(tenant, configResponse.getTenant());
         Assert.assertEquals(content, configResponse.getContent());
-        
+        Assert.assertEquals(type, configResponse.getConfigType());
     }
     
     @Test
@@ -49,16 +51,19 @@ public class ConfigResponseTest {
         String group = "group";
         String tenant = "n";
         String content = "abc";
+        String custom = "custom";
         
         configResponse.setContent(content);
         configResponse.setDataId(dataId);
         configResponse.setGroup(group);
         configResponse.setTenant(tenant);
+        configResponse.putParameter(custom, custom);
         
         Assert.assertEquals(dataId, configResponse.getParameter("dataId"));
         Assert.assertEquals(group, configResponse.getParameter("group"));
         Assert.assertEquals(tenant, configResponse.getParameter("tenant"));
         Assert.assertEquals(content, configResponse.getParameter("content"));
+        Assert.assertEquals(custom, configResponse.getParameter("custom"));
     }
     
     @Test

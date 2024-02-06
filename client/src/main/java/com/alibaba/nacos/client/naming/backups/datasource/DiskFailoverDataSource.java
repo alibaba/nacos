@@ -21,7 +21,7 @@ import com.alibaba.nacos.client.naming.backups.FailoverData;
 import com.alibaba.nacos.client.naming.backups.FailoverDataSource;
 import com.alibaba.nacos.client.naming.backups.FailoverSwitch;
 import com.alibaba.nacos.client.naming.backups.NamingFailoverData;
-import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
+import com.alibaba.nacos.client.utils.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
