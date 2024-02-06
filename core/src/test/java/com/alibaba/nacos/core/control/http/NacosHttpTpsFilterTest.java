@@ -20,7 +20,6 @@ package com.alibaba.nacos.core.control.http;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
-import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.remote.HealthCheckRequestHandler;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
@@ -106,12 +105,8 @@ public class NacosHttpTpsFilterTest {
         when(tpsControlManager.check(any(TpsCheckRequest.class))).thenReturn(tpsCheckResponse);
         
         //mock http tps control method
-        Method method = Mockito.mock(Method.class);
-        when(method.isAnnotationPresent(TpsControl.class)).thenReturn(true);
-        // tps control annotation can not mock ,borrow annotation instance from HealthCheckRequestHandler
-        TpsControl annotation = HealthCheckRequestHandler.class.getMethod("handle", Request.class, RequestMeta.class)
-                .getAnnotation(TpsControl.class);
-        when(method.getAnnotation(TpsControl.class)).thenReturn(annotation);
+        Method method = HealthCheckRequestHandler.class.getMethod("handle", Request.class, RequestMeta.class);
+    
         MockHttpServletRequest httpServletRequest = Mockito.mock(MockHttpServletRequest.class);
         MockHttpServletResponse httpServletResponse = Mockito.mock(MockHttpServletResponse.class);
         MockFilterChain filterChain = Mockito.mock(MockFilterChain.class);
@@ -151,12 +146,8 @@ public class NacosHttpTpsFilterTest {
         when(tpsControlManager.check(any(TpsCheckRequest.class))).thenReturn(tpsCheckResponse);
         
         //mock http tps control method
-        Method method = Mockito.mock(Method.class);
-        when(method.isAnnotationPresent(TpsControl.class)).thenReturn(true);
-        // tps control annotation can not mock ,borrow annotation instance from HealthCheckRequestHandler
-        TpsControl annotation = HealthCheckRequestHandler.class.getMethod("handle", Request.class, RequestMeta.class)
-                .getAnnotation(TpsControl.class);
-        when(method.getAnnotation(TpsControl.class)).thenReturn(annotation);
+        Method method = HealthCheckRequestHandler.class.getMethod("handle", Request.class, RequestMeta.class);
+    
         MockHttpServletRequest httpServletRequest = Mockito.mock(MockHttpServletRequest.class);
         MockHttpServletResponse httpServletResponse = Mockito.mock(MockHttpServletResponse.class);
         MockFilterChain filterChain = Mockito.mock(MockFilterChain.class);
@@ -198,12 +189,7 @@ public class NacosHttpTpsFilterTest {
         when(tpsControlManager.check(any(TpsCheckRequest.class))).thenThrow(new RuntimeException("324565"));
         
         //mock http tps control method
-        Method method = Mockito.mock(Method.class);
-        when(method.isAnnotationPresent(TpsControl.class)).thenReturn(true);
-        // tps control annotation can not mock ,borrow annotation instance from HealthCheckRequestHandler
-        TpsControl annotation = HealthCheckRequestHandler.class.getMethod("handle", Request.class, RequestMeta.class)
-                .getAnnotation(TpsControl.class);
-        when(method.getAnnotation(TpsControl.class)).thenReturn(annotation);
+        Method method = HealthCheckRequestHandler.class.getMethod("handle", Request.class, RequestMeta.class);
         
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);

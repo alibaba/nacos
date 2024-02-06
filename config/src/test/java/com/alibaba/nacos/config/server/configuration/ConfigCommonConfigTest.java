@@ -47,7 +47,8 @@ public class ConfigCommonConfigTest {
     
     @Test
     public void getMaxPushRetryTimes() {
-        assertEquals(50, commonConfig.getMaxPushRetryTimes());
+        Integer property = EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
+        assertEquals(property.intValue(), commonConfig.getMaxPushRetryTimes());
     }
     
     @Test
