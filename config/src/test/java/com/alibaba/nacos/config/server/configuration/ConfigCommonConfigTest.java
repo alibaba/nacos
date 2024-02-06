@@ -42,7 +42,9 @@ public class ConfigCommonConfigTest {
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-        commonConfig = ConfigCommonConfig.getInstance();
+        Constructor<ConfigCommonConfig> declaredConstructor = ConfigCommonConfig.class.getDeclaredConstructor();
+        declaredConstructor.setAccessible(true);
+        commonConfig = declaredConstructor.newInstance();
     }
     
     @Test
