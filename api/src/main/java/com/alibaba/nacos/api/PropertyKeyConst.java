@@ -59,6 +59,10 @@ public class PropertyKeyConst {
     
     public static final String CONFIG_RETRY_TIME = "configRetryTime";
     
+    public static final String CLIENT_WORKER_MAX_THREAD_COUNT = "clientWorkerMaxThreadCount";
+
+    public static final String CLIENT_WORKER_THREAD_COUNT = "clientWorkerThreadCount";
+    
     public static final String MAX_RETRY = "maxRetry";
     
     public static final String ENABLE_REMOTE_SYNC_CONFIG = "enableRemoteSyncConfig";
@@ -68,6 +72,8 @@ public class PropertyKeyConst {
     public static final String NAMING_CACHE_REGISTRY_DIR = "namingCacheRegistryDir";
     
     public static final String NAMING_CLIENT_BEAT_THREAD_COUNT = "namingClientBeatThreadCount";
+    
+    public static final String NAMING_POLLING_MAX_THREAD_COUNT = "namingPollingMaxThreadCount";
     
     public static final String NAMING_POLLING_THREAD_COUNT = "namingPollingThreadCount";
     

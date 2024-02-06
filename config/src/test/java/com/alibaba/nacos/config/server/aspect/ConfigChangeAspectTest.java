@@ -19,8 +19,10 @@ package com.alibaba.nacos.config.server.aspect;
 import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
 import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
 import com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse;
+import com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.config.server.configuration.ConfigChangeConfigs;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.utils.RequestUtil;
@@ -220,6 +222,48 @@ public class ConfigChangeAspectTest {
         Object o = configChangeAspect.removeConfigAroundRpc(proceedingJoinPoint, request, requestMeta);
         //expect
         Mockito.verify(configChangePluginService, Mockito.times(1))
+                .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
+        Assert.assertEquals(configPublishResponse, o);
+    }
+    
+    @Test
+    public void testRemoveConfigAroundRpcException() throws Throwable {
+        Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
+        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        ConfigRemoveRequest request = new ConfigRemoveRequest();
+        RequestMeta requestMeta = new RequestMeta();
+    
+        Mockito.when(proceedingJoinPoint.proceed(any())).thenThrow(new NacosRuntimeException(503));
+        //execute
+        Object o = configChangeAspect.removeConfigAroundRpc(proceedingJoinPoint, request, requestMeta);
+        //expect
+        Mockito.verify(configChangePluginService, Mockito.times(1))
+                .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
+    
+        Assert.assertTrue(((ConfigRemoveResponse) o).getMessage().contains("config change join point fail"));
+    }
+    
+    @Test
+    public void testDisEnablePluginService() throws Throwable {
+        Properties properties = new Properties();
+        properties.put("mockedConfigChangeService.enabled", "false");
+        propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(),
+                eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX))).thenReturn(properties);
+        configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
+        Assert.assertFalse(Boolean.parseBoolean(configChangeConfigs
+                .getPluginProperties("mockedConfigChangeService").getProperty("enabled")));
+        
+        Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
+        Mockito.when(configChangePluginService.getServiceType()).thenReturn("mockedConfigChangeService");
+        ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
+        ConfigRemoveRequest request = new ConfigRemoveRequest();
+        RequestMeta requestMeta = new RequestMeta();
+        ConfigPublishResponse configPublishResponse = ConfigPublishResponse.buildSuccessResponse();
+        Mockito.when(proceedingJoinPoint.proceed()).thenReturn(configPublishResponse);
+        //execute
+        Object o = configChangeAspect.removeConfigAroundRpc(proceedingJoinPoint, request, requestMeta);
+        //expect
+        Mockito.verify(configChangePluginService, Mockito.times(0))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         Assert.assertEquals(configPublishResponse, o);
     }

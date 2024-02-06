@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.impl;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.AbstractListener;
 import com.alibaba.nacos.api.config.listener.Listener;
@@ -54,13 +55,23 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.io.File;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
 
 import static com.alibaba.nacos.api.annotation.NacosProperties.NAMESPACE;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,6 +87,12 @@ public class ClientWorkerTest {
     
     MockedStatic<LocalConfigInfoProcessor> localConfigInfoProcessorMockedStatic;
     
+    
+    private static final String TEST_NAMESPACE = "TEST_NAMESPACE";
+    
+    private ClientWorker clientWorker;
+    
+    private ClientWorker clientWorkerSpy;
     @Mock
     RpcClient rpcClient;
     
@@ -87,7 +104,17 @@ public class ClientWorkerTest {
                 () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
                         any(RpcClientTlsConfig.class))).thenReturn(rpcClient);
         localConfigInfoProcessorMockedStatic = Mockito.mockStatic(LocalConfigInfoProcessor.class);
-        
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.NAMESPACE, TEST_NAMESPACE);
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(properties);
+        ServerListManager serverListManager = Mockito.mock(ServerListManager.class);
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        try {
+            clientWorker = new ClientWorker(filter, serverListManager, nacosClientProperties);
+        } catch (NacosException e) {
+            throw new RuntimeException(e);
+        }
+        clientWorkerSpy = Mockito.spy(clientWorker);
     }
     
     @After
@@ -595,5 +622,130 @@ public class ClientWorkerTest {
         
         Mockito.when(client.isHealthServer()).thenReturn(Boolean.FALSE);
         Assert.assertEquals(false, clientWorker.isHealthServer());
+    }
+    
+    @Test
+    public void testPutCache() throws Exception {
+        // 反射调用私有方法putCacheIfAbsent
+        Method putCacheMethod = ClientWorker.class.getDeclaredMethod("putCache", String.class, CacheData.class);
+        putCacheMethod.setAccessible(true);
+        Properties prop = new Properties();
+        ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
+        ServerListManager agent = Mockito.mock(ServerListManager.class);
+        final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
+        ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
+        String key = "testKey";
+        CacheData cacheData = new CacheData(filter, "env", "dataId", "group");
+        putCacheMethod.invoke(clientWorker, key, cacheData);
+        Field cacheMapField = ClientWorker.class.getDeclaredField("cacheMap");
+        cacheMapField.setAccessible(true);
+        AtomicReference<Map<String, CacheData>> cacheMapRef = (AtomicReference<Map<String, CacheData>>) cacheMapField.get(
+                clientWorker);
+        // 检查cacheMap是否包含特定的key
+        assertNotNull(cacheMapRef.get().get(key));
+        Assert.assertEquals(cacheData, cacheMapRef.get().get(key));
+        // 测试再次插入相同的key将覆盖原始的值
+        CacheData newCacheData = new CacheData(filter, "newEnv", "newDataId", "newGroup");
+        putCacheMethod.invoke(clientWorker, key, newCacheData);
+        // 检查key对应的value是否改变为newCacheData
+        Assert.assertEquals(newCacheData, cacheMapRef.get().get(key));
+    }
+    
+    @Test
+    public void testAddListenersEnsureCacheDataSafe()
+            throws NacosException, IllegalAccessException, NoSuchFieldException {
+        String dataId = "testDataId";
+        String group = "testGroup";
+        // 将key-cacheData插入到cacheMap中
+        CacheData cacheData = new CacheData(null, "env", dataId, group);
+        Field cacheMapField = ClientWorker.class.getDeclaredField("cacheMap");
+        cacheMapField.setAccessible(true);
+        AtomicReference<Map<String, CacheData>> cacheMapRef = (AtomicReference<Map<String, CacheData>>) cacheMapField.get(
+                clientWorker);
+        String key = GroupKey.getKey(dataId, group);
+        cacheMapRef.get().put(key, cacheData);
+        // 当addCacheDataIfAbsent得到的differentCacheData，同cacheMap中该key对应的cacheData不一致
+        CacheData differentCacheData = new CacheData(null, "env", dataId, group);
+        doReturn(differentCacheData).when(clientWorkerSpy).addCacheDataIfAbsent(anyString(), anyString());
+        // 使用addListeners将differentCacheData插入到cacheMap中
+        clientWorkerSpy.addListeners(dataId, group, Collections.EMPTY_LIST);
+        CacheData cacheDataFromCache1 = clientWorker.getCache(dataId, group);
+        assertNotNull(cacheDataFromCache1);
+        assertEquals(cacheDataFromCache1, differentCacheData);
+        assertFalse(cacheDataFromCache1.isDiscard());
+        assertFalse(cacheDataFromCache1.isConsistentWithServer());
+        // 再次调用addListeners，此时addCacheDataIfAbsent得到的cacheData同cacheMap中该key对应的cacheData一致，均为differentCacheData
+        clientWorkerSpy.addListeners(dataId, group, Collections.EMPTY_LIST);
+        CacheData cacheDataFromCache2 = clientWorker.getCache(dataId, group);
+        assertNotNull(cacheDataFromCache2);
+        assertEquals(cacheDataFromCache2, differentCacheData);
+        assertFalse(cacheDataFromCache2.isDiscard());
+        assertFalse(cacheDataFromCache2.isConsistentWithServer());
+    }
+    
+    @Test
+    public void testAddTenantListenersEnsureCacheDataSafe()
+            throws NacosException, IllegalAccessException, NoSuchFieldException {
+        String dataId = "testDataId";
+        String group = "testGroup";
+        // 将key-cacheData插入到cacheMap中
+        CacheData cacheData = new CacheData(null, "env", dataId, group);
+        Field cacheMapField = ClientWorker.class.getDeclaredField("cacheMap");
+        cacheMapField.setAccessible(true);
+        AtomicReference<Map<String, CacheData>> cacheMapRef = (AtomicReference<Map<String, CacheData>>) cacheMapField.get(
+                clientWorker);
+        String key = GroupKey.getKeyTenant(dataId, group, TEST_NAMESPACE);
+        cacheMapRef.get().put(key, cacheData);
+        // 当addCacheDataIfAbsent得到的differentCacheData，同cacheMap中该key对应的cacheData不一致
+        CacheData differentCacheData = new CacheData(null, "env", dataId, group);
+        doReturn(differentCacheData).when(clientWorkerSpy)
+                .addCacheDataIfAbsent(anyString(), anyString(), eq(TEST_NAMESPACE));
+        // 使用addListeners将differentCacheData插入到cacheMap中
+        clientWorkerSpy.addTenantListeners(dataId, group, Collections.EMPTY_LIST);
+        CacheData cacheDataFromCache1 = clientWorker.getCache(dataId, group, TEST_NAMESPACE);
+        assertNotNull(cacheDataFromCache1);
+        assertEquals(cacheDataFromCache1, differentCacheData);
+        assertFalse(cacheDataFromCache1.isDiscard());
+        assertFalse(cacheDataFromCache1.isConsistentWithServer());
+        // 再次调用addListeners，此时addCacheDataIfAbsent得到的cacheData同cacheMap中该key对应的cacheData一致，均为differentCacheData
+        clientWorkerSpy.addTenantListeners(dataId, group, Collections.EMPTY_LIST);
+        CacheData cacheDataFromCache2 = clientWorker.getCache(dataId, group, TEST_NAMESPACE);
+        assertNotNull(cacheDataFromCache2);
+        assertEquals(cacheDataFromCache2, differentCacheData);
+        assertFalse(cacheDataFromCache2.isDiscard());
+        assertFalse(cacheDataFromCache2.isConsistentWithServer());
+    }
+    
+    @Test
+    public void testAddTenantListenersWithContentEnsureCacheDataSafe()
+            throws NacosException, IllegalAccessException, NoSuchFieldException {
+        String dataId = "testDataId";
+        String group = "testGroup";
+        // 将key-cacheData插入到cacheMap中
+        CacheData cacheData = new CacheData(null, "env", dataId, group);
+        Field cacheMapField = ClientWorker.class.getDeclaredField("cacheMap");
+        cacheMapField.setAccessible(true);
+        AtomicReference<Map<String, CacheData>> cacheMapRef = (AtomicReference<Map<String, CacheData>>) cacheMapField.get(
+                clientWorker);
+        String key = GroupKey.getKeyTenant(dataId, group, TEST_NAMESPACE);
+        cacheMapRef.get().put(key, cacheData);
+        // 当addCacheDataIfAbsent得到的differentCacheData，同cacheMap中该key对应的cacheData不一致
+        CacheData differentCacheData = new CacheData(null, "env", dataId, group);
+        doReturn(differentCacheData).when(clientWorkerSpy)
+                .addCacheDataIfAbsent(anyString(), anyString(), eq(TEST_NAMESPACE));
+        // 使用addListeners将differentCacheData插入到cacheMap中
+        clientWorkerSpy.addTenantListenersWithContent(dataId, group, "", "", Collections.EMPTY_LIST);
+        CacheData cacheDataFromCache1 = clientWorker.getCache(dataId, group, TEST_NAMESPACE);
+        assertNotNull(cacheDataFromCache1);
+        assertEquals(cacheDataFromCache1, differentCacheData);
+        assertFalse(cacheDataFromCache1.isDiscard());
+        assertFalse(cacheDataFromCache1.isConsistentWithServer());
+        // 再次调用addListeners，此时addCacheDataIfAbsent得到的cacheData同cacheMap中该key对应的cacheData一致，均为differentCacheData
+        clientWorkerSpy.addTenantListenersWithContent(dataId, group, "", "", Collections.EMPTY_LIST);
+        CacheData cacheDataFromCache2 = clientWorker.getCache(dataId, group, TEST_NAMESPACE);
+        assertNotNull(cacheDataFromCache2);
+        assertEquals(cacheDataFromCache2, differentCacheData);
+        assertFalse(cacheDataFromCache2.isDiscard());
+        assertFalse(cacheDataFromCache2.isConsistentWithServer());
     }
 }
