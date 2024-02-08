@@ -20,7 +20,7 @@ import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSy
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
-import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.service.dump.DumpRequest;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
@@ -50,20 +50,13 @@ public class ConfigChangeClusterSyncRequestHandler
     public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
             RequestMeta meta) throws NacosException {
     
-        if (configChangeSyncRequest.isBeta()) {
-            dumpService.dumpBeta(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getGroup(),
-                    configChangeSyncRequest.getTenant(), configChangeSyncRequest.getLastModified(), meta.getClientIp());
-        } else if (configChangeSyncRequest.isBatch()) {
-            dumpService.dumpBatch(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getGroup(),
-                    configChangeSyncRequest.getTenant(), configChangeSyncRequest.getLastModified(), meta.getClientIp());
-        } else if (StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
-            dumpService.dumpTag(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getGroup(),
-                    configChangeSyncRequest.getTenant(), configChangeSyncRequest.getTag(),
-                    configChangeSyncRequest.getLastModified(), meta.getClientIp());
-        } else {
-            dumpService.dumpFormal(configChangeSyncRequest.getDataId(), configChangeSyncRequest.getGroup(),
-                    configChangeSyncRequest.getTenant(), configChangeSyncRequest.getLastModified(), meta.getClientIp());
-        }
+        DumpRequest dumpRequest = DumpRequest.create(configChangeSyncRequest.getDataId(),
+                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+                configChangeSyncRequest.getLastModified(), meta.getClientIp());
+        dumpRequest.setBeta(configChangeSyncRequest.isBeta());
+        dumpRequest.setBatch(configChangeSyncRequest.isBatch());
+        dumpRequest.setTag(configChangeSyncRequest.getTag());
+        dumpService.dump(dumpRequest);
         return new ConfigChangeClusterSyncResponse();
     }
     

@@ -85,20 +85,10 @@ public class CommunicationControllerTest {
     public void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
-        ReflectionTestUtils.setField(communicationController, "dumpService", dumpService);
         ReflectionTestUtils.setField(communicationController, "longPollingService", longPollingService);
         ReflectionTestUtils.setField(communicationController, "configChangeListenContext", configChangeListenContext);
         ReflectionTestUtils.setField(communicationController, "connectionManager", connectionManager);
         mockMvc = MockMvcBuilders.standaloneSetup(communicationController).build();
-    }
-    
-    @Test
-    public void testNotifyConfigInfo() throws Exception {
-        
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.COMMUNICATION_CONTROLLER_PATH + "/dataChange")
-                .param("dataId", "test").param("group", "test");
-        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertEquals("true", actualValue);
     }
     
     @Test

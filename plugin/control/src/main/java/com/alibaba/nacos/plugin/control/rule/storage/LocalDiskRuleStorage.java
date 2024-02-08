@@ -59,7 +59,7 @@ public class LocalDiskRuleStorage implements RuleStorage {
     private File getConnectionRuleFile() {
         File baseDir = new File(localRuleBaseDir, "data" + File.separator + "connection" + File.separator);
         if (!baseDir.exists()) {
-            baseDir.mkdir();
+            baseDir.mkdirs();
         }
         return new File(baseDir, "limitRule");
     }

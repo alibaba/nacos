@@ -79,7 +79,7 @@ public class GroupCapacityPersistService {
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
     
-    private static final class GroupCapacityRowMapper implements RowMapper<GroupCapacity> {
+    static final class GroupCapacityRowMapper implements RowMapper<GroupCapacity> {
         
         @Override
         public GroupCapacity mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -166,9 +166,9 @@ public class GroupCapacityPersistService {
         GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.GROUP_CAPACITY);
         MapperContext context = new MapperContext();
-        context.putWhereParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
+        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, groupCapacity.getGmtModified());
         context.putWhereParameter(FieldConstant.GROUP_ID, groupCapacity.getGroup());
-        context.putWhereParameter(FieldConstant.QUOTA, groupCapacity.getQuota());
+        context.putWhereParameter(FieldConstant.USAGE, groupCapacity.getQuota());
         MapperResult mapperResult = groupCapacityMapper.incrementUsageByWhereQuotaEqualZero(context);
         try {
             int affectRow = jdbcTemplate.update(mapperResult.getSql(), mapperResult.getParamList().toArray());
@@ -312,7 +312,7 @@ public class GroupCapacityPersistService {
                 TableConstant.GROUP_CAPACITY);
         MapperResult mapperResult;
         MapperContext context = new MapperContext();
-        context.putWhereParameter(FieldConstant.GMT_MODIFIED, gmtModified);
+        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, gmtModified);
         context.putWhereParameter(FieldConstant.GROUP_ID, group);
         if (CLUSTER.equals(group)) {
             mapperResult = groupCapacityMapper.updateUsage(context);

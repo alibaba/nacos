@@ -16,38 +16,66 @@
 
 package com.alibaba.nacos.client.naming.backups.datasource;
 
-import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
-import junit.framework.TestCase;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.client.naming.backups.FailoverData;
+import com.alibaba.nacos.client.naming.backups.FailoverSwitch;
+import com.alibaba.nacos.client.naming.cache.DiskCacheTest;
+import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
-import java.util.HashMap;
-import java.util.Properties;
+import java.lang.reflect.Field;
+import java.util.Map;
 
-public class DiskFailoverDataSourceTest extends TestCase {
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class DiskFailoverDataSourceTest {
     
-    @Test
-    public void testGetSwitch() {
-        Properties prop = new Properties();
-        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(prop);
-        String cacheDir = CacheDirUtil.initCacheDir("public", properties);
-        DiskFailoverDataSource diskFailoverDataSource = new DiskFailoverDataSource();
-        diskFailoverDataSource.getSwitch();
+    DiskFailoverDataSource dataSource;
+    
+    @Before
+    public void setUp() {
+        dataSource = new DiskFailoverDataSource();
     }
     
     @Test
-    public void testGetFailoverData() {
-        Properties prop = new Properties();
-        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(prop);
-        String cacheDir = CacheDirUtil.initCacheDir("public", properties);
-        DiskFailoverDataSource diskFailoverDataSource = new DiskFailoverDataSource();
-        diskFailoverDataSource.getFailoverData();
+    public void testGetSwitchWithNonExistFailoverSwitchFile() {
+        FailoverSwitch actual = dataSource.getSwitch();
+        assertFalse(actual.getEnabled());
     }
     
+    @Test
+    public void testGetSwitchForFailoverDisabled() throws NoSuchFieldException, IllegalAccessException {
+        String dir = DiskCacheTest.class.getResource("/").getPath() + "/failover_test/disabled";
+        injectFailOverDir(dir);
+        assertFalse(dataSource.getSwitch().getEnabled());
+        Map<String, FailoverData> actual = dataSource.getFailoverData();
+        assertTrue(actual.isEmpty());
+    }
+    
+    @Test
+    public void testGetSwitchForFailoverEnabled() throws NoSuchFieldException, IllegalAccessException {
+        String dir = DiskCacheTest.class.getResource("/").getPath() + "/failover_test/enabled";
+        injectFailOverDir(dir);
+        assertTrue(dataSource.getSwitch().getEnabled());
+        Map<String, FailoverData> actual = dataSource.getFailoverData();
+        assertEquals(1, actual.size());
+        assertTrue(actual.containsKey("legal@@with_name@@file"));
+        assertEquals(FailoverData.DataType.naming, actual.get("legal@@with_name@@file").getDataType());
+        assertEquals("1.1.1.1",
+                ((ServiceInfo) actual.get("legal@@with_name@@file").getData()).getHosts().get(0).getIp());
+    }
+    
+    @Test
+    public void testGetFailoverDataForFailoverDisabled() {
+        Map<String, FailoverData> actual = dataSource.getFailoverData();
+        assertTrue(actual.isEmpty());
+    }
+    
+    private void injectFailOverDir(String failoverDir) throws NoSuchFieldException, IllegalAccessException {
+        Field failoverDirField = DiskFailoverDataSource.class.getDeclaredField("failoverDir");
+        failoverDirField.setAccessible(true);
+        failoverDirField.set(dataSource, failoverDir);
+    }
 }

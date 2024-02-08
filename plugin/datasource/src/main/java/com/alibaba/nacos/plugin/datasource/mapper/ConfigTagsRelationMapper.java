@@ -44,6 +44,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
      */
     default MapperResult findConfigInfo4PageCountRows(final MapperContext context) {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
+        final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
@@ -54,7 +55,7 @@ public interface ConfigTagsRelationMapper extends Mapper {
         final String sqlCount = "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id";
         
         where.append(" a.tenant_id=? ");
-        
+        paramList.add(tenantId);
         if (StringUtils.isNotBlank(dataId)) {
             where.append(" AND a.data_id=? ");
             paramList.add(dataId);
@@ -77,6 +78,8 @@ public interface ConfigTagsRelationMapper extends Mapper {
                 where.append(", ");
             }
             where.append('?');
+            paramList.add(tagArr[i]);
+    
         }
         where.append(") ");
         return new MapperResult(sqlCount + where, paramList);

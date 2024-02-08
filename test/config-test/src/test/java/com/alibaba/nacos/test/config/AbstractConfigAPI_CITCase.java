@@ -28,7 +28,18 @@ import com.alibaba.nacos.client.config.http.MetricsHttpAgent;
 import com.alibaba.nacos.client.config.http.ServerHttpAgent;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.plugin.encryption.EncryptionPluginManager;
+import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import org.apache.commons.codec.binary.Base64;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -64,6 +75,100 @@ public abstract class AbstractConfigAPI_CITCase {
     
     @LocalServerPort
     private int port;
+    
+    private EncryptionPluginService mockEncryptionPluginService;
+    
+    @Before
+    public void initEncryptionPluginService() {
+        mockEncryptionPluginService = new EncryptionPluginService() {
+            
+            private static final String ALGORITHM = "AES";
+            
+            private static final String AES_PKCS5P = "AES/ECB/PKCS5Padding";
+            
+            // 随机生成密钥-用来加密数据内容
+            private final String contentKey = generateKey();
+            
+            // 随机生成密钥-用来加密密钥
+            private final String theKeyOfContentKey = generateKey();
+            
+            private String generateKey() {
+                SecureRandom secureRandom = new SecureRandom();
+                KeyGenerator keyGenerator;
+                try {
+                    keyGenerator = KeyGenerator.getInstance(ALGORITHM);
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e);
+                }
+                keyGenerator.init(128, secureRandom);
+                SecretKey secretKey = keyGenerator.generateKey();
+                byte[] keyBytes = secretKey.getEncoded();
+                return Base64.encodeBase64String(keyBytes);
+            }
+            
+            @Override
+            public String encrypt(String secretKey, String content) {
+                return Base64.encodeBase64String(aes(Cipher.ENCRYPT_MODE, content, secretKey));
+            }
+            
+            @Override
+            public String decrypt(String secretKey, String content) {
+                if (StringUtils.isBlank(secretKey)) {
+                    return null;
+                }
+                return aesDecrypt(content, secretKey);
+            }
+            
+            @Override
+            public String generateSecretKey() {
+                return contentKey;
+            }
+            
+            @Override
+            public String algorithmName() {
+                return ALGORITHM.toLowerCase();
+            }
+            
+            @Override
+            public String encryptSecretKey(String secretKey) {
+                return Base64.encodeBase64String(aes(Cipher.ENCRYPT_MODE, generateSecretKey(), theKeyOfContentKey));
+            }
+            
+            @Override
+            public String decryptSecretKey(String secretKey) {
+                if (StringUtils.isBlank(secretKey)) {
+                    return null;
+                }
+                return aesDecrypt(secretKey, theKeyOfContentKey);
+            }
+            
+            private byte[] aes(int mode, String content, String key) {
+                try {
+                    return aesBytes(mode, content.getBytes(StandardCharsets.UTF_8), key);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            
+            private byte[] aesBytes(int mode, byte[] content, String key) {
+                SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), ALGORITHM);
+                Cipher cipher = null;
+                try {
+                    cipher = Cipher.getInstance(AES_PKCS5P);
+                    cipher.init(mode, keySpec);
+                    return cipher.doFinal(content);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            
+            private String aesDecrypt(String content, String key) {
+                byte[] bytes = aesBytes(Cipher.DECRYPT_MODE, Base64.decodeBase64(content), key);
+                return new String(bytes, StandardCharsets.UTF_8);
+            }
+        };
+        EncryptionPluginManager.join(mockEncryptionPluginService);
+    }
     
     @Before
     public void setUp() throws Exception {
@@ -113,6 +218,27 @@ public abstract class AbstractConfigAPI_CITCase {
         Assert.assertTrue(result);
         value = iconfig.getConfig(dataId, group, TIME_OUT);
         System.out.println(value);
+        Assert.assertNull(value);
+    }
+    
+    /**
+     * @TCDescription : nacos_正常推送&获取加密数据
+     * @TestStep :
+     * @ExpectResult :
+     */
+    @Test(timeout = 3 * TIME_OUT)
+    public void nacosPublishAndGetConfig() throws Exception {
+        String dataId = "cipher-aes-dataId";
+        final String content = "test";
+        boolean result = iconfig.publishConfig(dataId, group, content);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+        String value = iconfig.getConfig(dataId, group, TIME_OUT);
+        Assert.assertEquals(content, value);
+        result = iconfig.removeConfig(dataId, group);
+        Thread.sleep(TIME_OUT);
+        Assert.assertTrue(result);
+        value = iconfig.getConfig(dataId, group, TIME_OUT);
         Assert.assertNull(value);
     }
     
