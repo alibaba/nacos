@@ -38,7 +38,7 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -98,7 +98,7 @@ public class ClientWorkerTest {
         
         rpcClientFactoryMockedStatic.when(
                 () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
-                        any(RpcClientTlsConfig.class))).thenReturn(rpcClient);
+                        any(RpcSdkClientTlsConfig.class))).thenReturn(rpcClient);
         localConfigInfoProcessorMockedStatic = Mockito.mockStatic(LocalConfigInfoProcessor.class);
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, TEST_NAMESPACE);
@@ -555,7 +555,7 @@ public class ClientWorkerTest {
         Mockito.when(rpcClientInner.isWaitInitiated()).thenReturn(true, false);
         rpcClientFactoryMockedStatic.when(
                 () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
-                        any(RpcClientTlsConfig.class))).thenReturn(rpcClientInner);
+                        any(RpcSdkClientTlsConfig.class))).thenReturn(rpcClientInner);
         // mock listen and remove listen request
         Mockito.when(rpcClientInner.request(any(ConfigBatchListenRequest.class), anyLong()))
                 .thenReturn(response, response);
