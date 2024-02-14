@@ -21,8 +21,10 @@ import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.instance.InstanceIdGeneratorManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Before;
 import org.junit.Test;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,6 +43,7 @@ public class InstanceUtilTest {
     
     @Before
     public void init() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         service = Service.newService("namespace", "group", "serviceName");
         instancePublishInfo = new InstancePublishInfo("1.1.1.1", 8080);
     }
