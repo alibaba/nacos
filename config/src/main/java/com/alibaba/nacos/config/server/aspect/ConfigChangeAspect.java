@@ -45,11 +45,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
-import java.util.PriorityQueue;
+import java.util.ArrayList;
 import java.util.Properties;
+import java.util.Locale;
 
 /**
  * Config change pointcut aspect,which config change plugin services will pointcut.
@@ -62,9 +61,9 @@ public class ConfigChangeAspect {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigChangeAspect.class);
     
-    private static final Integer DEFAULT_BEFORE_QUEUE_CAPACITY = 2;
+    private static final Integer DEFAULT_BEFORE_LIST_CAPACITY = 2;
     
-    private static final Integer DEFAULT_AFTER_QUEUE_CAPACITY = 1;
+    private static final Integer DEFAULT_AFTER_LIST_CAPACITY = 1;
     
     private static final String ENABLED = "enabled";
     
@@ -132,10 +131,10 @@ public class ConfigChangeAspect {
             String appName, String srcUser, String configTags, String desc, String use, String effect, String type)
             throws Throwable {
         final ConfigChangePointCutTypes configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_HTTP;
-        final PriorityQueue<ConfigChangePluginService> pluginServicePriorityQueue = getPluginServicePriorityQueue(
+        final List<ConfigChangePluginService> pluginServices = getPluginServices(
                 configChangePointCutType);
         // didn't enabled or add relative plugin
-        if (pluginServicePriorityQueue.isEmpty()) {
+        if (pluginServices.isEmpty()) {
             return pjp.proceed();
         }
         ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
@@ -151,7 +150,7 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("use", use);
         configChangeRequest.setArg("effect", effect);
         configChangeRequest.setArg("type", type);
-        return configChangeServiceHandle(pjp, pluginServicePriorityQueue, configChangeRequest);
+        return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
     }
     
     /**
@@ -161,10 +160,10 @@ public class ConfigChangeAspect {
     Object removeConfigByIdAround(ProceedingJoinPoint pjp, HttpServletRequest request, HttpServletResponse response,
             String dataId, String group, String tenant) throws Throwable {
         final ConfigChangePointCutTypes configChangePointCutType = ConfigChangePointCutTypes.REMOVE_BY_HTTP;
-        final PriorityQueue<ConfigChangePluginService> pluginServicePriorityQueue = getPluginServicePriorityQueue(
+        final List<ConfigChangePluginService> pluginServices = getPluginServices(
                 configChangePointCutType);
         // didn't enabled or add relative plugin
-        if (pluginServicePriorityQueue.isEmpty()) {
+        if (pluginServices.isEmpty()) {
             return pjp.proceed();
         }
         ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
@@ -174,7 +173,7 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("srcIp", RequestUtil.getRemoteIp(request));
         configChangeRequest.setArg("requestIpApp", RequestUtil.getAppName(request));
         configChangeRequest.setArg("use", RequestUtil.getSrcUserName(request));
-        return configChangeServiceHandle(pjp, pluginServicePriorityQueue, configChangeRequest);
+        return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
     }
     
     /**
@@ -184,10 +183,10 @@ public class ConfigChangeAspect {
     public Object removeConfigByIdsAround(ProceedingJoinPoint pjp, HttpServletRequest request, List<Long> ids)
             throws Throwable {
         final ConfigChangePointCutTypes configChangePointCutType = ConfigChangePointCutTypes.REMOVE_BATCH_HTTP;
-        final PriorityQueue<ConfigChangePluginService> pluginServicePriorityQueue = getPluginServicePriorityQueue(
+        final List<ConfigChangePluginService> pluginServices = getPluginServices(
                 configChangePointCutType);
         // didn't enabled or add relative plugin
-        if (pluginServicePriorityQueue.isEmpty()) {
+        if (pluginServices.isEmpty()) {
             return pjp.proceed();
         }
         ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
@@ -195,7 +194,7 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("srcIp", RequestUtil.getRemoteIp(request));
         configChangeRequest.setArg("requestIpApp", RequestUtil.getAppName(request));
         configChangeRequest.setArg("use", RequestUtil.getSrcUserName(request));
-        return configChangeServiceHandle(pjp, pluginServicePriorityQueue, configChangeRequest);
+        return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
     }
     
     /**
@@ -205,10 +204,10 @@ public class ConfigChangeAspect {
     public Object importConfigAround(ProceedingJoinPoint pjp, HttpServletRequest request, String srcUser,
             String namespace, SameConfigPolicy policy, MultipartFile file) throws Throwable {
         final ConfigChangePointCutTypes configChangePointCutType = ConfigChangePointCutTypes.IMPORT_BY_HTTP;
-        final PriorityQueue<ConfigChangePluginService> pluginServicePriorityQueue = getPluginServicePriorityQueue(
+        final List<ConfigChangePluginService> pluginServices = getPluginServices(
                 configChangePointCutType);
         // didn't enabled or add relative plugin
-        if (pluginServicePriorityQueue.isEmpty()) {
+        if (pluginServices.isEmpty()) {
             return pjp.proceed();
         }
         ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
@@ -219,7 +218,7 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("srcIp", RequestUtil.getRemoteIp(request));
         configChangeRequest.setArg("requestIpApp", RequestUtil.getAppName(request));
         configChangeRequest.setArg("use", RequestUtil.getSrcUserName(request));
-        return configChangeServiceHandle(pjp, pluginServicePriorityQueue, configChangeRequest);
+        return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
     }
     
     /**
@@ -229,10 +228,10 @@ public class ConfigChangeAspect {
     Object publishConfigAroundRpc(ProceedingJoinPoint pjp, ConfigPublishRequest request, RequestMeta meta)
             throws Throwable {
         final ConfigChangePointCutTypes configChangePointCutType = ConfigChangePointCutTypes.PUBLISH_BY_RPC;
-        final PriorityQueue<ConfigChangePluginService> pluginServicePriorityQueue = getPluginServicePriorityQueue(
+        final List<ConfigChangePluginService> pluginServices = getPluginServices(
                 configChangePointCutType);
         // didn't enabled or add relative plugin
-        if (pluginServicePriorityQueue.isEmpty()) {
+        if (pluginServices.isEmpty()) {
             return pjp.proceed();
         }
         ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
@@ -250,7 +249,7 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("requestIpApp", request.getAdditionParam("requestIpApp"));
         configChangeRequest.setArg("srcUser", request.getAdditionParam("src_user"));
         configChangeRequest.setArg("use", request.getAdditionParam("use"));
-        return configChangeServiceHandle(pjp, pluginServicePriorityQueue, configChangeRequest);
+        return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
     }
     
     /**
@@ -260,10 +259,10 @@ public class ConfigChangeAspect {
     Object removeConfigAroundRpc(ProceedingJoinPoint pjp, ConfigRemoveRequest request, RequestMeta meta)
             throws Throwable {
         final ConfigChangePointCutTypes configChangePointCutType = ConfigChangePointCutTypes.REMOVE_BY_RPC;
-        final PriorityQueue<ConfigChangePluginService> pluginServicePriorityQueue = getPluginServicePriorityQueue(
+        final List<ConfigChangePluginService> pluginServices = getPluginServices(
                 configChangePointCutType);
         // didn't enabled or add relative plugin
-        if (pluginServicePriorityQueue.isEmpty()) {
+        if (pluginServices.isEmpty()) {
             return pjp.proceed();
         }
         ConfigChangeRequest configChangeRequest = new ConfigChangeRequest(configChangePointCutType);
@@ -275,42 +274,41 @@ public class ConfigChangeAspect {
         configChangeRequest.setArg("requestIpApp", request.getHeader("requestIpApp"));
         configChangeRequest.setArg("srcUser", request.getHeader("src_user"));
         configChangeRequest.setArg("use", request.getHeader("use"));
-        return configChangeServiceHandle(pjp, pluginServicePriorityQueue, configChangeRequest);
+        return configChangeServiceHandle(pjp, pluginServices, configChangeRequest);
     }
     
     /**
      * Execute relevant config change plugin services.
      */
     private Object configChangeServiceHandle(ProceedingJoinPoint pjp,
-            PriorityQueue<ConfigChangePluginService> configChangePluginServicePriorityQueue,
+            List<ConfigChangePluginService> configChangePluginServiceList,
             ConfigChangeRequest configChangeRequest) {
         configChangeRequest.setArg("modifyTime", TimeUtils.getCurrentTimeStr());
         ConfigChangePointCutTypes handleType = configChangeRequest.getRequestType();
         ConfigChangeResponse configChangeResponse = new ConfigChangeResponse(handleType);
         // default success,when before plugin service verify failed , set false
         configChangeResponse.setSuccess(true);
-        PriorityQueue<ConfigChangePluginService> beforeExecutePriorityQueue = new PriorityQueue<>(
-                DEFAULT_BEFORE_QUEUE_CAPACITY, Comparator.comparingInt(ConfigChangePluginService::getOrder));
-        PriorityQueue<ConfigChangePluginService> afterExecutePriorityQueue = new PriorityQueue<>(
-                DEFAULT_AFTER_QUEUE_CAPACITY, Comparator.comparingInt(ConfigChangePluginService::getOrder));
+
+        List<ConfigChangePluginService> beforeExecutePluginServices = new ArrayList<>(DEFAULT_BEFORE_LIST_CAPACITY);
+        List<ConfigChangePluginService> afterExecutePluginServices = new ArrayList<>(DEFAULT_AFTER_LIST_CAPACITY);
         
         Object retVal = null;
         Object[] args = pjp.getArgs();
         configChangeRequest.setArg(ConfigChangeConstants.ORIGINAL_ARGS, args);
         
-        for (ConfigChangePluginService ccs : configChangePluginServicePriorityQueue) {
+        for (ConfigChangePluginService ccs : configChangePluginServiceList) {
             if (!isEnabled(ccs)) {
                 continue;
             }
             if (ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE.equals(ccs.executeType())) {
-                beforeExecutePriorityQueue.add(ccs);
+                beforeExecutePluginServices.add(ccs);
             } else {
-                afterExecutePriorityQueue.add(ccs);
+                afterExecutePluginServices.add(ccs);
             }
         }
         
         // before plugin service execute
-        for (ConfigChangePluginService ccs : beforeExecutePriorityQueue) {
+        for (ConfigChangePluginService ccs : beforeExecutePluginServices) {
             final String serviceType = ccs.getServiceType().toLowerCase(Locale.ROOT);
             final Properties properties = configChangeConfigs.getPluginProperties(serviceType);
             configChangeRequest.setArg("pluginProperties", properties);
@@ -339,7 +337,7 @@ public class ConfigChangeAspect {
         
         // after plugin service execute
         ConfigExecutor.executeAsyncConfigChangePluginTask(() -> {
-            for (ConfigChangePluginService ccs : afterExecutePriorityQueue) {
+            for (ConfigChangePluginService ccs : afterExecutePluginServices) {
                 try {
                     final String serviceType = ccs.getServiceType().toLowerCase(Locale.ROOT);
                     final Properties properties = configChangeConfigs.getPluginProperties(serviceType);
@@ -354,19 +352,19 @@ public class ConfigChangeAspect {
         return retVal;
     }
     
-    private PriorityQueue<ConfigChangePluginService> getPluginServicePriorityQueue(
+    private List<ConfigChangePluginService> getPluginServices(
             ConfigChangePointCutTypes configChangePointCutType) {
-        PriorityQueue<ConfigChangePluginService> pluginServicePriorityQueue = ConfigChangePluginManager
-                .findPluginServiceQueueByPointcut(configChangePointCutType);
-        if (pluginServicePriorityQueue == null) {
-            return new PriorityQueue<>();
+        List<ConfigChangePluginService> pluginServicePriorityList = ConfigChangePluginManager
+                .findPluginServicesByPointcut(configChangePointCutType);
+        if (pluginServicePriorityList == null) {
+            return new ArrayList<>();
         }
-        for (ConfigChangePluginService each : pluginServicePriorityQueue) {
+        for (ConfigChangePluginService each : pluginServicePriorityList) {
             if (isEnabled(each)) {
-                return pluginServicePriorityQueue;
+                return pluginServicePriorityList;
             }
         }
-        return new PriorityQueue<>();
+        return new ArrayList<>();
     }
     
     private boolean isEnabled(ConfigChangePluginService configChangePluginService) {
