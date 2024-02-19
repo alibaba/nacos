@@ -105,7 +105,6 @@ public class DumpChangeConfigWorkerTest {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         ConfigDiskServiceFactory.getInstance().clearAll();
-        ConfigDiskServiceFactory.getInstance().clearAllBatch();
         ConfigDiskServiceFactory.getInstance().clearAllBeta();
         ConfigDiskServiceFactory.getInstance().clearAllTag();
         
