@@ -178,7 +178,7 @@ public enum ErrorCode {
     /**
      *  node down failure.
      */
-    NODE_DOWN_FAILURE(23001, "node down failure"),
+    NODE_DOWN_FAILURE(23002, "node down failure"),
     
     /**
      *  server error.
