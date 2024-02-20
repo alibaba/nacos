@@ -47,7 +47,12 @@ if [ -z "$JAVA_HOME" ]; then
     fi
   fi
   if [ -z "$JAVA_HOME" ]; then
-        error_exit "Please set the JAVA_HOME variable in your environment, We need java(x64)! jdk8 or later is better!"
+        JAVA_PATH=$(which java)
+        if [ -z "$JAVA_PATH" ]; then
+            error_exit "Please set the JAVA_HOME variable in your environment, We need java(x64)! jdk8 or later is better!"
+        fi
+        JAVA_HOME=$(dirname "$JAVA_PATH")/..
+        export JAVA_HOME=$(cd "$JAVA_HOME" && pwd)
   fi
 fi
 
