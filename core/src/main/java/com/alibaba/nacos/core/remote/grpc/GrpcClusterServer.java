@@ -17,12 +17,11 @@
 package com.alibaba.nacos.core.remote.grpc;
 
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.remote.CommunicationType;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilter;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilterServiceLoader;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptor;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptorServiceLoader;
-import com.alibaba.nacos.core.remote.grpc.negotiator.tls.ProtocolNegotiatorBuilderManager;
+import com.alibaba.nacos.core.remote.grpc.negotiator.ClusterProtocolNegotiatorBuilderSingleton;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -80,8 +79,7 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
-        protocolNegotiator = ProtocolNegotiatorBuilderManager.getInstance()
-                .buildGrpcProtocolNegotiator(CommunicationType.CLUSTER);
+        protocolNegotiator = ClusterProtocolNegotiatorBuilderSingleton.getSingleton().build();
         return Optional.ofNullable(protocolNegotiator);
     }
     
