@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.naming.cache;
+package com.alibaba.nacos.client.utils;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -27,14 +30,14 @@ import java.nio.channels.FileLock;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
-
 /**
  * Concurrent Disk util.
  *
  * @author nkorange
  */
 public class ConcurrentDiskUtil {
+    
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConcurrentDiskUtil.class);
     
     private static final String READ_ONLY = "r";
     
@@ -139,7 +142,7 @@ public class ConcurrentDiskUtil {
         try {
             Thread.sleep(time);
         } catch (InterruptedException e) {
-            NAMING_LOGGER.warn("sleep wrong", e);
+            LOGGER.warn("sleep wrong", e);
             // set the interrupted flag
             Thread.currentThread().interrupt();
         }
@@ -154,11 +157,11 @@ public class ConcurrentDiskUtil {
             } catch (Exception e) {
                 ++i;
                 if (i > RETRY_COUNT) {
-                    NAMING_LOGGER.error("[NA] read " + file.getName() + " fail;retryed time: " + i, e);
-                    throw new IOException("read " + file.getAbsolutePath() + " conflict");
+                    LOGGER.error("[NA] lock " + file.getName() + " fail;retryed time: " + i, e);
+                    throw new IOException("lock " + file.getAbsolutePath() + " conflict");
                 }
                 sleep(SLEEP_BASETIME * i);
-                NAMING_LOGGER.warn("read " + file.getName() + " conflict;retry time: " + i);
+                LOGGER.warn("lock " + file.getName() + " conflict;retry time: " + i);
             }
         } while (null == result);
         return result;

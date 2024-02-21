@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.control.TpsControlConfig;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.Loggers;
+import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 
@@ -48,6 +49,8 @@ public class NacosHttpTpsFilter implements Filter {
     
     private ControllerMethodsCache controllerMethodsCache;
     
+    private TpsControlManager tpsControlManager;
+    
     public NacosHttpTpsFilter(ControllerMethodsCache controllerMethodsCache) {
         this.controllerMethodsCache = controllerMethodsCache;
     }
@@ -55,6 +58,12 @@ public class NacosHttpTpsFilter implements Filter {
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
         Filter.super.init(filterConfig);
+    }
+    
+    private void initTpsControlManager() {
+        if (tpsControlManager == null) {
+            tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
+        }
     }
     
     @Override
@@ -81,8 +90,8 @@ public class NacosHttpTpsFilter implements Filter {
                 if (StringUtils.isBlank(httpTpsCheckRequest.getPointName())) {
                     httpTpsCheckRequest.setPointName(pointName);
                 }
-                TpsCheckResponse checkResponse = ControlManagerCenter.getInstance().getTpsControlManager()
-                        .check(httpTpsCheckRequest);
+                initTpsControlManager();
+                TpsCheckResponse checkResponse = tpsControlManager.check(httpTpsCheckRequest);
                 if (!checkResponse.isSuccess()) {
                     AsyncContext asyncContext = httpServletRequest.startAsync();
                     asyncContext.setTimeout(0);
@@ -97,7 +106,7 @@ public class NacosHttpTpsFilter implements Filter {
             Loggers.TPS.warn("Fail to  http tps check", throwable);
         }
         
-        filterChain.doFilter(httpServletRequest, servletResponse);
+        filterChain.doFilter(httpServletRequest, response);
     }
     
     @Override

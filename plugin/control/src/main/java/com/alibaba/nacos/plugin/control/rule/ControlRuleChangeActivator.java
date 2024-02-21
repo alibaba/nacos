@@ -67,9 +67,9 @@ public class ControlRuleChangeActivator {
                         String persistTpsRule = ruleStorageProxy.getExternalStorage().getTpsRule(pointName);
                         ruleStorageProxy.getLocalDiskStorage().saveTpsRule(pointName, persistTpsRule);
                     } else {
-                        Loggers.CONTROL
-                                .info("No external rule storage found,will load local disk instead,point name={}",
-                                        event.getPointName());
+                        Loggers.CONTROL.info(
+                                "No external rule storage found,will load local disk instead,point name={}",
+                                event.getPointName());
                     }
                     
                 }
@@ -114,7 +114,7 @@ public class ControlRuleChangeActivator {
                 }
                 String limitRule = ruleStorageProxy.getLocalDiskStorage().getConnectionRule();
                 
-                Loggers.CONTROL.info("start to apply connection rule content " + limitRule);
+                Loggers.CONTROL.info("start to apply connection rule content {}", limitRule);
                 ConnectionControlManager controlManager = ControlManagerCenter.getInstance()
                         .getConnectionControlManager();
                 ConnectionControlRule connectionControlRule =
