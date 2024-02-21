@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender"/>
+    
+    <appender name="PREF_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>/Users/xiweng.yy/logs/nacos/perf.log</file>
+        
+        <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
+            <fileNamePattern>/Users/xiweng.yy/logs/nacos/perf.log.%i</fileNamePattern>
+            <maxIndex>${JM.LOG.RETAIN.COUNT:-7}</maxIndex>
+        </rollingPolicy>
+        
+        <triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">
+            <maxFileSize>${JM.LOG.FILE.SIZE:-10MB}</maxFileSize>
+        </triggeringPolicy>
+        
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %p [%-5t:%c{2}] %m%n</pattern>
+        </encoder>
+    </appender>
+    
+    <logger name="org.apache" level="DEBUG" />
+    <logger name="org.apache.http.wire" level="DEBUG" />
+    <logger name="org.apache.http.headers" level="INFO" />
+    <logger name="io.grpc.netty" level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </logger>
+    <logger name="komachi.sion.nacos" level="INFO">
+        <appender-ref ref="PREF_LOG_FILE"/>
+    </logger>
+    
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+</configuration>
