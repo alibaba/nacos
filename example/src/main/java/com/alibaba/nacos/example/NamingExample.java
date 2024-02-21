@@ -55,6 +55,8 @@ public class NamingExample {
         NamingService naming = NamingFactory.createNamingService(properties);
         
         naming.registerInstance(INSTANCE_SERVICE_NAME, INSTANCE_IP, INSTANCE_PORT, INSTANCE_CLUSTER_NAME);
+    
+        Thread.sleep(1000);
         
         System.out.println("[instances after register] " + naming.getAllInstances(INSTANCE_SERVICE_NAME));
         
@@ -81,8 +83,10 @@ public class NamingExample {
             }
         });
         
+        Thread.sleep(1000);
+    
         naming.deregisterInstance(INSTANCE_SERVICE_NAME, INSTANCE_IP, INSTANCE_PORT, INSTANCE_CLUSTER_NAME);
-        
+    
         Thread.sleep(1000);
         
         System.out.println("[instances after deregister] " + naming.getAllInstances(INSTANCE_SERVICE_NAME));
