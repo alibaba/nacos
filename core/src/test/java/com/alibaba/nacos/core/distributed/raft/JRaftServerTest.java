@@ -230,7 +230,7 @@ public class JRaftServerTest {
     @Test
     public void testRefreshRouteTable() {
         server.refreshRouteTable(groupId);
-        verify(cliClientServiceMock, times(2)).connect(peerId1.getEndpoint());
+        verify(cliClientServiceMock, times(1)).connect(peerId1.getEndpoint());
         verify(cliClientServiceMock).getLeader(eq(peerId1.getEndpoint()), any(CliRequests.GetLeaderRequest.class), eq(null));
     }
     
