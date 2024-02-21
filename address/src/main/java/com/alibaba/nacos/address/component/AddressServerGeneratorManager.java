@@ -96,7 +96,7 @@ public class AddressServerGeneratorManager {
     /**
      * Generate response ips.
      *
-     * @param instanceList a instance set will generate string response to client.
+     * @param instanceList an instance set will generate string response to client.
      * @return the result of response to client
      */
     public String generateResponseIps(List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList) {
