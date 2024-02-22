@@ -113,7 +113,7 @@ public class AddressServerGeneratorManager {
     /**
      * Generate nacos service name.
      *
-     * @param rawServiceName the raw service name will not contains the {@link Constants#DEFAULT_GROUP}.
+     * @param rawServiceName the raw service name will not contain the {@link Constants#DEFAULT_GROUP}.
      * @return the nacos service name
      */
     public String generateNacosServiceName(String rawServiceName) {
