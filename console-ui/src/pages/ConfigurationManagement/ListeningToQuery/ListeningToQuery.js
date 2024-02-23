@@ -334,7 +334,6 @@ class ListeningToQuery extends React.Component {
               pageSize={this.state.pageSize}
               onChange={this.changePage}
             />
-            ,
           </div>
         </Loading>
       </>

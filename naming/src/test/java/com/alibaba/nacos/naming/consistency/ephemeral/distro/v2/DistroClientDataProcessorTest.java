@@ -23,6 +23,7 @@ import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroKey;
 import com.alibaba.nacos.naming.cluster.transport.Serializer;
 import com.alibaba.nacos.naming.constants.ClientConstants;
+import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.client.Client;
 import com.alibaba.nacos.naming.core.v2.client.ClientAttributes;
 import com.alibaba.nacos.naming.core.v2.client.ClientSyncData;
@@ -30,7 +31,10 @@ import com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot;
 import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
@@ -38,9 +42,11 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -228,6 +234,109 @@ public class DistroClientDataProcessorTest {
         verify(clientManager).syncClientConnected(CLIENT_ID, clientSyncData.getAttributes());
         assertEquals(1L, client.getRevision());
         assertEquals(1, client.getAllPublishedService().size());
+    }
+
+    @Test
+    public void testProcessDataForBatch() {
+        // swap tmp
+        Serializer mock = Mockito.mock(Serializer.class);
+        when(applicationContext.getBean(Serializer.class)).thenReturn(mock);
+
+        // single instance => batch instances => batch instances => single instance
+        // single
+        ClientSyncData syncData = createSingleForBatchTest(1);
+        DistroData data = new DistroData();
+        data.setContent(serializer.serialize(syncData));
+        data.setType(DataOperation.ADD);
+        when(mock.deserialize(any(), eq(ClientSyncData.class))).thenReturn(syncData);
+        distroClientDataProcessor.processData(data);
+        assertEquals(1L, client.getRevision());
+        assertEquals(1, client.getAllPublishedService().size());
+        Service service = Service.newService("batchData", "batchData", "batchData");
+        Service singleton = ServiceManager.getInstance().getSingleton(service);
+        InstancePublishInfo info = client.getInstancePublishInfo(ServiceManager.getInstance().getSingleton(singleton));
+        assertEquals(info.getIp(), "127.0.0.1");
+        assertEquals(info.getPort(), 8080);
+
+        // batch
+        data = new DistroData();
+        syncData = createBatchForBatchTest(2);
+        data.setContent(serializer.serialize(syncData));
+        data.setType(DataOperation.CHANGE);
+        when(mock.deserialize(any(), eq(ClientSyncData.class))).thenReturn(syncData);
+        distroClientDataProcessor.processData(data);
+        assertEquals(2L, client.getRevision());
+        assertEquals(1, client.getAllPublishedService().size());
+        info = client.getInstancePublishInfo(ServiceManager.getInstance().getSingleton(singleton));
+        assertTrue(info instanceof BatchInstancePublishInfo);
+        BatchInstancePublishInfo batchInfo = (BatchInstancePublishInfo) info;
+        assertEquals(batchInfo.getInstancePublishInfos().size(), 2);
+        for (InstancePublishInfo instancePublishInfo : batchInfo.getInstancePublishInfos()) {
+            assertEquals(instancePublishInfo.getIp(), "127.0.0.1");
+            assertTrue(instancePublishInfo.getPort() == 8080 || instancePublishInfo.getPort() == 8081);
+        }
+
+        // batch
+        data = new DistroData();
+        syncData = createBatchForBatchTest(3);
+        data.setContent(serializer.serialize(syncData));
+        data.setType(DataOperation.CHANGE);
+        when(mock.deserialize(any(), eq(ClientSyncData.class))).thenReturn(syncData);
+        distroClientDataProcessor.processData(data);
+        assertEquals(3L, client.getRevision());
+        assertEquals(1, client.getAllPublishedService().size());
+        info = client.getInstancePublishInfo(ServiceManager.getInstance().getSingleton(singleton));
+        assertTrue(info instanceof BatchInstancePublishInfo);
+        batchInfo = (BatchInstancePublishInfo) info;
+        assertEquals(batchInfo.getInstancePublishInfos().size(), 2);
+        for (InstancePublishInfo instancePublishInfo : batchInfo.getInstancePublishInfos()) {
+            assertEquals(instancePublishInfo.getIp(), "127.0.0.1");
+            assertTrue(instancePublishInfo.getPort() == 8080 || instancePublishInfo.getPort() == 8081);
+        }
+
+        // single
+        syncData = createSingleForBatchTest(4);
+        data = new DistroData();
+        data.setContent(serializer.serialize(syncData));
+        data.setType(DataOperation.ADD);
+        when(mock.deserialize(any(), eq(ClientSyncData.class))).thenReturn(syncData);
+        distroClientDataProcessor.processData(data);
+        assertEquals(4L, client.getRevision());
+        assertEquals(1, client.getAllPublishedService().size());
+        info = client.getInstancePublishInfo(ServiceManager.getInstance().getSingleton(singleton));
+        assertEquals(info.getIp(), "127.0.0.1");
+        assertEquals(info.getPort(), 8080);
+    }
+
+    private ClientSyncData createSingleForBatchTest(int revision) {
+        ClientSyncData syncData = new ClientSyncData();
+        syncData.setClientId(CLIENT_ID);
+        ClientAttributes clientAttributes = new ClientAttributes();
+        clientAttributes.addClientAttribute(ClientConstants.REVISION, revision);
+        syncData.setAttributes(clientAttributes);
+        syncData.setNamespaces(Collections.singletonList("batchData"));
+        syncData.setGroupNames(Collections.singletonList("batchData"));
+        syncData.setServiceNames(Collections.singletonList("batchData"));
+        syncData.setInstancePublishInfos(Collections.singletonList(new InstancePublishInfo("127.0.0.1", 8080)));
+        return syncData;
+    }
+
+    private ClientSyncData createBatchForBatchTest(int revision) {
+        ClientSyncData syncData = new ClientSyncData();
+        syncData.setClientId(CLIENT_ID);
+        ClientAttributes clientAttributes = new ClientAttributes();
+        clientAttributes.addClientAttribute(ClientConstants.REVISION, revision);
+        syncData.setAttributes(clientAttributes);
+        syncData.setNamespaces(Collections.emptyList());
+        BatchInstancePublishInfo batchInstancePublishInfo = new BatchInstancePublishInfo();
+        syncData.setBatchInstanceData(new BatchInstanceData(Collections.singletonList("batchData"),
+                Collections.singletonList("batchData"),
+                Collections.singletonList("batchData"),
+                Collections.singletonList(batchInstancePublishInfo)));
+        batchInstancePublishInfo.setInstancePublishInfos(
+                Arrays.asList(new InstancePublishInfo("127.0.0.1", 8080),
+                        new InstancePublishInfo("127.0.0.1", 8081)));
+        return syncData;
     }
     
     @Test
