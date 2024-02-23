@@ -42,8 +42,8 @@ public class DefaultConnectionControlManager extends ConnectionControlManager {
     @Override
     public void applyConnectionLimitRule(ConnectionControlRule connectionControlRule) {
         super.connectionControlRule = connectionControlRule;
-        Loggers.CONTROL.info("Connection control rule updated to ->" + (this.connectionControlRule == null ? null
-                : JacksonUtils.toJson(this.connectionControlRule)));
+        Loggers.CONTROL.info("Connection control rule updated to -> {}",
+                (this.connectionControlRule == null ? null : JacksonUtils.toJson(this.connectionControlRule)));
         Loggers.CONTROL.warn("Connection control updated, But connection control manager is no limit implementation.");
     }
     
