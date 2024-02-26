@@ -1,3 +1,19 @@
+/*
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.api.exception.NacosException;
@@ -32,14 +48,12 @@ import java.util.List;
 import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ParamCheckerFilterTest {
-    
     
     MockedStatic<ServerParamCheckConfig> serverParamCheckConfigMockedStatic;
     
@@ -120,17 +134,17 @@ public class ParamCheckerFilterTest {
     
     @Test
     public void testParamCheckPassed() throws Exception {
-        ControllerMethodsCache methodsCache = Mockito.mock(ControllerMethodsCache.class);
-        ParamCheckerFilter paramCheckerFilter = new ParamCheckerFilter(methodsCache);
-        HttpServletRequest req = Mockito.mock(MockHttpServletRequest.class);
-        HttpServletResponse resp = Mockito.mock(MockHttpServletResponse.class);
-        FilterChain filterChain = Mockito.mock(MockFilterChain.class);
         Mockito.when(serverParamCheckConfig.isParamCheckEnabled()).thenReturn(true);
         Method withExtractorMethod = TestExtractorController.class.getDeclaredMethod("testExtractor", String.class);
+        ControllerMethodsCache methodsCache = Mockito.mock(ControllerMethodsCache.class);
+        HttpServletRequest req = Mockito.mock(MockHttpServletRequest.class);
         Mockito.when(methodsCache.getMethod(eq(req))).thenReturn(withExtractorMethod);
         Mockito.when(paramCheckerManager.getParamChecker(any())).thenReturn(new TestPassedParamChecker());
         extractorManagerMockedStatic.when(() -> ExtractorManager.getHttpExtractor(any()))
                 .thenReturn(new TestExtractor());
+        ParamCheckerFilter paramCheckerFilter = new ParamCheckerFilter(methodsCache);
+        HttpServletResponse resp = Mockito.mock(MockHttpServletResponse.class);
+        FilterChain filterChain = Mockito.mock(MockFilterChain.class);
         paramCheckerFilter.doFilter(req, resp, filterChain);
         
         Mockito.verify(filterChain, times(1)).doFilter(req, resp);
@@ -143,7 +157,6 @@ public class ParamCheckerFilterTest {
         
         HttpServletRequest req = Mockito.mock(MockHttpServletRequest.class);
         HttpServletResponse resp = Mockito.mock(MockHttpServletResponse.class);
-        FilterChain filterChain = Mockito.mock(MockFilterChain.class);
         Mockito.when(serverParamCheckConfig.isParamCheckEnabled()).thenReturn(true);
         Method withExtractorMethod = TestExtractorController.class.getDeclaredMethod("testExtractor", String.class);
         Mockito.when(paramCheckerManager.getParamChecker(any())).thenReturn(new TestFailedParamChecker());
@@ -156,6 +169,7 @@ public class ParamCheckerFilterTest {
         ServletOutputStream servletOutputStream = Mockito.mock(ServletOutputStream.class);
         Mockito.when(resp.getOutputStream()).thenReturn(servletOutputStream);
         ParamCheckerFilter paramCheckerFilter = new ParamCheckerFilter(methodsCache);
+        FilterChain filterChain = Mockito.mock(MockFilterChain.class);
         paramCheckerFilter.doFilter(req, resp, filterChain);
         
         Mockito.verify(filterChain, times(0)).doFilter(req, resp);
@@ -166,7 +180,6 @@ public class ParamCheckerFilterTest {
     @Test
     public void testParamCheckFailedeButResponseError() throws Exception {
         
-        FilterChain filterChain = Mockito.mock(MockFilterChain.class);
         Mockito.when(serverParamCheckConfig.isParamCheckEnabled()).thenReturn(true);
         Method withExtractorMethod = TestExtractorController.class.getDeclaredMethod("testExtractor", String.class);
         Mockito.when(paramCheckerManager.getParamChecker(any())).thenReturn(new TestFailedParamChecker());
@@ -181,6 +194,7 @@ public class ParamCheckerFilterTest {
         Mockito.when(resp.getOutputStream()).thenReturn(servletOutputStream);
         doThrow(new IOException("test fail")).when(servletOutputStream).println(any());
         ParamCheckerFilter paramCheckerFilter = new ParamCheckerFilter(methodsCache);
+        FilterChain filterChain = Mockito.mock(MockFilterChain.class);
         paramCheckerFilter.doFilter(req, resp, filterChain);
         Mockito.verify(filterChain, times(0)).doFilter(req, resp);
         Mockito.verify(resp, times(1)).setStatus(HttpServletResponse.SC_BAD_REQUEST);
@@ -214,7 +228,6 @@ public class ParamCheckerFilterTest {
         
     }
     
-    
     @ExtractorManager.Extractor(httpExtractor = TestExtractor.class)
     class TestExtractorController {
         
@@ -238,7 +251,6 @@ public class ParamCheckerFilterTest {
             throw new NacosException();
         }
     }
-    
     
     class TestPassedParamChecker extends AbstractParamChecker {
         

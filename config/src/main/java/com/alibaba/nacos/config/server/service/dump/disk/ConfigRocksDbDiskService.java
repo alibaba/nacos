@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
-import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
