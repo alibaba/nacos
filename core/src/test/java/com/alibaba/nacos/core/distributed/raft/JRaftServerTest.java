@@ -190,14 +190,12 @@ public class JRaftServerTest {
         // Assign PeerId1 as the leader
         final CliRequests.GetLeaderRequest.Builder rb = CliRequests.GetLeaderRequest.newBuilder();
         rb.setGroupId(groupId);
-        final CliRequests.GetLeaderRequest getLeaderRequest = rb.build();
+        rb.build();
         final FutureImpl<Message> getLeaderFuture = new FutureImpl<>();
         final CliRequests.GetLeaderResponse.Builder gb = CliRequests.GetLeaderResponse.newBuilder();
         gb.setLeaderId(peerId1.toString());
         final CliRequests.GetLeaderResponse getLeaderResponse = gb.build();
         getLeaderFuture.setResult(getLeaderResponse);
-        when(cliClientServiceMock.getLeader(peerId1.getEndpoint(), getLeaderRequest, null))
-                .thenReturn(getLeaderFuture);
     }
     
     private void mockcliService() {
