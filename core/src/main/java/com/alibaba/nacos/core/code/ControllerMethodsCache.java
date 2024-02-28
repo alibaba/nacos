@@ -229,8 +229,7 @@ public class ControllerMethodsCache {
         requestMappingInfo.setParamRequestCondition(new ParamRequestCondition(requestParam));
         List<RequestMappingInfo> requestMappingInfos = urlLookup.get(urlKey);
         if (requestMappingInfos == null) {
-            urlLookup.putIfAbsent(urlKey, new ArrayList<>());
-            requestMappingInfos = urlLookup.get(urlKey);
+            requestMappingInfos = urlLookup.putIfAbsent(urlKey, new ArrayList<>());
             // For issue #4701.
             String urlKeyBackup = urlKey + "/";
             urlLookup.putIfAbsent(urlKeyBackup, requestMappingInfos);
