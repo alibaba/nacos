@@ -128,8 +128,7 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void addPublisherIndexes(Service service, String clientId) {
-        publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>());
-        publisherIndexes.get(service).add(clientId);
+        publisherIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>()).add(clientId);
         NotifyCenter.publishEvent(new ServiceEvent.ServiceChangedEvent(service, true));
     }
     
@@ -142,19 +141,20 @@ public class ClientServiceIndexesManager extends SmartSubscriber {
     }
     
     private void addSubscriberIndexes(Service service, String clientId) {
-        subscriberIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>());
+        Set<String> clientIds = subscriberIndexes.computeIfAbsent(service, key -> new ConcurrentHashSet<>());
         // Fix #5404, Only first time add need notify event.
-        if (subscriberIndexes.get(service).add(clientId)) {
+        if (clientIds.add(clientId)) {
             NotifyCenter.publishEvent(new ServiceEvent.ServiceSubscribedEvent(service, clientId));
         }
     }
     
     private void removeSubscriberIndexes(Service service, String clientId) {
-        if (!subscriberIndexes.containsKey(service)) {
+        Set<String> clientIds = subscriberIndexes.get(service);
+        if (clientIds == null) {
             return;
         }
-        subscriberIndexes.get(service).remove(clientId);
-        if (subscriberIndexes.get(service).isEmpty()) {
+        clientIds.remove(clientId);
+        if (clientIds.isEmpty()) {
             subscriberIndexes.remove(service);
         }
     }
