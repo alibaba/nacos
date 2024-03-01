@@ -152,7 +152,7 @@ public class ConfigController {
     @PostMapping
     @TpsControl(pointName = "ConfigPublish")
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
-    public Boolean publishConfig(HttpServletRequest request, HttpServletResponse response,
+    public RestResult<Boolean> publishConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam(value = "dataId") String dataId, @RequestParam(value = "group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
             @RequestParam(value = "content") String content, @RequestParam(value = "tag", required = false) String tag,
@@ -208,7 +208,12 @@ public class ConfigController {
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
         
-        return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
+        Boolean res = configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
+        if (res) {
+            return RestResultUtils.success(res);
+        } else {
+            return RestResultUtils.failed("update fail");
+        }
     }
     
     /**
