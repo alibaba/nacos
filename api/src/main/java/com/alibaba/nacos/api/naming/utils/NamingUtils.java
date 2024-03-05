@@ -88,6 +88,16 @@ public class NamingUtils {
     }
     
     /**
+     * Check serviceName is compatibility mode or not.
+     *
+     * @param serviceName serviceName
+     * @return if serviceName is compatibility mode, return true
+     */
+    public static boolean isServiceNameCompatibilityMode(final String serviceName) {
+        return !StringUtils.isBlank(serviceName) && serviceName.contains(Constants.SERVICE_INFO_SPLITER);
+    }
+    
+    /**
      * check combineServiceName format. the serviceName can't be blank.
      * <pre>
      * serviceName = "@@";                 the length = 0; illegal

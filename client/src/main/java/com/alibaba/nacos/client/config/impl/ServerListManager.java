@@ -24,6 +24,7 @@ import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
@@ -63,12 +64,8 @@ public class ServerListManager implements Closeable {
     
     private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     
-    private final ScheduledExecutorService executorService = new ScheduledThreadPoolExecutor(1, r -> {
-        Thread t = new Thread(r);
-        t.setName("com.alibaba.nacos.client.ServerListManager");
-        t.setDaemon(true);
-        return t;
-    });
+    private final ScheduledExecutorService executorService =
+            new ScheduledThreadPoolExecutor(1, new NameThreadFactory("com.alibaba.nacos.client.ServerListManager"));
     
     /**
      * The name of the different environment.

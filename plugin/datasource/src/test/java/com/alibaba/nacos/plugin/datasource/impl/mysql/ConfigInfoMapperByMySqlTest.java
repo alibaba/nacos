@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.common.utils.NamespaceUtil;
+import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -149,11 +150,22 @@ public class ConfigInfoMapperByMySqlTest {
     
     @Test
     public void testFindAllConfigInfoFragment() {
+        //with content
+        context.putContextParameter(ContextConstant.NEED_CONTENT, "true");
+        
         MapperResult mapperResult = configInfoMapperByMySql.findAllConfigInfoFragment(context);
-        Assert.assertEquals(mapperResult.getSql(),
+        Assert.assertEquals(
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize);
+                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize,
+                mapperResult.getSql());
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id});
+        
+        context.putContextParameter(ContextConstant.NEED_CONTENT, "false");
+        MapperResult mapperResult2 = configInfoMapperByMySql.findAllConfigInfoFragment(context);
+        Assert.assertEquals("SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type,encrypted_data_key "
+                        + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + startRow + "," + pageSize,
+                mapperResult2.getSql());
+        Assert.assertArrayEquals(mapperResult2.getParamList().toArray(), new Object[] {id});
     }
     
     @Test
@@ -322,7 +334,7 @@ public class ConfigInfoMapperByMySqlTest {
         Object effect = "effect";
         Object type = "type";
         Object schema = "schema";
-        
+        String encryptedDataKey = "ey456789";
         context.putUpdateParameter(FieldConstant.CONTENT, newContent);
         context.putUpdateParameter(FieldConstant.MD5, newMD5);
         context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
@@ -334,7 +346,7 @@ public class ConfigInfoMapperByMySqlTest {
         context.putUpdateParameter(FieldConstant.EFFECT, effect);
         context.putUpdateParameter(FieldConstant.TYPE, type);
         context.putUpdateParameter(FieldConstant.C_SCHEMA, schema);
-        
+        context.putUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY, encryptedDataKey);
         Object dataId = "dataId";
         Object group = "group";
         Object md5 = "md5";
@@ -346,10 +358,11 @@ public class ConfigInfoMapperByMySqlTest {
         
         MapperResult mapperResult = configInfoMapperByMySql.updateConfigInfoAtomicCas(context);
         Assert.assertEquals(mapperResult.getSql(), "UPDATE config_info SET "
-                + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
+                + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,"
+                + "c_use=?,effect=?,type=?,c_schema=?,encrypted_data_key=? "
                 + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
                 new Object[] {newContent, newMD5, srcIp, srcUser, time, appNameTmp, desc, use, effect, type, schema,
-                        dataId, group, tenantId, md5});
+                        encryptedDataKey, dataId, group, tenantId, md5});
     }
 }

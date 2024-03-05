@@ -36,6 +36,8 @@ public class ValidatorUtilsTest {
         ValidatorUtils.checkContextPath(contextPath3);
         String contextPath4 = "";
         ValidatorUtils.checkContextPath(contextPath4);
+        // allow null
+        ValidatorUtils.checkContextPath(null);
     }
     
     @Test(expected = IllegalArgumentException.class)
@@ -67,7 +69,6 @@ public class ValidatorUtilsTest {
         try {
             Properties properties = new Properties();
             properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "test");
-    
             final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
             ValidatorUtils.checkInitParam(nacosClientProperties);
         } catch (NacosException e) {

@@ -59,7 +59,7 @@ public class LocalDiskRuleStorage implements RuleStorage {
     private File getConnectionRuleFile() {
         File baseDir = new File(localRuleBaseDir, "data" + File.separator + "connection" + File.separator);
         if (!baseDir.exists()) {
-            baseDir.mkdir();
+            baseDir.mkdirs();
         }
         return new File(baseDir, "limitRule");
     }
@@ -76,7 +76,7 @@ public class LocalDiskRuleStorage implements RuleStorage {
             pointFile.createNewFile();
         }
         DiskUtils.writeFile(pointFile, ruleContent.getBytes(Constants.ENCODE), false);
-        LOGGER.info("Save connection rule to local,pointName={}, ruleContent ={} ", ruleContent);
+        LOGGER.info("Save connection rule to local, ruleContent ={} ", ruleContent);
     }
     
     @Override

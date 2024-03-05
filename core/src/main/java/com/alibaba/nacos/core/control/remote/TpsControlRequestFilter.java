@@ -43,12 +43,12 @@ import java.lang.reflect.Method;
 @Service
 public class TpsControlRequestFilter extends AbstractRequestFilter {
     
-    TpsControlManager tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
+    private TpsControlManager tpsControlManager;
     
     @Override
     protected Response filter(Request request, RequestMeta meta, Class handlerClazz) {
         
-        Method method = null;
+        Method method;
         try {
             method = getHandleMethod(handlerClazz);
         } catch (NacosException e) {
@@ -73,6 +73,8 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                     tpsCheckRequest.setPointName(pointName);
                 }
                 
+                initTpsControlManager();
+                
                 TpsCheckResponse check = tpsControlManager.check(tpsCheckRequest);
                 
                 if (!check.isSuccess()) {
@@ -83,20 +85,24 @@ public class TpsControlRequestFilter extends AbstractRequestFilter {
                                 "Tps Flow restricted:" + check.getMessage());
                         return response;
                     } catch (Exception e) {
-                        com.alibaba.nacos.plugin.control.Loggers.TPS
-                                .warn("Tps check fail , request: {},exception:{}", request.getClass().getSimpleName(),
-                                        e);
+                        com.alibaba.nacos.plugin.control.Loggers.TPS.warn("Tps check fail , request: {},exception:{}",
+                                request.getClass().getSimpleName(), e);
                         return null;
                     }
                     
                 }
             } catch (Throwable throwable) {
-                com.alibaba.nacos.plugin.control.Loggers.TPS
-                        .warn("Tps check exception , request: {},exception:{}", request.getClass().getSimpleName(),
-                                throwable);
+                com.alibaba.nacos.plugin.control.Loggers.TPS.warn("Tps check exception , request: {},exception:{}",
+                        request.getClass().getSimpleName(), throwable);
             }
         }
         
         return null;
+    }
+    
+    private void initTpsControlManager() {
+        if (tpsControlManager == null) {
+            tpsControlManager = ControlManagerCenter.getInstance().getTpsControlManager();
+        }
     }
 }

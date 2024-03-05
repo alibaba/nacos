@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
@@ -46,10 +46,17 @@ public class DumpChangeConfigWorker implements Runnable {
     
     Timestamp startTime;
     
-    public DumpChangeConfigWorker(DumpService dumpService, Timestamp startTime) {
-        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
-        this.historyConfigInfoPersistService = dumpService.getHistoryConfigInfoPersistService();
+    public DumpChangeConfigWorker(ConfigInfoPersistService configInfoPersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService, Timestamp startTime) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.startTime = startTime;
+    }
+    
+    int pageSize = 100;
+    
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
     }
     
     /**
@@ -68,17 +75,16 @@ public class DumpChangeConfigWorker implements Runnable {
             
             LogUtil.DEFAULT_LOG.info("Start to check delete configs from  time {}", startTime);
             
-            int pageSize = 100;
             long startDeletedConfigTime = System.currentTimeMillis();
             LogUtil.DEFAULT_LOG.info("Check delete configs from  time {}", startTime);
             
             long deleteCursorId = 0L;
             
             while (true) {
-                List<ConfigInfoWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
+                List<ConfigInfoStateWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize);
-                for (ConfigInfo configInfo : configDeleted) {
-                    if (configInfoPersistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
+                for (ConfigInfoStateWrapper configInfo : configDeleted) {
+                    if (configInfoPersistService.findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant()) == null) {
                         ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(),
                                 configInfo.getTenant());
@@ -101,9 +107,9 @@ public class DumpChangeConfigWorker implements Runnable {
             long changeCursorId = 0L;
             while (true) {
                 LogUtil.DEFAULT_LOG.info("Check changed configs from  time {},lastMaxId={}", startTime, changeCursorId);
-                List<ConfigInfoWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime,
+                List<ConfigInfoStateWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
-                for (ConfigInfoWrapper cf : changeConfigs) {
+                for (ConfigInfoStateWrapper cf : changeConfigs) {
                     final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
                     //check md5 & localtimestamp update local disk cache.
                     boolean newLastModified = cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
@@ -114,9 +120,12 @@ public class DumpChangeConfigWorker implements Runnable {
                                 new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
                         ConfigInfoWrapper configInfoWrapper = configInfoPersistService.findConfigInfo(cf.getDataId(),
                                 cf.getGroup(), cf.getTenant());
-                        ConfigCacheService.dumpChange(configInfoWrapper.getDataId(), configInfoWrapper.getGroup(),
+                        LogUtil.DUMP_LOG.info("[dump-change] find change config  {}, {}, md5={}",
+                                new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
+                        ConfigCacheService.dump(configInfoWrapper.getDataId(), configInfoWrapper.getGroup(),
                                 configInfoWrapper.getTenant(), configInfoWrapper.getContent(),
-                                configInfoWrapper.getLastModified(), configInfoWrapper.getEncryptedDataKey());
+                                configInfoWrapper.getLastModified(), configInfoWrapper.getType(),
+                                configInfoWrapper.getEncryptedDataKey());
                         final String content = configInfoWrapper.getContent();
                         final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_GBK);
                         final String md5Utf8 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
@@ -142,7 +151,7 @@ public class DumpChangeConfigWorker implements Runnable {
         } finally {
             ConfigExecutor.scheduleConfigChangeTask(this, PropertyUtil.getDumpChangeWorkerInterval(),
                     TimeUnit.MILLISECONDS);
-            LogUtil.DEFAULT_LOG.info("Next dump change will scheduled after {} millseconds",
+            LogUtil.DEFAULT_LOG.info("Next dump change will scheduled after {} milliseconds",
                     PropertyUtil.getDumpChangeWorkerInterval());
             
         }

@@ -45,21 +45,6 @@ public class ConfigInfoAggr implements Serializable {
     
     private String content;
     
-    public ConfigInfoAggr(String dataId, String group, String datumId, String content) {
-        this.dataId = dataId;
-        this.group = group;
-        this.datumId = datumId;
-        this.content = content;
-    }
-    
-    public ConfigInfoAggr(String dataId, String group, String datumId, String appName, String content) {
-        this.dataId = dataId;
-        this.group = group;
-        this.datumId = datumId;
-        this.appName = appName;
-        this.content = content;
-    }
-    
     public ConfigInfoAggr() {
     
     }
@@ -102,17 +87,6 @@ public class ConfigInfoAggr implements Serializable {
     
     public void setContent(String content) {
         this.content = content;
-    }
-    
-    @Override
-    public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ((content == null) ? 0 : content.hashCode());
-        result = prime * result + ((dataId == null) ? 0 : dataId.hashCode());
-        result = prime * result + ((datumId == null) ? 0 : datumId.hashCode());
-        result = prime * result + ((group == null) ? 0 : group.hashCode());
-        return result;
     }
     
     @Override

@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
@@ -54,7 +55,7 @@ public class FailoverReactor implements Closeable {
     
     private String notifierEventScope;
     
-    private HashMap<String, Meter> meterMap = new HashMap<>(10);
+    private Map<String, Meter> meterMap = new HashMap<>(10);
     
     public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
@@ -66,12 +67,8 @@ public class FailoverReactor implements Closeable {
             break;
         }
         // init executorService
-        this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("com.alibaba.nacos.naming.failover");
-            return thread;
-        });
+        this.executorService = new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.naming.failover"));
         this.init();
     }
     
@@ -79,9 +76,7 @@ public class FailoverReactor implements Closeable {
      * Init.
      */
     public void init() {
-        
         executorService.scheduleWithFixedDelay(new FailoverSwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
-        
     }
     
     class FailoverSwitchRefresher implements Runnable {
@@ -140,7 +135,6 @@ public class FailoverReactor implements Closeable {
                     serviceMap.clear();
                     failoverSwitchEnable = false;
                     failoverServiceCntMetricsClear();
-                    return;
                 }
             } catch (Exception e) {
                 NAMING_LOGGER.error("FailoverSwitchRefresher run err", e);
@@ -165,20 +159,6 @@ public class FailoverReactor implements Closeable {
         }
         
         return serviceInfo;
-    }
-    
-    /**
-     * Add day.
-     *
-     * @param date start time
-     * @param num  add day number
-     * @return new date
-     */
-    public Date addDay(Date date, int num) {
-        Calendar startDT = Calendar.getInstance();
-        startDT.setTime(date);
-        startDT.add(Calendar.DAY_OF_MONTH, num);
-        return startDT.getTime();
     }
     
     /**

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.model;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * ConfigInfoStateWrapper. include id，dataId，group，tenant，lastModified.
@@ -34,6 +35,8 @@ public class ConfigInfoStateWrapper implements Serializable {
     private String tenant;
     
     private long lastModified;
+    
+    private String md5;
     
     public long getId() {
         return id;
@@ -74,4 +77,32 @@ public class ConfigInfoStateWrapper implements Serializable {
     public void setTenant(String tenant) {
         this.tenant = tenant;
     }
+    
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        ConfigInfoStateWrapper that = (ConfigInfoStateWrapper) o;
+        return id == that.id && lastModified == that.lastModified && Objects.equals(dataId, that.dataId)
+                && Objects.equals(group, that.group) && Objects.equals(tenant, that.tenant) && Objects.equals(md5,
+                that.md5);
+    }
+    
+    @Override
+    public int hashCode() {
+        return Objects.hash(dataId, group, tenant);
+    }
+    
+    public String getMd5() {
+        return md5;
+    }
+    
+    public void setMd5(String md5) {
+        this.md5 = md5;
+    }
+    
 }

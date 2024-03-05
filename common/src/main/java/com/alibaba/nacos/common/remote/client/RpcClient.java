@@ -30,6 +30,7 @@ import com.alibaba.nacos.api.remote.response.ClientDetectionResponse;
 import com.alibaba.nacos.api.remote.response.ConnectResetResponse;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.packagescan.resource.DefaultResourceLoader;
 import com.alibaba.nacos.common.packagescan.resource.ResourceLoader;
@@ -242,12 +243,8 @@ public abstract class RpcClient implements Closeable {
             return;
         }
         
-        clientEventExecutor = new ScheduledThreadPoolExecutor(2, r -> {
-            Thread t = new Thread(r);
-            t.setName("com.alibaba.nacos.client.remote.worker");
-            t.setDaemon(true);
-            return t;
-        });
+        clientEventExecutor = new ScheduledThreadPoolExecutor(2,
+                new NameThreadFactory("com.alibaba.nacos.client.remote.worker"));
         
         // connection event consumer.
         clientEventExecutor.submit(() -> {

@@ -135,7 +135,7 @@ public interface ConfigInfoMapper extends Mapper {
      * id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id
      * > ? ORDER BY id ASC LIMIT startRow,pageSize
      *
-     * @param context The context of startRow, pageSize
+     * @param context     The context of startRow, pageSize
      * @return The sql of querying all config info.
      */
     MapperResult findAllConfigInfoFragment(MapperContext context);
@@ -499,13 +499,13 @@ public interface ConfigInfoMapper extends Mapper {
         paramList.add(context.getUpdateParameter(FieldConstant.EFFECT));
         paramList.add(context.getUpdateParameter(FieldConstant.TYPE));
         paramList.add(context.getUpdateParameter(FieldConstant.C_SCHEMA));
-        
+        paramList.add(context.getUpdateParameter(FieldConstant.ENCRYPTED_DATA_KEY));
         paramList.add(context.getWhereParameter(FieldConstant.DATA_ID));
         paramList.add(context.getWhereParameter(FieldConstant.GROUP_ID));
         paramList.add(context.getWhereParameter(FieldConstant.TENANT_ID));
         paramList.add(context.getWhereParameter(FieldConstant.MD5));
-        String sql = "UPDATE config_info SET "
-                + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=? "
+        String sql = "UPDATE config_info SET " + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?,"
+                + " app_name=?,c_desc=?,c_use=?,effect=?,type=?,c_schema=?,encrypted_data_key=? "
                 + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')";
         return new MapperResult(sql, paramList);
     }

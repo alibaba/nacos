@@ -30,11 +30,12 @@ $dark-aside-border: #1C1D1F;
 $dark-table-header-bg: #4A4A4A;
 $dark-pull-bac: #373737;
 $dark-input-bak: #303030;
-$dark-input-border: #414141;
+$dark-input-border: #8D8D93;
+$dark-input-border-focus: #B8B8BC;
 $dark-input-color: #585858;
 //contain
 .dark {
-  filter: grayscale(.2);
+  filter: grayscale(.25);
   //侧边栏背景
   .next-shell-navigation.next-shell-mini.next-shell-aside, .next-menu-item:not(.next-disabled).next-focused {
     background-color: $dark-menu-bac !important;
@@ -73,12 +74,23 @@ $dark-input-color: #585858;
   .main-container .right-panel {
     background-color: $dark-container-bgc !important;
   }
+  .main-container .right-panel::-webkit-scrollbar, .main-container .right-panel::-webkit-scrollbar-track, .main-container .right-panel::-webkit-scrollbar-corner {
+    background-color: $dark-container-bgc !important;
+  }
   //title颜色
   .page-title {
     color: $dark-color-deep;
   }
   .nav-title, .nav-mode {
     border-color: $dark-aside-border
+  }
+  //通知栏
+  .next-message.next-message-notice.next-inline {
+    background-color: $dark-container-bgc;
+    border-color: $dark-color-grep;
+  }
+  .next-message.next-message-notice.next-inline .next-message-content {
+    color: $dark-color-light-grep;
   }
 }
 //namespacewrapper
@@ -115,10 +127,17 @@ $dark-input-color: #585858;
   .next-table td, .next-table th {
     border-color: $dark-bg-border!important;
   }
+  .next-table-row.selected {
+    background: $dark-aside-color !important;
+    color: $dark-color-light-grep;
+  }
   //table tr hover
   .next-table-row.hovered {
     background: $dark-table-header-bg !important;
     color: $dark-color-deep;
+  }
+  .next-table-header-fixer {
+    background: $dark-table-header-bg !important;
   }
   .next-table-cell-wrapper a {
     color: $dark-bg-hover;
@@ -168,6 +187,9 @@ $dark-input-color: #585858;
       color: $dark-color-grep;
     }
   }
+  .next-input:hover, .next-input.next-focus {
+    border-color: $dark-input-border-focus !important;
+  }
   .next-input.next-small, .next-input.next-input-textarea {
     background-color: $dark-input-bak!important;
     border-color: $dark-input-border!important;
@@ -185,7 +207,7 @@ $dark-input-color: #585858;
   .setting-box {
     background-color: $dark-main-bgc !important;
     color: $dark-color-deep!important;
-    border-color: $dark-bg-border;
+    border-color: $dark-input-border;
   }
   .next-radio-group .next-radio-label {
     color: $dark-color-light-grep !important;
@@ -246,5 +268,39 @@ $dark-input-color: #585858;
       border-color: $dark-aside-border;
       color: $dark-color-light-grep;
     }
+  }
+}
+//button
+.dark {
+  .next-btn.next-btn-normal,.next-btn.next-btn-secondary {
+    background-color: $dark-input-bak !important;
+    border-color: $dark-input-border !important;
+    color: $dark-color-light-grep !important;
+  }
+  .next-btn.next-btn-normal:hover,.next-btn.next-btn-secondary:hover {
+    background-color: $dark-pull-bac !important;
+    color: $dark-color-deep !important;
+    border-color: $dark-input-border-focus !important;
+  }
+  .next-pagination .next-pagination-item.next-current {
+    background-color: $dark-input-border !important;
+    color: $dark-color-deep !important;
+  }
+  .next-pagination.next-medium .next-pagination-item.next-prev:not([disabled]) i, .next-pagination.next-medium .next-pagination-item.next-next:not([disabled]) i {
+    color: $dark-color-light-grep !important;
+  }
+  .next-switch-on .next-switch-btn,.next-switch-off .next-switch-btn {
+    background-color: $dark-color-light-grep !important;
+  }
+  .next-switch-on:hover .next-switch-btn, .next-switch-on:focus .next-switch-btn,.next-switch-off:hover .next-switch-btn, .next-switch-off:focus .next-switch-btn {
+    background-color: $dark-color-deep !important;
+  }
+  .next-switch-off {
+    background-color: $dark-input-bak !important;
+    border-color: $dark-input-border !important;
+  }
+  .next-switch-off:hover {
+    border-color: $dark-input-border-focus !important;
+    background-color: $dark-pull-bac !important;
   }
 }

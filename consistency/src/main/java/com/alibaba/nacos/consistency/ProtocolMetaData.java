@@ -82,13 +82,11 @@ public final class ProtocolMetaData {
      * If MetaData does not exist, actively create a MetaData.
      */
     public void subscribe(final String group, final String key, final Observer observer) {
-        metaDataMap.computeIfAbsent(group, s -> new MetaData(group));
-        metaDataMap.get(group).subscribe(key, observer);
+        metaDataMap.computeIfAbsent(group, s -> new MetaData(group)).subscribe(key, observer);
     }
     
     public void unSubscribe(final String group, final String key, final Observer observer) {
-        metaDataMap.computeIfAbsent(group, s -> new MetaData(group));
-        metaDataMap.get(group).unSubscribe(key, observer);
+        metaDataMap.computeIfAbsent(group, s -> new MetaData(group)).unSubscribe(key, observer);
     }
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
@@ -107,8 +105,7 @@ public final class ProtocolMetaData {
         }
         
         void put(String key, Object value) {
-            itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
-            ValueItem item = itemMap.get(key);
+            ValueItem item = itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
             item.setData(value);
         }
         
@@ -119,8 +116,7 @@ public final class ProtocolMetaData {
         // If ValueItem does not exist, actively create a ValueItem
         
         void subscribe(final String key, final Observer observer) {
-            itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
-            final ValueItem item = itemMap.get(key);
+            final ValueItem item = itemMap.computeIfAbsent(key, s -> new ValueItem(group + "/" + key));
             item.addObserver(observer);
         }
         

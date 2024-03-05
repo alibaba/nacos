@@ -84,12 +84,7 @@ public class BeatInfoInstanceBuilder {
         actualBuilder.setEphemeral(beatInfo.isEphemeral());
     }
     
-    /**
-     * TODO use spi and metadata info to generate instanceId.
-     */
     private void setInstanceId(Instance instance) {
-        DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(instance.getServiceName(),
-                instance.getClusterName(), instance.getIp(), instance.getPort());
-        instance.setInstanceId(idGenerator.generateInstanceId());
+        instance.setInstanceId(InstanceIdGeneratorManager.generateInstanceId(instance));
     }
 }
