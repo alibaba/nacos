@@ -20,7 +20,11 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.handler.support.DefaultPag
 import com.alibaba.nacos.plugin.auth.impl.persistence.handler.support.DerbyPageHandlerAdapter;
 import com.alibaba.nacos.plugin.auth.impl.persistence.handler.support.MysqlPageHandlerAdapter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Collections;
 import java.util.function.Consumer;
 
 /**
@@ -44,7 +48,7 @@ public class PageHandlerAdapterFactory {
 
     private PageHandlerAdapterFactory() {
         List<PageHandlerAdapter> handlerAdapters = new ArrayList<>(3);
-        Map<String,PageHandlerAdapter> handlerAdapterMap = new HashMap<>(3);
+        Map<String, PageHandlerAdapter> handlerAdapterMap = new HashMap<>(3);
         Consumer<PageHandlerAdapter> addHandlerAdapter = handlerAdapter -> {
             handlerAdapters.add(handlerAdapter);
             handlerAdapterMap.put(handlerAdapter.getClass().getName(), handlerAdapter);
@@ -55,16 +59,16 @@ public class PageHandlerAdapterFactory {
         addHandlerAdapter.accept(new DerbyPageHandlerAdapter());
         // DefaultPageHandlerAdapter
         addHandlerAdapter.accept(new DefaultPageHandlerAdapter());
-        this.handlerAdapters= Collections.unmodifiableList(handlerAdapters);
-        this.handlerAdapterMap= Collections.unmodifiableMap(handlerAdapterMap);
+        this.handlerAdapters = Collections.unmodifiableList(handlerAdapters);
+        this.handlerAdapterMap = Collections.unmodifiableMap(handlerAdapterMap);
     }
 
     private static final class InstanceHolder {
-        static final PageHandlerAdapterFactory instance = new PageHandlerAdapterFactory();
+        static final PageHandlerAdapterFactory INSTANCE = new PageHandlerAdapterFactory();
     }
 
     public static PageHandlerAdapterFactory getInstance() {
-        return InstanceHolder.instance;
+        return InstanceHolder.INSTANCE;
     }
 
 }
