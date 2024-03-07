@@ -22,10 +22,13 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+
+import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 public class ServerListManagerTest {
     
@@ -146,4 +149,100 @@ public class ServerListManagerTest {
         
     }
     
+    @Test
+    public void testAddressServerBaseServerAddrsStr() throws NacosException {
+        Properties properties = new Properties();
+        String serverAddrStr = "nacos.test.com:8080";
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, serverAddrStr);
+        String endpointContextPath = "/endpoint";
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, endpointContextPath);
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ServerListManager serverListManager = new ServerListManager(clientProperties);
+        Assert.assertEquals(1, serverListManager.serverUrls.size());
+        Assert.assertTrue(serverListManager.serverUrls.contains(HTTP_PREFIX + serverAddrStr));
+    }
+    
+    @Test
+    public void testAddressServerBaseEndpoint() throws NacosException {
+        Properties properties = new Properties();
+        String endpoint = "127.0.0.1";
+        properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
+        String endpointPort = "8080";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_PORT, endpointPort);
+        String endpointContextPath = "/endpoint";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, endpointContextPath);
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ServerListManager serverListManager = new ServerListManager(clientProperties);
+        Assert.assertTrue(serverListManager.addressServerUrl.startsWith(
+                HTTP_PREFIX + endpoint + ":" + endpointPort + endpointContextPath));
+    }
+    
+    @Test
+    public void testInitParam() throws NacosException, NoSuchFieldException, IllegalAccessException {
+        Properties properties = new Properties();
+        String endpoint = "127.0.0.1";
+        properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
+        String endpointPort = "9090";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_PORT, endpointPort);
+        String endpointContextPath = "/endpointContextPath";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, endpointContextPath);
+        String contextPath = "/contextPath";
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, contextPath);
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ServerListManager serverListManager = new ServerListManager(clientProperties);
+        Field endpointField = ServerListManager.class.getDeclaredField("endpoint");
+        endpointField.setAccessible(true);
+        String fieldEndpoint = (String) endpointField.get(serverListManager);
+        Assert.assertEquals(endpoint, fieldEndpoint);
+        
+        Field endpointPortField = ServerListManager.class.getDeclaredField("endpointPort");
+        endpointPortField.setAccessible(true);
+        String fieldEndpointPort = String.valueOf(endpointPortField.get(serverListManager));
+        Assert.assertEquals(endpointPort, fieldEndpointPort);
+        
+        Field endpointContextPathField = ServerListManager.class.getDeclaredField("endpointContextPath");
+        endpointContextPathField.setAccessible(true);
+        String fieldEndpointContextPath = String.valueOf(endpointContextPathField.get(serverListManager));
+        Assert.assertEquals(endpointContextPath, fieldEndpointContextPath);
+        
+        Field contentPathField = ServerListManager.class.getDeclaredField("contentPath");
+        contentPathField.setAccessible(true);
+        String fieldContentPath = String.valueOf(contentPathField.get(serverListManager));
+        Assert.assertEquals(fieldContentPath, contextPath);
+    }
+    
+    @Test
+    public void testWithEndpointContextPath() throws NacosException {
+        Properties properties = new Properties();
+        String endpoint = "127.0.0.1";
+        properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
+        String endpointPort = "9090";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_PORT, endpointPort);
+        String endpointContextPath = "/endpointContextPath";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, endpointContextPath);
+        String contextPath = "/contextPath";
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, contextPath);
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ServerListManager serverListManager = new ServerListManager(clientProperties);
+        Assert.assertTrue(serverListManager.addressServerUrl.contains(endpointContextPath));
+        Assert.assertTrue(serverListManager.getName().contains("endpointContextPath"));
+    }
+    
+    @Test
+    public void testWithoutEndpointContextPath() throws NacosException {
+        Properties properties = new Properties();
+        String endpoint = "127.0.0.1";
+        properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
+        String endpointPort = "9090";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_PORT, endpointPort);
+        String contextPath = "/contextPath";
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, contextPath);
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ServerListManager serverListManager = new ServerListManager(clientProperties);
+        String endpointContextPath = "/endpointContextPath";
+        Assert.assertFalse(serverListManager.addressServerUrl.contains(endpointContextPath));
+        Assert.assertTrue(serverListManager.addressServerUrl.contains(contextPath));
+        Assert.assertFalse(serverListManager.getName().contains("endpointContextPath"));
+        Assert.assertTrue(serverListManager.getName().contains("contextPath"));
+    }
 }
