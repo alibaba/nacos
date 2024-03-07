@@ -135,9 +135,9 @@ public class FailoverReactorTest {
     @Test
     public void testFailoverServiceCntMetrics()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetrics", Map.class);
+        Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetrics");
         method.setAccessible(true);
-        method.invoke(failoverReactor, new Object[1]);
+        method.invoke(failoverReactor);
         // No exception
     }
     
