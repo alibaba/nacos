@@ -63,19 +63,21 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
     @Test
     public void testBuildTlsEnabled() {
         Properties properties = new Properties();
-        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_ENABLE.getSuffix(), "true");
-        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.COMPATIBILITY.getSuffix(), "false");
-        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_CIPHERS.getSuffix(),
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.ServerSuffix.TLS_ENABLE, "true");
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.ServerSuffix.COMPATIBILITY,
+                "false");
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.ServerSuffix.TLS_CIPHERS,
                 "ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_PROTOCOLS.getSuffix(),
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.ServerSuffix.TLS_PROTOCOLS,
                 "TLSv1.2,TLSv1.3");
-        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_CERT_KEY.getSuffix(),
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.ServerSuffix.TLS_CERT_KEY,
                 "test-server-key.pem");
-        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_CERT_CHAIN_PATH.getSuffix(),
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.ServerSuffix.TLS_CERT_CHAIN_PATH,
                 "test-server-cert.pem");
-        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH.getSuffix(),
+        properties.setProperty(
+                RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.ServerSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH,
                 "test-ca-cert.pem");
-
+        
         PropertiesPropertySource propertySource = new PropertiesPropertySource("myPropertySource", properties);
         MutablePropertySources propertySources = environment.getPropertySources();
         propertySources.addLast(propertySource);
@@ -83,5 +85,5 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
         NacosGrpcProtocolNegotiator negotiator = builder.build();
         assertNotNull(negotiator);
     }
-
+    
 }
