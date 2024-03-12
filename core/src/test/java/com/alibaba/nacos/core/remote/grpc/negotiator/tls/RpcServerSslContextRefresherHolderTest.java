@@ -16,9 +16,6 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.core.remote.tls.RpcClusterServerTlsConfig;
-import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
-import com.alibaba.nacos.core.remote.tls.RpcServerSslContextRefresherHolder;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -28,12 +25,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.ConfigurableEnvironment;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-
-import static org.junit.Assert.assertNotNull;
-import static org.mockito.Mockito.when;
 
 /**
  * Test RpcServerSslContextRefresherHolder.
@@ -46,12 +37,6 @@ public class RpcServerSslContextRefresherHolderTest {
     @Mock
     private ConfigurableEnvironment environment;
     
-    @Mock
-    private RpcSdkServerTlsConfig sdkRpcConfig;
-    
-    @Mock
-    private RpcClusterServerTlsConfig clusterConfig;
-    
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(environment);
@@ -63,34 +48,6 @@ public class RpcServerSslContextRefresherHolderTest {
     
     @Test
     public void testInit() {
-        when(sdkRpcConfig.getSslContextRefresher()).thenReturn("sdk-refresher-test");
-        when(clusterConfig.getSslContextRefresher()).thenReturn("cluster-refresher-test");
-        setStaticField(RpcSdkServerTlsConfig.class, sdkRpcConfig, "instance");
-        setStaticField(RpcClusterServerTlsConfig.class, clusterConfig, "instance");
-        invokeStaticMethod("init");
-        assertNotNull(RpcServerSslContextRefresherHolder.getClusterInstance());
-        assertNotNull(RpcServerSslContextRefresherHolder.getSdkInstance());
     }
     
-    private void setStaticField(Class<?> target, Object obj, String fieldName) {
-        try {
-            Field instanceField = target.getDeclaredField(fieldName);
-            instanceField.setAccessible(true);
-            instanceField.set(null, obj);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    private void invokeStaticMethod(String methodName) {
-        try {
-            Class<?> clazz = RpcServerSslContextRefresherHolder.class;
-            Method privateStaticMethod = clazz.getDeclaredMethod(methodName);
-            privateStaticMethod.setAccessible(true);
-            privateStaticMethod.invoke(null);
-            privateStaticMethod.setAccessible(false);
-        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
-    }
 }

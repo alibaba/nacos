@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.remote.client.grpc;
 
-import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -84,7 +84,7 @@ public class DefaultGrpcClientConfigTest {
         properties.setProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT, "5000");
         
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder()
-                .fromProperties(properties).build();
+                .fromProperties(properties, null).build();
         
         assertEquals("test", config.name());
         assertEquals(3, config.retryTimes());
@@ -255,7 +255,7 @@ public class DefaultGrpcClientConfigTest {
     
     @Test
     public void testSetTlsConfig() {
-        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
+        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setTlsConfig(tlsConfig);
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();
@@ -264,7 +264,7 @@ public class DefaultGrpcClientConfigTest {
     
     @Test
     public void testSetTlsConfigDirectly() {
-        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
+        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();
         config.setTlsConfig(tlsConfig);

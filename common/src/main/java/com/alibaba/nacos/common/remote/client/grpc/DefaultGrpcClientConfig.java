@@ -17,7 +17,8 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
-import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcTlsConfigFactory;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashMap;
@@ -65,7 +66,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
     
     private final Map<String, String> labels;
     
-    private TlsConfig tlsConfig = new TlsConfig();
+    private RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
     
     /**
      * constructor.
@@ -99,7 +100,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         this.labels.put("tls.enable", "false");
         if (Objects.nonNull(builder.tlsConfig)) {
             this.tlsConfig = builder.tlsConfig;
-            if (builder.tlsConfig.getEnableTls()) {
+            if (Objects.nonNull(builder.tlsConfig.getEnableTls()) && builder.tlsConfig.getEnableTls()) {
                 this.labels.put("tls.enable", "true");
             }
         }
@@ -178,7 +179,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         return tlsConfig;
     }
     
-    public void setTlsConfig(TlsConfig tlsConfig) {
+    public void setTlsConfig(RpcClientTlsConfig tlsConfig) {
         this.tlsConfig = tlsConfig;
     }
     
@@ -240,9 +241,19 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         
         private final Map<String, String> labels = new HashMap<>();
         
-        private TlsConfig tlsConfig = new TlsConfig();
+        private RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         
         private Builder() {
+        }
+
+        public Builder buildSdkFromProperties(Properties properties) {
+            RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createSdkClientTlsConfig(properties);
+            return fromProperties(properties, tlsConfig);
+        }
+
+        public Builder buildClusterFromProperties(Properties properties) {
+            RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+            return fromProperties(properties, tlsConfig);
         }
         
         /**
@@ -251,7 +262,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
          * @param properties properties
          * @return Builder
          */
-        public Builder fromProperties(Properties properties) {
+        public Builder fromProperties(Properties properties, RpcClientTlsConfig tlsConfig) {
             if (properties.containsKey(GrpcConstants.GRPC_NAME)) {
                 this.name = properties.getProperty(GrpcConstants.GRPC_NAME);
             }
@@ -308,7 +319,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
                 this.channelKeepAliveTimeout = Integer.parseInt(
                         properties.getProperty(GrpcConstants.GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT));
             }
-            this.tlsConfig = RpcSdkClientTlsConfig.properties(properties);
+            this.tlsConfig = tlsConfig;
             return this;
         }
         
@@ -450,7 +461,7 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
          * @param tlsConfig tls of client.
          * @return
          */
-        public Builder setTlsConfig(TlsConfig tlsConfig) {
+        public Builder setTlsConfig(RpcClientTlsConfig tlsConfig) {
             this.tlsConfig = tlsConfig;
             return this;
         }

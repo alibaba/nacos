@@ -58,8 +58,9 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.RpcTlsConfigFactory;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -1066,12 +1067,13 @@ public class ClientWorker implements Closeable {
         
         private RpcClient ensureRpcClient(String taskId) throws NacosException {
             synchronized (ClientWorker.this) {
-                
+
                 Map<String, String> labels = getLabels();
                 Map<String, String> newLabels = new HashMap<>(labels);
                 newLabels.put("taskId", taskId);
+                RpcClientTlsConfig clientTlsConfig = RpcTlsConfigFactory.createSdkClientTlsConfig(properties);
                 RpcClient rpcClient = RpcClientFactory.createClient(uuid + "_config-" + taskId, getConnectionType(),
-                        newLabels, RpcSdkClientTlsConfig.properties(this.properties));
+                        newLabels, clientTlsConfig);
                 if (rpcClient.isWaitInitiated()) {
                     initRpcClientHandler(rpcClient);
                     rpcClient.setTenant(getTenant());

@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
+import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
-import com.alibaba.nacos.core.remote.tls.RpcClusterServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
@@ -27,7 +27,6 @@ import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertiesPropertySource;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.lang.reflect.Field;
 import java.util.Properties;
 
 import static org.junit.Assert.assertNotNull;
@@ -54,7 +53,6 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
     
     @After
     public void tearDown() throws NoSuchFieldException, IllegalAccessException {
-        resetInstance();
     }
     
     @Test
@@ -65,12 +63,19 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
     @Test
     public void testBuildTlsEnabled() {
         Properties properties = new Properties();
-        properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".enableTls", "true");
-        properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".compatibility", "false");
-        properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".certChainFile", "test-server-cert.pem");
-        properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".certPrivateKey", "test-server-key.pem");
-        properties.setProperty(RpcClusterServerTlsConfig.PREFIX + ".trustCollectionCertFile", "test-ca-cert.pem");
-        
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_ENABLE.getSuffix(), "true");
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.COMPATIBILITY.getSuffix(), "false");
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_CIPHERS.getSuffix(),
+                "ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_PROTOCOLS.getSuffix(),
+                "TLSv1.2,TLSv1.3");
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_CERT_KEY.getSuffix(),
+                "test-server-key.pem");
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_CERT_CHAIN_PATH.getSuffix(),
+                "test-server-cert.pem");
+        properties.setProperty(RpcConstants.NACOS_CLUSTER_SERVER_RPC + RpcConstants.RpcServerConfigSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH.getSuffix(),
+                "test-ca-cert.pem");
+
         PropertiesPropertySource propertySource = new PropertiesPropertySource("myPropertySource", properties);
         MutablePropertySources propertySources = environment.getPropertySources();
         propertySources.addLast(propertySource);
@@ -78,10 +83,5 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
         NacosGrpcProtocolNegotiator negotiator = builder.build();
         assertNotNull(negotiator);
     }
-    
-    private void resetInstance() throws NoSuchFieldException, IllegalAccessException {
-        Field instanceField = RpcClusterServerTlsConfig.class.getDeclaredField("instance");
-        instanceField.setAccessible(true);
-        instanceField.set(null, null);
-    }
+
 }

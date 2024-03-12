@@ -16,11 +16,14 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
+import com.alibaba.nacos.common.remote.client.RpcTlsConfigFactory;
+import com.alibaba.nacos.common.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilder;
-import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
+
+import java.util.Properties;
 
 /**
  * The {@code SdkDefaultTlsProtocolNegotiatorBuilder} class is an implementation of the
@@ -31,7 +34,7 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
  * </p>
  *
  * <p>The {@code build()} method constructs and returns a {@link NacosGrpcProtocolNegotiator} instance based on the
- * configuration provided by the {@link RpcSdkServerTlsConfig} class. If TLS encryption is enabled, it creates an
+ * configuration provided by the {@link RpcServerTlsConfig} class. If TLS encryption is enabled, it creates an
  * {@link OptionalTlsProtocolNegotiator} with the corresponding SSL context and configuration; otherwise, it returns
  * null.
  * </p>
@@ -50,7 +53,7 @@ import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
  * @date 2023/12/23
  * @see ProtocolNegotiatorBuilder
  * @see NacosGrpcProtocolNegotiator
- * @see RpcSdkServerTlsConfig
+ * @see RpcServerTlsConfig
  * @see OptionalTlsProtocolNegotiator
  */
 public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiatorBuilder {
@@ -67,7 +70,8 @@ public class SdkDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegotiato
      */
     @Override
     public NacosGrpcProtocolNegotiator build() {
-        RpcServerTlsConfig config = RpcSdkServerTlsConfig.getInstance();
+        Properties properties = EnvUtil.getProperties();
+        RpcServerTlsConfig config = RpcTlsConfigFactory.createSdkServerTlsConfig(properties);
         if (config.getEnableTls()) {
             SslContext sslContext = DefaultTlsContextBuilder.getSslContext(config);
             return new OptionalTlsProtocolNegotiator(sslContext, config);

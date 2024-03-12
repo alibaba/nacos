@@ -36,71 +36,75 @@ public class RpcConstants {
     public static final String NACOS_CLIENT_RPC = "nacos.remote.client.rpc";
     
     public static final String NACOS_CLUSTER_CLIENT_RPC = "nacos.remote.cluster.client.rpc";
+
+    public static final String NACOS_SERVER_RPC = "nacos.remote.server.rpc.tls";
+
+    public static final String NACOS_CLUSTER_SERVER_RPC = "nacos.remote.cluster.server.rpc.tls";
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_ENABLE = getConfigKey(RpcConfigSuffix.TLS_ENABLE);
+    public static final String RPC_CLIENT_TLS_ENABLE = getConfigKey(RpcClientConfigSuffix.TLS_ENABLE);
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_PROVIDER = getConfigKey(RpcConfigSuffix.TLS_PROVIDER);
+    public static final String RPC_CLIENT_TLS_PROVIDER = getConfigKey(RpcClientConfigSuffix.TLS_PROVIDER);
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_MUTUAL_AUTH = getConfigKey(RpcConfigSuffix.MUTUAL_AUTH);
+    public static final String RPC_CLIENT_MUTUAL_AUTH = getConfigKey(RpcClientConfigSuffix.MUTUAL_AUTH);
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_PROTOCOLS = getConfigKey(RpcConfigSuffix.TLS_PROTOCOLS);
+    public static final String RPC_CLIENT_TLS_PROTOCOLS = getConfigKey(RpcClientConfigSuffix.TLS_PROTOCOLS);
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_CIPHERS = getConfigKey(RpcConfigSuffix.TLS_CIPHERS);
+    public static final String RPC_CLIENT_TLS_CIPHERS = getConfigKey(RpcClientConfigSuffix.TLS_CIPHERS);
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_CERT_CHAIN_PATH = getConfigKey(RpcConfigSuffix.TLS_CERT_CHAIN_PATH);
+    public static final String RPC_CLIENT_TLS_CERT_CHAIN_PATH = getConfigKey(RpcClientConfigSuffix.TLS_CERT_CHAIN_PATH);
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_CERT_KEY = getConfigKey(RpcConfigSuffix.TLS_CERT_KEY);
+    public static final String RPC_CLIENT_TLS_CERT_KEY = getConfigKey(RpcClientConfigSuffix.TLS_CERT_KEY);
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_TRUST_PWD = getConfigKey(RpcConfigSuffix.TLS_TRUST_PWD);
+    public static final String RPC_CLIENT_TLS_TRUST_PWD = getConfigKey(RpcClientConfigSuffix.TLS_TRUST_PWD);
     
     @RpcConfigLabel
     public static final String RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH = getConfigKey(
-            RpcConfigSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH);
+            RpcClientConfigSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH);
     
     @RpcConfigLabel
-    public static final String RPC_CLIENT_TLS_TRUST_ALL = getConfigKey(RpcConfigSuffix.TLS_TRUST_ALL);
+    public static final String RPC_CLIENT_TLS_TRUST_ALL = getConfigKey(RpcClientConfigSuffix.TLS_TRUST_ALL);
     
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
     
     @RpcClusterConfigLabel
-    public static final String RPC_CLUSTER_CLIENT_TLS_ENABLE = getClusterConfigKey(RpcConfigSuffix.TLS_ENABLE);
+    public static final String RPC_CLUSTER_CLIENT_TLS_ENABLE = getClusterConfigKey(RpcClientConfigSuffix.TLS_ENABLE);
     
     @RpcClusterConfigLabel
-    public static final String RPC_CLUSTER_CLIENT_TLS_PROVIDER = getClusterConfigKey(RpcConfigSuffix.TLS_PROVIDER);
+    public static final String RPC_CLUSTER_CLIENT_TLS_PROVIDER = getClusterConfigKey(RpcClientConfigSuffix.TLS_PROVIDER);
     
     @RpcClusterConfigLabel
-    public static final String RPC_CLUSTER_CLIENT_MUTUAL_AUTH = getClusterConfigKey(RpcConfigSuffix.MUTUAL_AUTH);
+    public static final String RPC_CLUSTER_CLIENT_MUTUAL_AUTH = getClusterConfigKey(RpcClientConfigSuffix.MUTUAL_AUTH);
     
     @RpcClusterConfigLabel
-    public static final String RPC_CLUSTER_CLIENT_TLS_PROTOCOLS = getClusterConfigKey(RpcConfigSuffix.TLS_PROTOCOLS);
+    public static final String RPC_CLUSTER_CLIENT_TLS_PROTOCOLS = getClusterConfigKey(RpcClientConfigSuffix.TLS_PROTOCOLS);
     
     @RpcClusterConfigLabel
-    public static final String RPC_CLUSTER_CLIENT_TLS_CIPHERS = getClusterConfigKey(RpcConfigSuffix.TLS_CIPHERS);
+    public static final String RPC_CLUSTER_CLIENT_TLS_CIPHERS = getClusterConfigKey(RpcClientConfigSuffix.TLS_CIPHERS);
     
     @RpcClusterConfigLabel
     public static final String RPC_CLUSTER_CLIENT_TLS_CERT_CHAIN_PATH = getClusterConfigKey(
-            RpcConfigSuffix.TLS_CERT_CHAIN_PATH);
+            RpcClientConfigSuffix.TLS_CERT_CHAIN_PATH);
     
     @RpcClusterConfigLabel
-    public static final String RPC_CLUSTER_CLIENT_TLS_CERT_KEY = getClusterConfigKey(RpcConfigSuffix.TLS_CERT_KEY);
+    public static final String RPC_CLUSTER_CLIENT_TLS_CERT_KEY = getClusterConfigKey(RpcClientConfigSuffix.TLS_CERT_KEY);
     
     @RpcClusterConfigLabel
-    public static final String RPC_CLUSTER_CLIENT_TLS_TRUST_PWD = getClusterConfigKey(RpcConfigSuffix.TLS_TRUST_PWD);
+    public static final String RPC_CLUSTER_CLIENT_TLS_TRUST_PWD = getClusterConfigKey(RpcClientConfigSuffix.TLS_TRUST_PWD);
     
     @RpcClusterConfigLabel
     public static final String RPC_CLUSTER_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH = getClusterConfigKey(
-            RpcConfigSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH);
+            RpcClientConfigSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH);
     
     @RpcClusterConfigLabel
-    public static final String RPC_CLUSTER_CLIENT_TLS_TRUST_ALL = getClusterConfigKey(RpcConfigSuffix.TLS_TRUST_ALL);
+    public static final String RPC_CLUSTER_CLIENT_TLS_TRUST_ALL = getClusterConfigKey(RpcClientConfigSuffix.TLS_TRUST_ALL);
     
     private static final Set<String> CLUSTER_CONFIG_NAMES = new HashSet<>();
     
@@ -126,11 +130,11 @@ public class RpcConstants {
         }
     }
     
-    public static String getConfigKey(RpcConfigSuffix configSuffix) {
+    public static String getConfigKey(RpcClientConfigSuffix configSuffix) {
         return NACOS_CLIENT_RPC + configSuffix.getSuffix();
     }
     
-    public static String getClusterConfigKey(RpcConfigSuffix configSuffix) {
+    public static String getClusterConfigKey(RpcClientConfigSuffix configSuffix) {
         return NACOS_CLUSTER_CLIENT_RPC + configSuffix.getSuffix();
     }
     
@@ -138,7 +142,7 @@ public class RpcConstants {
      * Enumeration of common suffixes for RPC configuration properties. Each enum constant represents a specific
      * configuration attribute suffix. This allows for the construction of complete configuration property keys.
      */
-    public enum RpcConfigSuffix {
+    public enum RpcClientConfigSuffix {
         
         /**
          * Suffix for 'tls.enable' configuration property.
@@ -193,14 +197,95 @@ public class RpcConstants {
         private final String suffix;
         
         /**
-         * Constructor for RpcConfigSuffix enumeration.
+         * Constructor for RpcClientConfigSuffix enumeration.
          *
          * @param suffix The configuration attribute suffix.
          */
-        RpcConfigSuffix(String suffix) {
+        RpcClientConfigSuffix(String suffix) {
             this.suffix = suffix;
         }
         
+        /**
+         * Retrieve the configuration attribute suffix.
+         *
+         * @return The configuration attribute suffix.
+         */
+        public String getSuffix() {
+            return suffix;
+        }
+    }
+
+    /**
+     * Enumeration of common suffixes for RPC configuration properties. Each enum constant represents a specific
+     * configuration attribute suffix. This allows for the construction of complete configuration property keys.
+     */
+    public enum RpcServerConfigSuffix {
+
+        /**
+         * Suffix for 'tls.enable' configuration property.
+         */
+        TLS_ENABLE(".enableTls"),
+
+        /**
+         * Suffix for 'tls.provider' configuration property.
+         */
+        TLS_PROVIDER(".sslProvider"),
+
+        /**
+         * Suffix for 'tls.mutualAuth' configuration property.
+         */
+        MUTUAL_AUTH(".mutualAuthEnable"),
+
+        /**
+         * Suffix for 'tls.protocols' configuration property.
+         */
+        TLS_PROTOCOLS(".protocols"),
+
+        /**
+         * Suffix for 'tls.ciphers' configuration property.
+         */
+        TLS_CIPHERS(".ciphers"),
+
+        /**
+         * Suffix for 'tls.certChainFile' configuration property.
+         */
+        TLS_CERT_CHAIN_PATH(".certChainFile"),
+
+        /**
+         * Suffix for 'tls.certPrivateKey' configuration property.
+         */
+        TLS_CERT_KEY(".certPrivateKey"),
+
+        /**
+         * Suffix for 'tls.certPrivateKeyPassword' configuration property.
+         */
+        TLS_TRUST_PWD(".certPrivateKeyPassword"),
+
+        /**
+         * Suffix for 'tls.trustCollectionChainPath' configuration property.
+         */
+        TLS_TRUST_COLLECTION_CHAIN_PATH(".trustCollectionCertFile"),
+
+        /**
+         * Suffix for 'tls.trustAll' configuration property.
+         */
+        TLS_TRUST_ALL(".trustAll"),
+
+        SSL_CONTEXT_REFRESHER(".sslContextRefresher"),
+
+        COMPATIBILITY(".compatibility");
+
+        private final String suffix;
+
+        /**
+         * Constructor for RpcServerConfigSuffix enumeration.
+         *
+         * @param suffix The configuration attribute suffix.
+         */
+        RpcServerConfigSuffix(String suffix) {
+            this.suffix = suffix;
+        }
+
         /**
          * Retrieve the configuration attribute suffix.
          *

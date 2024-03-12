@@ -14,33 +14,60 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.remote.tls;
+package com.alibaba.nacos.common.remote.tls;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
 
 /**
- * Grpc config.
+ * Represents the TLS configuration for an RPC server.
+ * This class extends TlsConfig to inherit common TLS configuration properties.
  *
- * @author githubcheng2978.
+ * @author stone-98
  */
 public class RpcServerTlsConfig extends TlsConfig {
-    
+
+    /**
+     *  The class representing the configuration for SSL context refreshing in the RPC server.
+     */
     private String sslContextRefresher = "";
-    
+
+    /**
+     * Indicates whether compatibility mode is enabled.
+     */
     private Boolean compatibility = true;
-    
+
+    /**
+     * Gets the compatibility mode status.
+     *
+     * @return true if compatibility mode is enabled, false otherwise.
+     */
     public Boolean getCompatibility() {
         return compatibility;
     }
-    
+
+    /**
+     * Sets the compatibility mode status.
+     *
+     * @param compatibility true to enable compatibility mode, false otherwise.
+     */
     public void setCompatibility(Boolean compatibility) {
         this.compatibility = compatibility;
     }
-    
+
+    /**
+     * Gets the SSL context refresher.
+     *
+     * @return the SSL context refresher.
+     */
     public String getSslContextRefresher() {
         return sslContextRefresher;
     }
-    
+
+    /**
+     * Sets the SSL context refresher.
+     *
+     * @param sslContextRefresher the SSL context refresher to set.
+     */
     public void setSslContextRefresher(String sslContextRefresher) {
         this.sslContextRefresher = sslContextRefresher;
     }

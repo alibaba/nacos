@@ -37,6 +37,7 @@ import com.alibaba.nacos.common.remote.TlsConfig;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientStatus;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -64,7 +65,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -112,15 +112,6 @@ public abstract class GrpcClient extends RpcClient {
     /**
      * constructor.
      *
-     * @param properties .
-     */
-    public GrpcClient(Properties properties) {
-        this(DefaultGrpcClientConfig.newBuilder().fromProperties(properties).build());
-    }
-    
-    /**
-     * constructor.
-     *
      * @param clientConfig .
      */
     public GrpcClient(GrpcClientConfig clientConfig) {
@@ -163,7 +154,7 @@ public abstract class GrpcClient extends RpcClient {
     }
     
     public GrpcClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
-            TlsConfig tlsConfig) {
+            RpcClientTlsConfig tlsConfig) {
         this(DefaultGrpcClientConfig.newBuilder().setName(name).setThreadPoolCoreSize(threadPoolCoreSize)
                 .setTlsConfig(tlsConfig).setThreadPoolMaxSize(threadPoolMaxSize).setLabels(labels).build());
     }

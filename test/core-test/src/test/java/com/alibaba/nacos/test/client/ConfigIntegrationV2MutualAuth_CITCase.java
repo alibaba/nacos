@@ -24,8 +24,8 @@ import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
-import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.test.ConfigCleanUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -50,10 +50,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
-        RpcSdkServerTlsConfig.PREFIX + ".mutualAuthEnable=true", RpcSdkServerTlsConfig.PREFIX + ".compatibility=false",
-        RpcSdkServerTlsConfig.PREFIX + ".enableTls=true",
-        RpcSdkServerTlsConfig.PREFIX + ".certChainFile=test-server-cert.pem",
-        RpcSdkServerTlsConfig.PREFIX + ".certPrivateKey=test-server-key.pem", RpcSdkServerTlsConfig.PREFIX
+        RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
+        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
+        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
+        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem", RpcConstants.NACOS_SERVER_RPC
         + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigIntegrationV2MutualAuth_CITCase {
     
@@ -77,7 +77,7 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
     @Ignore("TODO, fix the cert expired problem")
     public void test_d_MutualAuth() throws Exception {
         
-        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
+        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setMutualAuthEnable(true);
         tlsConfig.setCertChainFile("test-client-cert.pem");
@@ -107,7 +107,7 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
     @Test
     public void test_e_ServerMutualAuthOnly() throws Exception {
         
-        RpcSdkClientTlsConfig tlsConfig = new RpcSdkClientTlsConfig();
+        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
         RpcClient client = RpcClientFactory.createClient("testServerMutualAuthNoly", ConnectionType.GRPC,

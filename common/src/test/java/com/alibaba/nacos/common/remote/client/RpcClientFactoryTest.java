@@ -48,10 +48,10 @@ public class RpcClientFactoryTest {
     RpcClient rpcClient;
     
     @Mock(lenient = true)
-    RpcClusterClientTlsConfig clusterClientTlsConfig;
+    RpcClientTlsConfig clusterClientTlsConfig;
     
     @Mock(lenient = true)
-    RpcSdkClientTlsConfig rpcClientTlsConfig;
+    RpcClientTlsConfig rpcClientTlsConfig;
     
     @BeforeClass
     public static void setUpBeforeClass() throws NoSuchFieldException, IllegalAccessException {

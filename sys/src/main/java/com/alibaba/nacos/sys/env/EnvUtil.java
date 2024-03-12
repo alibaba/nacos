@@ -24,8 +24,10 @@ import com.alibaba.nacos.plugin.environment.CustomEnvironmentPluginManager;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
 import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.EnumerablePropertySource;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.core.io.Resource;
 
@@ -43,6 +45,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 import java.util.HashMap;
 
@@ -168,6 +171,23 @@ public class EnvUtil {
     
     public static <T> T getRequiredProperty(String key, Class<T> targetType) throws IllegalStateException {
         return environment.getRequiredProperty(key, targetType);
+    }
+
+    public static Properties getProperties() {
+        Properties properties = new Properties();
+        for (PropertySource<?> propertySource : environment.getPropertySources()) {
+            if (propertySource instanceof EnumerablePropertySource) {
+                EnumerablePropertySource<?> enumerablePropertySource = (EnumerablePropertySource<?>) propertySource;
+                String[] propertyNames = enumerablePropertySource.getPropertyNames();
+                for (String propertyName : propertyNames) {
+                    Object propertyValue = enumerablePropertySource.getProperty(propertyName);
+                    if (propertyValue != null) {
+                        properties.put(propertyName, propertyValue.toString());
+                    }
+                }
+            }
+        }
+        return properties;
     }
     
     public static String resolvePlaceholders(String text) {

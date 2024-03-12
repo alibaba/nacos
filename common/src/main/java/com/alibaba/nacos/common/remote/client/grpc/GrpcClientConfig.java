@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 
 /**
  * GrpcCleint config. Use to collect and init Grpc client configuration.
@@ -94,7 +95,7 @@ public interface GrpcClientConfig extends RpcClientConfig {
      *
      * @param tlsConfig tlsConfig of client.
      */
-    void setTlsConfig(TlsConfig tlsConfig);
+    void setTlsConfig(RpcClientTlsConfig tlsConfig);
     
     /**
      * get timeout of connection setup(TimeUnit.MILLISECONDS).

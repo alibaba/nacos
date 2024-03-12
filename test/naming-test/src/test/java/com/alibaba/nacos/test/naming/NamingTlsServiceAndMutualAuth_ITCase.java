@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
-import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
@@ -51,10 +50,10 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 @RunWith(SpringRunner.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-        RpcSdkServerTlsConfig.PREFIX + ".enableTls=true", RpcSdkServerTlsConfig.PREFIX + ".mutualAuthEnable=true",
-        RpcSdkServerTlsConfig.PREFIX + ".compatibility=false",
-        RpcSdkServerTlsConfig.PREFIX + ".certChainFile=test-server-cert.pem",
-        RpcSdkServerTlsConfig.PREFIX + ".certPrivateKey=test-server-key.pem", RpcSdkServerTlsConfig.PREFIX
+        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true",
+        RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
+        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
+        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem", RpcConstants.NACOS_SERVER_RPC
         + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Ignore("TODO, Fix cert expired problem")
 public class NamingTlsServiceAndMutualAuth_ITCase {

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.common.remote.tls.RpcServerTlsConfig;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcHttp2ConnectionHandler;
 import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiators;
 import io.grpc.netty.shaded.io.grpc.netty.ProtocolNegotiationEvent;

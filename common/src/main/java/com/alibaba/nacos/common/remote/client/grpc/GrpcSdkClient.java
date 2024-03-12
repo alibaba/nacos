@@ -18,10 +18,9 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.common.Constants;
-import com.alibaba.nacos.common.remote.client.RpcSdkClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * gRPC client for sdk.
@@ -43,15 +42,6 @@ public class GrpcSdkClient extends GrpcClient {
     /**
      * Constructor.
      *
-     * @param properties .
-     */
-    public GrpcSdkClient(Properties properties) {
-        super(properties);
-    }
-    
-    /**
-     * Constructor.
-     *
      * @param name               name of client.
      * @param threadPoolCoreSize .
      * @param threadPoolMaxSize  .
@@ -63,7 +53,7 @@ public class GrpcSdkClient extends GrpcClient {
     }
     
     public GrpcSdkClient(String name, Integer threadPoolCoreSize, Integer threadPoolMaxSize, Map<String, String> labels,
-            RpcSdkClientTlsConfig tlsConfig) {
+            RpcClientTlsConfig tlsConfig) {
         super(name, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
     }
     

@@ -46,7 +46,9 @@ public class GrpcClusterClientTest {
     
     @Test
     public void testRpcPortOffsetDefault() {
-        grpcClusterClient = new GrpcClusterClient(new Properties());
+        DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder()
+                .buildClusterFromProperties(new Properties());
+        grpcClusterClient = new  GrpcClusterClient(builder.build());
         assertEquals(1001, grpcClusterClient.rpcPortOffset());
     }
     

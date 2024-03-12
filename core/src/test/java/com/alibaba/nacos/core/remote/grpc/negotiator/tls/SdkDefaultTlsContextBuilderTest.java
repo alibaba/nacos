@@ -17,105 +17,94 @@
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.core.remote.tls.RpcSdkServerTlsConfig;
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.common.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.lang.reflect.Field;
+import static org.mockito.Mockito.when;
 
+/**
+ * {@link DefaultTlsContextBuilder} unit test.
+ *
+ * @author stone-98
+ * @date 2024-03-11 17:11
+ */
+@RunWith(MockitoJUnitRunner.class)
 public class SdkDefaultTlsContextBuilderTest {
-    
+
     private ConfigurableEnvironment environment;
-    
+
+    @Mock
+    private RpcServerTlsConfig rpcServerTlsConfig;
+
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-        RpcSdkServerTlsConfig.getInstance().setEnableTls(true);
     }
-    
+
     @After
     public void tearDown() throws Exception {
-        RpcSdkServerTlsConfig.getInstance().setEnableTls(false);
-        RpcSdkServerTlsConfig.getInstance().setTrustAll(false);
-        RpcSdkServerTlsConfig.getInstance().setMutualAuthEnable(false);
-        RpcSdkServerTlsConfig.getInstance().setCertChainFile(null);
-        RpcSdkServerTlsConfig.getInstance().setCertPrivateKey(null);
-        RpcSdkServerTlsConfig.getInstance().setCiphers(null);
-        RpcSdkServerTlsConfig.getInstance().setProtocols(null);
-        RpcSdkServerTlsConfig.getInstance().setTrustCollectionCertFile(null);
-        RpcSdkServerTlsConfig.getInstance().setSslProvider("");
-        clearRpcServerTlsConfigInstance();
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testGetSslContextIllegal() {
-        DefaultTlsContextBuilder.getSslContext(RpcSdkServerTlsConfig.getInstance());
+        DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
     }
-    
+
     @Test
     public void testGetSslContextWithoutMutual() {
-        RpcServerTlsConfig grpcServerConfig = RpcSdkServerTlsConfig.getInstance();
-        grpcServerConfig.setCiphers("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        grpcServerConfig.setProtocols("TLSv1.2,TLSv1.3");
-        grpcServerConfig.setCertPrivateKey("test-server-key.pem");
-        grpcServerConfig.setCertChainFile("test-server-cert.pem");
-        DefaultTlsContextBuilder.getSslContext(RpcSdkServerTlsConfig.getInstance());
+        when(rpcServerTlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
+        when(rpcServerTlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
+        when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
+        when(rpcServerTlsConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
+        DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
     }
-    
+
     @Test
     public void testGetSslContextWithMutual() {
-        RpcServerTlsConfig grpcServerConfig = RpcSdkServerTlsConfig.getInstance();
-        grpcServerConfig.setTrustAll(true);
-        grpcServerConfig.setMutualAuthEnable(true);
-        grpcServerConfig.setCiphers("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        grpcServerConfig.setProtocols("TLSv1.2,TLSv1.3");
-        grpcServerConfig.setCertPrivateKey("test-server-key.pem");
-        grpcServerConfig.setCertChainFile("test-server-cert.pem");
-        DefaultTlsContextBuilder.getSslContext(RpcSdkServerTlsConfig.getInstance());
+        when(rpcServerTlsConfig.getTrustAll()).thenReturn(true);
+        when(rpcServerTlsConfig.getMutualAuthEnable()).thenReturn(true);
+        when(rpcServerTlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
+        when(rpcServerTlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
+        when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
+        when(rpcServerTlsConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
+        DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
     }
-    
+
     @Test
     public void testGetSslContextWithMutualAndPart() {
-        RpcServerTlsConfig grpcServerConfig = RpcSdkServerTlsConfig.getInstance();
-        grpcServerConfig.setMutualAuthEnable(true);
-        grpcServerConfig.setCiphers("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        grpcServerConfig.setProtocols("TLSv1.2,TLSv1.3");
-        grpcServerConfig.setCertPrivateKey("test-server-key.pem");
-        grpcServerConfig.setCertChainFile("test-server-cert.pem");
-        grpcServerConfig.setTrustCollectionCertFile("test-ca-cert.pem");
-        DefaultTlsContextBuilder.getSslContext(RpcSdkServerTlsConfig.getInstance());
+        when(rpcServerTlsConfig.getMutualAuthEnable()).thenReturn(true);
+        when(rpcServerTlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
+        when(rpcServerTlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
+        when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
+        when(rpcServerTlsConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
+        when(rpcServerTlsConfig.getTrustCollectionCertFile()).thenReturn("test-ca-cert.pem");
+        DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
     }
-    
+
     @Test(expected = IllegalArgumentException.class)
     public void testGetSslContextWithMutualAndPartIllegal() {
-        RpcServerTlsConfig grpcServerConfig = RpcSdkServerTlsConfig.getInstance();
-        grpcServerConfig.setMutualAuthEnable(true);
-        grpcServerConfig.setCiphers("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        grpcServerConfig.setProtocols("TLSv1.2,TLSv1.3");
-        grpcServerConfig.setCertPrivateKey("test-server-key.pem");
-        grpcServerConfig.setCertChainFile("test-server-cert.pem");
-        DefaultTlsContextBuilder.getSslContext(RpcSdkServerTlsConfig.getInstance());
+        when(rpcServerTlsConfig.getMutualAuthEnable()).thenReturn(true);
+        when(rpcServerTlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
+        when(rpcServerTlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
+        when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
+        when(rpcServerTlsConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
+        DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
     }
-    
+
     @Test(expected = NacosRuntimeException.class)
     public void testGetSslContextForNonExistFile() {
-        RpcServerTlsConfig grpcServerConfig = RpcSdkServerTlsConfig.getInstance();
-        grpcServerConfig.setCiphers("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        grpcServerConfig.setProtocols("TLSv1.2,TLSv1.3");
-        grpcServerConfig.setCertPrivateKey("non-exist-server-key.pem");
-        grpcServerConfig.setCertChainFile("non-exist-cert.pem");
-        DefaultTlsContextBuilder.getSslContext(RpcSdkServerTlsConfig.getInstance());
+        when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("non-exist-server-key.pem");
+        when(rpcServerTlsConfig.getCertChainFile()).thenReturn("non-exist-cert.pem");
+        DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
     }
-    
-    private static void clearRpcServerTlsConfigInstance() throws Exception {
-        Field instanceField = RpcSdkServerTlsConfig.class.getDeclaredField("instance");
-        instanceField.setAccessible(true);
-        instanceField.set(null, null);
-    }
+
 }

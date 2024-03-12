@@ -22,7 +22,6 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.util.Collections;
-import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,7 +45,7 @@ public class GrpcSdkClientTest {
     
     @Test
     public void testRpcPortOffsetDefault() {
-        grpcSdkClient = new GrpcSdkClient(new Properties());
+        grpcSdkClient = new GrpcSdkClient("test");
         assertEquals(1000, grpcSdkClient.rpcPortOffset());
     }
     
