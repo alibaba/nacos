@@ -78,7 +78,8 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
             paramList.add(tagArr[i]);
         }
         where.append(") ");
-        return new MapperResult(sql + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
+        return new MapperResult(sql + where + " ORDER BY id OFFSET " + context.getStartRow()
+                + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY",
                 paramList);
     }
     
@@ -125,8 +126,8 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
             paramList.add(tagArr[i]);
         }
         where.append(") ");
-        return new MapperResult(sqlFetchRows + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
-                paramList);
+        return new MapperResult(sqlFetchRows + where + " ORDER BY id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
+                + " ROWS ONLY", paramList);
     }
     
     @Override

@@ -26,7 +26,7 @@ public class AuthPageConstant {
     
     public static final String OFFSET = "OFFSET";
     
-    public static final String OFFSET_ROWS = "OFFSET ? ROWS";
+    public static final String OFFSET_ROWS = "ORDER BY id OFFSET ? ROWS";
     
     public static final String FETCH_NEXT = "FETCH NEXT ? ROWS ONLY";
     

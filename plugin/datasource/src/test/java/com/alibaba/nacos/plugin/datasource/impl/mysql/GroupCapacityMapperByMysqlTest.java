@@ -176,7 +176,8 @@ public class GroupCapacityMapperByMysqlTest {
         Object id = 1;
         context.putWhereParameter(FieldConstant.ID, id);
         MapperResult mapperResult = groupCapacityMapperByMysql.selectGroupInfoBySize(context);
-        Assert.assertEquals(mapperResult.getSql(), "SELECT id, group_id FROM group_capacity WHERE id > ? LIMIT ?");
+        Assert.assertEquals(mapperResult.getSql(), "SELECT id, group_id FROM group_capacity WHERE id > ? "
+                + " ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         context.putWhereParameter(FieldConstant.GMT_CREATE, createTime);
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id, pageSize});
     }

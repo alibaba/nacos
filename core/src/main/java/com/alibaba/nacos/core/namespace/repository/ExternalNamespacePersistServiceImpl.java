@@ -160,7 +160,10 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     
     @Override
     public boolean isExistTable(String tableName) {
-        String sql = String.format("SELECT 1 FROM %s LIMIT 1", tableName);
+        String sql = String.format("IF EXISTS (SELECT 1 FROM sys.tables WHERE name = N'%s')\n"
+                + "BEGIN\n"
+                + "    SELECT 1\n"
+                + "END", tableName);
         try {
             jt.queryForObject(sql, Integer.class);
             return true;

@@ -59,7 +59,8 @@ public class HistoryConfigInfoMapperByMySqlTest {
     @Test
     public void testRemoveConfigHistory() {
         MapperResult mapperResult = historyConfigInfoMapperByMySql.removeConfigHistory(context);
-        Assert.assertEquals(mapperResult.getSql(), "DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?");
+        Assert.assertEquals(mapperResult.getSql(), "DELETE FROM his_config_info WHERE gmt_modified < ? "
+                + " ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, limitSize});
     }
     
@@ -75,7 +76,7 @@ public class HistoryConfigInfoMapperByMySqlTest {
         MapperResult mapperResult = historyConfigInfoMapperByMySql.findDeletedConfig(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info "
-                        + "WHERE op_type = 'D' AND gmt_modified >= ? and nid > ? order by nid limit ? ");
+                        + "WHERE op_type = 'D' AND gmt_modified >= ? AND nid > ? ORDER BY nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
     }

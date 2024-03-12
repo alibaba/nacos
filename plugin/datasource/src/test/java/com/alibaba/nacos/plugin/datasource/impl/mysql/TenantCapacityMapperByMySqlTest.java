@@ -115,7 +115,8 @@ public class TenantCapacityMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.ID, id);
         context.putWhereParameter(FieldConstant.LIMIT_SIZE, limit);
         MapperResult mapperResult = tenantCapacityMapperByMySql.getCapacityList4CorrectUsage(context);
-        Assert.assertEquals(mapperResult.getSql(), "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?");
+        Assert.assertEquals(mapperResult.getSql(), "SELECT id, tenant_id FROM tenant_capacity WHERE id>? "
+                + "ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id, limit});
     }
     

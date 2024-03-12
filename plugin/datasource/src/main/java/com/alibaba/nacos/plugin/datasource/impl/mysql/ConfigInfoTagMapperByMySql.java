@@ -35,8 +35,8 @@ public class ConfigInfoTagMapperByMySql extends AbstractMapper implements Config
     @Override
     public MapperResult findAllConfigInfoTagForDumpAllFetchRows(MapperContext context) {
         String sql = " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
-                + " FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT " + context.getStartRow() + ","
-                + context.getPageSize() + " ) " + "g, config_info_tag t  WHERE g.id = t.id  ";
+                + " FROM (  SELECT id FROM config_info_tag  ORDER BY id OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "
+                + context.getPageSize() + " ROWS ONLY ) " + "g, config_info_tag t  WHERE g.id = t.id  ";
         return new MapperResult(sql, Collections.emptyList());
     }
     

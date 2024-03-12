@@ -135,7 +135,7 @@
         <logback.version>1.2.13</logback.version>
         <log4j.version>2.17.1</log4j.version>
         
-        <mysql-connector-java.version>8.0.28</mysql-connector-java.version>
+        <mssql-connector-java.version>8.4.1.jre8</mssql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
         <javatuples.version>1.2</javatuples.version>
@@ -852,9 +852,9 @@
             
             <!-- JDBC libs -->
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${mysql-connector-java.version}</version>
+                <groupId>com.microsoft.sqlserver</groupId>
+                <artifactId>mssql-jdbc</artifactId>
+                <version>${mssql-connector-java.version}</version>
             </dependency>
             
             <dependency>

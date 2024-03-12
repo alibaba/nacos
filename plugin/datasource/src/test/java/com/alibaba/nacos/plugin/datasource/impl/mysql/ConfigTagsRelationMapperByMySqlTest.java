@@ -85,8 +85,8 @@ public class ConfigTagsRelationMapperByMySqlTest {
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  "
                         + "a LEFT JOIN config_tags_relation b ON a.id=b.id "
                         + "WHERE  a.tenant_id=?  AND a.data_id=?  AND a.group_id=?  AND a.app_name=?  AND a.content LIKE ? "
-                        + " AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT "
-                        + startRow + "," + pageSize, mapperResult.getSql());
+                        + " AND b.tag_name IN (?, ?, ?, ?, ?) "
+                        + " ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY", mapperResult.getSql());
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");
@@ -125,8 +125,8 @@ public class ConfigTagsRelationMapperByMySqlTest {
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info a LEFT JOIN"
                         + " config_tags_relation b ON a.id=b.id  WHERE  a.tenant_id LIKE ?  AND a.data_id LIKE ?  "
-                        + "AND a.group_id LIKE ?  AND a.app_name = ?  AND a.content LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT "
-                        + startRow + "," + pageSize);
+                        + "AND a.group_id LIKE ?  AND a.app_name = ?  AND a.content LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) "
+                        + " ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");

@@ -37,7 +37,6 @@ import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjecto
 import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.ConfigInfoStateWrapperRowMapper;
 import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.ConfigInfoTagWrapperRowMapper;
 import com.alibaba.nacos.persistence.repository.RowMapperManager;
-import com.mysql.cj.jdbc.result.ResultSetImpl;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,6 +45,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.ResultSet;
 
 import static org.mockito.ArgumentMatchers.eq;
 
@@ -73,7 +73,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setContent("content1123434t");
         preConfig.setMd5("md54567");
         preConfig.setEncryptedDataKey("encrypted_data_key1324");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -104,7 +104,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setMd5("md54567");
         preConfig.setEncryptedDataKey("encrypted_data_key1324");
         preConfig.setBetaIps("127.0.0.1,127.0.0.2");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -134,7 +134,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setContent("content1123434t");
         preConfig.setMd5("md54567");
         preConfig.setEncryptedDataKey("encrypted_data_key1324");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -162,7 +162,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setEffect("effect233");
         preConfig.setType("type132435");
         preConfig.setSchema("scheme344");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("src_ip"))).thenReturn(preConfig.getCreateIp());
         Mockito.when(resultSet.getString(eq("type"))).thenReturn(preConfig.getType());
         Mockito.when(resultSet.getString(eq("c_desc"))).thenReturn(preConfig.getDesc());
@@ -190,7 +190,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setContent("content1123434t");
         preConfig.setMd5("md54567");
         preConfig.setEncryptedDataKey("encrypted_data_key1324");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
@@ -222,7 +222,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setContent("content1123434t");
         preConfig.setMd5("md54567");
         preConfig.setEncryptedDataKey("encrypted_data_key1324");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -251,7 +251,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setContent("content1123434t");
         preConfig.setMd5("md54567");
         preConfig.setEncryptedDataKey("encrypted_data_key1324");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -282,7 +282,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setMd5("md54567");
         preConfig.setEncryptedDataKey("encrypted_data_key1324");
         preConfig.setTag("tag567890");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -307,7 +307,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setGroup("group_id11");
         preConfig.setId(1243567898L);
         preConfig.setContent("content1123434t");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("content"))).thenReturn(preConfig.getContent());
@@ -328,7 +328,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setDatumId("datum4567890");
         preConfig.setTenant("tenang34567890");
         preConfig.setAppName("app3456789");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -349,7 +349,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setDataId("testDataId");
         preConfig.setGroup("group_id11");
         preConfig.setTenant("tenang34567890");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -373,7 +373,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setOpType("D2345678");
         preConfig.setCreatedTime(new Timestamp(System.currentTimeMillis()));
         preConfig.setLastModifiedTime(new Timestamp(System.currentTimeMillis()));
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -410,7 +410,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setContent("content1123434t");
         preConfig.setMd5("md54567");
         preConfig.setEncryptedDataKey("key3456789");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -439,7 +439,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setGroup("group_id11");
         preConfig.setTenant("tenant_id11111");
         preConfig.setId(1243567898L);
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
@@ -458,7 +458,7 @@ public class ConfigRowMapperInjectorTest {
         preConfig.setDataId("testDataId");
         preConfig.setGroup("group_id11");
         preConfig.setAppName("appertyui4567");
-        ResultSetImpl resultSet = Mockito.mock(ResultSetImpl.class);
+        ResultSet resultSet = Mockito.mock(ResultSet.class);
         Mockito.when(resultSet.getString(eq("data_id"))).thenReturn(preConfig.getDataId());
         Mockito.when(resultSet.getString(eq("group_id"))).thenReturn(preConfig.getGroup());
         Mockito.when(resultSet.getString(eq("app_name"))).thenReturn(preConfig.getAppName());
