@@ -22,7 +22,7 @@ import com.alibaba.nacos.common.remote.TlsConfig;
  * Represents the TLS configuration for an RPC server.
  * This class extends TlsConfig to inherit common TLS configuration properties.
  *
- * @author stone-98
+ * @author githubcheng2978.
  */
 public class RpcServerTlsConfig extends TlsConfig {
 
