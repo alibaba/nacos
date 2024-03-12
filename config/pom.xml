@@ -29,6 +29,7 @@
     <packaging>jar</packaging>
     
     <name>nacos-config ${project.version}</name>
+    <description>nacos-config</description>
     <url>https://nacos.io</url>
     
     <dependencies>

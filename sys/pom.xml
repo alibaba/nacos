@@ -29,6 +29,7 @@
     <artifactId>nacos-sys</artifactId>
     <packaging>jar</packaging>
     <name>nacos-sys ${project.version}</name>
+    <description>nacos-sys</description>
     <url>https://nacos.io</url>
     
     <dependencies>

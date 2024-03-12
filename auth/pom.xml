@@ -29,6 +29,7 @@
     <artifactId>nacos-auth</artifactId>
     <packaging>jar</packaging>
     <name>nacos-auth ${project.version}</name>
+    <description>nacos-auth</description>
     <url>https://nacos.io</url>
 
     <dependencies>

@@ -27,6 +27,7 @@
     
     <artifactId>default-control-plugin</artifactId>
     <name>nacos-default-control-plugin ${project.version}</name>
+    <description>nacos-default-control-plugin</description>
     
     <dependencies>
         <dependency>

@@ -30,6 +30,7 @@
     <packaging>jar</packaging>
     
     <name>nacos-cmdb ${project.version}</name>
+    <description>nacos-cmdb</description>
     <url>https://nacos.io</url>
     
     <dependencies>

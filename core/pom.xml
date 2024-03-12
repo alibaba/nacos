@@ -31,6 +31,7 @@
     <packaging>jar</packaging>
 
     <name>nacos-core ${project.version}</name>
+    <description>nacos-core</description>
     <url>https://nacos.io</url>
 
     <dependencies>

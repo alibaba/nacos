@@ -27,6 +27,7 @@
     
     <artifactId>default-auth-plugin</artifactId>
     <name>nacos-default-auth-plugin ${project.version}</name>
+    <description>nacos-default-auth-plugin</description>
     
     <dependencies>
         <dependency>

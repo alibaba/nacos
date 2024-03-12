@@ -28,6 +28,7 @@
     <packaging>jar</packaging>
     
     <name>nacos-prometheus ${project.version}</name>
+    <description>nacos-prometheus</description>
     <url>https://nacos.io</url>
     
     <dependencies>

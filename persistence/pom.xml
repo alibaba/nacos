@@ -28,6 +28,7 @@
     
     <artifactId>nacos-persistence</artifactId>
     <name>nacos-persistence ${project.version}</name>
+    <description>nacos-persistence</description>
     <url>https://nacos.io</url>
     
     <dependencies>

@@ -27,6 +27,7 @@
     <packaging>jar</packaging>
     
     <name>nacos-istio ${project.version}</name>
+    <description>nacos-istio</description>
     <url>https://nacos.io</url>
     
     <dependencies>
