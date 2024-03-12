@@ -76,7 +76,7 @@ public class LocalDiskRuleStorage implements RuleStorage {
             pointFile.createNewFile();
         }
         DiskUtils.writeFile(pointFile, ruleContent.getBytes(Constants.ENCODE), false);
-        LOGGER.info("Save connection rule to local,pointName={}, ruleContent ={} ", ruleContent);
+        LOGGER.info("Save connection rule to local, ruleContent ={} ", ruleContent);
     }
     
     @Override

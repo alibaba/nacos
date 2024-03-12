@@ -143,7 +143,7 @@ public class ServiceInfoHolder implements Closeable {
         if (changed) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
-            if (!failoverReactor.isFailoverSwitch()) {
+            if (!failoverReactor.isFailoverSwitch(serviceKey)) {
                 NotifyCenter.publishEvent(
                         new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
                                 serviceInfo.getClusters(), serviceInfo.getHosts()));

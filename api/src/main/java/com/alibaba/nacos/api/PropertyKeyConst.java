@@ -33,6 +33,8 @@ public class PropertyKeyConst {
     
     public static final String ENDPOINT_PORT = "endpointPort";
     
+    public static final String ENDPOINT_CONTEXT_PATH = "endpointContextPath";
+    
     public static final String SERVER_NAME = "serverName";
     
     public static final String NAMESPACE = "namespace";
@@ -93,6 +95,8 @@ public class PropertyKeyConst {
     public static class SystemEnv {
         
         public static final String ALIBABA_ALIWARE_ENDPOINT_PORT = "ALIBABA_ALIWARE_ENDPOINT_PORT";
+        
+        public static final String ALIBABA_ALIWARE_ENDPOINT_CONTEXT_PATH = "ALIBABA_ALIWARE_ENDPOINT_CONTEXT_PATH";
         
         public static final String ALIBABA_ALIWARE_NAMESPACE = "ALIBABA_ALIWARE_NAMESPACE";
         

@@ -116,7 +116,7 @@
 * [#175] Support deregistering instance automatically.
 * [#176] Naming client query instance method should bypass local cache at client start.
 * [#177] Console supports registering new empty service and delete empty service.
-* [#181] NPE when adding a instance if no leader in the raft cluster.
+* [#181] NPE when adding an instance if no leader in the raft cluster.
 * [#193] Configure host domain name cause nacos server cluster is unavailable.
 * [#209] Disable service and cluster level customization in client registerInstance method.
 * [#214] Please support Java 11.

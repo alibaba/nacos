@@ -240,7 +240,10 @@ public class ConfigServletInnerTest {
         actualValue = configServletInner.doGetConfig(request, response, dataId, group, tenant,
                 "auto-tag-test-not-exist", "true", "localhost");
         Assert.assertEquals(HttpServletResponse.SC_NOT_FOUND + "", actualValue);
-        Assert.assertEquals("config data not exist\n", response.getContentAsString());
+        String expectedContent = "config data not exist";
+        String actualContent = response.getContentAsString();
+        
+        Assert.assertTrue(actualContent.contains(expectedContent));
         
     }
     

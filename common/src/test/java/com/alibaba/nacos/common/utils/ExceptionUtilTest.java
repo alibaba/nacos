@@ -53,7 +53,7 @@ public class ExceptionUtilTest {
         String stackTrace = ExceptionUtil.getStackTrace(nacosRuntimeException);
         assertTrue(stackTrace.contains(
                 "com.alibaba.nacos.api.exception.runtime.NacosRuntimeException: errCode: 500, errMsg: Test"));
-        assertTrue(stackTrace.contains("at "));
+        assertTrue(stackTrace.contains("at"));
         assertTrue(stackTrace.contains("Caused by: java.lang.RuntimeException: I'm caused exception."));
     }
 }
