@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 public class ReuseHttpServletRequestTest {
     private MockHttpServletRequest target;
+
     private ReuseHttpServletRequest reuseHttpServletRequest;
 
     @BeforeEach
