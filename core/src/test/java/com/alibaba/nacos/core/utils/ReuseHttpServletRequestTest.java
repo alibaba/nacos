@@ -37,7 +37,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @date 2023/12/28
  */
 public class ReuseHttpServletRequestTest {
-
     private MockHttpServletRequest target;
     private ReuseHttpServletRequest reuseHttpServletRequest;
 
