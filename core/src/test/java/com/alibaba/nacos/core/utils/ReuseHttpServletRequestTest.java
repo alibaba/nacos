@@ -22,7 +22,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.ServletInputStream;
-import java.io.*;
+
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.Map;
 
 import static org.junit.Assert.fail;
@@ -71,13 +73,11 @@ public class ReuseHttpServletRequestTest {
         assertNotNull(body);
     }
 
-
     @Test
     public void testGetReader() throws IOException {
         BufferedReader reader = reuseHttpServletRequest.getReader();
         assertNotNull(reader);
     }
-
 
     @Test
     public void testGetParameterMap() {
@@ -88,14 +88,12 @@ public class ReuseHttpServletRequestTest {
         assertEquals("123", parameterMap.get("value")[0]);
     }
 
-
     @Test
     public void testGetParameter() {
         String name = reuseHttpServletRequest.getParameter("name");
         assertNotNull(name);
         assertEquals("test", name);
     }
-
 
     @Test
     public void testGetParameterValues() {
