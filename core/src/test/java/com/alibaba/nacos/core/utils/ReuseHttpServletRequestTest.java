@@ -50,27 +50,22 @@ public class ReuseHttpServletRequestTest {
 
     @Test
     public void testConstructor() throws IOException {
-        // 测试空参数构造
         try {
             new ReuseHttpServletRequest(null);
             fail("IllegalArgumentException expected");
         } catch (IllegalArgumentException e) {
             assertEquals("Request cannot be null", e.getMessage());
         }
-
-        // 测试正常参数构造
         ReuseHttpServletRequest request = new ReuseHttpServletRequest(target);
         assertNotNull(request);
     }
 
     @Test
     public void testGetBody() throws Exception {
-        // 测试非multipart/form-data类型
         Object body = reuseHttpServletRequest.getBody();
         assertNotNull(body);
         assertEquals("name=test&value=123&", body.toString());
 
-        // 测试multipart/form-data类型
         target.setContentType(MediaType.MULTIPART_FORM_DATA);
         body = reuseHttpServletRequest.getBody();
         assertNotNull(body);
