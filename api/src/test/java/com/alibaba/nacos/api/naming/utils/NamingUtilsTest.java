@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class NamingUtilsTest {
@@ -81,6 +82,18 @@ public class NamingUtilsTest {
     @Test
     public void testGetGroupNameWithEmpty() {
         assertEquals(StringUtils.EMPTY, NamingUtils.getGroupName(null));
+    }
+    
+    @Test
+    public void testIsServiceNameCompatibilityMode() {
+        String serviceName1 = "group@@serviceName";
+        assertTrue(NamingUtils.isServiceNameCompatibilityMode(serviceName1));
+    
+        String serviceName2 = "serviceName";
+        assertFalse(NamingUtils.isServiceNameCompatibilityMode(serviceName2));
+    
+        String serviceName3 = null;
+        assertFalse(NamingUtils.isServiceNameCompatibilityMode(serviceName3));
     }
     
     @Test
@@ -227,6 +240,19 @@ public class NamingUtilsTest {
             instance.setPort(9089);
             instance.setEphemeral(false);
             NamingUtils.checkInstanceIsEphemeral(instance);
+        } catch (NacosException e) {
+            Assert.assertEquals(e.getErrCode(), NacosException.INVALID_PARAM);
+        }
+    }
+
+    @Test
+    public void testCheckInstanceIsNull() throws NacosException {
+        Instance instance = new Instance();
+        instance.setIp("127.0.0.1");
+        instance.setPort(9089);
+        NamingUtils.checkInstanceIsLegal(instance);
+        try {
+            NamingUtils.checkInstanceIsLegal(null);
         } catch (NacosException e) {
             Assert.assertEquals(e.getErrCode(), NacosException.INVALID_PARAM);
         }

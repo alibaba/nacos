@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.remote.request.ClientDetectionRequest;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.plugin.control.Loggers;
 
 import java.util.HashSet;
@@ -53,18 +52,17 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
         // remove overload connection
         ejectOverLimitConnection();
     }
-
+    
     /**
      * eject the outdated connection.
      */
     private void ejectOutdatedConnection() {
         try {
-    
+            
             Loggers.CONNECTION.info("Connection check task start");
-    
+            
             Map<String, Connection> connections = connectionManager.connections;
             int totalCount = connections.size();
-            MetricsMonitor.getLongConnectionMonitor().set(totalCount);
             int currentSdkClientCount = connectionManager.currentSdkClientCount();
             
             Loggers.CONNECTION.info("Long connection metrics detail ,Total count ={}, sdkCount={},clusterCount={}",
@@ -76,6 +74,8 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
             for (Map.Entry<String, Connection> entry : connections.entrySet()) {
                 Connection client = entry.getValue();
                 if (now - client.getMetaInfo().getLastActiveTime() >= KEEP_ALIVE_TIME) {
+                    outDatedConnections.add(client.getMetaInfo().getConnectionId());
+                } else if (client.getMetaInfo().pushQueueBlockTimesLastOver(300 * 1000)) {
                     outDatedConnections.add(client.getMetaInfo().getConnectionId());
                 }
             }
@@ -147,7 +147,7 @@ public class NacosRuntimeConnectionEjector extends RuntimeConnectionEjector {
             Loggers.CONNECTION.error("Error occurs during connection check... ", e);
         }
     }
-
+    
     /**
      * eject the over limit connection.
      */

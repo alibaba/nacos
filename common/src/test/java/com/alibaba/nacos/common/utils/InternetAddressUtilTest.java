@@ -24,6 +24,7 @@ import java.lang.reflect.Modifier;
 
 /**
  * test IpUtil.
+ *
  * @ClassName: IpUtilTest
  * @date 2020/9/3 10:31
  */
@@ -56,7 +57,8 @@ public class InternetAddressUtilTest {
     
     @Test
     public void testGetIPFromString() {
-        Assert.assertEquals("[::1]", InternetAddressUtil.getIPFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        Assert.assertEquals("[::1]",
+                InternetAddressUtil.getIPFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
         Assert.assertEquals("[::1]", InternetAddressUtil.getIPFromString(
                 "jdbc:mysql://[::1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
@@ -66,7 +68,7 @@ public class InternetAddressUtilTest {
                 "jdbc:mysql://127.0.0.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString("http://[::1:666"));
-    
+        
         Assert.assertEquals("",
                 InternetAddressUtil.getIPFromString("http://[dddd]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString(
@@ -107,7 +109,7 @@ public class InternetAddressUtilTest {
         checkSplitIPPortStr("[2001:DB8:0:0:1::1]:88", false, "[2001:DB8:0:0:1::1]", "88");
         checkSplitIPPortStr("localhost:8848", false, "localhost", "8848");
         checkSplitIPPortStr("[dead::beef]:88", false, "[dead::beef]", "88");
-    
+        
         // illegal ip will get abnormal results
         checkSplitIPPortStr("::1:88", false, "", "", "1", "88");
         checkSplitIPPortStr("[::1:88", false, "[", "", "1", "88");
@@ -174,11 +176,22 @@ public class InternetAddressUtilTest {
         Assert.assertEquals("[::1]", InternetAddressUtil.localHostIP());
     }
     
+    @Test
+    public void testIpToInt() {
+        Assert.assertEquals(2130706433, InternetAddressUtil.ipToInt("127.0.0.1"));
+        Assert.assertEquals(-1062731775, InternetAddressUtil.ipToInt("192.168.0.1"));
+    }
+    
+    @Test(expected = IllegalArgumentException.class)
+    public void testIllegalIpToInt() {
+        InternetAddressUtil.ipToInt("127.0.0.256");
+    }
+    
     /**
-     * checkSplitIpPortStr.
-     * 2020/9/4 14:12
-     * @param addr addr
-     * @param isEx isEx
+     * checkSplitIpPortStr. 2020/9/4 14:12
+     *
+     * @param addr       addr
+     * @param isEx       isEx
      * @param equalsStrs equalsStrs
      */
     public static void checkSplitIPPortStr(String addr, boolean isEx, String... equalsStrs) {

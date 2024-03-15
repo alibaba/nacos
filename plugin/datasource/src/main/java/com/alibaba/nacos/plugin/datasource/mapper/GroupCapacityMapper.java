@@ -195,7 +195,7 @@ public interface GroupCapacityMapper extends Mapper {
                 "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = '"
                         + NamespaceUtil.getNamespaceDefaultId() + "')," + " gmt_modified = ? WHERE group_id= ?",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.GROUP_ID),
-                        context.getWhereParameter(FieldConstant.GMT_MODIFIED),
+                        context.getUpdateParameter(FieldConstant.GMT_MODIFIED),
                         context.getWhereParameter(FieldConstant.GROUP_ID)));
     }
     

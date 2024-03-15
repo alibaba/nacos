@@ -42,18 +42,23 @@ public class ConfigCommonConfigTest {
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-        commonConfig = ConfigCommonConfig.getInstance();
+        Constructor<ConfigCommonConfig> declaredConstructor = ConfigCommonConfig.class.getDeclaredConstructor();
+        declaredConstructor.setAccessible(true);
+        commonConfig = declaredConstructor.newInstance();
     }
     
     @Test
     public void getMaxPushRetryTimes() {
-        assertEquals(50, commonConfig.getMaxPushRetryTimes());
+        Integer property = EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
+        assertEquals(property.intValue(), commonConfig.getMaxPushRetryTimes());
     }
     
     @Test
     public void setMaxPushRetryTimes() {
+        int maxPushRetryTimesOld = commonConfig.getMaxPushRetryTimes();
         commonConfig.setMaxPushRetryTimes(100);
         assertEquals(100, commonConfig.getMaxPushRetryTimes());
+        commonConfig.setMaxPushRetryTimes(maxPushRetryTimesOld);
     }
     
     @Test

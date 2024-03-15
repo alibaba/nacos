@@ -29,6 +29,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -281,7 +282,11 @@ public class ExternalDataSourceServiceImpl implements DataSourceService {
             for (int i = 0; i < testJtList.size(); i++) {
                 JdbcTemplate jdbcTemplate = testJtList.get(i);
                 try {
-                    jdbcTemplate.queryForMap(sql);
+                    try {
+                        jdbcTemplate.queryForMap(sql);
+                    } catch (EmptyResultDataAccessException e) {
+                        // do nothing.
+                    }
                     isHealthList.set(i, Boolean.TRUE);
                 } catch (DataAccessException e) {
                     if (i == masterIndex) {

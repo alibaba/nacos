@@ -19,59 +19,137 @@ package com.alibaba.nacos.client.naming.backups;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
+import com.alibaba.nacos.common.utils.ReflectUtils;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
-import java.util.Date;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
+
+@RunWith(MockitoJUnitRunner.class)
 public class FailoverReactorTest {
     
-    @Test
-    public void testInit() throws NacosException, NoSuchFieldException, IllegalAccessException {
-        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp");
-        Field executorService = FailoverReactor.class.getDeclaredField("executorService");
-        executorService.setAccessible(true);
-        ScheduledExecutorService o = (ScheduledExecutorService) executorService.get(failoverReactor);
-        Assert.assertFalse(o.isShutdown());
-        failoverReactor.shutdown();
-        Assert.assertTrue(o.isShutdown());
+    @Mock
+    ServiceInfoHolder holder;
+    
+    @Mock
+    FailoverDataSource failoverDataSource;
+    
+    FailoverReactor failoverReactor;
+    
+    @Before
+    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+        failoverReactor = new FailoverReactor(holder, UUID.randomUUID().toString());
+        Field failoverDataSourceField = FailoverReactor.class.getDeclaredField("failoverDataSource");
+        failoverDataSourceField.setAccessible(true);
+        failoverDataSourceField.set(failoverReactor, failoverDataSource);
     }
     
-    @Test
-    public void testAddDay() throws NacosException {
-        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp");
-        Date date = new Date();
-        Date actual = failoverReactor.addDay(date, 1);
-        Assert.assertEquals(date.getTime() + 24 * 60 * 60 * 1000, actual.getTime());
+    @After
+    public void tearDown() throws NacosException {
         failoverReactor.shutdown();
     }
     
     @Test
     public void testIsFailoverSwitch() throws NacosException {
-        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp");
         Assert.assertFalse(failoverReactor.isFailoverSwitch());
-        failoverReactor.shutdown();
         
     }
     
     @Test
     public void testGetService() throws NacosException {
-        ServiceInfoHolder holder = Mockito.mock(ServiceInfoHolder.class);
-        Mockito.when(holder.getServiceInfoMap()).thenReturn(new HashMap<>());
-        FailoverReactor failoverReactor = new FailoverReactor(holder, "/tmp");
         ServiceInfo info = failoverReactor.getService("aa@@bb");
-        Assert.assertEquals(new ServiceInfo("aa@@bb").toString(), info.toString());
-        failoverReactor.shutdown();
-        
+        assertEquals(new ServiceInfo("aa@@bb").toString(), info.toString());
+    }
+    
+    @Test
+    public void testRefreshFromDisabledToEnabled() throws InterruptedException {
+        // make sure the first no delay refresh thread finished.
+        TimeUnit.MILLISECONDS.sleep(500);
+        FailoverSwitch mockFailoverSwitch = new FailoverSwitch(true);
+        when(failoverDataSource.getSwitch()).thenReturn(mockFailoverSwitch);
+        Map<String, FailoverData> map = new HashMap<>();
+        ServiceInfo serviceInfo = new ServiceInfo("a@@b");
+        map.put("a@@b", NamingFailoverData.newNamingFailoverData(serviceInfo));
+        when(failoverDataSource.getFailoverData()).thenReturn(map);
+        when(holder.isChangedServiceInfo(any(), any())).thenReturn(true);
+        // waiting refresh thread work
+        TimeUnit.MILLISECONDS.sleep(5500);
+        ServiceInfo actual = failoverReactor.getService("a@@b");
+        assertEquals(serviceInfo, actual);
+    }
+    
+    @Test
+    public void testRefreshFromDisabledToEnabledWithException() throws InterruptedException {
+        // make sure the first no delay refresh thread finished.
+        TimeUnit.MILLISECONDS.sleep(500);
+        FailoverSwitch mockFailoverSwitch = new FailoverSwitch(true);
+        when(failoverDataSource.getSwitch()).thenReturn(mockFailoverSwitch);
+        when(failoverDataSource.getFailoverData()).thenReturn(null);
+        // waiting refresh thread work
+        TimeUnit.MILLISECONDS.sleep(5500);
+        assertTrue(((Map) ReflectUtils.getFieldValue(failoverDataSource, "serviceMap", new HashMap<>())).isEmpty());
+    }
+    
+    @Test
+    public void testRefreshFromEnabledToDisabled()
+            throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+        // make sure the first no delay refresh thread finished.
+        TimeUnit.MILLISECONDS.sleep(500);
+        FailoverSwitch mockFailoverSwitch = new FailoverSwitch(false);
+        when(failoverDataSource.getSwitch()).thenReturn(mockFailoverSwitch);
+        Field failoverSwitchEnableField = FailoverReactor.class.getDeclaredField("failoverSwitchEnable");
+        failoverSwitchEnableField.setAccessible(true);
+        failoverSwitchEnableField.set(failoverReactor, true);
+        Map<String, ServiceInfo> map = new HashMap<>();
+        ServiceInfo serviceInfo = new ServiceInfo("a@@b");
+        map.put("a@@b", serviceInfo);
+        when(holder.getServiceInfoMap()).thenReturn(map);
+        Field serviceMapField = FailoverReactor.class.getDeclaredField("serviceMap");
+        serviceMapField.setAccessible(true);
+        serviceMapField.set(failoverReactor, map);
+        when(holder.isChangedServiceInfo(any(), any())).thenReturn(true);
+        // waiting refresh thread work
+        TimeUnit.MILLISECONDS.sleep(5500);
+        ServiceInfo actual = failoverReactor.getService("a@@b");
+        assertNotEquals(serviceInfo, actual);
+    }
+    
+    @Test
+    public void testFailoverServiceCntMetrics()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetrics");
+        method.setAccessible(true);
+        method.invoke(failoverReactor);
+        // No exception
+    }
+    
+    @Test
+    public void testFailoverServiceCntMetricsClear()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
+        Field field = FailoverReactor.class.getDeclaredField("meterMap");
+        field.setAccessible(true);
+        field.set(failoverReactor, Collections.singletonMap("a", null));
+        Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetricsClear");
+        method.setAccessible(true);
+        method.invoke(failoverReactor);
+        // No exception
     }
 }

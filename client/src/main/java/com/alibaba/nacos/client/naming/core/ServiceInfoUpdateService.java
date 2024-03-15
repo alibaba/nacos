@@ -25,7 +25,6 @@ import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -50,6 +49,8 @@ public class ServiceInfoUpdateService implements Closeable {
     private static final long DEFAULT_DELAY = 1000L;
     
     private static final int DEFAULT_UPDATE_CACHE_TIME_MULTIPLE = 6;
+    
+    private static final int MIN_THREAD_NUM = 1;
     
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<>();
     
@@ -82,11 +83,13 @@ public class ServiceInfoUpdateService implements Closeable {
     }
     
     private int initPollingThreadCount(NacosClientProperties properties) {
+        int count = ThreadUtils.getSuitableThreadCount(1) > 1 ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
         if (properties == null) {
-            return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
+            return count;
         }
-        return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
-                UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+        count = Math.min(properties.getInteger(PropertyKeyConst.NAMING_POLLING_MAX_THREAD_COUNT, count), count);
+        count = Math.max(count, MIN_THREAD_NUM);
+        return properties.getInteger(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT, count);
     }
     
     /**

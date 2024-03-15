@@ -40,6 +40,7 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
+    nacosMode: 'MODE',
     doesNotExist: 'The page you visit does not exist',
     configurationManagementVirtual: 'ConfigManagement',
     configurationManagement: 'Configurations',
@@ -63,6 +64,7 @@ const I18N_CONF = {
     roleManagement: 'Role Management',
     privilegeManagement: 'Privilege Management',
     consoleClosed: 'Console Closed',
+    settingCenter: 'Setting Center',
   },
   Password: {
     passwordNotConsistent: 'The passwords are not consistent',
@@ -671,8 +673,16 @@ const I18N_CONF = {
     readWrite: 'Read and write',
   },
   Components: {
-      copySuccessfully: 'Success copied!',
-  }
+    copySuccessfully: 'Success copied!',
+  },
+  SettingCenter: {
+    settingTitle: 'Setting Center',
+    settingTheme: 'Themes',
+    settingLight: 'light',
+    settingDark: 'dark',
+    settingLocale: 'Language',
+    settingSubmit: 'Apply',
+  },
 };
 
 export default I18N_CONF;

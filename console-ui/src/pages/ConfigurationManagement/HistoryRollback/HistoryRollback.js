@@ -214,8 +214,8 @@ class HistoryRollback extends React.Component {
   goCompare(record) {
     let tenant = getParams('namespace') || '';
     let serverId = getParams('serverId') || 'center';
-    this.getConfig(-1, tenant, serverId, this.dataId, this.group).then(lasted => {
-      this.getHistoryConfig(record.id, this.dataId, this.group).then(selected => {
+    this.getConfig(-1, tenant, serverId, record.dataId, record.group).then(lasted => {
+      this.getHistoryConfig(record.id, record.dataId, record.group).then(selected => {
         this.diffEditorDialog.current.getInstance().openDialog(selected.content, lasted.content);
       });
     });
@@ -457,7 +457,6 @@ class HistoryRollback extends React.Component {
               pageSize={this.state.pageSize}
               onChange={this.changePage.bind(this)}
             />
-            ,
           </div>
           <DiffEditorDialog
             ref={this.diffEditorDialog}

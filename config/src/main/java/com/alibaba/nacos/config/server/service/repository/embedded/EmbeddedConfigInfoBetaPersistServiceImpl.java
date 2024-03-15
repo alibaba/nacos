@@ -73,7 +73,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+     * @param databaseOperate databaseOperate.
      */
     public EmbeddedConfigInfoBetaPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
@@ -147,17 +147,17 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigOperateResult insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser) {
-        if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
-            return addConfigInfo4Beta(configInfo, betaIps, srcIp, null);
+        if (findConfigInfo4BetaState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
+            return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         } else {
-            return updateConfigInfo4Beta(configInfo, betaIps, srcIp, null);
+            return updateConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         }
     }
     
     @Override
     public ConfigOperateResult insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps,
             final String srcIp, final String srcUser) {
-        if (findConfigInfo4Beta(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
+        if (findConfigInfo4BetaState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant()) == null) {
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         } else {
             return updateConfigInfo4BetaCas(configInfo, betaIps, srcIp, srcUser);
@@ -168,7 +168,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public void removeConfigInfo4Beta(final String dataId, final String group, final String tenant) {
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
+        ConfigInfoStateWrapper configInfo = findConfigInfo4BetaState(dataId, group, tenant);
         if (configInfo != null) {
             try {
                 ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
@@ -227,7 +227,7 @@ public class EmbeddedConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
             String srcUser) {
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
-
+        
         configInfo.setTenant(tenantTmp);
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);

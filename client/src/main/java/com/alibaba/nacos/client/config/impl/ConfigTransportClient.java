@@ -175,8 +175,10 @@ public abstract class ConfigTransportClient {
     
     /**
      * listen change .
+     *
+     * @throws NacosException nacos exception throws, should retry.
      */
-    public abstract void executeConfigListen();
+    public abstract void executeConfigListen() throws NacosException;
     
     /**
      * remove cache implements.

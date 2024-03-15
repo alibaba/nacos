@@ -38,6 +38,7 @@ public class InetAddressValidatorTest {
     @Test
     public void isIPv6MixedAddress() {
         Assert.assertTrue(InetAddressValidator.isIPv6MixedAddress("1:0:0:0:0:0:172.12.55.18"));
+        Assert.assertTrue(InetAddressValidator.isIPv6MixedAddress("::172.12.55.18"));
         Assert.assertFalse(InetAddressValidator.isIPv6MixedAddress("2001:DB8::8:800:200C141aA"));
     }
     
@@ -50,5 +51,11 @@ public class InetAddressValidatorTest {
     @Test
     public void isIPv4Address() {
         Assert.assertTrue(InetAddressValidator.isIPv4Address("192.168.1.2"));
+    }
+    
+    @Test
+    public void isLinkLocalIPv6WithZoneIndex() {
+        Assert.assertTrue(InetAddressValidator.isLinkLocalIPv6WithZoneIndex("fe80::1%lo0"));
+        Assert.assertFalse(InetAddressValidator.isLinkLocalIPv6WithZoneIndex("2000:0000:0000:0000:0001:2345:6789:abcd"));
     }
 }

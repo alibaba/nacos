@@ -55,6 +55,7 @@ class ListeningToQuery extends React.Component {
       pageSize: 10,
       currentPage: 1,
       dataSource: [],
+      totalDataSource: [],
     };
     this.field = new Field(this);
     this.group = getParams('listeningGroup') || '';
@@ -127,8 +128,9 @@ class ListeningToQuery extends React.Component {
             }
           }
           self.setState({
-            dataSource: dataSoureTmp || [],
+            totalDataSource: dataSoureTmp || [],
             total: dataSoureTmp.length || 0,
+            dataSource: dataSoureTmp.slice(0, self.state.pageSize),
           });
         }
       },
@@ -141,8 +143,10 @@ class ListeningToQuery extends React.Component {
   showMore() {}
 
   changePage = value => {
+    const startIndex = (value - 1) * this.state.pageSize;
     this.setState({
       currentPage: value,
+      dataSource: this.state.totalDataSource.slice(startIndex, startIndex + this.state.pageSize),
     });
   };
 
@@ -330,7 +334,6 @@ class ListeningToQuery extends React.Component {
               pageSize={this.state.pageSize}
               onChange={this.changePage}
             />
-            ,
           </div>
         </Loading>
       </>

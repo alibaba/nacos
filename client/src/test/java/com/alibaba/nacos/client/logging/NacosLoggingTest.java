@@ -24,6 +24,8 @@ import org.mockito.Mockito;
 
 import java.lang.reflect.Field;
 
+import static org.mockito.Mockito.doThrow;
+
 public class NacosLoggingTest {
     
     @Test
@@ -41,5 +43,22 @@ public class NacosLoggingTest {
         nacosLogging.set(instance, mockLogging);
         instance.loadConfiguration();
         Mockito.verify(mockLogging, Mockito.times(1)).loadConfiguration();
+    }
+    
+    @Test
+    public void testLoadConfigurationWithException() throws NoSuchFieldException, IllegalAccessException {
+        NacosLogging instance = NacosLogging.getInstance();
+        Field nacosLoggingField = NacosLogging.class.getDeclaredField("nacosLogging");
+        nacosLoggingField.setAccessible(true);
+        AbstractNacosLogging cachedLogging = (AbstractNacosLogging) nacosLoggingField.get(instance);
+        try {
+            AbstractNacosLogging mockLogging = Mockito.mock(AbstractNacosLogging.class);
+            doThrow(new RuntimeException()).when(mockLogging).loadConfiguration();
+            nacosLoggingField.set(instance, mockLogging);
+            instance.loadConfiguration();
+            // without exception thrown
+        } finally {
+            nacosLoggingField.set(instance, cachedLogging);
+        }
     }
 }

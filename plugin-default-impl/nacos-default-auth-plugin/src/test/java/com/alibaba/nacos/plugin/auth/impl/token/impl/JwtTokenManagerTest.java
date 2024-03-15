@@ -110,7 +110,7 @@ public class JwtTokenManagerTest {
     public void testCreateTokenWhenDisableAuth() {
         when(authConfigs.isAuthEnabled()).thenReturn(false);
         jwtTokenManager = new JwtTokenManager(authConfigs);
-        assertEquals("", jwtTokenManager.createToken("nacos"));
+        assertEquals("AUTH_DISABLED", jwtTokenManager.createToken("nacos"));
     }
     
     @Test

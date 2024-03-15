@@ -29,14 +29,14 @@ public class Credentials implements SpasCredential {
     
     private volatile String tenantId;
     
+    public Credentials() {
+        this(null, null, null);
+    }
+    
     public Credentials(String accessKey, String secretKey, String tenantId) {
         this.accessKey = accessKey;
         this.secretKey = secretKey;
         this.tenantId = tenantId;
-    }
-    
-    public Credentials() {
-        this(null, null, null);
     }
     
     @Override

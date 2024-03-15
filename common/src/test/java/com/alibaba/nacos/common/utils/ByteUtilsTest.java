@@ -21,7 +21,8 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
- *  ByteUtils Test.
+ * ByteUtils Test.
+ *
  * @ClassName: ByteUtilsTest
  * @Author: ChenHao26
  * @Date: 2022/8/22 10:58
@@ -46,6 +47,13 @@ public class ByteUtilsTest {
         byte[] bytes = ByteUtils.toBytes("google");
         String str = ByteUtils.toString(bytes);
         Assert.assertEquals(str, "google");
+    }
+    
+    @Test
+    public void testForInputNull() {
+        Assert.assertEquals(0, ByteUtils.toBytes(null).length);
+        Assert.assertEquals(0, ByteUtils.toBytes((Object) null).length);
+        Assert.assertEquals("", ByteUtils.toString(null));
     }
     
     @Test

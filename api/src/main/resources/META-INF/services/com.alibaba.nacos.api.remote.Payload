@@ -47,6 +47,7 @@ com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncReque
 com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse
 com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest
 com.alibaba.nacos.api.naming.remote.request.InstanceRequest
+com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest
 com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest
 com.alibaba.nacos.api.naming.remote.request.ServiceListRequest
 com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest

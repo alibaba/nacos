@@ -15,7 +15,7 @@
  */
 
 import request from '../utils/request';
-import { GET_STATE, LOGINPAGE_ENABLED, GET_NOTICE, SERVER_GUIDE } from '../constants';
+import { GET_STATE, LOGINPAGE_ENABLED, GET_NOTICE, SERVER_GUIDE, LANGUAGE_KEY } from '../constants';
 
 const initialState = {
   version: null,
@@ -58,6 +58,7 @@ const getState = () => dispatch =>
           loginPageEnabled: res.login_page_enabled,
           authEnabled: res.auth_enabled,
           consoleUiEnable: res.console_ui_enabled,
+          startupMode: res.startup_mode,
         },
       });
     })
@@ -77,7 +78,7 @@ const getState = () => dispatch =>
 
 const getNotice = () => dispatch =>
   request
-    .get('v1/console/server/announcement')
+    .get('v1/console/server/announcement?language=' + localStorage.getItem(LANGUAGE_KEY))
     .then(res => {
       dispatch({
         type: GET_NOTICE,

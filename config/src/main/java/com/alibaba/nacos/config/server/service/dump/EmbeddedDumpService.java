@@ -20,6 +20,7 @@ import com.alibaba.nacos.common.utils.Observable;
 import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
 import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
@@ -73,13 +74,15 @@ public class EmbeddedDumpService extends DumpService {
      * @param protocolManager {@link ProtocolManager}
      */
     public EmbeddedDumpService(ConfigInfoPersistService configInfoPersistService,
-            NamespacePersistService namespacePersistService, HistoryConfigInfoPersistService historyConfigInfoPersistService,
+            NamespacePersistService namespacePersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoAggrPersistService configInfoAggrPersistService,
             ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService, ServerMemberManager memberManager,
-            ProtocolManager protocolManager) {
+            ConfigInfoTagPersistService configInfoTagPersistService, MergeDatumService mergeDatumService,
+            ServerMemberManager memberManager, ProtocolManager protocolManager) {
         super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, memberManager);
+                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService,
+                mergeDatumService, memberManager);
         this.protocolManager = protocolManager;
     }
     
@@ -87,7 +90,7 @@ public class EmbeddedDumpService extends DumpService {
     @Override
     protected void init() throws Throwable {
         if (EnvUtil.getStandaloneMode()) {
-            dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
+            dumpOperate();
             return;
         }
         
@@ -110,14 +113,15 @@ public class EmbeddedDumpService extends DumpService {
                         return;
                     }
                     // Identify without a timeout mechanism
-                    EmbeddedStorageContextHolder.putExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA, "true");
+                    EmbeddedStorageContextHolder.putExtendInfo(PersistenceConstant.EXTEND_NEED_READ_UNTIL_HAVE_DATA,
+                            "true");
                     // Remove your own listening to avoid task accumulation
                     boolean canEnd = false;
                     for (; ; ) {
                         try {
-                            dumpOperate(processor, dumpAllProcessor, dumpAllBetaProcessor, dumpAllTagProcessor);
-                            protocol.protocolMetaData()
-                                    .unSubscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP, MetadataKey.LEADER_META_DATA, this);
+                            dumpOperate();
+                            protocol.protocolMetaData().unSubscribe(PersistenceConstant.CONFIG_MODEL_RAFT_GROUP,
+                                    MetadataKey.LEADER_META_DATA, this);
                             canEnd = true;
                         } catch (Throwable ex) {
                             if (!shouldRetry(ex)) {

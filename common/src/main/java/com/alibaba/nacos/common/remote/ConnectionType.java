@@ -29,9 +29,9 @@ public enum ConnectionType {
      */
     GRPC("GRPC", "Grpc Connection");
     
-    String type;
+    final String type;
     
-    String name;
+    final String name;
     
     public static ConnectionType getByType(String type) {
         ConnectionType[] values = ConnectionType.values();
@@ -58,29 +58,11 @@ public enum ConnectionType {
     }
     
     /**
-     * Setter method for property <tt>type</tt>.
-     *
-     * @param type value to be assigned to property type
-     */
-    public void setType(String type) {
-        this.type = type;
-    }
-    
-    /**
      * Getter method for property <tt>name</tt>.
      *
      * @return property value of name
      */
     public String getName() {
         return name;
-    }
-    
-    /**
-     * Setter method for property <tt>name</tt>.
-     *
-     * @param name value to be assigned to property name
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }

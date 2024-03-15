@@ -19,7 +19,9 @@
 package com.alibaba.nacos.client.auth.ram.identify;
 
 import junit.framework.TestCase;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.lang.reflect.Field;
@@ -30,6 +32,19 @@ import static org.mockito.Mockito.verify;
 
 public class CredentialServiceTest extends TestCase {
     
+    private static final String APP_NAME = "app";
+    
+    @Before
+    public void setUp() throws Exception {
+    }
+    
+    @After
+    public void tearDown() throws Exception {
+        System.clearProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
+        CredentialService.freeInstance();
+        CredentialService.freeInstance(APP_NAME);
+    }
+    
     @Test
     public void testGetInstance() {
         CredentialService credentialService1 = CredentialService.getInstance();
@@ -39,9 +54,19 @@ public class CredentialServiceTest extends TestCase {
     
     @Test
     public void testGetInstance2() {
-        CredentialService credentialService1 = CredentialService.getInstance("app");
-        CredentialService credentialService2 = CredentialService.getInstance("app");
+        CredentialService credentialService1 = CredentialService.getInstance(APP_NAME);
+        CredentialService credentialService2 = CredentialService.getInstance(APP_NAME);
         Assert.assertEquals(credentialService1, credentialService2);
+    }
+    
+    @Test
+    public void testGetInstance3() throws NoSuchFieldException, IllegalAccessException {
+        System.setProperty(IdentifyConstants.PROJECT_NAME_PROPERTY, APP_NAME);
+        CredentialService credentialService1 = CredentialService.getInstance();
+        Field appNameField = credentialService1.getClass().getDeclaredField("appName");
+        appNameField.setAccessible(true);
+        String appName = (String) appNameField.get(credentialService1);
+        assertEquals(APP_NAME, appName);
     }
     
     @Test
@@ -104,16 +129,13 @@ public class CredentialServiceTest extends TestCase {
     }
     
     @Test
-    public void testRegisterCredentialListener() throws NoSuchFieldException, IllegalAccessException {
-        CredentialService credentialService1 = CredentialService.getInstance();
-        Field listenerField = CredentialService.class.getDeclaredField("listener");
-        listenerField.setAccessible(true);
+    public void testRegisterCredentialListener() {
         CredentialListener expect = mock(CredentialListener.class);
-        //when
+        CredentialService credentialService1 = CredentialService.getInstance();
         credentialService1.registerCredentialListener(expect);
-        //then
-        CredentialListener actual = (CredentialListener) listenerField.get(credentialService1);
-        Assert.assertEquals(expect, actual);
-        
+        Credentials newCredentials = new Credentials();
+        newCredentials.setAccessKey("ak");
+        credentialService1.setCredential(newCredentials);
+        verify(expect, times(1)).onUpdateCredential();
     }
 }
