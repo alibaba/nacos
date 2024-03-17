@@ -60,35 +60,51 @@ public class InternetAddressUtilTest {
         Assert.assertEquals("[::1]",
                 InternetAddressUtil.getIPFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
         Assert.assertEquals("[::1]", InternetAddressUtil.getIPFromString(
-                "jdbc:sqlserver://[::1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                "jdbc:mysql://[::1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        Assert.assertEquals("[::1]", InternetAddressUtil.getIPFromString(
+                "jdbc:sqlserver://[::1]:1433;database=nacos;encrypt=true;trustServerCertificate=false;loginTimeout=30;"));
         Assert.assertEquals("127.0.0.1",
                 InternetAddressUtil.getIPFromString("http://127.0.0.1:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
         Assert.assertEquals("127.0.0.1", InternetAddressUtil.getIPFromString(
-                "jdbc:sqlserver://127.0.0.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                "jdbc:mysql://127.0.0.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        Assert.assertEquals("[::1]", InternetAddressUtil.getIPFromString(
+                "jdbc:sqlserver://127.0.0.1:1433;database=nacos;encrypt=true;trustServerCertificate=false;loginTimeout=30;"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString("http://[::1:666"));
         
         Assert.assertEquals("",
                 InternetAddressUtil.getIPFromString("http://[dddd]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:sqlserver://[127.0.0.1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                "jdbc:mysql://[127.0.0.1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:sqlserver://666.288.333.444:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                "jdbc:sqlserver://[127.0.0.1]:1433;database=nacos;encrypt=true;trustServerCertificate=false;loginTimeout=30;"));
+        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
+                "jdbc:mysql://666.288.333.444:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:sqlserver://292.168.1.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                "jdbc:sqlserver://666.288.333.444:1433;database=nacos;encrypt=true;trustServerCertificate=false;loginTimeout=30;"));
+        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
+                "jdbc:mysql://292.168.1.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:sqlserver://29.168.1.288:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                "jdbc:sqlserver://292.168.1.1:3306:1433;database=nacos;encrypt=true;trustServerCertificate=false;loginTimeout=30;"));
+        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
+                "jdbc:mysql://29.168.1.288:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:sqlserver://29.168.288.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                "jdbc:sqlserver://29.168.1.288:1433;database=nacos;encrypt=true;trustServerCertificate=false;loginTimeout=30;"));
+        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
+                "jdbc:mysql://29.168.288.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString(
-                "jdbc:sqlserver://29.288.28.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
+                "jdbc:sqlserver://29.168.288.28:1433;database=nacos;encrypt=true;trustServerCertificate=false;loginTimeout=30;"));
+        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
+                "jdbc:mysql://29.288.28.28:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
+        Assert.assertEquals("", InternetAddressUtil.getIPFromString(
+                "jdbc:sqlserver://29.288.28.28:1433;database=nacos;encrypt=true;trustServerCertificate=false;loginTimeout=30;"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString(""));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString(null));
     }
