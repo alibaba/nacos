@@ -14,7 +14,7 @@
  *   limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
@@ -32,13 +32,13 @@ import java.util.Arrays;
 import java.util.List;
 
 @RunWith(JUnit4.class)
-public class ConfigInfoAggrMapperByMySqlTest {
+public class ConfigInfoAggrMapperBySqlServerTest {
     
-    private ConfigInfoAggrMapperByMySql configInfoAggrMapperByMySql;
+    private ConfigInfoAggrMapperBySqlServer configInfoAggrMapperBySqlServer;
     
     @Before
     public void setUp() throws Exception {
-        configInfoAggrMapperByMySql = new ConfigInfoAggrMapperByMySql();
+        configInfoAggrMapperBySqlServer = new ConfigInfoAggrMapperBySqlServer();
     }
     
     @Test
@@ -57,7 +57,7 @@ public class ConfigInfoAggrMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
-        MapperResult mapperResult = configInfoAggrMapperByMySql.batchRemoveAggr(context);
+        MapperResult mapperResult = configInfoAggrMapperBySqlServer.batchRemoveAggr(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
         
@@ -83,7 +83,7 @@ public class ConfigInfoAggrMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
-        MapperResult mapperResult = configInfoAggrMapperByMySql.aggrConfigInfoCount(context);
+        MapperResult mapperResult = configInfoAggrMapperBySqlServer.aggrConfigInfoCount(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
         
@@ -104,7 +104,7 @@ public class ConfigInfoAggrMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
-        MapperResult mapperResult = configInfoAggrMapperByMySql.findConfigInfoAggrIsOrdered(context);
+        MapperResult mapperResult = configInfoAggrMapperBySqlServer.findConfigInfoAggrIsOrdered(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
         
@@ -128,32 +128,32 @@ public class ConfigInfoAggrMapperByMySqlTest {
         context.setStartRow(startRow);
         context.setPageSize(pageSize);
         
-        MapperResult mapperResult = configInfoAggrMapperByMySql.findConfigInfoAggrByPageFetchRows(context);
+        MapperResult mapperResult = configInfoAggrMapperBySqlServer.findConfigInfoAggrByPageFetchRows(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
         
         Assert.assertEquals(sql,
                 "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE "
-                        + "data_id= ? AND group_id= ? AND tenant_id= ? ORDER BY datum_id LIMIT 0,5");
+                        + "data_id= ? AND group_id= ? AND tenant_id= ? ORDER BY datum_id OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
         Assert.assertEquals(paramList, Arrays.asList(dataId, groupId, tenantId));
     }
     
     @Test
     public void testFindAllAggrGroupByDistinct() {
-        MapperResult mapperResult = configInfoAggrMapperByMySql.findAllAggrGroupByDistinct(null);
+        MapperResult mapperResult = configInfoAggrMapperBySqlServer.findAllAggrGroupByDistinct(null);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr");
     }
     
     @Test
     public void testGetTableName() {
-        String tableName = configInfoAggrMapperByMySql.getTableName();
+        String tableName = configInfoAggrMapperBySqlServer.getTableName();
         Assert.assertEquals(tableName, TableConstant.CONFIG_INFO_AGGR);
     }
     
     @Test
     public void testGetDataSource() {
-        String dataSource = configInfoAggrMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        String dataSource = configInfoAggrMapperBySqlServer.getDataSource();
+        Assert.assertEquals(dataSource, DataSourceConstant.SQLSERVER);
     }
 }

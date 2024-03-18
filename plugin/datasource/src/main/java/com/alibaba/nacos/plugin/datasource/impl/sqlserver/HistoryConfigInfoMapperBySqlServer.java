@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
@@ -27,14 +27,14 @@ import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 /**
  * The mysql implementation of HistoryConfigInfoMapper.
  *
- * @author hyx
+ * @author QY Li
  **/
 
-public class HistoryConfigInfoMapperByMySql extends AbstractMapper implements HistoryConfigInfoMapper {
+public class HistoryConfigInfoMapperBySqlServer extends AbstractMapper implements HistoryConfigInfoMapper {
     
     @Override
     public MapperResult removeConfigHistory(MapperContext context) {
-        String sql = "DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?";
+        String sql = "DELETE FROM his_config_info WHERE gmt_modified < ?  ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
                 context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
@@ -43,14 +43,14 @@ public class HistoryConfigInfoMapperByMySql extends AbstractMapper implements Hi
     public MapperResult pageFindConfigHistoryFetchRows(MapperContext context) {
         String sql =
                 "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
-                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  LIMIT "
-                        + context.getStartRow() + "," + context.getPageSize();
+                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC "
+                        + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
                 context.getWhereParameter(FieldConstant.GROUP_ID), context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
     
     @Override
     public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+        return DataSourceConstant.SQLSERVER;
     }
 }

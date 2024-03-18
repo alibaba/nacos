@@ -14,34 +14,32 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
-import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.GroupCapacityMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
-import java.util.Collections;
-
 /**
- * The mysql implementation of ConfigInfoTagMapper.
+ * The derby implementation of {@link GroupCapacityMapper}.
  *
- * @author hyx
- **/
-
-public class ConfigInfoTagMapperByMySql extends AbstractMapper implements ConfigInfoTagMapper {
-    
+ * @author QY Li
+ */
+public class GroupCapacityMapperBySqlServer extends AbstractMapper implements GroupCapacityMapper {
     @Override
-    public MapperResult findAllConfigInfoTagForDumpAllFetchRows(MapperContext context) {
-        String sql = " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
-                + " FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT " + context.getStartRow() + ","
-                + context.getPageSize() + " ) " + "g, config_info_tag t  WHERE g.id = t.id  ";
-        return new MapperResult(sql, Collections.emptyList());
+    public MapperResult selectGroupInfoBySize(MapperContext context) {
+        String sql = "SELECT id, group_id FROM group_capacity WHERE id > ?  ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
     }
-    
+
     @Override
     public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+        return DataSourceConstant.SQLSERVER;
     }
+
 }
+

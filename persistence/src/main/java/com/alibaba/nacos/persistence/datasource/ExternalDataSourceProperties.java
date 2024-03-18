@@ -37,8 +37,10 @@ import static com.alibaba.nacos.common.utils.CollectionUtils.getOrDefault;
  */
 public class ExternalDataSourceProperties {
     
-    private static final String JDBC_DRIVER_NAME = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
-    
+    private static final String SQLSERVER_JDBC_SQLSERVER_DRIVER = "com.microsoft.sqlserver.jdbc.SQLServerDriver";
+
+    private static final String MYSQL_JDBC_MYSQL_DRIVER = "com.mysql.cj.jdbc.Driver";
+
     private static final String TEST_QUERY = "SELECT 1";
     
     private Integer num;
@@ -83,7 +85,11 @@ public class ExternalDataSourceProperties {
             Preconditions.checkArgument(url.size() >= currentSize, "db.url.%s is null", index);
             DataSourcePoolProperties poolProperties = DataSourcePoolProperties.build(environment);
             if (StringUtils.isEmpty(poolProperties.getDataSource().getDriverClassName())) {
-                poolProperties.setDriverClassName(JDBC_DRIVER_NAME);
+                if (url.get(index).contains("sqlserver")) {
+                    poolProperties.setDriverClassName(SQLSERVER_JDBC_SQLSERVER_DRIVER);
+                } else {
+                    poolProperties.setDriverClassName(MYSQL_JDBC_MYSQL_DRIVER);
+                }
             }
             poolProperties.setJdbcUrl(url.get(index).trim());
             poolProperties.setUsername(getOrDefault(user, index, user.get(0)).trim());

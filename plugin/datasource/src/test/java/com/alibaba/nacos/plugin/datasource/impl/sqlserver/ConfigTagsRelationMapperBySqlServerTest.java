@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
@@ -29,9 +29,9 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
-public class ConfigTagsRelationMapperByMySqlTest {
+public class ConfigTagsRelationMapperBySqlServerTest {
     
-    private ConfigTagsRelationMapperByMySql configTagsRelationMapperByMySql;
+    private ConfigTagsRelationMapperBySqlServer configTagsRelationMapperBySqlServer;
     
     int startRow = 0;
     
@@ -45,7 +45,7 @@ public class ConfigTagsRelationMapperByMySqlTest {
     
     @Before
     public void setUp() throws Exception {
-        configTagsRelationMapperByMySql = new ConfigTagsRelationMapperByMySql();
+        configTagsRelationMapperBySqlServer = new ConfigTagsRelationMapperBySqlServer();
         context = new MapperContext(startRow, pageSize);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         context.putWhereParameter(FieldConstant.TAG_ARR, tagArr);
@@ -53,7 +53,7 @@ public class ConfigTagsRelationMapperByMySqlTest {
     
     @Test
     public void testFindConfigInfoLike4PageCountRows() {
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
+        MapperResult mapperResult = configTagsRelationMapperBySqlServer.findConfigInfoLike4PageCountRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id  WHERE  "
                         + "a.tenant_id LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
@@ -64,7 +64,7 @@ public class ConfigTagsRelationMapperByMySqlTest {
     
     @Test
     public void testFindConfigInfo4PageCountRows() {
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfo4PageCountRows(context);
+        MapperResult mapperResult = configTagsRelationMapperBySqlServer.findConfigInfo4PageCountRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id "
                         + "WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?) ");
@@ -80,13 +80,13 @@ public class ConfigTagsRelationMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
         
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfo4PageFetchRows(context);
+        MapperResult mapperResult = configTagsRelationMapperBySqlServer.findConfigInfo4PageFetchRows(context);
         Assert.assertEquals(
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  "
                         + "a LEFT JOIN config_tags_relation b ON a.id=b.id "
                         + "WHERE  a.tenant_id=?  AND a.data_id=?  AND a.group_id=?  AND a.app_name=?  AND a.content LIKE ? "
-                        + " AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT "
-                        + startRow + "," + pageSize, mapperResult.getSql());
+                        + " AND b.tag_name IN (?, ?, ?, ?, ?) "
+                        + " ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY", mapperResult.getSql());
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");
@@ -102,7 +102,7 @@ public class ConfigTagsRelationMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, "groupID1");
         context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageCountRows(context);
+        MapperResult mapperResult = configTagsRelationMapperBySqlServer.findConfigInfoLike4PageCountRows(context);
         Assert.assertEquals("SELECT count(*) FROM config_info  a LEFT JOIN config_tags_relation b ON a.id=b.id  "
                 + "WHERE  a.tenant_id LIKE ?  AND a.data_id LIKE ?  AND a.group_id LIKE ?  AND a.app_name = ?  "
                 + "AND a.content LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) ", mapperResult.getSql());
@@ -121,12 +121,12 @@ public class ConfigTagsRelationMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, "groupID1");
         context.putWhereParameter(FieldConstant.APP_NAME, "AppName1");
         context.putWhereParameter(FieldConstant.CONTENT, "Content1");
-        MapperResult mapperResult = configTagsRelationMapperByMySql.findConfigInfoLike4PageFetchRows(context);
+        MapperResult mapperResult = configTagsRelationMapperBySqlServer.findConfigInfoLike4PageFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info a LEFT JOIN"
                         + " config_tags_relation b ON a.id=b.id  WHERE  a.tenant_id LIKE ?  AND a.data_id LIKE ?  "
-                        + "AND a.group_id LIKE ?  AND a.app_name = ?  AND a.content LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?)  LIMIT "
-                        + startRow + "," + pageSize);
+                        + "AND a.group_id LIKE ?  AND a.app_name = ?  AND a.content LIKE ?  AND b.tag_name IN (?, ?, ?, ?, ?) "
+                        + " ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
         List<Object> list = CollectionUtils.list(tenantId);
         list.add("dataID1");
         list.add("groupID1");
@@ -138,13 +138,13 @@ public class ConfigTagsRelationMapperByMySqlTest {
     
     @Test
     public void testGetTableName() {
-        String tableName = configTagsRelationMapperByMySql.getTableName();
+        String tableName = configTagsRelationMapperBySqlServer.getTableName();
         Assert.assertEquals(tableName, TableConstant.CONFIG_TAGS_RELATION);
     }
     
     @Test
     public void testGetDataSource() {
-        String dataSource = configTagsRelationMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        String dataSource = configTagsRelationMapperBySqlServer.getDataSource();
+        Assert.assertEquals(dataSource, DataSourceConstant.SQLSERVER);
     }
 }

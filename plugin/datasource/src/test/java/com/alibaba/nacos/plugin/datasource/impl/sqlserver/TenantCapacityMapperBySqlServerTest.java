@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -27,9 +27,9 @@ import org.junit.Test;
 
 import java.sql.Timestamp;
 
-public class TenantCapacityMapperByMySqlTest {
+public class TenantCapacityMapperBySqlServerTest {
     
-    private TenantCapacityMapperByMySql tenantCapacityMapperByMySql;
+    private TenantCapacityMapperBySqlServer tenantCapacityMapperBySqlServer;
     
     String tenantId = "tenantId";
     
@@ -43,7 +43,7 @@ public class TenantCapacityMapperByMySqlTest {
     
     @Before
     public void setUp() throws Exception {
-        tenantCapacityMapperByMySql = new TenantCapacityMapperByMySql();
+        tenantCapacityMapperBySqlServer = new TenantCapacityMapperBySqlServer();
         context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
         context.putWhereParameter(FieldConstant.GMT_MODIFIED, oldModified);
@@ -54,19 +54,19 @@ public class TenantCapacityMapperByMySqlTest {
     
     @Test
     public void testGetTableName() {
-        String tableName = tenantCapacityMapperByMySql.getTableName();
+        String tableName = tenantCapacityMapperBySqlServer.getTableName();
         Assert.assertEquals(tableName, TableConstant.TENANT_CAPACITY);
     }
     
     @Test
     public void testGetDataSource() {
-        String dataSource = tenantCapacityMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        String dataSource = tenantCapacityMapperBySqlServer.getDataSource();
+        Assert.assertEquals(dataSource, DataSourceConstant.SQLSERVER);
     }
     
     @Test
     public void testIncrementUsageWithDefaultQuotaLimit() {
-        MapperResult mapperResult = tenantCapacityMapperByMySql.incrementUsageWithDefaultQuotaLimit(context);
+        MapperResult mapperResult = tenantCapacityMapperBySqlServer.incrementUsageWithDefaultQuotaLimit(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <"
                         + " ? AND quota = 0");
@@ -75,7 +75,7 @@ public class TenantCapacityMapperByMySqlTest {
     
     @Test
     public void testIncrementUsageWithQuotaLimit() {
-        MapperResult mapperResult = tenantCapacityMapperByMySql.incrementUsageWithQuotaLimit(context);
+        MapperResult mapperResult = tenantCapacityMapperBySqlServer.incrementUsageWithQuotaLimit(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < "
                         + "quota AND quota != 0");
@@ -84,7 +84,7 @@ public class TenantCapacityMapperByMySqlTest {
     
     @Test
     public void testIncrementUsage() {
-        MapperResult mapperResult = tenantCapacityMapperByMySql.incrementUsage(context);
+        MapperResult mapperResult = tenantCapacityMapperBySqlServer.incrementUsage(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, tenantId});
@@ -92,7 +92,7 @@ public class TenantCapacityMapperByMySqlTest {
     
     @Test
     public void testDecrementUsage() {
-        MapperResult mapperResult = tenantCapacityMapperByMySql.decrementUsage(context);
+        MapperResult mapperResult = tenantCapacityMapperBySqlServer.decrementUsage(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, tenantId});
@@ -100,7 +100,7 @@ public class TenantCapacityMapperByMySqlTest {
     
     @Test
     public void testCorrectUsage() {
-        MapperResult mapperResult = tenantCapacityMapperByMySql.correctUsage(context);
+        MapperResult mapperResult = tenantCapacityMapperBySqlServer.correctUsage(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
                         + "gmt_modified = ? WHERE tenant_id = ?");
@@ -114,8 +114,9 @@ public class TenantCapacityMapperByMySqlTest {
         Object limit = 10;
         context.putWhereParameter(FieldConstant.ID, id);
         context.putWhereParameter(FieldConstant.LIMIT_SIZE, limit);
-        MapperResult mapperResult = tenantCapacityMapperByMySql.getCapacityList4CorrectUsage(context);
-        Assert.assertEquals(mapperResult.getSql(), "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?");
+        MapperResult mapperResult = tenantCapacityMapperBySqlServer.getCapacityList4CorrectUsage(context);
+        Assert.assertEquals(mapperResult.getSql(), "SELECT id, tenant_id FROM tenant_capacity WHERE id>? "
+                + "ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id, limit});
     }
     
@@ -140,7 +141,7 @@ public class TenantCapacityMapperByMySqlTest {
         
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
-        MapperResult mapperResult = tenantCapacityMapperByMySql.insertTenantCapacity(context);
+        MapperResult mapperResult = tenantCapacityMapperBySqlServer.insertTenantCapacity(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
                         + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;");

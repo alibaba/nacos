@@ -38,7 +38,7 @@ public class GroupCapacityMapperByMysql extends AbstractMapper implements GroupC
     
     @Override
     public MapperResult selectGroupInfoBySize(MapperContext context) {
-        String sql = "SELECT id, group_id FROM group_capacity WHERE id > ?  ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+        String sql = "SELECT id, group_id FROM group_capacity WHERE id > ? LIMIT ?";
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID), context.getPageSize()));
     }
 }

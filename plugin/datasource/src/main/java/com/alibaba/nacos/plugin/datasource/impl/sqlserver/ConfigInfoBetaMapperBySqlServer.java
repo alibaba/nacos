@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
@@ -28,18 +28,18 @@ import java.util.List;
 /**
  * The mysql implementation of ConfigInfoBetaMapper.
  *
- * @author hyx
+ * @author QY Li
  **/
 
-public class ConfigInfoBetaMapperByMySql extends AbstractMapper implements ConfigInfoBetaMapper {
+public class ConfigInfoBetaMapperBySqlServer extends AbstractMapper implements ConfigInfoBetaMapper {
 
     @Override
     public MapperResult findAllConfigInfoBetaForDumpAllFetchRows(MapperContext context) {
         int startRow = context.getStartRow();
         int pageSize = context.getPageSize();
         String sql = " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key "
-                + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT " + startRow + "," + pageSize + " )"
-                + "  g, config_info_beta t WHERE g.id = t.id ";
+                + " FROM ( SELECT id FROM config_info_beta  ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY) "
+                + " g, config_info_beta t WHERE g.id = t.id ";
         List<Object> paramList = new ArrayList<>();
         paramList.add(startRow);
         paramList.add(pageSize);
@@ -49,6 +49,6 @@ public class ConfigInfoBetaMapperByMySql extends AbstractMapper implements Confi
 
     @Override
     public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+        return DataSourceConstant.SQLSERVER;
     }
 }

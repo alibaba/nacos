@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
@@ -29,9 +29,9 @@ import java.util.List;
 /**
  * The mysql implementation of ConfigInfoAggrMapper.
  *
- * @author hyx
+ * @author QY Li
  **/
-public class ConfigInfoAggrMapperByMySql extends AbstractMapper implements ConfigInfoAggrMapper {
+public class ConfigInfoAggrMapperBySqlServer extends AbstractMapper implements ConfigInfoAggrMapper {
     
     @Override
     public MapperResult findConfigInfoAggrByPageFetchRows(MapperContext context) {
@@ -43,13 +43,14 @@ public class ConfigInfoAggrMapperByMySql extends AbstractMapper implements Confi
         
         String sql =
                 "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id= ? AND "
-                        + "group_id= ? AND tenant_id= ? ORDER BY datum_id LIMIT " + startRow + "," + pageSize;
+                        + "group_id= ? AND tenant_id= ? ORDER BY datum_id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + " ROWS ONLY";
         List<Object> paramList = CollectionUtils.list(dataId, groupId, tenantId);
         return new MapperResult(sql, paramList);
     }
     
     @Override
     public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+        return DataSourceConstant.SQLSERVER;
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -27,9 +27,9 @@ import org.junit.Test;
 
 import java.sql.Timestamp;
 
-public class HistoryConfigInfoMapperByMySqlTest {
+public class HistoryConfigInfoMapperBySqlServerTest {
     
-    private HistoryConfigInfoMapperByMySql historyConfigInfoMapperByMySql;
+    private HistoryConfigInfoMapperBySqlServer historyConfigInfoMapperBySqlServer;
     
     int startRow = 0;
     
@@ -47,7 +47,7 @@ public class HistoryConfigInfoMapperByMySqlTest {
     
     @Before
     public void setUp() throws Exception {
-        historyConfigInfoMapperByMySql = new HistoryConfigInfoMapperByMySql();
+        historyConfigInfoMapperBySqlServer = new HistoryConfigInfoMapperBySqlServer();
         context = new MapperContext(startRow, pageSize);
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
         context.putWhereParameter(FieldConstant.END_TIME, endTime);
@@ -58,24 +58,25 @@ public class HistoryConfigInfoMapperByMySqlTest {
     
     @Test
     public void testRemoveConfigHistory() {
-        MapperResult mapperResult = historyConfigInfoMapperByMySql.removeConfigHistory(context);
-        Assert.assertEquals(mapperResult.getSql(), "DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?");
+        MapperResult mapperResult = historyConfigInfoMapperBySqlServer.removeConfigHistory(context);
+        Assert.assertEquals(mapperResult.getSql(), "DELETE FROM his_config_info WHERE gmt_modified < ? "
+                + " ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, limitSize});
     }
     
     @Test
     public void testFindConfigHistoryCountByTime() {
-        MapperResult mapperResult = historyConfigInfoMapperByMySql.findConfigHistoryCountByTime(context);
+        MapperResult mapperResult = historyConfigInfoMapperBySqlServer.findConfigHistoryCountByTime(context);
         Assert.assertEquals(mapperResult.getSql(), "SELECT count(*) FROM his_config_info WHERE gmt_modified < ?");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime});
     }
     
     @Test
     public void testFindDeletedConfig() {
-        MapperResult mapperResult = historyConfigInfoMapperByMySql.findDeletedConfig(context);
+        MapperResult mapperResult = historyConfigInfoMapperBySqlServer.findDeletedConfig(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info "
-                        + "WHERE op_type = 'D' AND gmt_modified >= ? and nid > ? order by nid limit ? ");
+                        + "WHERE op_type = 'D' AND gmt_modified >= ? AND nid > ? ORDER BY nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
     }
@@ -90,7 +91,7 @@ public class HistoryConfigInfoMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
-        MapperResult mapperResult = historyConfigInfoMapperByMySql.findConfigHistoryFetchRows(context);
+        MapperResult mapperResult = historyConfigInfoMapperBySqlServer.findConfigHistoryFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC");
@@ -101,7 +102,7 @@ public class HistoryConfigInfoMapperByMySqlTest {
     public void testDetailPreviousConfigHistory() {
         Object id = "1";
         context.putWhereParameter(FieldConstant.ID, id);
-        MapperResult mapperResult = historyConfigInfoMapperByMySql.detailPreviousConfigHistory(context);
+        MapperResult mapperResult = historyConfigInfoMapperBySqlServer.detailPreviousConfigHistory(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,"
                         + "gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)");
@@ -110,13 +111,13 @@ public class HistoryConfigInfoMapperByMySqlTest {
     
     @Test
     public void testGetTableName() {
-        String tableName = historyConfigInfoMapperByMySql.getTableName();
+        String tableName = historyConfigInfoMapperBySqlServer.getTableName();
         Assert.assertEquals(tableName, TableConstant.HIS_CONFIG_INFO);
     }
     
     @Test
     public void testGetDataSource() {
-        String dataSource = historyConfigInfoMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        String dataSource = historyConfigInfoMapperBySqlServer.getDataSource();
+        Assert.assertEquals(dataSource, DataSourceConstant.SQLSERVER);
     }
 }

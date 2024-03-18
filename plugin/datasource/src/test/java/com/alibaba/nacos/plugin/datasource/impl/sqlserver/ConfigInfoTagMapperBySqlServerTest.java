@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -29,9 +29,9 @@ import org.junit.Test;
 import java.sql.Timestamp;
 import java.util.List;
 
-public class ConfigInfoTagMapperByMySqlTest {
+public class ConfigInfoTagMapperBySqlServerTest {
     
-    private ConfigInfoTagMapperByMySql configInfoTagMapperByMySql;
+    private ConfigInfoTagMapperBySqlServer configInfoTagMapperBySqlServer;
     
     private final Object[] emptyObjs = new Object[] {};
     
@@ -55,7 +55,7 @@ public class ConfigInfoTagMapperByMySqlTest {
     
     @Before
     public void setUp() throws Exception {
-        configInfoTagMapperByMySql = new ConfigInfoTagMapperByMySql();
+        configInfoTagMapperBySqlServer = new ConfigInfoTagMapperBySqlServer();
         
         context = new MapperContext(startRow, pageSize);
         context.putWhereParameter(FieldConstant.APP_NAME, appName);
@@ -104,7 +104,7 @@ public class ConfigInfoTagMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.TAG_ID, tagId);
         context.putWhereParameter(FieldConstant.MD5, md5);
         
-        MapperResult mapperResult = configInfoTagMapperByMySql.updateConfigInfo4TagCas(context);
+        MapperResult mapperResult = configInfoTagMapperBySqlServer.updateConfigInfo4TagCas(context);
         
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,"
@@ -117,23 +117,24 @@ public class ConfigInfoTagMapperByMySqlTest {
     
     @Test
     public void testFindAllConfigInfoTagForDumpAllFetchRows() {
-        MapperResult mapperResult = configInfoTagMapperByMySql.findAllConfigInfoTagForDumpAllFetchRows(context);
+        MapperResult mapperResult = configInfoTagMapperBySqlServer.findAllConfigInfoTagForDumpAllFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified  FROM (  "
-                        + "SELECT id FROM config_info_tag  ORDER BY id LIMIT " + startRow + "," + pageSize
+                        + "SELECT id FROM config_info_tag "
+                        + " ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY"
                         + " ) g, config_info_tag t  WHERE g.id = t.id  ");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
     public void testGetTableName() {
-        String tableName = configInfoTagMapperByMySql.getTableName();
+        String tableName = configInfoTagMapperBySqlServer.getTableName();
         Assert.assertEquals(tableName, TableConstant.CONFIG_INFO_TAG);
     }
     
     @Test
     public void testGetDataSource() {
-        String dataSource = configInfoTagMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        String dataSource = configInfoTagMapperBySqlServer.getDataSource();
+        Assert.assertEquals(dataSource, DataSourceConstant.SQLSERVER);
     }
 }

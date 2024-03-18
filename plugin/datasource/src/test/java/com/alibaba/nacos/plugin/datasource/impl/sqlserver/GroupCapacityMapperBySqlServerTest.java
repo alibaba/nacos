@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -27,9 +27,9 @@ import org.junit.Test;
 
 import java.sql.Timestamp;
 
-public class GroupCapacityMapperByMysqlTest {
+public class GroupCapacityMapperBySqlServerTest {
     
-    private GroupCapacityMapperByMysql groupCapacityMapperByMysql;
+    private GroupCapacityMapperBySqlServer groupCapacityMapperBySqlServer;
     
     private final Object[] emptyObjs = new Object[] {};
     
@@ -47,7 +47,7 @@ public class GroupCapacityMapperByMysqlTest {
     
     @Before
     public void setUp() throws Exception {
-        groupCapacityMapperByMysql = new GroupCapacityMapperByMysql();
+        groupCapacityMapperBySqlServer = new GroupCapacityMapperBySqlServer();
         context = new MapperContext(startRow, pageSize);
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
         
@@ -57,14 +57,14 @@ public class GroupCapacityMapperByMysqlTest {
     
     @Test
     public void testGetTableName() {
-        String tableName = groupCapacityMapperByMysql.getTableName();
+        String tableName = groupCapacityMapperBySqlServer.getTableName();
         Assert.assertEquals(tableName, TableConstant.GROUP_CAPACITY);
     }
     
     @Test
     public void testGetDataSource() {
-        String dataSource = groupCapacityMapperByMysql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        String dataSource = groupCapacityMapperBySqlServer.getDataSource();
+        Assert.assertEquals(dataSource, DataSourceConstant.SQLSERVER);
     }
     
     @Test
@@ -84,7 +84,7 @@ public class GroupCapacityMapperByMysqlTest {
         context.putUpdateParameter(FieldConstant.GMT_CREATE, createTime);
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
         
-        MapperResult mapperResult = groupCapacityMapperByMysql.insertIntoSelect(context);
+        MapperResult mapperResult = groupCapacityMapperBySqlServer.insertIntoSelect(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size,gmt_create,"
                         + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info");
@@ -111,7 +111,7 @@ public class GroupCapacityMapperByMysqlTest {
         context.putUpdateParameter(FieldConstant.GMT_CREATE, createTime);
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
         
-        MapperResult mapperResult = groupCapacityMapperByMysql.insertIntoSelectByWhere(context);
+        MapperResult mapperResult = groupCapacityMapperBySqlServer.insertIntoSelectByWhere(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size, gmt_create,"
                         + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = ''");
@@ -123,7 +123,7 @@ public class GroupCapacityMapperByMysqlTest {
     public void testIncrementUsageByWhereQuotaEqualZero() {
         Object usage = 1;
         context.putWhereParameter(FieldConstant.USAGE, usage);
-        MapperResult mapperResult = groupCapacityMapperByMysql.incrementUsageByWhereQuotaEqualZero(context);
+        MapperResult mapperResult = groupCapacityMapperBySqlServer.incrementUsageByWhereQuotaEqualZero(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < ? AND quota = 0");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId, usage});
@@ -132,7 +132,7 @@ public class GroupCapacityMapperByMysqlTest {
     @Test
     public void testIncrementUsageByWhereQuotaNotEqualZero() {
         
-        MapperResult mapperResult = groupCapacityMapperByMysql.incrementUsageByWhereQuotaNotEqualZero(context);
+        MapperResult mapperResult = groupCapacityMapperBySqlServer.incrementUsageByWhereQuotaNotEqualZero(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < quota AND quota != 0");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId});
@@ -140,7 +140,7 @@ public class GroupCapacityMapperByMysqlTest {
     
     @Test
     public void testIncrementUsageByWhere() {
-        MapperResult mapperResult = groupCapacityMapperByMysql.incrementUsageByWhere(context);
+        MapperResult mapperResult = groupCapacityMapperBySqlServer.incrementUsageByWhere(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ?");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId});
@@ -148,7 +148,7 @@ public class GroupCapacityMapperByMysqlTest {
     
     @Test
     public void testDecrementUsageByWhere() {
-        MapperResult mapperResult = groupCapacityMapperByMysql.decrementUsageByWhere(context);
+        MapperResult mapperResult = groupCapacityMapperBySqlServer.decrementUsageByWhere(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE group_capacity SET usage = usage - 1, gmt_modified = ? WHERE group_id = ? AND usage > 0");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId});
@@ -156,7 +156,7 @@ public class GroupCapacityMapperByMysqlTest {
     
     @Test
     public void testUpdateUsage() {
-        MapperResult mapperResult = groupCapacityMapperByMysql.updateUsage(context);
+        MapperResult mapperResult = groupCapacityMapperBySqlServer.updateUsage(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE group_id = ?");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId});
@@ -164,7 +164,7 @@ public class GroupCapacityMapperByMysqlTest {
     
     @Test
     public void testUpdateUsageByWhere() {
-        MapperResult mapperResult = groupCapacityMapperByMysql.updateUsageByWhere(context);
+        MapperResult mapperResult = groupCapacityMapperBySqlServer.updateUsageByWhere(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = ''),"
                         + " gmt_modified = ? WHERE group_id= ?");
@@ -175,8 +175,9 @@ public class GroupCapacityMapperByMysqlTest {
     public void testSelectGroupInfoBySize() {
         Object id = 1;
         context.putWhereParameter(FieldConstant.ID, id);
-        MapperResult mapperResult = groupCapacityMapperByMysql.selectGroupInfoBySize(context);
-        Assert.assertEquals(mapperResult.getSql(), "SELECT id, group_id FROM group_capacity WHERE id > ? LIMIT ?");
+        MapperResult mapperResult = groupCapacityMapperBySqlServer.selectGroupInfoBySize(context);
+        Assert.assertEquals(mapperResult.getSql(), "SELECT id, group_id FROM group_capacity WHERE id > ? "
+                + " ORDER BY id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
         context.putWhereParameter(FieldConstant.GMT_CREATE, createTime);
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id, pageSize});
     }

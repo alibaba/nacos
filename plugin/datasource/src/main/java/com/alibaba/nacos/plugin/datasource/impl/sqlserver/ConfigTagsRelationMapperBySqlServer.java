@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
@@ -30,10 +30,10 @@ import java.util.List;
 /**
  * The mysql implementation of ConfigTagsRelationMapper.
  *
- * @author hyx
+ * @author QY Li
  **/
 
-public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements ConfigTagsRelationMapper {
+public class ConfigTagsRelationMapperBySqlServer extends AbstractMapper implements ConfigTagsRelationMapper {
     
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
@@ -78,7 +78,8 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
             paramList.add(tagArr[i]);
         }
         where.append(") ");
-        return new MapperResult(sql + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
+        return new MapperResult(sql + where + " ORDER BY id OFFSET " + context.getStartRow()
+                + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY",
                 paramList);
     }
     
@@ -131,6 +132,6 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
     
     @Override
     public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+        return DataSourceConstant.SQLSERVER;
     }
 }

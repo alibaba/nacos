@@ -23,7 +23,9 @@ package com.alibaba.nacos.plugin.datasource.constants;
  **/
 
 public class DataSourceConstant {
-    public static final String MYSQL = "sqlserver";
+    public static final String MYSQL = "mysql";
+
+    public static final String SQLSERVER = "sqlserver";
     
     public static final String DERBY = "derby";
 }

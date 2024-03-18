@@ -14,34 +14,35 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
-import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.TenantCapacityMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
-import java.util.Collections;
-
 /**
- * The mysql implementation of ConfigInfoTagMapper.
+ * The mysql implementation of TenantCapacityMapper.
  *
- * @author hyx
+ * @author QY Li
  **/
 
-public class ConfigInfoTagMapperByMySql extends AbstractMapper implements ConfigInfoTagMapper {
-    
+public class TenantCapacityMapperBySqlServer extends AbstractMapper implements TenantCapacityMapper {
+
     @Override
-    public MapperResult findAllConfigInfoTagForDumpAllFetchRows(MapperContext context) {
-        String sql = " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
-                + " FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT " + context.getStartRow() + ","
-                + context.getPageSize() + " ) " + "g, config_info_tag t  WHERE g.id = t.id  ";
-        return new MapperResult(sql, Collections.emptyList());
+    public MapperResult getCapacityList4CorrectUsage(MapperContext context) {
+        String sql = "SELECT id, tenant_id FROM tenant_capacity WHERE id>? ORDER BY id "
+                + "OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID),
+                context.getWhereParameter(FieldConstant.LIMIT_SIZE)));
     }
-    
+
     @Override
     public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+        return DataSourceConstant.SQLSERVER;
     }
+
 }

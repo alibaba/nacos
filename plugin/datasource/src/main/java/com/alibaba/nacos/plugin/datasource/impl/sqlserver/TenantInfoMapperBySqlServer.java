@@ -14,26 +14,22 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.auth.impl.constant;
+package com.alibaba.nacos.plugin.datasource.impl.sqlserver;
+
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 
 /**
- * Auth plugin page constant.
+ * The mysql implementation of TenantInfoMapper.
  *
- * @author huangKeming
+ * @author QY Li
  **/
 
-public class AuthPageConstant {
-    
-    public static final String OFFSET = "OFFSET";
-    
-    public static final String OFFSET_ROWS = "OFFSET ? ROWS";
+public class TenantInfoMapperBySqlServer extends AbstractMapper implements TenantInfoMapper {
 
-    public static final String ORDER_OFFSET_ROWS = "OREDER BY id OFFSET ? ROWS";
-    
-    public static final String FETCH_NEXT = "FETCH NEXT ? ROWS ONLY";
-    
-    public static final String LIMIT = "LIMIT";
-    
-    public static final String LIMIT_SIZE = "LIMIT ?,?";
-    
+    @Override
+    public String getDataSource() {
+        return DataSourceConstant.SQLSERVER;
+    }
 }

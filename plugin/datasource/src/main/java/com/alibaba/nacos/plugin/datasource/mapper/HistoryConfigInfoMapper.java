@@ -62,7 +62,7 @@ public interface HistoryConfigInfoMapper extends Mapper {
     default MapperResult findDeletedConfig(MapperContext context) {
         return new MapperResult(
                 "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info WHERE op_type = 'D' AND "
-                        + "gmt_modified >= ? AND nid > ? ORDER BY nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
+                        + "gmt_modified >= ? and nid > ? order by nid limit ? ",
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
                         context.getWhereParameter(FieldConstant.LAST_MAX_ID),
                         context.getWhereParameter(FieldConstant.PAGE_SIZE)));
