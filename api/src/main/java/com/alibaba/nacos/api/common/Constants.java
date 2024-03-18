@@ -253,16 +253,6 @@ public class Constants {
     
     public static final String APP_CONN_PREFIX = "app_";
     
-    public static final String BETA_IPS = "betaIps";
-    
-    public static final String TAG_V1 = "tag";
-    
-    public static final String TAG_V2 = "tagv2";
-    
-    public static final String TAG_V2_PREFIX = "tagv2_";
-    
-    public static final int CONFIG_GRAY_DEFAULT_ORDER_WEIGHT = 100;
-    
     public static final String CONFIG_GRAY = "nacos.config" + DOT + GRAY;
     
     /**
