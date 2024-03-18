@@ -20,10 +20,10 @@
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender"/>
     
     <appender name="PREF_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/Users/xiweng.yy/logs/nacos/perf.log</file>
+        <file>${user.home}/logs/nacos/perf.log</file>
         
         <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
-            <fileNamePattern>/Users/xiweng.yy/logs/nacos/perf.log.%i</fileNamePattern>
+            <fileNamePattern>${user.home}/logs/nacos/perf.log.%i</fileNamePattern>
             <maxIndex>${JM.LOG.RETAIN.COUNT:-7}</maxIndex>
         </rollingPolicy>
         

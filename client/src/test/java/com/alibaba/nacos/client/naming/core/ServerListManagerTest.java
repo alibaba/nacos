@@ -202,6 +202,50 @@ public class ServerListManagerTest {
     }
     
     @Test
+    public void testConstructWithEndpointWithEndpointPathAndName() throws Exception {
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "aaa");
+        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "bbb");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
+        Mockito.reset(nacosRestTemplate);
+        Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
+                .thenReturn(httpRestResult);
+        serverListManager = new ServerListManager(clientProperties, "test");
+        List<String> serverList = serverListManager.getServerList();
+        Assert.assertEquals(1, serverList.size());
+        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+    }
+    
+    @Test
+    public void testConstructEndpointContextPathPriority() throws Exception {
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "aaa");
+        clientProperties.setProperty(PropertyKeyConst.CONTEXT_PATH, "bbb");
+        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "ccc");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
+        Mockito.reset(nacosRestTemplate);
+        Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/ccc"), any(), any(), any()))
+                .thenReturn(httpRestResult);
+        serverListManager = new ServerListManager(clientProperties, "test");
+        List<String> serverList = serverListManager.getServerList();
+        Assert.assertEquals(1, serverList.size());
+        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+    }
+    
+    @Test
+    public void testConstructEndpointContextPathIsEmpty() throws Exception {
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "");
+        clientProperties.setProperty(PropertyKeyConst.CONTEXT_PATH, "bbb");
+        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "ccc");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
+        Mockito.reset(nacosRestTemplate);
+        Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/bbb/ccc"), any(), any(), any()))
+                .thenReturn(httpRestResult);
+        serverListManager = new ServerListManager(clientProperties, "test");
+        List<String> serverList = serverListManager.getServerList();
+        Assert.assertEquals(1, serverList.size());
+        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+    }
+    
+    @Test
     public void testIsDomain() throws IOException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
