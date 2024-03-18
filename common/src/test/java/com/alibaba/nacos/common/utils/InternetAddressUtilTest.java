@@ -69,7 +69,7 @@ public class InternetAddressUtilTest {
         Assert.assertEquals("127.0.0.1", InternetAddressUtil.getIPFromString(
                 "jdbc:mysql://127.0.0.1:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));
-        Assert.assertEquals("[::1]", InternetAddressUtil.getIPFromString(
+        Assert.assertEquals("127.0.0.1", InternetAddressUtil.getIPFromString(
                 "jdbc:sqlserver://127.0.0.1:1433;database=nacos;encrypt=true;trustServerCertificate=false;loginTimeout=30;"));
         Assert.assertEquals("", InternetAddressUtil.getIPFromString("http://[::1:666"));
         
