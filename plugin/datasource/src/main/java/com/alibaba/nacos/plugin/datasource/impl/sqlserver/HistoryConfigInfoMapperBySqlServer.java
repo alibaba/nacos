@@ -48,6 +48,16 @@ public class HistoryConfigInfoMapperBySqlServer extends AbstractMapper implement
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
                 context.getWhereParameter(FieldConstant.GROUP_ID), context.getWhereParameter(FieldConstant.TENANT_ID)));
     }
+
+    @Override
+    public MapperResult findDeletedConfig(MapperContext context) {
+        return new MapperResult(
+                "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info "
+                        + "WHERE op_type = 'D' AND gmt_modified >= ? AND nid > ? ORDER BY nid OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY",
+                CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+                        context.getWhereParameter(FieldConstant.LAST_MAX_ID),
+                        context.getWhereParameter(FieldConstant.PAGE_SIZE)));
+    }
     
     @Override
     public String getDataSource() {

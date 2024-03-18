@@ -269,6 +269,16 @@ public class ConfigInfoMapperBySqlServer extends AbstractMapper implements Confi
                 CollectionUtils.list(context.getWhereParameter(FieldConstant.TENANT_ID), context.getStartRow(),
                         context.getPageSize()));
     }
+
+    @Override
+    public MapperResult findChangeConfig(MapperContext context) {
+        String sql =
+                "SELECT id, data_id, group_id, tenant_id, app_name,md5, gmt_modified, encrypted_data_key FROM config_info WHERE "
+                        + "gmt_modified >= ? and id > ? order by id OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY";
+        return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.START_TIME),
+                context.getWhereParameter(FieldConstant.LAST_MAX_ID),
+                context.getWhereParameter(FieldConstant.PAGE_SIZE)));
+    }
     
     @Override
     public String getDataSource() {
