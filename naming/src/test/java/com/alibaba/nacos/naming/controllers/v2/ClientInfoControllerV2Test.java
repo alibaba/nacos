@@ -110,7 +110,8 @@ public class ClientInfoControllerV2Test extends BaseTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
         // batch instances
         BatchInstancePublishInfo instancePublishInfo = new BatchInstancePublishInfo();
-        instancePublishInfo.setInstancePublishInfos(Arrays.asList(new InstancePublishInfo("127.0.0.1", 8848), new InstancePublishInfo("127.0.0.1", 8849)));
+        instancePublishInfo.setInstancePublishInfos(Arrays.asList(new InstancePublishInfo("127.0.0.1", 8848),
+                new InstancePublishInfo("127.0.0.1", 8849)));
         connectionBasedClient.addServiceInstance(service, instancePublishInfo);
         mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/publish/list")
                 .param("clientId", "test1");
