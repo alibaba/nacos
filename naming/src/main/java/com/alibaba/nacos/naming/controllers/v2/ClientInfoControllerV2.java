@@ -32,6 +32,7 @@ import com.alibaba.nacos.naming.core.v2.client.impl.ConnectionBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.impl.IpPortBasedClient;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.index.ClientServiceIndexesManager;
+import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
@@ -137,19 +138,30 @@ public class ClientInfoControllerV2 {
         Collection<Service> allPublishedService = client.getAllPublishedService();
         ArrayList<ObjectNode> res = new ArrayList<>();
         for (Service service : allPublishedService) {
-            ObjectNode item = JacksonUtils.createEmptyJsonNode();
-            item.put("namespace", service.getNamespace());
-            item.put("group", service.getGroup());
-            item.put("serviceName", service.getName());
             InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(service);
-            ObjectNode instanceInfo = JacksonUtils.createEmptyJsonNode();
-            instanceInfo.put("ip", instancePublishInfo.getIp());
-            instanceInfo.put("port", instancePublishInfo.getPort());
-            instanceInfo.put("cluster", instancePublishInfo.getCluster());
-            item.set("registeredInstance", instanceInfo);
-            res.add(item);
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                List<InstancePublishInfo> instancePublishInfos = ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos();
+                for (InstancePublishInfo publishInfo : instancePublishInfos) {
+                    res.add(wrapSingleInstanceNode(publishInfo, service));
+                }
+            } else {
+                res.add(wrapSingleInstanceNode(instancePublishInfo, service));
+            }
         }
         return Result.success(res);
+    }
+
+    private ObjectNode wrapSingleInstanceNode(InstancePublishInfo instancePublishInfo, Service service) {
+        ObjectNode item = JacksonUtils.createEmptyJsonNode();
+        item.put("namespace", service.getNamespace());
+        item.put("group", service.getGroup());
+        item.put("serviceName", service.getName());
+        ObjectNode instanceInfo = JacksonUtils.createEmptyJsonNode();
+        instanceInfo.put("ip", instancePublishInfo.getIp());
+        instanceInfo.put("port", instancePublishInfo.getPort());
+        instanceInfo.put("cluster", instancePublishInfo.getCluster());
+        item.set("registeredInstance", instanceInfo);
+        return item;
     }
     
     /**
