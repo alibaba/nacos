@@ -33,6 +33,8 @@ public class Constants {
     
     public static final String APPNAME = "AppName";
     
+    public static final String CLIENT_VERSION_KEY = "ClientVersion";
+    
     public static final String UNKNOWN_APP = "UnknownApp";
     
     public static final String DEFAULT_DOMAINNAME = "commonconfig.config-host.taobao.com";
@@ -222,6 +224,46 @@ public class Constants {
     public static final long DEFAULT_REDO_DELAY_TIME = 3000L;
     
     public static final int DEFAULT_REDO_THREAD_COUNT = 1;
+    
+    public static final String APP_CONN_LABELS_PREFIX = "nacos.app.conn.labels";
+    
+    public static final String GRAY = "gray";
+    
+    public static final String DOT = ".";
+    
+    public static final String WEIGHT = "weight";
+    
+    public static final String PROPERTIES_KEY = "properties";
+    
+    public static final String JVM_KEY = "jvm";
+    
+    public static final String ENV_KEY = "env";
+    
+    public static final String APP_CONN_LABELS_PROPERTIES_WEIGHT_KEY = APP_CONN_LABELS_PREFIX + DOT + WEIGHT + DOT + PROPERTIES_KEY;
+    
+    public static final int APP_CONN_LABELS_PROPERTIES_DEFAULT_WEIGHT = 3;
+    
+    public static final String APP_CONN_LABELS_JVM_WEIGHT_KEY = APP_CONN_LABELS_PREFIX + DOT + WEIGHT + DOT + JVM_KEY;
+    
+    public static final int APP_CONN_LABELS_JVM_DEFAULT_WEIGHT = 2;
+    
+    public static final String APP_CONN_LABELS_ENV_WEIGHT_KEY = APP_CONN_LABELS_PREFIX + DOT + WEIGHT + DOT + ENV_KEY;
+    
+    public static final int APP_CONN_LABELS_ENV_DEFAULT_WEIGHT = 1;
+    
+    public static final String APP_CONN_PREFIX = "app_";
+    
+    public static final String BETA_IPS = "betaIps";
+    
+    public static final String TAG_V1 = "tag";
+    
+    public static final String TAG_V2 = "tagv2";
+    
+    public static final String TAG_V2_PREFIX = "tagv2_";
+    
+    public static final int CONFIG_GRAY_DEFAULT_ORDER_WEIGHT = 100;
+    
+    public static final String CONFIG_GRAY = "nacos.config" + DOT + GRAY;
     
     /**
      * The constants in config directory.
