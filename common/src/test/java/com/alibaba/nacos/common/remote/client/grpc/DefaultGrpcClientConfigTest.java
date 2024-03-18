@@ -84,7 +84,7 @@ public class DefaultGrpcClientConfigTest {
         properties.setProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT, "5000");
         
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder()
-                .fromProperties(properties).build();
+                .fromProperties(properties, null).build();
         
         assertEquals("test", config.name());
         assertEquals(3, config.retryTimes());

@@ -47,8 +47,12 @@ public abstract class BaseRpcServer {
         
         startServer();
         
-        if (RpcServerSslContextRefresherHolder.getInstance() != null) {
-            RpcServerSslContextRefresherHolder.getInstance().refresh(this);
+        if (RpcServerSslContextRefresherHolder.getSdkInstance() != null) {
+            RpcServerSslContextRefresherHolder.getSdkInstance().refresh(this);
+        }
+        
+        if (RpcServerSslContextRefresherHolder.getClusterInstance() != null) {
+            RpcServerSslContextRefresherHolder.getClusterInstance().refresh(this);
         }
         
         Loggers.REMOTE.info("Nacos {} Rpc server started at port {}", serverName, getServicePort());
@@ -75,8 +79,8 @@ public abstract class BaseRpcServer {
      * Reload protocol context if necessary.
      *
      * <p>
-     *     protocol like:
-     *     <li>Tls</li>
+     * protocol like:
+     * <li>Tls</li>
      * </p>
      */
     public abstract void reloadProtocolContext();

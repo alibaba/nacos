@@ -21,15 +21,18 @@ import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilter;
 import com.alibaba.nacos.core.remote.grpc.filter.NacosGrpcServerTransportFilterServiceLoader;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptor;
 import com.alibaba.nacos.core.remote.grpc.interceptor.NacosGrpcServerInterceptorServiceLoader;
+import com.alibaba.nacos.core.remote.grpc.negotiator.ClusterProtocolNegotiatorBuilderSingleton;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.ServerInterceptor;
 import io.grpc.ServerTransportFilter;
+import io.grpc.netty.shaded.io.grpc.netty.InternalProtocolNegotiator;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
@@ -56,8 +59,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getKeepAliveTime() {
-        Long property = EnvUtil
-                .getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY, Long.class);
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIME_PROPERTY,
+                Long.class);
         if (property != null) {
             return property;
         }
@@ -66,12 +69,18 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected long getKeepAliveTimeout() {
-        Long property = EnvUtil
-                .getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY, Long.class);
+        Long property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_KEEP_ALIVE_TIMEOUT_PROPERTY,
+                Long.class);
         if (property != null) {
             return property;
         }
         return super.getKeepAliveTimeout();
+    }
+    
+    @Override
+    protected Optional<InternalProtocolNegotiator.ProtocolNegotiator> newProtocolNegotiator() {
+        protocolNegotiator = ClusterProtocolNegotiatorBuilderSingleton.getSingleton().build();
+        return Optional.ofNullable(protocolNegotiator);
     }
     
     @Override
@@ -85,8 +94,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     
     @Override
     protected int getMaxInboundMessageSize() {
-        Integer property = EnvUtil
-                .getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY, Integer.class);
+        Integer property = EnvUtil.getProperty(GrpcServerConstants.GrpcConfig.CLUSTER_MAX_INBOUND_MSG_SIZE_PROPERTY,
+                Integer.class);
         if (property != null) {
             return property;
         }
@@ -104,8 +113,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     protected List<ServerInterceptor> getSeverInterceptors() {
         List<ServerInterceptor> result = new LinkedList<>();
         result.addAll(super.getSeverInterceptors());
-        result.addAll(NacosGrpcServerInterceptorServiceLoader
-                .loadServerInterceptors(NacosGrpcServerInterceptor.CLUSTER_INTERCEPTOR));
+        result.addAll(NacosGrpcServerInterceptorServiceLoader.loadServerInterceptors(
+                NacosGrpcServerInterceptor.CLUSTER_INTERCEPTOR));
         return result;
     }
     
@@ -113,8 +122,8 @@ public class GrpcClusterServer extends BaseGrpcServer {
     protected List<ServerTransportFilter> getServerTransportFilters() {
         List<ServerTransportFilter> result = new LinkedList<>();
         result.addAll(super.getServerTransportFilters());
-        result.addAll(NacosGrpcServerTransportFilterServiceLoader
-                .loadServerTransportFilters(NacosGrpcServerTransportFilter.CLUSTER_FILTER));
+        result.addAll(NacosGrpcServerTransportFilterServiceLoader.loadServerTransportFilters(
+                NacosGrpcServerTransportFilter.CLUSTER_FILTER));
         return result;
     }
 }
