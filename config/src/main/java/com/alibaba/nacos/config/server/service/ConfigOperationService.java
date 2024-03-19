@@ -88,7 +88,10 @@ public class ConfigOperationService {
         
         ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configForm.getAppName(), configForm.getContent());
-        
+        //cas 原本的md5值
+        if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
+            configInfo.setMd5(configRequestInfo.getCasMd5());
+        }
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(encryptedDataKey);
         ConfigOperateResult configOperateResult;
