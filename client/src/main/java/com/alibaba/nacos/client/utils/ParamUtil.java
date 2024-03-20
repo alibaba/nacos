@@ -50,7 +50,7 @@ public class ParamUtil {
     
     private static final String DEFAULT_SERVER_PORT = "8848";
     
-    private static final String serverPort;
+    private static String serverPort;
     
     private static String clientVersion = "unknown";
     
