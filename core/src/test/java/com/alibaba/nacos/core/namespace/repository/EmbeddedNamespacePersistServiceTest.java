@@ -18,6 +18,7 @@ package com.alibaba.nacos.core.namespace.repository;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.core.namespace.model.TenantInfo;
+import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
@@ -57,6 +58,7 @@ public class EmbeddedNamespacePersistServiceTest {
     @Before
     public void setUp() {
         EnvUtil.setIsStandalone(true);
+        DatasourceConfiguration.setEmbeddedStorage(true);
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         DynamicDataSource instance = DynamicDataSource.getInstance();
