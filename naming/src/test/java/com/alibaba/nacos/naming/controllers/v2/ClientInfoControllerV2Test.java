@@ -118,4 +118,38 @@ public class ClientInfoControllerV2Test extends BaseTest {
         mockmvc.perform(mockHttpServletRequestBuilder)
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(2));
     }
+
+    @Test
+    public void testGetPublishedClientList() throws Exception {
+        String baseTestKey = "nacos-getPublishedClientList-test";
+        // single instance
+        Service service = Service.newService(baseTestKey, baseTestKey, baseTestKey);
+        when(clientServiceIndexesManager.getAllClientsRegisteredService(service)).thenReturn(Arrays.asList("test"));
+        when(clientManager.getClient("test")).thenReturn(connectionBasedClient);
+        connectionBasedClient.addServiceInstance(service, new InstancePublishInfo("127.0.0.1", 8848));
+        MockHttpServletRequestBuilder mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/publisher/list")
+                .param("namespaceId", baseTestKey)
+                .param("groupName", baseTestKey)
+                .param("serviceName", baseTestKey)
+                .param("ip", "127.0.0.1")
+                .param("port", "8848");
+        mockmvc.perform(mockHttpServletRequestBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+
+        // batch instances
+        when(clientServiceIndexesManager.getAllClientsRegisteredService(service)).thenReturn(Arrays.asList("test"));
+        when(clientManager.getClient("test")).thenReturn(connectionBasedClient);
+        BatchInstancePublishInfo instancePublishInfo = new BatchInstancePublishInfo();
+        instancePublishInfo.setInstancePublishInfos(Arrays.asList(new InstancePublishInfo("127.0.0.1", 8848),
+                new InstancePublishInfo("127.0.0.1", 8849)));
+        connectionBasedClient.addServiceInstance(service, instancePublishInfo);
+        mockHttpServletRequestBuilder = MockMvcRequestBuilders.get(URL + "/service/publisher/list")
+                .param("namespaceId", baseTestKey)
+                .param("groupName", baseTestKey)
+                .param("serviceName", baseTestKey)
+                .param("ip", "127.0.0.1")
+                .param("port", "8848");
+        mockmvc.perform(mockHttpServletRequestBuilder)
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.length()").value(1));
+    }
 }

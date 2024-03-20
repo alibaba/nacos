@@ -156,12 +156,16 @@ public class ClientInfoControllerV2 {
         item.put("namespace", service.getNamespace());
         item.put("group", service.getGroup());
         item.put("serviceName", service.getName());
+        item.set("registeredInstance", wrapSingleInstance(instancePublishInfo));
+        return item;
+    }
+
+    private ObjectNode wrapSingleInstance(InstancePublishInfo instancePublishInfo) {
         ObjectNode instanceInfo = JacksonUtils.createEmptyJsonNode();
         instanceInfo.put("ip", instancePublishInfo.getIp());
         instanceInfo.put("port", instancePublishInfo.getPort());
         instanceInfo.put("cluster", instancePublishInfo.getCluster());
-        item.set("registeredInstance", instanceInfo);
-        return item;
+        return instanceInfo;
     }
     
     /**
@@ -219,15 +223,22 @@ public class ClientInfoControllerV2 {
         for (String clientId : allClientsRegisteredService) {
             Client client = clientManager.getClient(clientId);
             InstancePublishInfo instancePublishInfo = client.getInstancePublishInfo(service);
-            if (!Objects.equals(instancePublishInfo.getIp(), ip) || !Objects
-                    .equals(port, instancePublishInfo.getPort())) {
-                continue;
+            if (instancePublishInfo instanceof BatchInstancePublishInfo) {
+                List<InstancePublishInfo> list = ((BatchInstancePublishInfo) instancePublishInfo).getInstancePublishInfos();
+                for (InstancePublishInfo info : list) {
+                    if (!Objects.equals(info.getIp(), ip) || !Objects
+                            .equals(port, info.getPort())) {
+                        continue;
+                    }
+                    res.add(wrapSingleInstance(info));
+                }
+            } else {
+                if (!Objects.equals(instancePublishInfo.getIp(), ip) || !Objects
+                        .equals(port, instancePublishInfo.getPort())) {
+                    continue;
+                }
+                res.add(wrapSingleInstance(instancePublishInfo));
             }
-            ObjectNode item = JacksonUtils.createEmptyJsonNode();
-            item.put("clientId", clientId);
-            item.put("ip", instancePublishInfo.getIp());
-            item.put("port", instancePublishInfo.getPort());
-            res.add(item);
         }
         return Result.success(res);
     }
