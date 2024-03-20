@@ -17,6 +17,7 @@
 package com.alibaba.nacos.api.config;
 
 import com.alibaba.nacos.api.config.filter.IConfigFilter;
+import com.alibaba.nacos.api.config.listener.AbstractFuzzyListenListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
@@ -59,8 +60,8 @@ public interface ConfigService {
     /**
      * Add a listener to the configuration, after the server modified the configuration, the client will use the
      * incoming listener callback. Recommended asynchronous processing, the application can implement the getExecutor
-     * method in the ManagerListener, provide a thread pool of execution. If not provided, use the main thread callback, May
-     * block other configurations or be blocked by other configurations.
+     * method in the ManagerListener, provide a thread pool of execution. If not provided, use the main thread callback,
+     * May block other configurations or be blocked by other configurations.
      *
      * @param dataId   dataId
      * @param group    group
@@ -68,6 +69,51 @@ public interface ConfigService {
      * @throws NacosException NacosException
      */
     void addListener(String dataId, String group, Listener listener) throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration. After the server modifies the configuration matching the specified
+     * fixed group name, the client will utilize the incoming fuzzy listener callback. Fuzzy listeners allow for
+     * pattern-based subscription to configurations, where the fixed group name represents the group and dataId patterns
+     * specified for subscription.
+     *
+     * @param fixedGroupName The fixed group name representing the group and dataId patterns to subscribe to.
+     * @param listener       The fuzzy listener to be added.
+     * @throws NacosException NacosException
+     */
+    void addFuzzyListener(String fixedGroupName, AbstractFuzzyListenListener listener) throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration. After the server modifies the configuration matching the specified
+     * dataId pattern and fixed group name, the client will utilize the incoming fuzzy listener callback. Fuzzy
+     * listeners allow for pattern-based subscription to configurations.
+     *
+     * @param dataIdPattern  The pattern to match dataIds for subscription.
+     * @param fixedGroupName The fixed group name representing the group and dataId patterns to subscribe to.
+     * @param listener       The fuzzy listener to be added.
+     * @throws NacosException NacosException
+     */
+    void addFuzzyListener(String dataIdPattern, String fixedGroupName, AbstractFuzzyListenListener listener)
+            throws NacosException;
+    
+    /**
+     * Cancel fuzzy listen and remove the event listener for a specified fixed group name.
+     *
+     * @param fixedGroupName The fixed group name for fuzzy watch.
+     * @param listener       The event listener to be removed.
+     * @throws NacosException If an error occurs during the cancellation process.
+     */
+    void cancelFuzzyListen(String fixedGroupName, AbstractFuzzyListenListener listener) throws NacosException;
+    
+    /**
+     * Cancel fuzzy listen and remove the event listener for a specified service name pattern and fixed group name.
+     *
+     * @param dataIdPatter   The pattern to match dataId for fuzzy watch.
+     * @param fixedGroupName The fixed group name for fuzzy watch.
+     * @param listener       The event listener to be removed.
+     * @throws NacosException If an error occurs during the cancellation process.
+     */
+    void cancelFuzzyListen(String dataIdPatter, String fixedGroupName, AbstractFuzzyListenListener listener)
+            throws NacosException;
     
     /**
      * Publish config.
@@ -144,10 +190,10 @@ public interface ConfigService {
      * @return whether health
      */
     String getServerStatus();
-
+    
     /**
-     * add config filter.
-     * It is recommended to use {@link com.alibaba.nacos.api.config.filter.AbstractConfigFilter} to expand the filter.
+     * add config filter. It is recommended to use {@link com.alibaba.nacos.api.config.filter.AbstractConfigFilter} to
+     * expand the filter.
      *
      * @param configFilter filter
      * @since 2.3.0

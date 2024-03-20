@@ -33,6 +33,10 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
     
     private int maxPushRetryTimes = 50;
     
+    private long pushTimeout = 3000L;
+    
+    private int batchSize = 10;
+    
     private ConfigCommonConfig() {
         super(CONFIG_COMMON);
         resetConfig();
@@ -50,9 +54,27 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
         this.maxPushRetryTimes = maxPushRetryTimes;
     }
     
+    public long getPushTimeout() {
+        return pushTimeout;
+    }
+    
+    public void setPushTimeout(long pushTimeout) {
+        this.pushTimeout = pushTimeout;
+    }
+    
+    public int getBatchSize() {
+        return batchSize;
+    }
+    
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
+    
     @Override
     protected void getConfigFromEnv() {
         maxPushRetryTimes = EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
+        pushTimeout = EnvUtil.getProperty("nacos.config.push.timeout", Long.class, 3000L);
+        pushTimeout = EnvUtil.getProperty("nacos.config.push.batchSize", Integer.class, 10);
     }
     
     @Override

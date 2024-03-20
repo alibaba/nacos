@@ -50,13 +50,15 @@ public class ParamUtil {
     
     private static final String DEFAULT_SERVER_PORT = "8848";
     
-    private static String serverPort;
+    private static final String serverPort;
     
     private static String clientVersion = "unknown";
     
     private static int connectTimeout;
     
     private static double perTaskConfigSize = 3000;
+    
+    private static final String PER_TASK_CONTEXT_SIZE_KEY = "PER_TASK_CONTEXT_SIZE_KEY";
     
     private static final String NACOS_CLIENT_APP_KEY = "nacos.client.appKey";
     
@@ -76,12 +78,16 @@ public class ParamUtil {
     
     private static final String DEFAULT_PER_TASK_CONFIG_SIZE_KEY = "3000";
     
+    private static final String DEFAULT_PER_TASK_CONTEXT_SIZE_KEY = "3000";
+    
+    private static double perTaskContextSize = 3000;
+    
     static {
         // Client identity information
         appKey = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CLIENT_APP_KEY, BLANK_STR);
         
-        defaultContextPath = NacosClientProperties.PROTOTYPE
-                .getProperty(NACOS_CLIENT_CONTEXTPATH_KEY, DEFAULT_NACOS_CLIENT_CONTEXTPATH);
+        defaultContextPath = NacosClientProperties.PROTOTYPE.getProperty(NACOS_CLIENT_CONTEXTPATH_KEY,
+                DEFAULT_NACOS_CLIENT_CONTEXTPATH);
         
         appName = AppNameUtils.getAppName();
         
@@ -95,6 +101,9 @@ public class ParamUtil {
         
         perTaskConfigSize = initPerTaskConfigSize();
         LOGGER.info("PER_TASK_CONFIG_SIZE: {}", perTaskConfigSize);
+        
+        perTaskContextSize = initPerTaskContextSize();
+        LOGGER.info("PER_TASK_CONTEXT_SIZE: {}", perTaskContextSize);
     }
     
     private static int initConnectionTimeout() {
@@ -111,11 +120,21 @@ public class ParamUtil {
     
     private static double initPerTaskConfigSize() {
         try {
-            return Double.parseDouble(NacosClientProperties.PROTOTYPE
-                    .getProperty(PER_TASK_CONFIG_SIZE_KEY, DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
+            return Double.parseDouble(NacosClientProperties.PROTOTYPE.getProperty(PER_TASK_CONFIG_SIZE_KEY,
+                    DEFAULT_PER_TASK_CONFIG_SIZE_KEY));
         } catch (NumberFormatException e) {
             LOGGER.error("[PER_TASK_CONFIG_SIZE] PER_TASK_CONFIG_SIZE invalid", e);
             throw new IllegalArgumentException("invalid PER_TASK_CONFIG_SIZE, expected value type double", e);
+        }
+    }
+    
+    private static double initPerTaskContextSize() {
+        try {
+            return Double.parseDouble(NacosClientProperties.PROTOTYPE.getProperty(PER_TASK_CONTEXT_SIZE_KEY,
+                    DEFAULT_PER_TASK_CONTEXT_SIZE_KEY));
+        } catch (NumberFormatException e) {
+            LOGGER.error("[PER_TASK_CONTEXT_SIZE] PER_TASK_CONTEXT_SIZE invalid", e);
+            throw new IllegalArgumentException("invalid PER_TASK_CONTEXT_SIZE, expected value type double", e);
         }
     }
     
@@ -165,6 +184,14 @@ public class ParamUtil {
     
     public static void setPerTaskConfigSize(double perTaskConfigSize) {
         ParamUtil.perTaskConfigSize = perTaskConfigSize;
+    }
+    
+    public static double getPerTaskContextSize() {
+        return perTaskContextSize;
+    }
+    
+    public static void setPerTaskContextSize(double perTaskContextSize) {
+        ParamUtil.perTaskContextSize = perTaskContextSize;
     }
     
     public static String getDefaultServerPort() {
@@ -217,15 +244,15 @@ public class ParamUtil {
         // If entered in the configuration file, the priority in ENV will be given priority.
         if (endpointUrl == null || !PATTERN.matcher(endpointUrl).find()) {
             // skip retrieve from system property and retrieve directly from system env
-            String endpointUrlSource = NacosClientProperties.PROTOTYPE
-                    .getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
+            String endpointUrlSource = NacosClientProperties.PROTOTYPE.getProperty(
+                    PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
             if (StringUtils.isNotBlank(endpointUrlSource)) {
                 endpointUrl = endpointUrlSource;
             }
-            
+    
             return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
         }
-        
+    
         endpointUrl = endpointUrl.substring(endpointUrl.indexOf("${") + 2, endpointUrl.lastIndexOf("}"));
         int defStartOf = endpointUrl.indexOf(":");
         String defaultEndpointUrl = null;
@@ -233,12 +260,12 @@ public class ParamUtil {
             defaultEndpointUrl = endpointUrl.substring(defStartOf + 1);
             endpointUrl = endpointUrl.substring(0, defStartOf);
         }
-        
-        String endpointUrlSource = TemplateUtils
-                .stringBlankAndThenExecute(NacosClientProperties.PROTOTYPE.getProperty(endpointUrl),
-                        () -> NacosClientProperties.PROTOTYPE
-                                .getProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
-        
+    
+        String endpointUrlSource = TemplateUtils.stringBlankAndThenExecute(
+                NacosClientProperties.PROTOTYPE.getProperty(endpointUrl),
+                () -> NacosClientProperties.PROTOTYPE.getProperty(
+                        PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL));
+    
         if (StringUtils.isBlank(endpointUrlSource)) {
             if (StringUtils.isNotBlank(defaultEndpointUrl)) {
                 endpointUrl = defaultEndpointUrl;
@@ -246,7 +273,7 @@ public class ParamUtil {
         } else {
             endpointUrl = endpointUrlSource;
         }
-        
+    
         return StringUtils.isNotBlank(endpointUrl) ? endpointUrl : "";
     }
     

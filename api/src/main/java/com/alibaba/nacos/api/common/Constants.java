@@ -91,6 +91,10 @@ public class Constants {
     
     public static final Integer CLUSTER_GRPC_PORT_DEFAULT_OFFSET = 1001;
     
+    public static final String NAMESPACE_ID_SPLITTER = ">>";
+    
+    public static final String DATA_ID_SPLITTER = "@@";
+    
     /**
      * second.
      */
@@ -200,6 +204,8 @@ public class Constants {
     
     public static final String ALL_PATTERN = "*";
     
+    public static final String FUZZY_LISTEN_PATTERN_WILDCARD = "*";
+    
     public static final String COLON = ":";
     
     public static final String LINE_BREAK = "\n";
@@ -222,6 +228,17 @@ public class Constants {
     public static final long DEFAULT_REDO_DELAY_TIME = 3000L;
     
     public static final int DEFAULT_REDO_THREAD_COUNT = 1;
+    
+    public static class ConfigChangeType {
+        
+        public static final String ADD_CONFIG = "ADD_CONFIG";
+        
+        public static final String DELETE_CONFIG = "DELETE_CONFIG";
+        
+        public static final String FINISH_LISTEN_INIT = "FINISH_WATCH_INIT";
+        
+        public static final String LISTEN_INIT = "LISTEN_INIT";
+    }
     
     /**
      * The constants in config directory.

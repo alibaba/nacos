@@ -58,3 +58,9 @@ com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse
 com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse
 com.alibaba.nacos.api.naming.remote.response.ServiceListResponse
 com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse
+com.alibaba.nacos.api.config.remote.request.ConfigBatchFuzzyListenRequest
+com.alibaba.nacos.api.config.remote.response.ConfigBatchFuzzyListenResponse
+com.alibaba.nacos.api.config.remote.request.FuzzyListenNotifyChangeRequest
+com.alibaba.nacos.api.config.remote.response.FuzzyListenNotifyChangeResponse
+com.alibaba.nacos.api.config.remote.request.FuzzyListenNotifyDiffRequest
+com.alibaba.nacos.api.config.remote.response.FuzzyListenNotifyDiffResponse
