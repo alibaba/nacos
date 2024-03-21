@@ -230,14 +230,14 @@ public class ClientInfoControllerV2 {
                             .equals(port, info.getPort())) {
                         continue;
                     }
-                    res.add(wrapSingleInstance(info));
+                    res.add(wrapSingleInstance(info).put("clientId", clientId));
                 }
             } else {
                 if (!Objects.equals(instancePublishInfo.getIp(), ip) || !Objects
                         .equals(port, instancePublishInfo.getPort())) {
                     continue;
                 }
-                res.add(wrapSingleInstance(instancePublishInfo));
+                res.add(wrapSingleInstance(instancePublishInfo).put("clientId", clientId));
             }
         }
         return Result.success(res);
