@@ -76,6 +76,8 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private String endpoint;
     
+    private String endpointContentPath;
+    
     private String contentPath = ParamUtil.getDefaultContextPath();
     
     private String serverListName = ParamUtil.getDefaultNodesPath();
@@ -101,7 +103,10 @@ public class ServerListManager implements ServerListFactory, Closeable {
     private void initServerAddr(NacosClientProperties properties) {
         this.endpoint = InitUtils.initEndpoint(properties);
         if (StringUtils.isNotEmpty(endpoint)) {
-            
+            String endpointContentPathTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH);
+            if (!StringUtils.isBlank(endpointContentPathTmp)) {
+                this.endpointContentPath = endpointContentPathTmp;
+            }
             String contentPathTmp = properties.getProperty(PropertyKeyConst.CONTEXT_PATH);
             if (!StringUtils.isBlank(contentPathTmp)) {
                 this.contentPath = contentPathTmp;
@@ -130,9 +135,13 @@ public class ServerListManager implements ServerListFactory, Closeable {
     
     private List<String> getServerListFromEndpoint() {
         try {
-            StringBuilder addressServerUrlTem = new StringBuilder(String.format("http://%s%s/%s", this.endpoint,
-                    ContextPathUtil.normalizeContextPath(this.contentPath), this.serverListName));
-            String urlString = addressServerUrlTem.toString();
+            String contentPathTmp;
+            if (StringUtils.isNotBlank(this.endpointContentPath)) {
+                contentPathTmp = ContextPathUtil.normalizeContextPath(this.endpointContentPath);
+            } else {
+                contentPathTmp = ContextPathUtil.normalizeContextPath(this.contentPath);
+            }
+            String urlString = String.format("http://%s%s/%s", this.endpoint, contentPathTmp, this.serverListName);
             Header header = NamingHttpUtil.builderHeader();
             Query query = StringUtils.isNotBlank(namespace) ? Query.newInstance().addParam("namespace", namespace)
                     : Query.EMPTY;

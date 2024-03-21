@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.3.1-SNAPSHOT</revision>
+        <revision>2.4.0-SNAPSHOT</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
@@ -147,7 +147,7 @@
         <mockito-all.version>1.10.19</mockito-all.version>
         <mockito-core.version>3.8.0</mockito-core.version>
         <HikariCP.version>3.4.2</HikariCP.version>
-        <jraft-core.version>1.3.12</jraft-core.version>
+        <jraft-core.version>1.3.14</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
     </properties>
@@ -348,7 +348,7 @@
                         <exclude>**/any.proto</exclude>
                         <exclude>src/main/java/com/alibaba/nacos/common/packagescan/classreading/**</exclude>
                         <exclude>.flattened-pom.xml</exclude>
-                        <exclude>**/announcement.conf</exclude>
+                        <exclude>**/announcement*.conf</exclude>
                         <exclude>**/console-guide.conf</exclude>
                         <exclude>**/reflect-config.json</exclude>
                         <exclude>**/resource-config.json</exclude>

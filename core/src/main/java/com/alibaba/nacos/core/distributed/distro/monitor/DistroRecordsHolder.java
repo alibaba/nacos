@@ -46,8 +46,7 @@ public class DistroRecordsHolder {
     }
     
     public DistroRecord getRecord(String type) {
-        distroRecords.computeIfAbsent(type, s -> new DistroRecord(type));
-        return distroRecords.get(type);
+        return distroRecords.computeIfAbsent(type, s -> new DistroRecord(type));
     }
     
     public long getTotalSyncCount() {

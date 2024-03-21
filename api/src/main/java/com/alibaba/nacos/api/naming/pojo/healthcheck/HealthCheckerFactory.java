@@ -69,7 +69,7 @@ public class HealthCheckerFactory {
     }
     
     /**
-     * Deserialize and create a instance of health checker.
+     * Deserialize and create an instance of health checker.
      *
      * @param jsonString json string of health checker
      * @return new instance
@@ -83,7 +83,7 @@ public class HealthCheckerFactory {
     }
     
     /**
-     * Serialize a instance of health checker to json.
+     * Serialize an instance of health checker to json.
      *
      * @param healthChecker health checker instance
      * @return son string after serializing

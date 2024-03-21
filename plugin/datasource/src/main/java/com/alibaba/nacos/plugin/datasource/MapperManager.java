@@ -99,7 +99,9 @@ public class MapperManager {
      * @return mapper.
      */
     public <R extends Mapper> R findMapper(String dataSource, String tableName) {
-        LOGGER.info("[MapperManager] findMapper dataSource: {}, tableName: {}", dataSource, tableName);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("[MapperManager] findMapper dataSource: {}, tableName: {}", dataSource, tableName);
+        }
         if (StringUtils.isBlank(dataSource) || StringUtils.isBlank(tableName)) {
             throw new NacosRuntimeException(FIND_DATASOURCE_ERROR_CODE, "dataSource or tableName is null");
         }
