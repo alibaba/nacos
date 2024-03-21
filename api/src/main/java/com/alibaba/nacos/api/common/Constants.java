@@ -235,7 +235,7 @@ public class Constants {
         
         public static final String DELETE_CONFIG = "DELETE_CONFIG";
         
-        public static final String FINISH_LISTEN_INIT = "FINISH_WATCH_INIT";
+        public static final String FINISH_LISTEN_INIT = "FINISH_LISTEN_INIT";
         
         public static final String LISTEN_INIT = "LISTEN_INIT";
     }
