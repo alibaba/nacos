@@ -28,22 +28,13 @@ import java.util.Properties;
 public interface LabelsCollector {
     
     /**
-     * init labels.
-     *
-     * @param properties Properties
-     * @date 2024/2/4
-     * @description init labels
-     */
-    void init(Properties properties);
-    
-    /**
      * getLabels.
      *
      * @return Map
      * @date 2024/2/4
      * @description get all labels
      */
-    Map<String, String> getLabels();
+    Map<String, String> collectLabels(Properties properties);
     
     /**
      * getOrder.

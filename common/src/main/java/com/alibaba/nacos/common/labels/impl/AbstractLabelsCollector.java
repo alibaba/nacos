@@ -28,14 +28,7 @@ import java.util.Map;
  */
 public abstract class AbstractLabelsCollector implements LabelsCollector {
     
-    protected Map<String, String> labels = new HashMap<>(2);
-    
     private static final int DEFAULT_INITIAL_ORDER = 100;
-    
-    @Override
-    public Map<String, String> getLabels() {
-        return labels;
-    }
     
     @Override
     public int getOrder() {

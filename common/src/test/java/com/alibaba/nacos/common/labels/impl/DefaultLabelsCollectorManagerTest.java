@@ -30,24 +30,25 @@ import java.util.Properties;
  * @date 2024-02-29 20:13
  */
 public class DefaultLabelsCollectorManagerTest {
+    
     @Test
     public void tagV2LabelsCollectorTest() {
         Properties properties = new Properties();
-        properties.put(Constants.APP_CONN_LABELS_PREFIX, "k1=v1,gray=properties_pre");
-        properties.put(Constants.CONFIG_GRAY, "properties_after");
-        DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager(properties);
-        Map<String, String> labels = defaultLabelsCollectorManager.getAllLabels();
-        Assert.assertEquals("properties_after", labels.get(Constants.GRAY));
+        properties.put(Constants.APP_CONN_LABELS_KEY, "k1=v1,gray=properties_pre");
+        properties.put(Constants.CONFIG_GRAY_LABEL, "properties_after");
+        DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
+        Map<String, String> labels = defaultLabelsCollectorManager.getLabels(properties);
+        Assert.assertEquals("properties_after", labels.get(Constants.CONFIG_GRAY_LABEL));
         Assert.assertEquals("v1", labels.get("k1"));
     }
     
     @Test
     public void tagV2LabelsCollectorOrderTest() {
         Properties properties = new Properties();
-        DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager(properties);
-        Map<String, String> labels = defaultLabelsCollectorManager.getAllLabels();
+        DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
+        Map<String, String> labels = defaultLabelsCollectorManager.getLabels(properties);
         String test = labels.get("test");
         Assert.assertEquals("test2", test);
     }
-
+    
 }

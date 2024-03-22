@@ -28,20 +28,11 @@ import java.util.Properties;
 public interface LabelsCollectorManager {
     
     /**
-    * get all labels collected.
-    *
-    * @date 2024/2/4
-    * @description
-    * @return all labels
-    */
-    Map<String, String> getAllLabels();
-    
-    /**
      * refresh all labels.
      *
      * @date 2024/3/7
      * @param properties    Properties.
      * @return all labels.
      */
-    Map<String, String> refreshAllLabels(Properties properties);
+    Map<String, String> getLabels(Properties properties);
 }

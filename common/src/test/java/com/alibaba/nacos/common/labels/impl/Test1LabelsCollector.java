@@ -17,7 +17,10 @@
 package com.alibaba.nacos.common.labels.impl;
 
 import com.alibaba.nacos.common.labels.LabelsCollector;
+import org.checkerframework.common.reflection.qual.ClassValBottom;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 /**
@@ -25,7 +28,7 @@ import java.util.Properties;
  *
  * @author rong
  */
-public class Test1LabelsCollector extends AbstractLabelsCollector implements LabelsCollector {
+public class Test1LabelsCollector implements LabelsCollector {
     
     @Override
     public String getName() {
@@ -33,8 +36,10 @@ public class Test1LabelsCollector extends AbstractLabelsCollector implements Lab
     }
     
     @Override
-    public void init(Properties properties) {
+    public Map<String, String> collectLabels(Properties properties) {
+        Map<String, String> labels = new HashMap<>();
         labels.put("test", getName());
+        return labels;
     }
     
     @Override
