@@ -17,11 +17,9 @@
 package com.alibaba.nacos.common.remote.client;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.common.labels.impl.DefaultLabelsCollectorManager;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClusterClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcSdkClient;
-import com.alibaba.nacos.common.utils.ConnLabelsUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,9 +27,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static com.alibaba.nacos.api.common.Constants.APP_CONN_PREFIX;
 
 /**
  * RpcClientFactory.to support multi client for different modules of usage.
@@ -44,8 +39,6 @@ public class RpcClientFactory {
     private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.remote.client");
     
     private static final Map<String, RpcClient> CLIENT_MAP = new ConcurrentHashMap<>();
-    
-    private static AtomicReference<DefaultLabelsCollectorManager> defaultLabelsCollectorManager;
     
     /**
      * get all client.
@@ -89,18 +82,13 @@ public class RpcClientFactory {
     }
     
     /**
-    * create client with properties.
-    *
-    * @date 2024/3/7
-    * @return rpc client.
-    */
+     * create client with properties.
+     *
+     * @return rpc client.
+     * @date 2024/3/7
+     */
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
             Properties properties, RpcClientTlsConfig tlsConfig) {
-        try {
-            labels = ConnLabelsUtils.mergeMapByOrder(labels, collectLabels(properties));
-        } catch (Exception e) {
-            LOGGER.error("Collect labels error when creating config rpc client", e);
-        }
         return createClient(clientName, connectionType, null, null, labels, tlsConfig);
     }
     
@@ -130,22 +118,6 @@ public class RpcClientFactory {
             LOGGER.info("[RpcClientFactory] create a new rpc client of " + clientName);
             return new GrpcSdkClient(clientNameInner, threadPoolCoreSize, threadPoolMaxSize, labels, tlsConfig);
         });
-    }
-    
-    /**
-     * collect labels.
-     *
-     * @return the labels map
-     * @description will get labels map from properties, valueFromSpi, JVM OPTIONS or ENV by order of properties >
-     * valueFromSpi > JVM OPTIONS > ENV which will use the next level value when the key doesn't exist in current
-     * map
-     */
-    private static Map<String, String> collectLabels(Properties properties) {
-        //labels from spi
-        defaultLabelsCollectorManager.compareAndSet(null, new DefaultLabelsCollectorManager(properties));
-        Map<String, String> allLabels = defaultLabelsCollectorManager.get().refreshAllLabels(properties);
-        allLabels = ConnLabelsUtils.addPrefixForEachKey(allLabels, APP_CONN_PREFIX);
-        return allLabels;
     }
     
     /**

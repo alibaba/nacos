@@ -34,62 +34,42 @@ import java.util.ServiceLoader;
  */
 public class DefaultLabelsCollectorManager implements LabelsCollectorManager {
     
-    private static final Logger LOGGER = LoggerFactory.getLogger(DefaultLabelsCollectorManager.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.labels");
     
     private ArrayList<LabelsCollector> labelsCollectorsList = new ArrayList<>();
     
-    private Map<String, String> labels = new HashMap<>();
-    
-    private static final int MAX_TRY_COUNT = 3;
-    
-    private volatile boolean isLabelsInit = false;
-    
-    public DefaultLabelsCollectorManager(Properties properties) {
-        init(properties);
-    }
-    
-    private void init(Properties properties) {
-        if (isLabelsInit) {
-            return;
-        }
-        synchronized (this) {
-            if (isLabelsInit) {
-                return;
-            }
-            isLabelsInit = true;
-            LOGGER.info("DefaultLabelsCollectorManager init labels.....");
-            initLabels(properties);
-            LOGGER.info("DefaultLabelsCollectorManager init labels finished, labels:{}", labels);
-            
-        }
-    }
-    
-    public Map<String, String> getAllLabels() {
-        for (int tryTimes = 0; tryTimes < MAX_TRY_COUNT && !isLabelsInit; tryTimes++) {
-            try {
-                Thread.sleep(100);
-            } catch (Exception e) {
-                //do nothing
-            }
-        }
-        return labels;
+    public DefaultLabelsCollectorManager() {
+        labelsCollectorsList = loadLabelsCollectors();
     }
     
     @Override
-    public Map<String, String> refreshAllLabels(Properties properties) {
-        for (int tryTimes = 0; tryTimes < MAX_TRY_COUNT && !isLabelsInit; tryTimes++) {
-            try {
-                Thread.sleep(100);
-            } catch (Exception e) {
-                //do nothing
+    public Map<String, String> getLabels(Properties properties) {
+        LOGGER.info("DefaultLabelsCollectorManager get labels.....");
+        Map<String, String> labels = getLabels(labelsCollectorsList, properties);
+        LOGGER.info("DefaultLabelsCollectorManager get labels finished,labels :{}", labels);
+        return labels;
+    }
+    
+    Map<String, String> getLabels(ArrayList<LabelsCollector> labelsCollectorsList, Properties properties) {
+        
+        if (properties == null) {
+            properties = new Properties();
+        }
+        Map<String, String> labels = new HashMap<>(8);
+        for (LabelsCollector labelsCollector : labelsCollectorsList) {
+            
+            LOGGER.info("Process LabelsCollector with [name:{}]", labelsCollector.getName());
+            for (Map.Entry<String, String> entry : labelsCollector.collectLabels(properties).entrySet()) {
+                if (innerAddLabel(labels, entry.getKey(), entry.getValue())) {
+                    LOGGER.info("pick label with [key:{}, value:{}] of collector [name:{}]", entry.getKey(),
+                            entry.getValue(), labelsCollector.getName());
+                } else {
+                    LOGGER.info(" ignore label with [key:{}, value:{}] of collector [name:{}],"
+                                    + "already existed in LabelsCollectorManager with previous [value:{}]，", entry.getKey(),
+                            entry.getValue(), labelsCollector.getName(), labels.get(entry.getKey()));
+                }
             }
         }
-        if (!isLabelsInit) {
-            return new HashMap<>(2);
-        }
-        LOGGER.info("DefaultLabelsCollectorManager refresh labels.....");
-        initLabels(properties);
-        LOGGER.info("DefaultLabelsCollectorManager refresh labels finished,labels :{}", labels);
         return labels;
     }
     
@@ -101,38 +81,6 @@ public class DefaultLabelsCollectorManager implements LabelsCollectorManager {
         }
         labelsCollectorsList.sort((o1, o2) -> o2.getOrder() - o1.getOrder());
         return labelsCollectorsList;
-    }
-    
-    private void initLabels(Properties properties) {
-        labelsCollectorsList = loadLabelsCollectors();
-        this.labels = getLabels(labelsCollectorsList, properties);
-    }
-    
-    Map<String, String> getLabels(ArrayList<LabelsCollector> labelsCollectorsList, Properties properties) {
-        Map<String, String> labels = new HashMap<>(8);
-        for (LabelsCollector labelsCollector : labelsCollectorsList) {
-            try {
-                LOGGER.info("LabelsCollector with name [{}] initializing......", labelsCollector.getName());
-                labelsCollector.init(properties);
-                LOGGER.info("LabelsCollector with name [{}] initialize finished......", labelsCollector.getName());
-            } catch (Exception e) {
-                LOGGER.error("init LabelsCollector with [name:{}] failed", labelsCollector.getName(), e);
-                continue;
-            }
-            LOGGER.info("Process LabelsCollector with [name:{}]", labelsCollector.getName());
-            for (Map.Entry<String, String> entry : labelsCollector.getLabels().entrySet()) {
-                if (innerAddLabel(labels, entry.getKey(), entry.getValue())) {
-                    LOGGER.info("pick label with [key:{}, value:{}] of collector [name:{}]", entry.getKey(),
-                            entry.getValue(), labelsCollector.getName());
-                } else {
-                    LOGGER.info(
-                            " ignore label with [key:{}, value:{}] of collector [name:{}],"
-                                    + "already existed in LabelsCollectorManager with previous [value:{}]，",
-                            entry.getKey(), entry.getValue(), labelsCollector.getName(), labels.get(entry.getKey()));
-                }
-            }
-        }
-        return labels;
     }
     
     private boolean innerAddLabel(Map<String, String> labels, String key, String value) {

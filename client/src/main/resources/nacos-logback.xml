@@ -99,6 +99,10 @@
         <appender-ref ref="ASYNC-CONFIG"/>
     </logger>
     
+    <Logger name="com.alibaba.nacos.common.labels" level="${nacosConfigLogLevel}"
+        additivity="false">
+        <appender-ref ref="ASYNC-REMOTE"/>
+    </Logger>
     
     <Logger name="com.alibaba.nacos.common.remote.client" level="${nacosConfigLogLevel}"
         additivity="false">
