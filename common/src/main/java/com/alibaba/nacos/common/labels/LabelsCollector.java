@@ -30,7 +30,8 @@ public interface LabelsCollector {
     /**
      * getLabels.
      *
-     * @return Map
+     * @param properties properties
+     * @return Map labels.
      * @date 2024/2/4
      * @description get all labels
      */

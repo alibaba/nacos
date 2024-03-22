@@ -27,6 +27,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.alibaba.nacos.api.common.Constants.DOT;
+import static com.alibaba.nacos.api.common.Constants.ENV_KEY;
+import static com.alibaba.nacos.api.common.Constants.JVM_KEY;
+
 /**
  * DefaultLabelsCollector.
  *
@@ -37,6 +41,8 @@ public class DefaultLabelsCollector implements LabelsCollector {
     private static final Logger LOGGER = LoggerFactory.getLogger("com.alibaba.nacos.common.labels");
     
     private final String customName = "defaultNacosLabelsCollector";
+    
+    private static final String UNDERSCORE = "_";
     
     /**
      * init labels.
@@ -70,23 +76,24 @@ public class DefaultLabelsCollector implements LabelsCollector {
         
         //env
         Map<String, String> envLabels = ConnLabelsUtils.parseRawLabels(
-                System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll(".", "_")));
-        if (System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(".", "_")) != null) {
-            envLabels.put(Constants.CONFIG_GRAY_LABEL, System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(".", "_")));
+                System.getenv(Constants.APP_CONN_LABELS_KEY.replaceAll(DOT, UNDERSCORE)));
+        if (System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(DOT, UNDERSCORE)) != null) {
+            envLabels.put(Constants.CONFIG_GRAY_LABEL,
+                    System.getenv(Constants.CONFIG_GRAY_LABEL.replaceAll(DOT, UNDERSCORE)));
         }
         LOGGER.info("default nacos collect env labels: {}", envLabels);
         
-        Map<String, String> finalLabels = new HashMap<>();
+        Map<String, String> finalLabels = new HashMap<>(4);
         String preferred = System.getenv(Constants.APP_CONN_LABELS_PREFERRED);
         boolean jvmPrefferred = false;
         boolean envPrefferred = false;
         
         if (StringUtils.isNotBlank(preferred)) {
             LOGGER.info("default nacos  labels collector preferred {} labels.", preferred);
-            if ("jvm".equals(preferred)) {
+            if (JVM_KEY.equals(preferred)) {
                 finalLabels.putAll(jvmLabels);
                 jvmPrefferred = true;
-            } else if ("env".equals(preferred)) {
+            } else if (ENV_KEY.equals(preferred)) {
                 finalLabels.putAll(envLabels);
                 envPrefferred = true;
             }

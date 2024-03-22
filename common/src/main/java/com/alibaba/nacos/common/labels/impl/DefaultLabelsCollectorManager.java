@@ -42,33 +42,19 @@ public class DefaultLabelsCollectorManager implements LabelsCollectorManager {
         labelsCollectorsList = loadLabelsCollectors();
     }
     
-    
     @Override
     public Map<String, String> getLabels(Properties properties) {
         LOGGER.info("DefaultLabelsCollectorManager get labels.....");
-        Map<String, String> labels = initLabels(properties);
+        Map<String, String> labels = getLabels(labelsCollectorsList, properties);
         LOGGER.info("DefaultLabelsCollectorManager get labels finished,labels :{}", labels);
         return labels;
     }
     
-    private ArrayList<LabelsCollector> loadLabelsCollectors() {
-        ServiceLoader<LabelsCollector> labelsCollectors = ServiceLoader.load(LabelsCollector.class);
-        ArrayList<LabelsCollector> labelsCollectorsList = new ArrayList<>();
-        for (LabelsCollector labelsCollector : labelsCollectors) {
-            labelsCollectorsList.add(labelsCollector);
-        }
-        labelsCollectorsList.sort((o1, o2) -> o2.getOrder() - o1.getOrder());
-        return labelsCollectorsList;
-    }
-    
-    private Map<String, String> initLabels(Properties properties) {
+    Map<String, String> getLabels(ArrayList<LabelsCollector> labelsCollectorsList, Properties properties) {
+        
         if (properties == null) {
             properties = new Properties();
         }
-        return getLabels(labelsCollectorsList, properties);
-    }
-    
-    Map<String, String> getLabels(ArrayList<LabelsCollector> labelsCollectorsList, Properties properties) {
         Map<String, String> labels = new HashMap<>(8);
         for (LabelsCollector labelsCollector : labelsCollectorsList) {
             
@@ -85,6 +71,16 @@ public class DefaultLabelsCollectorManager implements LabelsCollectorManager {
             }
         }
         return labels;
+    }
+    
+    private ArrayList<LabelsCollector> loadLabelsCollectors() {
+        ServiceLoader<LabelsCollector> labelsCollectors = ServiceLoader.load(LabelsCollector.class);
+        ArrayList<LabelsCollector> labelsCollectorsList = new ArrayList<>();
+        for (LabelsCollector labelsCollector : labelsCollectors) {
+            labelsCollectorsList.add(labelsCollector);
+        }
+        labelsCollectorsList.sort((o1, o2) -> o2.getOrder() - o1.getOrder());
+        return labelsCollectorsList;
     }
     
     private boolean innerAddLabel(Map<String, String> labels, String key, String value) {

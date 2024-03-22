@@ -17,7 +17,6 @@
 package com.alibaba.nacos.common.labels.impl;
 
 import com.alibaba.nacos.common.labels.LabelsCollector;
-import org.checkerframework.common.reflection.qual.ClassValBottom;
 
 import java.util.HashMap;
 import java.util.Map;

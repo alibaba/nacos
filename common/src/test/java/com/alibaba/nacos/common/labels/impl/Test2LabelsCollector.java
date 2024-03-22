@@ -34,6 +34,7 @@ public class Test2LabelsCollector implements LabelsCollector {
         return "test2";
     }
     
+    @Override
     public Map<String, String> collectLabels(Properties properties) {
         Map<String, String> labels = new HashMap<>();
         labels.put("test", getName());
