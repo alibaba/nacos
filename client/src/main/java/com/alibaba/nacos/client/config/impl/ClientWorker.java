@@ -866,42 +866,36 @@ public class ClientWorker implements Closeable {
             final String group = cacheData.group;
             final String tenant = cacheData.tenant;
             final String envName = cacheData.envName;
-            
+
             // Check if a failover file exists for the specified dataId, group, and tenant.
             File file = LocalConfigInfoProcessor.getFailoverFile(envName, dataId, group, tenant);
-            
-            // If not using local config info and a failover file exists, load and use it.
-            if (!cacheData.isUseLocalConfigInfo() && file.exists()) {
+
+            // not using local config info, but a failover file exists
+            boolean failOverFileCreated = !cacheData.isUseLocalConfigInfo() && file.exists();
+
+            // using local config info, but there is a change in local configuration
+            boolean failOverFileChanged= cacheData.isUseLocalConfigInfo() && file.exists() && cacheData.getLocalConfigInfoVersion() != file.lastModified();
+
+            // using local config info, but the failover file is deleted
+            boolean failOverFileDeleted = cacheData.isUseLocalConfigInfo() && !file.exists();
+
+            if (failOverFileCreated || failOverFileChanged) {
+                // load and use the file content
                 String content = LocalConfigInfoProcessor.getFailover(envName, dataId, group, tenant);
                 final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
                 cacheData.setUseLocalConfigInfo(true);
                 cacheData.setLocalConfigInfoVersion(file.lastModified());
                 cacheData.setContent(content);
                 LOGGER.warn(
-                        "[{}] [failover-change] failover file created. dataId={}, group={}, tenant={}, md5={}, content={}",
-                        envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
-                return;
+                        "[{}] [failover-change] failover file {}. dataId={}, group={}, tenant={}, md5={}, content={}",
+                        failOverFileCreated ? "created" : "changed", envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));;
             }
-            
-            // If use local config info, but the failover file is deleted, switch back to server config.
-            if (cacheData.isUseLocalConfigInfo() && !file.exists()) {
+
+            if (failOverFileDeleted) {
+                // switch back to server config.
                 cacheData.setUseLocalConfigInfo(false);
                 LOGGER.warn("[{}] [failover-change] failover file deleted. dataId={}, group={}, tenant={}", envName,
                         dataId, group, tenant);
-                return;
-            }
-            
-            // When the failover file content changes, indicating a change in local configuration.
-            if (cacheData.isUseLocalConfigInfo() && file.exists()
-                    && cacheData.getLocalConfigInfoVersion() != file.lastModified()) {
-                String content = LocalConfigInfoProcessor.getFailover(envName, dataId, group, tenant);
-                final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE);
-                cacheData.setUseLocalConfigInfo(true);
-                cacheData.setLocalConfigInfoVersion(file.lastModified());
-                cacheData.setContent(content);
-                LOGGER.warn(
-                        "[{}] [failover-change] failover file changed. dataId={}, group={}, tenant={}, md5={}, content={}",
-                        envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             }
         }
         
