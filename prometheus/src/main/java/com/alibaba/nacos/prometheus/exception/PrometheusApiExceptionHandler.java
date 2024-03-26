@@ -50,7 +50,7 @@ public class PrometheusApiExceptionHandler {
     @ExceptionHandler(NacosRuntimeException.class)
     public ResponseEntity<Result<String>> handleNacosRuntimeException(NacosRuntimeException e) {
         LOGGER.error("got exception. {}", e.getMessage());
-        return ResponseEntity.internalServerError().body(Result.failure(e.getMessage()));
+        return ResponseEntity.status(e.getErrCode()).body(Result.failure(e.getMessage()));
     }
     
 }
