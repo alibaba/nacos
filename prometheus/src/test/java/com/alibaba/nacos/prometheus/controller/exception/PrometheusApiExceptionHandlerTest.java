@@ -39,7 +39,7 @@ public class PrometheusApiExceptionHandlerTest {
 
     @Test
     public void testNacosRunTimeExceptionHandler() throws Exception {
-        // 设置InstanceControllerV2的行为，使其抛出NacosRuntimeException并被ResponseExceptionHandler捕获处理
+        // 设置InstanceControllerV2的行为，使其抛出NacosRuntimeException并被PrometheusApiExceptionHandler捕获处理
         when(prometheusController.metric())
                 .thenThrow(new NacosRuntimeException(NacosException.INVALID_PARAM))
                 .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
