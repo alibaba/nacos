@@ -170,8 +170,32 @@
   "methods":[{"name":"isSupportRemoteMetrics","parameterTypes":[] }]
 },
 {
-  "name":"com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest",
-  "allDeclaredFields":true
+	"name": "com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest",
+	"allDeclaredFields": true,
+	"allDeclaredConstructors": true,
+	"methods": [
+		{"name": "getDataId","parameterTypes": [ ]},
+		{"name": "getGroup","parameterTypes": [ ]},
+		{"name": "getModule","parameterTypes": [ ]},
+		{"name": "getTenant","parameterTypes": [ ]},
+		{"name": "setDataId","parameterTypes": ["java.lang.String"]},
+		{"name": "setGroup","parameterTypes": ["java.lang.String"]},
+		{"name": "setTenant","parameterTypes": ["java.lang.String"]}
+	]
+},
+{
+	"name": "com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest",
+	"allDeclaredConstructors": true,
+	"allDeclaredFields": true,
+	"methods": [
+		{"name": "setGroup","parameterTypes": ["java.lang.String"]},
+		{"name": "getTenant","parameterTypes": [ ]},
+		{"name": "setTenant","parameterTypes": ["java.lang.String"]},
+		{"name": "setDataId","parameterTypes": ["java.lang.String"]},
+		{"name": "getGroup","parameterTypes": [ ]},
+		{"name": "getDataId","parameterTypes": [ ]},
+		{"name": "getModule","parameterTypes": [ ]}
+	]
 },
 {
   "name":"com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest",
@@ -359,14 +383,20 @@
   ]
 },
 {
-  "name":"com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "methods":[
-    {"name":"<init>","parameterTypes":[] },
-    {"name":"setServiceInfo","parameterTypes":["com.alibaba.nacos.api.naming.pojo.ServiceInfo"] }
-  ]
+	"name": "com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest",
+	"allDeclaredFields": true,
+	"allDeclaredConstructors": true,
+	"methods": [
+		{"name": "getGroupName","parameterTypes": [ ]},
+		{"name": "getModule","parameterTypes": [ ]},
+		{"name": "getNamespace","parameterTypes": [ ]},
+		{"name": "getServiceInfo","parameterTypes": [ ]},
+		{"name": "getServiceName","parameterTypes": [ ]},
+		{"name": "setGroupName","parameterTypes": ["java.lang.String"]},
+		{"name": "setNamespace","parameterTypes": ["java.lang.String"]},
+		{"name": "setServiceInfo","parameterTypes": ["com.alibaba.nacos.api.naming.pojo.ServiceInfo"]},
+		{"name": "setServiceName","parameterTypes": ["java.lang.String"]}
+	]
 },
 {
   "name":"com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest",
@@ -416,16 +446,19 @@
     "methods":[{"name":"isSupportRemoteConnection","parameterTypes":[] }]
   },
 {
-  "name":"com.alibaba.nacos.api.remote.request.ConnectionSetupRequest",
-  "allDeclaredFields":true,
-  "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true,
-  "methods":[
-    {"name":"getAbilities","parameterTypes":[] }, 
-    {"name":"getClientVersion","parameterTypes":[] }, 
-    {"name":"getLabels","parameterTypes":[] }, 
-    {"name":"getTenant","parameterTypes":[] }
-  ]
+	"name": "com.alibaba.nacos.api.remote.request.ConnectionSetupRequest",
+	"allDeclaredFields": true,
+	"allDeclaredConstructors": true,
+	"methods": [
+		{"name": "getAbilityTable","parameterTypes": [ ]},
+		{"name": "getClientVersion","parameterTypes": [ ]},
+		{"name": "getLabels","parameterTypes": [ ]},
+		{"name": "getTenant","parameterTypes": [ ]},
+		{"name": "setAbilityTable","parameterTypes": ["java.util.Map"]},
+		{"name": "setClientVersion","parameterTypes": ["java.lang.String"]},
+		{"name": "setLabels","parameterTypes": ["java.util.Map"]},
+		{"name": "setTenant","parameterTypes": ["java.lang.String"]}
+	]
 },
 {
   "name":"com.alibaba.nacos.api.remote.request.HealthCheckRequest",
