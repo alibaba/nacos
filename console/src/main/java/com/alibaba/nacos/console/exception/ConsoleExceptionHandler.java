@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.console.exception;
 
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
@@ -50,6 +51,12 @@ public class ConsoleExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     private ResponseEntity<String> handleIllegalArgumentException(IllegalArgumentException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ExceptionUtil.getAllExceptionMsg(e));
+    }
+
+    @ExceptionHandler(NacosRuntimeException.class)
+    private ResponseEntity<String> handleNacosRuntimeException(NacosRuntimeException e) {
+        LOGGER.error("got exception. {}", e.getMessage());
+        return ResponseEntity.status(e.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(e));
     }
     
     @ExceptionHandler(Exception.class)

@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.http.HttpStatus;
@@ -42,6 +43,18 @@ public class ResponseExceptionHandler {
     @ExceptionHandler(NacosException.class)
     public ResponseEntity<String> handleNacosException(NacosException e) {
         Loggers.SRV_LOG.error("got exception. {}", e.getErrMsg(), ExceptionUtil.getAllExceptionMsg(e));
+        return ResponseEntity.status(e.getErrCode()).body(e.getMessage());
+    }
+
+    /**
+     * Handle {@link com.alibaba.nacos.api.exception.runtime.NacosRuntimeException}.
+     *
+     * @param e NacosException
+     * @return ResponseEntity
+     */
+    @ExceptionHandler(NacosRuntimeException.class)
+    public ResponseEntity<String> handleNacosRuntimeException(NacosRuntimeException e) {
+        Loggers.SRV_LOG.error("got exception. {}", e.getMessage(), ExceptionUtil.getAllExceptionMsg(e));
         return ResponseEntity.status(e.getErrCode()).body(e.getMessage());
     }
     

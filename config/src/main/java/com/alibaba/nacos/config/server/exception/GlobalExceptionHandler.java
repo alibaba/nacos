@@ -17,6 +17,7 @@
 package com.alibaba.nacos.config.server.exception;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.config.server.monitor.MetricsMonitor;
 import com.alibaba.nacos.persistence.monitor.DatasourceMetrics;
@@ -48,6 +49,17 @@ public class GlobalExceptionHandler {
     }
     
     /**
+     * For NacosRuntimeException.
+     *
+     * @throws com.alibaba.nacos.api.exception.runtime.NacosRuntimeException NacosRuntimeException.
+     */
+    @ExceptionHandler(NacosRuntimeException.class)
+    public ResponseEntity<String> handleNacosRunTimeException(NacosRuntimeException ex) throws IOException {
+        MetricsMonitor.getNacosException().increment();
+        return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
+    }
+
+    /**
      * For NacosException.
      *
      * @throws NacosException NacosException.
@@ -57,7 +69,7 @@ public class GlobalExceptionHandler {
         MetricsMonitor.getNacosException().increment();
         return ResponseEntity.status(ex.getErrCode()).body(ExceptionUtil.getAllExceptionMsg(ex));
     }
-    
+
     /**
      * For DataAccessException.
      *
