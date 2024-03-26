@@ -351,7 +351,7 @@ public class EmbeddedConfigInfoPersistServiceImplTest {
         embeddedConfigInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo, configAdvanceInfo);
         //expect update config info invoked.
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
+                () -> EmbeddedStorageContextHolder.addSqlContext(eq(Boolean.TRUE), anyString(), eq(content),
                         eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
                         any(Timestamp.class), eq(appName), eq(desc), eq(use), eq(effect), eq(type), eq(schema),
                         eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant), eq(casMd5)), times(1));
