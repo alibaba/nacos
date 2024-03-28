@@ -41,22 +41,22 @@ public class ConnLabelsUtils {
     
     public static final int TAG_V2_LABEL_KEY_VALUE_SPLIT_LENGTH = 2;
     
-    public static final int TAG_V1_LABEL_KEY_VALUE_SPLIT_LENGTH = 1;
-    
     /**
-    * parse property value to map.
-    *
-    * @date 2024/1/29
-    * @description will get a key-value map from properties, JVM OPTIONS, ENV by order of <tt>properties > JVM OPTIONS > ENV</tt>
-     * which will use the next level value when the current level value isn't setup.
-     * <p>eg: if the value of "nacos.app.conn.labels"(properties' key) is "k1=v1,k2=v2"(properties' value), the result will be
+     * parse property value to map.
+     *
+     * @param properties   Properties
+     * @param propertyName which key to get
+     * @return (String)key-(String)value map
+     * @date 2024/1/29
+     * @description will get a key-value map from properties, JVM OPTIONS, ENV by order of <tt>properties > JVM OPTIONS
+     * > ENV</tt> which will use the next level value when the current level value isn't setup.
+     * <p>eg: if the value of "nacos.app.conn.labels"(properties' key) is "k1=v1,k2=v2"(properties' value), the result
+     * will be
      * a Map with value{k1=v1,k2=v2}.</p>
-    * @param  properties Properties
-    * @param  propertyName which key to get
-    * @return (String)key-(String)value map
      */
     public static Map<String, String> parsePropertyValue2Map(Properties properties, String propertyName) {
-        String rawLabels = properties.getProperty(propertyName, System.getProperty(propertyName, System.getenv(propertyName)));
+        String rawLabels = properties.getProperty(propertyName,
+                System.getProperty(propertyName, System.getenv(propertyName)));
         if (StringUtils.isBlank(rawLabels)) {
             LOGGER.info("no value found for property key: {}", propertyName);
             return new HashMap<>(2);
@@ -65,29 +65,24 @@ public class ConnLabelsUtils {
     }
     
     /**
-    * parse raw json labels into a key-value map.
-    *
-    * @date 2024/1/29
-    * @description
-    * @param rawLabels rawLabels to parse
-    * @return map parsed from rawLabels
-    */
+     * parse raw json labels into a key-value map.
+     *
+     * @param rawLabels rawLabels to parse
+     * @return map parsed from rawLabels
+     * @date 2024/1/29
+     * @description
+     */
     public static Map<String, String> parseRawLabels(String rawLabels) {
         if (StringUtils.isBlank(rawLabels)) {
             return new HashMap<>(2);
         }
         HashMap<String, String> resultMap = new HashMap<>(2);
         try {
-            Arrays.stream(rawLabels.split(LABEL_SPLIT_OPERATOR))
-                    .filter(Objects::nonNull)
-                    .map(String::trim)
-                    .filter(StringUtils::isNotBlank)
-                    .forEach(label -> {
+            Arrays.stream(rawLabels.split(LABEL_SPLIT_OPERATOR)).filter(Objects::nonNull).map(String::trim)
+                    .filter(StringUtils::isNotBlank).forEach(label -> {
                         String[] kv = label.split(LABEL_EQUALS_OPERATOR);
                         if (kv.length == TAG_V2_LABEL_KEY_VALUE_SPLIT_LENGTH) {
                             resultMap.put(kv[0].trim(), kv[1].trim());
-                        } else if (kv.length == TAG_V1_LABEL_KEY_VALUE_SPLIT_LENGTH) {
-                            resultMap.put(kv[0].trim(), kv[0].trim());
                         } else {
                             LOGGER.error("unknown label format: {}", label);
                         }
@@ -99,24 +94,32 @@ public class ConnLabelsUtils {
     }
     
     /**
-    *  merge two map into one by using the former value when key is duplicated.
-    *
-    * @date 2024/1/29
-    * @description merge two map into one preferring using the first one when key is duplicated
-    * @param preferredMap preferredMap
-    * @param backwardMap backwardMap
-    */
+     * merge two map into one by using the former value when key is duplicated.
+     *
+     * @param preferredMap preferredMap
+     * @param backwardMap  backwardMap
+     * @date 2024/1/29
+     * @description merge two map into one preferring using the first one when key is duplicated
+     */
     public static <T, R> Map<T, R> mergeMapByOrder(Map<T, R> preferredMap, Map<T, R> backwardMap) {
         if (preferredMap == null || preferredMap.isEmpty()) {
-            return new HashMap<T, R>(8) { {
-                    putAll(backwardMap); } };
+            return new HashMap<T, R>(8) {
+                {
+                    putAll(backwardMap);
+                }
+            };
         }
         if (backwardMap == null || backwardMap.isEmpty()) {
-            return new HashMap<T, R>(8) { {
-                    putAll(preferredMap); } };
+            return new HashMap<T, R>(8) {
+                {
+                    putAll(preferredMap);
+                }
+            };
         }
-        HashMap<T, R> resultMap = new HashMap<T, R>(8) {{
-                putAll(preferredMap); } };
+        HashMap<T, R> resultMap = new HashMap<T, R>(8) {
+            {
+                putAll(preferredMap);
+            } };
         backwardMap.forEach((key, value) -> {
             if (!resultMap.containsKey(key)) {
                 resultMap.put(key, value);
@@ -126,19 +129,18 @@ public class ConnLabelsUtils {
     }
     
     /**
-    * add prefix for each key in map.
-    *
-    * @date 2024/1/29
-    * @description add prefix for each key in map
-    * @param map map to add prefix
-    * @param prefix prefix
-    */
+     * add prefix for each key in map.
+     *
+     * @param map    map to add prefix
+     * @param prefix prefix
+     * @date 2024/1/29
+     * @description add prefix for each key in map
+     */
     public static <T> Map<String, T> addPrefixForEachKey(Map<String, T> map, String prefix) {
         if (map == null || map.isEmpty()) {
             return map;
         }
-        return map.entrySet().stream().filter(Objects::nonNull)
-                .filter(elem -> !elem.getKey().trim().isEmpty())
+        return map.entrySet().stream().filter(Objects::nonNull).filter(elem -> !elem.getKey().trim().isEmpty())
                 .collect(Collectors.toMap(elem -> prefix + elem.getKey(), Map.Entry::getValue));
     }
 }
