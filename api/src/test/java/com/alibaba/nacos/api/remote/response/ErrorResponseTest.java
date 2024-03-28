@@ -31,6 +31,7 @@ public class ErrorResponseTest {
         Response response = ErrorResponse.build(errorCode, msg);
         
         Assert.assertEquals(errorCode, response.getErrorCode());
+        Assert.assertEquals(errorCode, response.getResultCode());
         Assert.assertEquals(msg, response.getMessage());
     }
     
@@ -42,6 +43,7 @@ public class ErrorResponseTest {
         Response response = ErrorResponse.build(runtimeException);
         
         Assert.assertEquals(ResponseCode.FAIL.getCode(), response.getErrorCode());
+        Assert.assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         Assert.assertEquals(errMsg, response.getMessage());
     }
     
@@ -54,6 +56,7 @@ public class ErrorResponseTest {
         Response response = ErrorResponse.build(nacosException);
         
         Assert.assertEquals(errCode, response.getErrorCode());
+        Assert.assertEquals(errCode, response.getResultCode());
         Assert.assertEquals(errMsg, response.getMessage());
     }
     
@@ -66,7 +69,8 @@ public class ErrorResponseTest {
         Response response = ErrorResponse.build(nacosRuntimeException);
         
         Assert.assertEquals(errCode, response.getErrorCode());
+        Assert.assertEquals(errCode, response.getResultCode());
         Assert.assertEquals("errCode: " + errCode + ", errMsg: " + errMsg + " ", response.getMessage());
     }
-    
+
 }
