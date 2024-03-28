@@ -57,6 +57,7 @@ public class ErrorResponse extends Response {
         }
         ErrorResponse response = new ErrorResponse();
         response.setErrorInfo(errorCode, exception.getMessage());
+        response.setResultCode(errorCode);
         return response;
     }
     
