@@ -874,7 +874,7 @@ public class ClientWorker implements Closeable {
             boolean failOverFileCreated = !cacheData.isUseLocalConfigInfo() && file.exists();
 
             // using local config info, but there is a change in local configuration
-            boolean failOverFileChanged= cacheData.isUseLocalConfigInfo() && file.exists() && cacheData.getLocalConfigInfoVersion() != file.lastModified();
+            boolean failOverFileChanged = cacheData.isUseLocalConfigInfo() && file.exists() && cacheData.getLocalConfigInfoVersion() != file.lastModified();
 
             // using local config info, but the failover file is deleted
             boolean failOverFileDeleted = cacheData.isUseLocalConfigInfo() && !file.exists();
@@ -888,7 +888,7 @@ public class ClientWorker implements Closeable {
                 cacheData.setContent(content);
                 LOGGER.warn(
                         "[{}] [failover-change] failover file {}. dataId={}, group={}, tenant={}, md5={}, content={}",
-                        failOverFileCreated ? "created" : "changed", envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));;
+                        failOverFileCreated ? "created" : "changed", envName, dataId, group, tenant, md5, ContentUtils.truncateContent(content));
             }
 
             if (failOverFileDeleted) {
