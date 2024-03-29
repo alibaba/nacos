@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -130,12 +131,13 @@ public class ServiceInfoHolder implements Closeable {
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
-            NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {}, " 
+            NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {}, "
                     + "pushEmptyProtection: {}, hosts: {}", serviceKey, pushEmptyProtection, serviceInfo.getHosts());
             return oldService;
         }
         serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-        boolean changed = isChangedServiceInfo(oldService, serviceInfo);
+        Map<String, Set<Instance>> changedMap = new HashMap<>(3);
+        boolean changed = isChangedServiceInfo(oldService, serviceInfo, changedMap);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
@@ -144,9 +146,16 @@ public class ServiceInfoHolder implements Closeable {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
             if (!failoverReactor.isFailoverSwitch(serviceKey)) {
-                NotifyCenter.publishEvent(
-                        new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
-                                serviceInfo.getClusters(), serviceInfo.getHosts()));
+                InstancesChangeEvent instancesChangeEvent = new InstancesChangeEvent(notifierEventScope,
+                        serviceInfo.getName(), serviceInfo.getGroupName(), serviceInfo.getClusters(),
+                        serviceInfo.getHosts());
+                instancesChangeEvent.setNewHosts(
+                        Optional.ofNullable(changedMap.get("newHosts")).orElse(new HashSet<>()));
+                instancesChangeEvent.setRemvHosts(
+                        Optional.ofNullable(changedMap.get("remvHosts")).orElse(new HashSet<>()));
+                instancesChangeEvent.setModHosts(
+                        Optional.ofNullable(changedMap.get("modHosts")).orElse(new HashSet<>()));
+                NotifyCenter.publishEvent(instancesChangeEvent);
             }
             DiskCache.write(serviceInfo, cacheDir);
         }
@@ -165,6 +174,19 @@ public class ServiceInfoHolder implements Closeable {
      * @return
      */
     public boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
+        return isChangedServiceInfo(oldService, newService, new HashMap<>(3));
+    }
+    
+    /**
+     * isChangedServiceInfo.
+     *
+     * @param oldService old service data
+     * @param newService new service data
+     * @param changedMap changed map
+     * @return
+     */
+    public boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService,
+            Map<String, Set<Instance>> changedMap) {
         if (null == oldService) {
             NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(), newService.getKey(),
                     JacksonUtils.toJson(newService.getHosts()));
@@ -175,7 +197,6 @@ public class ServiceInfoHolder implements Closeable {
                     newService.getLastRefTime());
             return false;
         }
-        boolean changed = false;
         Map<String, Instance> oldHostMap = new HashMap<>(oldService.getHosts().size());
         for (Instance host : oldService.getHosts()) {
             oldHostMap.put(host.toInetAddr(), host);
@@ -215,23 +236,23 @@ public class ServiceInfoHolder implements Closeable {
         }
         
         if (newHosts.size() > 0) {
-            changed = true;
+            changedMap.put("newHosts", newHosts);
             NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(newHosts));
         }
         
         if (remvHosts.size() > 0) {
-            changed = true;
+            changedMap.put("remvHosts", remvHosts);
             NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(remvHosts));
         }
         
         if (modHosts.size() > 0) {
-            changed = true;
+            changedMap.put("modHosts", modHosts);
             NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
                     JacksonUtils.toJson(modHosts));
         }
-        return changed;
+        return changedMap.size() > 0;
     }
     
     public String getCacheDir() {

@@ -64,7 +64,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      */
     public void registerListener(String groupName, String serviceName, String clusters, EventListener listener) {
         String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
-        ConcurrentHashSet<EventListener> eventListeners = listenerMap.computeIfAbsent(key, keyInner -> new ConcurrentHashSet<>());
+        ConcurrentHashSet<EventListener> eventListeners = listenerMap.computeIfAbsent(key,
+                keyInner -> new ConcurrentHashSet<>());
         eventListeners.add(listener);
     }
     
@@ -112,8 +113,8 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     @Override
     public void onEvent(InstancesChangeEvent event) {
-        String key = ServiceInfo
-                .getKey(NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName()), event.getClusters());
+        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName()),
+                event.getClusters());
         ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
         if (CollectionUtils.isEmpty(eventListeners)) {
             return;
@@ -130,8 +131,13 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     private com.alibaba.nacos.api.naming.listener.Event transferToNamingEvent(
             InstancesChangeEvent instancesChangeEvent) {
-        return new NamingEvent(instancesChangeEvent.getServiceName(), instancesChangeEvent.getGroupName(),
-                instancesChangeEvent.getClusters(), instancesChangeEvent.getHosts());
+        NamingEvent namingEvent = new NamingEvent(instancesChangeEvent.getServiceName(),
+                instancesChangeEvent.getGroupName(), instancesChangeEvent.getClusters(),
+                instancesChangeEvent.getHosts());
+        namingEvent.setNewHosts(instancesChangeEvent.getNewHosts());
+        namingEvent.setModHosts(instancesChangeEvent.getModHosts());
+        namingEvent.setRemvHosts(instancesChangeEvent.getRemvHosts());
+        return namingEvent;
     }
     
     @Override
