@@ -52,7 +52,7 @@ public class ConsoleExceptionHandlerTest {
 
     @Test
     public void testNacosRunTimeExceptionHandler() throws Exception {
-        // 设置InstanceControllerV2的行为，使其抛出NacosRuntimeException并被ConsoleExceptionHandler捕获处理
+        // 设置HealthControllerV2的行为，使其抛出NacosRuntimeException并被ConsoleExceptionHandler捕获处理
         when(healthControllerV2.liveness())
                 .thenThrow(new NacosRuntimeException(NacosException.INVALID_PARAM))
                 .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))

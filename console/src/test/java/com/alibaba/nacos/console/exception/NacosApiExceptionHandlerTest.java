@@ -53,7 +53,7 @@ public class NacosApiExceptionHandlerTest {
 
     @Test
     public void testNacosRunTimeExceptionHandler() throws Exception {
-        // 设置InstanceControllerV2的行为，使其抛出NacosRuntimeException并被NacosApiExceptionHandler捕获处理
+        // 设置NamespaceControllerV2的行为，使其抛出NacosRuntimeException并被NacosApiExceptionHandler捕获处理
         when(namespaceControllerV2.createNamespace(any()))
                 .thenThrow(new NacosRuntimeException(NacosException.INVALID_PARAM))
                 .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))

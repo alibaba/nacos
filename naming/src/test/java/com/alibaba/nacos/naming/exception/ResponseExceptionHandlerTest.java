@@ -23,20 +23,24 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 
 @RunWith(SpringRunner.class)
-@WebMvcTest(ResponseExceptionHandlerTest.class)
+@WebAppConfiguration
+@ContextConfiguration(classes = {ResponseExceptionHandler.class})
 public class ResponseExceptionHandlerTest {
 
     private MockMvc mockMvc;
@@ -61,7 +65,7 @@ public class ResponseExceptionHandlerTest {
                 .thenThrow(new NacosRuntimeException(503));
 
         // 执行请求并验证响应码
-        ResultActions resultActions  = mockMvc.perform(post("/v2/ns/instance")
+        ResultActions resultActions  = mockMvc.perform(MockMvcRequestBuilders.post("/v2/ns/instance")
                 .param("namespaceId", "public").param("groupName", "G")
                 .param("serviceName", "s").param("ip", "192.168.0.1")
                 .param("port", "8080").param("ephemeral", "true"));
