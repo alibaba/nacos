@@ -39,7 +39,7 @@ public class ConnLabelsUtilsTest {
         String rawValue = "k1 = v1, k2 = v2";
         properties.put(property, rawValue);
         String property1 = "property2";
-        String rawValue1 = "k1, kk2";
+        String rawValue1 = "k11=v11, kk2";
         properties.put(property1, rawValue1);
         
         Map<String, String> m = ConnLabelsUtils.parsePropertyValue2Map(properties, property);
@@ -48,15 +48,15 @@ public class ConnLabelsUtilsTest {
         assertEquals("v2", m.get("k2"));
         
         Map<String, String> m1 = ConnLabelsUtils.parsePropertyValue2Map(properties, property1);
-        assertEquals(2, m.size());
-        assertEquals("k1", m1.get("k1"));
-        assertEquals("kk2", m1.get("kk2"));
+        assertEquals(1, m1.size());
+        assertEquals("v11", m1.get("k11"));
+        assertEquals(null, m1.get("kk2"));
         
         m = ConnLabelsUtils.mergeMapByOrder(m, m1);
         assertEquals(3, m.size());
         assertEquals("v1", m.get("k1"));
         assertEquals("v2", m.get("k2"));
-        assertEquals("kk2", m.get("kk2"));
+        assertEquals("v11", m.get("k11"));
         
         m = ConnLabelsUtils.addPrefixForEachKey(m, "test_prefix");
         assertEquals(3, m.size());

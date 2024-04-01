@@ -18,6 +18,7 @@ package com.alibaba.nacos.common.labels.impl;
 
 import com.alibaba.nacos.common.labels.LabelsCollector;
 import com.alibaba.nacos.common.labels.LabelsCollectorManager;
+import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,6 +61,11 @@ public class DefaultLabelsCollectorManager implements LabelsCollectorManager {
             
             LOGGER.info("Process LabelsCollector with [name:{}]", labelsCollector.getName());
             for (Map.Entry<String, String> entry : labelsCollector.collectLabels(properties).entrySet()) {
+                if (!checkValidLabel(entry.getKey(), entry.getValue())) {
+                    LOGGER.info(" ignore invalid label with [key:{}, value:{}] of collector [name:{}]", entry.getKey(),
+                            entry.getValue(), labelsCollector.getName());
+                    continue;
+                }
                 if (innerAddLabel(labels, entry.getKey(), entry.getValue())) {
                     LOGGER.info("pick label with [key:{}, value:{}] of collector [name:{}]", entry.getKey(),
                             entry.getValue(), labelsCollector.getName());
@@ -71,6 +77,40 @@ public class DefaultLabelsCollectorManager implements LabelsCollectorManager {
             }
         }
         return labels;
+    }
+    
+    private boolean checkValidLabel(String key, String value) {
+        return isValid(key) && isValid(value);
+    }
+    
+    private static boolean isValid(String param) {
+        if (StringUtils.isBlank(param)) {
+            return false;
+        }
+        int length = param.length();
+        if (length > maxLength) {
+            return false;
+        }
+        for (int i = 0; i < length; i++) {
+            char ch = param.charAt(i);
+            if (!Character.isLetterOrDigit(ch) && !isValidChar(ch)) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private static char[] validChars = new char[] {'_', '-', '.'};
+    
+    private static int maxLength = 128;
+    
+    private static boolean isValidChar(char ch) {
+        for (char c : validChars) {
+            if (c == ch) {
+                return true;
+            }
+        }
+        return false;
     }
     
     private ArrayList<LabelsCollector> loadLabelsCollectors() {
