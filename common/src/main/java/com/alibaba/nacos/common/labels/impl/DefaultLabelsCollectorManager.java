@@ -62,8 +62,8 @@ public class DefaultLabelsCollectorManager implements LabelsCollectorManager {
             LOGGER.info("Process LabelsCollector with [name:{}]", labelsCollector.getName());
             for (Map.Entry<String, String> entry : labelsCollector.collectLabels(properties).entrySet()) {
                 if (!checkValidLabel(entry.getKey(), entry.getValue())) {
-                    LOGGER.info(" ignore invalid label with [key:{}, value:{}] of collector [name:{}]," + "",
-                            entry.getKey(), entry.getValue(), labelsCollector.getName(), labels.get(entry.getKey()));
+                    LOGGER.info(" ignore invalid label with [key:{}, value:{}] of collector [name:{}]", entry.getKey(),
+                            entry.getValue(), labelsCollector.getName());
                     continue;
                 }
                 if (innerAddLabel(labels, entry.getKey(), entry.getValue())) {
