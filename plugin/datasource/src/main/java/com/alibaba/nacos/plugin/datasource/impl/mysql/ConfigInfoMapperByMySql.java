@@ -86,7 +86,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     public MapperResult findAllConfigInfoBaseFetchRows(MapperContext context) {
         String sql = "SELECT t.id,data_id,group_id,content,md5"
                 + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT " + context.getStartRow() + ","
-                + context.getPageSize() +" )" + " g, config_info t  WHERE g.id = t.id ";
+                + context.getPageSize() + " )" + " g, config_info t  WHERE g.id = t.id ";
         return new MapperResult(sql, Collections.emptyList());
     }
     
