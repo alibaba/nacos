@@ -43,9 +43,8 @@ public class ConfigInfoAggrMapperByDerby extends AbstractMapper implements Confi
         
         String sql =
                 "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE data_id=? AND "
-                        + "group_id=? AND tenant_id=? ORDER BY datum_id OFFSET " + startRow + " ROWS FETCH NEXT "
-                        + pageSize + " ROWS ONLY";
-        List<Object> paramList = CollectionUtils.list(dataId, groupId, tenantId);
+                        + "group_id=? AND tenant_id=? ORDER BY datum_id OFFSET ? ROWS FETCH NEXT ? ROWS ONLY";
+        List<Object> paramList = CollectionUtils.list(dataId, groupId, tenantId, startRow, pageSize);
         return new MapperResult(sql, paramList);
     }
     

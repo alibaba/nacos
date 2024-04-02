@@ -99,8 +99,8 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoByAppFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE"
-                        + " ? AND app_name = ? OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
+                        + " ? AND app_name = ? OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName, startRow, pageSize});
     }
     
     @Test
@@ -114,18 +114,18 @@ public class ConfigInfoMapperByDerbyTest {
     public void testGetTenantIdList() {
         MapperResult mapperResult = configInfoMapperByDerby.getTenantIdList(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET " + startRow
-                        + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
+                "SELECT tenant_id FROM config_info WHERE tenant_id != '' GROUP BY tenant_id OFFSET ?"
+                        + " ROWS FETCH NEXT ? ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startRow, pageSize});
     }
     
     @Test
     public void testGetGroupIdList() {
         MapperResult mapperResult = configInfoMapperByDerby.getGroupIdList(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id OFFSET " + startRow
-                        + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
+                "SELECT group_id FROM config_info WHERE tenant_id ='' GROUP BY group_id OFFSET ?"
+                        + " ROWS FETCH NEXT ? ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startRow, pageSize});
     }
     
     @Test
@@ -133,19 +133,19 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.findAllConfigKey(context);
         Assert.assertEquals(mapperResult.getSql(),
                 " SELECT data_id,group_id,app_name FROM  ( SELECT id FROM config_info WHERE tenant_id LIKE"
-                        + " ? ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + " ? ORDER BY id OFFSET ? ROWS FETCH NEXT ?"
                         + " ROWS ONLY ) g, config_info t  WHERE g.id = t.id ");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId});
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, startRow, pageSize});
     }
     
     @Test
     public void testFindAllConfigInfoBaseFetchRows() {
         MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfoBaseFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT t.id,data_id,group_id,content,md5  FROM ( SELECT id FROM config_info ORDER BY " + "id OFFSET "
-                        + startRow + " ROWS FETCH NEXT " + pageSize
+                "SELECT t.id,data_id,group_id,content,md5  FROM ( SELECT id FROM config_info ORDER BY " + "id OFFSET ?"
+                        + " ROWS FETCH NEXT ?"
                         + " ROWS ONLY )   g, config_info t WHERE g.id = t.id ");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(),  new Object[] {startRow, pageSize});
     }
     
     @Test
@@ -155,18 +155,18 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.findAllConfigInfoFragment(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type FROM config_info "
-                        + "WHERE id > ? ORDER BY id ASC OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + "WHERE id > ? ORDER BY id ASC OFFSET ? ROWS FETCH NEXT ?"
                         + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id});
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id, startRow, pageSize});
         //with out content
         context.putContextParameter(ContextConstant.NEED_CONTENT, "false");
     
         MapperResult mapperResult2 = configInfoMapperByDerby.findAllConfigInfoFragment(context);
         Assert.assertEquals(mapperResult2.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,md5,gmt_modified,type FROM config_info "
-                        + "WHERE id > ? ORDER BY id ASC OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + "WHERE id > ? ORDER BY id ASC OFFSET ? ROWS FETCH NEXT ?"
                         + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult2.getParamList().toArray(), new Object[] {id});
+        Assert.assertArrayEquals(mapperResult2.getParamList().toArray(), new Object[] {id, startRow, pageSize});
     }
     
     @Test
@@ -192,9 +192,9 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.findChangeConfigFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info "
-                        + "WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=?  OFFSET " + startRow
-                        + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {appName, startTime, endTime});
+                        + "WHERE  1=1  AND app_name = ?  AND gmt_modified >=?  AND gmt_modified <=?  OFFSET ?"
+                        + " ROWS FETCH NEXT ? ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {appName, startTime, endTime, startRow, pageSize});
     }
     
     @Test
@@ -202,9 +202,9 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.listGroupKeyMd5ByPageFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 " SELECT t.id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM ( SELECT id FROM config_info "
-                        + "ORDER BY id OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize
+                        + "ORDER BY id OFFSET ? ROWS FETCH NEXT ?"
                         + " ROWS ONLY ) g, config_info t WHERE g.id = t.id");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startRow, pageSize});
         
     }
     
@@ -237,8 +237,8 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoBaseLikeFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,content FROM config_info WHERE  1=1 AND tenant_id=''  "
-                        + "OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
+                        + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startRow, pageSize});
     }
     
     @Test
@@ -254,8 +254,8 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfo4PageFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,type FROM config_info WHERE  tenant_id=?  AND app_name=? "
-                        + " OFFSET " + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
+                        + " OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName, startRow, pageSize});
     }
     
     @Test
@@ -263,9 +263,9 @@ public class ConfigInfoMapperByDerbyTest {
         context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoBaseByGroupFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=? " + "OFFSET "
-                        + startRow + " ROWS FETCH NEXT " + pageSize + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {groupId, tenantId});
+                "SELECT id,data_id,group_id,content FROM config_info WHERE group_id=? AND tenant_id=? " + "OFFSET ?"
+                        + " ROWS FETCH NEXT ? ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {groupId, tenantId, startRow, pageSize});
     }
     
     @Test
@@ -281,9 +281,9 @@ public class ConfigInfoMapperByDerbyTest {
         MapperResult mapperResult = configInfoMapperByDerby.findConfigInfoLike4PageFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT id,data_id,group_id,tenant_id,app_name,content,encrypted_data_key FROM config_info "
-                        + "WHERE  tenant_id LIKE ?  AND app_name = ?  OFFSET " + startRow + " ROWS FETCH NEXT "
-                        + pageSize + " ROWS ONLY");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName});
+                        + "WHERE  tenant_id LIKE ?  AND app_name = ?  OFFSET ? ROWS FETCH NEXT ?"
+                        + " ROWS ONLY");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, appName, startRow, pageSize});
     }
     
     @Test

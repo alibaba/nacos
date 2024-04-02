@@ -16,13 +16,12 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
+import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-
-import java.util.Collections;
 
 /**
  * The mysql implementation of ConfigInfoTagMapper.
@@ -35,9 +34,9 @@ public class ConfigInfoTagMapperByMySql extends AbstractMapper implements Config
     @Override
     public MapperResult findAllConfigInfoTagForDumpAllFetchRows(MapperContext context) {
         String sql = " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified "
-                + " FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT " + context.getStartRow() + ","
-                + context.getPageSize() + " ) " + "g, config_info_tag t  WHERE g.id = t.id  ";
-        return new MapperResult(sql, Collections.emptyList());
+                + " FROM (  SELECT id FROM config_info_tag  ORDER BY id LIMIT ?,?"
+                + " ) " + "g, config_info_tag t  WHERE g.id = t.id  ";
+        return new MapperResult(sql, CollectionUtils.list(context.getStartRow(), context.getPageSize()));
     }
     
     @Override

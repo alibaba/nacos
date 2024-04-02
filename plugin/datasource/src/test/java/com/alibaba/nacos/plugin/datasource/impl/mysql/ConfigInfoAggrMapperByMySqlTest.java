@@ -134,8 +134,8 @@ public class ConfigInfoAggrMapperByMySqlTest {
         
         Assert.assertEquals(sql,
                 "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE "
-                        + "data_id= ? AND group_id= ? AND tenant_id= ? ORDER BY datum_id LIMIT 0,5");
-        Assert.assertEquals(paramList, Arrays.asList(dataId, groupId, tenantId));
+                        + "data_id= ? AND group_id= ? AND tenant_id= ? ORDER BY datum_id LIMIT ?,?");
+        Assert.assertEquals(paramList, Arrays.asList(dataId, groupId, tenantId, startRow, pageSize));
     }
     
     @Test

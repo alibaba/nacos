@@ -68,9 +68,11 @@ public class ConfigInfoTagsRelationMapperByDerbyTest {
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT a.id,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a LEFT JOIN "
                         + "config_tags_relation b ON a.id=b.id WHERE  a.tenant_id=?  AND b.tag_name IN (?, ?, ?, ?, ?)  "
-                        + "OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+                        + "OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
+        list.add(startRow);
+        list.add(pageSize);
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     
@@ -91,9 +93,11 @@ public class ConfigInfoTagsRelationMapperByDerbyTest {
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT a.ID,a.data_id,a.group_id,a.tenant_id,a.app_name,a.content FROM config_info  a "
                         + "LEFT JOIN config_tags_relation b ON a.id=b.id  WHERE  a.tenant_id LIKE ?  AND b.tag_name "
-                        + "IN (?, ?, ?, ?, ?)  OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+                        + "IN (?, ?, ?, ?, ?)  OFFSET ? ROWS FETCH NEXT ? ROWS ONLY");
         List<Object> list = CollectionUtils.list(tenantId);
         list.addAll(Arrays.asList(tagArr));
+        list.add(startRow);
+        list.add(pageSize);
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), list.toArray());
     }
     

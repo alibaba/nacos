@@ -122,7 +122,7 @@ public class ConfigInfoBetaMapperByMySqlTest {
         List<Object> paramList = result.getParamList();
         Assert.assertEquals(sql,
                 " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key "
-                        + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT " + startRow + "," + pageSize
+                        + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT ?,?"
                         + " )" + "  g, config_info_beta t WHERE g.id = t.id ");
         Assert.assertEquals(paramList, Arrays.asList(startRow, pageSize));
     }

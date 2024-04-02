@@ -44,10 +44,11 @@ public class HistoryConfigInfoMapperByDerby extends AbstractMapper implements Hi
     public MapperResult pageFindConfigHistoryFetchRows(MapperContext context) {
         String sql =
                 "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
-                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  OFFSET "
-                        + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize() + " ROWS ONLY";
+                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  OFFSET ?"
+                        + " ROWS FETCH NEXT ? ROWS ONLY";
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.DATA_ID),
-                context.getWhereParameter(FieldConstant.GROUP_ID), context.getWhereParameter(FieldConstant.TENANT_ID)));
+                context.getWhereParameter(FieldConstant.GROUP_ID), context.getWhereParameter(FieldConstant.TENANT_ID),
+                context.getStartRow(), context.getPageSize()));
     }
     
     @Override

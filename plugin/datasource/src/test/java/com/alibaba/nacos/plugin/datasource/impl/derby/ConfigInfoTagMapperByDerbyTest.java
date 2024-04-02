@@ -120,9 +120,9 @@ public class ConfigInfoTagMapperByDerbyTest {
         MapperResult mapperResult = configInfoTagMapperByDerby.findAllConfigInfoTagForDumpAllFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
                 "SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified  FROM "
-                        + "( SELECT id FROM config_info_tag  ORDER BY id  OFFSET " + startRow + " ROWS FETCH NEXT "
-                        + pageSize + " ROWS ONLY )  g, " + "config_info_tag t  WHERE g.id = t.id");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
+                        + "( SELECT id FROM config_info_tag  ORDER BY id  OFFSET ? ROWS FETCH NEXT ?"
+                        + " ROWS ONLY )  g, " + "config_info_tag t  WHERE g.id = t.id");
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[]{startRow, pageSize});
     }
     
     @Test

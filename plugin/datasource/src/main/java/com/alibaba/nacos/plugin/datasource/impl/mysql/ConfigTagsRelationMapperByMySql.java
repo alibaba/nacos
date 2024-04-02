@@ -77,8 +77,10 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
             where.append('?');
             paramList.add(tagArr[i]);
         }
+        paramList.add(context.getStartRow());
+        paramList.add(context.getPageSize());
         where.append(") ");
-        return new MapperResult(sql + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
+        return new MapperResult(sql + where + " LIMIT ?,?",
                 paramList);
     }
     
@@ -124,8 +126,10 @@ public class ConfigTagsRelationMapperByMySql extends AbstractMapper implements C
             where.append('?');
             paramList.add(tagArr[i]);
         }
+        paramList.add(context.getStartRow());
+        paramList.add(context.getPageSize());
         where.append(") ");
-        return new MapperResult(sqlFetchRows + where + " LIMIT " + context.getStartRow() + "," + context.getPageSize(),
+        return new MapperResult(sqlFetchRows + where + " LIMIT ?,?",
                 paramList);
     }
     

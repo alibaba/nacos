@@ -77,8 +77,10 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implemen
             where.append('?');
             paramList.add(tagArr[i]);
         }
+        paramList.add(context.getStartRow());
+        paramList.add(context.getPageSize());
         where.append(") ");
-        String sql = baseSql + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
+        String sql = baseSql + where + " OFFSET ? ROWS FETCH NEXT ?"
                 + " ROWS ONLY";
         return new MapperResult(sql, paramList);
     }
@@ -126,8 +128,10 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implemen
             where.append('?');
             paramList.add(tagArr[i]);
         }
+        paramList.add(context.getStartRow());
+        paramList.add(context.getPageSize());
         where.append(") ");
-        String sql = baseSql + where + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT " + context.getPageSize()
+        String sql = baseSql + where + " OFFSET ? ROWS FETCH NEXT ?"
                 + " ROWS ONLY";
         return new MapperResult(sql, paramList);
     }

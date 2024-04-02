@@ -69,6 +69,23 @@ public class HistoryConfigInfoMapperByMySqlTest {
         Assert.assertEquals(mapperResult.getSql(), "SELECT count(*) FROM his_config_info WHERE gmt_modified < ?");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime});
     }
+
+    @Test
+    public void testPageFindConfigHistoryFetchRows() {
+        Object dataId = "dataId";
+        Object groupId = "groupId";
+        Object tenantId = "tenantId";
+
+        context.putWhereParameter(FieldConstant.DATA_ID, dataId);
+        context.putWhereParameter(FieldConstant.GROUP_ID, groupId);
+        context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
+        MapperResult mapperResult = historyConfigInfoMapperByMySql.pageFindConfigHistoryFetchRows(context);
+        Assert.assertEquals(mapperResult.getSql(),
+                "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
+                        + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC  LIMIT ?,?");
+
+        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {dataId, groupId, tenantId, startRow, pageSize});
+    }
     
     @Test
     public void testFindDeletedConfig() {
