@@ -145,11 +145,11 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     private void validateClientLegality(Client client, String clientId) {
         if (client == null) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    String.format("Client connection {} already disconnect.", clientId));
+                    String.format("Client connection %s already disconnect.", clientId));
         }
         if (!client.isEphemeral()) {
             throw new NacosRuntimeException(NacosException.INVALID_PARAM,
-                    String.format("Client connection {} type is not ephemeral.", clientId));
+                    String.format("Client connection %s type is not ephemeral.", clientId));
         }
     }
 }
