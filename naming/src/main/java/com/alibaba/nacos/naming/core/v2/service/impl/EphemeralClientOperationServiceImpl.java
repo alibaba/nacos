@@ -63,9 +63,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
                             singleton.getGroupedServiceName()));
         }
         Client client = clientManager.getClient(clientId);
-        if (!clientIsLegal(client, clientId)) {
-            return;
-        }
+        checkClientIsLegal(client, clientId);
         InstancePublishInfo instanceInfo = getPublishInfo(instance);
         client.addServiceInstance(singleton, instanceInfo);
         client.setLastUpdatedTime();
@@ -84,9 +82,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
                             singleton.getGroupedServiceName()));
         }
         Client client = clientManager.getClient(clientId);
-        if (!clientIsLegal(client, clientId)) {
-            return;
-        }
+        checkClientIsLegal(client, clientId);
         BatchInstancePublishInfo batchInstancePublishInfo = new BatchInstancePublishInfo();
         List<InstancePublishInfo> resultList = new ArrayList<>();
         for (Instance instance : instances) {
@@ -110,9 +106,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
         }
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         Client client = clientManager.getClient(clientId);
-        if (!clientIsLegal(client, clientId)) {
-            return;
-        }
+        checkClientIsLegal(client, clientId);
         InstancePublishInfo removedInstance = client.removeServiceInstance(singleton);
         client.setLastUpdatedTime();
         client.recalculateRevision();
@@ -127,9 +121,7 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     public void subscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
-        if (!clientIsLegal(client, clientId)) {
-            return;
-        }
+        checkClientIsLegal(client, clientId);
         client.addServiceSubscriber(singleton, subscriber);
         client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientSubscribeServiceEvent(singleton, clientId));
@@ -139,23 +131,24 @@ public class EphemeralClientOperationServiceImpl implements ClientOperationServi
     public void unsubscribeService(Service service, Subscriber subscriber, String clientId) {
         Service singleton = ServiceManager.getInstance().getSingletonIfExist(service).orElse(service);
         Client client = clientManager.getClient(clientId);
-        if (!clientIsLegal(client, clientId)) {
-            return;
-        }
+        checkClientIsLegal(client, clientId);
         client.removeServiceSubscriber(singleton);
         client.setLastUpdatedTime();
         NotifyCenter.publishEvent(new ClientOperationEvent.ClientUnsubscribeServiceEvent(singleton, clientId));
     }
-    
-    private boolean clientIsLegal(Client client, String clientId) {
+
+    private void checkClientIsLegal(Client client, String clientId) {
         if (client == null) {
             Loggers.SRV_LOG.warn("Client connection {} already disconnect", clientId);
-            return false;
+            throw new NacosRuntimeException(NacosException.CLIENT_DISCONNECT,
+                    String.format("Client [%s] connection already disconnect, can't register ephemeral instance.",
+                            clientId));
         }
         if (!client.isEphemeral()) {
             Loggers.SRV_LOG.warn("Client connection {} type is not ephemeral", clientId);
-            return false;
+            throw new NacosRuntimeException(NacosException.INVALID_PARAM,
+                    String.format("Current client [%s] is persistent client, can't register ephemeral instance.",
+                            clientId));
         }
-        return true;
     }
 }
