@@ -114,6 +114,9 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
         // Get the connection for the client
         Connection connection = connectionManager.getConnection(event.getClientId());
         if (connection == null) {
+            Loggers.REMOTE_PUSH.warn(
+                    "clientId not found, Config diff notification not sent. clientId={},keyGroupPattern={}",
+                    event.getClientId(), event.getKeyGroupPattern());
             // If connection is not available, return
             return;
         }

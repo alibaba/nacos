@@ -89,6 +89,9 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
         for (String clientId : configChangeListenContext.getConnectIdMatchedPatterns(groupKey)) {
             Connection connection = connectionManager.getConnection(clientId);
             if (null == connection) {
+                Loggers.REMOTE_PUSH.warn(
+                        "clientId not found, Config change notification not sent. clientId={},keyGroupPattern={}",
+                        clientId, event.groupKey);
                 continue;
             }
             ConnectionMeta metaInfo = connection.getMetaInfo();
