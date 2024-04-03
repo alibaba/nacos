@@ -760,7 +760,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         String dataId = "dataId4567222";
         String group = "group3456789";
         String tenant = "tenant4567890";
-        
+
         //mock total count
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {tenant, dataId, group}),
                 eq(Integer.class))).thenReturn(new Integer(9));
@@ -769,10 +769,13 @@ public class ExternalConfigInfoPersistServiceImplTest {
         result.add(createMockConfigInfo(0));
         result.add(createMockConfigInfo(1));
         result.add(createMockConfigInfo(2));
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {tenant, dataId, group}),
+        int pageNo = 1;
+        int pageSize = 3;
+        int startRow = (pageNo - 1) * pageSize;
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {tenant, dataId, group, startRow, pageSize}),
                 eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
         Map<String, Object> configAdvanceInfo = new HashMap<>();
-        Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfo4Page(1, 3, dataId, group,
+        Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId, group,
                 tenant, configAdvanceInfo);
         Assert.assertEquals(result.size(), configInfo4Page.getPageItems().size());
         Assert.assertEquals(9, configInfo4Page.getTotalCount());
@@ -784,6 +787,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         String dataId = "dataId4567222";
         String group = "group3456789";
         String tenant = "tenant4567890";
+
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "tags1,tags3");
         
@@ -795,10 +799,14 @@ public class ExternalConfigInfoPersistServiceImplTest {
         result.add(createMockConfigInfo(0));
         result.add(createMockConfigInfo(1));
         result.add(createMockConfigInfo(2));
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {tenant, dataId, group, "tags1", "tags3"}),
+
+        int pageNo = 1;
+        int pageSize = 3;
+        int startRow = (pageNo - 1) * pageSize;
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {tenant, dataId, group, "tags1", "tags3", startRow, pageSize}),
                 eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
         
-        Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfo4Page(1, 3, dataId, group,
+        Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfo4Page(pageNo, pageSize, dataId, group,
                 tenant, configAdvanceInfo);
         Assert.assertEquals(result.size(), configInfo4Page.getPageItems().size());
         Assert.assertEquals(9, configInfo4Page.getTotalCount());
@@ -849,6 +857,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         String tenant = "tenant4567890";
         String appName = "appName1234";
         String content = "content123";
+
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("appName", appName);
         configAdvanceInfo.put("content", content);
@@ -861,11 +870,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
         result.add(createMockConfigInfo(0));
         result.add(createMockConfigInfo(1));
         result.add(createMockConfigInfo(2));
+
+        int pageNo = 1;
+        int pageSize = 3;
+        int startRow = (pageNo - 1) * pageSize;
         when(jdbcTemplate.query(anyString(),
                 eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"), appName,
-                        content}), eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
+                        content, startRow, pageSize}), eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
         
-        Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfoLike4Page(1, 3, dataId, group,
+        Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group,
                 tenant, configAdvanceInfo);
         Assert.assertEquals(result.size(), configInfo4Page.getPageItems().size());
         Assert.assertEquals(9, configInfo4Page.getTotalCount());
@@ -884,6 +897,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         String dataId = "dataId4567222*";
         String group = "group3456789*";
         String tenant = "tenant4567890";
+
         //mock total count
         when(jdbcTemplate.queryForObject(anyString(),
                 eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"), appName, content,
@@ -893,11 +907,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
         result.add(createMockConfigInfo(0));
         result.add(createMockConfigInfo(1));
         result.add(createMockConfigInfo(2));
+
+        int pageNo = 1;
+        int pageSize = 3;
+        int startRow = (pageNo - 1) * pageSize;
         when(jdbcTemplate.query(anyString(),
                 eq(new Object[] {tenant, dataId.replaceAll("\\*", "%"), group.replaceAll("\\*", "%"), appName, content,
-                        "tags", "tag2"}), eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
+                        "tags", "tag2", startRow, pageSize}), eq(CONFIG_INFO_ROW_MAPPER))).thenReturn(result);
         
-        Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfoLike4Page(1, 3, dataId, group,
+        Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfoLike4Page(pageNo, pageSize, dataId, group,
                 tenant, configAdvanceInfo);
         Assert.assertEquals(result.size(), configInfo4Page.getPageItems().size());
         Assert.assertEquals(9, configInfo4Page.getTotalCount());
@@ -1226,9 +1244,10 @@ public class ExternalConfigInfoPersistServiceImplTest {
         
         int page = 10;
         int pageSize = 100;
+        int startRow = (page - 1) * pageSize;
         //mock select config state
         List<String> tenantStrings = Arrays.asList("tenant1", "tenant2", "tenant3");
-        when(jdbcTemplate.queryForList(anyString(), eq(new Object[] {}), eq(String.class))).thenReturn(tenantStrings);
+        when(jdbcTemplate.queryForList(anyString(), eq(new Object[] {startRow, pageSize}), eq(String.class))).thenReturn(tenantStrings);
         //execute return mock obj
         List<String> returnTenants = externalConfigInfoPersistService.getTenantIdList(page, pageSize);
         
@@ -1241,9 +1260,10 @@ public class ExternalConfigInfoPersistServiceImplTest {
         
         int page = 10;
         int pageSize = 100;
+        int startRow = (page - 1) * pageSize;
         //mock select config state
         List<String> groupStrings = Arrays.asList("group1", "group2", "group3");
-        when(jdbcTemplate.queryForList(anyString(), eq(new Object[] {}), eq(String.class))).thenReturn(groupStrings);
+        when(jdbcTemplate.queryForList(anyString(), eq(new Object[] {startRow, pageSize}), eq(String.class))).thenReturn(groupStrings);
         //execute return mock obj
         List<String> returnGroups = externalConfigInfoPersistService.getGroupIdList(page, pageSize);
         
@@ -1259,9 +1279,9 @@ public class ExternalConfigInfoPersistServiceImplTest {
         mockConfigs.add(createMockConfigInfoWrapper(1));
         mockConfigs.add(createMockConfigInfoWrapper(2));
         long lastId = 10111L;
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenReturn(
-                mockConfigs);
         int pageSize = 100;
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, 0, pageSize}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenReturn(
+                mockConfigs);
         //execute return mock obj
         Page<ConfigInfoWrapper> returnConfigPage = externalConfigInfoPersistService.findAllConfigInfoFragment(lastId,
                 pageSize, true);
@@ -1269,7 +1289,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         //expect check
         Assert.assertEquals(mockConfigs, returnConfigPage.getPageItems());
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenThrow(
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId, 0, pageSize}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("mock fail"));
         try {
             externalConfigInfoPersistService.findAllConfigInfoFragment(lastId, pageSize, true);

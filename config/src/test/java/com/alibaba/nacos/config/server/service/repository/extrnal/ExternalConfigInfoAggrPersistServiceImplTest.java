@@ -242,7 +242,7 @@ public class ExternalConfigInfoAggrPersistServiceImplTest {
         String dataId = "dataId111";
         String group = "group";
         String tenant = "tenant";
-        
+
         //mock query count.
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(Integer.class))).thenReturn(101);
@@ -251,11 +251,13 @@ public class ExternalConfigInfoAggrPersistServiceImplTest {
         configInfoAggrs.add(new ConfigInfoAggr());
         configInfoAggrs.add(new ConfigInfoAggr());
         configInfoAggrs.add(new ConfigInfoAggr());
-        
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(CONFIG_INFO_AGGR_ROW_MAPPER))).thenReturn(configInfoAggrs);
+
         int pageNo = 1;
         int pageSize = 120;
+        int startRow = (pageNo - 1) * pageSize;
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {dataId, group, tenant, startRow, pageSize}),
+                eq(CONFIG_INFO_AGGR_ROW_MAPPER))).thenReturn(configInfoAggrs);
+
         Page<ConfigInfoAggr> configInfoAggrByPage = externalConfigInfoAggrPersistService.findConfigInfoAggrByPage(
                 dataId, group, tenant, pageNo, pageSize);
         Assert.assertEquals(101, configInfoAggrByPage.getTotalCount());

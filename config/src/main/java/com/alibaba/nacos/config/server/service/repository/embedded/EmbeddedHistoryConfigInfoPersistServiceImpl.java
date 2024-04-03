@@ -151,7 +151,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         MapperResult sqlFetchRows = historyConfigInfoMapper.pageFindConfigHistoryFetchRows(context);
         
         PaginationHelper<ConfigHistoryInfo> helper = createPaginationHelper();
-        return helper.fetchPage(sqlCountRows, sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
+        return helper.fetchPageLimit(sqlCountRows, new Object[]{dataId, group, tenantTmp}, sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
                 pageSize, HISTORY_LIST_ROW_MAPPER);
     }
     

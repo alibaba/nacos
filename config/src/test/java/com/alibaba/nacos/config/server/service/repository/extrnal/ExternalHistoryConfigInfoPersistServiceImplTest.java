@@ -196,7 +196,7 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
         String dataId = "dataId34567";
         String group = "group34567";
         String tenant = "tenant34567";
-        
+
         //mock count
         Mockito.when(
                         jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))
@@ -206,11 +206,12 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
         mockList.add(createMockConfigHistoryInfo(0));
         mockList.add(createMockConfigHistoryInfo(1));
         mockList.add(createMockConfigHistoryInfo(2));
-        Mockito.when(
-                        jdbcTemplate.query(anyString(), eq(new Object[] {dataId, group, tenant}), eq(HISTORY_LIST_ROW_MAPPER)))
-                .thenReturn(mockList);
         int pageSize = 100;
         int pageNo = 2;
+        int startRow = (pageNo - 1) * pageSize;
+        Mockito.when(
+                        jdbcTemplate.query(anyString(), eq(new Object[] {dataId, group, tenant, startRow, pageSize}), eq(HISTORY_LIST_ROW_MAPPER)))
+                .thenReturn(mockList);
         //execute & verify
         Page<ConfigHistoryInfo> historyReturn = externalHistoryConfigInfoPersistService.findConfigHistory(dataId, group,
                 tenant, pageNo, pageSize);

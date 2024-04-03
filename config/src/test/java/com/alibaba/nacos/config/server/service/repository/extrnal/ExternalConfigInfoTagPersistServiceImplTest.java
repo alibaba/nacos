@@ -380,11 +380,13 @@ public class ExternalConfigInfoTagPersistServiceImplTest {
         mockTagList.get(0).setLastModified(System.currentTimeMillis());
         mockTagList.get(1).setLastModified(System.currentTimeMillis());
         mockTagList.get(2).setLastModified(System.currentTimeMillis());
-        //mock query list
-        Mockito.when(jdbcTemplate.query(anyString(), eq(new Object[] {}), eq(CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER)))
-                .thenReturn(mockTagList);
         int pageNo = 3;
         int pageSize = 100;
+        int startRow = (pageNo - 1) * pageSize;
+        //mock query list
+        Mockito.when(jdbcTemplate.query(anyString(), eq(new Object[] {startRow, pageSize}), eq(CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER)))
+                .thenReturn(mockTagList);
+
         //execute & verify
         Page<ConfigInfoTagWrapper> returnTagPage = externalConfigInfoTagPersistService.findAllConfigInfoTagForDumpAll(
                 pageNo, pageSize);

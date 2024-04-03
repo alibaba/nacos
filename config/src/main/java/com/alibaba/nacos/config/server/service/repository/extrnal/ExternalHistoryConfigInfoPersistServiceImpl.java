@@ -158,7 +158,8 @@ public class ExternalHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         
         Page<ConfigHistoryInfo> page;
         try {
-            page = helper.fetchPage(sqlCountRows, sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
+            page = helper.fetchPageLimit(sqlCountRows, new Object[]{dataId, group, tenant},
+                    sqlFetchRows.getSql(), sqlFetchRows.getParamList().toArray(), pageNo,
                     pageSize, HISTORY_LIST_ROW_MAPPER);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[list-config-history] error, dataId:{}, group:{}", new Object[] {dataId, group},
