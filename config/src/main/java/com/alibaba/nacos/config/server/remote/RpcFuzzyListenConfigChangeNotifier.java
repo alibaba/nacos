@@ -127,6 +127,10 @@ public class RpcFuzzyListenConfigChangeNotifier extends Subscriber<LocalDataChan
                     .schedule(retryTask, retryTask.tryTimes * 2L, TimeUnit.SECONDS);
         } else {
             // Client is already offline, ignore the task.
+            Loggers.REMOTE_PUSH.warn(
+                    "Client is already offline, ignore the task. dataId={},group={},tenant={},clientId={}",
+                    notifyRequest.getDataId(), notifyRequest.getGroup(), notifyRequest.getTenant(),
+                    retryTask.connectionId);
         }
     }
     

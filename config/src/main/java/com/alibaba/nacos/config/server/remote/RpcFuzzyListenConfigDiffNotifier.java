@@ -98,6 +98,8 @@ public class RpcFuzzyListenConfigDiffNotifier extends Subscriber<ConfigBatchFuzz
             ConfigExecutor.scheduleClientConfigNotifier(retryTask, retryTask.tryTimes * 2L, TimeUnit.SECONDS);
         } else {
             // If the client is already offline, ignore the task
+            Loggers.REMOTE_PUSH.warn("Client is already offline, ignore the task. groupKeyPattern={}, clientId={}",
+                    notifyRequest.getGroupKeyPattern(), retryTask.connectionId);
         }
     }
     
