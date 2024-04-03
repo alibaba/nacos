@@ -102,6 +102,11 @@
             additivity="false">
             <AppenderRef ref="ASYNC_REMOTE"/>
         </Logger>
+    
+        <Logger name="com.alibaba.nacos.common.labels" level="${nacosClientProperty:com.alibaba.nacos.config.log.level:-info}"
+            additivity="false">
+            <AppenderRef ref="ASYNC_REMOTE"/>
+        </Logger>
         
         <Logger name="com.alibaba.nacos.client.config" level="${nacosClientProperty:com.alibaba.nacos.config.log.level:-info}"
             additivity="false">

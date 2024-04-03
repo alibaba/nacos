@@ -18,28 +18,25 @@ package com.alibaba.nacos.client.naming.backups;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import com.alibaba.nacos.client.naming.cache.ConcurrentDiskUtil;
-import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.NotifyCenter;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.Gauge;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.StringReader;
-import java.net.URLDecoder;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.Map;
-import java.util.TimerTask;
+import java.util.HashMap;
+import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -54,36 +51,32 @@ import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
  */
 public class FailoverReactor implements Closeable {
     
-    private static final String FAILOVER_DIR = "/failover";
-    
-    private static final String IS_FAILOVER_MODE = "1";
-    
-    private static final String NO_FAILOVER_MODE = "0";
-    
-    private static final String FAILOVER_MODE_PARAM = "failover-mode";
-    
     private Map<String, ServiceInfo> serviceMap = new ConcurrentHashMap<>();
     
-    private final Map<String, String> switchParams = new ConcurrentHashMap<>();
-    
-    private static final long DAY_PERIOD_MINUTES = 24 * 60;
-    
-    private final String failoverDir;
+    private boolean failoverSwitchEnable;
     
     private final ServiceInfoHolder serviceInfoHolder;
     
     private final ScheduledExecutorService executorService;
     
-    public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String cacheDir) {
+    private FailoverDataSource failoverDataSource;
+    
+    private String notifierEventScope;
+    
+    private Map<String, Meter> meterMap = new HashMap<>(10);
+    
+    public FailoverReactor(ServiceInfoHolder serviceInfoHolder, String notifierEventScope) {
         this.serviceInfoHolder = serviceInfoHolder;
-        this.failoverDir = cacheDir + FAILOVER_DIR;
+        this.notifierEventScope = notifierEventScope;
+        Collection<FailoverDataSource> dataSources = NacosServiceLoader.load(FailoverDataSource.class);
+        for (FailoverDataSource dataSource : dataSources) {
+            failoverDataSource = dataSource;
+            NAMING_LOGGER.info("FailoverDataSource type is {}", dataSource.getClass());
+            break;
+        }
         // init executorService
-        this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("com.alibaba.nacos.naming.failover");
-            return thread;
-        });
+        this.executorService = new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.naming.failover"));
         this.init();
     }
     
@@ -91,190 +84,78 @@ public class FailoverReactor implements Closeable {
      * Init.
      */
     public void init() {
-        
-        executorService.scheduleWithFixedDelay(new SwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
-        
-        executorService.scheduleWithFixedDelay(new DiskFileWriter(), 30, DAY_PERIOD_MINUTES, TimeUnit.MINUTES);
-        
-        // backup file on startup if failover directory is empty.
-        executorService.schedule(() -> {
-            try {
-                File cacheDir = new File(failoverDir);
-
-                if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                    throw new IllegalStateException("failed to create cache dir: " + failoverDir);
-                }
-
-                File[] files = cacheDir.listFiles();
-                if (files == null || files.length <= 0) {
-                    new DiskFileWriter().run();
-                }
-            } catch (Throwable e) {
-                NAMING_LOGGER.error("[NA] failed to backup file on startup.", e);
-            }
-
-        }, 10000L, TimeUnit.MILLISECONDS);
+        executorService.scheduleWithFixedDelay(new FailoverSwitchRefresher(), 0L, 5000L, TimeUnit.MILLISECONDS);
     }
     
-    /**
-     * Add day.
-     *
-     * @param date start time
-     * @param num  add day number
-     * @return new date
-     */
-    public Date addDay(Date date, int num) {
-        Calendar startDT = Calendar.getInstance();
-        startDT.setTime(date);
-        startDT.add(Calendar.DAY_OF_MONTH, num);
-        return startDT.getTime();
-    }
-    
-    @Override
-    public void shutdown() throws NacosException {
-        String className = this.getClass().getName();
-        NAMING_LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
-        NAMING_LOGGER.info("{} do shutdown stop", className);
-    }
-    
-    class SwitchRefresher implements Runnable {
-        
-        long lastModifiedMillis = 0L;
+    class FailoverSwitchRefresher implements Runnable {
         
         @Override
         public void run() {
             try {
-                File switchFile = Paths.get(failoverDir, UtilAndComs.FAILOVER_SWITCH).toFile();
-                if (!switchFile.exists()) {
-                    switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
-                    NAMING_LOGGER.debug("failover switch is not found, {}", switchFile.getName());
+                FailoverSwitch fSwitch = failoverDataSource.getSwitch();
+                if (fSwitch == null) {
+                    failoverSwitchEnable = false;
+                    return;
+                }
+                if (fSwitch.getEnabled() != failoverSwitchEnable) {
+                    NAMING_LOGGER.info("failover switch changed, new: {}", fSwitch.getEnabled());
+                }
+                if (fSwitch.getEnabled()) {
+                    Map<String, ServiceInfo> failoverMap = new ConcurrentHashMap<>(200);
+                    Map<String, FailoverData> failoverData = failoverDataSource.getFailoverData();
+                    for (Map.Entry<String, FailoverData> entry : failoverData.entrySet()) {
+                        ServiceInfo newService = (ServiceInfo) entry.getValue().getData();
+                        ServiceInfo oldService = serviceMap.get(entry.getKey());
+                        if (serviceInfoHolder.isChangedServiceInfo(oldService, newService)) {
+                            NAMING_LOGGER.info("[NA] failoverdata isChangedServiceInfo. newService:{}",
+                                    JacksonUtils.toJson(newService));
+                            NotifyCenter.publishEvent(new InstancesChangeEvent(notifierEventScope, newService.getName(),
+                                    newService.getGroupName(), newService.getClusters(), newService.getHosts()));
+                        }
+                        failoverMap.put(entry.getKey(), (ServiceInfo) entry.getValue().getData());
+                    }
+                    
+                    if (failoverMap.size() > 0) {
+                        failoverServiceCntMetrics();
+                        serviceMap = failoverMap;
+                    }
+                    
+                    failoverSwitchEnable = true;
                     return;
                 }
                 
-                long modified = switchFile.lastModified();
-                
-                if (lastModifiedMillis < modified) {
-                    lastModifiedMillis = modified;
-                    String failover = ConcurrentDiskUtil.getFileContent(switchFile.getPath(),
-                            Charset.defaultCharset().toString());
-                    if (!StringUtils.isEmpty(failover)) {
-                        String[] lines = failover.split(DiskCache.getLineSeparator());
-                        
-                        for (String line : lines) {
-                            String line1 = line.trim();
-                            if (IS_FAILOVER_MODE.equals(line1)) {
-                                switchParams.put(FAILOVER_MODE_PARAM, Boolean.TRUE.toString());
-                                NAMING_LOGGER.info("failover-mode is on");
-                                new FailoverFileReader().run();
-                            } else if (NO_FAILOVER_MODE.equals(line1)) {
-                                switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
-                                NAMING_LOGGER.info("failover-mode is off");
+                if (failoverSwitchEnable && !fSwitch.getEnabled()) {
+                    Map<String, ServiceInfo> serviceInfoMap = serviceInfoHolder.getServiceInfoMap();
+                    for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
+                        ServiceInfo oldService = entry.getValue();
+                        ServiceInfo newService = serviceInfoMap.get(entry.getKey());
+                        if (newService != null) {
+                            boolean changed = serviceInfoHolder.isChangedServiceInfo(oldService, newService);
+                            if (changed) {
+                                NotifyCenter.publishEvent(
+                                        new InstancesChangeEvent(notifierEventScope, newService.getName(),
+                                                newService.getGroupName(), newService.getClusters(),
+                                                newService.getHosts()));
                             }
                         }
-                    } else {
-                        switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
-                    }
-                }
-                
-            } catch (Throwable e) {
-                NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
-            }
-        }
-    }
-    
-    class FailoverFileReader implements Runnable {
-        
-        @Override
-        public void run() {
-            Map<String, ServiceInfo> domMap = new HashMap<>(16);
-            
-            BufferedReader reader = null;
-            try {
-                
-                File cacheDir = new File(failoverDir);
-                if (!cacheDir.exists() && !cacheDir.mkdirs()) {
-                    throw new IllegalStateException("failed to create cache dir: " + failoverDir);
-                }
-                
-                File[] files = cacheDir.listFiles();
-                if (files == null) {
-                    return;
-                }
-                
-                for (File file : files) {
-                    if (!file.isFile()) {
-                        continue;
                     }
                     
-                    if (file.getName().equals(UtilAndComs.FAILOVER_SWITCH)) {
-                        continue;
-                    }
-                    
-                    ServiceInfo dom = null;
-                    
-                    try {
-                        dom = new ServiceInfo(URLDecoder.decode(file.getName(), StandardCharsets.UTF_8.name()));
-                        String dataString = ConcurrentDiskUtil.getFileContent(file,
-                                Charset.defaultCharset().toString());
-                        reader = new BufferedReader(new StringReader(dataString));
-                        
-                        String json;
-                        if ((json = reader.readLine()) != null) {
-                            try {
-                                dom = JacksonUtils.toObj(json, ServiceInfo.class);
-                            } catch (Exception e) {
-                                NAMING_LOGGER.error("[NA] error while parsing cached dom : {}", json, e);
-                            }
-                        }
-                        
-                    } catch (Exception e) {
-                        NAMING_LOGGER.error("[NA] failed to read cache for dom: {}", file.getName(), e);
-                    } finally {
-                        try {
-                            if (reader != null) {
-                                reader.close();
-                            }
-                        } catch (Exception e) {
-                            //ignore
-                        }
-                    }
-                    if (dom != null && !CollectionUtils.isEmpty(dom.getHosts())) {
-                        domMap.put(dom.getKey(), dom);
-                    }
+                    serviceMap.clear();
+                    failoverSwitchEnable = false;
+                    failoverServiceCntMetricsClear();
                 }
             } catch (Exception e) {
-                NAMING_LOGGER.error("[NA] failed to read cache file", e);
-            }
-            
-            if (domMap.size() > 0) {
-                serviceMap = domMap;
-            }
-        }
-    }
-    
-    class DiskFileWriter extends TimerTask {
-        
-        @Override
-        public void run() {
-            Map<String, ServiceInfo> map = serviceInfoHolder.getServiceInfoMap();
-            for (Map.Entry<String, ServiceInfo> entry : map.entrySet()) {
-                ServiceInfo serviceInfo = entry.getValue();
-                if (StringUtils.equals(serviceInfo.getKey(), UtilAndComs.ALL_IPS) || StringUtils
-                        .equals(serviceInfo.getName(), UtilAndComs.ENV_LIST_KEY) || StringUtils
-                        .equals(serviceInfo.getName(), UtilAndComs.ENV_CONFIGS) || StringUtils
-                        .equals(serviceInfo.getName(), UtilAndComs.VIP_CLIENT_FILE) || StringUtils
-                        .equals(serviceInfo.getName(), UtilAndComs.ALL_HOSTS)) {
-                    continue;
-                }
-                
-                DiskCache.write(serviceInfo, failoverDir);
+                NAMING_LOGGER.error("FailoverSwitchRefresher run err", e);
             }
         }
     }
     
     public boolean isFailoverSwitch() {
-        return Boolean.parseBoolean(switchParams.get(FAILOVER_MODE_PARAM));
+        return failoverSwitchEnable;
+    }
+    
+    public boolean isFailoverSwitch(String serviceName) {
+        return failoverSwitchEnable && serviceMap.containsKey(serviceName) && serviceMap.get(serviceName).ipCount() > 0;
     }
     
     public ServiceInfo getService(String key) {
@@ -286,5 +167,48 @@ public class FailoverReactor implements Closeable {
         }
         
         return serviceInfo;
+    }
+    
+    /**
+     * shutdown ThreadPool.
+     *
+     * @throws NacosException Nacos exception
+     */
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        NAMING_LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(executorService, NAMING_LOGGER);
+        NAMING_LOGGER.info("{} do shutdown stop", className);
+    }
+    
+    private void failoverServiceCntMetrics() {
+        try {
+            for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
+                String serviceName = entry.getKey();
+                List<Tag> tags = new ArrayList<>();
+                tags.add(new ImmutableTag("service_name", serviceName));
+                if (Metrics.globalRegistry.find("nacos_naming_client_failover_instances").tags(tags).gauge() == null) {
+                    Gauge.builder("nacos_naming_client_failover_instances", () -> serviceMap.get(serviceName).ipCount())
+                            .tags(tags).register(Metrics.globalRegistry);
+                }
+            }
+        } catch (Exception e) {
+            NAMING_LOGGER.info("[NA] registerFailoverServiceCnt fail.", e);
+        }
+    }
+    
+    private void failoverServiceCntMetricsClear() {
+        try {
+            for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
+                Gauge gauge = Metrics.globalRegistry.find("nacos_naming_client_failover_instances")
+                        .tag("service_name", entry.getKey()).gauge();
+                if (gauge != null) {
+                    Metrics.globalRegistry.remove(gauge);
+                }
+            }
+        } catch (Exception e) {
+            NAMING_LOGGER.info("[NA] registerFailoverServiceCnt fail.", e);
+        }
     }
 }

@@ -1,0 +1,306 @@
+/*!
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+$dark-container-bgc: #161616;
+$dark-menu-bac: #2D2D2D;
+$dark-main-bgc: #303030;
+
+$dark-color-deep: #ffffff;
+$dark-color-light-grep: #C9C9CC;
+$dark-color-grep: #929299;
+
+$dark-bg-hover: #209BFA;
+$dark-bg-border: #3E3E3E;
+$dark-aside-color: #424346;
+$dark-aside-border: #1C1D1F;
+
+$dark-table-header-bg: #4A4A4A;
+$dark-pull-bac: #373737;
+$dark-input-bak: #303030;
+$dark-input-border: #8D8D93;
+$dark-input-border-focus: #B8B8BC;
+$dark-input-color: #585858;
+//contain
+.dark {
+  filter: grayscale(.25);
+  //侧边栏背景
+  .next-shell-navigation.next-shell-mini.next-shell-aside, .next-menu-item:not(.next-disabled).next-focused {
+    background-color: $dark-menu-bac !important;
+    color: $dark-color-deep !important;
+    border-color: $dark-bg-border;
+  }
+  //菜单颜色
+  .next-menu-item {
+    color: $dark-color-deep !important;
+  }
+  //二级菜单
+  .next-nav-embeddable.next-primary .next-menu-sub-menu .next-menu-item, .next-nav-embeddable.next-primary .next-nav-item.next-menu-item, .next-nav-embeddable.next-secondary .next-menu-sub-menu .next-menu-item, .next-nav-embeddable.next-secondary .next-nav-item.next-menu-item, .next-nav-embeddable.next-normal .next-menu-sub-menu .next-menu-item, .next-nav-embeddable.next-normal .next-nav-item.next-menu-item {
+    background-color: $dark-container-bgc !important;
+    color: $dark-color-grep!important;
+  }
+  //一级菜单hover
+  .next-menu-item:not(.next-disabled):hover {
+    background-color: $dark-aside-color!important;
+  }
+  //菜单hover和focus
+  .next-nav.next-normal .next-menu-sub-menu .next-menu-item.next-focused, .next-nav.next-normal .next-menu-sub-menu .next-menu-item:hover {
+    background-color: $dark-aside-color !important;
+    color: $dark-bg-hover !important;
+  }
+
+  //菜单选中
+  .next-menu.next-normal .next-menu-item.next-selected, .next-menu-item.next-selected {
+    background-color: $dark-aside-color!important;
+    color: $dark-bg-hover !important;
+  }
+  //container背景
+  .next-shell-brand .next-shell-main {
+    background-color: $dark-container-bgc !important;
+  }
+  //container背景
+  .main-container .right-panel {
+    background-color: $dark-container-bgc !important;
+  }
+  .main-container .right-panel::-webkit-scrollbar, .main-container .right-panel::-webkit-scrollbar-track, .main-container .right-panel::-webkit-scrollbar-corner {
+    background-color: $dark-container-bgc !important;
+  }
+  //title颜色
+  .page-title {
+    color: $dark-color-deep;
+  }
+  .nav-title, .nav-mode {
+    border-color: $dark-aside-border
+  }
+  //通知栏
+  .next-message.next-message-notice.next-inline {
+    background-color: $dark-container-bgc;
+    border-color: $dark-color-grep;
+  }
+  .next-message.next-message-notice.next-inline .next-message-content {
+    color: $dark-color-light-grep;
+  }
+}
+//namespacewrapper
+.dark {
+  //命名空间列表
+  .namespacewrapper {
+    background-color: $dark-main-bgc !important;
+    .naming-simple {
+      color: $dark-color-light-grep;
+    }
+  }
+  //表格
+  .next-table {
+    border-color: $dark-bg-border !important;
+    table {
+      background-color: $dark-main-bgc !important;
+    }
+  }
+  .query_result_wrapper {
+    color: $dark-color-deep;
+  }
+  .next-table-header th {
+    background-color: $dark-table-header-bg !important;
+    color: $dark-color-deep;
+  }
+  //每行
+  .next-table-row {
+    background-color: $dark-main-bgc !important;
+    color: $dark-color-light-grep;
+  }
+  .next-table-sort .next-icon {
+    color: $dark-color-deep;
+  }
+  .next-table td, .next-table th {
+    border-color: $dark-bg-border!important;
+  }
+  .next-table-row.selected {
+    background: $dark-aside-color !important;
+    color: $dark-color-light-grep;
+  }
+  //table tr hover
+  .next-table-row.hovered {
+    background: $dark-table-header-bg !important;
+    color: $dark-color-deep;
+  }
+  .next-table-header-fixer {
+    background: $dark-table-header-bg !important;
+  }
+  .next-table-cell-wrapper a {
+    color: $dark-bg-hover;
+  }
+  //表单
+  form {
+    label {
+      color: $dark-color-light-grep !important;
+    }
+  }
+  //命名空间复制
+  .naming-copy {
+    background: $dark-main-bgc !important;
+    color: $dark-color-deep !important;
+  }
+  //下拉框
+  .next-menu.next-ver {
+    background-color: $dark-menu-bac;
+    border-color: $dark-aside-color;
+  }
+  .next-overlay-wrapper .opened {
+    .next-menu-item:not(.next-disabled):hover {
+      background-color: white;
+    }
+  }
+}
+//dialog
+.dark {
+  .next-message.next-large.next-title-content .next-message-title, .next-dialog-header {
+    color: $dark-color-deep;
+  }
+  .next-overlay-wrapper .next-overlay-inner {
+    border-color: $dark-aside-border;
+    background-color: $dark-container-bgc;
+  }
+}
+//input
+.dark {
+  .next-input.next-medium, .next-input.next-input-textarea {
+    background-color: $dark-input-bak!important;
+    border-color: $dark-input-border!important;
+    caret-color: $dark-color-light-grep!important;
+    input, textarea, em {
+      color: $dark-color-deep !important;
+    }
+    input::placeholder {
+      color: $dark-color-grep;
+    }
+  }
+  .next-input:hover, .next-input.next-focus {
+    border-color: $dark-input-border-focus !important;
+  }
+  .next-input.next-small, .next-input.next-input-textarea {
+    background-color: $dark-input-bak!important;
+    border-color: $dark-input-border!important;
+    caret-color: $dark-color-light-grep!important;
+    input, textarea, em {
+      color: $dark-color-deep !important;
+    }
+    input::placeholder {
+      color: $dark-color-grep;
+    }
+  }
+}
+//设置中心
+.dark {
+  .setting-box {
+    background-color: $dark-main-bgc !important;
+    color: $dark-color-deep!important;
+    border-color: $dark-input-border;
+  }
+  .next-radio-group .next-radio-label {
+    color: $dark-color-light-grep !important;
+  }
+}
+//服务管理
+.dark {
+  .main-container {
+    background-color: $dark-container-bgc;
+  }
+  .next-shell-brand .next-shell-main {
+    color: $dark-color-light-grep;
+    h1 {
+      color: $dark-color-deep;
+    }
+  }
+}
+.dark {
+  .service-detail .cluster-card, .next-card-head, .next-card-body {
+    background-color: $dark-main-bgc;
+  }
+  .next-card-title, .next-form-item.next-small .next-form-item-label {
+    color: $dark-color-deep !important;
+  }
+  .next-card-subtitle {
+    color: $dark-color-light-grep;
+  }
+  .next-tag-group .next-tag-medium {
+    color: $dark-color-light-grep !important;
+  }
+}
+//权限管理
+.dark {
+  .next-form-item p {
+    color: $dark-color-light-grep;
+  }
+}
+//节点管理
+.dark {
+  .next-collapse-panel-title {
+    background-color: $dark-container-bgc;
+    color: $dark-color-light-grep;
+  }
+  .next-collapse .next-collapse-panel-icon {
+    color: $dark-color-light-grep;
+  }
+  .next-collapse-panel-title:hover, .next-collapse-panel-title:hover .next-collapse-panel-icon {
+    background-color: $dark-aside-border;
+    color: $dark-color-deep;
+  }
+  .next-collapse {
+    border-color: $dark-aside-border;
+  }
+  .next-collapse-panel-expanded > .next-collapse-panel-content {
+    background-color: $dark-menu-bac;
+    ul li pre {
+      background-color: $dark-main-bgc;
+      border-color: $dark-aside-border;
+      color: $dark-color-light-grep;
+    }
+  }
+}
+//button
+.dark {
+  .next-btn.next-btn-normal,.next-btn.next-btn-secondary {
+    background-color: $dark-input-bak !important;
+    border-color: $dark-input-border !important;
+    color: $dark-color-light-grep !important;
+  }
+  .next-btn.next-btn-normal:hover,.next-btn.next-btn-secondary:hover {
+    background-color: $dark-pull-bac !important;
+    color: $dark-color-deep !important;
+    border-color: $dark-input-border-focus !important;
+  }
+  .next-pagination .next-pagination-item.next-current {
+    background-color: $dark-input-border !important;
+    color: $dark-color-deep !important;
+  }
+  .next-pagination.next-medium .next-pagination-item.next-prev:not([disabled]) i, .next-pagination.next-medium .next-pagination-item.next-next:not([disabled]) i {
+    color: $dark-color-light-grep !important;
+  }
+  .next-switch-on .next-switch-btn,.next-switch-off .next-switch-btn {
+    background-color: $dark-color-light-grep !important;
+  }
+  .next-switch-on:hover .next-switch-btn, .next-switch-on:focus .next-switch-btn,.next-switch-off:hover .next-switch-btn, .next-switch-off:focus .next-switch-btn {
+    background-color: $dark-color-deep !important;
+  }
+  .next-switch-off {
+    background-color: $dark-input-bak !important;
+    border-color: $dark-input-border !important;
+  }
+  .next-switch-off:hover {
+    border-color: $dark-input-border-focus !important;
+    background-color: $dark-pull-bac !important;
+  }
+}

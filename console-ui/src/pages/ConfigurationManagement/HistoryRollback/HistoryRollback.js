@@ -457,7 +457,6 @@ class HistoryRollback extends React.Component {
               pageSize={this.state.pageSize}
               onChange={this.changePage.bind(this)}
             />
-            ,
           </div>
           <DiffEditorDialog
             ref={this.diffEditorDialog}

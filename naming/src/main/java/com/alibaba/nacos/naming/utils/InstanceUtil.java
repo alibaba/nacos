@@ -23,7 +23,7 @@ import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.pojo.instance.DefaultInstanceIdGenerator;
+import com.alibaba.nacos.naming.pojo.instance.InstanceIdGeneratorManager;
 
 import java.util.HashMap;
 import java.util.List;
@@ -87,7 +87,7 @@ public final class InstanceUtil {
 
     /**
      * Deepcopy one instance.
-     * 
+     *
      * @param source instance to be deepcopy
      */
     public static Instance deepCopy(Instance source) {
@@ -113,9 +113,10 @@ public final class InstanceUtil {
      */
     public static void setInstanceIdIfEmpty(Instance instance, String groupedServiceName) {
         if (null != instance && StringUtils.isEmpty(instance.getInstanceId())) {
-            DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(groupedServiceName,
-                    instance.getClusterName(), instance.getIp(), instance.getPort());
-            instance.setInstanceId(idGenerator.generateInstanceId());
+            if (StringUtils.isBlank(instance.getServiceName())) {
+                instance.setServiceName(groupedServiceName);
+            }
+            instance.setInstanceId(InstanceIdGeneratorManager.generateInstanceId(instance));
         }
     }
     

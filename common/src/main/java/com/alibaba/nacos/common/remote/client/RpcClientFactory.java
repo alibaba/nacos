@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -78,7 +79,17 @@ public class RpcClientFactory {
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
             RpcClientTlsConfig tlsConfig) {
         return createClient(clientName, connectionType, null, null, labels, tlsConfig);
-        
+    }
+    
+    /**
+     * create client with properties.
+     *
+     * @return rpc client.
+     * @date 2024/3/7
+     */
+    public static RpcClient createClient(String clientName, ConnectionType connectionType, Map<String, String> labels,
+            Properties properties, RpcClientTlsConfig tlsConfig) {
+        return createClient(clientName, connectionType, null, null, labels, tlsConfig);
     }
     
     public static RpcClient createClient(String clientName, ConnectionType connectionType, Integer threadPoolCoreSize,

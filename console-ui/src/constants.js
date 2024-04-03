@@ -45,4 +45,6 @@ export const GLOBAL_PAGE_SIZE_LIST = [10, 20, 30, 50, 100];
 
 export const LOGINPAGE_ENABLED = 'docsite_loginpage';
 
+export const THEME = 'setting_theme';
+
 export const SERVER_GUIDE = 'SERVER_GUIDE';

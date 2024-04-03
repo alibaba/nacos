@@ -33,6 +33,8 @@ public class Constants {
     
     public static final String APPNAME = "AppName";
     
+    public static final String CLIENT_VERSION_KEY = "ClientVersion";
+    
     public static final String UNKNOWN_APP = "UnknownApp";
     
     public static final String DEFAULT_DOMAINNAME = "commonconfig.config-host.taobao.com";
@@ -223,6 +225,24 @@ public class Constants {
     
     public static final int DEFAULT_REDO_THREAD_COUNT = 1;
     
+    public static final String APP_CONN_LABELS_KEY = "nacos.app.conn.labels";
+    
+    public static final String DOT = ".";
+    
+    public static final String WEIGHT = "weight";
+    
+    public static final String PROPERTIES_KEY = "properties";
+    
+    public static final String JVM_KEY = "jvm";
+    
+    public static final String ENV_KEY = "env";
+    
+    public static final String APP_CONN_LABELS_PREFERRED = "nacos_app_conn_labels_preferred";
+    
+    public static final String APP_CONN_PREFIX = "app_";
+    
+    public static final String CONFIG_GRAY_LABEL = "nacos.config.gray.label";
+    
     /**
      * The constants in config directory.
      */
@@ -237,9 +257,9 @@ public class Constants {
      * The constants in naming directory.
      */
     public static class Naming {
-    
+        
         public static final String NAMING_MODULE = "naming";
-    
+        
         public static final String CMDB_CONTEXT_TYPE = "CMDB";
     }
     
@@ -247,7 +267,7 @@ public class Constants {
      * The constants in remote directory.
      */
     public static class Remote {
-    
+        
         public static final String INTERNAL_MODULE = "internal";
     }
     
@@ -259,9 +279,9 @@ public class Constants {
         public static final int SERIALIZE_ERROR_CODE = 100;
         
         public static final int DESERIALIZE_ERROR_CODE = 101;
-    
+        
         public static final int FIND_DATASOURCE_ERROR_CODE = 102;
-    
+        
         public static final int FIND_TABLE_ERROR_CODE = 103;
     }
 }

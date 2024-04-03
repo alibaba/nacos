@@ -64,6 +64,7 @@ const I18N_CONF = {
     roleManagement: 'Role Management',
     privilegeManagement: 'Privilege Management',
     consoleClosed: 'Console Closed',
+    settingCenter: 'Setting Center',
   },
   Password: {
     passwordNotConsistent: 'The passwords are not consistent',
@@ -673,6 +674,14 @@ const I18N_CONF = {
   },
   Components: {
     copySuccessfully: 'Success copied!',
+  },
+  SettingCenter: {
+    settingTitle: 'Setting Center',
+    settingTheme: 'Themes',
+    settingLight: 'light',
+    settingDark: 'dark',
+    settingLocale: 'Language',
+    settingSubmit: 'Apply',
   },
 };
 

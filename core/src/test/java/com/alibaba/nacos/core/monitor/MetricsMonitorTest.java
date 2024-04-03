@@ -28,6 +28,8 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -52,6 +54,44 @@ public class MetricsMonitorTest {
         // add simple meterRegistry.
         NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY)
                 .add(new SimpleMeterRegistry());
+    }
+
+    @Test
+    public void testSdkServerExecutorMetric() {
+        MetricsMonitor.getSdkServerExecutorMetric().getPoolSize().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getMaximumPoolSize().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getCorePoolSize().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getActiveCount().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getInQueueTaskCount().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getTaskCount().set(1);
+        MetricsMonitor.getSdkServerExecutorMetric().getCompletedTaskCount().set(1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getType(), "grpcSdkServer");
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getPoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getMaximumPoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getCorePoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getActiveCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getInQueueTaskCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getTaskCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getSdkServerExecutorMetric().getCompletedTaskCount().get(), 1);
+    }
+
+    @Test
+    public void testClusterServerExecutorMetric() {
+        MetricsMonitor.getClusterServerExecutorMetric().getPoolSize().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getMaximumPoolSize().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getCorePoolSize().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getActiveCount().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getInQueueTaskCount().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getTaskCount().set(1);
+        MetricsMonitor.getClusterServerExecutorMetric().getCompletedTaskCount().set(1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getType(), "grpcClusterServer");
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getPoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getMaximumPoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getCorePoolSize().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getActiveCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getInQueueTaskCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getTaskCount().get(), 1);
+        Assert.assertEquals(MetricsMonitor.getClusterServerExecutorMetric().getCompletedTaskCount().get(), 1);
     }
     
     @Test
@@ -91,5 +131,32 @@ public class MetricsMonitorTest {
         Assert.assertEquals(0.5D, raftApplyReadTimer.totalTime(TimeUnit.MINUTES), 0.01);
         
         Assert.assertEquals(30D, raftApplyReadTimer.totalTime(TimeUnit.SECONDS), 0.01);
+    }
+
+    @Test
+    public void testRefreshModuleConnectionCount() {
+        // refresh
+        Map<String, Integer> map = new HashMap<>();
+        map.put("naming", 10);
+        MetricsMonitor.refreshModuleConnectionCount(map);
+        Assert.assertEquals(1, MetricsMonitor.getModuleConnectionCnt().size());
+        Assert.assertEquals(10, MetricsMonitor.getModuleConnectionCnt().get("naming").get());
+
+        // refresh again
+        map = new HashMap<>();
+        map.put("naming", 11);
+        map.put("config", 1);
+        MetricsMonitor.refreshModuleConnectionCount(map);
+        Assert.assertEquals(2, MetricsMonitor.getModuleConnectionCnt().size());
+        Assert.assertEquals(11, MetricsMonitor.getModuleConnectionCnt().get("naming").get());
+        Assert.assertEquals(1, MetricsMonitor.getModuleConnectionCnt().get("config").get());
+
+        // refresh again
+        map = new HashMap<>();
+        map.put("naming", 1);
+        MetricsMonitor.refreshModuleConnectionCount(map);
+        Assert.assertEquals(2, MetricsMonitor.getModuleConnectionCnt().size());
+        Assert.assertEquals(1, MetricsMonitor.getModuleConnectionCnt().get("naming").get());
+        Assert.assertEquals(0, MetricsMonitor.getModuleConnectionCnt().get("config").get());
     }
 }

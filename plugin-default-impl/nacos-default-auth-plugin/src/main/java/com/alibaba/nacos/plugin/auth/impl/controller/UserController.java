@@ -176,11 +176,17 @@ public class UserController {
         }
         IdentityContext identityContext = (IdentityContext) request.getSession()
                 .getAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT);
-        NacosUser user;
-        if (identityContext == null
-                || (user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY)) == null
-                || (user = iAuthenticationManager.authenticate(request)) == null) {
+        if (identityContext == null) {
             throw new HttpSessionRequiredException("session expired!");
+        }
+        NacosUser user = (NacosUser) identityContext.getParameter(AuthConstants.NACOS_USER_KEY);
+        if (user == null) {
+            user = iAuthenticationManager.authenticate(request);
+            if (user == null) {
+                throw new HttpSessionRequiredException("session expired!");
+            }
+            //get user form jwt need check permission
+            iAuthenticationManager.hasGlobalAdminRole(user);
         }
         // admin
         if (user.isGlobalAdmin()) {

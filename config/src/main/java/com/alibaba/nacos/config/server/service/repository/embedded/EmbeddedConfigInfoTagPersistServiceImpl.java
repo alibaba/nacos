@@ -73,7 +73,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     /**
      * The constructor sets the dependency injection order.
      *
-     * @param databaseOperate {@link EmbeddedStoragePersistServiceImpl}
+     * @param databaseOperate databaseOperate.
      */
     public EmbeddedConfigInfoTagPersistServiceImpl(DatabaseOperate databaseOperate) {
         this.databaseOperate = databaseOperate;
@@ -147,7 +147,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public ConfigOperateResult insertOrUpdateTag(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser) {
-        if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
+        if (findConfigInfo4TagState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
             return addConfigInfo4Tag(configInfo, tag, srcIp, srcUser);
         } else {
             return updateConfigInfo4Tag(configInfo, tag, srcIp, srcUser);
@@ -157,7 +157,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
     @Override
     public ConfigOperateResult insertOrUpdateTagCas(final ConfigInfo configInfo, final String tag, final String srcIp,
             final String srcUser) {
-        if (findConfigInfo4Tag(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
+        if (findConfigInfo4TagState(configInfo.getDataId(), configInfo.getGroup(), configInfo.getTenant(), tag) == null) {
             return addConfigInfo4Tag(configInfo, tag, srcIp, srcUser);
         } else {
             return updateConfigInfo4TagCas(configInfo, tag, srcIp, srcUser);
@@ -248,7 +248,7 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
             final MapperResult mapperResult = configInfoTagMapper.updateConfigInfo4TagCas(context);
             
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
-            EmbeddedStorageContextHolder.addSqlContext(mapperResult.getSql(), mapperResult.getParamList());
+            EmbeddedStorageContextHolder.addSqlContext(mapperResult.getSql(), mapperResult.getParamList().toArray());
             
             Boolean success = databaseOperate.blockUpdate();
             if (success) {

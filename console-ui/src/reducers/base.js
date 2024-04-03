@@ -15,7 +15,7 @@
  */
 
 import request from '../utils/request';
-import { GET_STATE, LOGINPAGE_ENABLED, GET_NOTICE, SERVER_GUIDE } from '../constants';
+import { GET_STATE, LOGINPAGE_ENABLED, GET_NOTICE, SERVER_GUIDE, LANGUAGE_KEY } from '../constants';
 
 const initialState = {
   version: null,
@@ -78,7 +78,7 @@ const getState = () => dispatch =>
 
 const getNotice = () => dispatch =>
   request
-    .get('v1/console/server/announcement')
+    .get('v1/console/server/announcement?language=' + localStorage.getItem(LANGUAGE_KEY))
     .then(res => {
       dispatch({
         type: GET_NOTICE,

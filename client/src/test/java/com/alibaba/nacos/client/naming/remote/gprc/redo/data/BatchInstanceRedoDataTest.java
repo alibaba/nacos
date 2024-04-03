@@ -41,6 +41,8 @@ public class BatchInstanceRedoDataTest {
         assertFalse(redoData1.equals(null));
         assertFalse(redoData1.equals(redoData2));
         assertFalse(redoData1.equals(redoData2));
+        BatchInstanceRedoData redoData3 = new BatchInstanceRedoData("c", "b");
+        assertFalse(redoData1.equals(redoData3));
     }
     
     @Test

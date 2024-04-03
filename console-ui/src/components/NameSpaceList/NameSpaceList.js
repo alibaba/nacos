@@ -168,15 +168,11 @@ class NameSpaceList extends React.Component {
   rendernamespace(namespaceList) {
     const { nownamespace } = this.state; // 获得当前namespace
     const namespacesBtn = namespaceList.map((obj, index) => {
-      const style =
-        obj.namespace === nownamespace
-          ? { color: '#209BFA', paddingRight: 10, border: 'none', fontSize: 14 }
-          : { color: '#666', paddingRight: 10, border: 'none', fontSize: 14 };
       return (
         <div key={index} style={{ cursor: 'pointer' }}>
           {index === 0 ? '' : <span style={{ marginRight: 8, color: '#999' }}>|</span>}
           <span
-            style={style}
+            className={obj.namespace === nownamespace ? 'naming-focus' : 'naming-simple'}
             onClick={this.changeNameSpace.bind(
               this,
               obj.namespace,

@@ -101,5 +101,6 @@ public class NacosMonitorPushResultHookTest {
     public void testPushFailed() {
         new NacosMonitorPushResultHook().pushFailed(pushResult);
         assertEquals(1, MetricsMonitor.getFailedPushMonitor().get());
+        assertEquals(1, MetricsMonitor.getTotalPushMonitor().get());
     }
 }
