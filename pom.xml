@@ -88,7 +88,7 @@
     </issueManagement>
     
     <properties>
-        <revision>2.4.0-SNAPSHOT</revision>
+        <revision>2.3.2</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Compiler settings properties -->
