@@ -518,9 +518,9 @@ public class ClientWorker implements Closeable {
             cacheMap.set(copy);
         }
         LOGGER.info("[{}] [subscribe] {}", agent.getName(), key);
-    
+        
         MetricsMonitor.getListenConfigCountMonitor().set(cacheMap.get().size());
-    
+        
         return cache;
     }
     
@@ -905,7 +905,7 @@ public class ClientWorker implements Closeable {
             labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipserverTag());
             labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmoryTag());
             labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
-    
+            
             return labels;
         }
         
@@ -942,9 +942,8 @@ public class ClientWorker implements Closeable {
                                     Constants.ConfigChangeType.DELETE_CONFIG));
                         }
                         break;
-                    // Fall through to FINISH_LISTEN_INIT case intentionally
                     case Constants.ConfigChangeType.FINISH_LISTEN_INIT:
-                        context.setInitializing(true);
+                        context.setInitializing(false);
                         break;
                     default:
                         LOGGER.error("Invalid config change type: {}", requestContext.getType());
@@ -1046,6 +1045,9 @@ public class ClientWorker implements Closeable {
                 public void onConnected(Connection connection) {
                     LOGGER.info("[{}] Connected,notify listen context...", rpcClientInner.getName());
                     notifyListenConfig();
+                    
+                    LOGGER.info("[{}] Connected,notify fuzzy listen context...", rpcClientInner.getName());
+                    notifyFuzzyListenConfig();
                 }
                 
                 @Override
@@ -1061,6 +1063,18 @@ public class ClientWorker implements Closeable {
                             }
                         } else {
                             cacheData.setConsistentWithServer(false);
+                        }
+                    }
+                    
+                    Collection<FuzzyListenContext> fuzzyListenContexts = fuzzyListenContextMap.get().values();
+                    
+                    for (FuzzyListenContext context : fuzzyListenContexts) {
+                        if (StringUtils.isNotBlank(taskId)) {
+                            if (Integer.valueOf(taskId).equals(context.getTaskId())) {
+                                context.getIsConsistentWithServer().set(false);
+                            }
+                        } else {
+                            context.getIsConsistentWithServer().set(false);
                         }
                     }
                 }
@@ -1092,14 +1106,14 @@ public class ClientWorker implements Closeable {
                 public void onEvent(Event event) {
                     rpcClientInner.onServerListChange();
                 }
-    
+                
                 @Override
                 public Class<? extends Event> subscribeType() {
                     return ServerListChangeEvent.class;
                 }
             };
             NotifyCenter.registerSubscriber(subscriber);
-    
+            
             NotifyCenter.registerSubscriber(new Subscriber() {
                 @Override
                 public void onEvent(Event event) {
@@ -1112,7 +1126,7 @@ public class ClientWorker implements Closeable {
                     context.notifyListener(fuzzyListenNotifyEvent.getDataId(), fuzzyListenNotifyEvent.getType(),
                             fuzzyListenNotifyEvent.getUuid());
                 }
-        
+                
                 @Override
                 public Class<? extends Event> subscribeType() {
                     return FuzzyListenNotifyEvent.class;
@@ -1141,7 +1155,7 @@ public class ClientWorker implements Closeable {
                     }
                 }
             }, 0L, TimeUnit.MILLISECONDS);
-    
+            
             executor.schedule(() -> {
                 while (!executor.isShutdown() && !executor.isTerminated()) {
                     try {
@@ -1161,7 +1175,7 @@ public class ClientWorker implements Closeable {
                     }
                 }
             }, 0L, TimeUnit.MILLISECONDS);
-    
+            
         }
         
         @Override
@@ -1488,7 +1502,7 @@ public class ClientWorker implements Closeable {
                 for (Map.Entry<String, List<CacheData>> entry : removeListenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
                     RpcClient rpcClient = ensureRpcClient(taskId);
-    
+                    
                     ExecutorService executorService = ensureSyncExecutor(configListenerTaskPrefix, taskId);
                     Future future = executorService.submit(() -> {
                         List<CacheData> removeListenCaches = entry.getValue();
@@ -1538,7 +1552,7 @@ public class ClientWorker implements Closeable {
                 for (Map.Entry<String, List<CacheData>> entry : listenCachesMap.entrySet()) {
                     String taskId = entry.getKey();
                     RpcClient rpcClient = ensureRpcClient(taskId);
-    
+                    
                     ExecutorService executorService = ensureSyncExecutor(configListenerTaskPrefix, taskId);
                     Future future = executorService.submit(() -> {
                         List<CacheData> listenCaches = entry.getValue();
@@ -1646,7 +1660,7 @@ public class ClientWorker implements Closeable {
          * @return request.
          */
         private ConfigBatchListenRequest buildConfigRequest(List<CacheData> caches) {
-    
+            
             ConfigBatchListenRequest configChangeListenRequest = new ConfigBatchListenRequest();
             for (CacheData cacheData : caches) {
                 configChangeListenRequest.addConfigListenContext(cacheData.group, cacheData.dataId, cacheData.tenant,
