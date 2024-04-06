@@ -1259,9 +1259,7 @@ public class ClientWorker implements Closeable {
          */
         @Override
         public void executeConfigFuzzyListen() throws NacosException {
-            // Initialize maps to store contexts for addition and removal
-            Map<String, List<FuzzyListenContext>> addContextMap = new HashMap<>(16);
-            Map<String, List<FuzzyListenContext>> removeContextMap = new HashMap<>(16);
+            Map<String, List<FuzzyListenContext>> needSyncContextMap = new HashMap<>(16);
             
             // Obtain the current timestamp
             long now = System.currentTimeMillis();
@@ -1279,23 +1277,13 @@ public class ClientWorker implements Closeable {
                     }
                 }
                 
-                // Determine whether to add or remove the context
-                if (context.isDiscard()) {
-                    List<FuzzyListenContext> fuzzyListenContexts = removeContextMap.computeIfAbsent(
-                            String.valueOf(context.getTaskId()), k -> new LinkedList<>());
-                    fuzzyListenContexts.add(context);
-                } else {
-                    List<FuzzyListenContext> fuzzyListenContexts = addContextMap.computeIfAbsent(
-                            String.valueOf(context.getTaskId()), k -> new LinkedList<>());
-                    fuzzyListenContexts.add(context);
-                }
+                List<FuzzyListenContext> needSyncContexts = needSyncContextMap.computeIfAbsent(
+                        String.valueOf(context.getTaskId()), k -> new LinkedList<>());
+                needSyncContexts.add(context);
             }
             
             // Execute fuzzy listen operation for addition
-            doExecuteConfigFuzzyListen(addContextMap, true);
-            
-            // Execute fuzzy listen operation for removal
-            doExecuteConfigFuzzyListen(removeContextMap, false);
+            doExecuteConfigFuzzyListen(needSyncContextMap);
             
             // Update last all sync time if a full synchronization was performed
             if (needAllSync) {
@@ -1310,10 +1298,9 @@ public class ClientWorker implements Closeable {
          * waits for all tasks to complete and logs any errors that occur.
          *
          * @param contextMap The map of contexts to execute fuzzy listen operations for.
-         * @param isListen   Indicates whether the operation is for adding or removing listeners.
          * @throws NacosException If an error occurs during the execution of fuzzy listen configuration changes.
          */
-        private void doExecuteConfigFuzzyListen(Map<String, List<FuzzyListenContext>> contextMap, boolean isListen)
+        private void doExecuteConfigFuzzyListen(Map<String, List<FuzzyListenContext>> contextMap)
                 throws NacosException {
             // Return if the context map is null or empty
             if (contextMap == null || contextMap.isEmpty()) {
@@ -1338,18 +1325,12 @@ public class ClientWorker implements Closeable {
                         ConfigBatchFuzzyListenResponse listenResponse = (ConfigBatchFuzzyListenResponse) requestProxy(
                                 rpcClient, configBatchFuzzyListenRequest);
                         if (listenResponse != null && listenResponse.isSuccess()) {
-                            // Update consistency status of contexts
-                            if (isListen) {
-                                for (FuzzyListenContext context : contexts) {
+                            for (FuzzyListenContext context : contexts) {
+                                if (context.isDiscard()) {
+                                    ClientWorker.this.removeFuzzyListenContext(context.getDataIdPattern(),
+                                            context.getGroup());
+                                } else {
                                     context.getIsConsistentWithServer().set(true);
-                                }
-                            } else {
-                                // Remove contexts marked for discard
-                                for (FuzzyListenContext context : contexts) {
-                                    if (context.isDiscard()) {
-                                        ClientWorker.this.removeFuzzyListenContext(context.getDataIdPattern(),
-                                                context.getGroup());
-                                    }
                                 }
                             }
                         }

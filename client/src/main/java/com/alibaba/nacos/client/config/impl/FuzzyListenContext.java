@@ -44,11 +44,6 @@ public class FuzzyListenContext {
     private static final Logger LOGGER = LogUtils.logger(FuzzyListenContext.class);
     
     /**
-     * Flag indicating whether the context is consistent with the server.
-     */
-    private final AtomicBoolean isConsistentWithServer = new AtomicBoolean();
-    
-    /**
      * Environment name.
      */
     private String envName;
@@ -74,14 +69,19 @@ public class FuzzyListenContext {
     private String tenant;
     
     /**
-     * Flag indicating whether the context is discarded.
+     * Flag indicating whether the context is consistent with the server.
      */
-    private volatile boolean isDiscard = false;
+    private final AtomicBoolean isConsistentWithServer = new AtomicBoolean();
     
     /**
      * Flag indicating whether the context is initializing.
      */
     private volatile boolean isInitializing = false;
+    
+    /**
+     * Flag indicating whether the context is discarded.
+     */
+    private volatile boolean isDiscard = false;
     
     /**
      * Set of data IDs associated with the context.
