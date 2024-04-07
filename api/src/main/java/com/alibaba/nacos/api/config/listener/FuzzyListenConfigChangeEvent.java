@@ -37,7 +37,7 @@ public class FuzzyListenConfigChangeEvent {
     private String dataId;
     
     /**
-     * The type of change that has occurred (e.g., "add", "delete", "update").
+     * The type of change that has occurred (e.g., "ADD_CONFIG", "DELETE_CONFIG").
      */
     private String type;
     
