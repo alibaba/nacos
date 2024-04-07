@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
-import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -150,14 +149,6 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
-     * Save batch information to disk.
-     */
-    public void saveBatchToDisk(String dataId, String group, String tenant, String content) throws IOException {
-        saveToDiskInner(BATCH_DIR, dataId, group, tenant, content);
-        
-    }
-    
-    /**
      * Save tag information to disk.
      */
     public void saveTagToDisk(String dataId, String group, String tenant, String tag, String content)
@@ -181,13 +172,6 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     }
     
     /**
-     * Deletes batch configuration files on disk.
-     */
-    public void removeConfigInfo4Batch(String dataId, String group, String tenant) {
-        removeContentInner(BATCH_DIR, dataId, group, tenant, null);
-    }
-    
-    /**
      * Deletes tag configuration files on disk.
      */
     public void removeConfigInfo4Tag(String dataId, String group, String tenant, String tag) {
@@ -202,7 +186,7 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         return new String(bytes, ENCODE_UTF8);
     }
     
-    RocksDB initAndGetDB(String dir) throws IOException, RocksDBException {
+    RocksDB initAndGetDB(String dir) throws RocksDBException {
         if (rocksDbMap.containsKey(dir)) {
             return rocksDbMap.get(dir);
         } else {
@@ -272,10 +256,6 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
     
     public String getContent(String dataId, String group, String tenant) throws IOException {
         return getContentInner(BASE_DIR, dataId, group, tenant);
-    }
-    
-    public String getLocalConfigMd5(String dataId, String group, String tenant, String encode) throws IOException {
-        return MD5Utils.md5Hex(getContentInner(BASE_DIR, dataId, group, tenant), encode);
     }
     
     Options createOptions(String dir) {
@@ -378,23 +358,4 @@ public class ConfigRocksDbDiskService implements ConfigDiskService {
         }
     }
     
-    /**
-     * clear all batch.
-     */
-    public void clearAllBatch() {
-        try {
-            if (rocksDbMap.containsKey(BATCH_DIR)) {
-                rocksDbMap.get(BATCH_DIR).close();
-                RocksDB.destroyDB(EnvUtil.getNacosHome() + BATCH_DIR, new Options());
-            }
-            deleteDirIfExist(BATCH_DIR);
-            LogUtil.DEFAULT_LOG.info("clear all config-info-batch success.");
-        } catch (RocksDBException e) {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-batch failed.", e);
-        }
-    }
-    
-    public String getBatchContent(String dataId, String group, String tenant) throws IOException {
-        return getContentInner(BATCH_DIR, dataId, group, tenant);
-    }
 }

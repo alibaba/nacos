@@ -99,6 +99,9 @@ public class ClientWorkerTest {
         rpcClientFactoryMockedStatic.when(
                 () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
                         any(RpcClientTlsConfig.class))).thenReturn(rpcClient);
+        rpcClientFactoryMockedStatic.when(
+                () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
+                        any(Properties.class), any(RpcClientTlsConfig.class))).thenReturn(rpcClient);
         localConfigInfoProcessorMockedStatic = Mockito.mockStatic(LocalConfigInfoProcessor.class);
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, TEST_NAMESPACE);
@@ -555,7 +558,7 @@ public class ClientWorkerTest {
         Mockito.when(rpcClientInner.isWaitInitiated()).thenReturn(true, false);
         rpcClientFactoryMockedStatic.when(
                 () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
-                        any(RpcClientTlsConfig.class))).thenReturn(rpcClientInner);
+                        any(Properties.class), any(RpcClientTlsConfig.class))).thenReturn(rpcClientInner);
         // mock listen and remove listen request
         Mockito.when(rpcClientInner.request(any(ConfigBatchListenRequest.class), anyLong()))
                 .thenReturn(response, response);
