@@ -923,8 +923,12 @@ public class ClientWorker implements Closeable {
                 String clientName) {
             LOGGER.info("[{}] [fuzzy-listen-config-push] config init.", clientName);
             String groupKeyPattern = request.getGroupKeyPattern();
+            FuzzyListenContext context = fuzzyListenContextMap.get().get(groupKeyPattern);
+            if (Constants.ConfigChangeType.FINISH_LISTEN_INIT.equals(request.getServiceChangedType())) {
+                context.markInitializationComplete();
+                return new FuzzyListenNotifyDiffResponse();
+            }
             for (FuzzyListenNotifyDiffRequest.Context requestContext : request.getContexts()) {
-                FuzzyListenContext context = fuzzyListenContextMap.get().get(groupKeyPattern);
                 Set<String> existsDataIds = context.getDataIds();
                 switch (requestContext.getType()) {
                     case Constants.ConfigChangeType.LISTEN_INIT:
@@ -941,9 +945,6 @@ public class ClientWorker implements Closeable {
                                     requestContext.getGroup(), requestContext.getDataId(), request.getGroupKeyPattern(),
                                     Constants.ConfigChangeType.DELETE_CONFIG));
                         }
-                        break;
-                    case Constants.ConfigChangeType.FINISH_LISTEN_INIT:
-                        context.setInitializing(false);
                         break;
                     default:
                         LOGGER.error("Invalid config change type: {}", requestContext.getType());

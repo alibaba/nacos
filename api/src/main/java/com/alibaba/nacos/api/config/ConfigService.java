@@ -21,6 +21,9 @@ import com.alibaba.nacos.api.config.listener.AbstractFuzzyListenListener;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 
+import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Config Service Interface.
  *
@@ -94,6 +97,33 @@ public interface ConfigService {
      */
     void addFuzzyListener(String dataIdPattern, String fixedGroupName, AbstractFuzzyListenListener listener)
             throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration and retrieve all configs that match the specified fixed group name.
+     * Fuzzy listeners allow for pattern-based subscription to configs, where the fixed group name represents the group
+     * and dataId patterns specified for subscription.
+     *
+     * @param fixedGroupName The fixed group name representing the group and dataId patterns to subscribe to.
+     * @param listener       The fuzzy listener to be added.
+     * @return CompletableFuture containing collection of configs that match the specified fixed group name.
+     * @throws NacosException NacosException
+     */
+    CompletableFuture<Collection<String>> addFuzzyListenerAndGetConfigs(String fixedGroupName,
+            AbstractFuzzyListenListener listener) throws NacosException;
+    
+    /**
+     * Add a fuzzy listener to the configuration and retrieve all configs that match the specified dataId pattern and
+     * fixed group name. Fuzzy listeners allow for pattern-based subscription to configs.
+     *
+     * @param dataIdPattern  The pattern to match dataIds for subscription.
+     * @param fixedGroupName The fixed group name representing the group and dataId patterns to subscribe to.
+     * @param listener       The fuzzy listener to be added.
+     * @return CompletableFuture containing collection of configs that match the specified dataId pattern and fixed
+     * group name.
+     * @throws NacosException NacosException
+     */
+    CompletableFuture<Collection<String>> addFuzzyListenerAndGetConfigs(String dataIdPattern, String fixedGroupName,
+            AbstractFuzzyListenListener listener) throws NacosException;
     
     /**
      * Cancel fuzzy listen and remove the event listener for a specified fixed group name.

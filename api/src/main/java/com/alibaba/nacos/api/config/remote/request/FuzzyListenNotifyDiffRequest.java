@@ -80,7 +80,7 @@ public class FuzzyListenNotifyDiffRequest extends AbstractFuzzyListenNotifyReque
      * @return A final FuzzyListenNotifyDiffRequest
      */
     public static FuzzyListenNotifyDiffRequest buildInitFinishRequest(String groupKeyPattern) {
-        return new FuzzyListenNotifyDiffRequest(Constants.ConfigChangeType.LISTEN_INIT, groupKeyPattern,
+        return new FuzzyListenNotifyDiffRequest(Constants.ConfigChangeType.FINISH_LISTEN_INIT, groupKeyPattern,
                 new HashSet<>());
     }
     

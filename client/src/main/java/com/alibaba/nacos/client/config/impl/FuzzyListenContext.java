@@ -22,9 +22,14 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Context for fuzzy listening.
@@ -79,9 +84,19 @@ public class FuzzyListenContext {
     private volatile boolean isDiscard = false;
     
     /**
+     * Lock object for synchronization of initialization.
+     */
+    private final Lock initializationLock = new ReentrantLock();
+    
+    /**
+     * Condition object for waiting initialization completion.
+     */
+    private final Condition initializationCompleted = initializationLock.newCondition();
+    
+    /**
      * Flag indicating whether the context is initializing.
      */
-    private volatile boolean isInitializing = false;
+    private boolean isInitializing = false;
     
     /**
      * Set of data IDs associated with the context.
@@ -178,6 +193,43 @@ public class FuzzyListenContext {
                 LOGGER.error("[{}] [notify-listener-error] dataId={}, group={}, tenant={}, listener={}, throwable={}.",
                         envName, dataId, group, tenant, listener, t.getCause());
             }
+        }
+    }
+    
+    
+    /**
+     * Wait for initialization to be complete.
+     *
+     * @return CompletableFuture<Collection < String>> Completes with the collection of data IDs if initialization is
+     * @return CompletableFuture<Collection < String>> Completes with the collection of data IDs if initialization is
+     * complete, or completes exceptionally if an error occurs
+     */
+    public CompletableFuture<Collection<String>> waitForInitializationComplete(
+            CompletableFuture<Collection<String>> future) {
+        initializationLock.lock();
+        try {
+            while (isInitializing) {
+                initializationCompleted.await();
+            }
+            future.complete(dataIds);
+        } catch (InterruptedException e) {
+            future.completeExceptionally(e);
+        } finally {
+            initializationLock.unlock();
+        }
+        return future;
+    }
+    
+    /**
+     * Mark initialization as complete and notify waiting threads.
+     */
+    public void markInitializationComplete() {
+        initializationLock.lock();
+        try {
+            isInitializing = false;
+            initializationCompleted.signalAll();
+        } finally {
+            initializationLock.unlock();
         }
     }
     
