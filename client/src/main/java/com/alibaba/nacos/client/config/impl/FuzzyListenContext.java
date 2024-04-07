@@ -19,10 +19,12 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.config.listener.AbstractFuzzyListenListener;
 import com.alibaba.nacos.api.config.listener.FuzzyListenConfigChangeEvent;
 import com.alibaba.nacos.client.utils.LogUtils;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -101,7 +103,7 @@ public class FuzzyListenContext {
     /**
      * Set of data IDs associated with the context.
      */
-    private Set<String> dataIds = new HashSet<>();
+    private Set<String> dataIds = new ConcurrentHashSet<>();
     
     /**
      * Set of listeners associated with the context.
@@ -211,7 +213,7 @@ public class FuzzyListenContext {
             while (isInitializing) {
                 initializationCompleted.await();
             }
-            future.complete(dataIds);
+            future.complete(Collections.unmodifiableCollection(dataIds));
         } catch (InterruptedException e) {
             future.completeExceptionally(e);
         } finally {
@@ -392,7 +394,7 @@ public class FuzzyListenContext {
      * @return Set of data IDs
      */
     public Set<String> getDataIds() {
-        return dataIds;
+        return Collections.unmodifiableSet(dataIds);
     }
     
     /**
