@@ -454,6 +454,7 @@ const I18N_CONF = {
     dialogCurrentArea: '当前值',
     dialogOriginalArea: '原始值',
     publishFailed403: '发布失败,请检查是否有权限',
+    publishCasFailed: '发布失败,配置修改冲突',
     namespace: '命名空间',
   },
   EditorNameSpace: {
