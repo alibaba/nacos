@@ -104,8 +104,8 @@ public class ExpiredMetadataCleanerTest extends TestCase {
         Service service = Service.newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, serviceName);
         when(existingMetadataInfoMock.getService()).thenReturn(service);
         when(existingMetadataInfoMock.getCreateTime()).thenReturn(0L);
-        when(existingMetadataInfoMock.getMetadataId()).
-                thenReturn(InstancePublishInfo.genMetadataId(ip, port, Constants.DEFAULT_CLUSTER_NAME));
+        when(existingMetadataInfoMock.getMetadataId())
+                .thenReturn(InstancePublishInfo.genMetadataId(ip, port, Constants.DEFAULT_CLUSTER_NAME));
         
         set.add(existingMetadataInfoMock);
         
