@@ -23,6 +23,7 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
+import com.alibaba.nacos.core.remote.tls.RpcServerConstants;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
@@ -49,8 +50,9 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 @RunWith(SpringRunner.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
-        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem", RpcConstants.NACOS_SERVER_RPC
+        RpcServerConstants.NACOS_SERVER_RPC + ".enableTls=true",
+        RpcServerConstants.NACOS_SERVER_RPC + ".compatibility=false",
+        RpcServerConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem", RpcServerConstants.NACOS_SERVER_RPC
         + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Ignore("TODO, Fix cert expired problem")
 public class NamingTlsServiceTls_ITCase {

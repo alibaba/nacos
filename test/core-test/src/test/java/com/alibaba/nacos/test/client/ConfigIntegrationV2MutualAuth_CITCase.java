@@ -25,7 +25,7 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
-import com.alibaba.nacos.common.remote.client.RpcConstants;
+import com.alibaba.nacos.core.remote.tls.RpcServerConstants;
 import com.alibaba.nacos.test.ConfigCleanUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -50,11 +50,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
-        RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
-        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
-        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
-        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem", RpcConstants.NACOS_SERVER_RPC
-        + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+        RpcServerConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true",
+        RpcServerConstants.NACOS_SERVER_RPC + ".compatibility=false",
+        RpcServerConstants.NACOS_SERVER_RPC + ".enableTls=true",
+        RpcServerConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
+        RpcServerConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem",
+        RpcServerConstants.NACOS_SERVER_RPC + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigIntegrationV2MutualAuth_CITCase {
     
     @LocalServerPort

@@ -16,9 +16,21 @@
 
 package com.alibaba.nacos.core.remote.tls;
 
-import com.alibaba.nacos.common.remote.client.RpcConstants;
 
 import java.util.Properties;
+
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.COMPATIBILITY;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.MUTUAL_AUTH;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.SSL_CONTEXT_REFRESHER;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_CERT_CHAIN_PATH;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_CERT_KEY;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_CIPHERS;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_ENABLE;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_PROTOCOLS;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_PROVIDER;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_TRUST_ALL;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH;
+import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_TRUST_PWD;
 
 /**
  * RpcServerTlsConfigFactory.
@@ -35,7 +47,7 @@ public class RpcServerTlsConfigFactory {
      * @return RpcClientTlsConfig object representing the TLS configuration
      */
     public static RpcServerTlsConfig createSdkServerTlsConfig(Properties properties) {
-        return createServerTlsConfig(properties, RpcConstants.NACOS_SERVER_RPC);
+        return createServerTlsConfig(properties, RpcServerConstants.NACOS_SERVER_RPC);
     }
     
     /**
@@ -45,7 +57,7 @@ public class RpcServerTlsConfigFactory {
      * @return RpcClientTlsConfig object representing the TLS configuration
      */
     public static RpcServerTlsConfig createClusterServerTlsConfig(Properties properties) {
-        return createServerTlsConfig(properties, RpcConstants.NACOS_CLUSTER_SERVER_RPC);
+        return createServerTlsConfig(properties, RpcServerConstants.NACOS_CLUSTER_SERVER_RPC);
     }
     
     /**
@@ -73,22 +85,18 @@ public class RpcServerTlsConfigFactory {
      */
     public static RpcServerTlsConfig createServerTlsConfig(Properties properties, String prefix) {
         RpcServerTlsConfig tlsConfig = new RpcServerTlsConfig();
-        tlsConfig.setEnableTls(getBooleanProperty(properties, prefix + RpcConstants.ServerSuffix.TLS_ENABLE, false));
-        tlsConfig.setMutualAuthEnable(
-                getBooleanProperty(properties, prefix + RpcConstants.ServerSuffix.MUTUAL_AUTH, false));
-        tlsConfig.setProtocols(properties.getProperty(prefix + RpcConstants.ServerSuffix.TLS_PROTOCOLS));
-        tlsConfig.setCiphers(properties.getProperty(prefix + RpcConstants.ServerSuffix.TLS_CIPHERS));
-        tlsConfig.setTrustCollectionCertFile(
-                properties.getProperty(prefix + RpcConstants.ServerSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH));
-        tlsConfig.setCertChainFile(properties.getProperty(prefix + RpcConstants.ServerSuffix.TLS_CERT_CHAIN_PATH));
-        tlsConfig.setCertPrivateKey(properties.getProperty(prefix + RpcConstants.ServerSuffix.TLS_CERT_KEY));
-        tlsConfig.setTrustAll(getBooleanProperty(properties, prefix + RpcConstants.ServerSuffix.TLS_TRUST_ALL, true));
-        tlsConfig.setCertPrivateKeyPassword(properties.getProperty(prefix + RpcConstants.ServerSuffix.TLS_TRUST_PWD));
-        tlsConfig.setSslProvider(properties.getProperty(prefix + RpcConstants.ServerSuffix.TLS_PROVIDER));
-        tlsConfig.setSslContextRefresher(
-                properties.getProperty(prefix + RpcConstants.ServerSuffix.SSL_CONTEXT_REFRESHER));
-        tlsConfig.setCompatibility(
-                getBooleanProperty(properties, prefix + RpcConstants.ServerSuffix.COMPATIBILITY, true));
+        tlsConfig.setEnableTls(getBooleanProperty(properties, prefix + TLS_ENABLE, false));
+        tlsConfig.setMutualAuthEnable(getBooleanProperty(properties, prefix + MUTUAL_AUTH, false));
+        tlsConfig.setProtocols(properties.getProperty(prefix + TLS_PROTOCOLS));
+        tlsConfig.setCiphers(properties.getProperty(prefix + TLS_CIPHERS));
+        tlsConfig.setTrustCollectionCertFile(properties.getProperty(prefix + TLS_TRUST_COLLECTION_CHAIN_PATH));
+        tlsConfig.setCertChainFile(properties.getProperty(prefix + TLS_CERT_CHAIN_PATH));
+        tlsConfig.setCertPrivateKey(properties.getProperty(prefix + TLS_CERT_KEY));
+        tlsConfig.setTrustAll(getBooleanProperty(properties, prefix + TLS_TRUST_ALL, true));
+        tlsConfig.setCertPrivateKeyPassword(properties.getProperty(prefix + TLS_TRUST_PWD));
+        tlsConfig.setSslProvider(properties.getProperty(prefix + TLS_PROVIDER));
+        tlsConfig.setSslContextRefresher(properties.getProperty(prefix + SSL_CONTEXT_REFRESHER));
+        tlsConfig.setCompatibility(getBooleanProperty(properties, prefix + COMPATIBILITY, true));
         return tlsConfig;
     }
 }

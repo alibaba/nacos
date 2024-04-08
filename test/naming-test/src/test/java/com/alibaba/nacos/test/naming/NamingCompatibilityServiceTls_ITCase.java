@@ -27,7 +27,7 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.common.remote.client.RpcConstants;
+import com.alibaba.nacos.core.remote.tls.RpcServerConstants;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -52,9 +52,10 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  **/
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=true",
-        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem", RpcConstants.NACOS_SERVER_RPC
-        + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+        RpcServerConstants.NACOS_SERVER_RPC + ".enableTls=true",
+        RpcServerConstants.NACOS_SERVER_RPC + ".compatibility=true",
+        RpcServerConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
+        RpcServerConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NamingCompatibilityServiceTls_ITCase {
     
     private NamingMaintainService namingMaintainService;
