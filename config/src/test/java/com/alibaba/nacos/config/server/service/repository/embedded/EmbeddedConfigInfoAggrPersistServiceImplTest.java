@@ -201,7 +201,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
         String dataId = "dataId111";
         String group = "group";
         String tenant = "tenant";
-
+        
         //mock query count.
         Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))
                 .thenReturn(101);

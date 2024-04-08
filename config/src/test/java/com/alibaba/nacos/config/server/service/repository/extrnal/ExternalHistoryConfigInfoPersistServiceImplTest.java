@@ -196,7 +196,7 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
         String dataId = "dataId34567";
         String group = "group34567";
         String tenant = "tenant34567";
-
+        
         //mock count
         Mockito.when(
                         jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))

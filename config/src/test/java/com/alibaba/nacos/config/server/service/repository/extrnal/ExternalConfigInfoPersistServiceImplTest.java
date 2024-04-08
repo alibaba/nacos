@@ -760,7 +760,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         String dataId = "dataId4567222";
         String group = "group3456789";
         String tenant = "tenant4567890";
-
+        
         //mock total count
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {tenant, dataId, group}),
                 eq(Integer.class))).thenReturn(new Integer(9));

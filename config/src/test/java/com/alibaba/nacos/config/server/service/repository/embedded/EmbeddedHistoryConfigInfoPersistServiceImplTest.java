@@ -170,7 +170,7 @@ public class EmbeddedHistoryConfigInfoPersistServiceImplTest {
         String dataId = "dataId34567";
         String group = "group34567";
         String tenant = "tenant34567";
-
+        
         //mock count
         Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))
                 .thenReturn(300);
