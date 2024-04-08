@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.common.remote.client.RpcTlsConfigFactory;
-import com.alibaba.nacos.common.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.core.remote.grpc.negotiator.ProtocolNegotiatorBuilder;
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfigFactory;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslContext;
 
@@ -72,7 +72,7 @@ public class ClusterDefaultTlsProtocolNegotiatorBuilder implements ProtocolNegot
     @Override
     public NacosGrpcProtocolNegotiator build() {
         Properties properties = EnvUtil.getProperties();
-        RpcServerTlsConfig config = RpcTlsConfigFactory.createClusterServerTlsConfig(properties);
+        RpcServerTlsConfig config = RpcServerTlsConfigFactory.createClusterServerTlsConfig(properties);
         if (config.getEnableTls()) {
             SslContext sslContext = DefaultTlsContextBuilder.getSslContext(config);
             return new OptionalTlsProtocolNegotiator(sslContext, config);

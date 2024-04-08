@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.packagescan.resource.ResourceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.TlsTypeResolve;
-import com.alibaba.nacos.common.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.netty.handler.ssl.ClientAuth;

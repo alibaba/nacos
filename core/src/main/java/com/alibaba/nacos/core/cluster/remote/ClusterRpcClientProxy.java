@@ -27,7 +27,7 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
-import com.alibaba.nacos.common.remote.client.RpcTlsConfigFactory;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
@@ -156,7 +156,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
      */
     private RpcClient buildRpcClient(ConnectionType type, Map<String, String> labels, String memberClientKey) {
         Properties properties = EnvUtil.getProperties();
-        RpcClientTlsConfig config = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig config = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         return RpcClientFactory.createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
                 EnvUtil.getAvailableProcessors(8), labels, config);
     }

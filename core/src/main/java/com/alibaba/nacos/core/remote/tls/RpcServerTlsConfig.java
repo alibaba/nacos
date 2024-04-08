@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.remote.tls;
+package com.alibaba.nacos.core.remote.tls;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
 

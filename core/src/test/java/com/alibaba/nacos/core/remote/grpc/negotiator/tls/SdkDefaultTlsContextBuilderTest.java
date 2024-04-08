@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import com.alibaba.nacos.common.remote.tls.RpcServerTlsConfig;
+import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;

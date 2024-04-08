@@ -29,7 +29,7 @@ public class RpcClusterClientTlsConfigTest {
     public void testEnableTls() {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertTrue(tlsConfig.getEnableTls());
     }
     
@@ -38,7 +38,7 @@ public class RpcClusterClientTlsConfigTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_PROVIDER, "provider");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertEquals("provider", tlsConfig.getSslProvider());
     }
     
@@ -47,7 +47,7 @@ public class RpcClusterClientTlsConfigTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_MUTUAL_AUTH, "true");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertTrue(tlsConfig.getMutualAuthEnable());
     }
     
@@ -56,7 +56,7 @@ public class RpcClusterClientTlsConfigTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_PROTOCOLS, "protocols");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertEquals("protocols", tlsConfig.getProtocols());
     }
     
@@ -65,7 +65,7 @@ public class RpcClusterClientTlsConfigTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_CIPHERS, "ciphers");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertEquals("ciphers", tlsConfig.getCiphers());
     }
     
@@ -74,7 +74,7 @@ public class RpcClusterClientTlsConfigTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "trustCollectionCertFile");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertEquals("trustCollectionCertFile", tlsConfig.getTrustCollectionCertFile());
     }
     
@@ -83,7 +83,7 @@ public class RpcClusterClientTlsConfigTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_CERT_CHAIN_PATH, "certChainFile");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertEquals("certChainFile", tlsConfig.getCertChainFile());
     }
     
@@ -92,7 +92,7 @@ public class RpcClusterClientTlsConfigTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_CERT_KEY, "certPrivateKey");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertEquals("certPrivateKey", tlsConfig.getCertPrivateKey());
     }
     
@@ -101,7 +101,7 @@ public class RpcClusterClientTlsConfigTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_TRUST_ALL, "true");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertTrue(tlsConfig.getTrustAll());
     }
     
@@ -110,7 +110,7 @@ public class RpcClusterClientTlsConfigTest {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_ENABLE, "true");
         properties.setProperty(RpcConstants.RPC_CLUSTER_CLIENT_TLS_TRUST_PWD, "trustPwd");
-        RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
         assertEquals("trustPwd", tlsConfig.getCertPrivateKeyPassword());
     }
 }

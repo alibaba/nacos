@@ -16,8 +16,6 @@
 
 package com.alibaba.nacos.core.remote.tls;
 
-import com.alibaba.nacos.common.remote.client.RpcTlsConfigFactory;
-import com.alibaba.nacos.common.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.utils.Loggers;
@@ -74,8 +72,8 @@ public class RpcServerSslContextRefresherHolder {
     private static void init() {
         synchronized (RpcServerSslContextRefresherHolder.class) {
             Properties properties = EnvUtil.getProperties();
-            RpcServerTlsConfig clusterServerTlsConfig = RpcTlsConfigFactory.createClusterServerTlsConfig(properties);
-            RpcServerTlsConfig sdkServerTlsConfig = RpcTlsConfigFactory.createSdkServerTlsConfig(properties);
+            RpcServerTlsConfig clusterServerTlsConfig = RpcServerTlsConfigFactory.createClusterServerTlsConfig(properties);
+            RpcServerTlsConfig sdkServerTlsConfig = RpcServerTlsConfigFactory.createSdkServerTlsConfig(properties);
             Collection<RpcServerSslContextRefresher> refreshers = NacosServiceLoader.load(
                     RpcServerSslContextRefresher.class);
             sdkInstance = getSslContextRefresher(refreshers, sdkServerTlsConfig);

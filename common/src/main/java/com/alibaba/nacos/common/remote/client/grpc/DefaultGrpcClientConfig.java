@@ -18,7 +18,7 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
-import com.alibaba.nacos.common.remote.client.RpcTlsConfigFactory;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 
 import java.util.HashMap;
@@ -247,12 +247,12 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         }
 
         public Builder buildSdkFromProperties(Properties properties) {
-            RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createSdkClientTlsConfig(properties);
+            RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createSdkClientTlsConfig(properties);
             return fromProperties(properties, tlsConfig);
         }
 
         public Builder buildClusterFromProperties(Properties properties) {
-            RpcClientTlsConfig tlsConfig = RpcTlsConfigFactory.createClusterClientTlsConfig(properties);
+            RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
             return fromProperties(properties, tlsConfig);
         }
         
