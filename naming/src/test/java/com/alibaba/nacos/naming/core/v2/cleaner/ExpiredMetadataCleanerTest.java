@@ -17,6 +17,7 @@
 package com.alibaba.nacos.naming.core.v2.cleaner;
 
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.ExpiredMetadataInfo;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
@@ -49,12 +50,15 @@ public class ExpiredMetadataCleanerTest extends TestCase {
 
     @Mock
     private ExpiredMetadataInfo expiredMetadataInfoMock;
+    
+    @Mock
+    private ServiceStorage serviceStorage;
 
     @Before
     public void setUp() throws Exception {
         super.setUp();
         EnvUtil.setEnvironment(new MockEnvironment());
-        expiredMetadataCleaner = new ExpiredMetadataCleaner(metadataManagerMock, metadataOperateServiceMock);
+        expiredMetadataCleaner = new ExpiredMetadataCleaner(metadataManagerMock, metadataOperateServiceMock, serviceStorage);
 
         set.add(expiredMetadataInfoMock);
 

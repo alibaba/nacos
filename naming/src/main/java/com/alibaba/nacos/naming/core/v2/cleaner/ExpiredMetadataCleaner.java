@@ -16,14 +16,20 @@
 
 package com.alibaba.nacos.naming.core.v2.cleaner;
 
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.ExpiredMetadataInfo;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataOperateService;
+import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.GlobalConfig;
 import com.alibaba.nacos.naming.misc.GlobalExecutor;
 import com.alibaba.nacos.naming.misc.Loggers;
 import org.springframework.stereotype.Component;
 
+import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,10 +48,13 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
     
     private final NamingMetadataOperateService metadataOperateService;
     
+    private final ServiceStorage serviceStorage;
+    
     public ExpiredMetadataCleaner(NamingMetadataManager metadataManager,
-            NamingMetadataOperateService metadataOperateService) {
+            NamingMetadataOperateService metadataOperateService, ServiceStorage serviceStorage) {
         this.metadataManager = metadataManager;
         this.metadataOperateService = metadataOperateService;
+        this.serviceStorage = serviceStorage;
         GlobalExecutor.scheduleExpiredClientCleaner(this, INITIAL_DELAY, GlobalConfig.getExpiredMetadataCleanInterval(),
                 TimeUnit.MILLISECONDS);
     }
@@ -58,23 +67,49 @@ public class ExpiredMetadataCleaner extends AbstractNamingCleaner {
     @Override
     public void doClean() {
         long currentTime = System.currentTimeMillis();
-        for (ExpiredMetadataInfo each : metadataManager.getExpiredMetadataInfos()) {
+        Iterator<ExpiredMetadataInfo> it = metadataManager.getExpiredMetadataInfos().iterator();
+        while (it.hasNext()) {
+            ExpiredMetadataInfo each = it.next();
             if (currentTime - each.getCreateTime() > GlobalConfig.getExpiredMetadataExpiredTime()) {
-                removeExpiredMetadata(each);
+                if (!removeExpiredMetadata(each)) {
+                    it.remove();
+                }
             }
         }
     }
     
-    private void removeExpiredMetadata(ExpiredMetadataInfo expiredInfo) {
+    private boolean removeExpiredMetadata(ExpiredMetadataInfo expiredInfo) {
         Loggers.SRV_LOG.info("Remove expired metadata {}", expiredInfo);
         if (null == expiredInfo.getMetadataId()) {
             if (metadataManager.containServiceMetadata(expiredInfo.getService())) {
                 metadataOperateService.deleteServiceMetadata(expiredInfo.getService());
             }
         } else {
+            Instance instance = queryInstance(expiredInfo);
+            if (instance != null) {
+                Loggers.SRV_LOG.warn("Instance exists, abort removing metadata {}", expiredInfo);
+                return false;
+            }
             if (metadataManager.containInstanceMetadata(expiredInfo.getService(), expiredInfo.getMetadataId())) {
                 metadataOperateService.deleteInstanceMetadata(expiredInfo.getService(), expiredInfo.getMetadataId());
             }
         }
+        return true;
+    }
+    
+    private Instance queryInstance(ExpiredMetadataInfo expiredInfo) {
+        Instance instance = null;
+        String cluster = InstancePublishInfo.getClusterFromMetadataId(expiredInfo.getMetadataId());
+        String ip = InstancePublishInfo.getIpFromMetadataId(expiredInfo.getMetadataId());
+        int port = InstancePublishInfo.getPortFromMetadataId(expiredInfo.getMetadataId());
+        Service service = expiredInfo.getService();
+        ServiceInfo serviceInfo = serviceStorage.getPushData(service);
+        for (Instance each : serviceInfo.getHosts()) {
+            if (cluster.equals(each.getClusterName()) && ip.equals(each.getIp()) && port == each.getPort()) {
+                instance = each;
+                break;
+            }
+        }
+        return instance;
     }
 }
