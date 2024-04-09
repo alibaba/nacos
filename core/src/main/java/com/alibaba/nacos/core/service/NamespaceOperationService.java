@@ -66,6 +66,7 @@ public class NamespaceOperationService {
         
         Namespace namespace0 = new Namespace(NamespaceUtil.getNamespaceDefaultId(), DEFAULT_NAMESPACE, DEFAULT_QUOTA, 0,
                 NamespaceTypeEnum.GLOBAL.getType());
+        namespace0.setNamespaceDesc(DEFAULT_NAMESPACE_DESCRIPTION);
         NamespaceDetailInjectorHolder.getInstance().injectDetail(namespace0);
         List<Namespace> namespaceList = new ArrayList<>();
         namespaceList.add(namespace0);
