@@ -156,7 +156,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
      */
     private RpcClient buildRpcClient(ConnectionType type, Map<String, String> labels, String memberClientKey) {
         Properties properties = EnvUtil.getProperties();
-        RpcClientTlsConfig config = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
+        RpcClientTlsConfig config = RpcClientTlsConfigFactory.getInstance().createClusterConfig(properties);
         return RpcClientFactory.createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
                 EnvUtil.getAvailableProcessors(8), labels, config);
     }

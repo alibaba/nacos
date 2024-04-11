@@ -72,8 +72,8 @@ public class RpcServerSslContextRefresherHolder {
     private static void init() {
         synchronized (RpcServerSslContextRefresherHolder.class) {
             Properties properties = EnvUtil.getProperties();
-            RpcServerTlsConfig clusterServerTlsConfig = RpcServerTlsConfigFactory.createClusterServerTlsConfig(properties);
-            RpcServerTlsConfig sdkServerTlsConfig = RpcServerTlsConfigFactory.createSdkServerTlsConfig(properties);
+            RpcServerTlsConfig clusterServerTlsConfig = RpcServerTlsConfigFactory.getInstance().createClusterConfig(properties);
+            RpcServerTlsConfig sdkServerTlsConfig = RpcServerTlsConfigFactory.getInstance().createSdkConfig(properties);
             Collection<RpcServerSslContextRefresher> refreshers = NacosServiceLoader.load(
                     RpcServerSslContextRefresher.class);
             sdkInstance = getSslContextRefresher(refreshers, sdkServerTlsConfig);

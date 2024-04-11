@@ -16,21 +16,24 @@
 
 package com.alibaba.nacos.core.remote.tls;
 
+import com.alibaba.nacos.common.remote.client.RpcTlsConfigFactory;
+import com.alibaba.nacos.common.remote.client.RpcConstants;
 
 import java.util.Properties;
 
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.COMPATIBILITY;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.MUTUAL_AUTH;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.SSL_CONTEXT_REFRESHER;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_CERT_CHAIN_PATH;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_CERT_KEY;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_CIPHERS;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_ENABLE;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_PROTOCOLS;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_PROVIDER;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_TRUST_ALL;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH;
-import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.TLS_TRUST_PWD;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.NACOS_SERVER_RPC;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.COMPATIBILITY;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.MUTUAL_AUTH;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.SSL_CONTEXT_REFRESHER;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.TLS_CERT_CHAIN_PATH;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.TLS_CERT_KEY;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.TLS_CIPHERS;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.TLS_ENABLE;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.TLS_PROTOCOLS;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.TLS_PROVIDER;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.TLS_TRUST_ALL;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.ServerSuffix.TLS_TRUST_PWD;
 
 /**
  * RpcServerTlsConfigFactory.
@@ -38,44 +41,42 @@ import static com.alibaba.nacos.core.remote.tls.RpcServerConstants.ServerSuffix.
  * @author stone-98
  * @date 2024/4/8
  */
-public class RpcServerTlsConfigFactory {
-    
+public class RpcServerTlsConfigFactory implements RpcTlsConfigFactory {
+
+    private static RpcServerTlsConfigFactory instance;
+
+    private RpcServerTlsConfigFactory() {
+    }
+
+    public static synchronized RpcServerTlsConfigFactory getInstance() {
+        if (instance == null) {
+            instance = new RpcServerTlsConfigFactory();
+        }
+        return instance;
+    }
+
     /**
      * Create SDK client TLS config.
      *
      * @param properties Properties containing TLS configuration
      * @return RpcClientTlsConfig object representing the TLS configuration
      */
-    public static RpcServerTlsConfig createSdkServerTlsConfig(Properties properties) {
-        return createServerTlsConfig(properties, RpcServerConstants.NACOS_SERVER_RPC);
+    @Override
+    public RpcServerTlsConfig createSdkConfig(Properties properties) {
+        return createServerTlsConfig(properties, NACOS_SERVER_RPC);
     }
-    
+
     /**
      * Create cluster client TLS config.
      *
      * @param properties Properties containing TLS configuration
      * @return RpcClientTlsConfig object representing the TLS configuration
      */
-    public static RpcServerTlsConfig createClusterServerTlsConfig(Properties properties) {
-        return createServerTlsConfig(properties, RpcServerConstants.NACOS_CLUSTER_SERVER_RPC);
+    @Override
+    public RpcServerTlsConfig createClusterConfig(Properties properties) {
+        return createServerTlsConfig(properties, RpcConstants.NACOS_PEER_RPC);
     }
-    
-    /**
-     * Get boolean property from properties.
-     *
-     * @param properties   Properties containing configuration
-     * @param key          Key of the property
-     * @param defaultValue Default value to return if the property is not found or is invalid
-     * @return Boolean value of the property, or the provided defaultValue if not found or invalid
-     */
-    private static Boolean getBooleanProperty(Properties properties, String key, Boolean defaultValue) {
-        String value = properties.getProperty(key);
-        if (value != null) {
-            return Boolean.parseBoolean(value);
-        }
-        return defaultValue;
-    }
-    
+
     /**
      * create sdk server tls config.
      *
@@ -83,7 +84,7 @@ public class RpcServerTlsConfigFactory {
      * @param prefix     prefix
      * @return
      */
-    public static RpcServerTlsConfig createServerTlsConfig(Properties properties, String prefix) {
+    public RpcServerTlsConfig createServerTlsConfig(Properties properties, String prefix) {
         RpcServerTlsConfig tlsConfig = new RpcServerTlsConfig();
         tlsConfig.setEnableTls(getBooleanProperty(properties, prefix + TLS_ENABLE, false));
         tlsConfig.setMutualAuthEnable(getBooleanProperty(properties, prefix + MUTUAL_AUTH, false));

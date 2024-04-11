@@ -28,70 +28,70 @@ import static com.alibaba.nacos.common.remote.client.RpcConstants.ClientSuffix.T
 import static com.alibaba.nacos.common.remote.client.RpcConstants.ClientSuffix.TLS_TRUST_ALL;
 import static com.alibaba.nacos.common.remote.client.RpcConstants.ClientSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH;
 import static com.alibaba.nacos.common.remote.client.RpcConstants.ClientSuffix.TLS_TRUST_PWD;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.NACOS_CLIENT_RPC;
+import static com.alibaba.nacos.common.remote.client.RpcConstants.NACOS_PEER_RPC;
 
 /**
  * TlsConfigFactory.
  *
  * @author stone-98
  */
-public class RpcClientTlsConfigFactory {
-    
+public class RpcClientTlsConfigFactory implements RpcTlsConfigFactory {
+
+    private static RpcClientTlsConfigFactory instance;
+
+    private RpcClientTlsConfigFactory() {
+    }
+
+    public static synchronized RpcClientTlsConfigFactory getInstance() {
+        if (instance == null) {
+            instance = new RpcClientTlsConfigFactory();
+        }
+        return instance;
+    }
+
     /**
      * Create SDK client TLS config.
      *
      * @param properties Properties containing TLS configuration
      * @return RpcClientTlsConfig object representing the TLS configuration
      */
-    public static RpcClientTlsConfig createSdkClientTlsConfig(Properties properties) {
-        return createClientTlsConfig(properties, RpcConstants.NACOS_CLIENT_RPC);
+    @Override
+    public RpcClientTlsConfig createSdkConfig(Properties properties) {
+        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+        tlsConfig.setEnableTls(getBooleanProperty(properties, NACOS_CLIENT_RPC + TLS_ENABLE, false));
+        tlsConfig.setMutualAuthEnable(getBooleanProperty(properties, NACOS_CLIENT_RPC + MUTUAL_AUTH, false));
+        tlsConfig.setProtocols(properties.getProperty(NACOS_CLIENT_RPC + TLS_PROTOCOLS));
+        tlsConfig.setCiphers(properties.getProperty(NACOS_CLIENT_RPC + TLS_CIPHERS));
+        tlsConfig.setTrustCollectionCertFile(properties.getProperty(NACOS_CLIENT_RPC + TLS_TRUST_COLLECTION_CHAIN_PATH));
+        tlsConfig.setCertChainFile(properties.getProperty(NACOS_CLIENT_RPC + TLS_CERT_CHAIN_PATH));
+        tlsConfig.setCertPrivateKey(properties.getProperty(NACOS_CLIENT_RPC + TLS_CERT_KEY));
+        tlsConfig.setTrustAll(getBooleanProperty(properties, NACOS_CLIENT_RPC + TLS_TRUST_ALL, true));
+        tlsConfig.setCertPrivateKeyPassword(properties.getProperty(NACOS_CLIENT_RPC + TLS_TRUST_PWD));
+        tlsConfig.setSslProvider(properties.getProperty(NACOS_CLIENT_RPC + TLS_PROVIDER));
+        return tlsConfig;
     }
-    
+
     /**
      * Create cluster client TLS config.
      *
      * @param properties Properties containing TLS configuration
      * @return RpcClientTlsConfig object representing the TLS configuration
      */
-    public static RpcClientTlsConfig createClusterClientTlsConfig(Properties properties) {
-        return createClientTlsConfig(properties, RpcConstants.NACOS_CLUSTER_CLIENT_RPC);
-    }
-    
-    /**
-     * Get boolean property from properties.
-     *
-     * @param properties   Properties containing configuration
-     * @param key          Key of the property
-     * @param defaultValue Default value to return if the property is not found or is invalid
-     * @return Boolean value of the property, or the provided defaultValue if not found or invalid
-     */
-    private static Boolean getBooleanProperty(Properties properties, String key, Boolean defaultValue) {
-        String value = properties.getProperty(key);
-        if (value != null) {
-            return Boolean.parseBoolean(value);
-        }
-        return defaultValue;
-    }
-    
-    /**
-     * Create client TLS config.
-     *
-     * @param properties Properties containing TLS configuration
-     * @param prefix     Prefix for other configuration keys
-     * @return RpcClientTlsConfig object representing the TLS configuration
-     */
-    public static RpcClientTlsConfig createClientTlsConfig(Properties properties, String prefix) {
+    @Override
+    public RpcClientTlsConfig createClusterConfig(Properties properties) {
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
-        tlsConfig.setEnableTls(getBooleanProperty(properties, prefix + TLS_ENABLE, false));
-        tlsConfig.setMutualAuthEnable(getBooleanProperty(properties, prefix + MUTUAL_AUTH, false));
-        tlsConfig.setProtocols(properties.getProperty(prefix + TLS_PROTOCOLS));
-        tlsConfig.setCiphers(properties.getProperty(prefix + TLS_CIPHERS));
-        tlsConfig.setTrustCollectionCertFile(properties.getProperty(prefix + TLS_TRUST_COLLECTION_CHAIN_PATH));
-        tlsConfig.setCertChainFile(properties.getProperty(prefix + TLS_CERT_CHAIN_PATH));
-        tlsConfig.setCertPrivateKey(properties.getProperty(prefix + TLS_CERT_KEY));
-        tlsConfig.setTrustAll(getBooleanProperty(properties, prefix + TLS_TRUST_ALL, true));
-        tlsConfig.setCertPrivateKeyPassword(properties.getProperty(prefix + TLS_TRUST_PWD));
-        tlsConfig.setSslProvider(properties.getProperty(prefix + TLS_PROVIDER));
+        tlsConfig.setEnableTls(getBooleanProperty(properties, NACOS_PEER_RPC + RpcConstants.ServerSuffix.TLS_ENABLE, false));
+        tlsConfig.setMutualAuthEnable(getBooleanProperty(properties, NACOS_PEER_RPC + RpcConstants.ServerSuffix.MUTUAL_AUTH, false));
+        tlsConfig.setProtocols(properties.getProperty(NACOS_PEER_RPC + RpcConstants.ServerSuffix.TLS_PROTOCOLS));
+        tlsConfig.setCiphers(properties.getProperty(NACOS_PEER_RPC + RpcConstants.ServerSuffix.TLS_CIPHERS));
+        tlsConfig.setTrustCollectionCertFile(properties.getProperty(NACOS_PEER_RPC + RpcConstants.ServerSuffix.TLS_TRUST_COLLECTION_CHAIN_PATH));
+        tlsConfig.setCertChainFile(properties.getProperty(NACOS_PEER_RPC + RpcConstants.ServerSuffix.TLS_CERT_CHAIN_PATH));
+        tlsConfig.setCertPrivateKey(properties.getProperty(NACOS_PEER_RPC + RpcConstants.ServerSuffix.TLS_CERT_KEY));
+        tlsConfig.setTrustAll(getBooleanProperty(properties, NACOS_PEER_RPC + RpcConstants.ServerSuffix.TLS_TRUST_ALL, true));
+        tlsConfig.setCertPrivateKeyPassword(properties.getProperty(NACOS_PEER_RPC + RpcConstants.ServerSuffix.TLS_TRUST_PWD));
+        tlsConfig.setSslProvider(properties.getProperty(NACOS_PEER_RPC + RpcConstants.ServerSuffix.TLS_PROVIDER));
         return tlsConfig;
     }
-    
+
 }

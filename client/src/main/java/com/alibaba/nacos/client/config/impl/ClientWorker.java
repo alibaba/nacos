@@ -1071,7 +1071,7 @@ public class ClientWorker implements Closeable {
                 Map<String, String> labels = getLabels();
                 Map<String, String> newLabels = new HashMap<>(labels);
                 newLabels.put("taskId", taskId);
-                RpcClientTlsConfig clientTlsConfig = RpcClientTlsConfigFactory.createSdkClientTlsConfig(properties);
+                RpcClientTlsConfig clientTlsConfig = RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties);
                 RpcClient rpcClient = RpcClientFactory.createClient(uuid + "_config-" + taskId, getConnectionType(),
                         newLabels, clientTlsConfig);
                 if (rpcClient.isWaitInitiated()) {

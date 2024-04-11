@@ -247,12 +247,12 @@ public class DefaultGrpcClientConfig implements GrpcClientConfig {
         }
 
         public Builder buildSdkFromProperties(Properties properties) {
-            RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createSdkClientTlsConfig(properties);
+            RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties);
             return fromProperties(properties, tlsConfig);
         }
 
         public Builder buildClusterFromProperties(Properties properties) {
-            RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.createClusterClientTlsConfig(properties);
+            RpcClientTlsConfig tlsConfig = RpcClientTlsConfigFactory.getInstance().createClusterConfig(properties);
             return fromProperties(properties, tlsConfig);
         }
         
