@@ -135,7 +135,7 @@ public interface ConfigInfoMapper extends Mapper {
      * id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id
      * > ? ORDER BY id ASC LIMIT startRow,pageSize
      *
-     * @param context The context of startRow, pageSize
+     * @param context     The context of startRow, pageSize
      * @return The sql of querying all config info.
      */
     MapperResult findAllConfigInfoFragment(MapperContext context);

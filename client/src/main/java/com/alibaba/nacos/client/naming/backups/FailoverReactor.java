@@ -20,18 +20,23 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import io.micrometer.core.instrument.Gauge;
-import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.ImmutableTag;
+import io.micrometer.core.instrument.Gauge;
 
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Collection;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -70,12 +75,8 @@ public class FailoverReactor implements Closeable {
             break;
         }
         // init executorService
-        this.executorService = new ScheduledThreadPoolExecutor(1, r -> {
-            Thread thread = new Thread(r);
-            thread.setDaemon(true);
-            thread.setName("com.alibaba.nacos.naming.failover");
-            return thread;
-        });
+        this.executorService = new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.naming.failover"));
         this.init();
     }
     
@@ -115,7 +116,7 @@ public class FailoverReactor implements Closeable {
                     }
                     
                     if (failoverMap.size() > 0) {
-                        failoverServiceCntMetrics(failoverMap);
+                        failoverServiceCntMetrics();
                         serviceMap = failoverMap;
                     }
                     
@@ -153,6 +154,10 @@ public class FailoverReactor implements Closeable {
         return failoverSwitchEnable;
     }
     
+    public boolean isFailoverSwitch(String serviceName) {
+        return failoverSwitchEnable && serviceMap.containsKey(serviceName) && serviceMap.get(serviceName).ipCount() > 0;
+    }
+    
     public ServiceInfo getService(String key) {
         ServiceInfo serviceInfo = serviceMap.get(key);
         
@@ -177,15 +182,16 @@ public class FailoverReactor implements Closeable {
         NAMING_LOGGER.info("{} do shutdown stop", className);
     }
     
-    private void failoverServiceCntMetrics(Map<String, ServiceInfo> failoverMap) {
+    private void failoverServiceCntMetrics() {
         try {
-            for (Map.Entry<String, ServiceInfo> entry : failoverMap.entrySet()) {
+            for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
                 String serviceName = entry.getKey();
-                Gauge register = Gauge
-                        .builder("nacos_naming_client_failover_instances", failoverMap.get(serviceName).ipCount(),
-                                Integer::intValue).tag("service_name", serviceName)
-                        .description("Nacos failover data service count").register(Metrics.globalRegistry);
-                meterMap.put(serviceName, register);
+                List<Tag> tags = new ArrayList<>();
+                tags.add(new ImmutableTag("service_name", serviceName));
+                if (Metrics.globalRegistry.find("nacos_naming_client_failover_instances").tags(tags).gauge() == null) {
+                    Gauge.builder("nacos_naming_client_failover_instances", () -> serviceMap.get(serviceName).ipCount())
+                            .tags(tags).register(Metrics.globalRegistry);
+                }
             }
         } catch (Exception e) {
             NAMING_LOGGER.info("[NA] registerFailoverServiceCnt fail.", e);
@@ -194,10 +200,13 @@ public class FailoverReactor implements Closeable {
     
     private void failoverServiceCntMetricsClear() {
         try {
-            for (Map.Entry<String, Meter> entry : meterMap.entrySet()) {
-                Metrics.globalRegistry.remove(entry.getValue());
+            for (Map.Entry<String, ServiceInfo> entry : serviceMap.entrySet()) {
+                Gauge gauge = Metrics.globalRegistry.find("nacos_naming_client_failover_instances")
+                        .tag("service_name", entry.getKey()).gauge();
+                if (gauge != null) {
+                    Metrics.globalRegistry.remove(gauge);
+                }
             }
-            meterMap.clear();
         } catch (Exception e) {
             NAMING_LOGGER.info("[NA] registerFailoverServiceCnt fail.", e);
         }

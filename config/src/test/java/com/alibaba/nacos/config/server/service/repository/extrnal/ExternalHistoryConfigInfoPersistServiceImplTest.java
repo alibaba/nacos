@@ -18,7 +18,7 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.sql.ExternalStorageUtils;
 import com.alibaba.nacos.config.server.utils.TestCaseUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
@@ -39,17 +39,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.math.BigInteger;
 import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -150,44 +144,42 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
     public void testFindDeletedConfig() {
         
         //mock query list return
-        Map<String, Object> mockObj1 = new HashMap<>();
-        mockObj1.put("nid", new BigInteger("1234"));
-        mockObj1.put("data_id", "data_id1");
-        mockObj1.put("group_id", "group_id1");
-        mockObj1.put("tenant_id", "tenant_id1");
-        LocalDateTime now = LocalDateTime.of(LocalDate.now(), LocalTime.now());
-        mockObj1.put("gmt_modified", now);
-        List<Map<String, Object>> list = new ArrayList<>();
+        ConfigInfoStateWrapper mockObj1 = new ConfigInfoStateWrapper();
+        mockObj1.setDataId("data_id1");
+        mockObj1.setGroup("group_id1");
+        mockObj1.setTenant("tenant_id1");
+        mockObj1.setMd5("md51");
+        mockObj1.setLastModified(System.currentTimeMillis());
+        
+        List<ConfigInfoStateWrapper> list = new ArrayList<>();
         list.add(mockObj1);
-        Map<String, Object> mockObj2 = new HashMap<>();
-        mockObj2.put("nid", new BigInteger("12345"));
-        mockObj2.put("data_id", "data_id2");
-        mockObj2.put("group_id", "group_id2");
-        mockObj2.put("tenant_id", "tenant_id2");
-        LocalDateTime now2 = LocalDateTime.of(LocalDate.now(), LocalTime.now());
-        mockObj2.put("gmt_modified", now2);
+        ConfigInfoStateWrapper mockObj2 = new ConfigInfoStateWrapper();
+        mockObj2.setDataId("data_id2");
+        mockObj2.setGroup("group_id2");
+        mockObj2.setTenant("tenant_id2");
+        mockObj2.setMd5("md52");
         list.add(mockObj2);
         int pageSize = 1233;
         long startId = 23456;
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        Mockito.when(jdbcTemplate.queryForList(anyString(), eq(timestamp), eq(startId), eq(pageSize))).thenReturn(list);
+        Mockito.when(jdbcTemplate.query(anyString(), eq(new Object[] {timestamp, startId, pageSize}),
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(list);
         //execute
-        List<ConfigInfoWrapper> deletedConfig = externalHistoryConfigInfoPersistService.findDeletedConfig(timestamp,
-                startId, pageSize);
+        List<ConfigInfoStateWrapper> deletedConfig = externalHistoryConfigInfoPersistService.findDeletedConfig(
+                timestamp, startId, pageSize);
         //expect verify
         Assert.assertEquals("data_id1", deletedConfig.get(0).getDataId());
         Assert.assertEquals("group_id1", deletedConfig.get(0).getGroup());
         Assert.assertEquals("tenant_id1", deletedConfig.get(0).getTenant());
-        Assert.assertEquals(now.toInstant(ZoneOffset.ofHours(8)).toEpochMilli(),
-                deletedConfig.get(0).getLastModified());
+        Assert.assertEquals(mockObj1.getLastModified(), deletedConfig.get(0).getLastModified());
         Assert.assertEquals("data_id2", deletedConfig.get(1).getDataId());
         Assert.assertEquals("group_id2", deletedConfig.get(1).getGroup());
         Assert.assertEquals("tenant_id2", deletedConfig.get(1).getTenant());
-        Assert.assertEquals(now2.toInstant(ZoneOffset.ofHours(8)).toEpochMilli(),
-                deletedConfig.get(1).getLastModified());
+        Assert.assertEquals(mockObj2.getLastModified(), deletedConfig.get(1).getLastModified());
         
         //mock exception
-        Mockito.when(jdbcTemplate.queryForList(anyString(), eq(timestamp), eq(startId), eq(pageSize)))
+        Mockito.when(jdbcTemplate.query(anyString(), eq(new Object[] {timestamp, startId, pageSize}),
+                        eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
                 .thenThrow(new CannotGetJdbcConnectionException("conn error"));
         
         try {

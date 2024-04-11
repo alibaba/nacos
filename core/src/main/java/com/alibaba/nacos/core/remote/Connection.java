@@ -43,6 +43,10 @@ public abstract class Connection implements Requester {
         return metaInfo.getLabels();
     }
     
+    public Map<String, String> getAppLabels() {
+        return metaInfo.getAppLabels();
+    }
+    
     public boolean isTraced() {
         return traced;
     }

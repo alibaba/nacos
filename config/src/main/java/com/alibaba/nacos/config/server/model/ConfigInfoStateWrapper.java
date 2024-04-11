@@ -36,6 +36,8 @@ public class ConfigInfoStateWrapper implements Serializable {
     
     private long lastModified;
     
+    private String md5;
+    
     public long getId() {
         return id;
     }
@@ -86,11 +88,21 @@ public class ConfigInfoStateWrapper implements Serializable {
         }
         ConfigInfoStateWrapper that = (ConfigInfoStateWrapper) o;
         return id == that.id && lastModified == that.lastModified && Objects.equals(dataId, that.dataId)
-                && Objects.equals(group, that.group) && Objects.equals(tenant, that.tenant);
+                && Objects.equals(group, that.group) && Objects.equals(tenant, that.tenant) && Objects.equals(md5,
+                that.md5);
     }
     
     @Override
     public int hashCode() {
-        return Objects.hash(id, dataId, group, tenant, lastModified);
+        return Objects.hash(dataId, group, tenant);
     }
+    
+    public String getMd5() {
+        return md5;
+    }
+    
+    public void setMd5(String md5) {
+        this.md5 = md5;
+    }
+    
 }

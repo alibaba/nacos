@@ -17,11 +17,17 @@
 package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.constant.PropertiesConstant;
-import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.slf4j.Logger;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Properties util.
@@ -240,14 +246,6 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
         return EnvUtil.getStandaloneMode();
     }
     
-    // Determines whether to read the data directly
-    // if use mysql, Reduce database read pressure
-    // if use raft+derby, Reduce leader read pressure
-    
-    public static boolean isDirectRead() {
-        return EnvUtil.getStandaloneMode() && DatasourceConfiguration.isEmbeddedStorage();
-    }
-    
     private void loadSetting() {
         try {
             setNotifyConnectTimeout(Integer.parseInt(EnvUtil.getProperty(PropertiesConstant.NOTIFY_CONNECT_TIMEOUT,
@@ -319,4 +317,61 @@ public class PropertyUtil implements ApplicationContextInitializer<ConfigurableA
     public void initialize(ConfigurableApplicationContext configurableApplicationContext) {
         loadSetting();
     }
+    
+    private static final int MAX_DUMP_PAGE = 1000;
+    
+    private static final int MIN_DUMP_PAGE = 50;
+    
+    private static final int PAGE_MEMORY_DIVIDE_MB = 512;
+    
+    private static AtomicInteger allDumpPageSize;
+    
+    public static int getAllDumpPageSize() {
+        if (allDumpPageSize == null) {
+            allDumpPageSize = new AtomicInteger(initAllDumpPageSize());
+        }
+        return allDumpPageSize.get();
+    }
+    
+    static int initAllDumpPageSize() {
+        long memLimitMB = getMemLimitMB();
+        
+        //512MB->50 Page Size
+        int pageSize = (int) ((float) memLimitMB / PAGE_MEMORY_DIVIDE_MB) * MIN_DUMP_PAGE;
+        pageSize = Math.max(pageSize, MIN_DUMP_PAGE);
+        pageSize = Math.min(pageSize, MAX_DUMP_PAGE);
+        LOGGER.info("All dump page size is set to {} according to mem limit {} MB", pageSize, memLimitMB);
+        return pageSize;
+    }
+    
+    public static long getMemLimitMB() {
+        Optional<Long> memoryLimit = findMemoryLimitFromFile();
+        if (memoryLimit.isPresent()) {
+            return memoryLimit.get();
+        }
+        memoryLimit = findMemoryLimitFromSystem();
+        return memoryLimit.get();
+    }
+    
+    private static String limitMemoryFile;
+    
+    private static Optional<Long> findMemoryLimitFromFile() {
+        if (limitMemoryFile == null) {
+            limitMemoryFile = EnvUtil.getProperty("memory_limit_file_path",
+                    "/sys/fs/cgroup/memory/memory.limit_in_bytes");
+        }
+        File file = new File(limitMemoryFile);
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            long memoryLimit = Long.parseLong(reader.readLine().trim());
+            return Optional.of(memoryLimit / 1024L / 1024L);
+        } catch (IOException | NumberFormatException ignored) {
+            return Optional.empty();
+        }
+    }
+    
+    private static Optional<Long> findMemoryLimitFromSystem() {
+        long maxHeapSizeMb = Runtime.getRuntime().maxMemory() / 1024L / 1024L;
+        return Optional.of(maxHeapSizeMb);
+    }
+    
 }

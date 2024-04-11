@@ -42,6 +42,7 @@ import com.alibaba.nacos.persistence.repository.PaginationHelper;
 import com.alibaba.nacos.persistence.repository.extrnal.ExternalStoragePaginationHelperImpl;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
+import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
@@ -822,10 +823,12 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
-    public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize) {
+    public Page<ConfigInfoWrapper> findAllConfigInfoFragment(final long lastMaxId, final int pageSize,
+            boolean needContent) {
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         MapperContext context = new MapperContext(0, pageSize);
+        context.putContextParameter(ContextConstant.NEED_CONTENT, String.valueOf(needContent));
         context.putWhereParameter(FieldConstant.ID, lastMaxId);
         MapperResult select = configInfoMapper.findAllConfigInfoFragment(context);
         PaginationHelper<ConfigInfoWrapper> helper = createPaginationHelper();
@@ -896,7 +899,8 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     }
     
     @Override
-    public List<ConfigInfoWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId, final int pageSize) {
+    public List<ConfigInfoStateWrapper> findChangeConfig(final Timestamp startTime, long lastMaxId,
+            final int pageSize) {
         try {
             ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO);
@@ -908,7 +912,7 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             
             MapperResult mapperResult = configInfoMapper.findChangeConfig(context);
             return jt.query(mapperResult.getSql(), mapperResult.getParamList().toArray(),
-                    CONFIG_INFO_WRAPPER_ROW_MAPPER);
+                    CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;

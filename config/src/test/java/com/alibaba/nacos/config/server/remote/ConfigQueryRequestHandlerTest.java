@@ -22,15 +22,9 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.model.CacheItem;
 import com.alibaba.nacos.config.server.model.ConfigCache;
-import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
-import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -39,7 +33,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -49,6 +42,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
+import static com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse.CONFIG_NOT_FOUND;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
@@ -56,15 +50,6 @@ import static org.mockito.Mockito.when;
 public class ConfigQueryRequestHandlerTest {
     
     private ConfigQueryRequestHandler configQueryRequestHandler;
-    
-    @Mock
-    private ConfigInfoPersistService configInfoPersistService;
-    
-    @Mock
-    private ConfigInfoTagPersistService configInfoTagPersistService;
-    
-    @Mock
-    private ConfigInfoBetaPersistService configInfoBetaPersistService;
     
     static MockedStatic<ConfigCacheService> configCacheServiceMockedStatic;
     
@@ -75,6 +60,8 @@ public class ConfigQueryRequestHandlerTest {
     String dataId = "dataId" + System.currentTimeMillis();
     
     String group = "group" + System.currentTimeMillis();
+    
+    String tenant = "tenant" + System.currentTimeMillis();
     
     String content = "content" + System.currentTimeMillis();
     
@@ -92,48 +79,10 @@ public class ConfigQueryRequestHandlerTest {
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
         configDiskServiceFactoryMockedStatic = Mockito.mockStatic(ConfigDiskServiceFactory.class);
-        configQueryRequestHandler = new ConfigQueryRequestHandler(configInfoPersistService, configInfoTagPersistService,
-                configInfoBetaPersistService);
+        configQueryRequestHandler = new ConfigQueryRequestHandler();
         final String groupKey = GroupKey2.getKey(dataId, group, "");
-        when(ConfigCacheService.tryReadLock(groupKey)).thenReturn(1);
+        when(ConfigCacheService.tryConfigReadLock(groupKey)).thenReturn(1);
         propertyUtilMockedStatic.when(PropertyUtil::getMaxContent).thenReturn(1024 * 1000);
-        
-    }
-    
-    /**
-     * get normal config from direct read.
-     *
-     * @throws Exception Exception.
-     */
-    @Test
-    public void testGetNormalDirectRead() throws Exception {
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
-        String content = "content_from_directreadÄãºÃ" + System.currentTimeMillis();
-        ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
-        when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
-        when(PropertyUtil.isDirectRead()).thenReturn(true);
-        
-        CacheItem cacheItem = new CacheItem(groupKey);
-        cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
-        cacheItem.getConfigCache().setMd5Utf8(MD5Utils.md5Hex(content, "UTF-8"));
-        
-        when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(cacheItem);
-        
-        ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
-        configQueryRequest.setDataId(dataId);
-        configQueryRequest.setGroup(group);
-        RequestMeta requestMeta = new RequestMeta();
-        requestMeta.setClientIp("127.0.0.1");
-        ConfigInfoWrapper configInfoBase = new ConfigInfoWrapper();
-        configInfoBase.setDataId(dataId);
-        configInfoBase.setGroup(group);
-        configInfoBase.setContent(content);
-        when(configInfoPersistService.findConfigInfo(eq(dataId), eq(group), eq(null))).thenReturn(configInfoBase);
-        ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
-        Assert.assertEquals(content, response.getContent());
-        Assert.assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
-        Assert.assertFalse(response.isBeta());
-        Assert.assertNull(response.getTag());
         
     }
     
@@ -143,13 +92,12 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetNormalNotDirectRead() throws Exception {
+    public void testGetNormal() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         String content = "content_from_notdirectreadÄãºÃ" + System.currentTimeMillis();
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
-        when(PropertyUtil.isDirectRead()).thenReturn(false);
         
         CacheItem cacheItem = new CacheItem(groupKey);
         cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
@@ -182,12 +130,11 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetBetaNotDirectRead() throws Exception {
+    public void testGetBeta() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
-        when(PropertyUtil.isDirectRead()).thenReturn(false);
         
         CacheItem cacheItem = new CacheItem(groupKey);
         cacheItem.initBetaCacheIfEmpty();
@@ -218,57 +165,6 @@ public class ConfigQueryRequestHandlerTest {
     }
     
     /**
-     * get beta config from direct read.
-     *
-     * @throws Exception Exception.
-     */
-    @Test
-    public void testGetBetaDirectRead() throws Exception {
-        
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
-        ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
-        when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
-        when(PropertyUtil.isDirectRead()).thenReturn(true);
-        
-        CacheItem cacheItem = new CacheItem(groupKey);
-        cacheItem.initBetaCacheIfEmpty();
-        String content = "content_from_beta_directreadÄãºÃ" + System.currentTimeMillis();
-        cacheItem.getConfigCacheBeta().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
-        cacheItem.getConfigCacheBeta().setMd5Utf8(MD5Utils.md5Hex(content, "UTF-8"));
-        cacheItem.getConfigCacheBeta().setEncryptedDataKey("key_testGetBeta_DirectRead");
-        
-        cacheItem.setBeta(true);
-        cacheItem.setIps4Beta(Arrays.asList("127.0.0.1"));
-        
-        when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(cacheItem);
-        
-        ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
-        configQueryRequest.setDataId(dataId);
-        configQueryRequest.setGroup(group);
-        RequestMeta requestMeta = new RequestMeta();
-        requestMeta.setClientIp("127.0.0.1");
-        
-        //mock direct read.
-        ConfigInfoBetaWrapper configInfoBase = new ConfigInfoBetaWrapper();
-        configInfoBase.setDataId(dataId);
-        configInfoBase.setGroup(group);
-        configInfoBase.setContent(content);
-        when(configInfoBetaPersistService.findConfigInfo4Beta(eq(dataId), eq(group), eq(null))).thenReturn(
-                configInfoBase);
-        ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
-        
-        //check content&md5
-        Assert.assertEquals(content, response.getContent());
-        Assert.assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
-        Assert.assertEquals("key_testGetBeta_DirectRead", response.getEncryptedDataKey());
-        //check flags.
-        Assert.assertTrue(response.isBeta());
-        Assert.assertNull(response.getTag());
-        
-    }
-    
-    
-    /**
      * get tag config ,but not found.
      *
      * @throws Exception Exception.
@@ -277,11 +173,10 @@ public class ConfigQueryRequestHandlerTest {
     public void testGetTagNotFound() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
-        String content = "content_from_tag_directreadÄãºÃ" + System.currentTimeMillis();
+        String content = "content_from_tag_withtagÄãºÃ" + System.currentTimeMillis();
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
-        when(PropertyUtil.isDirectRead()).thenReturn(true);
-
+        
         CacheItem cacheItem = new CacheItem(groupKey);
         cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
         cacheItem.getConfigCache().setMd5Utf8(MD5Utils.md5Hex(content, "UTF-8"));
@@ -294,83 +189,19 @@ public class ConfigQueryRequestHandlerTest {
         configQueryRequest.setGroup(group);
         String specificTag = "specific_tag";
         configQueryRequest.setTag(specificTag);
-        String autoTag = "specific_tag";
+        String autoTag = "auto_tag111";
         configQueryRequest.putHeader(VIPSERVER_TAG, autoTag);
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         
-        //mock direct read.
-        when(configInfoTagPersistService.findConfigInfo4Tag(eq(dataId), eq(group), eq(null),
-                eq(specificTag))).thenReturn(null);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
         //check content&md5
         Assert.assertNull(response.getContent());
         Assert.assertNull(response.getMd5());
-        System.out.println(response.getMessage());
-        Assert.assertEquals(response.getErrorCode(), ConfigQueryResponse.CONFIG_NOT_FOUND);
+        Assert.assertEquals(response.getErrorCode(), CONFIG_NOT_FOUND);
         Assert.assertNull(response.getEncryptedDataKey());
         
-        //check flags.
-        Assert.assertFalse(response.isBeta());
-        Assert.assertEquals(response.getTag(), specificTag);
-        
-    }
-    
-    /**
-     * get tag config from direct read.
-     *
-     * @throws Exception Exception.
-     */
-    @Test
-    public void testGetTagDirectRead() throws Exception {
-        
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
-        ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
-        when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
-        when(PropertyUtil.isDirectRead()).thenReturn(true);
-        
-        CacheItem cacheItem = new CacheItem(groupKey);
-        String content = "content_from_tag_directreadÄãºÃ" + System.currentTimeMillis();
-        cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
-        cacheItem.getConfigCache().setEncryptedDataKey("key_testGetTag_DirectRead");
-        
-        cacheItem.initConfigTagsIfEmpty();
-        ConfigCache configCacheTag = new ConfigCache();
-        String tagContent = "content_from_specific_tag_directreadÄãºÃ" + System.currentTimeMillis();
-        configCacheTag.setMd5Gbk(MD5Utils.md5Hex(tagContent, "GBK"));
-        configCacheTag.setMd5Utf8(MD5Utils.md5Hex(tagContent, "UTF-8"));
-        configCacheTag.setEncryptedDataKey("key_testGetTag_DirectRead");
-        cacheItem.initConfigTagsIfEmpty();
-        //specific tag to get
-        String specificTag = "specific_tag";
-        cacheItem.getConfigCacheTags().put(specificTag, configCacheTag);
-        when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(cacheItem);
-        
-        ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
-        configQueryRequest.setDataId(dataId);
-        configQueryRequest.setGroup(group);
-        configQueryRequest.setTag(specificTag);
-        //just for compare.
-        String autoTag = "specific_tag";
-        configQueryRequest.putHeader(VIPSERVER_TAG, autoTag);
-        RequestMeta requestMeta = new RequestMeta();
-        requestMeta.setClientIp("127.0.0.1");
-        
-        //mock direct read.
-        ConfigInfoTagWrapper configInfoBase = new ConfigInfoTagWrapper();
-        configInfoBase.setDataId(dataId);
-        configInfoBase.setGroup(group);
-        configInfoBase.setContent(tagContent);
-        configInfoBase.setMd5(MD5Utils.md5Hex(tagContent, "UTF-8"));
-        when(configInfoTagPersistService.findConfigInfo4Tag(eq(dataId), eq(group), eq(null),
-                eq(specificTag))).thenReturn(configInfoBase);
-        ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
-        
-        //check content&md5
-        Assert.assertEquals(tagContent, response.getContent());
-        Assert.assertEquals("key_testGetTag_DirectRead", response.getEncryptedDataKey());
-        Assert.assertEquals(MD5Utils.md5Hex(tagContent, "UTF-8"), response.getMd5());
         //check flags.
         Assert.assertFalse(response.isBeta());
         Assert.assertEquals(response.getTag(), specificTag);
@@ -383,13 +214,12 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetTagNotDirectRead() throws Exception {
+    public void testGetTagWithTag() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         String content = "content_from_tag_notdirectreadÄãºÃ" + System.currentTimeMillis();
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
-        when(PropertyUtil.isDirectRead()).thenReturn(false);
         
         CacheItem cacheItem = new CacheItem(groupKey);
         cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
@@ -438,15 +268,12 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetTagAutoTagNotDirectRead() throws Exception {
+    public void testGetTagAutoTag() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         String content = "content_from_tag_notdirectreadÄãºÃ" + System.currentTimeMillis();
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
         when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
-        when(PropertyUtil.isDirectRead()).thenReturn(false);
-        
-        //just for compare.
         
         CacheItem cacheItem = new CacheItem(groupKey);
         cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
@@ -484,59 +311,47 @@ public class ConfigQueryRequestHandlerTest {
         
     }
     
-    
     /**
-     * get tag config of auto tag from direct read.
+     * get normal config from local disk.
      *
      * @throws Exception Exception.
      */
     @Test
-    public void testGetTagAutoTagDirectRead() throws Exception {
+    public void testGetConfigNotExistAndConflict() throws Exception {
         
-        final String groupKey = GroupKey2.getKey(dataId, group, "");
-        String content = "content_from_tag_directreadÄãºÃ" + System.currentTimeMillis();
-        ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
-        when(ConfigDiskServiceFactory.getInstance()).thenReturn(configRocksDbDiskService);
-        when(PropertyUtil.isDirectRead()).thenReturn(true);
-        
-        CacheItem cacheItem = new CacheItem(groupKey);
-        cacheItem.getConfigCache().setMd5Gbk(MD5Utils.md5Hex(content, "GBK"));
-        cacheItem.getConfigCache().setMd5Utf8(MD5Utils.md5Hex(content, "UTF-8"));
-        ConfigCache configCacheTag = new ConfigCache();
-        String tagContent = "content_from_specific_tag_directreadÄãºÃ" + System.currentTimeMillis();
-        configCacheTag.setMd5Gbk(MD5Utils.md5Hex(tagContent, "GBK"));
-        configCacheTag.setMd5Utf8(MD5Utils.md5Hex(tagContent, "UTF-8"));
-        configCacheTag.setEncryptedDataKey("key_testGetTag_AutoTag_DirectRead");
-        cacheItem.initConfigTagsIfEmpty();
-        //just for compare.
-        String autoTag = "auto_tag";
-        cacheItem.getConfigCacheTags().put(autoTag, configCacheTag);
-        when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(cacheItem);
+        String dataId = "dataId" + System.currentTimeMillis();
+        String group = "group" + System.currentTimeMillis();
+        String tenant = "tenant" + System.currentTimeMillis();
+        //test config not exist
+        configCacheServiceMockedStatic.when(
+                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(0);
+        final String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(null);
         
         ConfigQueryRequest configQueryRequest = new ConfigQueryRequest();
         configQueryRequest.setDataId(dataId);
         configQueryRequest.setGroup(group);
-        configQueryRequest.setTag(autoTag);
-        configQueryRequest.putHeader(VIPSERVER_TAG, autoTag);
+        configQueryRequest.setTenant(tenant);
         RequestMeta requestMeta = new RequestMeta();
         requestMeta.setClientIp("127.0.0.1");
         
-        //mock direct read.
-        ConfigInfoTagWrapper configInfoBase = new ConfigInfoTagWrapper();
-        configInfoBase.setDataId(dataId);
-        configInfoBase.setGroup(group);
-        configInfoBase.setContent(tagContent);
-        when(configInfoTagPersistService.findConfigInfo4Tag(eq(dataId), eq(group), eq(null), eq(autoTag))).thenReturn(
-                configInfoBase);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
-        
-        //check content&md5
-        Assert.assertEquals(tagContent, response.getContent());
-        Assert.assertEquals(MD5Utils.md5Hex(tagContent, "UTF-8"), response.getMd5());
-        Assert.assertEquals("key_testGetTag_AutoTag_DirectRead", response.getEncryptedDataKey());
-        //check flags.
+        Assert.assertEquals(CONFIG_NOT_FOUND, response.getErrorCode());
+        Assert.assertEquals(null, response.getContent());
+        Assert.assertEquals(null, response.getMd5());
         Assert.assertFalse(response.isBeta());
-        Assert.assertEquals(response.getTag(), autoTag);
+        Assert.assertNull(response.getTag());
+        
+        //test config conflict
+        when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(new CacheItem(groupKey));
+        configCacheServiceMockedStatic.when(
+                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(-1);
+        ConfigQueryResponse responseConflict = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
+        Assert.assertEquals(ConfigQueryResponse.CONFIG_QUERY_CONFLICT, responseConflict.getErrorCode());
+        Assert.assertEquals(null, responseConflict.getContent());
+        Assert.assertEquals(null, responseConflict.getMd5());
+        Assert.assertFalse(responseConflict.isBeta());
+        Assert.assertNull(responseConflict.getTag());
         
     }
     

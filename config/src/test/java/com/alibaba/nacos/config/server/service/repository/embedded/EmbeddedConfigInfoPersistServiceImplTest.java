@@ -351,7 +351,7 @@ public class EmbeddedConfigInfoPersistServiceImplTest {
         embeddedConfigInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo, configAdvanceInfo);
         //expect update config info invoked.
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
+                () -> EmbeddedStorageContextHolder.addSqlContext(eq(Boolean.TRUE), anyString(), eq(content),
                         eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
                         any(Timestamp.class), eq(appName), eq(desc), eq(use), eq(effect), eq(type), eq(schema),
                         eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant), eq(casMd5)), times(1));
@@ -579,6 +579,14 @@ public class EmbeddedConfigInfoPersistServiceImplTest {
         return configAllInfo;
     }
     
+    private ConfigInfoStateWrapper createMockConfigInfoStateWrapper(long mockId) {
+        ConfigInfoStateWrapper configAllInfo = new ConfigInfoStateWrapper();
+        configAllInfo.setDataId("test" + mockId + ".yaml");
+        configAllInfo.setGroup("test");
+        configAllInfo.setLastModified(System.currentTimeMillis());
+        return configAllInfo;
+    }
+    
     private ConfigInfo createMockConfigInfo(long mockId) {
         ConfigInfo configInfo = new ConfigInfo();
         configInfo.setDataId("test" + mockId + ".yaml");
@@ -784,17 +792,17 @@ public class EmbeddedConfigInfoPersistServiceImplTest {
     public void testFindChangeConfig() {
         
         //mock page list
-        List<ConfigInfoWrapper> result = new ArrayList<>();
-        result.add(createMockConfigInfoWrapper(0));
-        result.add(createMockConfigInfoWrapper(1));
-        result.add(createMockConfigInfoWrapper(2));
+        List<ConfigInfoStateWrapper> result = new ArrayList<>();
+        result.add(createMockConfigInfoStateWrapper(0));
+        result.add(createMockConfigInfoStateWrapper(1));
+        result.add(createMockConfigInfoStateWrapper(2));
         Timestamp startTime = new Timestamp(System.currentTimeMillis() - 1000L);
         long lastMaxId = 10000L;
         int pageSize = 30;
         when(databaseOperate.queryMany(anyString(), eq(new Object[] {startTime, lastMaxId, pageSize}),
-                eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenReturn(result);
+                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(result);
         
-        List<ConfigInfoWrapper> configInfo4List = embeddedConfigInfoPersistService.findChangeConfig(startTime,
+        List<ConfigInfoStateWrapper> configInfo4List = embeddedConfigInfoPersistService.findChangeConfig(startTime,
                 lastMaxId, pageSize);
         Assert.assertEquals(result.size(), configInfo4List.size());
     }
@@ -1019,7 +1027,7 @@ public class EmbeddedConfigInfoPersistServiceImplTest {
         int pageSize = 100;
         //execute return mock obj
         Page<ConfigInfoWrapper> returnConfigPage = embeddedConfigInfoPersistService.findAllConfigInfoFragment(lastId,
-                pageSize);
+                pageSize, true);
         //expect check
         Assert.assertEquals(mockConfigs, returnConfigPage.getPageItems());
         

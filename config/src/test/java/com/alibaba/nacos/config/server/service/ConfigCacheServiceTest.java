@@ -23,6 +23,7 @@ import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskService;
 import com.alibaba.nacos.config.server.service.dump.disk.ConfigDiskServiceFactory;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
+import com.alibaba.nacos.config.server.utils.SimpleReadWriteLock;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Assert;
@@ -32,12 +33,15 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.stubbing.OngoingStubbing;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -312,4 +316,44 @@ public class ConfigCacheServiceTest {
         Assert.assertNull(configCacheTags);
     }
     
+    @Test
+    public void testTryConfigReadLock() throws Exception {
+        String dataId = "123testTryConfigReadLock";
+        String group = "1234";
+        String tenant = "1234";
+        CacheItem cacheItem = Mockito.mock(CacheItem.class);
+        SimpleReadWriteLock lock = Mockito.mock(SimpleReadWriteLock.class);
+        Mockito.when(cacheItem.getRwLock()).thenReturn(lock);
+        String groupKey = GroupKey2.getKey(dataId, group, tenant);
+        Field cache1 = ConfigCacheService.class.getDeclaredField("CACHE");
+        cache1.setAccessible(true);
+        ConcurrentHashMap<String, CacheItem> cache = (ConcurrentHashMap<String, CacheItem>) cache1.get(null);
+        cache.put(groupKey, cacheItem);
+        
+        // lock ==0,not exist
+        int readLock = ConfigCacheService.tryConfigReadLock(groupKey + "3245");
+        Assert.assertEquals(0, readLock);
+        
+        //lock == 1 , success get lock
+        Mockito.when(lock.tryReadLock()).thenReturn(true);
+        int readLockSuccess = ConfigCacheService.tryConfigReadLock(groupKey);
+        Assert.assertEquals(1, readLockSuccess);
+        
+        //lock ==-1 fail after spin all times;
+        OngoingStubbing<Boolean> when = Mockito.when(lock.tryReadLock());
+        for (int i = 0; i < 10; i++) {
+            when = when.thenReturn(false);
+        }
+        int readLockFail = ConfigCacheService.tryConfigReadLock(groupKey);
+        Assert.assertEquals(-1, readLockFail);
+        
+        //lock ==1 success after serval spin  times;
+        OngoingStubbing<Boolean> when2 = Mockito.when(lock.tryReadLock());
+        for (int i = 0; i < 5; i++) {
+            when2 = when2.thenReturn(false);
+        }
+        when2.thenReturn(true);
+        int readLockSuccessAfterRetry = ConfigCacheService.tryConfigReadLock(groupKey);
+        Assert.assertEquals(1, readLockSuccessAfterRetry);
+    }
 }
