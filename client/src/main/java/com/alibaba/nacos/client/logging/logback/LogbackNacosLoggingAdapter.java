@@ -21,77 +21,98 @@ import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.CoreConstants;
-import com.alibaba.nacos.client.logging.AbstractNacosLogging;
-import com.alibaba.nacos.common.log.NacosLogbackConfigurator;
-import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.client.logging.NacosLoggingAdapter;
+import com.alibaba.nacos.client.logging.NacosLoggingProperties;
 import com.alibaba.nacos.common.utils.ResourceUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-
 /**
- * Support for Logback version 1.0.8 or higher
+ * Support for Logback version 1.0.8 to 1.2.X.
  *
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
  * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
+ * @author xiweng.yy
  * @since 0.9.0
  */
-public class LogbackNacosLogging extends AbstractNacosLogging {
+public class LogbackNacosLoggingAdapter implements NacosLoggingAdapter {
     
     private static final String NACOS_LOGBACK_LOCATION = "classpath:nacos-logback.xml";
     
-    private Integer userVersion = 2;
+    private final NacosLogbackConfigurator configurator;
     
     /**
      * logback use 'ch.qos.logback.core.model.Model' since 1.3.0, set logback version during initialization.
      */
-    public LogbackNacosLogging() {
+    public LogbackNacosLoggingAdapter() {
+        configurator = new NacosLogbackConfiguratorAdapterV1();
+    }
+    
+    @Override
+    public boolean isAdaptedLogger(Class<?> loggerClass) {
+        if (!Logger.class.isAssignableFrom(loggerClass)) {
+            return false;
+        }
+        return !isUpperLogback13();
+    }
+    
+    private boolean isUpperLogback13() {
         try {
             Class.forName("ch.qos.logback.core.model.Model");
+            return true;
         } catch (ClassNotFoundException e) {
-            userVersion = 1;
+            return false;
         }
     }
     
     @Override
-    public void loadConfiguration() {
-        LoggerContext loggerContext = loadConfigurationOnStart();
-        if (loggerContext.getObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK) != null && !hasListener(loggerContext)) {
-            addListener(loggerContext);
-        }
-    }
-    
-    private boolean hasListener(LoggerContext loggerContext) {
-        for (LoggerContextListener loggerContextListener : loggerContext.getCopyOfListenerList()) {
-            if (loggerContextListener instanceof NacosLoggerContextListener) {
-                return true;
-            }
-        }
+    public boolean isNeedReloadConfiguration() {
         return false;
     }
     
-    private LoggerContext loadConfigurationOnStart() {
-        String location = getLocation(NACOS_LOGBACK_LOCATION);
+    @Override
+    public String getDefaultConfigLocation() {
+        return NACOS_LOGBACK_LOCATION;
+    }
+    
+    @Override
+    public void loadConfiguration(NacosLoggingProperties loggingProperties) {
+        String location = loggingProperties.getLocation();
+        LoggerContext loggerContext = loadConfigurationOnStart(location);
+        if (loggerContext.getObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK) != null && hasNoListener(loggerContext)) {
+            addListener(loggerContext, location);
+        }
+    }
+    
+    private boolean hasNoListener(LoggerContext loggerContext) {
+        for (LoggerContextListener loggerContextListener : loggerContext.getCopyOfListenerList()) {
+            if (loggerContextListener instanceof NacosLoggerContextListener) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private LoggerContext loadConfigurationOnStart(final String location) {
         LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        Collection<NacosLogbackConfigurator> nacosLogbackConfigurators = NacosServiceLoader.load(
-                NacosLogbackConfigurator.class);
-        nacosLogbackConfigurators.stream().filter(c -> c.getVersion() == userVersion).findFirst()
-                .ifPresent(nacosLogbackConfigurator -> {
-                    nacosLogbackConfigurator.setContext(loggerContext);
-                    if (StringUtils.isNotBlank(location)) {
-                        try {
-                            nacosLogbackConfigurator.configure(ResourceUtils.getResourceUrl(location));
-                        } catch (Exception e) {
-                            throw new IllegalStateException(
-                                    "Could not initialize Logback Nacos logging from " + location, e);
-                        }
-                    }
-                });
+        configurator.setContext(loggerContext);
+        if (StringUtils.isNotBlank(location)) {
+            try {
+                configurator.configure(ResourceUtils.getResourceUrl(location));
+            } catch (Exception e) {
+                throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
+            }
+        }
         return loggerContext;
     }
     
     class NacosLoggerContextListener implements LoggerContextListener {
+        
+        private final String location;
+        
+        NacosLoggerContextListener(String location) {
+            this.location = location;
+        }
         
         @Override
         public boolean isResetResistant() {
@@ -100,27 +121,24 @@ public class LogbackNacosLogging extends AbstractNacosLogging {
         
         @Override
         public void onReset(LoggerContext context) {
-            loadConfigurationOnStart();
+            loadConfigurationOnStart(location);
         }
         
         @Override
         public void onStart(LoggerContext context) {
-        
         }
         
         @Override
         public void onStop(LoggerContext context) {
-        
         }
         
         @Override
         public void onLevelChange(Logger logger, Level level) {
-        
         }
     }
     
-    private void addListener(LoggerContext loggerContext) {
-        loggerContext.addListener(new NacosLoggerContextListener());
+    private void addListener(LoggerContext loggerContext, String location) {
+        loggerContext.addListener(new NacosLoggerContextListener(location));
     }
     
 }

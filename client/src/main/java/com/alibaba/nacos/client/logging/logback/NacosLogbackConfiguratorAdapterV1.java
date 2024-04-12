@@ -22,7 +22,7 @@ import ch.qos.logback.core.joran.event.SaxEvent;
 import ch.qos.logback.core.joran.spi.ElementSelector;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.joran.spi.RuleStore;
-import com.alibaba.nacos.common.log.NacosLogbackConfigurator;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
