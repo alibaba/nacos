@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.service.dump.disk;
 
 import com.alibaba.nacos.api.utils.StringUtils;
 import com.alibaba.nacos.common.utils.IoUtils;
-import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.utils.LogUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.apache.commons.io.FileUtils;
@@ -111,32 +110,11 @@ public class ConfigRawDiskService implements ConfigDiskService {
         return file;
     }
     
-    private static File targetBatchFile(String dataId, String group, String tenant) {
-        File file = null;
-        if (org.apache.commons.lang.StringUtils.isBlank(tenant)) {
-            file = new File(EnvUtil.getNacosHome(), BATCH_DIR);
-        } else {
-            file = new File(EnvUtil.getNacosHome(), TENANT_BATCH_DIR);
-            file = new File(file, tenant);
-        }
-        file = new File(file, group);
-        file = new File(file, dataId);
-        return file;
-    }
-    
     /**
      * Save beta information to disk.
      */
     public void saveBetaToDisk(String dataId, String group, String tenant, String content) throws IOException {
         File targetFile = targetBetaFile(dataId, group, tenant);
-        FileUtils.writeStringToFile(targetFile, content, ENCODE_UTF8);
-    }
-    
-    /**
-     * save batch to disk.
-     */
-    public void saveBatchToDisk(String dataId, String group, String tenant, String content) throws IOException {
-        File targetFile = targetBatchFile(dataId, group, tenant);
         FileUtils.writeStringToFile(targetFile, content, ENCODE_UTF8);
     }
     
@@ -161,13 +139,6 @@ public class ConfigRawDiskService implements ConfigDiskService {
      */
     public void removeConfigInfo4Beta(String dataId, String group, String tenant) {
         FileUtils.deleteQuietly(targetBetaFile(dataId, group, tenant));
-    }
-    
-    /**
-     * remove config for batch.
-     */
-    public void removeConfigInfo4Batch(String dataId, String group, String tenant) {
-        FileUtils.deleteQuietly(targetBatchFile(dataId, group, tenant));
     }
     
     /**
@@ -215,14 +186,6 @@ public class ConfigRawDiskService implements ConfigDiskService {
         } else {
             return null;
         }
-    }
-    
-    public String getLocalConfigMd5(String dataId, String group, String tenant, String encode) throws IOException {
-        String content = getContent(dataId, group, tenant);
-        if (content == null) {
-            content = com.alibaba.nacos.common.utils.StringUtils.EMPTY;
-        }
-        return MD5Utils.md5Hex(content, encode);
     }
     
     /**
@@ -280,26 +243,4 @@ public class ConfigRawDiskService implements ConfigDiskService {
         }
     }
     
-    /**
-     * clear all batch.
-     */
-    public void clearAllBatch() {
-        File file = new File(EnvUtil.getNacosHome(), BATCH_DIR);
-        if (!file.exists() || FileUtils.deleteQuietly(file)) {
-            LogUtil.DEFAULT_LOG.info("clear all config-info-batch success");
-        } else {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-batch failed.");
-        }
-        File fileTenant = new File(EnvUtil.getNacosHome(), TENANT_BATCH_DIR);
-        if (!fileTenant.exists() || FileUtils.deleteQuietly(fileTenant)) {
-            LogUtil.DEFAULT_LOG.info("clear all config-info-batch-tenant success.");
-        } else {
-            LogUtil.DEFAULT_LOG.warn("clear all config-info-batch-tenant failed.");
-        }
-    }
-    
-    public String getBatchContent(String dataId, String group, String tenant) throws IOException {
-        File file = targetBatchFile(dataId, group, tenant);
-        return file2String(file);
-    }
 }

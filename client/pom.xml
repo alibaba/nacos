@@ -199,7 +199,6 @@
                                         <include>org.conscrypt:conscrypt-openjdk</include>
                                         <include>org.mortbay.jetty.alpn:alpn-boot</include>
                                         <include>org.eclipse.jetty.npn:npn-api</include>
-                                        <include>org.reflections:reflections</include>
                                         <include>com.google.guava:guava</include>
                                         <include>io.grpc:*</include>
                                         <include>io.opencensus:*</include>
