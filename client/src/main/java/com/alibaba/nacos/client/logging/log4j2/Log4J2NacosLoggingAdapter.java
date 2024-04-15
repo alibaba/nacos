@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.ResourceUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
-import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationFactory;
@@ -53,10 +52,20 @@ public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
     
     private static final String APPENDER_MARK = "ASYNC_NAMING";
     
+    private static final String LOG4J2_CLASSES = "org.apache.logging.slf4j.Log4jLogger";
+    
     @Override
     public boolean isAdaptedLogger(Class<?> loggerClass) {
-        return org.apache.logging.slf4j.Log4jLogger.class.isAssignableFrom(loggerClass) || Logger.class
-                .isAssignableFrom(loggerClass);
+        Class<?> expectedLoggerClass = getExpectedLoggerClass();
+        return null != expectedLoggerClass && expectedLoggerClass.isAssignableFrom(loggerClass);
+    }
+    
+    private Class<?> getExpectedLoggerClass() {
+        try {
+            return Class.forName(LOG4J2_CLASSES);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
     }
     
     @Override

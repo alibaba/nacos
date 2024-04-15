@@ -39,6 +39,8 @@ public class LogbackNacosLoggingAdapter implements NacosLoggingAdapter {
     
     private static final String NACOS_LOGBACK_LOCATION = "classpath:nacos-logback.xml";
     
+    private static final String LOGBACK_CLASSES = "ch.qos.logback.classic.Logger";
+    
     private final NacosLogbackConfigurator configurator;
     
     /**
@@ -50,10 +52,19 @@ public class LogbackNacosLoggingAdapter implements NacosLoggingAdapter {
     
     @Override
     public boolean isAdaptedLogger(Class<?> loggerClass) {
-        if (!Logger.class.isAssignableFrom(loggerClass)) {
+        Class<?> expectedLoggerClass = getExpectedLoggerClass();
+        if (null == expectedLoggerClass || !expectedLoggerClass.isAssignableFrom(loggerClass)) {
             return false;
         }
         return !isUpperLogback13();
+    }
+    
+    private Class<?> getExpectedLoggerClass() {
+        try {
+            return Class.forName(LOGBACK_CLASSES);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
     }
     
     private boolean isUpperLogback13() {

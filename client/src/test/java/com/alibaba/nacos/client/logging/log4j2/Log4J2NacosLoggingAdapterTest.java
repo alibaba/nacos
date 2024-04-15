@@ -20,7 +20,6 @@ package com.alibaba.nacos.client.logging.log4j2;
 
 import com.alibaba.nacos.client.logging.NacosLoggingProperties;
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Logger;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.ConfigurationSource;
@@ -81,7 +80,7 @@ public class Log4J2NacosLoggingAdapterTest {
     
     @Test
     public void testIsAdaptedLogger() {
-        assertTrue(log4J2NacosLoggingAdapter.isAdaptedLogger(Logger.class));
+        assertTrue(log4J2NacosLoggingAdapter.isAdaptedLogger(org.apache.logging.slf4j.Log4jLogger.class));
         assertFalse(log4J2NacosLoggingAdapter.isAdaptedLogger(ch.qos.logback.classic.Logger.class));
     }
     
