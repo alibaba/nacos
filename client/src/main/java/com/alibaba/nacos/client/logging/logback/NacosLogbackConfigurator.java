@@ -32,12 +32,6 @@ public interface NacosLogbackConfigurator {
     void configure(URL resourceUrl) throws Exception;
     
     /**
-     * logback configurator will be sorted by version.
-     * @return version
-     */
-    int getVersion();
-    
-    /**
      * set loggerContext.
      * @param loggerContext loggerContext
      */

@@ -53,11 +53,6 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator impleme
     }
     
     @Override
-    public int getVersion() {
-        return 1;
-    }
-    
-    @Override
     public void setContext(Object loggerContext) {
         super.setContext((Context) loggerContext);
     }
