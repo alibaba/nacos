@@ -55,7 +55,8 @@ public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
     
     @Override
     public boolean isAdaptedLogger(Class<?> loggerClass) {
-        return Logger.class.isAssignableFrom(loggerClass);
+        return org.apache.logging.slf4j.Log4jLogger.class.isAssignableFrom(loggerClass) || Logger.class
+                .isAssignableFrom(loggerClass);
     }
     
     @Override
