@@ -22,7 +22,7 @@ import ch.qos.logback.core.joran.event.SaxEvent;
 import ch.qos.logback.core.joran.spi.ElementSelector;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.joran.spi.RuleStore;
-import com.alibaba.nacos.common.log.NacosLogbackConfigurator;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -50,11 +50,6 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator impleme
     public void addInstanceRules(RuleStore rs) {
         super.addInstanceRules(rs);
         rs.addRule(new ElementSelector("configuration/nacosClientProperty"), new NacosClientPropertyAction());
-    }
-    
-    @Override
-    public int getVersion() {
-        return 1;
     }
     
     @Override
