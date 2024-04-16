@@ -16,7 +16,8 @@
 
 package com.alibaba.nacos.client.logging.log4j2;
 
-import com.alibaba.nacos.client.logging.AbstractNacosLogging;
+import com.alibaba.nacos.client.logging.NacosLoggingAdapter;
+import com.alibaba.nacos.client.logging.NacosLoggingProperties;
 import com.alibaba.nacos.common.utils.ResourceUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -36,9 +37,10 @@ import java.util.Map;
  * Support for Log4j version 2.7 or higher
  *
  * @author <a href="mailto:huangxiaoyu1018@gmail.com">hxy1991</a>
+ * @author xiweng.yy
  * @since 0.9.0
  */
-public class Log4J2NacosLogging extends AbstractNacosLogging {
+public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
     
     private static final String NACOS_LOG4J2_LOCATION = "classpath:nacos-log4j2.xml";
     
@@ -48,14 +50,51 @@ public class Log4J2NacosLogging extends AbstractNacosLogging {
     
     private static final String NACOS_LOG4J2_PLUGIN_PACKAGE = "com.alibaba.nacos.client.logging.log4j2";
     
-    private final String location = getLocation(NACOS_LOG4J2_LOCATION);
+    private static final String APPENDER_MARK = "ASYNC_NAMING";
+    
+    private static final String LOG4J2_CLASSES = "org.apache.logging.slf4j.Log4jLogger";
     
     @Override
-    public void loadConfiguration() {
+    public boolean isAdaptedLogger(Class<?> loggerClass) {
+        Class<?> expectedLoggerClass = getExpectedLoggerClass();
+        return null != expectedLoggerClass && expectedLoggerClass.isAssignableFrom(loggerClass);
+    }
+    
+    private Class<?> getExpectedLoggerClass() {
+        try {
+            return Class.forName(LOG4J2_CLASSES);
+        } catch (ClassNotFoundException e) {
+            return null;
+        }
+    }
+    
+    @Override
+    public boolean isNeedReloadConfiguration() {
+        final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
+        final Configuration contextConfiguration = loggerContext.getConfiguration();
+        for (Map.Entry<String, Appender> entry : contextConfiguration.getAppenders().entrySet()) {
+            if (APPENDER_MARK.equals(entry.getValue().getName())) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    @Override
+    public String getDefaultConfigLocation() {
+        return NACOS_LOG4J2_LOCATION;
+    }
+    
+    @Override
+    public void loadConfiguration(NacosLoggingProperties loggingProperties) {
+        String location = loggingProperties.getLocation();
+        loadConfiguration(location);
+    }
+    
+    private void loadConfiguration(String location) {
         if (StringUtils.isBlank(location)) {
             return;
         }
-        
         final LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
         final Configuration contextConfiguration = loggerContext.getConfiguration();
         
