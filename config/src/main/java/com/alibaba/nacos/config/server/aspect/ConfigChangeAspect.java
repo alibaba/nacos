@@ -311,7 +311,7 @@ public class ConfigChangeAspect {
         for (ConfigChangePluginService ccs : beforeExecutePluginServices) {
             final String serviceType = ccs.getServiceType().toLowerCase(Locale.ROOT);
             final Properties properties = configChangeConfigs.getPluginProperties(serviceType);
-            configChangeRequest.setArg("pluginProperties", properties);
+            configChangeRequest.setArg(serviceType, properties);
             ccs.execute(configChangeRequest, configChangeResponse);
             if (null != configChangeResponse.getArgs()) {
                 // update args by filter with whitelist
@@ -341,7 +341,7 @@ public class ConfigChangeAspect {
                 try {
                     final String serviceType = ccs.getServiceType().toLowerCase(Locale.ROOT);
                     final Properties properties = configChangeConfigs.getPluginProperties(serviceType);
-                    configChangeRequest.setArg(ConfigChangeConstants.PLUGIN_PROPERTIES, properties);
+                    configChangeRequest.setArg(serviceType, properties);
                     ccs.execute(configChangeRequest, configChangeResponse);
                 } catch (Throwable throwable) {
                     LOGGER.warn("execute async plugin services failed {}", throwable.getMessage());
