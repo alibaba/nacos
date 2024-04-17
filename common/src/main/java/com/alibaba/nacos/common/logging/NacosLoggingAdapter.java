@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.logging;
+package com.alibaba.nacos.common.logging;
 
 /**
  * Nacos client logging adapter.

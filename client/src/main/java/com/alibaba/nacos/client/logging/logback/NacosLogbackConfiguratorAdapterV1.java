@@ -22,6 +22,7 @@ import ch.qos.logback.core.joran.event.SaxEvent;
 import ch.qos.logback.core.joran.spi.ElementSelector;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.joran.spi.RuleStore;
+import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,6 +38,12 @@ import java.util.List;
  */
 public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator implements NacosLogbackConfigurator {
     
+    private NacosLoggingProperties loggingProperties;
+    
+    public void setLoggingProperties(NacosLoggingProperties loggingProperties) {
+        this.loggingProperties = loggingProperties;
+    }
+    
     /**
      * ensure that Nacos configuration does not affect user configuration savepoints.
      *
@@ -49,7 +56,8 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator impleme
     @Override
     public void addInstanceRules(RuleStore rs) {
         super.addInstanceRules(rs);
-        rs.addRule(new ElementSelector("configuration/nacosClientProperty"), new NacosClientPropertyAction());
+        rs.addRule(new ElementSelector("configuration/nacosClientProperty"),
+                new NacosClientPropertyAction(loggingProperties));
     }
     
     @Override

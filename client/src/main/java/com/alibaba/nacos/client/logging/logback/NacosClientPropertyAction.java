@@ -22,6 +22,7 @@ import ch.qos.logback.core.joran.spi.ActionException;
 import ch.qos.logback.core.joran.spi.InterpretationContext;
 import ch.qos.logback.core.util.OptionHelper;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 import org.xml.sax.Attributes;
 
 /**
@@ -35,6 +36,13 @@ class NacosClientPropertyAction extends Action {
     private static final String DEFAULT_VALUE_ATTRIBUTE = "defaultValue";
     
     private static final String SOURCE_ATTRIBUTE = "source";
+    
+    private final NacosLoggingProperties loggingProperties;
+    
+    NacosClientPropertyAction(NacosLoggingProperties loggingProperties) {
+        this.loggingProperties = loggingProperties;
+    }
+    
     
     @Override
     public void begin(InterpretationContext ic, String elementName, Attributes attributes) throws ActionException {
@@ -54,6 +62,6 @@ class NacosClientPropertyAction extends Action {
     }
     
     private String getValue(String source, String defaultValue) {
-        return NacosClientProperties.PROTOTYPE.getProperty(source, defaultValue);
+        return null == loggingProperties ? defaultValue : loggingProperties.getValue(source, defaultValue);
     }
 }

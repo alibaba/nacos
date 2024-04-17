@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.logging;
+package com.alibaba.nacos.common.logging;
 
-import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+
+import java.util.Properties;
 
 /**
  * Nacos Logging Properties, save some nacos logging properties.
@@ -37,8 +38,11 @@ public class NacosLoggingProperties {
     
     private final String defaultLocation;
     
-    public NacosLoggingProperties(String defaultLocation) {
+    private final Properties properties;
+    
+    public NacosLoggingProperties(String defaultLocation, Properties properties) {
         this.defaultLocation = defaultLocation;
+        this.properties = null == properties ? new Properties() : properties;
     }
     
     /**
@@ -47,7 +51,7 @@ public class NacosLoggingProperties {
      * @return location of nacos logging configuration
      */
     public String getLocation() {
-        String location = NacosClientProperties.PROTOTYPE.getProperty(NACOS_LOGGING_CONFIG_PROPERTY);
+        String location = properties.getProperty(NACOS_LOGGING_CONFIG_PROPERTY);
         if (StringUtils.isBlank(location)) {
             if (isDefaultLocationEnabled()) {
                 return defaultLocation;
@@ -65,7 +69,7 @@ public class NacosLoggingProperties {
      * @return {@code true} if default location enabled, otherwise {@code false}, default is {@code true}
      */
     private boolean isDefaultLocationEnabled() {
-        String property = NacosClientProperties.PROTOTYPE.getProperty(NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY);
+        String property = properties.getProperty(NACOS_LOGGING_DEFAULT_CONFIG_ENABLED_PROPERTY);
         return property == null || ConvertUtils.toBoolean(property);
     }
     
@@ -75,7 +79,7 @@ public class NacosLoggingProperties {
      * @return reload internal
      */
     public long getReloadInternal() {
-        String interval = NacosClientProperties.PROTOTYPE.getProperty(NACOS_LOGGING_RELOAD_INTERVAL_PROPERTY);
+        String interval = properties.getProperty(NACOS_LOGGING_RELOAD_INTERVAL_PROPERTY);
         return ConvertUtils.toLong(interval, DEFAULT_NACOS_LOGGING_RELOAD_INTERVAL);
     }
     
@@ -87,6 +91,6 @@ public class NacosLoggingProperties {
      * @return value
      */
     public String getValue(String source, String defaultValue) {
-        return NacosClientProperties.PROTOTYPE.getProperty(source, defaultValue);
+        return properties.getProperty(source, defaultValue);
     }
 }

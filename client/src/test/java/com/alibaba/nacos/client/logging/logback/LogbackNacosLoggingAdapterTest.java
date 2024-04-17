@@ -23,7 +23,8 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.ReconfigureOnChangeTask;
 import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.CoreConstants;
-import com.alibaba.nacos.client.logging.NacosLoggingProperties;
+import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.impl.StaticLoggerBinder;
 
 import java.lang.reflect.Field;
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -68,7 +70,7 @@ public class LogbackNacosLoggingAdapterTest {
             loggerContext.addListener(loggerContextListener);
             setLoggerFactory(loggerContext);
         }
-        loggingProperties = new NacosLoggingProperties("classpath:nacos-logback.xml");
+        loggingProperties = new NacosLoggingProperties("classpath:nacos-logback.xml", new Properties());
     }
     
     @After
@@ -131,6 +133,8 @@ public class LogbackNacosLoggingAdapterTest {
     @Test(expected = IllegalStateException.class)
     public void testLoadConfigurationFailure() {
         System.setProperty("nacos.logging.config", "http://localhost");
+        loggingProperties = new NacosLoggingProperties("classpath:nacos-logback.xml",
+                NacosClientProperties.PROTOTYPE.asProperties());
         logbackNacosLoggingAdapter.loadConfiguration(loggingProperties);
     }
     

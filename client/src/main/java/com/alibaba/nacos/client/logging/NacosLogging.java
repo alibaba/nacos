@@ -16,8 +16,11 @@
 
 package com.alibaba.nacos.client.logging;
 
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
+import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +52,8 @@ public class NacosLogging {
             if (each.isEnabled() && each.isAdaptedLogger(loggerClass)) {
                 LOGGER.info("Nacos Logging Adapter: {} match {} success.", each.getClass().getName(),
                         loggerClass.getName());
-                loggingProperties = new NacosLoggingProperties(each.getDefaultConfigLocation());
+                loggingProperties = new NacosLoggingProperties(each.getDefaultConfigLocation(),
+                        NacosClientProperties.PROTOTYPE.asProperties());
                 loggingAdapter = each;
             }
         }
