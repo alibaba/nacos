@@ -42,7 +42,6 @@ class NacosClientPropertyAction extends Action {
         this.loggingProperties = loggingProperties;
     }
     
-    
     @Override
     public void begin(InterpretationContext ic, String elementName, Attributes attributes) throws ActionException {
         String name = attributes.getValue(NAME_ATTRIBUTE);

@@ -43,9 +43,6 @@ public class LogbackNacosLoggingAdapter implements NacosLoggingAdapter {
     
     private final NacosLogbackConfiguratorAdapterV1 configurator;
     
-    /**
-     * logback use 'ch.qos.logback.core.model.Model' since 1.3.0, set logback version during initialization.
-     */
     public LogbackNacosLoggingAdapter() {
         configurator = new NacosLogbackConfiguratorAdapterV1();
     }
@@ -67,6 +64,9 @@ public class LogbackNacosLoggingAdapter implements NacosLoggingAdapter {
         }
     }
     
+    /**
+     * logback use 'ch.qos.logback.core.model.Model' since 1.3.0, set logback version during initialization.
+     */
     private boolean isUpperLogback13() {
         try {
             Class.forName("ch.qos.logback.core.model.Model");
