@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.logging.logback;
+package com.alibaba.nacos.logger.adapter.logback12;
 
 import ch.qos.logback.classic.joran.JoranConfigurator;
-import ch.qos.logback.core.Context;
 import ch.qos.logback.core.joran.event.SaxEvent;
 import ch.qos.logback.core.joran.spi.ElementSelector;
 import ch.qos.logback.core.joran.spi.JoranException;
@@ -36,7 +35,7 @@ import java.util.List;
  * @author <a href="mailto:hujun3@xiaomi.com">hujun</a>
  * @see <a href="https://github.com/alibaba/nacos/issues/6999">#6999</a>
  */
-public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator implements NacosLogbackConfigurator {
+public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator {
     
     private NacosLoggingProperties loggingProperties;
     
@@ -60,18 +59,12 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator impleme
                 new NacosClientPropertyAction(loggingProperties));
     }
     
-    @Override
-    public void setContext(Object loggerContext) {
-        super.setContext((Context) loggerContext);
-    }
-    
     /**
      * ensure that Nacos configuration does not affect user configuration scanning url.
      *
      * @param url config url
      * @throws Exception e
      */
-    @Override
     public void configure(URL url) throws Exception {
         InputStream in = null;
         try {

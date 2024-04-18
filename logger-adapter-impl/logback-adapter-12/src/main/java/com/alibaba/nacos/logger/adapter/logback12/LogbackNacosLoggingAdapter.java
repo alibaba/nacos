@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.logging.logback;
+package com.alibaba.nacos.logger.adapter.logback12;
 
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
@@ -37,11 +37,11 @@ import org.slf4j.LoggerFactory;
  */
 public class LogbackNacosLoggingAdapter implements NacosLoggingAdapter {
     
-    private static final String NACOS_LOGBACK_LOCATION = "classpath:nacos-logback.xml";
+    private static final String NACOS_LOGBACK_LOCATION = "classpath:nacos-logback12.xml";
     
     private static final String LOGBACK_CLASSES = "ch.qos.logback.classic.Logger";
     
-    private final NacosLogbackConfigurator configurator;
+    private final NacosLogbackConfiguratorAdapterV1 configurator;
     
     /**
      * logback use 'ch.qos.logback.core.model.Model' since 1.3.0, set logback version during initialization.
@@ -89,6 +89,7 @@ public class LogbackNacosLoggingAdapter implements NacosLoggingAdapter {
     @Override
     public void loadConfiguration(NacosLoggingProperties loggingProperties) {
         String location = loggingProperties.getLocation();
+        configurator.setLoggingProperties(loggingProperties);
         LoggerContext loggerContext = loadConfigurationOnStart(location);
         if (loggerContext.getObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK) != null && hasNoListener(loggerContext)) {
             addListener(loggerContext, location);

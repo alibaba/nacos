@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.logging.logback;
+package com.alibaba.nacos.logger.adapter.logback12;
 
 import ch.qos.logback.core.ContextBase;
 import ch.qos.logback.core.joran.spi.JoranException;
 import ch.qos.logback.core.status.ErrorStatus;
 import ch.qos.logback.core.status.Status;
+import com.alibaba.nacos.logger.adapter.logback12.NacosLogbackConfiguratorAdapterV1;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

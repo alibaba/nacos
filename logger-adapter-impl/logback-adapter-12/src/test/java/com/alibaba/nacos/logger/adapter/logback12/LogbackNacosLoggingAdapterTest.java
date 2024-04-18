@@ -1,6 +1,5 @@
 /*
- *
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,17 +12,15 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.alibaba.nacos.client.logging.logback;
+package com.alibaba.nacos.logger.adapter.logback12;
 
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.ReconfigureOnChangeTask;
 import ch.qos.logback.classic.spi.LoggerContextListener;
 import ch.qos.logback.core.CoreConstants;
-import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 import org.junit.After;
 import org.junit.Before;
@@ -70,7 +67,7 @@ public class LogbackNacosLoggingAdapterTest {
             loggerContext.addListener(loggerContextListener);
             setLoggerFactory(loggerContext);
         }
-        loggingProperties = new NacosLoggingProperties("classpath:nacos-logback.xml", new Properties());
+        loggingProperties = new NacosLoggingProperties("classpath:nacos-logback12.xml", new Properties());
     }
     
     @After
@@ -127,14 +124,13 @@ public class LogbackNacosLoggingAdapterTest {
     @Test
     public void testIsAdaptedLogger() {
         assertTrue(logbackNacosLoggingAdapter.isAdaptedLogger(Logger.class));
-        assertFalse(logbackNacosLoggingAdapter.isAdaptedLogger(org.apache.logging.log4j.core.Logger.class));
+        assertFalse(logbackNacosLoggingAdapter.isAdaptedLogger(java.util.logging.Logger.class));
     }
     
     @Test(expected = IllegalStateException.class)
     public void testLoadConfigurationFailure() {
         System.setProperty("nacos.logging.config", "http://localhost");
-        loggingProperties = new NacosLoggingProperties("classpath:nacos-logback.xml",
-                NacosClientProperties.PROTOTYPE.asProperties());
+        loggingProperties = new NacosLoggingProperties("classpath:nacos-logback12.xml", System.getProperties());
         logbackNacosLoggingAdapter.loadConfiguration(loggingProperties);
     }
     
@@ -145,7 +141,7 @@ public class LogbackNacosLoggingAdapterTest {
     
     @Test
     public void testGetDefaultConfigLocation() {
-        assertEquals("classpath:nacos-logback.xml", logbackNacosLoggingAdapter.getDefaultConfigLocation());
+        assertEquals("classpath:nacos-logback12.xml", logbackNacosLoggingAdapter.getDefaultConfigLocation());
     }
     
     @Test
