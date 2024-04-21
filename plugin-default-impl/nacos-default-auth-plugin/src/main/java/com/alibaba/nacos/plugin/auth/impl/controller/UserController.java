@@ -110,6 +110,26 @@ public class UserController {
     }
     
     /**
+     * Create a tmp user only no admin user can use.
+     */
+    @PostMapping("/createTmpUser")
+    public Object createTmpUser(@RequestParam(required = false) String username, @RequestParam(required = false) String password) {
+        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            if (roleService.hasGlobalAdminRole()) {
+                return RestResultUtils.failed("have admin user cannot use it");
+            }
+            User tmpUser = userDetailsService.createTmpUser(username, password);
+            roleService.addTmpAdminRole(username);
+            ObjectNode result = JacksonUtils.createEmptyJsonNode();
+            result.put(AuthConstants.PARAM_USERNAME, tmpUser.getUsername());
+            result.put(AuthConstants.PARAM_PASSWORD, tmpUser.getPassword());
+            return result;
+        } else {
+            return RestResultUtils.failed("not support");
+        }
+    }
+    
+    /**
      * Delete an existed user.
      *
      * @param username username of user
@@ -122,7 +142,8 @@ public class UserController {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
+                if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())
+                        || AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole())) {
                     throw new IllegalArgumentException("cannot delete admin: " + username);
                 }
             }
@@ -170,7 +191,8 @@ public class UserController {
         return RestResultUtils.success("update user ok!");
     }
     
-    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException, AccessException {
+    private boolean hasPermission(String username, HttpServletRequest request)
+            throws HttpSessionRequiredException, AccessException {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
@@ -244,6 +266,7 @@ public class UserController {
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
             result.put(Constants.GLOBAL_ADMIN, iAuthenticationManager.hasGlobalAdminRole(user));
+            result.put(Constants.GLOBAL_TMP_ADMIN, iAuthenticationManager.hasTmpAdminRole(username));
             result.put(Constants.USERNAME, user.getUserName());
             return result;
         }

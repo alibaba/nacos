@@ -130,9 +130,13 @@ public class NacosRoleServiceImpl {
             return false;
         }
         
+        boolean hasGlobalAdminRole = hasGlobalAdminRole();
         // Global admin pass:
         for (RoleInfo roleInfo : roleInfoList) {
-            if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
+            if (hasGlobalAdminRole && AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
+                nacosUser.setGlobalAdmin(true);
+                return true;
+            } else if (AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole())) {
                 nacosUser.setGlobalAdmin(true);
                 return true;
             }
@@ -176,6 +180,15 @@ public class NacosRoleServiceImpl {
         return roleInfoList;
     }
     
+    public List<RoleInfo> getAllRoles() {
+        Page<RoleInfo> roleInfoPage = rolePersistService.getRolesByUserNameAndRoleName(StringUtils.EMPTY,
+                StringUtils.EMPTY, DEFAULT_PAGE_NO, Integer.MAX_VALUE);
+        if (roleInfoPage == null) {
+            return null;
+        }
+        return roleInfoPage.getPageItems();
+    }
+    
     public Page<RoleInfo> getRolesFromDatabase(String userName, String role, int pageNo, int pageSize) {
         Page<RoleInfo> roles = rolePersistService.getRolesByUserNameAndRoleName(userName, role, pageNo, pageSize);
         if (roles == null) {
@@ -213,19 +226,76 @@ public class NacosRoleServiceImpl {
         if (userDetailsService.getUserFromDatabase(username) == null) {
             throw new IllegalArgumentException("user '" + username + "' not found!");
         }
-        if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
-            throw new IllegalArgumentException(
-                    "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
+        
+        if (hasTmpAdminRole(username)) {
+            throw new IllegalArgumentException("tmp user is not permitted to bind!");
         }
+        
+        if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
+            if (hasGlobalAdminRole()) {
+                throw new IllegalArgumentException(
+                        "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
+            } else {
+                //delete tmp admin user
+                deleteTmpAdminUser();
+                rolePersistService.addRole(role, username);
+                roleSet.add(role);
+                authConfigs.setHasGlobalAdminRole(true);
+                return;
+            }
+            
+        } else if (AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(role)) {
+            throw new IllegalArgumentException(
+                    "role '" + AuthConstants.GLOBAL_TMP_ADMIN_ROLE + "' is not permitted to create!");
+        }
+        
         rolePersistService.addRole(role, username);
         roleSet.add(role);
     }
     
+    private void deleteTmpAdminUser() {
+        List<RoleInfo> roles = getAllRoles();
+        roles.stream().filter(roleInfo -> AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole()))
+                .forEach(tmpUser -> {
+                    userDetailsService.deleteUser(tmpUser.getUsername());
+                });
+        rolePersistService.deleteRole(AuthConstants.GLOBAL_TMP_ADMIN_ROLE);
+    }
+    
+    /**
+     * Add tmp admin role.
+     *
+     * @param username user name
+     */
+    public void addTmpAdminRole(String username) {
+        rolePersistService.addRole(AuthConstants.GLOBAL_TMP_ADMIN_ROLE, username);
+        roleSet.add(AuthConstants.GLOBAL_TMP_ADMIN_ROLE);
+    }
+    
+    /**
+     * delete user Role.
+     *
+     * @param role     role
+     * @param userName userName
+     */
     public void deleteRole(String role, String userName) {
+        if (AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(role)) {
+            throw new IllegalArgumentException(
+                    "role '" + AuthConstants.GLOBAL_TMP_ADMIN_ROLE + "' is not permitted to delete!");
+        }
         rolePersistService.deleteRole(role, userName);
     }
     
+    /**
+     * deleteRole.
+     *
+     * @param role role
+     */
     public void deleteRole(String role) {
+        if (AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(role)) {
+            throw new IllegalArgumentException(
+                    "role '" + AuthConstants.GLOBAL_TMP_ADMIN_ROLE + "' is not permitted to delete!");
+        }
         rolePersistService.deleteRole(role);
         roleSet.remove(role);
     }
@@ -304,7 +374,39 @@ public class NacosRoleServiceImpl {
      */
     public boolean hasGlobalAdminRole(String userName) {
         List<RoleInfo> roles = getRoles(userName);
-        
-        return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
+        if (hasGlobalAdminRole()) {
+            return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
+        } else {
+            return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole()));
+        }
     }
+    
+    /**
+     * check if all user has at least one admin role.
+     *
+     * @return true if all user has at least one admin role.
+     */
+    public boolean hasGlobalAdminRole() {
+        if (authConfigs.isHasGlobalAdminRole()) {
+            return true;
+        }
+        List<RoleInfo> roles = getAllRoles();
+        boolean hasGlobalAdminRole = CollectionUtils.isNotEmpty(roles) && roles.stream()
+                .anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
+        authConfigs.setHasGlobalAdminRole(hasGlobalAdminRole);
+        return hasGlobalAdminRole;
+    }
+    
+    /**
+     * check if user has Tmp admin role.
+     *
+     * @param userName user name
+     * @return true if user has Tmp admin role.
+     */
+    public boolean hasTmpAdminRole(String userName) {
+        List<RoleInfo> roles = getRoles(userName);
+        
+        return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole()));
+    }
+    
 }

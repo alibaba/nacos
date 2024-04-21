@@ -57,7 +57,9 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
         if (StringUtils.isBlank(username) || StringUtils.isBlank(rawPassword)) {
             throw new AccessException("user not found!");
         }
-        
+        if (!roleService.hasGlobalAdminRole() && !roleService.hasTmpAdminRole(username)) {
+            throw new AccessException(AuthConstants.GLOBAL_ADMIN_ROLE + " role user not exist!");
+        }
         NacosUserDetails nacosUserDetails = (NacosUserDetails) userDetailsService.loadUserByUsername(username);
         if (nacosUserDetails == null || !PasswordEncoderUtil.matches(rawPassword, nacosUserDetails.getPassword())) {
             throw new AccessException("user not found!");
@@ -128,5 +130,10 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
         }
         nacosUser.setGlobalAdmin(hasGlobalAdminRole(nacosUser.getUserName()));
         return nacosUser.isGlobalAdmin();
+    }
+    
+    @Override
+    public boolean hasTmpAdminRole(String username) {
+        return roleService.hasTmpAdminRole(username);
     }
 }

@@ -31,9 +31,13 @@ public class AuthConstants {
     
     public static final String GLOBAL_ADMIN_ROLE = "ROLE_ADMIN";
     
+    public static final String GLOBAL_TMP_ADMIN_ROLE = "ROLE_TMP_ADMIN";
+    
     public static final String AUTHORIZATION_HEADER = "Authorization";
     
     public static final String TOKEN_PREFIX = "Bearer ";
+    
+    public static final String TMP_USER = "nacos";
     
     public static final String PARAM_USERNAME = "username";
     

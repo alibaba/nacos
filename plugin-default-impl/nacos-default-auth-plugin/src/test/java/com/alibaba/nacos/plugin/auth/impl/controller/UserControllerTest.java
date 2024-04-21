@@ -86,9 +86,10 @@ public class UserControllerTest {
     }
     
     @Test
-    public void testLoginWithAuthedUser() throws AccessException {
+    public void testLoginWithNoAuthedUser() throws AccessException {
         when(authenticationManager.authenticate(request)).thenReturn(user);
         when(authenticationManager.hasGlobalAdminRole(user)).thenReturn(true);
+        when(authenticationManager.hasTmpAdminRole(anyString())).thenReturn(true);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(tokenManagerDelegate.getTokenTtlInSeconds(anyString())).thenReturn(18000L);
         Object actual = userController.login("nacos", "nacos", response, request);
