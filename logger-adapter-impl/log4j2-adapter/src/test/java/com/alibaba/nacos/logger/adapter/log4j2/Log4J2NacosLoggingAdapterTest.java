@@ -37,7 +37,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Map;
-import java.util.Properties;
 import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
@@ -64,7 +63,7 @@ public class Log4J2NacosLoggingAdapterTest {
     @Before
     public void setUp() throws Exception {
         log4J2NacosLoggingAdapter = new Log4J2NacosLoggingAdapter();
-        nacosLoggingProperties = new NacosLoggingProperties("classpath:nacos-log4j2.xml", new Properties());
+        nacosLoggingProperties = new NacosLoggingProperties("classpath:nacos-log4j2.xml", System.getProperties());
         LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
         loggerContext.addPropertyChangeListener(propertyChangeListener);
     }
