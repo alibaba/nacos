@@ -34,11 +34,14 @@ public class SnowFlakeInstanceIdGenerator implements InstanceIdGenerator {
 
     private static volatile boolean initialize = false;
 
-    private static final Object lock = new Object();
+    private static final Object LOCK = new Object();
 
-    public void ensureWorkerIdInitialization() {
+    /**
+     * initialize the workerId and ensure that it is only initialized once.
+     */
+    private void ensureWorkerIdInitialization() {
         if (!initialize) {
-            synchronized (lock) {
+            synchronized (LOCK) {
                 if (!initialize) {
                     SNOW_FLOWER_ID_GENERATOR.init();
                     initialize = true;
