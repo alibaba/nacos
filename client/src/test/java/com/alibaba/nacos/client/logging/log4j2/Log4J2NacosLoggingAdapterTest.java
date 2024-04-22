@@ -41,6 +41,7 @@ import java.lang.reflect.Method;
 import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
+import java.util.logging.Logger;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -83,7 +84,7 @@ public class Log4J2NacosLoggingAdapterTest {
     @Test
     public void testIsAdaptedLogger() {
         assertTrue(log4J2NacosLoggingAdapter.isAdaptedLogger(org.apache.logging.slf4j.Log4jLogger.class));
-        assertFalse(log4J2NacosLoggingAdapter.isAdaptedLogger(ch.qos.logback.classic.Logger.class));
+        assertFalse(log4J2NacosLoggingAdapter.isAdaptedLogger(Logger.class));
     }
     
     @Test

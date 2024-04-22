@@ -20,6 +20,7 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.executor.ExecutorFactory;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
+import com.alibaba.nacos.common.logging.NacosLoggingAdapterBuilder;
 import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import org.slf4j.Logger;
@@ -47,14 +48,15 @@ public class NacosLogging {
     
     private void initLoggingAdapter() {
         Class<? extends Logger> loggerClass = LOGGER.getClass();
-        for (NacosLoggingAdapter each : NacosServiceLoader.load(NacosLoggingAdapter.class)) {
-            LOGGER.info("Nacos Logging Adapter: {}", each.getClass().getName());
-            if (each.isEnabled() && each.isAdaptedLogger(loggerClass)) {
-                LOGGER.info("Nacos Logging Adapter: {} match {} success.", each.getClass().getName(),
+        for (NacosLoggingAdapterBuilder each : NacosServiceLoader.load(NacosLoggingAdapterBuilder.class)) {
+            LOGGER.info("Nacos Logging Adapter Builder: {}", each.getClass().getName());
+            NacosLoggingAdapter tempLoggingAdapter = buildLoggingAdapterFromBuilder(each);
+            if (isAdaptLogging(tempLoggingAdapter, loggerClass)) {
+                LOGGER.info("Nacos Logging Adapter: {} match {} success.", tempLoggingAdapter.getClass().getName(),
                         loggerClass.getName());
-                loggingProperties = new NacosLoggingProperties(each.getDefaultConfigLocation(),
+                loggingProperties = new NacosLoggingProperties(tempLoggingAdapter.getDefaultConfigLocation(),
                         NacosClientProperties.PROTOTYPE.asProperties());
-                loggingAdapter = each;
+                loggingAdapter = tempLoggingAdapter;
             }
         }
         if (null == loggingAdapter) {
@@ -62,6 +64,19 @@ public class NacosLogging {
             return;
         }
         scheduleReloadTask();
+    }
+    
+    private NacosLoggingAdapter buildLoggingAdapterFromBuilder(NacosLoggingAdapterBuilder builder) {
+        try {
+            return builder.build();
+        } catch (Throwable e) {
+            LOGGER.warn("Build Nacos Logging Adapter failed: {}", e.getMessage());
+            return null;
+        }
+    }
+    
+    private boolean isAdaptLogging(NacosLoggingAdapter loggingAdapter, Class<? extends Logger> loggerClass) {
+        return null != loggingAdapter && loggingAdapter.isEnabled() && loggingAdapter.isAdaptedLogger(loggerClass);
     }
     
     private void scheduleReloadTask() {

@@ -87,6 +87,7 @@ public class Log4J2NacosLoggingAdapter implements NacosLoggingAdapter {
     
     @Override
     public void loadConfiguration(NacosLoggingProperties loggingProperties) {
+        Log4j2NacosLoggingPropertiesHolder.setProperties(loggingProperties);
         String location = loggingProperties.getLocation();
         loadConfiguration(location);
     }
