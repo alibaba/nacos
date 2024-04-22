@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.logging.log4j2;
+package com.alibaba.nacos.logger.adapter.log4j2;
 
-import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 import org.junit.Assert;
 import org.junit.Test;
@@ -25,8 +24,8 @@ public class NacosClientPropertiesLookupTest {
     
     @Test
     public void testLookUp() {
-        NacosClientProperties.PROTOTYPE.setProperty("test.nacos.logging.lookup", "true");
-        NacosLoggingProperties properties = new NacosLoggingProperties("", NacosClientProperties.PROTOTYPE.asProperties());
+        System.setProperty("test.nacos.logging.lookup", "true");
+        NacosLoggingProperties properties = new NacosLoggingProperties("", System.getProperties());
         Log4j2NacosLoggingPropertiesHolder.setProperties(properties);
         NacosClientPropertiesLookup nacosClientPropertiesLookup = new NacosClientPropertiesLookup();
         final String actual = nacosClientPropertiesLookup.lookup("test.nacos.logging.lookup");

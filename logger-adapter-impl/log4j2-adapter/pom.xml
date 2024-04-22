@@ -25,31 +25,28 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     
-    <artifactId>nacos-logback-adapter-12</artifactId>
-    <name>nacos-logback-adapter-12 ${revision}</name>
-    <description>Nacos client logback adapter for logback 1.2.x and lower version pom.xml file</description>
+    <artifactId>nacos-log4j2-adapter</artifactId>
+    <name>nacos-log4j2-adapter ${revision}</name>
+    <description>Nacos client log4j2 adapter pom.xml file</description>
     
     <dependencies>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-            <version>1.7.26</version>
-            <scope>provided</scope>
-            <optional>true</optional>
-        </dependency>
-        
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>1.2.13</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
     
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-            <version>1.2.13</version>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <scope>provided</scope>
+            <optional>true</optional>
+        </dependency>
+    
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>

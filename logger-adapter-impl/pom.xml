@@ -31,6 +31,7 @@
     <url>https://nacos.io</url>
     <modules>
         <module>logback-adapter-12</module>
+        <module>log4j2-adapter</module>
     </modules>
     
     <dependencies>

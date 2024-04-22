@@ -14,4 +14,4 @@
 # limitations under the License.
 #
 
-com.alibaba.nacos.client.logging.log4j2.Log4j2NacosLoggingAdapterBuilder
+com.alibaba.nacos.logger.adapter.log4j2.Log4j2NacosLoggingAdapterBuilder

@@ -1,6 +1,5 @@
 /*
- *
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +12,10 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-package com.alibaba.nacos.client.logging.log4j2;
+package com.alibaba.nacos.logger.adapter.log4j2;
 
-import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -120,8 +117,7 @@ public class Log4J2NacosLoggingAdapterTest {
     @Test
     public void testLoadConfigurationWithoutLocation() {
         System.setProperty("nacos.logging.default.config.enabled", "false");
-        nacosLoggingProperties = new NacosLoggingProperties("classpath:nacos-log4j2.xml",
-                NacosClientProperties.PROTOTYPE.asProperties());
+        nacosLoggingProperties = new NacosLoggingProperties("classpath:nacos-log4j2.xml", System.getProperties());
         log4J2NacosLoggingAdapter = new Log4J2NacosLoggingAdapter();
         log4J2NacosLoggingAdapter.loadConfiguration(nacosLoggingProperties);
         verify(propertyChangeListener, never()).propertyChange(any());
@@ -130,8 +126,7 @@ public class Log4J2NacosLoggingAdapterTest {
     @Test(expected = IllegalStateException.class)
     public void testLoadConfigurationWithWrongLocation() {
         System.setProperty("nacos.logging.config", "http://localhost");
-        nacosLoggingProperties = new NacosLoggingProperties("classpath:nacos-log4j2.xml",
-                NacosClientProperties.PROTOTYPE.asProperties());
+        nacosLoggingProperties = new NacosLoggingProperties("classpath:nacos-log4j2.xml", System.getProperties());
         log4J2NacosLoggingAdapter = new Log4J2NacosLoggingAdapter();
         log4J2NacosLoggingAdapter.loadConfiguration(nacosLoggingProperties);
         verify(propertyChangeListener, never()).propertyChange(any());

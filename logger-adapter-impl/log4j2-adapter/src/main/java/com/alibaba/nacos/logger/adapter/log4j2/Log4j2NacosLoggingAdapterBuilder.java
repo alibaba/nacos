@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.logging.log4j2;
+package com.alibaba.nacos.logger.adapter.log4j2;
 
 import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
 import com.alibaba.nacos.common.logging.NacosLoggingAdapterBuilder;
