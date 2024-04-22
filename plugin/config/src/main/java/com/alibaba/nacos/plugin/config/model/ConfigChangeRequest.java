@@ -40,7 +40,7 @@ public class ConfigChangeRequest {
     }
 
     public void setArg(String key, Object value) {
-        requestArgs.putIfAbsent(key, value);
+        requestArgs.put(key, value);
     }
 
     public Object getArg(String key) {
