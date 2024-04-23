@@ -18,6 +18,8 @@
 
 package com.alibaba.nacos.client.logging;
 
+import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
+import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,6 +29,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
+import java.util.Properties;
 
 import static org.mockito.Mockito.doThrow;
 
@@ -42,7 +45,7 @@ public class NacosLoggingTest {
     
     @Before
     public void setUp() throws NoSuchFieldException, IllegalAccessException {
-        loggingProperties = new NacosLoggingProperties("");
+        loggingProperties = new NacosLoggingProperties("", new Properties());
         instance = NacosLogging.getInstance();
         Field loggingPropertiesField = NacosLogging.class.getDeclaredField("loggingProperties");
         loggingPropertiesField.setAccessible(true);
