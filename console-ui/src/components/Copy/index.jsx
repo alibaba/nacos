@@ -37,7 +37,29 @@ class Copy extends React.Component {
   };
 
 copyText(locale, value) {
-  navigator.clipboard.writeText(value);
+  // fix Navigator clipboard api needs a secure context (https)
+  // refer to https://stackoverflow.com/questions/51805395/navigator-clipboard-is-undefined
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(value);
+  } else {
+    // Use the 'out of viewport hidden text area' trick
+    const textArea = document.createElement('textarea');
+    textArea.value = value;
+
+    // Move textarea out of the viewport so it's not visible
+    textArea.style.position = 'absolute';
+    textArea.style.left = '-999999px';
+
+    document.body.prepend(textArea);
+    textArea.select();
+
+    try {
+      document.execCommand('copy');
+    } catch (error) {
+    } finally {
+      textArea.remove();
+    }
+  }
   Message.success(locale.Components.copySuccessfully);
 }
 

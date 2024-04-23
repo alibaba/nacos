@@ -163,11 +163,37 @@
   ]
 },
 {
+  "name":"com.alibaba.nacos.api.ability.ServerAbilities",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getConfigAbility","parameterTypes":[] },
+    {"name":"getNamingAbility","parameterTypes":[] },
+    {"name":"getRemoteAbility","parameterTypes":[] },
+    {"name":"setConfigAbility","parameterTypes":["com.alibaba.nacos.api.config.ability.ServerConfigAbility"] },
+    {"name":"setNamingAbility","parameterTypes":["com.alibaba.nacos.api.naming.ability.ServerNamingAbility"] },
+    {"name":"setRemoteAbility","parameterTypes":["com.alibaba.nacos.api.remote.ability.ServerRemoteAbility"] }
+  ]
+},
+{
   "name":"com.alibaba.nacos.api.config.ability.ClientConfigAbility",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true,
   "methods":[{"name":"isSupportRemoteMetrics","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.config.ability.ServerConfigAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"isSupportRemoteMetrics","parameterTypes":[] },
+    {"name":"setSupportRemoteMetrics","parameterTypes":["boolean"] }
+  ]
 },
 {
 	"name": "com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest",
@@ -184,6 +210,50 @@
 	]
 },
 {
+  "name":"com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getMetricsKeys","parameterTypes":[] },
+    {"name":"getModule","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ClientConfigMetricRequest$MetricsKey",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getKey","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getConfigListenContexts","parameterTypes":[] },
+    {"name":"isListen","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest$ConfigListenContext",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getDataId","parameterTypes":[] },
+    {"name":"getGroup","parameterTypes":[] },
+    {"name":"getMd5","parameterTypes":[] },
+    {"name":"getTenant","parameterTypes":[] }
+  ]
+},
+{
 	"name": "com.alibaba.nacos.api.config.remote.request.ConfigChangeNotifyRequest",
 	"allDeclaredConstructors": true,
 	"allDeclaredFields": true,
@@ -198,28 +268,94 @@
 	]
 },
 {
-  "name":"com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest",
-  "allDeclaredFields":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
-  "name":"com.alibaba.nacos.api.config.remote.request.ConfigBatchListenRequest$ConfigListenContext",
-  "allDeclaredFields":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
-},
-{
   "name":"com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest",
   "allDeclaredFields":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getAdditionMap","parameterTypes":[] },
+    {"name":"getCasMd5","parameterTypes":[] },
+    {"name":"getContent","parameterTypes":[] }
+  ]
 },
 {
   "name":"com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest",
   "allDeclaredFields":true,
-  "methods":[{"name":"<init>","parameterTypes":[] }]
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getTag","parameterTypes":[] },
+    {"name":"isNotify","parameterTypes":[] }
+  ]
 },
 {
   "name":"com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest",
   "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getTag","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getLastModified","parameterTypes":[] },
+    {"name":"getTag","parameterTypes":[] },
+    {"name":"isBatch","parameterTypes":[] },
+    {"name":"isBeta","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setMetrics","parameterTypes":["java.util.Map"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setChangedConfigs","parameterTypes":["java.util.List"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigChangeBatchListenResponse$ConfigContext",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setDataId","parameterTypes":["java.lang.String"] },
+    {"name":"setGroup","parameterTypes":["java.lang.String"] },
+    {"name":"setTenant","parameterTypes":["java.lang.String"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigChangeNotifyResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigPublishResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
   "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
@@ -232,9 +368,25 @@
     {"name":"setBeta","parameterTypes":["boolean"] },
     {"name":"setContent","parameterTypes":["java.lang.String"] },
     {"name":"setContentType","parameterTypes":["java.lang.String"] },
+    {"name":"setEncryptedDataKey","parameterTypes":["java.lang.String"] },
     {"name":"setLastModified","parameterTypes":["long"] },
-    {"name":"setMd5","parameterTypes":["java.lang.String"] }
+    {"name":"setMd5","parameterTypes":["java.lang.String"] },
+    {"name":"setTag","parameterTypes":["java.lang.String"] }
   ]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.ConfigRemoveResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"com.alibaba.nacos.api.grpc.auto.Metadata",
@@ -294,6 +446,17 @@
   "methods":[
     {"name":"isSupportDeltaPush","parameterTypes":[] },
     {"name":"isSupportRemoteMetric","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.ability.ServerNamingAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"isSupportJraft","parameterTypes":[] },
+    {"name":"setSupportJraft","parameterTypes":["boolean"] }
   ]
 },
 {
@@ -373,6 +536,16 @@
   ]
 },
 {
+  "name":"com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getInstances","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] }
+  ]
+},
+{
   "name":"com.alibaba.nacos.api.naming.remote.request.InstanceRequest",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -399,6 +572,38 @@
 	]
 },
 {
+  "name":"com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getInstance","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.ServiceListRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getPageNo","parameterTypes":[] },
+    {"name":"getPageSize","parameterTypes":[] },
+    {"name":"getSelector","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getCluster","parameterTypes":[] },
+    {"name":"getUdpPort","parameterTypes":[] },
+    {"name":"isHealthyOnly","parameterTypes":[] }
+  ]
+},
+{
   "name":"com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -407,6 +612,13 @@
     {"name":"getClusters","parameterTypes":[] },
     {"name":"isSubscribe","parameterTypes":[] }
   ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.response.BatchInstanceResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"com.alibaba.nacos.api.naming.remote.response.InstanceResponse",
@@ -422,7 +634,29 @@
   "name":"com.alibaba.nacos.api.naming.remote.response.NotifySubscriberResponse",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "queryAllDeclaredConstructors":true
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setServiceInfo","parameterTypes":["com.alibaba.nacos.api.naming.pojo.ServiceInfo"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.naming.remote.response.ServiceListResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setCount","parameterTypes":["int"] },
+    {"name":"setServiceNames","parameterTypes":["java.util.List"] }
+  ]
 },
 {
   "name":"com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse",
@@ -438,13 +672,45 @@
   "name":"com.alibaba.nacos.api.remote.Payload",
   "queryAllDeclaredMethods":true
 },
-  {
-    "name":"com.alibaba.nacos.api.remote.ability.ClientRemoteAbility",
-    "allDeclaredFields":true,
-    "queryAllDeclaredMethods":true,
-    "queryAllDeclaredConstructors":true,
-    "methods":[{"name":"isSupportRemoteConnection","parameterTypes":[] }]
-  },
+{
+  "name":"com.alibaba.nacos.api.remote.ability.ClientRemoteAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"isSupportRemoteConnection","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.ability.ServerRemoteAbility",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"isGrpcReportEnabled","parameterTypes":[] },
+    {"name":"isSupportRemoteConnection","parameterTypes":[] },
+    {"name":"setGrpcReportEnabled","parameterTypes":["boolean"] },
+    {"name":"setSupportRemoteConnection","parameterTypes":["boolean"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.ClientDetectionRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"getModule","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.ConnectResetRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getConnectionId","parameterTypes":[] },
+    {"name":"getModule","parameterTypes":[] },
+    {"name":"getServerIp","parameterTypes":[] },
+    {"name":"getServerPort","parameterTypes":[] }
+  ]
+},
 {
 	"name": "com.alibaba.nacos.api.remote.request.ConnectionSetupRequest",
 	"allDeclaredFields": true,
@@ -473,6 +739,17 @@
   "methods":[{"name":"getModule","parameterTypes":[] }]
 },
 {
+  "name":"com.alibaba.nacos.api.remote.request.PushAckRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getException","parameterTypes":[] },
+    {"name":"getRequestId","parameterTypes":[] },
+    {"name":"isSuccess","parameterTypes":[] }
+  ]
+},
+{
   "name":"com.alibaba.nacos.api.remote.request.Request",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
@@ -487,11 +764,58 @@
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true
 },
+{
+  "name":"com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.alibaba.nacos.api.remote.request.ServerReloadRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getReloadCount","parameterTypes":[] },
+    {"name":"getReloadServer","parameterTypes":[] }
+  ]
+},
   {
     "name":"com.alibaba.nacos.api.remote.request.ServerRequest",
     "allDeclaredFields":true,
     "queryAllDeclaredMethods":true
   },
+{
+  "name":"com.alibaba.nacos.api.remote.request.SetupAckRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getAbilityTable","parameterTypes":[] },
+    {"name":"getModule","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ClientDetectionResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ConnectResetResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ErrorResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
 {
   "name":"com.alibaba.nacos.api.remote.response.HealthCheckResponse",
   "allDeclaredFields":true,
@@ -505,6 +829,7 @@
   "queryAllDeclaredMethods":true,
   "methods":[
     {"name":"setErrorCode","parameterTypes":["int"] }, 
+    {"name":"setRequestId","parameterTypes":["java.lang.String"] },
     {"name":"setResultCode","parameterTypes":["int"] },
     {"name":"setMessage","parameterTypes":["java.lang.String"] }
   ]
@@ -516,8 +841,33 @@
   "queryAllDeclaredConstructors":true,
   "methods":[
     {"name":"<init>","parameterTypes":[] }, 
-    {"name":"setConnectionId","parameterTypes":["java.lang.String"] }
+    {"name":"setConnectionId","parameterTypes":["java.lang.String"] },
+    {"name":"setSupportAbilityNegotiation","parameterTypes":["boolean"] }
   ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setLoaderMetrics","parameterTypes":["java.util.Map"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.ServerReloadResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.api.remote.response.SetupAckResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"<init>","parameterTypes":[] }]
 },
 {
   "name":"com.alibaba.nacos.client.auth.impl.NacosClientAuthServiceImpl",
@@ -730,6 +1080,104 @@
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
   "queryAllDeclaredConstructors":true
+},
+{
+  "name":"com.alibaba.nacos.core.cluster.Member",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getAbilities","parameterTypes":[] },
+    {"name":"getAddress","parameterTypes":[] },
+    {"name":"getExtendInfo","parameterTypes":[] },
+    {"name":"getFailAccessCnt","parameterTypes":[] },
+    {"name":"getIp","parameterTypes":[] },
+    {"name":"getPort","parameterTypes":[] },
+    {"name":"getState","parameterTypes":[] },
+    {"name":"isGrpcReportEnabled","parameterTypes":[] },
+    {"name":"setAbilities","parameterTypes":["com.alibaba.nacos.api.ability.ServerAbilities"] },
+    {"name":"setAddress","parameterTypes":["java.lang.String"] },
+    {"name":"setExtendInfo","parameterTypes":["java.util.Map"] },
+    {"name":"setFailAccessCnt","parameterTypes":["boolean"] },
+    {"name":"setGrpcReportEnabled","parameterTypes":["boolean"] },
+    {"name":"setIp","parameterTypes":["java.lang.String"] },
+    {"name":"setPort","parameterTypes":["int"] },
+    {"name":"setState","parameterTypes":["com.alibaba.nacos.core.cluster.NodeState"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.core.cluster.remote.request.AbstractClusterRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "methods":[{"name":"getModule","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.core.cluster.remote.request.MemberReportRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[{"name":"getNode","parameterTypes":[] }]
+},
+{
+  "name":"com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setNode","parameterTypes":["com.alibaba.nacos.core.cluster.Member"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.core.distributed.distro.entity.DistroData",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getContent","parameterTypes":[] },
+    {"name":"getDistroKey","parameterTypes":[] },
+    {"name":"getType","parameterTypes":[] },
+    {"name":"setContent","parameterTypes":["byte[]"] },
+    {"name":"setDistroKey","parameterTypes":["com.alibaba.nacos.core.distributed.distro.entity.DistroKey"] },
+    {"name":"setType","parameterTypes":["com.alibaba.nacos.consistency.DataOperation"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.core.distributed.distro.entity.DistroKey",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"getResourceKey","parameterTypes":[] },
+    {"name":"getResourceType","parameterTypes":[] },
+    {"name":"getTargetServer","parameterTypes":[] },
+    {"name":"setResourceKey","parameterTypes":["java.lang.String"] },
+    {"name":"setResourceType","parameterTypes":["java.lang.String"] },
+    {"name":"setTargetServer","parameterTypes":["java.lang.String"] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.naming.cluster.remote.request.DistroDataRequest",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"getDataOperation","parameterTypes":[] },
+    {"name":"getDistroData","parameterTypes":[] }
+  ]
+},
+{
+  "name":"com.alibaba.nacos.naming.cluster.remote.response.DistroDataResponse",
+  "allDeclaredFields":true,
+  "queryAllDeclaredMethods":true,
+  "queryAllDeclaredConstructors":true,
+  "methods":[
+    {"name":"<init>","parameterTypes":[] },
+    {"name":"setDistroData","parameterTypes":["com.alibaba.nacos.core.distributed.distro.entity.DistroData"] }
+  ]
 },
 {
   "name":"com.fasterxml.jackson.core.JsonParser"

@@ -616,6 +616,7 @@
         <module>plugin-default-impl</module>
         <module>prometheus</module>
         <module>persistence</module>
+        <module>logger-adapter-impl</module>
     </modules>
     
     <!-- Default dependencies in all subprojects -->
