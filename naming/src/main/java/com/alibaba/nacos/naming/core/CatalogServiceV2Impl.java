@@ -83,6 +83,8 @@ public class CatalogServiceV2Impl implements CatalogService {
         serviceObject.put(FieldsConstants.NAME, serviceName);
         serviceObject.put(FieldsConstants.GROUP_NAME, groupName);
         serviceObject.put(FieldsConstants.PROTECT_THRESHOLD, detailedService.getProtectThreshold());
+        serviceObject.put(FieldsConstants.REGISTER_LEVEL, detailedService.getRegisterLevel());
+        serviceObject.put(FieldsConstants.LOCK_INSTANCE_ID_LIST, JacksonUtils.transferToJsonNode(detailedService.getLockInstanceIdList()));
         serviceObject.replace(FieldsConstants.SELECTOR, JacksonUtils.transferToJsonNode(detailedService.getSelector()));
         serviceObject.replace(FieldsConstants.METADATA,
                 JacksonUtils.transferToJsonNode(detailedService.getExtendData()));

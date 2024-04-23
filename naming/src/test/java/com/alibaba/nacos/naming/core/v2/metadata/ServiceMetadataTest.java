@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.naming.selector.LabelSelector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
@@ -26,7 +27,9 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -82,6 +85,30 @@ public class ServiceMetadataTest {
         Assert.assertNotNull(selector);
         boolean result = selector instanceof LabelSelector;
         Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testGetRegisterLevel() {
+        String registerLevel = serviceMetadata.getRegisterLevel();
+        Assert.assertNotNull(registerLevel);
+    }
+
+    @Test
+    public void testSetRegisterLevel() {
+        serviceMetadata.setRegisterLevel(CommonParams.REGISTER_LEVEL_PROTECTED);
+        Assert.assertNotNull(serviceMetadata.getRegisterLevel());
+    }
+
+    @Test
+    public void testGetLockInstanceIdList() {
+        List<String> lockInstanceIdList = serviceMetadata.getLockInstanceIdList();
+        Assert.assertNotNull(lockInstanceIdList);
+    }
+
+    @Test
+    public void testSetLockInstanceIdList() {
+        serviceMetadata.setLockInstanceIdList(new ArrayList<>());
+        Assert.assertNotNull(serviceMetadata.getLockInstanceIdList());
     }
     
     @Test

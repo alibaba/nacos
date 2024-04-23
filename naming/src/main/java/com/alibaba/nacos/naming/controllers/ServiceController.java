@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.controllers;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.CommonParams;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.auth.annotation.Secured;
@@ -34,10 +35,13 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.ServiceOperator;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
+import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
+import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.misc.Loggers;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.alibaba.nacos.naming.paramcheck.NamingDefaultHttpParamExtractor;
@@ -59,12 +63,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
 import java.net.URLDecoder;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Service operation controller.
@@ -84,6 +90,9 @@ public class ServiceController {
     
     @Autowired
     private SelectorManager selectorManager;
+
+    @Autowired
+    private ServiceStorage serviceStorage;
     
     /**
      * Create a new service. This API will create a persistence service.
@@ -196,14 +205,24 @@ public class ServiceController {
         serviceMetadata.setProtectThreshold(NumberUtils.toFloat(WebUtils.required(request, "protectThreshold")));
         serviceMetadata.setExtendData(metadata);
         serviceMetadata.setSelector(parseSelector(WebUtils.optional(request, "selector", StringUtils.EMPTY)));
+        serviceMetadata.setRegisterLevel(WebUtils.required(request, FieldsConstants.REGISTER_LEVEL));
         com.alibaba.nacos.naming.core.v2.pojo.Service service = com.alibaba.nacos.naming.core.v2.pojo.Service.newService(
                 namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName));
+        buildLockInstanceList(service, serviceMetadata);
         getServiceOperator().update(service, serviceMetadata);
         NotifyCenter.publishEvent(new UpdateServiceTraceEvent(System.currentTimeMillis(), namespaceId,
                 NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName), metadata));
         return "ok";
     }
-    
+
+    private void buildLockInstanceList(Service service, ServiceMetadata serviceMetadata) {
+        if (CommonParams.REGISTER_LEVEL_PROTECTED.equals(serviceMetadata.getRegisterLevel())) {
+            List<String> instanceIdList = serviceStorage.getRunningInstances(service)
+                    .stream().map(Instance::getInstanceId).collect(Collectors.toList());
+            serviceMetadata.setLockInstanceIdList(instanceIdList);
+        }
+    }
+
     /**
      * Search service names.
      *
@@ -290,6 +309,20 @@ public class ServiceController {
     @GetMapping("/selector/types")
     public RestResult<List<String>> listSelectorTypes() {
         return RestResultUtils.success(selectorManager.getAllSelectorTypes());
+    }
+
+    /**
+     * Get all levels.
+     *
+     * @return levels.
+     */
+    @GetMapping("/register/levels")
+    public RestResult<List<String>> listRegisterLevels() {
+        List<String> result = new ArrayList<String>();
+        result.add(CommonParams.REGISTER_LEVEL_DEFAULT);
+        result.add(CommonParams.REGISTER_LEVEL_PUBLIC);
+        result.add(CommonParams.REGISTER_LEVEL_PROTECTED);
+        return RestResultUtils.success(result);
     }
     
     private Selector parseSelector(String selectorJsonString) throws Exception {

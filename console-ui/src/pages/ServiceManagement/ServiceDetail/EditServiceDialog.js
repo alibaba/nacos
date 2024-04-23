@@ -39,6 +39,7 @@ class EditServiceDialog extends React.Component {
       editServiceDialogVisible: false,
       errors: { name: {}, protectThreshold: {} },
       selectorTypes: [],
+      registerLevels: [],
     };
     this.show = this.show.bind(this);
   }
@@ -53,6 +54,7 @@ class EditServiceDialog extends React.Component {
 
     // query selector types
     this.getSelectorTypes();
+    this.getRegisterLevels();
   }
 
   hide() {
@@ -82,7 +84,14 @@ class EditServiceDialog extends React.Component {
   onConfirm() {
     const { isCreate } = this.state;
     const editService = Object.assign({}, this.state.editService);
-    const { name, protectThreshold, groupName, metadataText = '', selector } = editService;
+    const {
+      name,
+      protectThreshold,
+      groupName,
+      metadataText = '',
+      selector,
+      registerLevel,
+    } = editService;
     if (!this.validator({ name, protectThreshold })) return;
     request({
       method: isCreate ? 'POST' : 'PUT',
@@ -93,6 +102,7 @@ class EditServiceDialog extends React.Component {
         protectThreshold,
         metadata: metadataText,
         selector: JSON.stringify(selector),
+        registerLevel: registerLevel,
       },
       dataType: 'text',
       beforeSend: () => this.setState({ loading: true }),
@@ -149,15 +159,39 @@ class EditServiceDialog extends React.Component {
     });
   }
 
+  getRegisterLevels() {
+    request({
+      method: 'GET',
+      url: 'v1/ns/service/register/levels',
+      success: response => {
+        if (response.code !== 200) {
+          Message.error(response.message);
+          return;
+        }
+        this.setState({
+          registerLevels: response.data,
+        });
+      },
+    });
+  }
+
   render() {
     const { locale = {} } = this.props;
-    const { isCreate, editService, editServiceDialogVisible, errors, selectorTypes } = this.state;
+    const {
+      isCreate,
+      editService,
+      editServiceDialogVisible,
+      errors,
+      selectorTypes,
+      registerLevels,
+    } = this.state;
     const {
       name,
       protectThreshold,
       groupName,
       metadataText,
       selector = { type: 'none' },
+      registerLevel = editService.registerLevel,
     } = editService;
     const formItemLayout = this.getFormItemLayout();
     return (
@@ -231,6 +265,17 @@ class EditServiceDialog extends React.Component {
               />
             </Form.Item>
           )}
+          <Form.Item label={`${locale.registerLevel}`} {...formItemLayout}>
+            <Select
+              className="full-width"
+              defaultValue={registerLevel}
+              onChange={registerLevel => this.onChangeCluster({ registerLevel })}
+            >
+              {registerLevels.map(registerLevel => (
+                <Select.Option value={registerLevel}>{registerLevel}</Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
         </Form>
       </Dialog>
     );

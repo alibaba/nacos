@@ -19,6 +19,7 @@ package com.alibaba.nacos.naming.core;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.api.NacosApiException;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.NamingResponseCode;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -106,9 +107,22 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         String clientId = IpPortBasedClient.getClientId(instance.toInetAddr(), ephemeral);
         createIpPortClientIfAbsent(clientId);
         Service service = getService(namespaceId, serviceName, ephemeral);
+        validateServiceRegisterLevel(service, instance);
         clientOperationService.registerInstance(service, instance, clientId);
     }
-    
+
+    private void validateServiceRegisterLevel(Service service, Instance instance) {
+        if (metadataManager.getServiceMetadata(service).isPresent()) {
+            ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).get();
+            if (CommonParams.REGISTER_LEVEL_PROTECTED.equals(serviceMetadata.getRegisterLevel())) {
+                List<String> lockInstanceIdList = serviceMetadata.getLockInstanceIdList();
+                if (serviceMetadata.getLockInstanceIdList() == null || !lockInstanceIdList.contains(instance.getInstanceId())) {
+                    instance.setEnabled(false);
+                }
+            }
+        }
+    }
+
     @Override
     public void removeInstance(String namespaceId, String serviceName, Instance instance) {
         boolean ephemeral = instance.isEphemeral();

@@ -18,6 +18,7 @@
 package com.alibaba.nacos.naming.core;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.naming.constants.FieldsConstants;
@@ -80,6 +81,7 @@ public class CatalogServiceV2ImplTest {
     public void testGetServiceDetail() throws NacosException {
         ServiceMetadata serviceMetadata = new ServiceMetadata();
         serviceMetadata.setProtectThreshold(0.75F);
+        serviceMetadata.setRegisterLevel(CommonParams.REGISTER_LEVEL_PROTECTED);
         Mockito.when(metadataManager.getServiceMetadata(Mockito.any())).thenReturn(Optional.of(serviceMetadata));
         Mockito.when(serviceStorage.getClusters(Mockito.any())).thenReturn(Collections.singleton("C"));
         Object obj = catalogServiceV2Impl.getServiceDetail("A", "B", "C");

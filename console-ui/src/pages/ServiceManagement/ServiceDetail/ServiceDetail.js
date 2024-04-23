@@ -109,7 +109,7 @@ class ServiceDetail extends React.Component {
   render() {
     const { locale = {} } = this.props;
     const { serviceName, groupName, loading, service = {}, clusters, instanceFilters } = this.state;
-    const { metadata = {}, selector = {} } = service;
+    const { metadata = {}, selector = {}, registerLevel = {} } = service;
     let metadataText = '';
     if (Object.keys(metadata).length) {
       metadataText = JSON.stringify(metadata, null, '\t');
@@ -173,6 +173,9 @@ class ServiceDetail extends React.Component {
                 <Input value={selector.expression} readOnly />
               </FormItem>
             )}
+            <FormItem label={`${locale.registerLevel}`}>
+              <Input value={registerLevel} readOnly />
+            </FormItem>
           </Form>
           {clusters.map(cluster => (
             <Card

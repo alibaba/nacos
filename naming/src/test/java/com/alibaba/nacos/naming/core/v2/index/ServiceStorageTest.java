@@ -140,6 +140,18 @@ public class ServiceStorageTest {
         
         Assert.assertNotNull(list);
     }
+
+    @Test
+    public void testGetRunningInstances()
+            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Class<ServiceStorage> serviceStorageClass = ServiceStorage.class;
+        Method getRunningInstances = serviceStorageClass
+                .getDeclaredMethod("getRunningInstances", Service.class);
+        getRunningInstances.setAccessible(true);
+        List<Instance> list = (List<Instance>) getRunningInstances.invoke(serviceStorage, SERVICE);
+
+        Assert.assertNotNull(list);
+    }
     
     @Test
     public void testGetInstanceInfo() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {

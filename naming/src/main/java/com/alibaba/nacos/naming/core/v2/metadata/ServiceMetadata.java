@@ -16,10 +16,13 @@
 
 package com.alibaba.nacos.naming.core.v2.metadata;
 
+import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.selector.Selector;
 import com.alibaba.nacos.naming.selector.NoneSelector;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,7 +50,11 @@ public class ServiceMetadata implements Serializable {
      * Type of {@link Selector}.
      */
     private Selector selector = new NoneSelector();
-    
+
+    private String registerLevel = CommonParams.REGISTER_LEVEL_DEFAULT;
+
+    private List<String> lockInstanceIdList = new ArrayList<>();
+
     private Map<String, String> extendData = new ConcurrentHashMap<>(1);
     
     private Map<String, ClusterMetadata> clusters = new ConcurrentHashMap<>(1);
@@ -91,7 +98,23 @@ public class ServiceMetadata implements Serializable {
     public void setClusters(Map<String, ClusterMetadata> clusters) {
         this.clusters = clusters;
     }
-    
+
+    public String getRegisterLevel() {
+        return registerLevel;
+    }
+
+    public void setRegisterLevel(String registerLevel) {
+        this.registerLevel = registerLevel;
+    }
+
+    public List<String> getLockInstanceIdList() {
+        return lockInstanceIdList;
+    }
+
+    public void setLockInstanceIdList(List<String> lockInstanceIdList) {
+        this.lockInstanceIdList = lockInstanceIdList;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

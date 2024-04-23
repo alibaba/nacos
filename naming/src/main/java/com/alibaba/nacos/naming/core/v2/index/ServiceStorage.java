@@ -39,6 +39,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 /**
  * Service storage.
@@ -157,6 +158,13 @@ public class ServiceStorage {
         Optional<InstanceMetadata> metadata = metadataManager
                 .getInstanceMetadata(service, instanceInfo.getMetadataId());
         metadata.ifPresent(instanceMetadata -> InstanceUtil.updateInstanceMetadata(result, instanceMetadata));
+        return result;
+    }
+
+    public List<Instance> getRunningInstances(Service service) {
+        List<Instance> allInstancesFromIndex = getAllInstancesFromIndex(service);
+        List<Instance> result = allInstancesFromIndex
+                .stream().filter(Instance::isEnabled).collect(Collectors.toList());
         return result;
     }
 }

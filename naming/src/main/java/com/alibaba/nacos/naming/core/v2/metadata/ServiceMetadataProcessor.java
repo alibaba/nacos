@@ -152,6 +152,8 @@ public class ServiceMetadataProcessor extends RequestProcessor4CP {
         result.setProtectThreshold(newMetadata.getProtectThreshold());
         result.setSelector(newMetadata.getSelector());
         result.setExtendData(newMetadata.getExtendData());
+        result.setRegisterLevel(newMetadata.getRegisterLevel());
+        result.setLockInstanceIdList(newMetadata.getLockInstanceIdList());
         return result;
     }
     

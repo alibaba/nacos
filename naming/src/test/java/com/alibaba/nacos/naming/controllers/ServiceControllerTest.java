@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.trace.event.naming.UpdateServiceTraceEvent;
 import com.alibaba.nacos.naming.BaseTest;
+import com.alibaba.nacos.naming.constants.FieldsConstants;
 import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.pojo.Subscriber;
@@ -143,6 +144,7 @@ public class ServiceControllerTest extends BaseTest {
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME);
         servletRequest.addParameter("protectThreshold", "0.01");
+        servletRequest.addParameter(FieldsConstants.REGISTER_LEVEL, CommonParams.REGISTER_LEVEL_DEFAULT);
         try {
             String res = serviceController.update(servletRequest);
             Assert.assertEquals("ok", res);

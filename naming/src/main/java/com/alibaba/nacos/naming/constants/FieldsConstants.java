@@ -30,7 +30,11 @@ public class FieldsConstants {
     public static final String GROUP_NAME = "groupName";
     
     public static final String SELECTOR = "selector";
-    
+
+    public static final String REGISTER_LEVEL = "registerLevel";
+
+    public static final String LOCK_INSTANCE_ID_LIST = "lockInstanceIdList";
+
     public static final String METADATA = "metadata";
     
     public static final String SERVICE = "service";
