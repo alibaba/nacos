@@ -31,13 +31,28 @@ import static com.alibaba.nacos.api.common.Constants.SNOWFLAKE_INSTANCE_ID_GENER
 public class SnowFlakeInstanceIdGenerator implements InstanceIdGenerator {
     
     private static final SnowFlowerIdGenerator SNOW_FLOWER_ID_GENERATOR = new SnowFlowerIdGenerator();
-    
-    static {
-        SNOW_FLOWER_ID_GENERATOR.init();
+
+    private static volatile boolean initialize = false;
+
+    private static final Object LOCK = new Object();
+
+    /**
+     * initialize the workerId and ensure that it is only initialized once.
+     */
+    private void ensureWorkerIdInitialization() {
+        if (!initialize) {
+            synchronized (LOCK) {
+                if (!initialize) {
+                    SNOW_FLOWER_ID_GENERATOR.init();
+                    initialize = true;
+                }
+            }
+        }
     }
-    
+
     @Override
     public String generateInstanceId(Instance instance) {
+        ensureWorkerIdInitialization();
         return SNOW_FLOWER_ID_GENERATOR.nextId() + NAMING_INSTANCE_ID_SPLITTER
                 + instance.getClusterName() + NAMING_INSTANCE_ID_SPLITTER
                 + instance.getServiceName();
