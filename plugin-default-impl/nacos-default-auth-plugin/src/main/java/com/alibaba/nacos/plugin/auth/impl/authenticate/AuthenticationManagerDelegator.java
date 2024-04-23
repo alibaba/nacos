@@ -72,6 +72,11 @@ public class AuthenticationManagerDelegator implements IAuthenticationManager {
     }
     
     @Override
+    public boolean hasGlobalAdminRole() {
+        return getManager().hasGlobalAdminRole();
+    }
+    
+    @Override
     public boolean hasGlobalAdminRole(NacosUser nacosUser) {
         return getManager().hasGlobalAdminRole(nacosUser);
     }

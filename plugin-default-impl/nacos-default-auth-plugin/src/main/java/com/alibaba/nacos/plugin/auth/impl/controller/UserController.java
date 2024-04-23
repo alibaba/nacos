@@ -113,7 +113,8 @@ public class UserController {
      * Create a tmp user only no admin user can use.
      */
     @PostMapping("/createTmpUser")
-    public Object createTmpUser(@RequestParam(required = false) String username, @RequestParam(required = false) String password) {
+    public Object createTmpUser(@RequestParam(required = false) String username,
+            @RequestParam(required = false) String password) {
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             if (roleService.hasGlobalAdminRole()) {
                 return RestResultUtils.failed("have admin user cannot use it");
@@ -258,6 +259,9 @@ public class UserController {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            if (!iAuthenticationManager.hasGlobalAdminRole() && !iAuthenticationManager.hasTmpAdminRole(username)) {
+                return RestResultUtils.failed(AuthConstants.GLOBAL_ADMIN_ROLE + " role user not exist!");
+            }
             NacosUser user = iAuthenticationManager.authenticate(request);
             
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
