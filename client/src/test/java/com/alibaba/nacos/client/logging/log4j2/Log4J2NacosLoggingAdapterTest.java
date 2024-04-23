@@ -18,6 +18,7 @@
 
 package com.alibaba.nacos.client.logging.log4j2;
 
+import com.alibaba.nacos.client.logging.NacosLoggingProperties;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
@@ -40,6 +41,8 @@ import java.net.URL;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -47,18 +50,21 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class Log4J2NacosLoggingTest {
+public class Log4J2NacosLoggingAdapterTest {
     
     private static final String NACOS_LOGGER_PREFIX = "com.alibaba.nacos";
     
     @Mock
     PropertyChangeListener propertyChangeListener;
     
-    Log4J2NacosLogging log4J2NacosLogging;
+    NacosLoggingProperties nacosLoggingProperties;
+    
+    Log4J2NacosLoggingAdapter log4J2NacosLoggingAdapter;
     
     @Before
     public void setUp() throws Exception {
-        log4J2NacosLogging = new Log4J2NacosLogging();
+        log4J2NacosLoggingAdapter = new Log4J2NacosLoggingAdapter();
+        nacosLoggingProperties = new NacosLoggingProperties("classpath:nacos-log4j2.xml");
         LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
         loggerContext.addPropertyChangeListener(propertyChangeListener);
     }
@@ -67,8 +73,27 @@ public class Log4J2NacosLoggingTest {
     public void tearDown() throws Exception {
         LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
         loggerContext.removePropertyChangeListener(propertyChangeListener);
+        loggerContext.setConfigLocation(loggerContext.getConfigLocation());
         System.clearProperty("nacos.logging.default.config.enabled");
         System.clearProperty("nacos.logging.config");
+    }
+    
+    @Test
+    public void testIsAdaptedLogger() {
+        assertTrue(log4J2NacosLoggingAdapter.isAdaptedLogger(org.apache.logging.slf4j.Log4jLogger.class));
+        assertFalse(log4J2NacosLoggingAdapter.isAdaptedLogger(ch.qos.logback.classic.Logger.class));
+    }
+    
+    @Test
+    public void testIsNeedReloadConfiguration() {
+        assertTrue(log4J2NacosLoggingAdapter.isNeedReloadConfiguration());
+        log4J2NacosLoggingAdapter.loadConfiguration(nacosLoggingProperties);
+        assertFalse(log4J2NacosLoggingAdapter.isNeedReloadConfiguration());
+    }
+    
+    @Test
+    public void testGetDefaultConfigLocation() {
+        assertEquals("classpath:nacos-log4j2.xml", log4J2NacosLoggingAdapter.getDefaultConfigLocation());
     }
     
     @Test
@@ -76,13 +101,13 @@ public class Log4J2NacosLoggingTest {
         LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
         Configuration contextConfiguration = loggerContext.getConfiguration();
         assertEquals(0, contextConfiguration.getLoggers().size());
-        log4J2NacosLogging.loadConfiguration();
+        log4J2NacosLoggingAdapter.loadConfiguration(nacosLoggingProperties);
         //then
         verify(propertyChangeListener).propertyChange(any());
         loggerContext = (LoggerContext) LogManager.getContext(false);
         contextConfiguration = loggerContext.getConfiguration();
         Map<String, LoggerConfig> nacosClientLoggers = contextConfiguration.getLoggers();
-        assertEquals(4, nacosClientLoggers.size());
+        assertEquals(5, nacosClientLoggers.size());
         for (Map.Entry<String, LoggerConfig> loggerEntry : nacosClientLoggers.entrySet()) {
             String loggerName = loggerEntry.getKey();
             Assert.assertTrue(loggerName.startsWith(NACOS_LOGGER_PREFIX));
@@ -92,30 +117,31 @@ public class Log4J2NacosLoggingTest {
     @Test
     public void testLoadConfigurationWithoutLocation() {
         System.setProperty("nacos.logging.default.config.enabled", "false");
-        log4J2NacosLogging = new Log4J2NacosLogging();
-        log4J2NacosLogging.loadConfiguration();
+        log4J2NacosLoggingAdapter = new Log4J2NacosLoggingAdapter();
+        log4J2NacosLoggingAdapter.loadConfiguration(nacosLoggingProperties);
         verify(propertyChangeListener, never()).propertyChange(any());
     }
     
     @Test(expected = IllegalStateException.class)
     public void testLoadConfigurationWithWrongLocation() {
         System.setProperty("nacos.logging.config", "http://localhost");
-        log4J2NacosLogging = new Log4J2NacosLogging();
-        log4J2NacosLogging.loadConfiguration();
+        log4J2NacosLoggingAdapter = new Log4J2NacosLoggingAdapter();
+        log4J2NacosLoggingAdapter.loadConfiguration(nacosLoggingProperties);
         verify(propertyChangeListener, never()).propertyChange(any());
     }
     
     @Test
     public void testGetConfigurationSourceForNonFileProtocol()
             throws NoSuchMethodException, IOException, InvocationTargetException, IllegalAccessException {
-        Method getConfigurationSourceMethod = Log4J2NacosLogging.class
+        Method getConfigurationSourceMethod = Log4J2NacosLoggingAdapter.class
                 .getDeclaredMethod("getConfigurationSource", URL.class);
         getConfigurationSourceMethod.setAccessible(true);
         URL url = mock(URL.class);
         InputStream inputStream = mock(InputStream.class);
         when(url.openStream()).thenReturn(inputStream);
         when(url.getProtocol()).thenReturn("http");
-        ConfigurationSource actual = (ConfigurationSource) getConfigurationSourceMethod.invoke(log4J2NacosLogging, url);
+        ConfigurationSource actual = (ConfigurationSource) getConfigurationSourceMethod
+                .invoke(log4J2NacosLoggingAdapter, url);
         assertEquals(inputStream, actual.getInputStream());
         assertEquals(url, actual.getURL());
     }

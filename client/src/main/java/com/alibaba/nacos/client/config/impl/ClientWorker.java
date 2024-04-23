@@ -41,6 +41,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.utils.ContentUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.AppNameUtils;
@@ -49,6 +50,7 @@ import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TenantUtil;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.labels.impl.DefaultLabelsCollectorManager;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -60,6 +62,7 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.utils.ConnLabelsUtils;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -81,6 +84,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -96,6 +100,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.alibaba.nacos.api.common.Constants.APP_CONN_PREFIX;
 import static com.alibaba.nacos.api.common.Constants.ENCODE;
 
 /**
@@ -123,6 +128,8 @@ public class ClientWorker implements Closeable {
      * groupKey -> cacheData.
      */
     private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<>(new HashMap<>());
+    
+    private Map<String, String> appLables = new HashMap<>();
     
     private final ConfigFilterChainManager configFilterChainManager;
     
@@ -478,12 +485,16 @@ public class ClientWorker implements Closeable {
         init(properties);
         
         agent = new ConfigRpcTransportClient(properties, serverListManager);
-        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(
-                initWorkerThreadCount(properties),
+        ScheduledExecutorService executorService = Executors.newScheduledThreadPool(initWorkerThreadCount(properties),
                 new NameThreadFactory("com.alibaba.nacos.client.Worker"));
         agent.setExecutor(executorService);
         agent.start();
         
+    }
+    
+    void initAppLabels(Properties properties) {
+        this.appLables = ConnLabelsUtils.addPrefixForEachKey(defaultLabelsCollectorManager.getLabels(properties),
+                APP_CONN_PREFIX);
     }
     
     private int initWorkerThreadCount(NacosClientProperties properties) {
@@ -506,6 +517,7 @@ public class ClientWorker implements Closeable {
         
         this.enableRemoteSyncConfig = Boolean.parseBoolean(
                 properties.getProperty(PropertyKeyConst.ENABLE_REMOTE_SYNC_CONFIG));
+        initAppLabels(properties.getProperties(SourceType.PROPERTIES));
     }
     
     Map<String, Object> getMetrics(List<ClientConfigMetricRequest.MetricsKey> metricsKeys) {
@@ -567,6 +579,8 @@ public class ClientWorker implements Closeable {
     public boolean isHealthServer() {
         return agent.isHealthServer();
     }
+    
+    private static DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
     
     public class ConfigRpcTransportClient extends ConfigTransportClient {
         
@@ -634,10 +648,17 @@ public class ClientWorker implements Closeable {
             labels.put(RemoteConstants.LABEL_SOURCE, RemoteConstants.LABEL_SOURCE_SDK);
             labels.put(RemoteConstants.LABEL_MODULE, RemoteConstants.LABEL_MODULE_CONFIG);
             labels.put(Constants.APPNAME, AppNameUtils.getAppName());
-            labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipserverTag());
-            labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmoryTag());
-            labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
+            if (EnvUtil.getSelfVipserverTag() != null) {
+                labels.put(Constants.VIPSERVER_TAG, EnvUtil.getSelfVipserverTag());
+            }
+            if (EnvUtil.getSelfAmoryTag() != null) {
+                labels.put(Constants.AMORY_TAG, EnvUtil.getSelfAmoryTag());
+            }
+            if (EnvUtil.getSelfLocationTag() != null) {
+                labels.put(Constants.LOCATION_TAG, EnvUtil.getSelfLocationTag());
+            }
             
+            labels.putAll(appLables);
             return labels;
         }
         
@@ -673,7 +694,8 @@ public class ClientWorker implements Closeable {
              */
             rpcClientInner.registerServerRequestHandler((request, connection) -> {
                 if (request instanceof ConfigChangeNotifyRequest) {
-                    handleConfigChangeNotifyRequest((ConfigChangeNotifyRequest) request, rpcClientInner.getName());
+                    return handleConfigChangeNotifyRequest((ConfigChangeNotifyRequest) request,
+                            rpcClientInner.getName());
                 }
                 return null;
             });
@@ -1067,7 +1089,6 @@ public class ClientWorker implements Closeable {
         
         private RpcClient ensureRpcClient(String taskId) throws NacosException {
             synchronized (ClientWorker.this) {
-
                 Map<String, String> labels = getLabels();
                 Map<String, String> newLabels = new HashMap<>(labels);
                 newLabels.put("taskId", taskId);

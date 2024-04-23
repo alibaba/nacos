@@ -614,7 +614,7 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         context.putWhereParameter(FieldConstant.MD5, configInfo.getMd5());
         MapperResult mapperResult = configInfoMapper.updateConfigInfoAtomicCas(context);
         
-        EmbeddedStorageContextHolder.addSqlContext(mapperResult.getSql(), mapperResult.getParamList().toArray());
+        EmbeddedStorageContextHolder.addSqlContext(Boolean.TRUE, mapperResult.getSql(), mapperResult.getParamList().toArray());
         return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
         
     }

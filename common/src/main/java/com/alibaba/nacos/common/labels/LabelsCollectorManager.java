@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2022 Alibaba Group Holding Ltd.
+ * Copyright 1999-2023 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,19 +14,25 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.common.log;
+package com.alibaba.nacos.common.labels;
+
+import java.util.Map;
+import java.util.Properties;
 
 /**
- * nacos logback properties.
- * @author hujun
- */
-public interface NacosLogbackProperties {
+* LabelsCollectorManager.
+ *
+* @author rong
+* @date 2024/2/4
+*/
+public interface LabelsCollectorManager {
+    
     /**
-     * get value.
+     * refresh all labels.
      *
-     * @param source       source
-     * @param defaultValue defaultValue
-     * @return value
+     * @date 2024/3/7
+     * @param properties    Properties.
+     * @return all labels.
      */
-    String getValue(String source, String defaultValue);
+    Map<String, String> getLabels(Properties properties);
 }

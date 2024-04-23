@@ -634,9 +634,9 @@ public class ConfigController {
             RestResult<Map<String, Object>> errorResult;
             if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
-                errorResult = parseImportDataV2(unziped, configInfoList, unrecognizedList, namespace);
+                errorResult = parseImportDataV2(srcUser, unziped, configInfoList, unrecognizedList, namespace);
             } else {
-                errorResult = parseImportData(unziped, configInfoList, unrecognizedList, namespace);
+                errorResult = parseImportData(srcUser, unziped, configInfoList, unrecognizedList, namespace);
             }
             if (errorResult != null) {
                 return errorResult;
@@ -682,7 +682,7 @@ public class ConfigController {
      * @param namespace        import namespace.
      * @return error result.
      */
-    private RestResult<Map<String, Object>> parseImportData(ZipUtils.UnZipResult unziped,
+    private RestResult<Map<String, Object>> parseImportData(String srcUser, ZipUtils.UnZipResult unziped,
             List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
         ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
         
@@ -735,6 +735,7 @@ public class ConfigController {
                 }
                 ci.setTenant(namespace);
                 ci.setEncryptedDataKey(pair.getFirst());
+                ci.setCreateUser(srcUser);
                 configInfoList.add(ci);
             }
         }
@@ -750,7 +751,7 @@ public class ConfigController {
      * @param namespace        import namespace.
      * @return error result.
      */
-    private RestResult<Map<String, Object>> parseImportDataV2(ZipUtils.UnZipResult unziped,
+    private RestResult<Map<String, Object>> parseImportDataV2(String srcUser, ZipUtils.UnZipResult unziped,
             List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
         ZipUtils.ZipItem metaDataItem = unziped.getMetaDataItem();
         String metaData = metaDataItem.getItemData();
@@ -826,6 +827,7 @@ public class ConfigController {
             ci.setAppName(configExportItem.getAppName());
             ci.setTenant(namespace);
             ci.setEncryptedDataKey(pair.getFirst());
+            ci.setCreateUser(srcUser);
             configInfoList.add(ci);
         }
         return null;

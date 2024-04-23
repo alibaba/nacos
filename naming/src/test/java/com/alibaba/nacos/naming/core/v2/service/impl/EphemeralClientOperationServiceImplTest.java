@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -138,7 +139,7 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
         ephemeralClientOperationServiceImpl.batchRegisterInstance(service, instances, connectionBasedClientId);
         assertTrue(connectionBasedClient.getAllPublishedService().contains(service));
     }
-    
+
     @Test
     public void testSubscribeAndUnsubscribeService() throws Exception {
         // Test subscribe instance
@@ -147,5 +148,85 @@ public class EphemeralClientOperationServiceImplTest extends TestCase {
         // Test unsubscribe instance
         ephemeralClientOperationServiceImpl.unsubscribeService(service, subscriber, ipPortBasedClientId);
         assertFalse(ipPortBasedClient.getAllSubscribeService().contains(service));
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testRegisterWhenClientNull() throws NacosException {
+        when(clientManager.getClient(anyString())).thenReturn(null);
+        // Excepted exception
+        ephemeralClientOperationServiceImpl.registerInstance(service, instance, ipPortBasedClientId);
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testRegisterWhenClientPersistent() throws NacosException {
+        Client persistentClient = new IpPortBasedClient(ipPortBasedClientId, false);
+        when(clientManager.getClient(anyString())).thenReturn(persistentClient);
+        // Excepted exception
+        ephemeralClientOperationServiceImpl.registerInstance(service, instance, ipPortBasedClientId);
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testBatchRegisterWhenClientNull() {
+        when(clientManager.getClient(anyString())).thenReturn(null);
+        // Excepted exception
+        List<Instance> instances = new ArrayList<>();
+        ephemeralClientOperationServiceImpl.batchRegisterInstance(service, instances, ipPortBasedClientId);
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testBatchRegisterWhenClientPersistent() {
+        Client persistentClient = new IpPortBasedClient(ipPortBasedClientId, false);
+        when(clientManager.getClient(anyString())).thenReturn(persistentClient);
+        // Excepted exception
+        List<Instance> instances = new ArrayList<>();
+        ephemeralClientOperationServiceImpl.batchRegisterInstance(service, instances, ipPortBasedClientId);
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testDeRegisterWhenClientNull() throws NacosException {
+        // Test register instance
+        ephemeralClientOperationServiceImpl.registerInstance(service, instance, ipPortBasedClientId);
+        when(clientManager.getClient(anyString())).thenReturn(null);
+        // Excepted exception
+        ephemeralClientOperationServiceImpl.registerInstance(service, instance, ipPortBasedClientId);
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testDeRegisterWhenClientPersistent() throws NacosException {
+        ephemeralClientOperationServiceImpl.registerInstance(service, instance, ipPortBasedClientId);
+        Client persistentClient = new IpPortBasedClient(ipPortBasedClientId, false);
+        when(clientManager.getClient(anyString())).thenReturn(persistentClient);
+        // Excepted exception
+        ephemeralClientOperationServiceImpl.deregisterInstance(service, instance, ipPortBasedClientId);
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testSubscribeWhenClientNull() {
+        when(clientManager.getClient(anyString())).thenReturn(null);
+        // Excepted exception
+        ephemeralClientOperationServiceImpl.subscribeService(service, subscriber, ipPortBasedClientId);
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testSubscribeWhenClientPersistent() {
+        Client persistentClient = new IpPortBasedClient(ipPortBasedClientId, false);
+        when(clientManager.getClient(anyString())).thenReturn(persistentClient);
+        // Excepted exception
+        ephemeralClientOperationServiceImpl.subscribeService(service, subscriber, ipPortBasedClientId);
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testUnSubscribeWhenClientNull() {
+        when(clientManager.getClient(anyString())).thenReturn(null);
+        // Excepted exception
+        ephemeralClientOperationServiceImpl.unsubscribeService(service, subscriber, ipPortBasedClientId);
+    }
+
+    @Test(expected = NacosRuntimeException.class)
+    public void testUnSubscribeWhenClientPersistent() {
+        Client persistentClient = new IpPortBasedClient(ipPortBasedClientId, false);
+        when(clientManager.getClient(anyString())).thenReturn(persistentClient);
+        // Excepted exception
+        ephemeralClientOperationServiceImpl.unsubscribeService(service, subscriber, ipPortBasedClientId);
     }
 }
