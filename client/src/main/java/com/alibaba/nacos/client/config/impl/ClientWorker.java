@@ -61,9 +61,9 @@ import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ConnLabelsUtils;
-import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
@@ -580,7 +580,7 @@ public class ClientWorker implements Closeable {
         return agent.isHealthServer();
     }
     
-    private static DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
+    private static final DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
     
     public class ConfigRpcTransportClient extends ConfigTransportClient {
         
@@ -1092,7 +1092,8 @@ public class ClientWorker implements Closeable {
                 Map<String, String> labels = getLabels();
                 Map<String, String> newLabels = new HashMap<>(labels);
                 newLabels.put("taskId", taskId);
-                RpcClientTlsConfig clientTlsConfig = RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties);
+                RpcClientTlsConfig clientTlsConfig = RpcClientTlsConfigFactory.getInstance()
+                        .createSdkConfig(properties);
                 RpcClient rpcClient = RpcClientFactory.createClient(uuid + "_config-" + taskId, getConnectionType(),
                         newLabels, clientTlsConfig);
                 if (rpcClient.isWaitInitiated()) {
@@ -1100,7 +1101,7 @@ public class ClientWorker implements Closeable {
                     rpcClient.setTenant(getTenant());
                     rpcClient.start();
                 }
-                
+    
                 return rpcClient;
             }
             
