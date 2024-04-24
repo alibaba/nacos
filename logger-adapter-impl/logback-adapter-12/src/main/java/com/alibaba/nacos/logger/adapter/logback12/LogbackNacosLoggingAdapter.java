@@ -20,7 +20,6 @@ import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.LoggerContextListener;
-import ch.qos.logback.core.CoreConstants;
 import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
 import com.alibaba.nacos.common.logging.NacosLoggingProperties;
 import com.alibaba.nacos.common.utils.ResourceUtils;
@@ -91,7 +90,7 @@ public class LogbackNacosLoggingAdapter implements NacosLoggingAdapter {
         String location = loggingProperties.getLocation();
         configurator.setLoggingProperties(loggingProperties);
         LoggerContext loggerContext = loadConfigurationOnStart(location);
-        if (loggerContext.getObject(CoreConstants.RECONFIGURE_ON_CHANGE_TASK) != null && hasNoListener(loggerContext)) {
+        if (hasNoListener(loggerContext)) {
             addListener(loggerContext, location);
         }
     }

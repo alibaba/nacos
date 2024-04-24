@@ -72,24 +72,6 @@
             <artifactId>nacos-log4j2-adapter</artifactId>
             <version>${project.version}</version>
         </dependency>
-    
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
-            <optional>true</optional>
-        </dependency>
-    
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-    
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <optional>true</optional>
-        </dependency>
         
         <dependency>
             <artifactId>commons-codec</artifactId>

@@ -71,7 +71,12 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator {
             URLConnection urlConnection = url.openConnection();
             urlConnection.setUseCaches(false);
             in = urlConnection.getInputStream();
-            doConfigure(in, url.toExternalForm());
+            if (hasNewDoConfigureApi()) {
+                doConfigure(in, url.toExternalForm());
+            } else {
+                // adapter old version of logback below 1.1.10
+                doConfigure(in);
+            }
         } catch (IOException ioe) {
             String errMsg = "Could not open URL [" + url + "].";
             addError(errMsg, ioe);
@@ -89,4 +94,17 @@ public class NacosLogbackConfiguratorAdapterV1 extends JoranConfigurator {
         }
     }
     
+    /**
+     * Since logback 1.1.10, Add new doConfigure API with sax systemId and use this API to do configure.
+     *
+     * @return {@code true} when logback is upper 1.1.10, otherwise {@code false}
+     */
+    private boolean hasNewDoConfigureApi() {
+        try {
+            this.getClass().getMethod("doConfigure", InputStream.class, String.class);
+            return true;
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
 }
