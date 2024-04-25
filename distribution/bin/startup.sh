@@ -89,7 +89,9 @@ export CUSTOM_SEARCH_LOCATIONS=file:${BASE_DIR}/conf/
 # JVM Configuration
 #===========================================================================================
 if [[ "${MODE}" == "standalone" ]]; then
-    if [[ "${DISABLE_NACOS_DEFAULT_MEMORY_SETTING,,}" != "true" ]]; then
+    if [[ -n "${CUSTOM_NACOS_MEMORY}" ]]; then
+        JAVA_OPT="${JAVA_OPT} ${CUSTOM_NACOS_MEMORY}"
+    else
         JAVA_OPT="${JAVA_OPT} -Xms512m -Xmx512m -Xmn256m"
     fi
     JAVA_OPT="${JAVA_OPT} -Dnacos.standalone=true"
@@ -98,7 +100,9 @@ else
         JAVA_OPT="${JAVA_OPT} -DembeddedStorage=true"
     fi
     JAVA_OPT="${JAVA_OPT} -server"
-    if [[ "${DISABLE_NACOS_DEFAULT_MEMORY_SETTING,,}" != "true" ]]; then
+    if [[ -n "${CUSTOM_NACOS_MEMORY}" ]]; then
+        JAVA_OPT="${JAVA_OPT} ${CUSTOM_NACOS_MEMORY}"
+    else
         JAVA_OPT="${JAVA_OPT} -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
     fi
     JAVA_OPT="${JAVA_OPT} -XX:-OmitStackTraceInFastThrow -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${BASE_DIR}/logs/java_heapdump.hprof"
