@@ -124,6 +124,25 @@ public interface ConfigInfoAggrMapper extends Mapper {
         
         return new MapperResult(sql, paramList);
     }
+
+    /**
+     * find the count of config info. The default sql: SELECT count(*) 
+     * FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=?
+     *
+     * @param context The context of data_id, group_id, tenant_id
+     * @return The count of config info.
+     */
+    default MapperResult findConfigInfoAggrByPageCountRows(MapperContext context) {
+        final String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
+        final String group = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
+        final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
+        final List<Object> paramList = new ArrayList<>();
+        paramList.add(dataId);
+        paramList.add(group);
+        paramList.add(tenantId);
+        final String sqlCount = "SELECT count(*) FROM config_info_aggr WHERE data_id=? AND group_id=? AND tenant_id=?";
+        return new MapperResult(sqlCount, paramList);
+    }
     
     /**
      * Query aggregation config info.

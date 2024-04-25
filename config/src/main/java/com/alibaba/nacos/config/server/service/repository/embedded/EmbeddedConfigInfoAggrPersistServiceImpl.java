@@ -166,9 +166,6 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
         final int startRow = (pageNo - 1) * pageSize;
-        final String sqlCountRows = configInfoAggrMapper.select(Collections.singletonList("count(*)"),
-                Arrays.asList("data_id", "group_id", "tenant_id"));
-        
         MapperContext context = new MapperContext();
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
         context.putWhereParameter(FieldConstant.GROUP_ID, group);
@@ -176,11 +173,15 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         context.setStartRow(startRow);
         context.setPageSize(pageSize);
         MapperResult mapperResult = configInfoAggrMapper.findConfigInfoAggrByPageFetchRows(context);
+        MapperResult countMapperResult = configInfoAggrMapper.findConfigInfoAggrByPageCountRows(context);
+        String sqlCountRows = countMapperResult.getSql();
+        Object[] sqlCountArgs = countMapperResult.getParamList().toArray();
+        
         String sqlFetchRows = mapperResult.getSql();
         Object[] sqlFetchArgs = mapperResult.getParamList().toArray();
         
         PaginationHelper<ConfigInfoAggr> helper = createPaginationHelper();
-        return helper.fetchPageLimit(sqlCountRows, new Object[] {dataId, group, tenantTmp}, sqlFetchRows, sqlFetchArgs,
+        return helper.fetchPageLimit(sqlCountRows, sqlCountArgs, sqlFetchRows, sqlFetchArgs,
                 pageNo, pageSize, CONFIG_INFO_AGGR_ROW_MAPPER);
     }
 
