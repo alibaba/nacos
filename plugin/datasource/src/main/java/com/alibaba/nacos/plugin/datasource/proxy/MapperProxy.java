@@ -43,7 +43,15 @@ public class MapperProxy implements InvocationHandler {
     
     public <R> R createProxy(Mapper mapper) {
         this.mapper = mapper;
-        return (R) Proxy.newProxyInstance(MapperProxy.class.getClassLoader(), mapper.getClass().getInterfaces(), this);
+        Class<?> clazz = mapper.getClass();
+        while (clazz.getInterfaces().length == 0) {
+            if (clazz.getSuperclass().equals(Object.class)) {
+                break;
+            }
+            clazz = clazz.getSuperclass();
+        }
+        Class<?>[] interfaces = clazz.getInterfaces();
+        return (R) Proxy.newProxyInstance(MapperProxy.class.getClassLoader(), interfaces, this);
     }
     
     /**
