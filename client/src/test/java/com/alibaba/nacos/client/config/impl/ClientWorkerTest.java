@@ -101,7 +101,7 @@ public class ClientWorkerTest {
                         any(RpcClientTlsConfig.class))).thenReturn(rpcClient);
         rpcClientFactoryMockedStatic.when(
                 () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
-                        any(Properties.class), any(RpcClientTlsConfig.class))).thenReturn(rpcClient);
+                        any(RpcClientTlsConfig.class))).thenReturn(rpcClient);
         localConfigInfoProcessorMockedStatic = Mockito.mockStatic(LocalConfigInfoProcessor.class);
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.NAMESPACE, TEST_NAMESPACE);
@@ -149,8 +149,8 @@ public class ClientWorkerTest {
             public void receiveConfigInfo(String configInfo) {
             }
         };
-        
-        clientWorker.addListeners(dataId, group, Arrays.asList(listener));
+    
+        clientWorker.addListeners(dataId, group, Collections.singletonList(listener));
         List<Listener> listeners = clientWorker.getCache(dataId, group).getListeners();
         Assert.assertEquals(1, listeners.size());
         Assert.assertEquals(listener, listeners.get(0));
@@ -180,8 +180,8 @@ public class ClientWorkerTest {
         
         String dataId = "a";
         String group = "b";
-        
-        clientWorker.addTenantListeners(dataId, group, Arrays.asList(listener));
+    
+        clientWorker.addTenantListeners(dataId, group, Collections.singletonList(listener));
         List<Listener> listeners = clientWorker.getCache(dataId, group).getListeners();
         Assert.assertEquals(1, listeners.size());
         Assert.assertEquals(listener, listeners.get(0));
@@ -191,7 +191,7 @@ public class ClientWorkerTest {
         Assert.assertEquals(0, listeners.size());
         
         String content = "d";
-        clientWorker.addTenantListenersWithContent(dataId, group, content, null, Arrays.asList(listener));
+        clientWorker.addTenantListenersWithContent(dataId, group, content, null, Collections.singletonList(listener));
         listeners = clientWorker.getCache(dataId, group).getListeners();
         Assert.assertEquals(1, listeners.size());
         Assert.assertEquals(listener, listeners.get(0));
@@ -418,10 +418,10 @@ public class ClientWorkerTest {
         String metricValues = jsonNode.get("metricValues")
                 .get(ClientConfigMetricRequest.MetricsKey.build(ClientConfigMetricRequest.MetricsKey.CACHE_DATA,
                         GroupKey.getKeyTenant(dataId, group, tenant)).toString()).textValue();
-        
-        int colonIndex = metricValues.toString().lastIndexOf(":");
+    
+        int colonIndex = metricValues.lastIndexOf(":");
         Assert.assertEquals(content, metricValues.substring(0, colonIndex));
-        Assert.assertEquals(md5, metricValues.substring(colonIndex + 1, metricValues.toString().length()));
+        Assert.assertEquals(md5, metricValues.substring(colonIndex + 1, metricValues.length()));
         
     }
     
@@ -441,7 +441,7 @@ public class ClientWorkerTest {
         Mockito.when(rpcClient.request(any(ConfigQueryRequest.class), anyLong())).thenReturn(configQueryResponse);
         
         ConfigResponse configResponse = clientWorker.getServerConfig(dataId, group, tenant, 100, true);
-        Assert.assertEquals(null, configResponse.getContent());
+        Assert.assertNull(configResponse.getContent());
         localConfigInfoProcessorMockedStatic.verify(
                 () -> LocalConfigInfoProcessor.saveSnapshot(eq(clientWorker.getAgentName()), eq(dataId), eq(group),
                         eq(tenant), eq(null)), times(1));
@@ -476,7 +476,7 @@ public class ClientWorkerTest {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
-        
+    
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         clientWorker.shutdown();
@@ -485,8 +485,8 @@ public class ClientWorkerTest {
         ConfigTransportClient o = (ConfigTransportClient) agent1.get(clientWorker);
         Assert.assertTrue(o.executor.isShutdown());
         agent1.setAccessible(false);
-        
-        Assert.assertEquals(null, clientWorker.getAgentName());
+    
+        Assert.assertNull(clientWorker.getAgentName());
     }
     
     @Test
@@ -552,13 +552,13 @@ public class ClientWorkerTest {
         configContext.setGroup(group);
         configContext.setTenant(tenant);
         ConfigChangeBatchListenResponse response = new ConfigChangeBatchListenResponse();
-        response.setChangedConfigs(Arrays.asList(configContext));
+        response.setChangedConfigs(Collections.singletonList(configContext));
         
         RpcClient rpcClientInner = Mockito.mock(RpcClient.class);
         Mockito.when(rpcClientInner.isWaitInitiated()).thenReturn(true, false);
         rpcClientFactoryMockedStatic.when(
                 () -> RpcClientFactory.createClient(anyString(), any(ConnectionType.class), any(Map.class),
-                        any(Properties.class), any(RpcClientTlsConfig.class))).thenReturn(rpcClientInner);
+                        any(RpcClientTlsConfig.class))).thenReturn(rpcClientInner);
         // mock listen and remove listen request
         Mockito.when(rpcClientInner.request(any(ConfigBatchListenRequest.class), anyLong()))
                 .thenReturn(response, response);
@@ -620,20 +620,20 @@ public class ClientWorkerTest {
         Properties prop = new Properties();
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
         ServerListManager agent = Mockito.mock(ServerListManager.class);
-        
+    
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         ClientWorker.ConfigRpcTransportClient client = Mockito.mock(ClientWorker.ConfigRpcTransportClient.class);
         Mockito.when(client.isHealthServer()).thenReturn(Boolean.TRUE);
-        
+    
         Field declaredField = ClientWorker.class.getDeclaredField("agent");
         declaredField.setAccessible(true);
         declaredField.set(clientWorker, client);
-        
-        Assert.assertEquals(true, clientWorker.isHealthServer());
-        
+    
+        Assert.assertTrue(clientWorker.isHealthServer());
+    
         Mockito.when(client.isHealthServer()).thenReturn(Boolean.FALSE);
-        Assert.assertEquals(false, clientWorker.isHealthServer());
+        assertFalse(clientWorker.isHealthServer());
     }
     
     @Test
