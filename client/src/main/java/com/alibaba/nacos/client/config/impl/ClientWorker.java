@@ -129,6 +129,8 @@ public class ClientWorker implements Closeable {
      */
     private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<>(new HashMap<>());
     
+    private final DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
+    
     private Map<String, String> appLables = new HashMap<>();
     
     private final ConfigFilterChainManager configFilterChainManager;
@@ -579,8 +581,6 @@ public class ClientWorker implements Closeable {
     public boolean isHealthServer() {
         return agent.isHealthServer();
     }
-    
-    private static final DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
     
     public class ConfigRpcTransportClient extends ConfigTransportClient {
         
