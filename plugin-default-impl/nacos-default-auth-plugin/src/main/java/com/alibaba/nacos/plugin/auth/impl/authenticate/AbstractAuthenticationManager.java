@@ -133,9 +133,4 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
         nacosUser.setGlobalAdmin(hasGlobalAdminRole(nacosUser.getUserName()));
         return nacosUser.isGlobalAdmin();
     }
-    
-    @Override
-    public boolean hasTmpAdminRole(String username) {
-        return StringUtils.isNotBlank(username) && roleService.hasTmpAdminRole(username);
-    }
 }

@@ -164,13 +164,9 @@ public class NacosAuthManager {
         user.setUserName(username);
         user.setToken(token);
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
-        boolean hasGlobalAdminRole = roleService.hasGlobalAdminRole();
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (hasGlobalAdminRole && roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
-                    user.setGlobalAdmin(true);
-                    break;
-                } else if (roleInfo.getRole().equals(AuthConstants.GLOBAL_TMP_ADMIN_ROLE)) {
+                if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
                     user.setGlobalAdmin(true);
                     break;
                 }

@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -36,6 +37,7 @@ import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -110,20 +112,26 @@ public class UserController {
     }
     
     /**
-     * Create a tmp user only no admin user can use.
+     * Create a admin user only not exist admin user can use.
      */
-    @PostMapping("/createTmpUser")
-    public Object createTmpUser(@RequestParam(required = false) String username,
+    @PostMapping("/admin")
+    public Object createAdminUser(@RequestParam(required = false) String username,
             @RequestParam(required = false) String password) {
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             if (roleService.hasGlobalAdminRole()) {
                 return RestResultUtils.failed("have admin user cannot use it");
             }
-            User tmpUser = userDetailsService.createTmpUser(username, password);
-            roleService.addTmpAdminRole(username);
+            if (StringUtils.isBlank(password)) {
+                password = PasswordGeneratorUtil.generateRandomPassword();
+            }
+            if (StringUtils.isBlank(username)) {
+                username = AuthConstants.DEFAULT_USER;
+            }
+            userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
+            roleService.addAdminRole(username);
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
-            result.put(AuthConstants.PARAM_USERNAME, tmpUser.getUsername());
-            result.put(AuthConstants.PARAM_PASSWORD, tmpUser.getPassword());
+            result.put(AuthConstants.PARAM_USERNAME, username);
+            result.put(AuthConstants.PARAM_PASSWORD, password);
             return result;
         } else {
             return RestResultUtils.failed("not support");
@@ -143,8 +151,7 @@ public class UserController {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())
-                        || AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole())) {
+                if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
                     throw new IllegalArgumentException("cannot delete admin: " + username);
                 }
             }
@@ -255,12 +262,13 @@ public class UserController {
      */
     @PostMapping("/login")
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
-            HttpServletRequest request) throws AccessException {
+            HttpServletRequest request) throws AccessException, IOException {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            if (!iAuthenticationManager.hasGlobalAdminRole() && !iAuthenticationManager.hasTmpAdminRole(username)) {
-                return RestResultUtils.failed(AuthConstants.GLOBAL_ADMIN_ROLE + " role user not exist!");
+            if (!iAuthenticationManager.hasGlobalAdminRole()) {
+                response.sendError(HttpServletResponse.SC_PRECONDITION_FAILED, "admin role user not exist");
+                return null;
             }
             NacosUser user = iAuthenticationManager.authenticate(request);
             
@@ -270,7 +278,6 @@ public class UserController {
             result.put(Constants.ACCESS_TOKEN, user.getToken());
             result.put(Constants.TOKEN_TTL, jwtTokenManager.getTokenTtlInSeconds(user.getToken()));
             result.put(Constants.GLOBAL_ADMIN, iAuthenticationManager.hasGlobalAdminRole(user));
-            result.put(Constants.GLOBAL_TMP_ADMIN, iAuthenticationManager.hasTmpAdminRole(username));
             result.put(Constants.USERNAME, user.getUserName());
             return result;
         }

@@ -18,13 +18,11 @@ package com.alibaba.nacos.plugin.auth.impl.users;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.plugin.auth.impl.constant.AuthConstants;
+
 import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
 import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
-import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -114,26 +112,6 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     
     public void createUser(String username, String password) {
         userPersistService.createUser(username, password);
-    }
-    
-    /**
-     * createTmpUser.
-     *
-     * @param username username
-     * @return
-     */
-    public User createTmpUser(String username, String password) {
-        if (StringUtils.isBlank(password)) {
-            password = PasswordGeneratorUtil.generateRandomPassword();
-        }
-        if (StringUtils.isBlank(username)) {
-            username = AuthConstants.TMP_USER;
-        }
-        userPersistService.createUser(username, PasswordEncoderUtil.encode(password));
-        User user = new User();
-        user.setPassword(password);
-        user.setUsername(username);
-        return user;
     }
     
     public void deleteUser(String username) {

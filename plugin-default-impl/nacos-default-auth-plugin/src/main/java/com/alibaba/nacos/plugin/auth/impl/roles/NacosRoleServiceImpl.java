@@ -130,13 +130,9 @@ public class NacosRoleServiceImpl {
             return false;
         }
         
-        boolean hasGlobalAdminRole = hasGlobalAdminRole();
         // Global admin pass:
         for (RoleInfo roleInfo : roleInfoList) {
-            if (hasGlobalAdminRole && AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
-                nacosUser.setGlobalAdmin(true);
-                return true;
-            } else if (AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole())) {
+            if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
                 nacosUser.setGlobalAdmin(true);
                 return true;
             }
@@ -227,49 +223,30 @@ public class NacosRoleServiceImpl {
             throw new IllegalArgumentException("user '" + username + "' not found!");
         }
         
-        if (hasTmpAdminRole(username)) {
-            throw new IllegalArgumentException("tmp user is not permitted to bind!");
-        }
-        
         if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(role)) {
-            if (hasGlobalAdminRole()) {
-                throw new IllegalArgumentException(
-                        "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
-            } else {
-                //delete tmp admin user
-                deleteTmpAdminUser();
-                rolePersistService.addRole(role, username);
-                roleSet.add(role);
-                authConfigs.setHasGlobalAdminRole(true);
-                return;
-            }
-            
-        } else if (AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(role)) {
             throw new IllegalArgumentException(
-                    "role '" + AuthConstants.GLOBAL_TMP_ADMIN_ROLE + "' is not permitted to create!");
+                    "role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' is not permitted to create!");
         }
-        
         rolePersistService.addRole(role, username);
         roleSet.add(role);
     }
     
-    private void deleteTmpAdminUser() {
-        List<RoleInfo> roles = getAllRoles();
-        roles.stream().filter(roleInfo -> AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole()))
-                .forEach(tmpUser -> {
-                    userDetailsService.deleteUser(tmpUser.getUsername());
-                });
-        rolePersistService.deleteRole(AuthConstants.GLOBAL_TMP_ADMIN_ROLE);
-    }
-    
     /**
-     * Add tmp admin role.
+     * Add role.
      *
      * @param username user name
      */
-    public void addTmpAdminRole(String username) {
-        rolePersistService.addRole(AuthConstants.GLOBAL_TMP_ADMIN_ROLE, username);
-        roleSet.add(AuthConstants.GLOBAL_TMP_ADMIN_ROLE);
+    public void addAdminRole(String username) {
+        if (userDetailsService.getUserFromDatabase(username) == null) {
+            throw new IllegalArgumentException("user '" + username + "' not found!");
+        }
+        if (hasGlobalAdminRole()) {
+            throw new IllegalArgumentException("role '" + AuthConstants.GLOBAL_ADMIN_ROLE + "' already exist !");
+        }
+        
+        rolePersistService.addRole(AuthConstants.GLOBAL_ADMIN_ROLE, username);
+        roleSet.add(AuthConstants.GLOBAL_ADMIN_ROLE);
+        authConfigs.setHasGlobalAdminRole(true);
     }
     
     /**
@@ -279,10 +256,6 @@ public class NacosRoleServiceImpl {
      * @param userName userName
      */
     public void deleteRole(String role, String userName) {
-        if (AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(role)) {
-            throw new IllegalArgumentException(
-                    "role '" + AuthConstants.GLOBAL_TMP_ADMIN_ROLE + "' is not permitted to delete!");
-        }
         rolePersistService.deleteRole(role, userName);
     }
     
@@ -292,10 +265,6 @@ public class NacosRoleServiceImpl {
      * @param role role
      */
     public void deleteRole(String role) {
-        if (AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(role)) {
-            throw new IllegalArgumentException(
-                    "role '" + AuthConstants.GLOBAL_TMP_ADMIN_ROLE + "' is not permitted to delete!");
-        }
         rolePersistService.deleteRole(role);
         roleSet.remove(role);
     }
@@ -374,11 +343,8 @@ public class NacosRoleServiceImpl {
      */
     public boolean hasGlobalAdminRole(String userName) {
         List<RoleInfo> roles = getRoles(userName);
-        if (hasGlobalAdminRole()) {
-            return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
-        } else {
-            return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole()));
-        }
+        
+        return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
     }
     
     /**
@@ -395,18 +361,6 @@ public class NacosRoleServiceImpl {
                 .anyMatch(roleInfo -> AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole()));
         authConfigs.setHasGlobalAdminRole(hasGlobalAdminRole);
         return hasGlobalAdminRole;
-    }
-    
-    /**
-     * check if user has Tmp admin role.
-     *
-     * @param userName user name
-     * @return true if user has Tmp admin role.
-     */
-    public boolean hasTmpAdminRole(String userName) {
-        List<RoleInfo> roles = getRoles(userName);
-        
-        return roles.stream().anyMatch(roleInfo -> AuthConstants.GLOBAL_TMP_ADMIN_ROLE.equals(roleInfo.getRole()));
     }
     
 }

@@ -89,12 +89,4 @@ public interface IAuthenticationManager {
      * @return if the user has the administrator role.
      */
     boolean hasGlobalAdminRole(NacosUser nacosUser);
-    
-    /**
-     * Whether the user has the tmp administrator role.
-     *
-     * @param username nacos user name
-     * @return if the user has the tmp administrator role.
-     */
-    boolean hasTmpAdminRole(String username);
 }

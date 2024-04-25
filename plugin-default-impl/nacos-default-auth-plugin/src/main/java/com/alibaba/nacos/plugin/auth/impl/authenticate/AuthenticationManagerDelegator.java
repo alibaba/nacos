@@ -81,11 +81,6 @@ public class AuthenticationManagerDelegator implements IAuthenticationManager {
         return getManager().hasGlobalAdminRole(nacosUser);
     }
     
-    @Override
-    public boolean hasTmpAdminRole(String username) {
-        return getManager().hasTmpAdminRole(username);
-    }
-    
     private IAuthenticationManager getManager() {
         if (AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             return ldapAuthenticationManager.getIfAvailable();
