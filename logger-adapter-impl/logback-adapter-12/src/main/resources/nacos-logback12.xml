@@ -20,6 +20,8 @@
     <nacosClientProperty scope="context" name="logRetainCount" source="JM.LOG.RETAIN.COUNT" defaultValue="7"/>
     <nacosClientProperty scope="context" name="logFileSize" source="JM.LOG.FILE.SIZE" defaultValue="10MB"/>
     <nacosClientProperty scope="context" name="nacosConfigLogLevel" source="com.alibaba.nacos.config.log.level" defaultValue="info"/>
+    <nacosClientProperty scope="context" name="nacosLogLevel" source="com.alibaba.nacos.log.level" defaultValue="info"/>
+    <nacosClientProperty scope="context" name="nacosNamingLogLevel" source="com.alibaba.nacos.naming.log.level" defaultValue="info"/>
     
     
     <appender name="CONFIG_LOG_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -99,12 +101,12 @@
         <appender-ref ref="ASYNC-CONFIG"/>
     </logger>
     
-    <Logger name="com.alibaba.nacos.common.labels" level="${nacosConfigLogLevel}"
+    <Logger name="com.alibaba.nacos.common.labels" level="${nacosLogLevel}"
         additivity="false">
         <appender-ref ref="ASYNC-REMOTE"/>
     </Logger>
     
-    <Logger name="com.alibaba.nacos.common.remote.client" level="${nacosConfigLogLevel}"
+    <Logger name="com.alibaba.nacos.common.remote.client" level="${nacosLogLevel}"
         additivity="false">
         <appender-ref ref="ASYNC-REMOTE"/>
     </Logger>
@@ -119,7 +121,7 @@
         <appender-ref ref="ASYNC-CONFIG"/>
     </logger>
     
-    <logger name="com.alibaba.nacos.client.naming" level="${nacosConfigLogLevel}"
+    <logger name="com.alibaba.nacos.client.naming" level="${nacosNamingLogLevel}"
         additivity="false">
         <appender-ref ref="ASYNC-NAMING"/>
     </logger>
