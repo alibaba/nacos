@@ -34,6 +34,7 @@ import org.springframework.mock.env.MockEnvironment;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
@@ -86,9 +87,10 @@ public class UserControllerTest {
     }
     
     @Test
-    public void testLoginWithAuthedUser() throws AccessException {
+    public void testLoginWithAuthedUser() throws AccessException, IOException {
         when(authenticationManager.authenticate(request)).thenReturn(user);
         when(authenticationManager.hasGlobalAdminRole(user)).thenReturn(true);
+        when(authenticationManager.hasGlobalAdminRole()).thenReturn(true);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());
         when(tokenManagerDelegate.getTokenTtlInSeconds(anyString())).thenReturn(18000L);
         Object actual = userController.login("nacos", "nacos", response, request);

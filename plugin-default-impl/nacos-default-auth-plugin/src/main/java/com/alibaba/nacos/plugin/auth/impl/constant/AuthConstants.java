@@ -35,6 +35,8 @@ public class AuthConstants {
     
     public static final String TOKEN_PREFIX = "Bearer ";
     
+    public static final String DEFAULT_USER = "nacos";
+    
     public static final String PARAM_USERNAME = "username";
     
     public static final String PARAM_PASSWORD = "password";
