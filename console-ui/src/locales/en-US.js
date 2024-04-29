@@ -458,6 +458,7 @@ const I18N_CONF = {
     dialogCurrentArea: 'Current Value',
     dialogOriginalArea: 'Original Value',
     publishFailed403: 'Publish failed. No operation permission',
+    publishCasFailed: 'Publish failed. Changes configuration conflict',
     namespace: 'Namespace',
   },
   EditorNameSpace: {

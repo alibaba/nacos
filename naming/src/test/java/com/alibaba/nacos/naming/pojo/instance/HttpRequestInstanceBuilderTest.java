@@ -21,12 +21,14 @@ import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
+import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.core.env.StandardEnvironment;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -54,6 +56,7 @@ public class HttpRequestInstanceBuilderTest {
     @BeforeClass
     public static void setUpBeforeClass() {
         NacosServiceLoader.load(InstanceExtensionHandler.class);
+        EnvUtil.setEnvironment(new StandardEnvironment());
     }
     
     @Before

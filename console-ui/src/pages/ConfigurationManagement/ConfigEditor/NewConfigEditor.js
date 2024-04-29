@@ -71,6 +71,7 @@ class ConfigEditor extends React.Component {
       isNewConfig: true,
       betaPublishSuccess: false,
       betaIps: '',
+      casMd5: '',
       tabActiveKey: '',
       form: {
         dataId: '', // 配置 ID
@@ -248,6 +249,7 @@ class ConfigEditor extends React.Component {
     if (beta) {
       headers.betaIps = betaIps;
     }
+    headers.casMd5 = this.state.casMd5;
     const form = { ...this.state.form, content: this.getCodeVal(), betaIps };
     const payload = {};
     Object.keys(form).forEach(key => {
@@ -280,6 +282,14 @@ class ConfigEditor extends React.Component {
         if (error.status && error.status === 403) {
           Dialog.alert({
             content: this.props.locale.publishFailed403,
+          });
+        } else if (
+          error.status &&
+          error.status === 500 &&
+          error.data.includes('Cas publish fail')
+        ) {
+          Dialog.alert({
+            content: this.props.locale.publishCasFailed,
           });
         }
       }
@@ -389,13 +399,14 @@ class ConfigEditor extends React.Component {
     return request.get('v1/cs/configs', { params }).then(res => {
       const form = beta ? res.data : res;
       if (!form) return false;
-      const { type, content, configTags, betaIps } = form;
+      const { type, content, configTags, betaIps, md5 } = form;
       this.setState({ betaIps });
       this.changeForm({ ...form, config_tags: configTags ? configTags.split(',') : [] });
       this.initMoacoEditor(type, content);
       this.codeVal = content;
       this.setState({
         tagDataSource: this.state.form.config_tags,
+        casMd5: md5,
       });
       return res;
     });

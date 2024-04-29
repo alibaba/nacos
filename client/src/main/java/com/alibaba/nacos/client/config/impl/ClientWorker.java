@@ -693,7 +693,8 @@ public class ClientWorker implements Closeable {
              */
             rpcClientInner.registerServerRequestHandler((request, connection) -> {
                 if (request instanceof ConfigChangeNotifyRequest) {
-                    handleConfigChangeNotifyRequest((ConfigChangeNotifyRequest) request, rpcClientInner.getName());
+                    return handleConfigChangeNotifyRequest((ConfigChangeNotifyRequest) request,
+                            rpcClientInner.getName());
                 }
                 return null;
             });

@@ -143,8 +143,8 @@ public class ConfigInfoMapperByMySqlTest {
     public void testFindAllConfigInfoBaseFetchRows() {
         MapperResult mapperResult = configInfoMapperByMySql.findAllConfigInfoBaseFetchRows(context);
         Assert.assertEquals(mapperResult.getSql(),
-                "SELECT t.id,data_id,group_id,content,md5 FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?"
-                        + "  )  g, config_info t  WHERE g.id = t.id ");
+                "SELECT t.id,data_id,group_id,content,md5 FROM ( SELECT id FROM config_info ORDER BY id LIMIT " + context.getStartRow() + ","
+                        + context.getPageSize() + " ) g, config_info t  WHERE g.id = t.id ");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
