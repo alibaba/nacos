@@ -16,11 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
-import com.alibaba.nacos.plugin.datasource.impl.TestInterface;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.impl.TestInterface;
 import com.alibaba.nacos.plugin.datasource.impl.base.BaseConfigInfoMapper;
-import com.alibaba.nacos.plugin.datasource.model.MapperContext;
-import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 
 /**
  * Implement interfaces other than Mapper. just for test
