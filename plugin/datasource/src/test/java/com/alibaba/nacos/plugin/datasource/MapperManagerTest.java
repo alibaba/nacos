@@ -17,7 +17,10 @@
 package com.alibaba.nacos.plugin.datasource;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.*;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
+import com.alibaba.nacos.plugin.datasource.mapper.TestMapper;
 import org.junit.Assert;
 import org.junit.Test;
 
