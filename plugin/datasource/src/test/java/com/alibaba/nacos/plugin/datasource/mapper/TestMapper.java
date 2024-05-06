@@ -28,7 +28,7 @@ public class TestMapper extends ConfigInfoAggrMapperByMySql implements TestInter
 
     @Override
     public String getTableName() {
-        return "test";
+        return "enable_data_source_log_test";
     }
 
     @Override

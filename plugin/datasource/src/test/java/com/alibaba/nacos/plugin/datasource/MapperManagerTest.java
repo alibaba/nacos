@@ -76,7 +76,7 @@ public class MapperManagerTest {
     public void testEnableDataSourceLogJoin() {
         MapperManager.join(new TestMapper());
         MapperManager instance = MapperManager.instance(true);
-        ConfigInfoAggrMapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "test");
+        ConfigInfoAggrMapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "enable_data_source_log_test");
         Assert.assertNotNull(mapper);
     }
 
