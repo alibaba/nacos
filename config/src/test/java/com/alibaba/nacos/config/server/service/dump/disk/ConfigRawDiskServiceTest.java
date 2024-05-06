@@ -33,6 +33,7 @@ public class ConfigRawDiskServiceTest extends TestCase {
     @Before
     public void setUp() throws Exception {
         cachedOsName = System.getProperty("os.name");
+        System.setProperty("os.name", "window");
     }
     
     @After
@@ -41,10 +42,9 @@ public class ConfigRawDiskServiceTest extends TestCase {
     }
     
     /**
-     * 测试获取beta文件路径.
+     * 测试获取文件路径.
      */
     public void testTargetFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        System.setProperty("os.name", "window");
         Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class, String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa\\dsaknkf", "aaaa/dsaknkf", "aaaa:dsaknkf");
@@ -65,7 +65,6 @@ public class ConfigRawDiskServiceTest extends TestCase {
      * 测试获取beta文件路径.
      */
     public void testTargetBetaFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        System.setProperty("os.name", "window");
         Method method = ConfigRawDiskService.class.getDeclaredMethod("targetBetaFile", String.class, String.class, String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa\\dsaknkf", "aaaa/dsaknkf", "aaaa:dsaknkf");
@@ -90,7 +89,6 @@ public class ConfigRawDiskServiceTest extends TestCase {
      * @throws InvocationTargetException 目标异常
      */
     public void testTargetTagFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        System.setProperty("os.name", "window");
         Method method = ConfigRawDiskService.class.getDeclaredMethod("targetTagFile", String.class, String.class, String.class, String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa\\dsaknkf", "aaaa/dsaknkf", "aaaa:dsaknkf", "aaaadsaknkf");
