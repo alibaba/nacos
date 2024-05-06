@@ -64,13 +64,16 @@
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-logback-adapter-12</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+    
+        <dependency>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>logback-adapter</artifactId>
         </dependency>
     
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-log4j2-adapter</artifactId>
-            <version>${project.version}</version>
         </dependency>
         
         <dependency>
