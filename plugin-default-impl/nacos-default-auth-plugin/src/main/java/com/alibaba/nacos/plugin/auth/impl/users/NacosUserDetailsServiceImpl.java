@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.users;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.StringUtils;
+
 import com.alibaba.nacos.plugin.auth.impl.persistence.UserPersistService;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.impl.persistence.User;
@@ -116,7 +117,7 @@ public class NacosUserDetailsServiceImpl implements UserDetailsService {
     public void deleteUser(String username) {
         userPersistService.deleteUser(username);
     }
-
+    
     public Page<User> findUsersLike4Page(String username, int pageNo, int pageSize) {
         return userPersistService.findUsersLike4Page(username, pageNo, pageSize);
     }

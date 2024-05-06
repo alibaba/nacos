@@ -76,6 +76,13 @@ public interface IAuthenticationManager {
     boolean hasGlobalAdminRole(String username);
     
     /**
+     * Whether the user exist the administrator role.
+     *
+     * @return if the user exist the administrator role.
+     */
+    boolean hasGlobalAdminRole();
+    
+    /**
      * Whether the user has the administrator role.
      *
      * @param nacosUser nacos user name
