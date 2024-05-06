@@ -18,7 +18,7 @@ package com.alibaba.nacos.plugin.datasource;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
-import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TestMapper;
 import org.junit.Assert;
@@ -76,7 +76,7 @@ public class MapperManagerTest {
     public void testEnableDataSourceLogJoin() {
         MapperManager.join(new TestMapper());
         MapperManager instance = MapperManager.instance(true);
-        ConfigInfoMapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "test");
+        ConfigInfoAggrMapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "test");
         Assert.assertNotNull(mapper);
     }
 

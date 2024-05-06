@@ -18,13 +18,13 @@ package com.alibaba.nacos.plugin.datasource.mapper;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.impl.TestInterface;
-import com.alibaba.nacos.plugin.datasource.impl.base.BaseConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoAggrMapperByMySql;
 
 /**
  * Implement interfaces other than Mapper. just for test
  * @author mikolls
  **/
-public class TestMapper extends BaseConfigInfoMapper implements TestInterface {
+public class TestMapper extends ConfigInfoAggrMapperByMySql implements TestInterface {
 
     @Override
     public String getTableName() {
