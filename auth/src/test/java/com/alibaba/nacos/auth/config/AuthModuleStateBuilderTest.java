@@ -57,5 +57,6 @@ public class AuthModuleStateBuilderTest {
         assertFalse((Boolean) actual.getStates().get(AUTH_ENABLED));
         assertFalse((Boolean) actual.getStates().get("login_page_enabled"));
         assertEquals("nacos", actual.getStates().get("auth_system_type"));
+        assertFalse((Boolean) actual.getStates().get("auth_admin_exist"));
     }
 }

@@ -39,6 +39,8 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
     
     public static final String AUTH_SYSTEM_TYPE = "auth_system_type";
     
+    public static final String AUTH_ADMIN_EXIST = "auth_admin_exist";
+    
     @Override
     public ModuleState build() {
         ModuleState result = new ModuleState(AUTH_MODULE);
@@ -46,6 +48,7 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
         result.newState(AUTH_ENABLED, authConfigs.isAuthEnabled());
         result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfigs));
         result.newState(AUTH_SYSTEM_TYPE, authConfigs.getNacosAuthSystemType());
+        result.newState(AUTH_ADMIN_EXIST, authConfigs.isHasGlobalAdminRole());
         return result;
     }
     

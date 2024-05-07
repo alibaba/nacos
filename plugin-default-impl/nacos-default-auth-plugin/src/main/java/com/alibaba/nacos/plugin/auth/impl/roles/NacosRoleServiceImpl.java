@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -75,6 +76,11 @@ public class NacosRoleServiceImpl {
     private volatile Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
     
     private volatile Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
+    
+    @PostConstruct
+    private void init() {
+        hasGlobalAdminRole();
+    }
     
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
