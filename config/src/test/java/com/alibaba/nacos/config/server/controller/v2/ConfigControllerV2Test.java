@@ -104,6 +104,8 @@ public class ConfigControllerV2Test {
     
     private static final String TEST_CONTENT = "test config";
     
+    private static final String TEST_ENCRYPTED_DATA_KEY = "test_encrypted_data_key";
+    
     @Before
     public void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
@@ -152,6 +154,28 @@ public class ConfigControllerV2Test {
         
         when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
                 anyString())).thenReturn(true);
+        
+        Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
+        
+        verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString());
+        
+        assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
+        assertEquals(true, booleanResult.getData());
+    }
+    
+    @Test
+    public void testPublishConfigWithEncryptedDataKey() throws Exception {
+        
+        ConfigForm configForm = new ConfigForm();
+        configForm.setDataId(TEST_DATA_ID);
+        configForm.setGroup(TEST_GROUP);
+        configForm.setNamespaceId(TEST_NAMESPACE_ID);
+        configForm.setContent(TEST_CONTENT);
+        configForm.setEncryptedDataKey(TEST_ENCRYPTED_DATA_KEY);
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        
+        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
+                eq(TEST_ENCRYPTED_DATA_KEY))).thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
