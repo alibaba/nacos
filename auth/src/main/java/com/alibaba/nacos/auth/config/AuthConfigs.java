@@ -78,7 +78,7 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE + ":false}")
     private boolean enableUserAgentAuthWhite;
     
-    private boolean hasGlobalAdminRole;
+    private boolean hasGlobalAdminRole = false;
     
     private Map<String, Properties> authPluginProperties = new HashMap<>();
     
