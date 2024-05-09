@@ -35,6 +35,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.io.File;
 import java.util.HashMap;
@@ -87,6 +88,7 @@ public class ConnectionManagerTest {
     
     @Before
     public void setUp() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         // create base file path
         File baseDir = new File(EnvUtil.getNacosHome(), "data");
         if (!baseDir.exists()) {

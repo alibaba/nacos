@@ -118,9 +118,13 @@ public class ConfigControllerV2 {
     public Result<Boolean> publishConfig(ConfigForm configForm, HttpServletRequest request) throws NacosException {
         // check required field
         configForm.validate();
-        // encrypted
-        Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(), configForm.getContent());
-        configForm.setContent(pair.getSecond());
+        String encryptedDataKeyFinal = configForm.getEncryptedDataKey();
+        if (StringUtils.isBlank(encryptedDataKeyFinal)) {
+            // encrypted
+            Pair<String, String> pair = EncryptionHandler.encryptHandler(configForm.getDataId(), configForm.getContent());
+            configForm.setContent(pair.getSecond());
+            encryptedDataKeyFinal = pair.getFirst();
+        }
         //fix issue #9783
         configForm.setNamespaceId(NamespaceUtil.processNamespaceParameter(configForm.getNamespaceId()));
         // check param
@@ -134,16 +138,14 @@ public class ConfigControllerV2 {
         if (!ConfigType.isValidType(configForm.getType())) {
             configForm.setType(ConfigType.getDefaultType().getType());
         }
-    
+        
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
         configRequestInfo.setCasMd5(request.getHeader("casMd5"));
-    
-        String encryptedDataKey = pair.getFirst();
-    
-        return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKey));
+        
+        return Result.success(configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal));
     }
     
     /**

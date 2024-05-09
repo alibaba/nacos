@@ -259,6 +259,8 @@ class ConfigEditor extends React.Component {
     if (configTags.length > 0) {
       payload.config_tags = configTags.join(',');
     }
+    // #12046 console-ui should not offer encryptedDataKey field to API
+    payload.encryptedDataKey = '';
     const stringify = require('qs/lib/stringify');
     this.setState({ loading: true });
     return request({
