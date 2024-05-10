@@ -31,27 +31,31 @@ import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.gprc.NamingGrpcClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NamingClientProxyDelegateTest {
+@ExtendWith(MockitoExtension.class)
+class NamingClientProxyDelegateTest {
     
     private static final String TEST_NAMESPACE = "ns1";
     
@@ -66,9 +70,9 @@ public class NamingClientProxyDelegateTest {
     InstancesChangeNotifier notifier;
     
     NacosClientProperties nacosClientProperties;
-    
-    @Before
-    public void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
+
+    @BeforeEach
+    void setUp() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties props = new Properties();
         props.setProperty("serverAddr", "localhost");
         nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(props);
@@ -78,14 +82,14 @@ public class NamingClientProxyDelegateTest {
         grpcClientProxyField.setAccessible(true);
         grpcClientProxyField.set(delegate, mockGrpcClient);
     }
-    
-    @After
-    public void tearDown() throws NacosException {
+
+    @AfterEach
+    void tearDown() throws NacosException {
         delegate.shutdown();
     }
-    
+
     @Test
-    public void testRegisterEphemeralServiceByGrpc() throws NacosException {
+    void testRegisterEphemeralServiceByGrpc() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         Instance instance = new Instance();
@@ -97,9 +101,9 @@ public class NamingClientProxyDelegateTest {
         delegate.registerService(serviceName, groupName, instance);
         verify(mockGrpcClient, times(1)).registerService(serviceName, groupName, instance);
     }
-    
+
     @Test
-    public void testBatchRegisterServiceByGrpc() throws NacosException {
+    void testBatchRegisterServiceByGrpc() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         Instance instance = new Instance();
@@ -112,9 +116,9 @@ public class NamingClientProxyDelegateTest {
         delegate.batchRegisterService(serviceName, groupName, instanceList);
         verify(mockGrpcClient, times(1)).batchRegisterService(serviceName, groupName, instanceList);
     }
-    
+
     @Test
-    public void testBatchDeregisterServiceByGrpc() throws NacosException {
+    void testBatchDeregisterServiceByGrpc() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         List<Instance> instanceList = new ArrayList<>();
@@ -125,9 +129,9 @@ public class NamingClientProxyDelegateTest {
         delegate.batchDeregisterService(serviceName, groupName, instanceList);
         verify(mockGrpcClient, times(1)).batchDeregisterService(serviceName, groupName, instanceList);
     }
-    
+
     @Test
-    public void testRegisterPersistentServiceByGrpc() throws NacosException {
+    void testRegisterPersistentServiceByGrpc() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         Instance instance = new Instance();
@@ -143,9 +147,9 @@ public class NamingClientProxyDelegateTest {
         delegate.registerService(serviceName, groupName, instance);
         verify(mockGrpcClient, times(1)).registerService(serviceName, groupName, instance);
     }
-    
+
     @Test
-    public void testRegisterPersistentServiceByHttp()
+    void testRegisterPersistentServiceByHttp()
             throws NacosException, NoSuchFieldException, IllegalAccessException {
         NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
         Field mockHttpClientField = NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
@@ -165,9 +169,9 @@ public class NamingClientProxyDelegateTest {
         delegate.registerService(serviceName, groupName, instance);
         verify(mockHttpClient, times(1)).registerService(serviceName, groupName, instance);
     }
-    
+
     @Test
-    public void testDeregisterEphemeralServiceGrpc() throws NacosException {
+    void testDeregisterEphemeralServiceGrpc() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         Instance instance = new Instance();
@@ -180,9 +184,9 @@ public class NamingClientProxyDelegateTest {
         delegate.deregisterService(serviceName, groupName, instance);
         verify(mockGrpcClient, times(1)).deregisterService(serviceName, groupName, instance);
     }
-    
+
     @Test
-    public void testDeregisterPersistentServiceGrpc() throws NacosException {
+    void testDeregisterPersistentServiceGrpc() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         Instance instance = new Instance();
@@ -198,9 +202,9 @@ public class NamingClientProxyDelegateTest {
         delegate.deregisterService(serviceName, groupName, instance);
         verify(mockGrpcClient, times(1)).deregisterService(serviceName, groupName, instance);
     }
-    
+
     @Test
-    public void testDeregisterPersistentServiceHttp()
+    void testDeregisterPersistentServiceHttp()
             throws NacosException, NoSuchFieldException, IllegalAccessException {
         NamingHttpClientProxy mockHttpClient = Mockito.mock(NamingHttpClientProxy.class);
         Field mockHttpClientField = NamingClientProxyDelegate.class.getDeclaredField("httpClientProxy");
@@ -219,61 +223,55 @@ public class NamingClientProxyDelegateTest {
         delegate.deregisterService(serviceName, groupName, instance);
         verify(mockHttpClient, times(1)).deregisterService(serviceName, groupName, instance);
     }
-    
+
     @Test
-    public void testUpdateInstance() {
+    void testUpdateInstance() {
         String serviceName = "service1";
         String groupName = "group1";
         Instance instance = new Instance();
-        try {
+        Assertions.assertDoesNotThrow(() -> {
             delegate.updateInstance(serviceName, groupName, instance);
-        } catch (Exception e) {
-            Assert.fail();
-        }
+        });
     }
-    
+
     @Test
-    public void testQueryInstancesOfService() throws NacosException {
+    void testQueryInstancesOfService() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         String clusters = "cluster1";
         delegate.queryInstancesOfService(serviceName, groupName, clusters, false);
         verify(mockGrpcClient, times(1)).queryInstancesOfService(serviceName, groupName, clusters, false);
     }
-    
+
     @Test
-    public void testQueryService() throws NacosException {
+    void testQueryService() throws NacosException {
         Service service = delegate.queryService("a", "b");
-        Assert.assertNull(service);
+        assertNull(service);
     }
-    
+
     @Test
-    public void testCreateService() {
+    void testCreateService() {
         Service service = new Service();
-        try {
+        Assertions.assertDoesNotThrow(() -> {
             delegate.createService(service, new NoneSelector());
-        } catch (Exception e) {
-            Assert.fail();
-        }
+        });
     }
-    
+
     @Test
-    public void testDeleteService() throws NacosException {
-        Assert.assertFalse(delegate.deleteService("service", "group1"));
+    void testDeleteService() throws NacosException {
+        assertFalse(delegate.deleteService("service", "group1"));
     }
-    
+
     @Test
-    public void testUpdateService() {
+    void testUpdateService() {
         Service service = new Service();
-        try {
+        Assertions.assertDoesNotThrow(() -> {
             delegate.updateService(service, new ExpressionSelector());
-        } catch (Exception e) {
-            Assert.fail();
-        }
+        });
     }
-    
+
     @Test
-    public void testGetServiceList() throws NacosException {
+    void testGetServiceList() throws NacosException {
         AbstractSelector selector = new ExpressionSelector();
         int pageNo = 1;
         int pageSize = 10;
@@ -282,9 +280,9 @@ public class NamingClientProxyDelegateTest {
         verify(mockGrpcClient, times(1)).getServiceList(pageNo, pageSize, groupName, selector);
         
     }
-    
+
     @Test
-    public void testSubscribe() throws NacosException {
+    void testSubscribe() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         String clusters = "cluster1";
@@ -295,39 +293,39 @@ public class NamingClientProxyDelegateTest {
         when(mockGrpcClient.subscribe(serviceName, groupName, clusters)).thenReturn(info);
         
         ServiceInfo actual = delegate.subscribe(serviceName, groupName, clusters);
-        Assert.assertEquals(info, actual);
+        assertEquals(info, actual);
         verify(mockGrpcClient, times(1)).subscribe(serviceName, groupName, clusters);
         verify(holder, times(1)).processServiceInfo(info);
         
     }
-    
+
     @Test
-    public void testUnsubscribe() throws NacosException {
+    void testUnsubscribe() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         String clusters = "cluster1";
         delegate.unsubscribe(serviceName, groupName, clusters);
         verify(mockGrpcClient, times(1)).unsubscribe(serviceName, groupName, clusters);
     }
-    
+
     @Test
-    public void testServerHealthy() {
+    void testServerHealthy() {
         Mockito.when(mockGrpcClient.serverHealthy()).thenReturn(true);
-        Assert.assertTrue(delegate.serverHealthy());
+        assertTrue(delegate.serverHealthy());
     }
-    
+
     @Test
-    public void testIsSubscribed() throws NacosException {
+    void testIsSubscribed() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         String clusters = "cluster1";
-        Assert.assertFalse(delegate.isSubscribed(serviceName, groupName, clusters));
+        assertFalse(delegate.isSubscribed(serviceName, groupName, clusters));
         when(mockGrpcClient.isSubscribed(serviceName, groupName, clusters)).thenReturn(true);
-        Assert.assertTrue(delegate.isSubscribed(serviceName, groupName, clusters));
+        assertTrue(delegate.isSubscribed(serviceName, groupName, clusters));
     }
-    
+
     @Test
-    public void testShutdown() throws NacosException {
+    void testShutdown() throws NacosException {
         delegate.shutdown();
         verify(mockGrpcClient, times(1)).shutdown();
     }

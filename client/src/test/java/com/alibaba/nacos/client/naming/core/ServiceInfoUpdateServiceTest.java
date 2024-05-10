@@ -24,13 +24,15 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
 import java.util.Collections;
@@ -40,11 +42,13 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ServiceInfoUpdateServiceTest {
+@ExtendWith(MockitoExtension.class)
+// todo  remove strictness lenient
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ServiceInfoUpdateServiceTest {
     
     String serviceName = "aa";
     
@@ -66,9 +70,9 @@ public class ServiceInfoUpdateServiceTest {
     ServiceInfo info;
     
     ServiceInfoUpdateService serviceInfoUpdateService;
-    
-    @Before
-    public void setUp() throws Exception {
+
+    @BeforeEach
+    void setUp() throws Exception {
         nacosClientProperties = NacosClientProperties.PROTOTYPE.derive();
         info = new ServiceInfo();
         info.setName(serviceName);
@@ -77,24 +81,24 @@ public class ServiceInfoUpdateServiceTest {
         info.setLastRefTime(System.currentTimeMillis());
         when(proxy.queryInstancesOfService(serviceName, group, clusters, false)).thenReturn(info);
     }
-    
-    @After
-    public void tearDown() throws Exception {
+
+    @AfterEach
+    void tearDown() throws Exception {
         if (null != serviceInfoUpdateService) {
             serviceInfoUpdateService.shutdown();
         }
     }
-    
+
     @Test
-    public void testScheduleUpdateWithoutOpen() throws InterruptedException, NacosException {
+    void testScheduleUpdateWithoutOpen() throws InterruptedException, NacosException {
         serviceInfoUpdateService = new ServiceInfoUpdateService(null, holder, proxy, notifier);
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, group, clusters);
         TimeUnit.MILLISECONDS.sleep(1500);
         Mockito.verify(proxy, Mockito.never()).queryInstancesOfService(serviceName, group, clusters, false);
     }
-    
+
     @Test
-    public void testScheduleUpdateIfAbsent() throws InterruptedException, NacosException {
+    void testScheduleUpdateIfAbsent() throws InterruptedException, NacosException {
         info.setCacheMillis(10000L);
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "true");
         serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifier);
@@ -102,9 +106,9 @@ public class ServiceInfoUpdateServiceTest {
         TimeUnit.MILLISECONDS.sleep(1500);
         Mockito.verify(proxy).queryInstancesOfService(serviceName, group, clusters, false);
     }
-    
+
     @Test
-    public void testScheduleUpdateIfAbsentDuplicate() throws InterruptedException, NacosException {
+    void testScheduleUpdateIfAbsentDuplicate() throws InterruptedException, NacosException {
         info.setCacheMillis(10000L);
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "true");
         serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifier);
@@ -114,9 +118,9 @@ public class ServiceInfoUpdateServiceTest {
         // Only once called
         Mockito.verify(proxy).queryInstancesOfService(serviceName, group, clusters, false);
     }
-    
+
     @Test
-    public void testScheduleUpdateIfAbsentUpdateOlder() throws InterruptedException, NacosException {
+    void testScheduleUpdateIfAbsentUpdateOlder() throws InterruptedException, NacosException {
         info.setCacheMillis(10000L);
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "true");
         serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifier);
@@ -127,9 +131,9 @@ public class ServiceInfoUpdateServiceTest {
         TimeUnit.MILLISECONDS.sleep(1500);
         Mockito.verify(proxy).queryInstancesOfService(serviceName, group, clusters, false);
     }
-    
+
     @Test
-    public void testScheduleUpdateIfAbsentUpdateOlderWithInstance() throws InterruptedException, NacosException {
+    void testScheduleUpdateIfAbsentUpdateOlderWithInstance() throws InterruptedException, NacosException {
         info.setCacheMillis(10000L);
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "true");
         serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifier);
@@ -141,9 +145,9 @@ public class ServiceInfoUpdateServiceTest {
         TimeUnit.MILLISECONDS.sleep(1500);
         Mockito.verify(proxy).queryInstancesOfService(serviceName, group, clusters, false);
     }
-    
+
     @Test
-    public void testScheduleUpdateIfAbsentWith403Exception()
+    void testScheduleUpdateIfAbsentWith403Exception()
             throws InterruptedException, NacosException, NoSuchFieldException, IllegalAccessException {
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "true");
         serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifier);
@@ -153,9 +157,9 @@ public class ServiceInfoUpdateServiceTest {
         TimeUnit.MILLISECONDS.sleep(1500);
         assertTrue(getScheduleFuture().getDelay(TimeUnit.MILLISECONDS) > 1000);
     }
-    
+
     @Test
-    public void testScheduleUpdateIfAbsentWith500Exception()
+    void testScheduleUpdateIfAbsentWith500Exception()
             throws InterruptedException, NacosException, NoSuchFieldException, IllegalAccessException {
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "true");
         serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifier);
@@ -165,9 +169,9 @@ public class ServiceInfoUpdateServiceTest {
         TimeUnit.MILLISECONDS.sleep(1500);
         assertTrue(getScheduleFuture().getDelay(TimeUnit.MILLISECONDS) > 2000);
     }
-    
+
     @Test
-    public void testScheduleUpdateIfAbsentWithOtherException()
+    void testScheduleUpdateIfAbsentWithOtherException()
             throws InterruptedException, NacosException, NoSuchFieldException, IllegalAccessException {
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "true");
         serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifier);
@@ -177,9 +181,9 @@ public class ServiceInfoUpdateServiceTest {
         TimeUnit.MILLISECONDS.sleep(1500);
         assertTrue(getScheduleFuture().getDelay(TimeUnit.MILLISECONDS) > 1000);
     }
-    
+
     @Test
-    public void testStopScheduleUpdateIfAbsent() throws InterruptedException, NacosException {
+    void testStopScheduleUpdateIfAbsent() throws InterruptedException, NacosException {
         info.setCacheMillis(10000L);
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE, "true");
         serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifier);
@@ -188,9 +192,9 @@ public class ServiceInfoUpdateServiceTest {
         TimeUnit.MILLISECONDS.sleep(1500);
         Mockito.verify(proxy, Mockito.never()).queryInstancesOfService(serviceName, group, clusters, false);
     }
-    
+
     @Test
-    public void testStopUpdateIfContainWithoutOpen() throws NacosException, InterruptedException {
+    void testStopUpdateIfContainWithoutOpen() throws NacosException, InterruptedException {
         serviceInfoUpdateService = new ServiceInfoUpdateService(nacosClientProperties, holder, proxy, notifier);
         serviceInfoUpdateService.scheduleUpdateIfAbsent(serviceName, group, clusters);
         TimeUnit.MILLISECONDS.sleep(1500);

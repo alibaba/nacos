@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,31 +25,32 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ChooserTest {
-    
+class ChooserTest {
+
     @Test
-    public void testChooser() {
+    void testChooser() {
         //Test the correctness of Chooser, the weight of the final selected instance must be greater than 0
         List<Instance> hosts = getInstanceList();
         Instance target = getRandomInstance(hosts);
         assertTrue(hosts.contains(target) && target.getWeight() > 0);
     }
-    
+
     @Test
-    public void testChooserRandomForEmptyList() {
+    void testChooserRandomForEmptyList() {
         Chooser<String, String> chooser = new Chooser<>("test");
         assertEquals("test", chooser.getUniqueKey());
         assertNull(chooser.random());
     }
-    
+
     @Test
-    public void testChooserRandomForOneSizeList() {
+    void testChooserRandomForOneSizeList() {
         List<Pair<String>> list = new LinkedList<>();
         list.add(new Pair<>("test", 1));
         Chooser<String, String> chooser = new Chooser<>("test", list);
@@ -57,9 +58,9 @@ public class ChooserTest {
         assertNotNull(actual);
         assertEquals("test", actual);
     }
-    
+
     @Test
-    public void testChooserRandom() {
+    void testChooserRandom() {
         List<Pair<String>> list = new LinkedList<>();
         list.add(new Pair<>("test", 1));
         list.add(new Pair<>("test2", 1));
@@ -68,18 +69,18 @@ public class ChooserTest {
         assertNotNull(actual);
         assertTrue(actual.equals("test") || actual.equals("test2"));
     }
-    
+
     @Test
-    public void testOnlyOneInstanceWeightIsNotZero() {
+    void testOnlyOneInstanceWeightIsNotZero() {
         // If there is only one instance whose weight is not zero, it will be selected
         List<Instance> hosts = getOneInstanceNotZeroList();
         
         Instance target = getRandomInstance(hosts);
         assertTrue(target.getWeight() > 0);
     }
-    
+
     @Test
-    public void testInstanceWeightAllZero() {
+    void testInstanceWeightAllZero() {
         // Throw an IllegalStateException when all instances have a weight of zero.
         List<Instance> hosts = getInstanceWeightAllZero();
         
@@ -89,17 +90,19 @@ public class ChooserTest {
             assertTrue(e instanceof IllegalStateException);
         }
     }
-    
-    @Test(expected = IllegalStateException.class)
-    public void testRandomWithWeightForNaNAndInfinity() {
-        List<Pair<String>> list = new LinkedList<>();
-        list.add(new Pair<>("test", Double.NaN));
-        list.add(new Pair<>("test2", Double.POSITIVE_INFINITY));
-        new Chooser<>("test", list);
-    }
-    
+
     @Test
-    public void testRefresh() {
+    void testRandomWithWeightForNaNAndInfinity() {
+        assertThrows(IllegalStateException.class, () -> {
+            List<Pair<String>> list = new LinkedList<>();
+            list.add(new Pair<>("test", Double.NaN));
+            list.add(new Pair<>("test2", Double.POSITIVE_INFINITY));
+            new Chooser<>("test", list);
+        });
+    }
+
+    @Test
+    void testRefresh() {
         Chooser<String, String> chooser = new Chooser<>("test");
         assertEquals("test", chooser.getUniqueKey());
         assertNull(chooser.random());
@@ -110,45 +113,45 @@ public class ChooserTest {
         assertNotNull(actual);
         assertEquals("test", actual);
     }
-    
+
     @Test
-    public void testEqualsHashCode() {
+    void testEqualsHashCode() {
         List<Pair<String>> list = new LinkedList<>();
         list.add(new Pair<>("test", 1));
         list.add(new Pair<>("test2", 1));
         Chooser<String, String> chooser = new Chooser<>("test", list);
         assertEquals("test".hashCode(), chooser.hashCode());
-        assertTrue(chooser.equals(chooser));
-        assertFalse(chooser.equals(null));
-        assertFalse(chooser.equals("test"));
+        assertEquals(chooser, chooser);
+        assertNotEquals(null, chooser);
+        assertNotEquals("test", chooser);
         Chooser<String, String> chooser1 = new Chooser<>(null, null);
-        assertFalse(chooser.equals(chooser1));
-        assertFalse(chooser1.equals(chooser));
+        assertNotEquals(chooser, chooser1);
+        assertNotEquals(chooser1, chooser);
         Chooser<String, String> chooser2 = new Chooser<>("test", Collections.emptyList());
-        assertFalse(chooser.equals(chooser2));
-        assertFalse(chooser2.equals(chooser));
+        assertNotEquals(chooser, chooser2);
+        assertNotEquals(chooser2, chooser);
         Chooser<String, String> chooser3 = new Chooser<>("test1", list);
-        assertFalse(chooser.equals(chooser3));
+        assertNotEquals(chooser, chooser3);
         Chooser<String, String> chooser4 = new Chooser<>("test", list);
-        assertTrue(chooser.equals(chooser4));
+        assertEquals(chooser, chooser4);
     }
-    
+
     @Test
-    public void testRefEqualsHashCode() {
+    void testRefEqualsHashCode() {
         List<Pair<String>> list = new LinkedList<>();
         list.add(new Pair<>("test", 1));
         list.add(new Pair<>("test2", 1));
         Chooser<String, String> chooser = new Chooser<>("test", list);
         Chooser.Ref ref = chooser.getRef();
         assertEquals(list.hashCode(), ref.hashCode());
-        assertTrue(ref.equals(ref));
-        assertFalse(ref.equals(null));
-        assertFalse(ref.equals(chooser));
+        assertEquals(ref, ref);
+        assertNotEquals(null, ref);
+        assertNotEquals(ref, chooser);
         Chooser.Ref ref1 = new Chooser<>("test", null).getRef();
-        assertFalse(ref.equals(ref1));
-        assertFalse(ref1.equals(ref));
+        assertNotEquals(ref, ref1);
+        assertNotEquals(ref1, ref);
         Chooser.Ref ref2 = new Chooser<>("test", list).getRef();
-        assertTrue(ref.equals(ref2));
+        assertEquals(ref, ref2);
     }
     
     private List<Instance> getInstanceList() {

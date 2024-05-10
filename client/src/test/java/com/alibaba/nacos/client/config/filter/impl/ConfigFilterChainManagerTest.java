@@ -22,15 +22,16 @@ import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.config.filter.IConfigRequest;
 import com.alibaba.nacos.api.config.filter.IConfigResponse;
 import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
-public class ConfigFilterChainManagerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConfigFilterChainManagerTest {
     
     private static class MyIConfigFilter implements IConfigFilter {
         
@@ -83,9 +84,9 @@ public class ConfigFilterChainManagerTest {
             return name;
         }
     }
-    
+
     @Test
-    public void testAddFilterOrder() throws NacosException {
+    void testAddFilterOrder() throws NacosException {
         final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
         MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
         MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
@@ -103,17 +104,17 @@ public class ConfigFilterChainManagerTest {
         IConfigContext configContext = configRequest.getConfigContext();
         
         // doFilter works
-        Assert.assertEquals(1, configContext.getParameter("filter1"));
-        Assert.assertEquals(2, configContext.getParameter("filter2"));
-        Assert.assertEquals(3, configContext.getParameter("filter3"));
+        assertEquals(1, configContext.getParameter("filter1"));
+        assertEquals(2, configContext.getParameter("filter2"));
+        assertEquals(3, configContext.getParameter("filter3"));
         
         //order
         List<Integer> orders = (List<Integer>) configContext.getParameter("orders");
-        Assert.assertEquals(Arrays.asList(1, 2, 3), orders);
+        assertEquals(Arrays.asList(1, 2, 3), orders);
     }
-    
+
     @Test
-    public void testAddFilterNotRepeat() throws NacosException {
+    void testAddFilterNotRepeat() throws NacosException {
         final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
         MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
         MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
@@ -128,6 +129,6 @@ public class ConfigFilterChainManagerTest {
         
         IConfigContext configContext = configRequest.getConfigContext();
         
-        Assert.assertEquals(2, configContext.getParameter("filterCount"));
+        assertEquals(2, configContext.getParameter("filterCount"));
     }
 }

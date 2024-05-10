@@ -30,21 +30,24 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.ServerRequestHandler;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class AbilityTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+class AbilityTest {
     
     private RpcClient rpcClient;
     
     private Connection connection;
-    
+
     @Test
-    public void testReceive() throws Exception {
+    void testReceive() throws Exception {
         rpcClient = new RpcClient(new RpcClientConfig() {
             @Override
             public String name() {
@@ -127,7 +130,7 @@ public class AbilityTest {
         };
         rpcClient.start();
         // test not ready
-        Assert.assertNull(rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+        assertNull(rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1));
         
         // test ready
         rpcClient.serverListFactory(new ServerListFactory() {
@@ -149,23 +152,23 @@ public class AbilityTest {
         });
         rpcClient.start();
         // if connect successfully
-        Assert.assertEquals(rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-        Assert.assertEquals(rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_2), AbilityStatus.NOT_SUPPORTED);
+        assertEquals(AbilityStatus.SUPPORTED, rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, rpcClient.getConnectionAbility(AbilityKey.SERVER_TEST_2));
     }
-    
-    @After
-    public void testServerRequestAbility() {
+
+    @AfterEach
+    void testServerRequestAbility() {
         //test support
         ServerRequestHandler serverRequestHandler = (request, connection) -> {
-            Assert.assertEquals(connection.getConnectionAbility(AbilityKey.SERVER_TEST_1), AbilityStatus.SUPPORTED);
-            Assert.assertEquals(connection.getConnectionAbility(AbilityKey.SERVER_TEST_2), AbilityStatus.NOT_SUPPORTED);
+            assertEquals(AbilityStatus.SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_TEST_1));
+            assertEquals(AbilityStatus.NOT_SUPPORTED, connection.getConnectionAbility(AbilityKey.SERVER_TEST_2));
             return new Response() { };
         };
         serverRequestHandler.requestReply(null, connection);
     
         // test no ability table
         serverRequestHandler = (request, connection) -> {
-            Assert.assertEquals(connection.getConnectionAbility(AbilityKey.SERVER_TEST_1), AbilityStatus.UNKNOWN);
+            assertEquals(AbilityStatus.UNKNOWN, connection.getConnectionAbility(AbilityKey.SERVER_TEST_1));
             return new Response() { };
         };
         serverRequestHandler.requestReply(null, new TestConnection(new RpcClient.ServerInfo()));

@@ -32,15 +32,12 @@ import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.http.NamingHttpClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -49,7 +46,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -60,11 +60,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NacosNamingServiceTest {
-    
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
+@ExtendWith(MockitoExtension.class)
+class NacosNamingServiceTest {
     
     @Mock
     private NamingClientProxy proxy;
@@ -76,18 +73,18 @@ public class NacosNamingServiceTest {
     private ServiceInfoHolder serviceInfoHolder;
     
     private NacosNamingService client;
-    
-    @Before
-    public void before() throws NoSuchFieldException, NacosException, IllegalAccessException {
+
+    @BeforeEach
+    void before() throws NoSuchFieldException, NacosException, IllegalAccessException {
         Properties prop = new Properties();
         prop.setProperty("serverAddr", "localhost");
         prop.put(PropertyKeyConst.NAMESPACE, "test");
         client = new NacosNamingService(prop);
         injectMocks(client);
     }
-    
-    @After
-    public void tearDown() throws NacosException {
+
+    @AfterEach
+    void tearDown() throws NacosException {
         client.shutDown();
     }
     
@@ -116,9 +113,9 @@ public class NacosNamingServiceTest {
         }
         serviceInfoHolderField.set(client, serviceInfoHolder);
     }
-    
+
     @Test
-    public void testRegisterInstance1() throws NacosException {
+    void testRegisterInstance1() throws NacosException {
         //given
         String serviceName = "service1";
         String ip = "1.1.1.1";
@@ -131,9 +128,9 @@ public class NacosNamingServiceTest {
                         && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
                         .equals(Constants.DEFAULT_CLUSTER_NAME)));
     }
-    
+
     @Test
-    public void testBatchRegisterInstance() throws NacosException {
+    void testBatchRegisterInstance() throws NacosException {
         Instance instance = new Instance();
         String serviceName = "service1";
         String ip = "1.1.1.1";
@@ -150,9 +147,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1)).batchRegisterService(eq(serviceName), eq(Constants.DEFAULT_GROUP),
                 argThat(instances -> CollectionUtils.isEqualCollection(instanceList, instances)));
     }
-    
+
     @Test
-    public void testBatchRegisterInstanceWithGroupNamePrefix() throws NacosException {
+    void testBatchRegisterInstanceWithGroupNamePrefix() throws NacosException {
         Instance instance = new Instance();
         String serviceName = "service1";
         String ip = "1.1.1.1";
@@ -169,9 +166,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1)).batchRegisterService(eq(serviceName), eq(Constants.DEFAULT_GROUP),
                 argThat(instances -> CollectionUtils.isEqualCollection(instanceList, instances)));
     }
-    
+
     @Test
-    public void testBatchRegisterInstanceWithWrongGroupNamePrefix() throws NacosException {
+    void testBatchRegisterInstanceWithWrongGroupNamePrefix() throws NacosException {
         Instance instance = new Instance();
         String serviceName = "service1";
         String ip = "1.1.1.1";
@@ -186,13 +183,13 @@ public class NacosNamingServiceTest {
         try {
             client.batchRegisterInstance(serviceName, Constants.DEFAULT_GROUP, instanceList);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof NacosException);
-            Assert.assertTrue(e.getMessage().contains("wrong group name prefix of instance service name"));
+            assertTrue(e instanceof NacosException);
+            assertTrue(e.getMessage().contains("wrong group name prefix of instance service name"));
         }
     }
-    
+
     @Test
-    public void testBatchDeRegisterInstance() throws NacosException {
+    void testBatchDeRegisterInstance() throws NacosException {
         Instance instance = new Instance();
         String serviceName = "service1";
         String ip = "1.1.1.1";
@@ -207,13 +204,13 @@ public class NacosNamingServiceTest {
         try {
             client.batchDeregisterInstance(serviceName, Constants.DEFAULT_GROUP, instanceList);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof NacosException);
-            Assert.assertTrue(e.getMessage().contains("not found"));
+            assertTrue(e instanceof NacosException);
+            assertTrue(e.getMessage().contains("not found"));
         }
     }
-    
+
     @Test
-    public void testRegisterInstance2() throws NacosException {
+    void testRegisterInstance2() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -227,9 +224,9 @@ public class NacosNamingServiceTest {
                         && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
                         .equals(Constants.DEFAULT_CLUSTER_NAME)));
     }
-    
+
     @Test
-    public void testRegisterInstance3() throws NacosException {
+    void testRegisterInstance3() throws NacosException {
         //given
         String serviceName = "service1";
         String clusterName = "cluster1";
@@ -243,9 +240,9 @@ public class NacosNamingServiceTest {
                         && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
                         .equals(clusterName)));
     }
-    
+
     @Test
-    public void testRegisterInstance4() throws NacosException {
+    void testRegisterInstance4() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -260,9 +257,9 @@ public class NacosNamingServiceTest {
                         && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
                         .equals(clusterName)));
     }
-    
+
     @Test
-    public void testRegisterInstance5() throws NacosException {
+    void testRegisterInstance5() throws NacosException {
         //given
         String serviceName = "service1";
         Instance instance = new Instance();
@@ -271,9 +268,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).registerService(serviceName, Constants.DEFAULT_GROUP, instance);
     }
-    
+
     @Test
-    public void testRegisterInstance6() throws NacosException {
+    void testRegisterInstance6() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -283,24 +280,24 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).registerService(serviceName, groupName, instance);
     }
-    
+
     @Test
-    public void testRegisterInstance7() throws NacosException {
-        expectedException.expect(NacosException.class);
-        expectedException.expectMessage(
-                "Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)");
-        
-        //given
-        String serviceName = "service1";
-        String groupName = "group1";
-        Instance instance = new Instance();
-        instance.setClusterName("cluster1,cluster2");
-        //when
-        client.registerInstance(serviceName, groupName, instance);
+    void testRegisterInstance7() throws NacosException {
+        Throwable exception = assertThrows(NacosException.class, () -> {
+
+            //given
+            String serviceName = "service1";
+            String groupName = "group1";
+            Instance instance = new Instance();
+            instance.setClusterName("cluster1,cluster2");
+            //when
+            client.registerInstance(serviceName, groupName, instance);
+        });
+        assertTrue(exception.getMessage().contains("Instance 'clusterName' should be characters with only 0-9a-zA-Z-. (current: cluster1,cluster2)"));
     }
-    
+
     @Test
-    public void testDeregisterInstance1() throws NacosException {
+    void testDeregisterInstance1() throws NacosException {
         //given
         String serviceName = "service1";
         String ip = "1.1.1.1";
@@ -313,9 +310,9 @@ public class NacosNamingServiceTest {
                         && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
                         .equals(Constants.DEFAULT_CLUSTER_NAME)));
     }
-    
+
     @Test
-    public void testDeregisterInstance2() throws NacosException {
+    void testDeregisterInstance2() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -329,9 +326,9 @@ public class NacosNamingServiceTest {
                         && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
                         .equals(Constants.DEFAULT_CLUSTER_NAME)));
     }
-    
+
     @Test
-    public void testDeregisterInstance3() throws NacosException {
+    void testDeregisterInstance3() throws NacosException {
         //given
         String serviceName = "service1";
         String clusterName = "cluster1";
@@ -345,9 +342,9 @@ public class NacosNamingServiceTest {
                         && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
                         .equals(clusterName)));
     }
-    
+
     @Test
-    public void testDeregisterInstance4() throws NacosException {
+    void testDeregisterInstance4() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -362,9 +359,9 @@ public class NacosNamingServiceTest {
                         && Math.abs(instance.getWeight() - 1.0) < 0.01f && instance.getClusterName()
                         .equals(clusterName)));
     }
-    
+
     @Test
-    public void testDeregisterInstance5() throws NacosException {
+    void testDeregisterInstance5() throws NacosException {
         //given
         String serviceName = "service1";
         Instance instance = new Instance();
@@ -373,9 +370,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).deregisterService(serviceName, Constants.DEFAULT_GROUP, instance);
     }
-    
+
     @Test
-    public void testDeregisterInstance6() throws NacosException {
+    void testDeregisterInstance6() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -385,9 +382,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).deregisterService(serviceName, groupName, instance);
     }
-    
+
     @Test
-    public void testGetAllInstances1() throws NacosException {
+    void testGetAllInstances1() throws NacosException {
         //given
         String serviceName = "service1";
         //when
@@ -395,9 +392,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "");
     }
-    
+
     @Test
-    public void testGetAllInstances2() throws NacosException {
+    void testGetAllInstances2() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -406,9 +403,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).subscribe(serviceName, groupName, "");
     }
-    
+
     @Test
-    public void testGetAllInstances3() throws NacosException {
+    void testGetAllInstances3() throws NacosException {
         //given
         String serviceName = "service1";
         //when
@@ -416,9 +413,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).queryInstancesOfService(serviceName, Constants.DEFAULT_GROUP, "", false);
     }
-    
+
     @Test
-    public void testGetAllInstances4() throws NacosException {
+    void testGetAllInstances4() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -428,9 +425,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1)).queryInstancesOfService(serviceName, groupName, "", false);
         
     }
-    
+
     @Test
-    public void testGetAllInstances5() throws NacosException {
+    void testGetAllInstances5() throws NacosException {
         //given
         String serviceName = "service1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
@@ -439,9 +436,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2");
     }
-    
+
     @Test
-    public void testGetAllInstances6() throws NacosException {
+    void testGetAllInstances6() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -452,9 +449,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1)).subscribe(serviceName, groupName, "cluster1,cluster2");
         
     }
-    
+
     @Test
-    public void testGetAllInstances7() throws NacosException {
+    void testGetAllInstances7() throws NacosException {
         //given
         String serviceName = "service1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
@@ -464,9 +461,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1))
                 .queryInstancesOfService(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2", false);
     }
-    
+
     @Test
-    public void testGetAllInstances8() throws NacosException {
+    void testGetAllInstances8() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -476,9 +473,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).queryInstancesOfService(serviceName, groupName, "cluster1,cluster2", false);
     }
-    
+
     @Test
-    public void testGetAllInstanceFromFailover() throws NacosException {
+    void testGetAllInstanceFromFailover() throws NacosException {
         when(serviceInfoHolder.isFailoverSwitch()).thenReturn(true);
         ServiceInfo serviceInfo = new ServiceInfo("group1@@service1");
         serviceInfo.setHosts(Collections.singletonList(new Instance()));
@@ -488,9 +485,9 @@ public class NacosNamingServiceTest {
         assertEquals(1, actual.size());
         assertEquals(new Instance(), actual.get(0));
     }
-    
+
     @Test
-    public void testGetAllInstanceFromFailoverEmpty() throws NacosException {
+    void testGetAllInstanceFromFailoverEmpty() throws NacosException {
         when(serviceInfoHolder.isFailoverSwitch()).thenReturn(true);
         ServiceInfo serviceInfo = new ServiceInfo("group1@@service1");
         when(serviceInfoHolder.getFailoverServiceInfo(anyString(), anyString(), anyString())).thenReturn(serviceInfo);
@@ -498,9 +495,9 @@ public class NacosNamingServiceTest {
         verify(proxy).queryInstancesOfService(anyString(), anyString(), anyString(), anyBoolean());
         assertEquals(0, actual.size());
     }
-    
+
     @Test
-    public void testSelectInstances1() throws NacosException {
+    void testSelectInstances1() throws NacosException {
         //given
         String serviceName = "service1";
         //when
@@ -508,9 +505,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "");
     }
-    
+
     @Test
-    public void testSelectInstances2() throws NacosException {
+    void testSelectInstances2() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -519,9 +516,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).subscribe(serviceName, groupName, "");
     }
-    
+
     @Test
-    public void testSelectInstances3() throws NacosException {
+    void testSelectInstances3() throws NacosException {
         //given
         String serviceName = "service1";
         //when
@@ -529,9 +526,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).queryInstancesOfService(serviceName, Constants.DEFAULT_GROUP, "", false);
     }
-    
+
     @Test
-    public void testSelectInstances4() throws NacosException {
+    void testSelectInstances4() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -541,9 +538,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1)).queryInstancesOfService(serviceName, groupName, "", false);
         
     }
-    
+
     @Test
-    public void testSelectInstances5() throws NacosException {
+    void testSelectInstances5() throws NacosException {
         //given
         String serviceName = "service1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
@@ -552,9 +549,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2");
     }
-    
+
     @Test
-    public void testSelectInstances6() throws NacosException {
+    void testSelectInstances6() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -565,9 +562,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1)).subscribe(serviceName, groupName, "cluster1,cluster2");
         
     }
-    
+
     @Test
-    public void testSelectInstances7() throws NacosException {
+    void testSelectInstances7() throws NacosException {
         //given
         String serviceName = "service1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
@@ -577,9 +574,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1))
                 .queryInstancesOfService(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2", false);
     }
-    
+
     @Test
-    public void testSelectInstances8() throws NacosException {
+    void testSelectInstances8() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -589,9 +586,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).queryInstancesOfService(serviceName, groupName, "cluster1,cluster2", false);
     }
-    
+
     @Test
-    public void testSelectInstancesWithHealthyFlag() throws NacosException {
+    void testSelectInstancesWithHealthyFlag() throws NacosException {
         //given
         Instance healthyInstance = new Instance();
         healthyInstance.setHealthy(true);
@@ -623,11 +620,11 @@ public class NacosNamingServiceTest {
         List<Instance> instances = client.selectInstances(serviceName, groupName, clusterList, true, false);
         //then
         assertEquals(1, instances.size());
-        Assert.assertSame(healthyInstance, instances.get(0));
+        assertSame(healthyInstance, instances.get(0));
     }
-    
+
     @Test
-    public void testSelectOneHealthyInstance1() throws NacosException {
+    void testSelectOneHealthyInstance1() throws NacosException {
         //given
         Instance healthyInstance = new Instance();
         healthyInstance.setIp("1.1.1.1");
@@ -644,9 +641,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "");
     }
-    
+
     @Test
-    public void testSelectOneHealthyInstance2() throws NacosException {
+    void testSelectOneHealthyInstance2() throws NacosException {
         //given
         Instance healthyInstance = new Instance();
         healthyInstance.setIp("1.1.1.1");
@@ -664,9 +661,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).subscribe(serviceName, groupName, "");
     }
-    
+
     @Test
-    public void testSelectOneHealthyInstance3() throws NacosException {
+    void testSelectOneHealthyInstance3() throws NacosException {
         //given
         Instance healthyInstance = new Instance();
         healthyInstance.setIp("1.1.1.1");
@@ -684,9 +681,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).queryInstancesOfService(serviceName, Constants.DEFAULT_GROUP, "", false);
     }
-    
+
     @Test
-    public void testSelectOneHealthyInstance4() throws NacosException {
+    void testSelectOneHealthyInstance4() throws NacosException {
         //given
         Instance healthyInstance = new Instance();
         healthyInstance.setIp("1.1.1.1");
@@ -706,9 +703,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1)).queryInstancesOfService(serviceName, groupName, "", false);
         
     }
-    
+
     @Test
-    public void testSelectOneHealthyInstance5() throws NacosException {
+    void testSelectOneHealthyInstance5() throws NacosException {
         //given
         Instance healthyInstance = new Instance();
         healthyInstance.setIp("1.1.1.1");
@@ -726,9 +723,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2");
     }
-    
+
     @Test
-    public void testSelectOneHealthyInstance6() throws NacosException {
+    void testSelectOneHealthyInstance6() throws NacosException {
         //given
         Instance healthyInstance = new Instance();
         healthyInstance.setIp("1.1.1.1");
@@ -748,9 +745,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1)).subscribe(serviceName, groupName, "cluster1,cluster2");
         
     }
-    
+
     @Test
-    public void testSelectOneHealthyInstance7() throws NacosException {
+    void testSelectOneHealthyInstance7() throws NacosException {
         //given
         Instance healthyInstance = new Instance();
         healthyInstance.setIp("1.1.1.1");
@@ -770,9 +767,9 @@ public class NacosNamingServiceTest {
         verify(proxy, times(1))
                 .queryInstancesOfService(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2", false);
     }
-    
+
     @Test
-    public void testSelectOneHealthyInstance8() throws NacosException {
+    void testSelectOneHealthyInstance8() throws NacosException {
         //given
         Instance healthyInstance = new Instance();
         healthyInstance.setIp("1.1.1.1");
@@ -792,9 +789,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).queryInstancesOfService(serviceName, groupName, "cluster1,cluster2", false);
     }
-    
+
     @Test
-    public void testSubscribe1() throws NacosException {
+    void testSubscribe1() throws NacosException {
         //given
         String serviceName = "service1";
         EventListener listener = event -> {
@@ -806,9 +803,9 @@ public class NacosNamingServiceTest {
         verify(changeNotifier, times(1)).registerListener(Constants.DEFAULT_GROUP, serviceName, "", listener);
         verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "");
     }
-    
+
     @Test
-    public void testSubscribe2() throws NacosException {
+    void testSubscribe2() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -821,9 +818,9 @@ public class NacosNamingServiceTest {
         verify(changeNotifier, times(1)).registerListener(groupName, serviceName, "", listener);
         verify(proxy, times(1)).subscribe(serviceName, groupName, "");
     }
-    
+
     @Test
-    public void testSubscribe3() throws NacosException {
+    void testSubscribe3() throws NacosException {
         //given
         String serviceName = "service1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
@@ -837,9 +834,9 @@ public class NacosNamingServiceTest {
                 .registerListener(Constants.DEFAULT_GROUP, serviceName, "cluster1,cluster2", listener);
         verify(proxy, times(1)).subscribe(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2");
     }
-    
+
     @Test
-    public void testSubscribe4() throws NacosException {
+    void testSubscribe4() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -853,9 +850,9 @@ public class NacosNamingServiceTest {
         verify(changeNotifier, times(1)).registerListener(groupName, serviceName, "cluster1,cluster2", listener);
         verify(proxy, times(1)).subscribe(serviceName, groupName, "cluster1,cluster2");
     }
-    
+
     @Test
-    public void testSubscribeWithNullListener() throws NacosException {
+    void testSubscribeWithNullListener() throws NacosException {
         String serviceName = "service1";
         String groupName = "group1";
         //when
@@ -865,9 +862,9 @@ public class NacosNamingServiceTest {
         verify(proxy, never()).subscribe(serviceName, groupName, "");
         
     }
-    
+
     @Test
-    public void testUnSubscribe1() throws NacosException {
+    void testUnSubscribe1() throws NacosException {
         //given
         String serviceName = "service1";
         EventListener listener = event -> {
@@ -878,9 +875,9 @@ public class NacosNamingServiceTest {
         verify(changeNotifier, times(1)).deregisterListener(Constants.DEFAULT_GROUP, serviceName, "", listener);
         verify(proxy, times(1)).unsubscribe(serviceName, Constants.DEFAULT_GROUP, "");
     }
-    
+
     @Test
-    public void testUnSubscribe2() throws NacosException {
+    void testUnSubscribe2() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -892,9 +889,9 @@ public class NacosNamingServiceTest {
         verify(changeNotifier, times(1)).deregisterListener(groupName, serviceName, "", listener);
         verify(proxy, times(1)).unsubscribe(serviceName, groupName, "");
     }
-    
+
     @Test
-    public void testUnSubscribe3() throws NacosException {
+    void testUnSubscribe3() throws NacosException {
         //given
         String serviceName = "service1";
         List<String> clusterList = Arrays.asList("cluster1", "cluster2");
@@ -907,9 +904,9 @@ public class NacosNamingServiceTest {
                 .deregisterListener(Constants.DEFAULT_GROUP, serviceName, "cluster1,cluster2", listener);
         verify(proxy, times(1)).unsubscribe(serviceName, Constants.DEFAULT_GROUP, "cluster1,cluster2");
     }
-    
+
     @Test
-    public void testUnSubscribe4() throws NacosException {
+    void testUnSubscribe4() throws NacosException {
         //given
         String serviceName = "service1";
         String groupName = "group1";
@@ -922,9 +919,9 @@ public class NacosNamingServiceTest {
         verify(changeNotifier, times(1)).deregisterListener(groupName, serviceName, "cluster1,cluster2", listener);
         verify(proxy, times(1)).unsubscribe(serviceName, groupName, "cluster1,cluster2");
     }
-    
+
     @Test
-    public void testGetServicesOfServer1() throws NacosException {
+    void testGetServicesOfServer1() throws NacosException {
         //given
         int pageNo = 1;
         int pageSize = 10;
@@ -933,9 +930,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).getServiceList(pageNo, pageSize, Constants.DEFAULT_GROUP, null);
     }
-    
+
     @Test
-    public void testGetServicesOfServer2() throws NacosException {
+    void testGetServicesOfServer2() throws NacosException {
         //given
         int pageNo = 1;
         int pageSize = 10;
@@ -945,9 +942,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).getServiceList(pageNo, pageSize, groupName, null);
     }
-    
+
     @Test
-    public void testGetServicesOfServer3() throws NacosException {
+    void testGetServicesOfServer3() throws NacosException {
         //given
         int pageNo = 1;
         int pageSize = 10;
@@ -962,9 +959,9 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).getServiceList(pageNo, pageSize, Constants.DEFAULT_GROUP, selector);
     }
-    
+
     @Test
-    public void testGetServicesOfServer4() throws NacosException {
+    void testGetServicesOfServer4() throws NacosException {
         //given
         int pageNo = 1;
         int pageSize = 10;
@@ -981,17 +978,17 @@ public class NacosNamingServiceTest {
         //then
         verify(proxy, times(1)).getServiceList(pageNo, pageSize, groupName, selector);
     }
-    
+
     @Test
-    public void testGetSubscribeServices() {
+    void testGetSubscribeServices() {
         //when
         client.getSubscribeServices();
         //then
         verify(changeNotifier, times(1)).getSubscribeServices();
     }
-    
+
     @Test
-    public void testGetServerStatus() {
+    void testGetServerStatus() {
         //given
         when(proxy.serverHealthy()).thenReturn(true);
         //when
@@ -999,9 +996,9 @@ public class NacosNamingServiceTest {
         //then
         assertEquals("UP", serverStatus);
     }
-    
+
     @Test
-    public void testGetServerStatusFail() {
+    void testGetServerStatusFail() {
         //given
         when(proxy.serverHealthy()).thenReturn(false);
         //when
@@ -1009,17 +1006,17 @@ public class NacosNamingServiceTest {
         //then
         assertEquals("DOWN", serverStatus);
     }
-    
+
     @Test
-    public void testShutDown() throws NacosException {
+    void testShutDown() throws NacosException {
         //when
         client.shutDown();
         //then
         verify(proxy, times(1)).shutdown();
     }
-    
+
     @Test
-    public void testConstructorWithServerList() throws NacosException, NoSuchFieldException, IllegalAccessException {
+    void testConstructorWithServerList() throws NacosException, NoSuchFieldException, IllegalAccessException {
         NacosNamingService namingService = new NacosNamingService("localhost");
         try {
             Field namespaceField = NacosNamingService.class.getDeclaredField("namespace");

@@ -19,44 +19,43 @@ package com.alibaba.nacos.client.naming.backups.datasource;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.backups.FailoverData;
 import com.alibaba.nacos.client.naming.backups.FailoverSwitch;
-import com.alibaba.nacos.client.naming.cache.DiskCacheTest;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DiskFailoverDataSourceTest {
+class DiskFailoverDataSourceTest {
     
     DiskFailoverDataSource dataSource;
-    
-    @Before
-    public void setUp() {
+
+    @BeforeEach
+    void setUp() {
         dataSource = new DiskFailoverDataSource();
     }
-    
+
     @Test
-    public void testGetSwitchWithNonExistFailoverSwitchFile() {
+    void testGetSwitchWithNonExistFailoverSwitchFile() {
         FailoverSwitch actual = dataSource.getSwitch();
         assertFalse(actual.getEnabled());
     }
-    
+
     @Test
-    public void testGetSwitchForFailoverDisabled() throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskCacheTest.class.getResource("/").getPath() + "/failover_test/disabled";
+    void testGetSwitchForFailoverDisabled() throws NoSuchFieldException, IllegalAccessException {
+        String dir = DiskFailoverDataSourceTest.class.getResource("/").getPath() + "/failover_test/disabled";
         injectFailOverDir(dir);
         assertFalse(dataSource.getSwitch().getEnabled());
         Map<String, FailoverData> actual = dataSource.getFailoverData();
         assertTrue(actual.isEmpty());
     }
-    
+
     @Test
-    public void testGetSwitchForFailoverEnabled() throws NoSuchFieldException, IllegalAccessException {
-        String dir = DiskCacheTest.class.getResource("/").getPath() + "/failover_test/enabled";
+    void testGetSwitchForFailoverEnabled() throws NoSuchFieldException, IllegalAccessException {
+        String dir = DiskFailoverDataSourceTest.class.getResource("/").getPath() + "/failover_test/enabled";
         injectFailOverDir(dir);
         assertTrue(dataSource.getSwitch().getEnabled());
         Map<String, FailoverData> actual = dataSource.getFailoverData();
@@ -66,9 +65,9 @@ public class DiskFailoverDataSourceTest {
         assertEquals("1.1.1.1",
                 ((ServiceInfo) actual.get("legal@@with_name@@file").getData()).getHosts().get(0).getIp());
     }
-    
+
     @Test
-    public void testGetFailoverDataForFailoverDisabled() {
+    void testGetFailoverDataForFailoverDisabled() {
         Map<String, FailoverData> actual = dataSource.getFailoverData();
         assertTrue(actual.isEmpty());
     }

@@ -20,21 +20,24 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class NacosClientAuthServiceImplTest {
-    
+class NacosClientAuthServiceImplTest {
+
     @Test
-    public void testLoginSuccess() throws Exception {
+    void testLoginSuccess() throws Exception {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
@@ -53,11 +56,11 @@ public class NacosClientAuthServiceImplTest {
         //when
         boolean ret = nacosClientAuthService.login(properties);
         //then
-        Assert.assertTrue(ret);
+        assertTrue(ret);
     }
-    
+
     @Test
-    public void testTestLoginFailCode() throws Exception {
+    void testTestLoginFailCode() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setCode(400);
@@ -72,11 +75,11 @@ public class NacosClientAuthServiceImplTest {
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         boolean ret = nacosClientAuthService.login(properties);
-        Assert.assertFalse(ret);
+        assertFalse(ret);
     }
-    
+
     @Test
-    public void testTestLoginFailHttp() throws Exception {
+    void testTestLoginFailHttp() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         when(nacosRestTemplate.postForm(any(), (Header) any(), any(), any(), any())).thenThrow(new Exception());
         Properties properties = new Properties();
@@ -89,12 +92,12 @@ public class NacosClientAuthServiceImplTest {
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         boolean ret = nacosClientAuthService.login(properties);
-        Assert.assertFalse(ret);
+        assertFalse(ret);
         
     }
-    
+
     @Test
-    public void testTestLoginServerListSuccess() throws Exception {
+    void testTestLoginServerListSuccess() throws Exception {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
@@ -112,11 +115,11 @@ public class NacosClientAuthServiceImplTest {
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         boolean ret = nacosClientAuthService.login(properties);
-        Assert.assertTrue(ret);
+        assertTrue(ret);
     }
-    
+
     @Test
-    public void testTestLoginServerListLoginInWindow() throws Exception {
+    void testTestLoginServerListLoginInWindow() throws Exception {
         //given
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
@@ -136,12 +139,12 @@ public class NacosClientAuthServiceImplTest {
         nacosClientAuthService.login(properties);
         //then
         boolean ret = nacosClientAuthService.login(properties);
-        Assert.assertTrue(ret);
+        assertTrue(ret);
         
     }
-   
+
     @Test
-    public void testGetAccessToken() throws Exception {
+    void testGetAccessToken() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setData("{\"accessToken\":\"abc\",\"tokenTtl\":1000}");
@@ -158,13 +161,13 @@ public class NacosClientAuthServiceImplTest {
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         //when
-        Assert.assertTrue(nacosClientAuthService.login(properties));
+        assertTrue(nacosClientAuthService.login(properties));
         //then
-        Assert.assertEquals("abc", nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+        assertEquals("abc", nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
-    
+
     @Test
-    public void testGetAccessEmptyToken() throws Exception {
+    void testGetAccessEmptyToken() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setData("{\"accessToken\":\"\",\"tokenTtl\":1000}");
@@ -181,13 +184,13 @@ public class NacosClientAuthServiceImplTest {
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         //when
-        Assert.assertTrue(nacosClientAuthService.login(properties));
+        assertTrue(nacosClientAuthService.login(properties));
         //then
-        Assert.assertEquals("", nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+        assertEquals("", nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
-    
+
     @Test
-    public void testGetAccessTokenWithoutToken() throws Exception {
+    void testGetAccessTokenWithoutToken() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setData("{\"tokenTtl\":1000}");
@@ -204,13 +207,13 @@ public class NacosClientAuthServiceImplTest {
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         //when
-        Assert.assertTrue(nacosClientAuthService.login(properties));
+        assertTrue(nacosClientAuthService.login(properties));
         //then
-        Assert.assertNull(nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+        assertNull(nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
-    
+
     @Test
-    public void testGetAccessTokenWithInvalidTtl() throws Exception {
+    void testGetAccessTokenWithInvalidTtl() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
         HttpRestResult<Object> result = new HttpRestResult<>();
         result.setData("{\"accessToken\":\"abc\",\"tokenTtl\":\"abc\"}");
@@ -227,6 +230,6 @@ public class NacosClientAuthServiceImplTest {
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         //when
-        Assert.assertFalse(nacosClientAuthService.login(properties));
+        assertFalse(nacosClientAuthService.login(properties));
     }
 }
