@@ -43,7 +43,7 @@ class NamingResourceInjectorTest {
     private RequestResource resource;
     
     private StsCredential stsCredential;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         namingResourceInjector = new NamingResourceInjector();
@@ -53,21 +53,21 @@ class NamingResourceInjectorTest {
         stsCredential = new StsCredential();
         StsConfig.getInstance().setRamRoleName(null);
     }
-
+    
     @AfterEach
     void tearDown() throws NoSuchFieldException, IllegalAccessException {
         clearForSts();
     }
-
+    
     @Test
     void testDoInjectWithEmpty() throws Exception {
         resource = RequestResource.namingBuilder().setResource("").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
-        String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
         assertEquals(3, actual.getAllKey().size());
         assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
         assertTrue(Long.parseLong(actual.getParameter("data")) - System.currentTimeMillis() < 100);
+        String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
         assertEquals(expectSign, actual.getParameter("signature"));
     }
     
@@ -76,13 +76,13 @@ class NamingResourceInjectorTest {
         resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
-        String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
         assertEquals(3, actual.getAllKey().size());
         assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
         assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
+        String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
         assertEquals(expectSign, actual.getParameter("signature"));
     }
-
+    
     @Test
     void testDoInjectWithoutGroup() throws Exception {
         resource = RequestResource.namingBuilder().setResource("aaa").setGroup("group").build();
@@ -94,33 +94,33 @@ class NamingResourceInjectorTest {
         String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
         assertEquals(expectSign, actual.getParameter("signature"));
     }
-
+    
     @Test
     void testDoInjectWithGroupForSts() throws Exception {
         prepareForSts();
         resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
-        String expectSign = SignUtil.sign(actual.getParameter("data"), "test-sts-sk");
         assertEquals(4, actual.getAllKey().size());
         assertEquals("test-sts-ak", actual.getParameter("ak"));
         assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
+        String expectSign = SignUtil.sign(actual.getParameter("data"), "test-sts-sk");
         assertEquals(expectSign, actual.getParameter("signature"));
     }
-
+    
     @Test
     void testDoInjectWithoutGroupForSts() throws Exception {
         prepareForSts();
         resource = RequestResource.namingBuilder().setResource("aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
-        String expectSign = SignUtil.sign(actual.getParameter("data"), "test-sts-sk");
         assertEquals(4, actual.getAllKey().size());
         assertEquals("test-sts-ak", actual.getParameter("ak"));
         assertTrue(actual.getParameter("data").endsWith("@@group@@aaa"));
+        String expectSign = SignUtil.sign(actual.getParameter("data"), "test-sts-sk");
         assertEquals(expectSign, actual.getParameter("signature"));
     }
-
+    
     @Test
     void testDoInjectForStsWithException() throws Exception {
         prepareForSts();
