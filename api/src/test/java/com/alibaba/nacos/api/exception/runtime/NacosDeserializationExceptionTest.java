@@ -18,25 +18,25 @@ package com.alibaba.nacos.api.exception.runtime;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.fasterxml.jackson.databind.type.SimpleType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Type;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class NacosDeserializationExceptionTest {
-    
+class NacosDeserializationExceptionTest {
+
     @Test
-    public void testEmptyConstructor() {
+    void testEmptyConstructor() {
         NacosDeserializationException exception = new NacosDeserializationException();
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
         assertNull(exception.getMessage());
         assertNull(exception.getTargetClass());
     }
-    
+
     @Test
-    public void testConstructorWithTargetClass() {
+    void testConstructorWithTargetClass() {
         NacosDeserializationException exception = new NacosDeserializationException(
                 NacosDeserializationExceptionTest.class);
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
@@ -44,9 +44,9 @@ public class NacosDeserializationExceptionTest {
                 NacosDeserializationExceptionTest.class.getName()), exception.getMessage());
         assertEquals(NacosDeserializationExceptionTest.class, exception.getTargetClass());
     }
-    
+
     @Test
-    public void testConstructorWithTargetType() {
+    void testConstructorWithTargetType() {
         Type type = SimpleType.constructUnsafe(NacosDeserializationExceptionTest.class);
         NacosDeserializationException exception = new NacosDeserializationException(type);
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
@@ -55,17 +55,17 @@ public class NacosDeserializationExceptionTest {
                 exception.getMessage());
         assertNull(exception.getTargetClass());
     }
-    
+
     @Test
-    public void testConstructorWithCause() {
+    void testConstructorWithCause() {
         NacosDeserializationException exception = new NacosDeserializationException(new RuntimeException("test"));
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
         assertEquals("errCode: 101, errMsg: Nacos deserialize failed.  ", exception.getMessage());
         assertNull(exception.getTargetClass());
     }
-    
+
     @Test
-    public void testConstructorWithTargetClassAndCause() {
+    void testConstructorWithTargetClassAndCause() {
         NacosDeserializationException exception = new NacosDeserializationException(
                 NacosDeserializationExceptionTest.class, new RuntimeException("test"));
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());
@@ -73,9 +73,9 @@ public class NacosDeserializationExceptionTest {
                 NacosDeserializationExceptionTest.class.getName(), "test"), exception.getMessage());
         assertEquals(NacosDeserializationExceptionTest.class, exception.getTargetClass());
     }
-    
+
     @Test
-    public void testConstructorWithTargetTypeAndCause() {
+    void testConstructorWithTargetTypeAndCause() {
         Type type = SimpleType.constructUnsafe(NacosDeserializationExceptionTest.class);
         NacosDeserializationException exception = new NacosDeserializationException(type, new RuntimeException("test"));
         assertEquals(Constants.Exception.DESERIALIZE_ERROR_CODE, exception.getErrCode());

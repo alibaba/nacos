@@ -20,45 +20,45 @@ import com.alibaba.nacos.api.cmdb.pojo.Entity;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.selector.context.CmdbContext;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.alibaba.nacos.api.common.Constants.Naming.CMDB_CONTEXT_TYPE;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AbstractCmdbSelectorTest {
+class AbstractCmdbSelectorTest {
     
     private AtomicInteger counter;
-    
-    @Before
-    public void setUp() {
+
+    @BeforeEach
+    void setUp() {
         counter = new AtomicInteger();
     }
-    
+
     @Test
-    public void testSetExpression() {
+    void testSetExpression() {
         MockCmdbSelector cmdbSelector = new MockCmdbSelector();
         assertNull(cmdbSelector.getExpression());
         cmdbSelector.setExpression("test");
         assertEquals("test", cmdbSelector.getExpression());
     }
-    
+
     @Test
-    public void testParse() throws NacosException {
+    void testParse() throws NacosException {
         MockCmdbSelector cmdbSelector = new MockCmdbSelector();
         cmdbSelector.parse("test");
         assertEquals("test", cmdbSelector.getExpression());
         assertEquals(1, counter.get());
     }
-    
+
     @Test
-    public void testSelect() {
+    void testSelect() {
         CmdbContext<Instance> context = new CmdbContext<>();
         CmdbContext.CmdbInstance<Instance> provider = new CmdbContext.CmdbInstance<>();
         provider.setInstance(new Instance());
@@ -76,14 +76,14 @@ public class AbstractCmdbSelectorTest {
         assertEquals("true", consumer.getInstance().getMetadata().get("afterSelect"));
         assertEquals("true", consumer.getEntity().getLabels().get("afterSelect"));
     }
-    
+
     @Test
-    public void testGetContextType() {
+    void testGetContextType() {
         assertEquals(CMDB_CONTEXT_TYPE, new MockCmdbSelector().getContextType());
     }
-    
+
     @Test
-    public void testGetType() {
+    void testGetType() {
         assertEquals("mock", new MockCmdbSelector().getType());
     }
     

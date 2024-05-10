@@ -20,30 +20,30 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class EmptyContentResponseTest {
+class EmptyContentResponseTest {
     
     private static final String COMMON_JSON = "{\"resultCode\":200,\"errorCode\":0,\"requestId\":\"1\",\"success\":true}";
     
     private static final String TO_STRING = "Response{resultCode=200, errorCode=0, message='null', requestId='1'}";
     
     ObjectMapper mapper = new ObjectMapper();
-    
-    @Before
-    public void setUp() throws Exception {
+
+    @BeforeEach
+    void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Test
-    public void testSetErrorInfo() {
+    void testSetErrorInfo() {
         Response response = new Response() {
         };
         response.setErrorInfo(ResponseCode.FAIL.getCode(), ResponseCode.FAIL.getDesc());
@@ -51,9 +51,9 @@ public class EmptyContentResponseTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(ResponseCode.FAIL.getDesc(), response.getMessage());
     }
-    
+
     @Test
-    public void testClientDetectionResponse() throws JsonProcessingException {
+    void testClientDetectionResponse() throws JsonProcessingException {
         ClientDetectionResponse response = new ClientDetectionResponse();
         response.setRequestId("1");
         String actual = mapper.writeValueAsString(response);
@@ -61,9 +61,9 @@ public class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, ClientDetectionResponse.class);
         assertCommonResponse(response);
     }
-    
+
     @Test
-    public void testConnectResetResponse() throws JsonProcessingException {
+    void testConnectResetResponse() throws JsonProcessingException {
         ConnectResetResponse response = new ConnectResetResponse();
         response.setRequestId("1");
         String actual = mapper.writeValueAsString(response);
@@ -71,9 +71,9 @@ public class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, ConnectResetResponse.class);
         assertCommonResponse(response);
     }
-    
+
     @Test
-    public void testHealthCheckResponse() throws JsonProcessingException {
+    void testHealthCheckResponse() throws JsonProcessingException {
         HealthCheckResponse response = new HealthCheckResponse();
         response.setRequestId("1");
         String actual = mapper.writeValueAsString(response);
@@ -81,9 +81,9 @@ public class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, HealthCheckResponse.class);
         assertCommonResponse(response);
     }
-    
+
     @Test
-    public void testServerReloadResponse() throws JsonProcessingException {
+    void testServerReloadResponse() throws JsonProcessingException {
         ServerReloadResponse response = new ServerReloadResponse();
         response.setRequestId("1");
         String actual = mapper.writeValueAsString(response);
@@ -91,9 +91,9 @@ public class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, ServerReloadResponse.class);
         assertCommonResponse(response);
     }
-    
+
     @Test
-    public void testSetupAckResponse() throws JsonProcessingException {
+    void testSetupAckResponse() throws JsonProcessingException {
         SetupAckResponse response = new SetupAckResponse();
         response.setRequestId("1");
         String actual = mapper.writeValueAsString(response);

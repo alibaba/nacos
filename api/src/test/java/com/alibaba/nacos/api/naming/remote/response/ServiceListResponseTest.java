@@ -20,27 +20,27 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ServiceListResponseTest {
+class ServiceListResponseTest {
     
     protected static ObjectMapper mapper;
-    
-    @BeforeClass
-    public static void setUp() throws Exception {
+
+    @BeforeAll
+    static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Test
-    public void testSerializeSuccessResponse() throws JsonProcessingException {
+    void testSerializeSuccessResponse() throws JsonProcessingException {
         ServiceListResponse response = ServiceListResponse.buildSuccessResponse(10, Collections.singletonList("a"));
         String json = mapper.writeValueAsString(response);
         assertTrue(json.contains("\"count\":10"));
@@ -49,9 +49,9 @@ public class ServiceListResponseTest {
         assertTrue(json.contains("\"errorCode\":0"));
         assertTrue(json.contains("\"success\":true"));
     }
-    
+
     @Test
-    public void testSerializeFailResponse() throws JsonProcessingException {
+    void testSerializeFailResponse() throws JsonProcessingException {
         ServiceListResponse response = ServiceListResponse.buildFailResponse("test");
         String json = mapper.writeValueAsString(response);
         assertTrue(json.contains("\"resultCode\":500"));
@@ -59,9 +59,9 @@ public class ServiceListResponseTest {
         assertTrue(json.contains("\"message\":\"test\""));
         assertTrue(json.contains("\"success\":false"));
     }
-    
+
     @Test
-    public void testDeserialize() throws JsonProcessingException {
+    void testDeserialize() throws JsonProcessingException {
         String json = "{\"resultCode\":200,\"errorCode\":0,\"count\":10,\"serviceNames\":[\"a\"],\"success\":true}";
         ServiceListResponse response = mapper.readValue(json, ServiceListResponse.class);
         assertEquals(10, response.getCount());

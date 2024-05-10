@@ -17,40 +17,40 @@
 package com.alibaba.nacos.api.exception.runtime;
 
 import com.alibaba.nacos.api.common.Constants;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class NacosSerializationExceptionTest {
-    
+class NacosSerializationExceptionTest {
+
     @Test
-    public void testEmptyConstructor() {
+    void testEmptyConstructor() {
         NacosSerializationException exception = new NacosSerializationException();
         assertEquals(Constants.Exception.SERIALIZE_ERROR_CODE, exception.getErrCode());
         assertNull(exception.getMessage());
         assertNull(exception.getSerializedClass());
     }
-    
+
     @Test
-    public void testConstructorWithSerializedClass() {
+    void testConstructorWithSerializedClass() {
         NacosSerializationException exception = new NacosSerializationException(NacosSerializationExceptionTest.class);
         assertEquals(Constants.Exception.SERIALIZE_ERROR_CODE, exception.getErrCode());
         assertEquals(String.format("errCode: 100, errMsg: Nacos serialize for class [%s] failed.  ",
                 NacosSerializationExceptionTest.class.getName()), exception.getMessage());
         assertEquals(NacosSerializationExceptionTest.class, exception.getSerializedClass());
     }
-    
+
     @Test
-    public void testConstructorWithCause() {
+    void testConstructorWithCause() {
         NacosSerializationException exception = new NacosSerializationException(new RuntimeException("test"));
         assertEquals(Constants.Exception.SERIALIZE_ERROR_CODE, exception.getErrCode());
         assertEquals("errCode: 100, errMsg: Nacos serialize failed.  ", exception.getMessage());
         assertNull(exception.getSerializedClass());
     }
-    
+
     @Test
-    public void testConstructorWithSerializedClassAndCause() {
+    void testConstructorWithSerializedClassAndCause() {
         NacosSerializationException exception = new NacosSerializationException(NacosSerializationExceptionTest.class,
                 new RuntimeException("test"));
         assertEquals(Constants.Exception.SERIALIZE_ERROR_CODE, exception.getErrCode());

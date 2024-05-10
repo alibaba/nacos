@@ -16,15 +16,15 @@
 
 package com.alibaba.nacos.api.config;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class ConfigChangeItemTest {
-    
+class ConfigChangeItemTest {
+
     @Test
-    public void testSetNewValue() {
+    void testSetNewValue() {
         ConfigChangeItem item = new ConfigChangeItem("testKey", null, "testValue");
         item.setType(PropertyChangeType.ADDED);
         assertEquals("testKey", item.getKey());
@@ -44,9 +44,9 @@ public class ConfigChangeItemTest {
         assertEquals("deletedKey", item.getKey());
         assertEquals(PropertyChangeType.DELETED, item.getType());
     }
-    
+
     @Test
-    public void testToString() {
+    void testToString() {
         ConfigChangeItem item = new ConfigChangeItem("testKey", null, "testValue");
         item.setType(PropertyChangeType.ADDED);
         assertEquals("ConfigChangeItem{key='testKey', oldValue='null', newValue='testValue', type=ADDED}",

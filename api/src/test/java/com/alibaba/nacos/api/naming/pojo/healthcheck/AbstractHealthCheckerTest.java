@@ -20,43 +20,43 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class AbstractHealthCheckerTest {
+class AbstractHealthCheckerTest {
     
     private final ObjectMapper objectMapper = new ObjectMapper();
-    
-    @Before
-    public void setUp() {
+
+    @BeforeEach
+    void setUp() {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.registerSubtypes(new NamedType(TestChecker.class, TestChecker.TYPE));
     }
-    
+
     @Test
-    public void testSerialize() throws JsonProcessingException {
+    void testSerialize() throws JsonProcessingException {
         TestChecker testChecker = new TestChecker();
         testChecker.setTestValue("");
         String actual = objectMapper.writeValueAsString(testChecker);
         assertTrue(actual.contains("\"testValue\":\"\""));
         assertTrue(actual.contains("\"type\":\"TEST\""));
     }
-    
+
     @Test
-    public void testDeserialize() throws IOException {
+    void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"TEST\",\"testValue\":\"\"}";
         TestChecker actual = objectMapper.readValue(testChecker, TestChecker.class);
         assertEquals("", actual.getTestValue());
         assertEquals(TestChecker.TYPE, actual.getType());
     }
-    
+
     @Test
-    public void testClone() throws CloneNotSupportedException {
+    void testClone() throws CloneNotSupportedException {
         AbstractHealthChecker none = new AbstractHealthChecker.None().clone();
         assertEquals(AbstractHealthChecker.None.class, none.getClass());
     }

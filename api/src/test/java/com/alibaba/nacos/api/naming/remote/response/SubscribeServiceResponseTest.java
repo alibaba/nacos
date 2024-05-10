@@ -21,25 +21,25 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SubscribeServiceResponseTest {
+class SubscribeServiceResponseTest {
     
     protected static ObjectMapper mapper;
-    
-    @BeforeClass
-    public static void setUp() throws Exception {
+
+    @BeforeAll
+    static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-    
+
     @Test
-    public void testSerializeSuccessResponse() throws JsonProcessingException {
+    void testSerializeSuccessResponse() throws JsonProcessingException {
         SubscribeServiceResponse response = new SubscribeServiceResponse(200, null, new ServiceInfo());
         String json = mapper.writeValueAsString(response);
         assertTrue(json.contains("\"serviceInfo\":{"));
@@ -47,9 +47,9 @@ public class SubscribeServiceResponseTest {
         assertTrue(json.contains("\"errorCode\":0"));
         assertTrue(json.contains("\"success\":true"));
     }
-    
+
     @Test
-    public void testSerializeFailResponse() throws JsonProcessingException {
+    void testSerializeFailResponse() throws JsonProcessingException {
         SubscribeServiceResponse response = new SubscribeServiceResponse(500, "test", null);
         String json = mapper.writeValueAsString(response);
         assertTrue(json.contains("\"resultCode\":500"));
@@ -57,9 +57,9 @@ public class SubscribeServiceResponseTest {
         assertTrue(json.contains("\"message\":\"test\""));
         assertTrue(json.contains("\"success\":false"));
     }
-    
+
     @Test
-    public void testDeserialize() throws JsonProcessingException {
+    void testDeserialize() throws JsonProcessingException {
         String json = "{\"resultCode\":200,\"errorCode\":0,\"serviceInfo\":{\"cacheMillis\":1000,\"hosts\":[],"
                 + "\"lastRefTime\":0,\"checksum\":\"\",\"allIPs\":false,\"reachProtectionThreshold\":false,"
                 + "\"valid\":true},\"success\":true}";

@@ -17,18 +17,18 @@
 package com.alibaba.nacos.api.naming.pojo.builder;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class InstanceBuilderTest {
+class InstanceBuilderTest {
     
     private static final String SERVICE_NAME = "testService";
     
@@ -51,9 +51,9 @@ public class InstanceBuilderTest {
     private static final String META_KEY = "key";
     
     private static final String META_VALUE = "value";
-    
+
     @Test
-    public void testBuildFullInstance() {
+    void testBuildFullInstance() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();
         Instance actual = builder.setServiceName(SERVICE_NAME).setClusterName(CLUSTER_NAME).setInstanceId(INSTANCE_ID)
                 .setIp(IP).setPort(PORT).setWeight(WEIGHT).setHealthy(HEALTHY).setEnabled(ENABLED)
@@ -70,9 +70,9 @@ public class InstanceBuilderTest {
         assertThat(actual.getMetadata().size(), is(1));
         assertThat(actual.getMetadata().get(META_KEY), is(META_VALUE));
     }
-    
+
     @Test
-    public void testBuildInstanceWithoutNewMetadata() {
+    void testBuildInstanceWithoutNewMetadata() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();
         Map<String, String> metadata = new HashMap<>();
         metadata.put("test", "test");
@@ -88,9 +88,9 @@ public class InstanceBuilderTest {
         assertTrue(actual.isEphemeral());
         assertEquals(1, actual.getMetadata().size());
     }
-    
+
     @Test
-    public void testBuildEmptyInstance() {
+    void testBuildEmptyInstance() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();
         Instance actual = builder.build();
         assertNull(actual.getServiceName());
