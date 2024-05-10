@@ -59,7 +59,7 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
         connectionCheckResponse.setCode(ConnectionCheckCode.PASS_BY_TOTAL);
         int totalCountLimit = connectionControlRule.getCountLimit();
         // If totalCountLimit equals to -1, no limit is applied.
-        if (totalCountLimit == -1) {
+        if (totalCountLimit < 0) {
             return connectionCheckResponse;
         }
         
