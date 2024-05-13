@@ -50,8 +50,7 @@ public class NacosAuthServiceImpl implements AuthService {
      *
      * @return true if all user has at least one admin role.
      */
-    @Override
-    public boolean hasGlobalAdminRole() {
+    private boolean hasGlobalAdminRole() {
         if (authConfigs.isHasGlobalAdminRole()) {
             return true;
         }
@@ -69,5 +68,10 @@ public class NacosAuthServiceImpl implements AuthService {
             return null;
         }
         return roleInfoPage.getPageItems();
+    }
+    
+    @Override
+    public boolean isAdminRequest() {
+        return !hasGlobalAdminRole();
     }
 }

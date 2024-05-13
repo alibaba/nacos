@@ -24,9 +24,9 @@ package com.alibaba.nacos.auth;
 public interface AuthService {
     
     /**
-     * Whether the user exist the administrator role.
+     * Whether need administrator .
      *
-     * @return if the user exist the administrator role.
+     * @return if the need exist the administrator role.
      */
-    boolean hasGlobalAdminRole();
+    boolean isAdminRequest();
 }

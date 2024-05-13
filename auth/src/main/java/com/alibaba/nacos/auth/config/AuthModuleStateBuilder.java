@@ -24,6 +24,7 @@ import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Module state builder for auth module.
@@ -40,7 +41,7 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
     
     public static final String AUTH_SYSTEM_TYPE = "auth_system_type";
     
-    public static final String AUTH_ADMIN_EXIST = "auth_admin_exist";
+    public static final String AUTH_ADMIN_REQUEST = "auth_admin_request";
     
     @Override
     public ModuleState build() {
@@ -49,8 +50,11 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
         result.newState(AUTH_ENABLED, authConfigs.isAuthEnabled());
         result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfigs));
         result.newState(AUTH_SYSTEM_TYPE, authConfigs.getNacosAuthSystemType());
-        AuthService authService = ApplicationUtils.getBean(AuthService.class);
-        result.newState(AUTH_ADMIN_EXIST, authService.hasGlobalAdminRole());
+        AtomicBoolean adminRequest = new AtomicBoolean(false);
+        ApplicationUtils.getBeanIfExist(AuthService.class, authService -> {
+            adminRequest.set(authService.isAdminRequest());
+        });
+        result.newState(AUTH_ADMIN_REQUEST, adminRequest.get());
         return result;
     }
     
