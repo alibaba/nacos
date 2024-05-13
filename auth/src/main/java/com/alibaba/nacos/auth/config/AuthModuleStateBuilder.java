@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.config;
 
+import com.alibaba.nacos.auth.AuthService;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.module.ModuleState;
@@ -48,8 +49,14 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
         result.newState(AUTH_ENABLED, authConfigs.isAuthEnabled());
         result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfigs));
         result.newState(AUTH_SYSTEM_TYPE, authConfigs.getNacosAuthSystemType());
-        result.newState(AUTH_ADMIN_EXIST, authConfigs.isHasGlobalAdminRole());
+        AuthService authService = ApplicationUtils.getBean(AuthService.class);
+        result.newState(AUTH_ADMIN_EXIST, authService.hasGlobalAdminRole());
         return result;
+    }
+    
+    @Override
+    public boolean isCacheable() {
+        return false;
     }
     
     private Boolean isLoginPageEnabled(AuthConfigs authConfigs) {

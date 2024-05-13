@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,38 +14,19 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.sys.module;
+package com.alibaba.nacos.auth;
 
 /**
- * Module state builder.
+ * AuthService.
  *
- * @author xiweng.yy
+ * @author : huangtianhui
  */
-public interface ModuleStateBuilder {
+public interface AuthService {
     
     /**
-     * Build module state.
+     * Whether the user exist the administrator role.
      *
-     * @return ModuleState
+     * @return if the user exist the administrator role.
      */
-    ModuleState build();
-    
-    /**
-     * Whether module is ignored, default return false.
-     *
-     * @return boolean
-     */
-    default boolean isIgnore() {
-        return false;
-    }
-    
-    /**
-     * Whether module is cache, default return true.
-     *
-     * @return boolean
-     */
-    default boolean isCacheable() {
-        return true;
-    }
-    
+    boolean hasGlobalAdminRole();
 }

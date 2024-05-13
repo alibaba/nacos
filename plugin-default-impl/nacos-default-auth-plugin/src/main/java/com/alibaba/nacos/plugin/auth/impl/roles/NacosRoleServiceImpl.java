@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.auth.impl.roles;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
-import com.alibaba.nacos.auth.config.AuthModuleStateBuilder;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
@@ -34,13 +33,10 @@ import com.alibaba.nacos.plugin.auth.impl.persistence.RoleInfo;
 import com.alibaba.nacos.plugin.auth.impl.persistence.RolePersistService;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
-import com.alibaba.nacos.sys.module.ModuleState;
-import com.alibaba.nacos.sys.module.ModuleStateHolder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -79,11 +75,6 @@ public class NacosRoleServiceImpl {
     private volatile Map<String, List<RoleInfo>> roleInfoMap = new ConcurrentHashMap<>();
     
     private volatile Map<String, List<PermissionInfo>> permissionInfoMap = new ConcurrentHashMap<>();
-    
-    @PostConstruct
-    private void init() {
-        hasGlobalAdminRole();
-    }
     
     @Scheduled(initialDelay = 5000, fixedDelay = 15000)
     private void reload() {
@@ -256,12 +247,6 @@ public class NacosRoleServiceImpl {
         rolePersistService.addRole(AuthConstants.GLOBAL_ADMIN_ROLE, username);
         roleSet.add(AuthConstants.GLOBAL_ADMIN_ROLE);
         authConfigs.setHasGlobalAdminRole(true);
-        //change state
-        ModuleStateHolder.getInstance().getModuleState(AuthModuleStateBuilder.AUTH_MODULE)
-                .ifPresent(moduleState -> {
-                    ModuleState temp = new AuthModuleStateBuilder().build();
-                    moduleState.getStates().putAll(temp.getStates());
-                });
     }
     
     /**
