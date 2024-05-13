@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.config;
 
+import com.alibaba.nacos.auth.AuthService;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.After;
@@ -40,11 +41,16 @@ public class AuthModuleStateBuilderTest {
     @Mock
     private AuthConfigs authConfigs;
     
+    @Mock
+    private AuthService authService;
+    
     @Before
     public void setUp() throws Exception {
         when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
+        when(context.getBean(AuthService.class)).thenReturn(authService);
         ApplicationUtils.injectContext(context);
         when(authConfigs.getNacosAuthSystemType()).thenReturn("nacos");
+        when(authService.isAdminRequest()).thenReturn(false);
     }
     
     @After
@@ -57,6 +63,6 @@ public class AuthModuleStateBuilderTest {
         assertFalse((Boolean) actual.getStates().get(AUTH_ENABLED));
         assertFalse((Boolean) actual.getStates().get("login_page_enabled"));
         assertEquals("nacos", actual.getStates().get("auth_system_type"));
-        assertFalse((Boolean) actual.getStates().get("auth_admin_exist"));
+        assertFalse((Boolean) actual.getStates().get("auth_admin_request"));
     }
 }
