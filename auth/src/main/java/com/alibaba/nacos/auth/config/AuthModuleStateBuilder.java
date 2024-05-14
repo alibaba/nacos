@@ -50,7 +50,7 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
         result.newState(AUTH_ENABLED, authConfigs.isAuthEnabled());
         result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfigs));
         result.newState(AUTH_SYSTEM_TYPE, authConfigs.getNacosAuthSystemType());
-        AtomicBoolean adminRequest = new AtomicBoolean(false);
+        AtomicBoolean adminRequest = new AtomicBoolean(true);
         ApplicationUtils.getBeanIfExist(AuthService.class, authService -> adminRequest.set(authService.isAdminRequest()));
         result.newState(AUTH_ADMIN_REQUEST, adminRequest.get());
         return result;
