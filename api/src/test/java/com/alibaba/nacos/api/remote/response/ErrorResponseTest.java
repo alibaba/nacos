@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ErrorResponseTest {
-
+    
     @Test
     void testBuildWithErrorCode() {
         int errorCode = 500;
@@ -35,7 +35,7 @@ class ErrorResponseTest {
         assertEquals(errorCode, response.getResultCode());
         assertEquals(msg, response.getMessage());
     }
-
+    
     @Test
     void testBuildWithThrowable() {
         String errMsg = "exception msg";
@@ -47,7 +47,7 @@ class ErrorResponseTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(errMsg, response.getMessage());
     }
-
+    
     @Test
     void testBuildWithNacosException() {
         int errCode = 500;
@@ -60,7 +60,7 @@ class ErrorResponseTest {
         assertEquals(errCode, response.getResultCode());
         assertEquals(errMsg, response.getMessage());
     }
-
+    
     @Test
     void testBuildWithNacosRuntimeException() {
         int errCode = 500;
@@ -73,5 +73,5 @@ class ErrorResponseTest {
         assertEquals(errCode, response.getResultCode());
         assertEquals("errCode: " + errCode + ", errMsg: " + errMsg + " ", response.getMessage());
     }
-
+    
 }

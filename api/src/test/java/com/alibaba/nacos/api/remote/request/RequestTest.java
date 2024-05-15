@@ -26,11 +26,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class RequestTest {
-
+    
     @BeforeEach
     void setUp() throws Exception {
     }
-
+    
     @Test
     void testHeader() {
         MockRequest request = new MockRequest();

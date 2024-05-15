@@ -29,7 +29,7 @@ class ConfigChangeNotifyRequestTest extends BasedConfigRequestTest {
     ConfigChangeNotifyRequest configChangeNotifyRequest;
     
     String requestId;
-
+    
     @BeforeEach
     void before() {
         configChangeNotifyRequest = ConfigChangeNotifyRequest.build(DATA_ID, GROUP, TENANT);

@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class NacosSerializationExceptionTest {
-
+    
     @Test
     void testEmptyConstructor() {
         NacosSerializationException exception = new NacosSerializationException();
@@ -31,7 +31,7 @@ class NacosSerializationExceptionTest {
         assertNull(exception.getMessage());
         assertNull(exception.getSerializedClass());
     }
-
+    
     @Test
     void testConstructorWithSerializedClass() {
         NacosSerializationException exception = new NacosSerializationException(NacosSerializationExceptionTest.class);
@@ -40,7 +40,7 @@ class NacosSerializationExceptionTest {
                 NacosSerializationExceptionTest.class.getName()), exception.getMessage());
         assertEquals(NacosSerializationExceptionTest.class, exception.getSerializedClass());
     }
-
+    
     @Test
     void testConstructorWithCause() {
         NacosSerializationException exception = new NacosSerializationException(new RuntimeException("test"));
@@ -48,7 +48,7 @@ class NacosSerializationExceptionTest {
         assertEquals("errCode: 100, errMsg: Nacos serialize failed.  ", exception.getMessage());
         assertNull(exception.getSerializedClass());
     }
-
+    
     @Test
     void testConstructorWithSerializedClassAndCause() {
         NacosSerializationException exception = new NacosSerializationException(NacosSerializationExceptionTest.class,

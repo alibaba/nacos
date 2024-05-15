@@ -29,7 +29,7 @@ class ConfigRemoveRequestTest extends BasedConfigRequestTest {
     ConfigRemoveRequest configRemoveRequest;
     
     String requestId;
-
+    
     @BeforeEach
     void before() {
         configRemoveRequest = new ConfigRemoveRequest(DATA_ID, GROUP, TENANT, TAG);

@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BatchInstanceRequestTest extends BasedNamingRequestTest {
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         BatchInstanceRequest request = new BatchInstanceRequest(NAMESPACE, SERVICE, GROUP,
@@ -37,7 +37,7 @@ class BatchInstanceRequestTest extends BasedNamingRequestTest {
         assertTrue(json.contains("\"type\":\"" + NamingRemoteConstants.BATCH_REGISTER_INSTANCE + "\""));
         assertTrue(json.contains("\"instances\":[{"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","

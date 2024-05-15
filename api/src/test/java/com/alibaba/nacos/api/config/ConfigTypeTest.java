@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigTypeTest {
-
+    
     @Test
     void isValidType() {
         assertTrue(ConfigType.isValidType("xml"));
@@ -36,7 +36,7 @@ class ConfigTypeTest {
         assertFalse(ConfigType.isValidType(""));
         assertFalse(ConfigType.isValidType("yml"));
     }
-
+    
     @Test
     void testGetDefaultType() {
         assertEquals("text", ConfigType.getDefaultType().getType());

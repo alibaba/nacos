@@ -28,53 +28,53 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class HealthCheckerFactoryTest {
-
+    
     @BeforeAll
     static void beforeClass() {
         HealthCheckerFactory.registerSubType(new TestChecker());
     }
-
+    
     @Test
     void testSerialize() {
         Tcp tcp = new Tcp();
         String actual = HealthCheckerFactory.serialize(tcp);
         assertTrue(actual.contains("\"type\":\"TCP\""));
     }
-
+    
     @Test
     void testSerializeExtend() {
         TestChecker testChecker = new TestChecker();
         String actual = HealthCheckerFactory.serialize(testChecker);
         assertTrue(actual.contains("\"type\":\"TEST\""));
     }
-
+    
     @Test
     void testDeserialize() {
         String tcpString = "{\"type\":\"TCP\"}";
         AbstractHealthChecker actual = HealthCheckerFactory.deserialize(tcpString);
         assertEquals(Tcp.class, actual.getClass());
     }
-
+    
     @Test
     void testDeserializeExtend() {
         String tcpString = "{\"type\":\"TEST\",\"testValue\":null}";
         AbstractHealthChecker actual = HealthCheckerFactory.deserialize(tcpString);
         assertEquals(TestChecker.class, actual.getClass());
     }
-
+    
     @Test
     void testSerializeNoRegister() {
         NoRegisterHealthChecker noRegister = new NoRegisterHealthChecker();
         assertFalse(HealthCheckerFactory.serialize(noRegister).contains("no register"));
     }
-
+    
     @Test
     void testDeserializeNoRegister() {
         String tcpString = "{\"type\":\"no register\",\"testValue\":null}";
         AbstractHealthChecker actual = HealthCheckerFactory.deserialize(tcpString);
         assertEquals(AbstractHealthChecker.None.class, actual.getClass());
     }
-
+    
     @Test
     void testSerializeFailure() {
         assertThrows(NacosSerializationException.class, () -> {
@@ -82,7 +82,7 @@ class HealthCheckerFactoryTest {
             System.out.println(HealthCheckerFactory.serialize(selfDependHealthChecker));
         });
     }
-
+    
     @Test
     void testDeserializeFailure() {
         assertThrows(NacosDeserializationException.class, () -> {
@@ -90,7 +90,7 @@ class HealthCheckerFactoryTest {
             System.out.println(HealthCheckerFactory.deserialize(errorString));
         });
     }
-
+    
     @Test
     void testCreateNoneHealthChecker() {
         assertEquals(AbstractHealthChecker.None.class, HealthCheckerFactory.createNoneHealthChecker().getClass());

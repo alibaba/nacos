@@ -35,13 +35,13 @@ class EmptyContentResponseTest {
     private static final String TO_STRING = "Response{resultCode=200, errorCode=0, message='null', requestId='1'}";
     
     ObjectMapper mapper = new ObjectMapper();
-
+    
     @BeforeEach
     void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSetErrorInfo() {
         Response response = new Response() {
@@ -51,7 +51,7 @@ class EmptyContentResponseTest {
         assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
         assertEquals(ResponseCode.FAIL.getDesc(), response.getMessage());
     }
-
+    
     @Test
     void testClientDetectionResponse() throws JsonProcessingException {
         ClientDetectionResponse response = new ClientDetectionResponse();
@@ -61,7 +61,7 @@ class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, ClientDetectionResponse.class);
         assertCommonResponse(response);
     }
-
+    
     @Test
     void testConnectResetResponse() throws JsonProcessingException {
         ConnectResetResponse response = new ConnectResetResponse();
@@ -71,7 +71,7 @@ class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, ConnectResetResponse.class);
         assertCommonResponse(response);
     }
-
+    
     @Test
     void testHealthCheckResponse() throws JsonProcessingException {
         HealthCheckResponse response = new HealthCheckResponse();
@@ -81,7 +81,7 @@ class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, HealthCheckResponse.class);
         assertCommonResponse(response);
     }
-
+    
     @Test
     void testServerReloadResponse() throws JsonProcessingException {
         ServerReloadResponse response = new ServerReloadResponse();
@@ -91,7 +91,7 @@ class EmptyContentResponseTest {
         response = mapper.readValue(COMMON_JSON, ServerReloadResponse.class);
         assertCommonResponse(response);
     }
-
+    
     @Test
     void testSetupAckResponse() throws JsonProcessingException {
         SetupAckResponse response = new SetupAckResponse();

@@ -30,21 +30,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ClientRemoteAbilityTest {
     
     private static ObjectMapper mapper;
-
+    
     @BeforeAll
     static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         ClientRemoteAbility abilities = new ClientRemoteAbility();
         String json = mapper.writeValueAsString(abilities);
         assertEquals("{\"supportRemoteConnection\":false}", json);
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"supportRemoteConnection\":true}";

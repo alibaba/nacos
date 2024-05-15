@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class HealthCheckTypeTest {
-
+    
     @Test
     void testOfHealthCheckerClassForBuildInType() {
         assertEquals(Tcp.class, HealthCheckType.ofHealthCheckerClass("TCP"));
@@ -35,18 +35,18 @@ class HealthCheckTypeTest {
         assertEquals(Mysql.class, HealthCheckType.ofHealthCheckerClass("MYSQL"));
         assertEquals(AbstractHealthChecker.None.class, HealthCheckType.ofHealthCheckerClass("NONE"));
     }
-
+    
     @Test
     void testOfHealthCheckerClassForExtendType() {
         HealthCheckType.registerHealthChecker(TestChecker.TYPE, TestChecker.class);
         assertEquals(TestChecker.class, HealthCheckType.ofHealthCheckerClass(TestChecker.TYPE));
     }
-
+    
     @Test
     void testOfHealthCheckerClassForNonExistType() {
         assertNull(HealthCheckType.ofHealthCheckerClass("non-exist"));
     }
-
+    
     @Test
     void testGetLoadedHealthCheckerClasses() {
         HealthCheckType.registerHealthChecker(TestChecker.TYPE, TestChecker.class);

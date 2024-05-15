@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class ServerConfigAbilityTest {
-
+    
     @Test
     void testEquals() {
         ServerConfigAbility ability = new ServerConfigAbility();

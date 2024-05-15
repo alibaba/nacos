@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SubscribeServiceRequestTest extends BasedNamingRequestTest {
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         SubscribeServiceRequest request = new SubscribeServiceRequest(NAMESPACE, GROUP, SERVICE, "", true);
@@ -33,7 +33,7 @@ class SubscribeServiceRequestTest extends BasedNamingRequestTest {
         assertTrue(json.contains("\"clusters\":\"\""));
         assertTrue(json.contains("\"subscribe\":true"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","

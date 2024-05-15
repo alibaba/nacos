@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class AbstractListenerTest {
-
+    
     @Test
     void testGetExecutor() {
         // Default listener executor is null.

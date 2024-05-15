@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AbstractPushCallBackTest {
     
     boolean testValue;
-
+    
     @Test
     void testAbstractPushCallBack() {
         AbstractPushCallBack callBack = new AbstractPushCallBack(2000) {

@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class NacosExceptionTest {
-
+    
     @Test
     void testEmptyConstructor() {
         NacosException exception = new NacosException();
@@ -33,7 +33,7 @@ class NacosExceptionTest {
         exception.setErrMsg("test");
         assertEquals("ErrCode:400, ErrMsg:test", exception.toString());
     }
-
+    
     @Test
     void testConstructorWithErrMsg() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR, "test");
@@ -41,7 +41,7 @@ class NacosExceptionTest {
         assertEquals("test", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:test", exception.toString());
     }
-
+    
     @Test
     void testConstructorWithCause() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR, new RuntimeException("cause test"));
@@ -49,7 +49,7 @@ class NacosExceptionTest {
         assertEquals("cause test", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:cause test", exception.toString());
     }
-
+    
     @Test
     void testConstructorWithMultiCauses() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR,
@@ -58,7 +58,7 @@ class NacosExceptionTest {
         assertEquals("multi", exception.getErrMsg());
         assertEquals("ErrCode:500, ErrMsg:multi", exception.toString());
     }
-
+    
     @Test
     void testConstructorWithFull() {
         NacosException exception = new NacosException(NacosException.SERVER_ERROR, "test",

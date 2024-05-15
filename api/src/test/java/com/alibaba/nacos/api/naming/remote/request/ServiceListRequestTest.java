@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServiceListRequestTest extends BasedNamingRequestTest {
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         ServiceListRequest request = new ServiceListRequest(NAMESPACE, GROUP, 1, 10);
@@ -37,7 +37,7 @@ class ServiceListRequestTest extends BasedNamingRequestTest {
         assertTrue(json.contains("\"pageNo\":1"));
         assertTrue(json.contains("\"pageSize\":10"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"\",\"groupName\":\"group\","

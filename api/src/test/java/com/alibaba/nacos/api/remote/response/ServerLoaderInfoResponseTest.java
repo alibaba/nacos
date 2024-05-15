@@ -29,13 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ServerLoaderInfoResponseTest {
     
     ObjectMapper mapper = new ObjectMapper();
-
+    
     @BeforeEach
     void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSerialization() throws JsonProcessingException {
         ServerLoaderInfoResponse response = new ServerLoaderInfoResponse();
@@ -44,7 +44,7 @@ class ServerLoaderInfoResponseTest {
         System.out.println(actual);
         assertTrue(actual.contains("\"loaderMetrics\":{\"test\":\"testValue\"}"));
     }
-
+    
     @Test
     void testDeserialization() throws JsonProcessingException {
         String json = "{\"resultCode\":200,\"errorCode\":0,\"loaderMetrics\":{\"test\":\"testValue\"},\"success\":true}";

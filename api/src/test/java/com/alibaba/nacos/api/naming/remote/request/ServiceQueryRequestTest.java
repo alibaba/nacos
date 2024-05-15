@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServiceQueryRequestTest extends BasedNamingRequestTest {
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         ServiceQueryRequest request = new ServiceQueryRequest(NAMESPACE, SERVICE, GROUP);
@@ -35,7 +35,7 @@ class ServiceQueryRequestTest extends BasedNamingRequestTest {
         assertTrue(json.contains("\"healthyOnly\":false"));
         assertTrue(json.contains("\"udpPort\":0"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","

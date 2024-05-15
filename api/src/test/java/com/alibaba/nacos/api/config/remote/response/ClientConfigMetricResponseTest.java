@@ -32,7 +32,7 @@ public class ClientConfigMetricResponseTest extends BasedConfigResponseTest {
     ClientConfigMetricResponse clientConfigMetricResponse;
     
     Map<String, Object> metric = new HashMap<>(16);
-
+    
     @BeforeEach
     void before() {
         metric.put("m1", "v1");

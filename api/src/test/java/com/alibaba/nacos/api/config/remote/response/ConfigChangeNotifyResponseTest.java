@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ConfigChangeNotifyResponseTest extends BasedConfigResponseTest {
     
     ConfigChangeNotifyResponse configChangeNotifyResponse;
-
+    
     @BeforeEach
     void before() {
         configChangeNotifyResponse = new ConfigChangeNotifyResponse();
@@ -41,7 +41,7 @@ public class ConfigChangeNotifyResponseTest extends BasedConfigResponseTest {
         assertTrue(json.contains("\"requestId\":\"" + requestId));
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.SUCCESS.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));
-    
+        
     }
     
     @Override

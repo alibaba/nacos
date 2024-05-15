@@ -35,12 +35,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AbstractCmdbSelectorTest {
     
     private AtomicInteger counter;
-
+    
     @BeforeEach
     void setUp() {
         counter = new AtomicInteger();
     }
-
+    
     @Test
     void testSetExpression() {
         MockCmdbSelector cmdbSelector = new MockCmdbSelector();
@@ -48,7 +48,7 @@ class AbstractCmdbSelectorTest {
         cmdbSelector.setExpression("test");
         assertEquals("test", cmdbSelector.getExpression());
     }
-
+    
     @Test
     void testParse() throws NacosException {
         MockCmdbSelector cmdbSelector = new MockCmdbSelector();
@@ -56,7 +56,7 @@ class AbstractCmdbSelectorTest {
         assertEquals("test", cmdbSelector.getExpression());
         assertEquals(1, counter.get());
     }
-
+    
     @Test
     void testSelect() {
         CmdbContext<Instance> context = new CmdbContext<>();
@@ -76,12 +76,12 @@ class AbstractCmdbSelectorTest {
         assertEquals("true", consumer.getInstance().getMetadata().get("afterSelect"));
         assertEquals("true", consumer.getEntity().getLabels().get("afterSelect"));
     }
-
+    
     @Test
     void testGetContextType() {
         assertEquals(CMDB_CONTEXT_TYPE, new MockCmdbSelector().getContextType());
     }
-
+    
     @Test
     void testGetType() {
         assertEquals("mock", new MockCmdbSelector().getType());

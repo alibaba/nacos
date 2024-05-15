@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ConfigChangeItemTest {
-
+    
     @Test
     void testSetNewValue() {
         ConfigChangeItem item = new ConfigChangeItem("testKey", null, "testValue");
@@ -44,7 +44,7 @@ class ConfigChangeItemTest {
         assertEquals("deletedKey", item.getKey());
         assertEquals(PropertyChangeType.DELETED, item.getType());
     }
-
+    
     @Test
     void testToString() {
         ConfigChangeItem item = new ConfigChangeItem("testKey", null, "testValue");

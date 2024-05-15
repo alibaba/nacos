@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServiceTest {
-
+    
     @Test
     void testSetAndGet() {
         Service service = new Service();
@@ -49,7 +49,7 @@ class ServiceTest {
         assertEquals(1, service.getMetadata().size());
         assertEquals("b", service.getMetadata().get("a"));
     }
-
+    
     @Test
     void testToString() {
         Service service = new Service("service");
@@ -57,6 +57,7 @@ class ServiceTest {
         service.setAppName("app");
         service.setProtectThreshold(1.0f);
         service.setMetadata(Collections.singletonMap("a", "b"));
-        assertEquals("Service{name='service', protectThreshold=1.0, appName='app', groupName='group', metadata={a=b}}", service.toString());
+        assertEquals("Service{name='service', protectThreshold=1.0, appName='app', groupName='group', metadata={a=b}}",
+                service.toString());
     }
 }

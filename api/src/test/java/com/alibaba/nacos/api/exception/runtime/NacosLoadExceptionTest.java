@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class NacosLoadExceptionTest {
-
+    
     @Test
     void testConstructor() {
         NacosLoadException exception = new NacosLoadException("test");

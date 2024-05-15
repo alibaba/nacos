@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ConfigChangeEventTest {
-
+    
     @Test
     void testConstructor() {
         Map<String, ConfigChangeItem> mockData = new HashMap<>();

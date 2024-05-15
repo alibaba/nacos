@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StringUtilsTest {
-
+    
     @Test
     void testIsEmpty() {
         assertTrue(StringUtils.isEmpty(null));
@@ -33,7 +33,7 @@ class StringUtilsTest {
         assertFalse(StringUtils.isEmpty("bob"));
         assertFalse(StringUtils.isEmpty("  bob  "));
     }
-
+    
     @Test
     void testIsBlank() {
         assertTrue(StringUtils.isBlank(null));
@@ -42,7 +42,7 @@ class StringUtilsTest {
         assertFalse(StringUtils.isBlank("bob"));
         assertFalse(StringUtils.isBlank("  bob  "));
     }
-
+    
     @Test
     void testTrim() {
         assertNull(StringUtils.trim(null));
@@ -51,7 +51,7 @@ class StringUtilsTest {
         assertEquals("abc", StringUtils.trim("abc"));
         assertEquals("abc", StringUtils.trim("    abc    "));
     }
-
+    
     @Test
     void testEquals() {
         assertTrue(StringUtils.equals(null, null));
@@ -62,50 +62,50 @@ class StringUtilsTest {
         assertTrue(StringUtils.equals(new StringBuilder("abc"), "abc"));
         assertFalse(StringUtils.equals(new StringBuilder("ABC"), "abc"));
     }
-
+    
     @Test
     void testRegionMatchesEqualsCaseSensitive() {
         assertTrue(StringUtils.regionMatches("abc", false, 0, "xabc", 1, 3));
-    
+        
     }
-
+    
     @Test
     void testRegionMatchesEqualsCaseInsensitive() {
         assertTrue(StringUtils.regionMatches("abc", true, 0, "xabc", 1, 3));
         assertTrue(StringUtils.regionMatches("abc", true, 0, "xAbc", 1, 3));
     }
-
+    
     @Test
     void testRegionMatchesNotEqualsCaseSensitive() {
         assertFalse(StringUtils.regionMatches("abc", false, 0, "xAbc", 1, 3));
         assertFalse(StringUtils.regionMatches("abc", false, 0, "xCbc", 1, 3));
         
     }
-
+    
     @Test
     void testRegionMatchesNotEqualsCaseInsensitive() {
         assertFalse(StringUtils.regionMatches("abc", true, 0, "xCab", 1, 3));
     }
-
+    
     @Test
     void testRegionMatchesEqualsCaseSensitiveForNonString() {
         assertTrue(StringUtils.regionMatches(new StringBuilder("abc"), false, 0, "xabc", 1, 3));
         
     }
-
+    
     @Test
     void testRegionMatchesEqualsCaseInsensitiveForNonString() {
         assertTrue(StringUtils.regionMatches(new StringBuilder("abc"), true, 0, "xabc", 1, 3));
         assertTrue(StringUtils.regionMatches(new StringBuilder("abc"), true, 0, "xAbc", 1, 3));
     }
-
+    
     @Test
     void testRegionMatchesNotEqualsCaseSensitiveForNonString() {
         assertFalse(StringUtils.regionMatches(new StringBuilder("abc"), false, 0, "xAbc", 1, 3));
         assertFalse(StringUtils.regionMatches(new StringBuilder("abc"), false, 0, "xCbc", 1, 3));
         
     }
-
+    
     @Test
     void testRegionMatchesNotEqualsCaseInsensitiveForNonString() {
         assertFalse(StringUtils.regionMatches(new StringBuilder("abc"), true, 0, "xCab", 1, 3));

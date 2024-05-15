@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NacosRuntimeExceptionTest {
-
+    
     @Test
     void testConstructorWithErrorCode() {
         NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM);
@@ -32,7 +32,7 @@ class NacosRuntimeExceptionTest {
         assertNull(exception.getMessage());
         assertNull(exception.getCause());
     }
-
+    
     @Test
     void testConstructorWithErrorCodeAndMsg() {
         NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM, "test");
@@ -40,7 +40,7 @@ class NacosRuntimeExceptionTest {
         assertEquals("errCode: 400, errMsg: test ", exception.getMessage());
         assertNull(exception.getCause());
     }
-
+    
     @Test
     void testConstructorWithErrorCodeAndCause() {
         NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM,
@@ -49,11 +49,11 @@ class NacosRuntimeExceptionTest {
         assertEquals("java.lang.RuntimeException: test", exception.getMessage());
         assertTrue(exception.getCause() instanceof RuntimeException);
     }
-
+    
     @Test
     void testConstructorWithFull() {
-        NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM,
-                "test", new RuntimeException("cause test"));
+        NacosRuntimeException exception = new NacosRuntimeException(NacosException.INVALID_PARAM, "test",
+                new RuntimeException("cause test"));
         assertEquals(NacosException.INVALID_PARAM, exception.getErrCode());
         assertEquals("errCode: 400, errMsg: test ", exception.getMessage());
         assertTrue(exception.getCause() instanceof RuntimeException);

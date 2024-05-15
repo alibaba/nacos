@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PersistentInstanceRequestTest extends BasedNamingRequestTest {
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         PersistentInstanceRequest request = new PersistentInstanceRequest(NAMESPACE, SERVICE, GROUP,
@@ -35,7 +35,7 @@ class PersistentInstanceRequestTest extends BasedNamingRequestTest {
         assertTrue(json.contains("\"type\":\"" + NamingRemoteConstants.REGISTER_INSTANCE + "\""));
         assertTrue(json.contains("\"instance\":{"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","

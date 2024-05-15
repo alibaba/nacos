@@ -26,14 +26,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConfigPublishRequestTest extends BasedConfigRequestTest {
     
-    ConfigPublishRequest configPublishRequest;
-    
     private static final String TAG_PARAM = "tag";
     
     private static final String APP_NAME_PARAM = "appName";
     
+    ConfigPublishRequest configPublishRequest;
+    
     String requestId;
-
+    
     @BeforeEach
     void before() {
         configPublishRequest = new ConfigPublishRequest(DATA_ID, GROUP, TENANT, CONTENT);

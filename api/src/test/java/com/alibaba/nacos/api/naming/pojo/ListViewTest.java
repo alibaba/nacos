@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ListViewTest {
-
+    
     @Test
     void testToString() {
         List<String> data = new LinkedList<>();
@@ -39,7 +39,7 @@ class ListViewTest {
         String actual = listView.toString();
         assertEquals("ListView{data=[1, 2, 3], count=3}", actual);
     }
-
+    
     @Test
     void testSetAndGet() {
         ListView<String> listView = new ListView<>();

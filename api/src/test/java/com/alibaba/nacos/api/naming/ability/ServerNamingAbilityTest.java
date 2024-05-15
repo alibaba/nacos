@@ -30,21 +30,21 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 class ServerNamingAbilityTest {
     
     private static ObjectMapper jacksonMapper;
-
+    
     @BeforeAll
     static void setUpClass() throws Exception {
         jacksonMapper = new ObjectMapper();
         jacksonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         jacksonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testDeserializeServerNamingAbilityForNonExistItem() throws JsonProcessingException {
         String nonExistItemJson = "{\"exampleAbility\":false}";
         ServerNamingAbility actual = jacksonMapper.readValue(nonExistItemJson, ServerNamingAbility.class);
         assertFalse(actual.isSupportJraft());
     }
-
+    
     @Test
     void testEquals() throws JsonProcessingException {
         ServerNamingAbility expected = new ServerNamingAbility();
@@ -57,19 +57,19 @@ class ServerNamingAbilityTest {
         actual.setSupportJraft(true);
         assertEquals(expected, actual);
     }
-
+    
     @Test
     void testEqualsForOneObject() {
         ServerNamingAbility ability = new ServerNamingAbility();
         assertEquals(ability, ability);
     }
-
+    
     @Test
     void testEqualsForOtherAbility() {
         ServerNamingAbility ability = new ServerNamingAbility();
         assertNotEquals(ability, new ClientNamingAbility());
     }
-
+    
     @Test
     void testHashCode() throws JsonProcessingException {
         ServerNamingAbility expected = new ServerNamingAbility();

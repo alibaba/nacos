@@ -52,7 +52,7 @@ class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
         assertEquals(HEADER_VALUE, actual.getHeader(HEADER_KEY));
         assertEquals(1, actual.getConfigListenContexts().size());
     }
-
+    
     @Test
     void testConfigListenContextToString() {
         ConfigBatchListenRequest configBatchListenRequest = new ConfigBatchListenRequest();

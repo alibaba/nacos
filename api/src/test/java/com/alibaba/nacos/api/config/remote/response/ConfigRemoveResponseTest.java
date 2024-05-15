@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConfigRemoveResponseTest extends BasedConfigResponseTest {
     
     ConfigRemoveResponse configRemoveResponse;
-
+    
     @BeforeEach
     void before() {
         configRemoveResponse = ConfigRemoveResponse.buildSuccessResponse();

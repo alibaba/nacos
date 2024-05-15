@@ -29,13 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ServerCheckResponseTest {
     
     ObjectMapper mapper = new ObjectMapper();
-
+    
     @BeforeEach
     void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSerialization() throws JsonProcessingException {
         ServerCheckResponse response = new ServerCheckResponse("35643245_1.1.1.1_3306", false);
@@ -43,7 +43,7 @@ class ServerCheckResponseTest {
         assertTrue(actual.contains("\"connectionId\":\"35643245_1.1.1.1_3306\""));
         assertTrue(actual.contains("\"supportAbilityNegotiation\":false"));
     }
-
+    
     @Test
     void testDeserialization() throws JsonProcessingException {
         String json = "{\"resultCode\":200,\"errorCode\":0,\"connectionId\":\"35643245_1.1.1.1_3306\",\"success\":true,"

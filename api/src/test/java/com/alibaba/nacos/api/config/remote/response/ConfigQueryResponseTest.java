@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConfigQueryResponseTest extends BasedConfigResponseTest {
     
     ConfigQueryResponse configQueryResponse;
-
+    
     @BeforeEach
     void before() {
         configQueryResponse = ConfigQueryResponse.buildSuccessResponse("success");

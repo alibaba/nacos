@@ -30,21 +30,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InstanceResponseTest {
     
     protected static ObjectMapper mapper;
-
+    
     @BeforeAll
     static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         InstanceResponse response = new InstanceResponse(NamingRemoteConstants.REGISTER_INSTANCE);
         String json = mapper.writeValueAsString(response);
         assertTrue(json.contains("\"type\":\"" + NamingRemoteConstants.REGISTER_INSTANCE + "\""));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"resultCode\":200,\"errorCode\":0,\"type\":\"deregisterInstance\",\"success\":true}";

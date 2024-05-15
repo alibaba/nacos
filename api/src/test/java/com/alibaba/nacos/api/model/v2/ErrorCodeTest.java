@@ -24,6 +24,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ErrorCodeTest {
+    
     @Test
     void testCodeNotSame() {
         Class<ErrorCode> errorCodeClass = ErrorCode.class;

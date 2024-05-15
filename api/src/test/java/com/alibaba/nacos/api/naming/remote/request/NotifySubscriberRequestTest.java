@@ -37,14 +37,14 @@ class NotifySubscriberRequestTest {
     private static final String NAMESPACE = "namespace";
     
     private static ObjectMapper mapper;
-
+    
     @BeforeAll
     static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         ServiceInfo serviceInfo = new ServiceInfo(GROUP + "@@" + SERVICE);
@@ -56,7 +56,7 @@ class NotifySubscriberRequestTest {
         checkSerializeBasedInfo(json);
         assertTrue(json.contains("\"serviceInfo\":{"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","

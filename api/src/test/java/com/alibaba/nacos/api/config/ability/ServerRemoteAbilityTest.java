@@ -36,7 +36,7 @@ class ServerRemoteAbilityTest {
     private static ObjectMapper mapper;
     
     private ServerRemoteAbility serverAbilities;
-
+    
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
         mapper = new ObjectMapper();
@@ -44,12 +44,12 @@ class ServerRemoteAbilityTest {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
     }
-
+    
     @BeforeEach
     void setUp() throws Exception {
         serverAbilities = new ServerRemoteAbility();
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         serverAbilities = new ServerRemoteAbility();
@@ -57,7 +57,7 @@ class ServerRemoteAbilityTest {
         assertTrue(json.contains("\"supportRemoteConnection\":false"));
         assertTrue(json.contains("\"grpcReportEnabled\":true"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"supportRemoteConnection\":true,\"grpcReportEnabled\":true}";
@@ -65,7 +65,7 @@ class ServerRemoteAbilityTest {
         assertTrue(abilities.isSupportRemoteConnection());
         assertTrue(abilities.isGrpcReportEnabled());
     }
-
+    
     @Test
     void testEqualsAndHashCode() {
         assertEquals(serverAbilities, serverAbilities);

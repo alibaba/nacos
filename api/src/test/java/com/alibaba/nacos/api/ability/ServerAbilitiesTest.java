@@ -34,19 +34,19 @@ class ServerAbilitiesTest {
     private static ObjectMapper mapper;
     
     private ServerAbilities serverAbilities;
-
+    
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @BeforeEach
     void setUp() throws Exception {
         serverAbilities = new ServerAbilities();
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         serverAbilities = new ServerAbilities();
@@ -55,7 +55,7 @@ class ServerAbilitiesTest {
         assertTrue(json.contains("\"configAbility\":{"));
         assertTrue(json.contains("\"namingAbility\":{"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"remoteAbility\":{\"supportRemoteConnection\":false},"
@@ -66,7 +66,7 @@ class ServerAbilitiesTest {
         assertNotNull(abilities.getNamingAbility());
         assertNotNull(abilities.getConfigAbility());
     }
-
+    
     @Test
     void testEqualsAndHashCode() {
         assertEquals(serverAbilities, serverAbilities);

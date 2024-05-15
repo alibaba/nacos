@@ -34,19 +34,19 @@ class HttpTest {
     private ObjectMapper objectMapper;
     
     private Http http;
-
+    
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
         http = new Http();
     }
-
+    
     @Test
     void testGetExpectedResponseCodeWithEmpty() {
         http.setHeaders("");
         assertTrue(http.getCustomHeaders().isEmpty());
     }
-
+    
     @Test
     void testGetExpectedResponseCodeWithoutEmpty() {
         http.setHeaders("x:a|y:");
@@ -55,7 +55,7 @@ class HttpTest {
         assertEquals(1, actual.size());
         assertEquals("a", actual.get("x"));
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         http.setHeaders("x:a|y:");
@@ -66,7 +66,7 @@ class HttpTest {
         assertTrue(actual.contains("\"headers\":\"x:a|y:\""));
         assertTrue(actual.contains("\"expectedResponseCode\":200"));
     }
-
+    
     @Test
     void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"HTTP\",\"path\":\"/x\",\"headers\":\"x:a|y:\",\"expectedResponseCode\":200}";
@@ -77,14 +77,14 @@ class HttpTest {
         assertEquals("x:a|y:", actual.getHeaders());
         assertEquals(Http.TYPE, actual.getType());
     }
-
+    
     @Test
     void testClone() throws CloneNotSupportedException {
         Http cloned = http.clone();
         assertEquals(http.hashCode(), cloned.hashCode());
         assertEquals(http, cloned);
     }
-
+    
     @Test
     void testNotEquals() throws CloneNotSupportedException {
         assertNotEquals(http, new Tcp());

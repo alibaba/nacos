@@ -31,13 +31,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LabelTest {
     
     ObjectMapper mapper = new ObjectMapper();
-
+    
     @BeforeEach
     void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSerialization() throws JsonProcessingException {
         Label label = new Label();
@@ -50,7 +50,7 @@ class LabelTest {
         assertTrue(actual.contains("\"description\":\"CMDB description\""));
         assertTrue(actual.contains("\"values\":[\"test-value\"]"));
     }
-
+    
     @Test
     void testDeserialization() throws JsonProcessingException {
         String json = "{\"values\":[\"test-value\"],\"name\":\"test-label\",\"description\":\"CMDB description\"}";

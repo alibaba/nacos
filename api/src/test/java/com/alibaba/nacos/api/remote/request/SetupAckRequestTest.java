@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class SetupAckRequestTest extends BasicRequestTest {
-
+    
     @Test
     void testSerialize() throws Exception {
         SetupAckRequest request = new SetupAckRequest(
@@ -39,7 +39,7 @@ class SetupAckRequestTest extends BasicRequestTest {
         assertTrue(json.contains("\"module\":\"internal\""));
         assertTrue(json.contains("\"requestId\":\"1\""));
     }
-
+    
     @Test
     void testDeserialize() throws Exception {
         String json =

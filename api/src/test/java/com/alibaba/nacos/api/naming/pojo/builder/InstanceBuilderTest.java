@@ -51,7 +51,7 @@ class InstanceBuilderTest {
     private static final String META_KEY = "key";
     
     private static final String META_VALUE = "value";
-
+    
     @Test
     void testBuildFullInstance() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();
@@ -70,7 +70,7 @@ class InstanceBuilderTest {
         assertThat(actual.getMetadata().size(), is(1));
         assertThat(actual.getMetadata().get(META_KEY), is(META_VALUE));
     }
-
+    
     @Test
     void testBuildInstanceWithoutNewMetadata() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();
@@ -88,7 +88,7 @@ class InstanceBuilderTest {
         assertTrue(actual.isEphemeral());
         assertEquals(1, actual.getMetadata().size());
     }
-
+    
     @Test
     void testBuildEmptyInstance() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();

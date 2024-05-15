@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ConfigChangeClusterSyncResponseTest extends BasedConfigResponseTest {
     
     ConfigChangeClusterSyncResponse configChangeClusterSyncResponse;
-
+    
     @BeforeEach
     void before() {
         configChangeClusterSyncResponse = new ConfigChangeClusterSyncResponse();

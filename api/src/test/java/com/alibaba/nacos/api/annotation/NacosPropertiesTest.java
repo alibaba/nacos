@@ -30,7 +30,7 @@ import static com.alibaba.nacos.api.annotation.NacosProperties.SERVER_ADDR_PLACE
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class NacosPropertiesTest {
-
+    
     @Test
     void testPlaceholders() {
         assertEquals("${nacos.endpoint:}", ENDPOINT_PLACEHOLDER);
@@ -42,7 +42,7 @@ class NacosPropertiesTest {
         assertEquals("${nacos.cluster-name:}", CLUSTER_NAME_PLACEHOLDER);
         assertEquals("${nacos.encode:UTF-8}", ENCODE_PLACEHOLDER);
     }
-
+    
     @Test
     void testResolvePlaceholders() {
         testResolvePlaceholder(ENDPOINT_PLACEHOLDER, "nacos.endpoint", "test-value", "test-value");
@@ -77,7 +77,7 @@ class NacosPropertiesTest {
         String resolvedValue = environment.resolvePlaceholders(placeholder);
         assertEquals(expectValue, resolvedValue);
     }
-
+    
     @Test
     void testSort() {
     

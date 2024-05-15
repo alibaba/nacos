@@ -37,14 +37,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class InstanceTest {
     
     private static ObjectMapper mapper;
-
+    
     @BeforeAll
     static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSetAndGet() {
         Instance instance = new Instance();
@@ -61,7 +61,7 @@ class InstanceTest {
         setInstance(instance);
         checkInstance(instance);
     }
-
+    
     @Test
     void testJsonSerialize() throws JsonProcessingException {
         Instance instance = new Instance();
@@ -81,7 +81,7 @@ class InstanceTest {
         assertTrue(actual.contains("\"instanceHeartBeatTimeOut\":15000"));
         assertTrue(actual.contains("\"ipDeleteTimeout\":30000"));
     }
-
+    
     @Test
     void testJsonDeserialize() throws JsonProcessingException {
         String json = "{\"instanceId\":\"id\",\"ip\":\"1.1.1.1\",\"port\":1000,\"weight\":100.0,\"healthy\":false,"
@@ -91,21 +91,21 @@ class InstanceTest {
         Instance instance = mapper.readValue(json, Instance.class);
         checkInstance(instance);
     }
-
+    
     @Test
     void testCheckClusterNameFormat() {
         Instance instance = new Instance();
         instance.setClusterName("demo");
         assertEquals("demo", instance.getClusterName());
     }
-
+    
     @Test
     void testToInetAddr() {
         Instance instance = new Instance();
         setInstance(instance);
         assertEquals("1.1.1.1:1000", instance.toInetAddr());
     }
-
+    
     @Test
     void testContainsMetadata() {
         Instance instance = new Instance();
@@ -115,7 +115,7 @@ class InstanceTest {
         instance.addMetadata("a", "b");
         assertTrue(instance.containsMetadata("a"));
     }
-
+    
     @Test
     void testGetInstanceIdGenerator() {
         Instance instance = new Instance();
@@ -123,7 +123,7 @@ class InstanceTest {
         instance.addMetadata(PreservedMetadataKeys.INSTANCE_ID_GENERATOR, "test");
         assertEquals("test", instance.getInstanceIdGenerator());
     }
-
+    
     @Test
     void testEquals() {
         Instance actual = new Instance();

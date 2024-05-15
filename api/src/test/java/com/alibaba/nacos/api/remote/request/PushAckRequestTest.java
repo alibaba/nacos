@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class PushAckRequestTest extends BasicRequestTest {
-
+    
     @Test
     void testSerialize() throws Exception {
         PushAckRequest request = PushAckRequest.build("1", false);
@@ -37,7 +37,7 @@ class PushAckRequestTest extends BasicRequestTest {
         assertTrue(json.contains("\"module\":\"internal\""));
         assertTrue(json.contains("\"requestId\":\"1\""));
     }
-
+    
     @Test
     void testDeserialize() throws Exception {
         String json = "{\"headers\":{},\"requestId\":\"1\",\"success\":false,"

@@ -23,12 +23,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ServerAbilitiesTest {
-
+    
     @Test
     void testGetStaticAbilities() {
         assertFalse(ServerAbilities.getStaticAbilities().isEmpty());
     }
-
+    
     @Test
     void testSupportPersistentInstanceByGrpcAbilities() {
         assertTrue(ServerAbilities.getStaticAbilities().get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));

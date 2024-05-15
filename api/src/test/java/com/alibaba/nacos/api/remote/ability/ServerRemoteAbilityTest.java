@@ -20,8 +20,8 @@ import com.alibaba.nacos.api.ability.ClientAbilities;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.MapperFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,7 +35,7 @@ class ServerRemoteAbilityTest {
     private static ObjectMapper mapper;
     
     private ServerRemoteAbility serverAbilities;
-
+    
     @BeforeAll
     static void setUpBeforeClass() throws Exception {
         mapper = new ObjectMapper();
@@ -43,12 +43,12 @@ class ServerRemoteAbilityTest {
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY);
     }
-
+    
     @BeforeEach
     void setUp() throws Exception {
         serverAbilities = new ServerRemoteAbility();
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         serverAbilities = new ServerRemoteAbility();
@@ -56,7 +56,7 @@ class ServerRemoteAbilityTest {
         assertTrue(json.contains("\"supportRemoteConnection\":false"));
         assertTrue(json.contains("\"grpcReportEnabled\":true"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"supportRemoteConnection\":true,\"grpcReportEnabled\":true}";
@@ -64,7 +64,7 @@ class ServerRemoteAbilityTest {
         assertTrue(abilities.isSupportRemoteConnection());
         assertTrue(abilities.isGrpcReportEnabled());
     }
-
+    
     @Test
     void testEqualsAndHashCode() {
         assertEquals(serverAbilities, serverAbilities);

@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest {
     
     ConfigChangeBatchListenResponse configChangeBatchListenResponse;
-
+    
     @BeforeEach
     void before() {
         configChangeBatchListenResponse = new ConfigChangeBatchListenResponse();
@@ -50,8 +50,8 @@ class ConfigChangeBatchListenResponseTest extends BasedConfigResponseTest {
     @Override
     @Test
     public void testSerializeFailResponse() throws JsonProcessingException {
-        ConfigChangeBatchListenResponse configChangeBatchListenResponse = ConfigChangeBatchListenResponse
-                .buildFailResponse("Fail");
+        ConfigChangeBatchListenResponse configChangeBatchListenResponse = ConfigChangeBatchListenResponse.buildFailResponse(
+                "Fail");
         String json = mapper.writeValueAsString(configChangeBatchListenResponse);
         assertTrue(json.contains("\"resultCode\":" + ResponseCode.FAIL.getCode()));
         assertTrue(json.contains("\"errorCode\":0"));

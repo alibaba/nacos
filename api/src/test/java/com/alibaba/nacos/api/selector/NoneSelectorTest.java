@@ -30,21 +30,21 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class NoneSelectorTest {
     
     ObjectMapper mapper = new ObjectMapper();
-
+    
     @BeforeEach
     void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.registerSubtypes(new NamedType(NoneSelector.class, SelectorType.none.name()));
     }
-
+    
     @Test
     void testSerialization() throws JsonProcessingException {
         NoneSelector selector = new NoneSelector();
         String actual = mapper.writeValueAsString(selector);
         assertTrue(actual.contains("\"type\":\"" + SelectorType.none.name() + "\""));
     }
-
+    
     @Test
     void testDeserialization() throws JsonProcessingException {
         String json = "{\"type\":\"none\"}";

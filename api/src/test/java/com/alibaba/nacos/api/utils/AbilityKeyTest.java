@@ -29,13 +29,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**.
+/**
+ * .
+ *
  * @author Daydreamer
  * @description Ability key test
  * @date 2022/9/8 12:27
  **/
 class AbilityKeyTest {
-
+    
     @Test
     void testMapStr() {
         Map<AbilityKey, Boolean> enumMap = new HashMap<>();
@@ -59,13 +61,13 @@ class AbilityKeyTest {
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
         assertTrue(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
     }
-
+    
     @Test
     void testMapEnumForEmpty() {
         Map<AbilityKey, Boolean> actual = AbilityKey.mapEnum(AbilityMode.SERVER, Collections.emptyMap());
         assertTrue(actual.isEmpty());
     }
-
+    
     @Test
     void testMapEnum() {
         Map<String, Boolean> mapStr = new HashMap<>();
@@ -80,7 +82,7 @@ class AbilityKeyTest {
         assertFalse(enumMap.get(AbilityKey.SERVER_TEST_2));
         assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
         assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
-    
+        
         mapStr.clear();
         mapStr.put(AbilityKey.SERVER_TEST_2.getName(), true);
         mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
@@ -91,7 +93,7 @@ class AbilityKeyTest {
         assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
         
     }
-
+    
     @Test
     void testGetAllValues() {
         Collection<AbilityKey> actual = AbilityKey.getAllValues(AbilityMode.SERVER);
@@ -101,7 +103,7 @@ class AbilityKeyTest {
         actual = AbilityKey.getAllValues(AbilityMode.CLUSTER_CLIENT);
         assertEquals(1, actual.size());
     }
-
+    
     @Test
     void testGetAllNames() {
         Collection<String> actual = AbilityKey.getAllNames(AbilityMode.SERVER);
@@ -111,7 +113,7 @@ class AbilityKeyTest {
         actual = AbilityKey.getAllNames(AbilityMode.CLUSTER_CLIENT);
         assertEquals(1, actual.size());
     }
-
+    
     @Test
     void testGetDescription() {
         assertEquals("just for junit test", AbilityKey.SERVER_TEST_1.getDescription());

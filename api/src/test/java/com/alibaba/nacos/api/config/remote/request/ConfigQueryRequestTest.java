@@ -34,7 +34,7 @@ class ConfigQueryRequestTest extends BasedConfigRequestTest {
     Map<String, String> headers = new HashMap<>();
     
     String requestId;
-
+    
     @BeforeEach
     void before() {
         headers.put(Constants.Config.NOTIFY_HEADER, Boolean.TRUE.toString());
@@ -43,7 +43,7 @@ class ConfigQueryRequestTest extends BasedConfigRequestTest {
         configQueryRequest.setTag(TAG);
         requestId = injectRequestUuId(configQueryRequest);
     }
-
+    
     @Test
     void testIsNotify() {
         assertTrue(configQueryRequest.isNotify());

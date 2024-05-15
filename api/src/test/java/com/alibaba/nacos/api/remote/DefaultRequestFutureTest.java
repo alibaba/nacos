@@ -51,16 +51,16 @@ class DefaultRequestFutureTest {
     private ExecutorService executor;
     
     private long timestamp;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         timestamp = System.currentTimeMillis();
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
     }
-
+    
     @Test
     void testSyncGetResponseSuccessWithoutTimeout() throws InterruptedException {
         DefaultRequestFuture requestFuture = new DefaultRequestFuture(CONNECTION_ID, REQUEST_ID);
@@ -78,7 +78,7 @@ class DefaultRequestFutureTest {
         assertTrue(requestFuture.isDone());
         assertTrue(requestFuture.getTimeStamp() >= timestamp);
     }
-
+    
     @Test
     void testSyncGetResponseFailureWithoutTimeout() throws InterruptedException {
         DefaultRequestFuture requestFuture = new DefaultRequestFuture(CONNECTION_ID, REQUEST_ID);
@@ -96,7 +96,7 @@ class DefaultRequestFutureTest {
         assertTrue(requestFuture.isDone());
         assertTrue(requestFuture.getTimeStamp() >= timestamp);
     }
-
+    
     @Test
     void testSyncGetResponseSuccessWithTimeout() throws InterruptedException, TimeoutException {
         DefaultRequestFuture requestFuture = new DefaultRequestFuture(CONNECTION_ID, REQUEST_ID);
@@ -114,7 +114,7 @@ class DefaultRequestFutureTest {
         assertTrue(requestFuture.isDone());
         assertTrue(requestFuture.getTimeStamp() >= timestamp);
     }
-
+    
     @Test
     void testSyncGetResponseSuccessWithInvalidTimeout() throws InterruptedException, TimeoutException {
         DefaultRequestFuture requestFuture = new DefaultRequestFuture(CONNECTION_ID, REQUEST_ID);
@@ -132,7 +132,7 @@ class DefaultRequestFutureTest {
         assertTrue(requestFuture.isDone());
         assertTrue(requestFuture.getTimeStamp() >= timestamp);
     }
-
+    
     @Test
     void testSyncGetResponseFailureWithTimeout() throws InterruptedException, TimeoutException {
         assertThrows(TimeoutException.class, () -> {
@@ -140,7 +140,7 @@ class DefaultRequestFutureTest {
             requestFuture.get(100L);
         });
     }
-
+    
     @Test
     void testSyncGetResponseSuccessByTriggerWithoutTimeout() throws InterruptedException {
         MockTimeoutInnerTrigger trigger = new MockTimeoutInnerTrigger();
@@ -160,7 +160,7 @@ class DefaultRequestFutureTest {
         assertTrue(requestFuture.getTimeStamp() >= timestamp);
         assertFalse(trigger.isTimeout);
     }
-
+    
     @Test
     void testSyncGetResponseFailureByTriggerWithoutTimeout() throws InterruptedException {
         MockTimeoutInnerTrigger trigger = new MockTimeoutInnerTrigger();
@@ -180,7 +180,7 @@ class DefaultRequestFutureTest {
         assertTrue(requestFuture.getTimeStamp() >= timestamp);
         assertFalse(trigger.isTimeout);
     }
-
+    
     @Test
     void testSyncGetResponseSuccessByTriggerWithTimeout() throws InterruptedException, TimeoutException {
         MockTimeoutInnerTrigger trigger = new MockTimeoutInnerTrigger();
@@ -200,7 +200,7 @@ class DefaultRequestFutureTest {
         assertTrue(requestFuture.getTimeStamp() >= timestamp);
         assertFalse(trigger.isTimeout);
     }
-
+    
     @Test
     void testSyncGetResponseFailureByTriggerWithTimeout() throws InterruptedException, TimeoutException {
         assertThrows(TimeoutException.class, () -> {
@@ -213,7 +213,7 @@ class DefaultRequestFutureTest {
             }
         });
     }
-
+    
     @Test
     void testASyncGetResponseSuccessWithoutTimeout() throws InterruptedException {
         MockTimeoutInnerTrigger trigger = new MockTimeoutInnerTrigger();
@@ -232,7 +232,7 @@ class DefaultRequestFutureTest {
         assertFalse(trigger.isTimeout);
         assertEquals(callback, requestFuture.getRequestCallBack());
     }
-
+    
     @Test
     void testASyncGetResponseSuccessWithoutTimeoutByExecutor() throws InterruptedException {
         MockTimeoutInnerTrigger trigger = new MockTimeoutInnerTrigger();
@@ -249,7 +249,7 @@ class DefaultRequestFutureTest {
         assertEquals(callback, requestFuture.getRequestCallBack());
         verify(executor).execute(any(DefaultRequestFuture.CallBackHandler.class));
     }
-
+    
     @Test
     void testASyncGetResponseFailureWithoutTimeout() throws InterruptedException {
         MockTimeoutInnerTrigger trigger = new MockTimeoutInnerTrigger();
@@ -268,12 +268,13 @@ class DefaultRequestFutureTest {
         assertFalse(trigger.isTimeout);
         assertEquals(callback, requestFuture.getRequestCallBack());
     }
-
+    
     @Test
     void testASyncGetResponseFailureWithTimeout() throws InterruptedException {
         MockTimeoutInnerTrigger trigger = new MockTimeoutInnerTrigger();
         MockRequestCallback callback = new MockRequestCallback(100L);
-        final DefaultRequestFuture requestFuture = new DefaultRequestFuture(CONNECTION_ID, REQUEST_ID, callback, trigger);
+        final DefaultRequestFuture requestFuture = new DefaultRequestFuture(CONNECTION_ID, REQUEST_ID, callback,
+                trigger);
         TimeUnit.MILLISECONDS.sleep(500);
         assertNull(callback.response);
         assertTrue(callback.exception instanceof TimeoutException);

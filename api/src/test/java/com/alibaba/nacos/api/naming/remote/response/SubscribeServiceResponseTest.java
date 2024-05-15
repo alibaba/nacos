@@ -30,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SubscribeServiceResponseTest {
     
     protected static ObjectMapper mapper;
-
+    
     @BeforeAll
     static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSerializeSuccessResponse() throws JsonProcessingException {
         SubscribeServiceResponse response = new SubscribeServiceResponse(200, null, new ServiceInfo());
@@ -47,7 +47,7 @@ class SubscribeServiceResponseTest {
         assertTrue(json.contains("\"errorCode\":0"));
         assertTrue(json.contains("\"success\":true"));
     }
-
+    
     @Test
     void testSerializeFailResponse() throws JsonProcessingException {
         SubscribeServiceResponse response = new SubscribeServiceResponse(500, "test", null);
@@ -57,7 +57,7 @@ class SubscribeServiceResponseTest {
         assertTrue(json.contains("\"message\":\"test\""));
         assertTrue(json.contains("\"success\":false"));
     }
-
+    
     @Test
     void testDeserialize() throws JsonProcessingException {
         String json = "{\"resultCode\":200,\"errorCode\":0,\"serviceInfo\":{\"cacheMillis\":1000,\"hosts\":[],"

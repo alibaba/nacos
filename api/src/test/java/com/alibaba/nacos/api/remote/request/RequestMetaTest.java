@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class RequestMetaTest {
     
     private RequestMeta requestMeta;
-
+    
     @BeforeEach
     void setUp() {
         requestMeta = new RequestMeta();
@@ -42,22 +42,22 @@ class RequestMetaTest {
         labels.put("env", "dev");
         requestMeta.setLabels(labels);
     }
-
+    
     @Test
     void testGetClientIp() {
         assertEquals("127.0.0.1", requestMeta.getClientIp());
     }
-
+    
     @Test
     void testGetClientVersion() {
         assertEquals("1.0.0", requestMeta.getClientVersion());
     }
-
+    
     @Test
     void testGetConnectionId() {
         assertEquals("test-connection-id", requestMeta.getConnectionId());
     }
-
+    
     @Test
     void testGetLabels() {
         Map<String, String> labels = requestMeta.getLabels();
@@ -65,20 +65,20 @@ class RequestMetaTest {
         assertEquals(1, labels.size());
         assertEquals("dev", labels.get("env"));
     }
-
+    
     @Test
     void testToString() {
         String expected = "RequestMeta{connectionId='test-connection-id', clientIp='127.0.0.1', clientVersion='1.0.0', labels={env=dev}}";
         assertEquals(expected, requestMeta.toString());
     }
-
+    
     @Test
     void testGetConnectionAbilityForNonExist() {
         assertEquals(AbilityStatus.UNKNOWN, requestMeta.getConnectionAbility(AbilityKey.SERVER_TEST_1));
         requestMeta.setAbilityTable(Collections.emptyMap());
         assertEquals(AbilityStatus.UNKNOWN, requestMeta.getConnectionAbility(AbilityKey.SERVER_TEST_1));
     }
-
+    
     @Test
     void testGetConnectionAbilityForExist() {
         requestMeta.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_TEST_1.getName(), Boolean.FALSE));

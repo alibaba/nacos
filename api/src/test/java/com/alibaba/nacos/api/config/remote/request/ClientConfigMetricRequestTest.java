@@ -60,7 +60,7 @@ class ClientConfigMetricRequestTest extends BasedConfigRequestTest {
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
         assertEquals(HEADER_VALUE, actual.getHeader(HEADER_KEY));
     }
-
+    
     @Test
     void testMetricsKeysEquals() {
         String dataKey = String.join("+", KEY);
@@ -68,23 +68,24 @@ class ClientConfigMetricRequestTest extends BasedConfigRequestTest {
         assertEquals(key, key);
         assertNotEquals(null, key);
         assertNotEquals(key, new ClientConfigMetricRequest());
-        ClientConfigMetricRequest.MetricsKey newOne = ClientConfigMetricRequest.MetricsKey
-                .build(SNAPSHOT_DATA, dataKey);
+        ClientConfigMetricRequest.MetricsKey newOne = ClientConfigMetricRequest.MetricsKey.build(SNAPSHOT_DATA,
+                dataKey);
         assertNotEquals(key, newOne);
         newOne.setType(CACHE_DATA);
         assertEquals(key, newOne);
     }
-
+    
     @Test
     void testMetricsHashCode() {
         String dataKey = String.join("+", KEY);
         ClientConfigMetricRequest.MetricsKey key = ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA, dataKey);
         assertEquals(Objects.hash(CACHE_DATA, dataKey), key.hashCode());
     }
-
+    
     @Test
     void testMetricsToString() {
-        ClientConfigMetricRequest.MetricsKey key = ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA,  String.join("+", KEY));
+        ClientConfigMetricRequest.MetricsKey key = ClientConfigMetricRequest.MetricsKey.build(CACHE_DATA,
+                String.join("+", KEY));
         assertEquals("MetricsKey{type='cacheData', key='test_data+group+test_tenant'}", key.toString());
     }
 }

@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class NacosDeserializationExceptionTest {
-
+    
     @Test
     void testEmptyConstructor() {
         NacosDeserializationException exception = new NacosDeserializationException();
@@ -34,7 +34,7 @@ class NacosDeserializationExceptionTest {
         assertNull(exception.getMessage());
         assertNull(exception.getTargetClass());
     }
-
+    
     @Test
     void testConstructorWithTargetClass() {
         NacosDeserializationException exception = new NacosDeserializationException(
@@ -44,7 +44,7 @@ class NacosDeserializationExceptionTest {
                 NacosDeserializationExceptionTest.class.getName()), exception.getMessage());
         assertEquals(NacosDeserializationExceptionTest.class, exception.getTargetClass());
     }
-
+    
     @Test
     void testConstructorWithTargetType() {
         Type type = SimpleType.constructUnsafe(NacosDeserializationExceptionTest.class);
@@ -55,7 +55,7 @@ class NacosDeserializationExceptionTest {
                 exception.getMessage());
         assertNull(exception.getTargetClass());
     }
-
+    
     @Test
     void testConstructorWithCause() {
         NacosDeserializationException exception = new NacosDeserializationException(new RuntimeException("test"));
@@ -63,7 +63,7 @@ class NacosDeserializationExceptionTest {
         assertEquals("errCode: 101, errMsg: Nacos deserialize failed.  ", exception.getMessage());
         assertNull(exception.getTargetClass());
     }
-
+    
     @Test
     void testConstructorWithTargetClassAndCause() {
         NacosDeserializationException exception = new NacosDeserializationException(
@@ -73,7 +73,7 @@ class NacosDeserializationExceptionTest {
                 NacosDeserializationExceptionTest.class.getName(), "test"), exception.getMessage());
         assertEquals(NacosDeserializationExceptionTest.class, exception.getTargetClass());
     }
-
+    
     @Test
     void testConstructorWithTargetTypeAndCause() {
         Type type = SimpleType.constructUnsafe(NacosDeserializationExceptionTest.class);

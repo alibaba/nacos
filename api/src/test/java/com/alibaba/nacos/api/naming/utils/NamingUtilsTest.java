@@ -34,78 +34,78 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NamingUtilsTest {
-
+    
     @Test
     void testGetGroupedName() {
         assertEquals("group@@serviceName", NamingUtils.getGroupedName("serviceName", "group"));
     }
-
+    
     @Test
     void testGetGroupedNameWithoutGroup() {
         assertThrows(IllegalArgumentException.class, () -> {
             NamingUtils.getGroupedName("serviceName", "");
         });
     }
-
+    
     @Test
     void testGetGroupedNameWithoutServiceName() {
         assertThrows(IllegalArgumentException.class, () -> {
             NamingUtils.getGroupedName("", "group");
         });
     }
-
+    
     @Test
     void testGetServiceName() {
         String validServiceName = "group@@serviceName";
         assertEquals("serviceName", NamingUtils.getServiceName(validServiceName));
     }
-
+    
     @Test
     void testGetServiceNameWithoutGroup() {
         String serviceName = "serviceName";
         assertEquals(serviceName, NamingUtils.getServiceName(serviceName));
     }
-
+    
     @Test
     void testGetServiceNameWithEmpty() {
         assertEquals(StringUtils.EMPTY, NamingUtils.getServiceName(null));
     }
-
+    
     @Test
     void testGetGroupName() {
         String validServiceName = "group@@serviceName";
         assertEquals("group", NamingUtils.getGroupName(validServiceName));
     }
-
+    
     @Test
     void testGetGroupNameWithoutGroup() {
         String serviceName = "serviceName";
         assertEquals(Constants.DEFAULT_GROUP, NamingUtils.getGroupName(serviceName));
     }
-
+    
     @Test
     void testGetGroupNameWithEmpty() {
         assertEquals(StringUtils.EMPTY, NamingUtils.getGroupName(null));
     }
-
+    
     @Test
     void testIsServiceNameCompatibilityMode() {
         String serviceName1 = "group@@serviceName";
         assertTrue(NamingUtils.isServiceNameCompatibilityMode(serviceName1));
-    
+        
         String serviceName2 = "serviceName";
         assertFalse(NamingUtils.isServiceNameCompatibilityMode(serviceName2));
-    
+        
         String serviceName3 = null;
         assertFalse(NamingUtils.isServiceNameCompatibilityMode(serviceName3));
     }
-
+    
     @Test
     void testCheckServiceNameFormat() {
         String validServiceName = "group@@serviceName";
         NamingUtils.checkServiceNameFormat(validServiceName);
     }
-
+    
     @Test
     void testCheckServiceNameFormatWithoutGroupAndService() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -113,7 +113,7 @@ class NamingUtilsTest {
             NamingUtils.checkServiceNameFormat(validServiceName);
         });
     }
-
+    
     @Test
     void testCheckServiceNameFormatWithoutGroup() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -121,7 +121,7 @@ class NamingUtilsTest {
             NamingUtils.checkServiceNameFormat(validServiceName);
         });
     }
-
+    
     @Test
     void testCheckServiceNameFormatWithoutService() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -129,7 +129,7 @@ class NamingUtilsTest {
             NamingUtils.checkServiceNameFormat(validServiceName);
         });
     }
-
+    
     @Test
     void testGetGroupedNameOptional() {
         String onlyGroupName = NamingUtils.getGroupedNameOptional(StringUtils.EMPTY, "groupA");
@@ -141,7 +141,7 @@ class NamingUtilsTest {
         String groupNameAndServiceName = NamingUtils.getGroupedNameOptional("serviceA", "groupA");
         assertEquals("groupA@@serviceA", groupNameAndServiceName);
     }
-
+    
     @Test
     void testCheckInstanceIsLegal() throws NacosException {
         // check invalid clusterName
@@ -161,7 +161,7 @@ class NamingUtilsTest {
         instance.setClusterName("cluster1");
         NamingUtils.checkInstanceIsLegal(instance);
         assertTrue(true);
-    
+        
         // check heartBeatTimeout, heartBeatInterval, ipDeleteTimeout
         Map<String, String> meta = new HashMap<>();
         meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "1");
@@ -173,8 +173,7 @@ class NamingUtilsTest {
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(e instanceof NacosException);
-            assertEquals(
-                    "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
+            assertEquals("Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
                     e.getMessage());
         }
         meta.put(PreservedMetadataKeys.HEART_BEAT_TIMEOUT, "3");
@@ -183,7 +182,7 @@ class NamingUtilsTest {
         NamingUtils.checkInstanceIsLegal(instance);
         assertTrue(true);
     }
-
+    
     @Test
     void testBatchCheckInstanceIsLegal() throws NacosException {
         // check invalid clusterName
@@ -222,8 +221,7 @@ class NamingUtilsTest {
             assertTrue(false);
         } catch (Exception e) {
             assertTrue(e instanceof NacosException);
-            assertEquals(
-                    "Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
+            assertEquals("Instance 'heart beat interval' must less than 'heart beat timeout' and 'ip delete timeout'.",
                     e.getMessage());
         }
         instanceList.remove(instance);
@@ -236,7 +234,7 @@ class NamingUtilsTest {
         NamingUtils.batchCheckInstanceIsLegal(instanceList);
         assertTrue(true);
     }
-
+    
     @Test
     void testCheckInstanceIsEphemeral() throws NacosException {
         Instance instance = new Instance();
@@ -254,7 +252,7 @@ class NamingUtilsTest {
             assertEquals(NacosException.INVALID_PARAM, e.getErrCode());
         }
     }
-
+    
     @Test
     void testCheckInstanceIsNull() throws NacosException {
         Instance instance = new Instance();
@@ -267,12 +265,12 @@ class NamingUtilsTest {
             assertEquals(NacosException.INVALID_PARAM, e.getErrCode());
         }
     }
-
+    
     @Test
     void testIsNumber() {
         String str1 = "abc";
         assertFalse(NamingUtils.isNumber(str1));
-    
+        
         String str2 = "123456";
         assertTrue(NamingUtils.isNumber(str2));
     }

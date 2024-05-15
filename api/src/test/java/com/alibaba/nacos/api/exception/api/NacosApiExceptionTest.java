@@ -23,7 +23,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class NacosApiExceptionTest {
-
+    
     @Test
     void testEmptyConstructor() {
         NacosApiException exception = new NacosApiException();
@@ -32,7 +32,7 @@ class NacosApiExceptionTest {
         assertEquals(Constants.NULL, exception.getErrMsg());
         assertEquals(Constants.NULL, exception.getErrAbstract());
     }
-
+    
     @Test
     void testConstructorWithoutCause() {
         NacosApiException exception = new NacosApiException(500, ErrorCode.SERVER_ERROR, "test");
@@ -41,7 +41,7 @@ class NacosApiExceptionTest {
         assertEquals("test", exception.getErrMsg());
         assertEquals(ErrorCode.SERVER_ERROR.getMsg(), exception.getErrAbstract());
     }
-
+    
     @Test
     void testConstructorWithCause() {
         NacosApiException exception = new NacosApiException(500, ErrorCode.SERVER_ERROR,

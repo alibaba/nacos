@@ -22,7 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class ResultTest {
-
+    
     @Test
     void testSuccessEmptyResult() {
         Result<String> result = Result.success();
@@ -30,7 +30,7 @@ class ResultTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), result.getMessage());
     }
-
+    
     @Test
     void testSuccessWithData() {
         Result<String> result = Result.success("test");
@@ -38,7 +38,7 @@ class ResultTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(ErrorCode.SUCCESS.getMsg(), result.getMessage());
     }
-
+    
     @Test
     void testFailureMessageResult() {
         Result<String> result = Result.failure("test");
@@ -46,7 +46,7 @@ class ResultTest {
         assertEquals(ErrorCode.SERVER_ERROR.getCode(), result.getCode());
         assertEquals("test", result.getMessage());
     }
-
+    
     @Test
     void testFailureWithoutData() {
         Result<String> result = Result.failure(ErrorCode.DATA_ACCESS_ERROR);
@@ -54,7 +54,7 @@ class ResultTest {
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getCode(), result.getCode());
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getMsg(), result.getMessage());
     }
-
+    
     @Test
     void testFailureWithData() {
         Result<String> result = Result.failure(ErrorCode.DATA_ACCESS_ERROR, "error");
@@ -62,7 +62,7 @@ class ResultTest {
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getCode(), result.getCode());
         assertEquals(ErrorCode.DATA_ACCESS_ERROR.getMsg(), result.getMessage());
     }
-
+    
     @Test
     void testToString() {
         Result<String> result = Result.success("test");

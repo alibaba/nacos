@@ -32,7 +32,7 @@ class MysqlTest {
     private ObjectMapper objectMapper;
     
     private Mysql mysql;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         mysql = new Mysql();
@@ -41,7 +41,7 @@ class MysqlTest {
         mysql.setCmd("cmd");
         objectMapper = new ObjectMapper();
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         String actual = objectMapper.writeValueAsString(mysql);
@@ -50,7 +50,7 @@ class MysqlTest {
         assertTrue(actual.contains("\"pwd\":\"pwd\""));
         assertTrue(actual.contains("\"cmd\":\"cmd\""));
     }
-
+    
     @Test
     void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"MYSQL\",\"user\":\"user\",\"pwd\":\"pwd\",\"cmd\":\"cmd\"}";
@@ -60,14 +60,14 @@ class MysqlTest {
         assertEquals("user", actual.getUser());
         assertEquals(Mysql.TYPE, actual.getType());
     }
-
+    
     @Test
     void testClone() throws CloneNotSupportedException {
         Mysql cloned = mysql.clone();
         assertEquals(mysql.hashCode(), cloned.hashCode());
         assertEquals(mysql, cloned);
     }
-
+    
     @Test
     void testNotEquals() throws CloneNotSupportedException {
         assertNotEquals(mysql, new Tcp());

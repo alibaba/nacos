@@ -28,12 +28,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class NamingEventTest {
     
     private MockNamingEventListener eventListener;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         eventListener = new MockNamingEventListener();
     }
-
+    
     @Test
     void testNamingEventWithSimpleConstructor() {
         NamingEvent event = new NamingEvent("serviceName", Collections.EMPTY_LIST);
@@ -47,7 +47,7 @@ class NamingEventTest {
         assertNull(event.getClusters());
         assertNull(event.getInstances());
     }
-
+    
     @Test
     void testNamingEventWithFullConstructor() {
         NamingEvent event = new NamingEvent("serviceName", "group", "clusters", Collections.EMPTY_LIST);

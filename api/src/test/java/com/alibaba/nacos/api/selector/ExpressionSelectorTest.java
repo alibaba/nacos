@@ -30,14 +30,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ExpressionSelectorTest {
     
     ObjectMapper mapper = new ObjectMapper();
-
+    
     @BeforeEach
     void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.registerSubtypes(new NamedType(ExpressionSelector.class, SelectorType.label.name()));
     }
-
+    
     @Test
     void testSerialization() throws JsonProcessingException {
         ExpressionSelector selector = new ExpressionSelector();
@@ -46,7 +46,7 @@ class ExpressionSelectorTest {
         assertTrue(actual.contains("\"type\":\"" + SelectorType.label.name() + "\""));
         assertTrue(actual.contains("\"expression\":\"test expression\""));
     }
-
+    
     @Test
     void testDeserialization() throws JsonProcessingException {
         String json = "{\"type\":\"label\",\"expression\":\"test expression\"}";

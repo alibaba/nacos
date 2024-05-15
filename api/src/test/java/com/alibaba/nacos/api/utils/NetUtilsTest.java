@@ -29,7 +29,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class NetUtilsTest {
-
+    
     @AfterEach
     void tearDown() throws Exception {
         Class<?> clazz = Class.forName("com.alibaba.nacos.api.utils.NetUtils");
@@ -40,7 +40,7 @@ class NetUtilsTest {
         System.clearProperty("com.alibaba.nacos.client.local.preferHostname");
         System.clearProperty("java.net.preferIPv6Addresses");
     }
-
+    
     @Test
     void testLocalIpWithSpecifiedIp() {
         System.setProperty("com.alibaba.nacos.client.local.ip", "10.2.8.8");
@@ -48,7 +48,7 @@ class NetUtilsTest {
         System.setProperty("com.alibaba.nacos.client.local.ip", "10.2.8.9");
         assertEquals("10.2.8.8", NetUtils.localIP());
     }
-
+    
     @Test
     void testLocalIpWithPreferHostname() throws Exception {
         InetAddress inetAddress = invokeGetInetAddress();
@@ -56,14 +56,14 @@ class NetUtilsTest {
         System.setProperty("com.alibaba.nacos.client.local.preferHostname", "true");
         assertEquals(hostname, NetUtils.localIP());
     }
-
+    
     @Test
     void testLocalIpWithoutPreferHostname() throws Exception {
         InetAddress inetAddress = invokeGetInetAddress();
         String ip = inetAddress.getHostAddress();
         assertEquals(ip, NetUtils.localIP());
     }
-
+    
     @Test
     void testLocalIpWithException() throws Exception {
         Field field = System.class.getDeclaredField("props");

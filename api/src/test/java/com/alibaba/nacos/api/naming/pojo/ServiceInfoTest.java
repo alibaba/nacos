@@ -40,14 +40,14 @@ class ServiceInfoTest {
     private ObjectMapper mapper;
     
     private ServiceInfo serviceInfo;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         serviceInfo = new ServiceInfo("G@@testName", "testClusters");
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         String actual = mapper.writeValueAsString(serviceInfo);
@@ -63,7 +63,7 @@ class ServiceInfoTest {
         assertFalse(actual.contains("key"));
         assertFalse(actual.contains("keyEncoded"));
     }
-
+    
     @Test
     void testDeserialize() throws IOException {
         String example = "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],"
@@ -81,14 +81,14 @@ class ServiceInfoTest {
         assertTrue(actual.isValid());
         assertFalse(actual.isAllIPs());
     }
-
+    
     @Test
     void testGetKey() {
         String key = serviceInfo.getKey();
         assertEquals("G@@testName@@testClusters", key);
         assertEquals("G@@testName@@testClusters", serviceInfo.toString());
     }
-
+    
     @Test
     void testGetKeyEncode() {
         String key = serviceInfo.getKeyEncoded();
@@ -100,7 +100,7 @@ class ServiceInfoTest {
         }
         assertEquals(key, ServiceInfo.getKey(encodeName, "testClusters"));
     }
-
+    
     @Test
     void testServiceInfoConstructor() {
         String key1 = "group@@name";
@@ -110,7 +110,7 @@ class ServiceInfoTest {
         assertEquals(key1, s1.getKey());
         assertEquals(key2, s2.getKey());
     }
-
+    
     @Test
     void testServiceInfoConstructorWithError() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -118,25 +118,25 @@ class ServiceInfoTest {
             ServiceInfo s1 = new ServiceInfo(key1);
         });
     }
-
+    
     @Test
     void testValidateForAllIps() {
         serviceInfo.setAllIPs(true);
         assertTrue(serviceInfo.validate());
     }
-
+    
     @Test
     void testValidateForNullHosts() {
         serviceInfo.setHosts(null);
         assertFalse(serviceInfo.validate());
     }
-
+    
     @Test
     void testValidateForEmptyHosts() {
         serviceInfo.setHosts(Collections.EMPTY_LIST);
         assertFalse(serviceInfo.validate());
     }
-
+    
     @Test
     void testValidateForUnhealthyHosts() {
         Instance instance = new Instance();
@@ -144,7 +144,7 @@ class ServiceInfoTest {
         serviceInfo.addHost(instance);
         assertFalse(serviceInfo.validate());
     }
-
+    
     @Test
     void testValidateForBothUnhealthyAndHealthyHosts() {
         List<Instance> instanceList = new LinkedList<>();
@@ -156,7 +156,7 @@ class ServiceInfoTest {
         serviceInfo.addAllHosts(instanceList);
         assertTrue(serviceInfo.validate());
     }
-
+    
     @Test
     void testFromKey() {
         String key1 = "group@@name";
@@ -166,7 +166,7 @@ class ServiceInfoTest {
         assertEquals(key1, s1.getKey());
         assertEquals(key2, s2.getKey());
     }
-
+    
     @Test
     void testSetAndGet() throws JsonProcessingException {
         serviceInfo.setReachProtectionThreshold(true);

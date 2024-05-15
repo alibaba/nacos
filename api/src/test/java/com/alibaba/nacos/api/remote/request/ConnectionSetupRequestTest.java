@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ConnectionSetupRequestTest extends BasicRequestTest {
-
+    
     @Test
     void testSerialize() throws Exception {
         ConnectionSetupRequest request = new ConnectionSetupRequest();
@@ -44,13 +44,14 @@ class ConnectionSetupRequestTest extends BasicRequestTest {
         assertTrue(json.contains("\"module\":\"internal\""));
         assertTrue(json.contains("\"requestId\":\"1\""));
     }
-
+    
     @Test
     void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"clientVersion\":\"2.2.2\",\"abilities\":{\"remoteAbility\":"
-                + "{\"supportRemoteConnection\":false},\"configAbility\":{\"supportRemoteMetrics\":false},"
-                + "\"namingAbility\":{\"supportDeltaPush\":false,\"supportRemoteMetric\":false}},\"tenant\":\"testNamespaceId\","
-                + "\"labels\":{\"labelKey\":\"labelValue\"},\"module\":\"internal\"}";
+        String json =
+                "{\"headers\":{},\"requestId\":\"1\",\"clientVersion\":\"2.2.2\",\"abilities\":{\"remoteAbility\":"
+                        + "{\"supportRemoteConnection\":false},\"configAbility\":{\"supportRemoteMetrics\":false},"
+                        + "\"namingAbility\":{\"supportDeltaPush\":false,\"supportRemoteMetric\":false}},\"tenant\":\"testNamespaceId\","
+                        + "\"labels\":{\"labelKey\":\"labelValue\"},\"module\":\"internal\"}";
         ConnectionSetupRequest result = mapper.readValue(json, ConnectionSetupRequest.class);
         assertNotNull(result);
         assertEquals("2.2.2", result.getClientVersion());

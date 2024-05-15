@@ -30,8 +30,6 @@ import java.util.UUID;
 
 public abstract class BasedConfigRequestTest {
     
-    protected static ObjectMapper mapper;
-    
     protected static final String DATA_ID = "test_data";
     
     protected static final String GROUP = "group";
@@ -51,6 +49,8 @@ public abstract class BasedConfigRequestTest {
     protected static final String HEADER_VALUE = "test_header1";
     
     protected static final String CONTENT = "content";
+    
+    protected static ObjectMapper mapper;
     
     static {
         HEADERS.put(HEADER_KEY, HEADER_VALUE);

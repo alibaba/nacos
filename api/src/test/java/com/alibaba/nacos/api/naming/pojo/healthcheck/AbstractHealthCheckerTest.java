@@ -31,13 +31,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AbstractHealthCheckerTest {
     
     private final ObjectMapper objectMapper = new ObjectMapper();
-
+    
     @BeforeEach
     void setUp() {
         objectMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         objectMapper.registerSubtypes(new NamedType(TestChecker.class, TestChecker.TYPE));
     }
-
+    
     @Test
     void testSerialize() throws JsonProcessingException {
         TestChecker testChecker = new TestChecker();
@@ -46,7 +46,7 @@ class AbstractHealthCheckerTest {
         assertTrue(actual.contains("\"testValue\":\"\""));
         assertTrue(actual.contains("\"type\":\"TEST\""));
     }
-
+    
     @Test
     void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"TEST\",\"testValue\":\"\"}";
@@ -54,7 +54,7 @@ class AbstractHealthCheckerTest {
         assertEquals("", actual.getTestValue());
         assertEquals(TestChecker.TYPE, actual.getType());
     }
-
+    
     @Test
     void testClone() throws CloneNotSupportedException {
         AbstractHealthChecker none = new AbstractHealthChecker.None().clone();

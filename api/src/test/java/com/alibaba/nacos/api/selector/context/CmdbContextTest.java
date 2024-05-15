@@ -24,7 +24,7 @@ import java.util.Collections;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CmdbContextTest {
-
+    
     @Test
     void testToString() {
         CmdbContext<Instance> cmdbContext = new CmdbContext<>();

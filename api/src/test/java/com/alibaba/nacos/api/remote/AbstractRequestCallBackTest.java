@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class AbstractRequestCallBackTest {
     
     boolean testValue;
-
+    
     @Test
     void testAbstractPushCallBack() {
         AbstractRequestCallBack callBack = new AbstractRequestCallBack() {

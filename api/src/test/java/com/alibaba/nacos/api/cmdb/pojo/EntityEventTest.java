@@ -29,13 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EntityEventTest {
     
     ObjectMapper mapper = new ObjectMapper();
-
+    
     @BeforeEach
     void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
-
+    
     @Test
     void testSerialization() throws JsonProcessingException {
         EntityEvent entity = new EntityEvent();
@@ -48,7 +48,7 @@ class EntityEventTest {
         assertTrue(actual.contains("\"entityType\":\"CMDB\""));
         assertTrue(actual.contains("\"type\":\"ENTITY_ADD_OR_UPDATE\""));
     }
-
+    
     @Test
     void testDeserialization() throws JsonProcessingException {
         String json = "{\"type\":\"ENTITY_REMOVE\",\"entityName\":\"test-entity\",\"entityType\":\"CMDB\"}";

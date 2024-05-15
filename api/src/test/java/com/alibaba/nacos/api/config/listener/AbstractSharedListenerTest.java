@@ -30,12 +30,12 @@ class AbstractSharedListenerTest {
     private static final String CONFIG_CONTENT = "test";
     
     private static Map<String, String> receivedMap;
-
+    
     @BeforeEach
     void setUp() {
         receivedMap = new HashMap<>();
     }
-
+    
     @Test
     void testFillContext() {
         assertEquals(0, receivedMap.size());
@@ -50,7 +50,7 @@ class AbstractSharedListenerTest {
         assertEquals("ggg", receivedMap.get("group"));
         assertEquals("aaa", receivedMap.get("dataId"));
     }
-
+    
     @Test
     void getExecutor() {
         // Default listener executor is null.
