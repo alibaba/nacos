@@ -42,7 +42,7 @@ class NacosLoggingTest {
     NacosLoggingProperties loggingProperties;
     
     NacosLogging instance;
-
+    
     @BeforeEach
     void setUp() throws NoSuchFieldException, IllegalAccessException {
         loggingProperties = new NacosLoggingProperties("", new Properties());
@@ -51,13 +51,13 @@ class NacosLoggingTest {
         loggingPropertiesField.setAccessible(true);
         loggingPropertiesField.set(instance, loggingProperties);
     }
-
+    
     @Test
     void testGetInstance() {
         NacosLogging instance = NacosLogging.getInstance();
         assertNotNull(instance);
     }
-
+    
     @Test
     void testLoadConfiguration() throws NoSuchFieldException, IllegalAccessException {
         instance = NacosLogging.getInstance();
@@ -67,7 +67,7 @@ class NacosLoggingTest {
         instance.loadConfiguration();
         Mockito.verify(loggingAdapter, Mockito.times(1)).loadConfiguration(loggingProperties);
     }
-
+    
     @Test
     void testLoadConfigurationWithException() throws NoSuchFieldException, IllegalAccessException {
         instance = NacosLogging.getInstance();

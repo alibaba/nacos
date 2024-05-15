@@ -28,13 +28,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ContentUtilsTest {
-
+    
     @Test
     void testVerifyIncrementPubContent() {
         String content = "aabbb";
         ContentUtils.verifyIncrementPubContent(content);
     }
-
+    
     @Test
     void testVerifyIncrementPubContentFail1() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -43,7 +43,7 @@ class ContentUtilsTest {
         });
         assertTrue(exception.getMessage().contains("publish/delete content can not be null"));
     }
-
+    
     @Test
     void testVerifyIncrementPubContentFail2() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -52,7 +52,7 @@ class ContentUtilsTest {
         });
         assertTrue(exception.getMessage().contains("publish/delete content can not contain return and linefeed"));
     }
-
+    
     @Test
     void testVerifyIncrementPubContentFail3() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -61,7 +61,7 @@ class ContentUtilsTest {
         });
         assertTrue(exception.getMessage().contains("publish/delete content can not be null"));
     }
-
+    
     @Test
     void testVerifyIncrementPubContentFail4() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -70,14 +70,14 @@ class ContentUtilsTest {
         });
         assertTrue(exception.getMessage().contains("publish/delete content can not contain(char)2"));
     }
-
+    
     @Test
     void testGetContentIdentity() {
         String content = "aa" + WORD_SEPARATOR + "bbb";
         String content1 = ContentUtils.getContentIdentity(content);
         assertEquals("aa", content1);
     }
-
+    
     @Test
     void testGetContentIdentityFail() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -85,14 +85,14 @@ class ContentUtilsTest {
             ContentUtils.getContentIdentity(content);
         });
     }
-
+    
     @Test
     void testGetContent() {
         String content = "aa" + WORD_SEPARATOR + "bbb";
         String content1 = ContentUtils.getContent(content);
         assertEquals("bbb", content1);
     }
-
+    
     @Test
     void testGetContentFail() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -100,14 +100,14 @@ class ContentUtilsTest {
             ContentUtils.getContent(content);
         });
     }
-
+    
     @Test
     void testTruncateContent() {
         String content = "aa";
         String actual = ContentUtils.truncateContent(content);
         assertEquals(content, actual);
     }
-
+    
     @Test
     void testTruncateLongContent() {
         char[] arr = new char[101];
@@ -116,7 +116,7 @@ class ContentUtilsTest {
         String actual = ContentUtils.truncateContent(content);
         assertEquals(content.substring(0, 100) + "...", actual);
     }
-
+    
     @Test
     void testTruncateContentNull() {
         String actual = ContentUtils.truncateContent(null);

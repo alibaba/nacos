@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class BatchInstanceRedoDataTest {
-
+    
     @Test
     @SuppressWarnings("all")
     void testEquals() {
@@ -42,7 +42,7 @@ class BatchInstanceRedoDataTest {
         BatchInstanceRedoData redoData3 = new BatchInstanceRedoData("c", "b");
         assertNotEquals(redoData1, redoData3);
     }
-
+    
     @Test
     void testHashCode() {
         BatchInstanceRedoData redoData1 = new BatchInstanceRedoData("a", "b");

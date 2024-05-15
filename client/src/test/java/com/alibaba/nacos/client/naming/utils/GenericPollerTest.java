@@ -23,7 +23,7 @@ import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class GenericPollerTest {
-
+    
     @Test
     void testNext() {
         String item1 = "item1";
@@ -33,7 +33,7 @@ class GenericPollerTest {
         assertEquals(item2, poller.next());
         assertEquals(item1, poller.next());
     }
-
+    
     @Test
     void testRefresh() {
         String item1 = "item1";

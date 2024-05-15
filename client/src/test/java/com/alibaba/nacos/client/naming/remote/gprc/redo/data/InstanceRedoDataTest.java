@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 class InstanceRedoDataTest {
-
+    
     @Test
     void testEquals() {
         InstanceRedoData redoData1 = new InstanceRedoData("a", "b");
@@ -34,7 +34,7 @@ class InstanceRedoDataTest {
         InstanceRedoData redoData3 = new InstanceRedoData("a", "b");
         assertEquals(redoData1, redoData3);
     }
-
+    
     @Test
     void testHashCode() {
         InstanceRedoData redoData1 = new InstanceRedoData("a", "b");

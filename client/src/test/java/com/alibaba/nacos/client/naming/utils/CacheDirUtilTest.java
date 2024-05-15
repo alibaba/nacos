@@ -24,20 +24,20 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CacheDirUtilTest {
-
+    
     @AfterEach
     void tearDown() throws Exception {
         System.clearProperty("user.home");
         System.clearProperty("JM.SNAPSHOT.PATH");
     }
-
+    
     @Test
     void testInitCacheDirWithDefaultRootAndWithoutCache() {
         System.setProperty("user.home", "/home/admin");
         String actual = CacheDirUtil.initCacheDir("test", NacosClientProperties.PROTOTYPE.derive());
         assertEquals("/home/admin/nacos/naming/test", actual);
     }
-
+    
     @Test
     void testInitCacheDirWithDefaultRootAndWithCache() {
         System.setProperty("user.home", "/home/admin");
@@ -46,14 +46,14 @@ class CacheDirUtilTest {
         String actual = CacheDirUtil.initCacheDir("test", properties);
         assertEquals("/home/admin/nacos/custom/naming/test", actual);
     }
-
+    
     @Test
     void testInitCacheDirWithJmSnapshotPathRootAndWithoutCache() {
         System.setProperty("JM.SNAPSHOT.PATH", "/home/snapshot");
         String actual = CacheDirUtil.initCacheDir("test", NacosClientProperties.PROTOTYPE.derive());
         assertEquals("/home/snapshot/nacos/naming/test", actual);
     }
-
+    
     @Test
     void testInitCacheDirWithJmSnapshotPathRootAndWithCache() {
         System.setProperty("user.home", "/home/snapshot");

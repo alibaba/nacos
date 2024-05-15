@@ -24,25 +24,25 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ConfigHttpClientManagerTest {
-
+    
     @Test
     void test() {
         final ConfigHttpClientManager instance1 = ConfigHttpClientManager.getInstance();
         final ConfigHttpClientManager instance2 = ConfigHttpClientManager.getInstance();
         
         assertEquals(instance1, instance2);
-    
+        
         final NacosRestTemplate nacosRestTemplate = instance1.getNacosRestTemplate();
         assertNotNull(nacosRestTemplate);
-    
+        
         final int time1 = instance1.getConnectTimeoutOrDefault(10);
         assertEquals(1000, time1);
         final int time2 = instance1.getConnectTimeoutOrDefault(2000);
         assertEquals(2000, time2);
-
+        
         Assertions.assertDoesNotThrow(() -> {
             instance1.shutdown();
         });
     }
-
+    
 }

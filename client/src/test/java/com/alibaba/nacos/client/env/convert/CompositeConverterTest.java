@@ -31,28 +31,28 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class CompositeConverterTest {
     
     CompositeConverter compositeConverter;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         compositeConverter = new CompositeConverter();
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
     }
-
+    
     @Test
     void testConvertNotSupportType() {
         assertThrows(MissingFormatArgumentException.class, () -> {
             compositeConverter.convert("test", CompositeConverter.class);
         });
     }
-
+    
     @Test
     void testConvertBooleanForEmptyProperty() {
         assertNull(compositeConverter.convert(null, Boolean.class));
     }
-
+    
     @Test
     void testConvertBooleanTrue() {
         assertTrue(compositeConverter.convert("true", Boolean.class));
@@ -60,7 +60,7 @@ class CompositeConverterTest {
         assertTrue(compositeConverter.convert("yes", Boolean.class));
         assertTrue(compositeConverter.convert("1", Boolean.class));
     }
-
+    
     @Test
     void testConvertBooleanFalse() {
         assertFalse(compositeConverter.convert("false", Boolean.class));
@@ -68,45 +68,47 @@ class CompositeConverterTest {
         assertFalse(compositeConverter.convert("no", Boolean.class));
         assertFalse(compositeConverter.convert("0", Boolean.class));
     }
-
+    
     @Test
     void testConvertBooleanIllegal() {
         assertThrows(IllegalArgumentException.class, () -> {
             compositeConverter.convert("aaa", Boolean.class);
         });
     }
-
+    
     @Test
     void testConvertIntegerForEmptyProperty() {
         assertNull(compositeConverter.convert(null, Integer.class));
     }
-
+    
     @Test
     void testConvertInteger() {
         assertEquals(100, (int) compositeConverter.convert("100", Integer.class));
-        assertEquals(Integer.MAX_VALUE, (int) compositeConverter.convert(String.valueOf(Integer.MAX_VALUE), Integer.class));
-        assertEquals(Integer.MIN_VALUE, (int) compositeConverter.convert(String.valueOf(Integer.MIN_VALUE), Integer.class));
+        assertEquals(Integer.MAX_VALUE,
+                (int) compositeConverter.convert(String.valueOf(Integer.MAX_VALUE), Integer.class));
+        assertEquals(Integer.MIN_VALUE,
+                (int) compositeConverter.convert(String.valueOf(Integer.MIN_VALUE), Integer.class));
     }
-
+    
     @Test
     void testConvertIntegerIllegal() {
         assertThrows(IllegalArgumentException.class, () -> {
             compositeConverter.convert("aaa", Integer.class);
         });
     }
-
+    
     @Test
     void testConvertLongForEmptyProperty() {
         assertNull(compositeConverter.convert(null, Long.class));
     }
-
+    
     @Test
     void testConvertLong() {
         assertEquals(100L, (long) compositeConverter.convert("100", Long.class));
         assertEquals(Long.MAX_VALUE, (long) compositeConverter.convert(String.valueOf(Long.MAX_VALUE), Long.class));
         assertEquals(Long.MIN_VALUE, (long) compositeConverter.convert(String.valueOf(Long.MIN_VALUE), Long.class));
     }
-
+    
     @Test
     void testConvertLongIllegal() {
         assertThrows(IllegalArgumentException.class, () -> {

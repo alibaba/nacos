@@ -33,6 +33,53 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ConfigFilterChainManagerTest {
     
+    @Test
+    void testAddFilterOrder() throws NacosException {
+        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
+        MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
+        MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
+        MyIConfigFilter filter3 = new MyIConfigFilter("filter3", 3);
+        
+        //random order
+        configFilterChainManager.addFilter(filter2);
+        configFilterChainManager.addFilter(filter1);
+        configFilterChainManager.addFilter(filter3);
+        
+        ConfigRequest configRequest = new ConfigRequest();
+        
+        configFilterChainManager.doFilter(configRequest, new ConfigResponse());
+        
+        IConfigContext configContext = configRequest.getConfigContext();
+        
+        // doFilter works
+        assertEquals(1, configContext.getParameter("filter1"));
+        assertEquals(2, configContext.getParameter("filter2"));
+        assertEquals(3, configContext.getParameter("filter3"));
+        
+        //order
+        List<Integer> orders = (List<Integer>) configContext.getParameter("orders");
+        assertEquals(Arrays.asList(1, 2, 3), orders);
+    }
+    
+    @Test
+    void testAddFilterNotRepeat() throws NacosException {
+        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
+        MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
+        MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
+        MyIConfigFilter repeatFilter = new MyIConfigFilter("filter1", 1);
+        
+        configFilterChainManager.addFilter(filter2);
+        configFilterChainManager.addFilter(filter1);
+        configFilterChainManager.addFilter(repeatFilter);
+        
+        ConfigRequest configRequest = new ConfigRequest();
+        configFilterChainManager.doFilter(configRequest, new ConfigResponse());
+        
+        IConfigContext configContext = configRequest.getConfigContext();
+        
+        assertEquals(2, configContext.getParameter("filterCount"));
+    }
+    
     private static class MyIConfigFilter implements IConfigFilter {
         
         private String name;
@@ -83,52 +130,5 @@ class ConfigFilterChainManagerTest {
         public String getFilterName() {
             return name;
         }
-    }
-
-    @Test
-    void testAddFilterOrder() throws NacosException {
-        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
-        MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
-        MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
-        MyIConfigFilter filter3 = new MyIConfigFilter("filter3", 3);
-        
-        //random order
-        configFilterChainManager.addFilter(filter2);
-        configFilterChainManager.addFilter(filter1);
-        configFilterChainManager.addFilter(filter3);
-        
-        ConfigRequest configRequest = new ConfigRequest();
-        
-        configFilterChainManager.doFilter(configRequest, new ConfigResponse());
-        
-        IConfigContext configContext = configRequest.getConfigContext();
-        
-        // doFilter works
-        assertEquals(1, configContext.getParameter("filter1"));
-        assertEquals(2, configContext.getParameter("filter2"));
-        assertEquals(3, configContext.getParameter("filter3"));
-        
-        //order
-        List<Integer> orders = (List<Integer>) configContext.getParameter("orders");
-        assertEquals(Arrays.asList(1, 2, 3), orders);
-    }
-
-    @Test
-    void testAddFilterNotRepeat() throws NacosException {
-        final ConfigFilterChainManager configFilterChainManager = new ConfigFilterChainManager(new Properties());
-        MyIConfigFilter filter1 = new MyIConfigFilter("filter1", 1);
-        MyIConfigFilter filter2 = new MyIConfigFilter("filter2", 2);
-        MyIConfigFilter repeatFilter = new MyIConfigFilter("filter1", 1);
-        
-        configFilterChainManager.addFilter(filter2);
-        configFilterChainManager.addFilter(filter1);
-        configFilterChainManager.addFilter(repeatFilter);
-        
-        ConfigRequest configRequest = new ConfigRequest();
-        configFilterChainManager.doFilter(configRequest, new ConfigResponse());
-        
-        IConfigContext configContext = configRequest.getConfigContext();
-        
-        assertEquals(2, configContext.getParameter("filterCount"));
     }
 }

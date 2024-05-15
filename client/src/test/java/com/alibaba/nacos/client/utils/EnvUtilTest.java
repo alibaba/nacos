@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class EnvUtilTest {
-
+    
     @Test
     void testSetSelfEnv() {
         Map<String, List<String>> headers = new HashMap<>();
@@ -51,7 +51,7 @@ class EnvUtilTest {
         assertNull(EnvUtil.getSelfVipserverTag());
         assertNull(EnvUtil.getSelfLocationTag());
     }
-
+    
     @Test
     void testSetSelfEnv2() {
         Map<String, List<String>> headers = new HashMap<>();

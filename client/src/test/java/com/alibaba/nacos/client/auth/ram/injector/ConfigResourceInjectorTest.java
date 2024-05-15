@@ -48,7 +48,7 @@ class ConfigResourceInjectorTest {
     private String cachedSecurityCredentials;
     
     private StsCredential stsCredential;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         configResourceInjector = new ConfigResourceInjector();
@@ -65,14 +65,14 @@ class ConfigResourceInjectorTest {
         StsConfig.getInstance().setSecurityCredentials("");
         stsCredential = new StsCredential();
     }
-
+    
     @AfterEach
     void tearDown() throws NoSuchFieldException, IllegalAccessException {
         StsConfig.getInstance().setSecurityCredentialsUrl(cachedSecurityCredentialsUrl);
         StsConfig.getInstance().setSecurityCredentials(cachedSecurityCredentials);
         clearForSts();
     }
-
+    
     @Test
     void testDoInjectWithFullResource() throws Exception {
         LoginIdentityContext actual = new LoginIdentityContext();
@@ -82,7 +82,7 @@ class ConfigResourceInjectorTest {
         assertTrue(actual.getAllKey().contains("Timestamp"));
         assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
-
+    
     @Test
     void testDoInjectWithTenant() throws Exception {
         resource.setGroup("");
@@ -93,7 +93,7 @@ class ConfigResourceInjectorTest {
         assertTrue(actual.getAllKey().contains("Timestamp"));
         assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
-
+    
     @Test
     void testDoInjectWithGroup() throws Exception {
         resource.setNamespace("");
@@ -104,7 +104,7 @@ class ConfigResourceInjectorTest {
         assertTrue(actual.getAllKey().contains("Timestamp"));
         assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
-
+    
     @Test
     void testDoInjectWithoutResource() throws Exception {
         resource = new RequestResource();
@@ -115,7 +115,7 @@ class ConfigResourceInjectorTest {
         assertTrue(actual.getAllKey().contains("Timestamp"));
         assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
-
+    
     @Test
     void testDoInjectForSts() throws NoSuchFieldException, IllegalAccessException {
         prepareForSts();

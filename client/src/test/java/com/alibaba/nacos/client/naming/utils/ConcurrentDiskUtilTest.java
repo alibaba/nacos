@@ -36,7 +36,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class ConcurrentDiskUtilTest {
-
+    
     @Test
     void testReadAndWrite() throws IOException {
         File tempFile = File.createTempFile("aaa", "bbb");
@@ -47,7 +47,7 @@ class ConcurrentDiskUtilTest {
         String actualContent = ConcurrentDiskUtil.getFileContent(fileName, charset);
         assertEquals(content, actualContent);
     }
-
+    
     @Test
     void testReadAndWrite2() throws IOException {
         File tempFile = File.createTempFile("aaa", "bbb");
@@ -57,7 +57,7 @@ class ConcurrentDiskUtilTest {
         String actualContent = ConcurrentDiskUtil.getFileContent(tempFile, charset);
         assertEquals(content, actualContent);
     }
-
+    
     @Test
     void testByteBufferToString() throws IOException {
         String msg = "test buff to string";
@@ -65,18 +65,18 @@ class ConcurrentDiskUtilTest {
         String actual = ConcurrentDiskUtil.byteBufferToString(buff, "UTF-8");
         assertEquals(msg, actual);
     }
-
+    
     @Test
     void testWriteFileContent() throws IOException {
         File file = mock(File.class);
         assertFalse(ConcurrentDiskUtil.writeFileContent(file, "hello", "UTF-8"));
     }
-
+    
     @Test
     void testTryLockFailure() throws Throwable {
         assertThrows(IOException.class, () -> {
-            Method method = ConcurrentDiskUtil.class
-                    .getDeclaredMethod("tryLock", File.class, FileChannel.class, boolean.class);
+            Method method = ConcurrentDiskUtil.class.getDeclaredMethod("tryLock", File.class, FileChannel.class,
+                    boolean.class);
             method.setAccessible(true);
             File file = new File("non-exist");
             FileChannel channel = mock(FileChannel.class);
@@ -88,12 +88,12 @@ class ConcurrentDiskUtilTest {
             }
         });
     }
-
+    
     @Test
     void testTryLockFailureForIntercept() throws Throwable {
         assertThrows(IOException.class, () -> {
-            Method method = ConcurrentDiskUtil.class
-                    .getDeclaredMethod("tryLock", File.class, FileChannel.class, boolean.class);
+            Method method = ConcurrentDiskUtil.class.getDeclaredMethod("tryLock", File.class, FileChannel.class,
+                    boolean.class);
             method.setAccessible(true);
             File file = new File("non-exist");
             FileChannel channel = mock(FileChannel.class);

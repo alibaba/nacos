@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * @date 2020/11/26 3:13 PM
  */
 class ContextPathUtilTest {
-
+    
     @Test
     void testNormalizeContextPath() {
         assertEquals("/nacos", ContextPathUtil.normalizeContextPath("/nacos"));

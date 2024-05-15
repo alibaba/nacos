@@ -35,7 +35,7 @@ class SystemEnvPropertySourceTest {
     SystemEnvPropertySource systemEnvPropertySource;
     
     private Map<String, String> mockEnvMap;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         systemEnvPropertySource = new SystemEnvPropertySource();
@@ -48,42 +48,42 @@ class SystemEnvPropertySourceTest {
         mockEnvMap.put("TESTCASE3", "value3");
         mockEnvMap.put("TEST_CASE_4", "value4");
     }
-
+    
     @Test
     void testGetEnvForLowerCaseKey() {
         assertEquals("value1", systemEnvPropertySource.getProperty("testcase1"));
     }
-
+    
     @Test
     void testGetEnvForLowerCaseKeyWithDot() {
         assertEquals("value2", systemEnvPropertySource.getProperty("test.case.2"));
     }
-
+    
     @Test
     void testGetEnvForLowerCaseKeyWithHyphen() {
         assertEquals("value2", systemEnvPropertySource.getProperty("test-case-2"));
     }
-
+    
     @Test
     void testGetEnvForLowerCaseKeyWithHyphenAndDot() {
         assertEquals("value2", systemEnvPropertySource.getProperty("test.case-2"));
     }
-
+    
     @Test
     void testGetEnvForUpperCaseKey() {
         assertEquals("value3", systemEnvPropertySource.getProperty("TESTCASE3"));
     }
-
+    
     @Test
     void testGetEnvForUpperCaseKeyWithDot() {
         assertEquals("value4", systemEnvPropertySource.getProperty("TEST.CASE.4"));
     }
-
+    
     @Test
     void testGetEnvForUpperCaseKeyWithHyphen() {
         assertEquals("value4", systemEnvPropertySource.getProperty("TEST-CASE-4"));
     }
-
+    
     @Test
     void testGetEnvForUpperCaseKeyWithHyphenAndDot() {
         assertEquals("value4", systemEnvPropertySource.getProperty("TEST_CASE.4"));

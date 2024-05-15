@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CredentialsTest {
-
+    
     @Test
     void testGetter() {
         // given
@@ -37,7 +37,7 @@ class CredentialsTest {
         assertEquals(sk, credentials.getSecretKey());
         assertEquals(tenantId, credentials.getTenantId());
     }
-
+    
     @Test
     void testSetter() {
         //given
@@ -54,7 +54,7 @@ class CredentialsTest {
         assertEquals(sk, credentials.getSecretKey());
         assertEquals(tenantId, credentials.getTenantId());
     }
-
+    
     @Test
     void testValid() {
         //given
@@ -67,7 +67,7 @@ class CredentialsTest {
         //then
         assertTrue(actual);
     }
-
+    
     @Test
     void testIdentical() {
         //given

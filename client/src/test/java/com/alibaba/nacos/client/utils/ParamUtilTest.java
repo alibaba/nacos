@@ -48,7 +48,7 @@ class ParamUtilTest {
     private double defaultPerTaskConfigSize;
     
     private String defaultNodesPath;
-
+    
     @BeforeEach
     void before() {
         defaultAppKey = "";
@@ -59,7 +59,7 @@ class ParamUtilTest {
         defaultPerTaskConfigSize = 3000.0;
         defaultNodesPath = "serverlist";
     }
-
+    
     @AfterEach
     void after() {
         ParamUtil.setAppKey(defaultAppKey);
@@ -73,7 +73,7 @@ class ParamUtilTest {
         System.clearProperty("PER_TASK_CONFIG_SIZE");
         System.clearProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL);
     }
-
+    
     @Test
     void testGetAppKey() {
         String defaultVal = ParamUtil.getAppKey();
@@ -83,7 +83,7 @@ class ParamUtilTest {
         ParamUtil.setAppKey(expect);
         assertEquals(expect, ParamUtil.getAppKey());
     }
-
+    
     @Test
     void testGetAppName() {
         String defaultVal = ParamUtil.getAppName();
@@ -93,7 +93,7 @@ class ParamUtilTest {
         ParamUtil.setAppName(expect);
         assertEquals(expect, ParamUtil.getAppName());
     }
-
+    
     @Test
     void testGetDefaultContextPath() {
         String defaultVal = ParamUtil.getDefaultContextPath();
@@ -103,7 +103,7 @@ class ParamUtilTest {
         ParamUtil.setDefaultContextPath(expect);
         assertEquals(expect, ParamUtil.getDefaultContextPath());
     }
-
+    
     @Test
     void testGetClientVersion() {
         String defaultVal = ParamUtil.getClientVersion();
@@ -113,7 +113,7 @@ class ParamUtilTest {
         ParamUtil.setClientVersion(expect);
         assertEquals(expect, ParamUtil.getClientVersion());
     }
-
+    
     @Test
     void testSetConnectTimeout() {
         int defaultVal = ParamUtil.getConnectTimeout();
@@ -123,7 +123,7 @@ class ParamUtilTest {
         ParamUtil.setConnectTimeout(expect);
         assertEquals(expect, ParamUtil.getConnectTimeout());
     }
-
+    
     @Test
     void testGetPerTaskConfigSize() {
         double defaultVal = ParamUtil.getPerTaskConfigSize();
@@ -133,13 +133,13 @@ class ParamUtilTest {
         ParamUtil.setPerTaskConfigSize(expect);
         assertEquals(expect, ParamUtil.getPerTaskConfigSize(), 0.01);
     }
-
+    
     @Test
     void testGetDefaultServerPort() {
         String actual = ParamUtil.getDefaultServerPort();
         assertEquals("8848", actual);
     }
-
+    
     @Test
     void testGetDefaultNodesPath() {
         String defaultVal = ParamUtil.getDefaultNodesPath();
@@ -149,7 +149,7 @@ class ParamUtilTest {
         ParamUtil.setDefaultNodesPath(expect);
         assertEquals(expect, ParamUtil.getDefaultNodesPath());
     }
-
+    
     @Test
     void testParseNamespace() {
         String expect = "test";
@@ -160,14 +160,14 @@ class ParamUtilTest {
         String actual = ParamUtil.parseNamespace(nacosClientProperties);
         assertEquals(expect, actual);
     }
-
+    
     @Test
     void testParsingEndpointRule() {
         String url = "${test:www.example.com}";
         String actual = ParamUtil.parsingEndpointRule(url);
         assertEquals("www.example.com", actual);
     }
-
+    
     @Test
     void testInitConnectionTimeoutWithException() throws Throwable {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -181,7 +181,7 @@ class ParamUtilTest {
             }
         });
     }
-
+    
     @Test
     void testInitPerTaskConfigSizeWithException() throws Throwable {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -195,19 +195,19 @@ class ParamUtilTest {
             }
         });
     }
-
+    
     @Test
     void testParsingEndpointRuleFromSystem() {
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL, "alibaba_aliware_endpoint_url");
         assertEquals("alibaba_aliware_endpoint_url", ParamUtil.parsingEndpointRule(null));
     }
-
+    
     @Test
     void testParsingEndpointRuleFromSystemWithParam() {
         System.setProperty(PropertyKeyConst.SystemEnv.ALIBABA_ALIWARE_ENDPOINT_URL, "alibaba_aliware_endpoint_url");
         assertEquals("alibaba_aliware_endpoint_url", ParamUtil.parsingEndpointRule("${abc:xxx}"));
     }
-
+    
     @Test
     void testSimplyEnvNameIfOverLimit() {
         StringBuilder envNameOverLimitBuilder = new StringBuilder("test");
@@ -219,7 +219,7 @@ class ParamUtilTest {
         String expect = envName.substring(0, 50) + MD5Utils.md5Hex(envName, "UTF-8");
         assertEquals(expect, actual);
     }
-
+    
     @Test
     void testSimplyEnvNameNotOverLimit() {
         String expect = "test";

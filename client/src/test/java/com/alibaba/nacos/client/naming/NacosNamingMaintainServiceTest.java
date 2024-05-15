@@ -57,19 +57,19 @@ class NacosNamingMaintainServiceTest {
     private SecurityProxy securityProxy;
     
     private ScheduledExecutorService executorService;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         Properties prop = new Properties();
         prop.setProperty(PropertyKeyConst.NAMESPACE, "public");
         prop.setProperty("serverAddr", "localhost");
-
+        
         nacosNamingMaintainService = new NacosNamingMaintainService(prop);
         serverProxy = mock(NamingHttpClientProxy.class);
         serverListManager = mock(ServerListManager.class);
         securityProxy = mock(SecurityProxy.class);
         executorService = mock(ScheduledExecutorService.class);
-
+        
         Field serverProxyField = NacosNamingMaintainService.class.getDeclaredField("serverProxy");
         serverProxyField.setAccessible(true);
         serverProxyField.set(nacosNamingMaintainService, serverProxy);
@@ -83,17 +83,17 @@ class NacosNamingMaintainServiceTest {
         executorServiceField.setAccessible(true);
         executorServiceField.set(nacosNamingMaintainService, executorService);
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
     }
-
+    
     @Test
     void testConstructor() throws NacosException {
         NacosNamingMaintainService client = new NacosNamingMaintainService("localhost");
         assertNotNull(client);
     }
-
+    
     @Test
     void testUpdateInstance1() throws NacosException {
         //given
@@ -105,7 +105,7 @@ class NacosNamingMaintainServiceTest {
         //then
         verify(serverProxy, times(1)).updateInstance(serviceName, groupName, instance);
     }
-
+    
     @Test
     void testUpdateInstance2() throws NacosException {
         //given
@@ -116,7 +116,7 @@ class NacosNamingMaintainServiceTest {
         //then
         verify(serverProxy, times(1)).updateInstance(serviceName, Constants.DEFAULT_GROUP, instance);
     }
-
+    
     @Test
     void testQueryService1() throws NacosException {
         //given
@@ -127,7 +127,7 @@ class NacosNamingMaintainServiceTest {
         //then
         verify(serverProxy, times(1)).queryService(serviceName, groupName);
     }
-
+    
     @Test
     void testQueryService2() throws NacosException {
         //given
@@ -138,7 +138,7 @@ class NacosNamingMaintainServiceTest {
         //then
         verify(serverProxy, times(1)).queryService(serviceName, Constants.DEFAULT_GROUP);
     }
-
+    
     @Test
     void testCreateService1() throws NacosException {
         //given
@@ -155,7 +155,7 @@ class NacosNamingMaintainServiceTest {
             }
         }), argThat(o -> o instanceof NoneSelector));
     }
-
+    
     @Test
     void testCreateService2() throws NacosException {
         //given
@@ -173,7 +173,7 @@ class NacosNamingMaintainServiceTest {
             }
         }), argThat(o -> o instanceof NoneSelector));
     }
-
+    
     @Test
     void testCreateService3() throws NacosException {
         //given
@@ -192,7 +192,7 @@ class NacosNamingMaintainServiceTest {
             }
         }), argThat(o -> o instanceof NoneSelector));
     }
-
+    
     @Test
     void testCreateService5() throws NacosException {
         //given
@@ -212,7 +212,7 @@ class NacosNamingMaintainServiceTest {
             }
         }), argThat(o -> ((ExpressionSelector) o).getExpression().equals(expression)));
     }
-
+    
     @Test
     void testCreateService4() throws NacosException {
         //given
@@ -223,7 +223,7 @@ class NacosNamingMaintainServiceTest {
         //then
         verify(serverProxy, times(1)).createService(service, selector);
     }
-
+    
     @Test
     void testDeleteService1() throws NacosException {
         //given
@@ -233,7 +233,7 @@ class NacosNamingMaintainServiceTest {
         //then
         verify(serverProxy, times(1)).deleteService(serviceName, Constants.DEFAULT_GROUP);
     }
-
+    
     @Test
     void testDeleteService2() throws NacosException {
         //given
@@ -244,7 +244,7 @@ class NacosNamingMaintainServiceTest {
         //then
         verify(serverProxy, times(1)).deleteService(serviceName, groupName);
     }
-
+    
     @Test
     void testUpdateService1() throws NacosException {
         //given
@@ -263,7 +263,7 @@ class NacosNamingMaintainServiceTest {
             }
         }), argThat(o -> o instanceof NoneSelector));
     }
-
+    
     @Test
     void testUpdateService2() throws NacosException {
         //given
@@ -285,7 +285,7 @@ class NacosNamingMaintainServiceTest {
             }
         }), argThat(o -> o instanceof NoneSelector));
     }
-
+    
     @Test
     void testUpdateService3() throws NacosException {
         //given
@@ -296,7 +296,7 @@ class NacosNamingMaintainServiceTest {
         //then
         verify(serverProxy, times(1)).updateService(service, selector);
     }
-
+    
     @Test
     void testShutDown() throws NacosException {
         //when

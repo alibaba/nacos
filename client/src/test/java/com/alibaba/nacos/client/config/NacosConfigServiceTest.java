@@ -57,7 +57,7 @@ class NacosConfigServiceTest {
         field.setAccessible(false);
         
     }
-
+    
     @BeforeEach
     void mock() throws Exception {
         final Properties properties = new Properties();
@@ -66,12 +66,12 @@ class NacosConfigServiceTest {
         mockWoker = Mockito.mock(ClientWorker.class);
         setFinal(NacosConfigService.class.getDeclaredField("worker"), nacosConfigService, mockWoker);
     }
-
+    
     @AfterEach
     void clean() {
         LocalConfigInfoProcessor.cleanAllSnapshot();
     }
-
+    
     @Test
     void testGetConfigFromServer() throws NacosException {
         final String dataId = "1";
@@ -87,7 +87,7 @@ class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(1)).getServerConfig(dataId, group, tenant, timeout, false);
         
     }
-
+    
     @Test
     void testGetConfigFromFailOver() throws NacosException {
         final String dataId = "1failover";
@@ -99,7 +99,7 @@ class NacosConfigServiceTest {
         try {
             String contentFailOver = "failOverContent" + System.currentTimeMillis();
             localConfigInfoProcessorMockedStatic.when(
-                    () -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
+                            () -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
                     .thenReturn(contentFailOver);
             final int timeout = 3000;
             
@@ -109,7 +109,7 @@ class NacosConfigServiceTest {
             localConfigInfoProcessorMockedStatic.close();
         }
     }
-
+    
     @Test
     void testGetConfigFromLocalCache() throws NacosException {
         final String dataId = "1localcache";
@@ -122,11 +122,11 @@ class NacosConfigServiceTest {
             String contentFailOver = "localCacheContent" + System.currentTimeMillis();
             //fail over null
             localConfigInfoProcessorMockedStatic.when(
-                    () -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
+                            () -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
                     .thenReturn(null);
             //snapshot content
             localConfigInfoProcessorMockedStatic.when(
-                    () -> LocalConfigInfoProcessor.getSnapshot(any(), eq(dataId), eq(group), eq(tenant)))
+                            () -> LocalConfigInfoProcessor.getSnapshot(any(), eq(dataId), eq(group), eq(tenant)))
                     .thenReturn(contentFailOver);
             //form server error.
             final int timeout = 3000;
@@ -139,7 +139,7 @@ class NacosConfigServiceTest {
         }
         
     }
-
+    
     @Test
     void testGetConfig403() throws NacosException {
         final String dataId = "1localcache403";
@@ -151,7 +151,7 @@ class NacosConfigServiceTest {
         try {
             //fail over null
             localConfigInfoProcessorMockedStatic.when(
-                    () -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
+                            () -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
                     .thenReturn(null);
             
             //form server error.
@@ -168,7 +168,7 @@ class NacosConfigServiceTest {
             localConfigInfoProcessorMockedStatic.close();
         }
     }
-
+    
     @Test
     void testGetConfigAndSignListener() throws NacosException {
         final String dataId = "1";
@@ -245,7 +245,7 @@ class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(1))
                 .addTenantListenersWithContent(dataId, group, content, null, Arrays.asList(listener));
     }
-
+    
     @Test
     void testAddListener() throws NacosException {
         String dataId = "1";
@@ -265,7 +265,7 @@ class NacosConfigServiceTest {
         nacosConfigService.addListener(dataId, group, listener);
         Mockito.verify(mockWoker, Mockito.times(1)).addTenantListeners(dataId, group, Arrays.asList(listener));
     }
-
+    
     @Test
     void testPublishConfig() throws NacosException {
         String dataId = "1";
@@ -282,7 +282,7 @@ class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(1))
                 .publishConfig(dataId, group, namespace, null, null, null, content, "", null, type);
     }
-
+    
     @Test
     void testPublishConfig2() throws NacosException {
         String dataId = "1";
@@ -300,7 +300,7 @@ class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(1))
                 .publishConfig(dataId, group, namespace, null, null, null, content, "", null, type);
     }
-
+    
     @Test
     void testPublishConfigCas() throws NacosException {
         String dataId = "1";
@@ -319,7 +319,7 @@ class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(1))
                 .publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type);
     }
-
+    
     @Test
     void testPublishConfigCas2() throws NacosException {
         String dataId = "1";
@@ -338,7 +338,7 @@ class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(1))
                 .publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type);
     }
-
+    
     @Test
     void testRemoveConfig() throws NacosException {
         String dataId = "1";
@@ -352,7 +352,7 @@ class NacosConfigServiceTest {
         
         Mockito.verify(mockWoker, Mockito.times(1)).removeConfig(dataId, group, tenant, null);
     }
-
+    
     @Test
     void testRemoveListener() {
         String dataId = "1";
@@ -372,7 +372,7 @@ class NacosConfigServiceTest {
         nacosConfigService.removeListener(dataId, group, listener);
         Mockito.verify(mockWoker, Mockito.times(1)).removeTenantListener(dataId, group, listener);
     }
-
+    
     @Test
     void testGetServerStatus() {
         Mockito.when(mockWoker.isHealthServer()).thenReturn(true);
@@ -384,7 +384,7 @@ class NacosConfigServiceTest {
         Mockito.verify(mockWoker, Mockito.times(2)).isHealthServer();
         
     }
-
+    
     @Test
     void testShutDown() {
         Assertions.assertDoesNotThrow(() -> {

@@ -38,22 +38,22 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class NamingHttpClientManagerTest {
-
+    
     @Test
     void testGetInstance() {
         assertNotNull(NamingHttpClientManager.getInstance());
     }
-
+    
     @Test
     void testGetPrefix() {
         assertEquals(HTTP_PREFIX, NamingHttpClientManager.getInstance().getPrefix());
     }
-
+    
     @Test
     void testGetNacosRestTemplate() {
         assertNotNull(NamingHttpClientManager.getInstance().getNacosRestTemplate());
     }
-
+    
     @Test
     void testShutdown() throws NoSuchFieldException, IllegalAccessException, NacosException, IOException {
         //given
@@ -68,7 +68,7 @@ class NamingHttpClientManagerTest {
         // then
         verify(mockHttpClientRequest, times(1)).close();
     }
-
+    
     @Test
     void testShutdownWithException() throws Exception {
         String key = "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory";

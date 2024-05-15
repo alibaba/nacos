@@ -28,15 +28,15 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CollectionUtilsTest {
-
+    
     @Test
     void testSubtract() {
-        List<String> subtract = (List<String>) CollectionUtils
-                .subtract(Arrays.asList("a", "b"), Arrays.asList("b", "c"));
+        List<String> subtract = (List<String>) CollectionUtils.subtract(Arrays.asList("a", "b"),
+                Arrays.asList("b", "c"));
         assertEquals(1, subtract.size());
         assertEquals("a", subtract.get(0));
     }
-
+    
     @Test
     void testGetCardinalityMap() {
         List<String> list1 = Arrays.asList("2", "2", "3");
@@ -46,7 +46,7 @@ class CollectionUtilsTest {
         assertEquals(1, map1.get("3").intValue());
         
     }
-
+    
     @Test
     void testIsEqualCollection() {
         List<String> list1 = Arrays.asList("2", "2", "3");
@@ -61,7 +61,7 @@ class CollectionUtilsTest {
         List<String> list6 = Arrays.asList("2", "2", "1");
         assertFalse(CollectionUtils.isEqualCollection(list1, list6));
     }
-
+    
     @Test
     void testIsEmpty() {
         assertTrue(CollectionUtils.isEmpty(null));

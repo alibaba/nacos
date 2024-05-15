@@ -81,19 +81,19 @@ import static org.mockito.Mockito.times;
 @ExtendWith(MockitoExtension.class)
 class ClientWorkerTest {
     
+    private static final String TEST_NAMESPACE = "TEST_NAMESPACE";
+    
     MockedStatic<RpcClientFactory> rpcClientFactoryMockedStatic;
     
     MockedStatic<LocalConfigInfoProcessor> localConfigInfoProcessorMockedStatic;
     
-    private static final String TEST_NAMESPACE = "TEST_NAMESPACE";
+    @Mock
+    RpcClient rpcClient;
     
     private ClientWorker clientWorker;
     
     private ClientWorker clientWorkerSpy;
     
-    @Mock
-    RpcClient rpcClient;
-
     @BeforeEach
     void before() {
         rpcClientFactoryMockedStatic = Mockito.mockStatic(RpcClientFactory.class);
@@ -117,13 +117,13 @@ class ClientWorkerTest {
         }
         clientWorkerSpy = Mockito.spy(clientWorker);
     }
-
+    
     @AfterEach
     void after() {
         rpcClientFactoryMockedStatic.close();
         localConfigInfoProcessorMockedStatic.close();
     }
-
+    
     @Test
     void testConstruct() throws NacosException {
         Properties prop = new Properties();
@@ -134,7 +134,7 @@ class ClientWorkerTest {
         ClientWorker clientWorker = new ClientWorker(filter, agent, nacosClientProperties);
         assertNotNull(clientWorker);
     }
-
+    
     @Test
     void testAddListenerWithoutTenant() throws NacosException {
         Properties prop = new Properties();
@@ -164,7 +164,7 @@ class ClientWorkerTest {
         CacheData cacheData = clientWorker.addCacheDataIfAbsent(dataId, group);
         assertEquals(cacheData, clientWorker.getCache(dataId, group));
     }
-
+    
     @Test
     void testListenerWithTenant() throws NacosException {
         Properties prop = new Properties();
@@ -210,7 +210,7 @@ class ClientWorkerTest {
         assertNull(clientWorker.getCache(dataId, group, tenant));
         
     }
-
+    
     @Test
     void testPublishConfigSuccess() throws NacosException {
         Properties prop = new Properties();
@@ -239,7 +239,7 @@ class ClientWorkerTest {
         assertTrue(b);
         
     }
-
+    
     @Test
     void testPublishConfigFail() throws NacosException {
         Properties prop = new Properties();
@@ -268,7 +268,7 @@ class ClientWorkerTest {
         assertFalse(b);
         
     }
-
+    
     @Test
     void testPublishConfigException() throws NacosException {
         Properties prop = new Properties();
@@ -296,7 +296,7 @@ class ClientWorkerTest {
         assertFalse(b);
         
     }
-
+    
     @Test
     void testRemoveConfig() throws NacosException {
         
@@ -324,7 +324,7 @@ class ClientWorkerTest {
             
         }
     }
-
+    
     @Test
     void testGeConfigConfigSuccess() throws NacosException {
         
@@ -347,7 +347,7 @@ class ClientWorkerTest {
                 () -> LocalConfigInfoProcessor.saveSnapshot(eq(clientWorker.getAgentName()), eq(dataId), eq(group),
                         eq(tenant), eq(content)), times(1));
     }
-
+    
     @Test
     void testHandleConfigChangeReqeust() throws Exception {
         
@@ -377,7 +377,7 @@ class ClientWorkerTest {
         Mockito.verify(cacheDataMocked, times(1)).setConsistentWithServer(false);
         Mockito.verify(atomicBoolean, times(1)).set(true);
     }
-
+    
     @Test
     void testHandleClientMetricsReqeust() throws Exception {
         
@@ -426,7 +426,7 @@ class ClientWorkerTest {
         assertEquals(md5, metricValues.substring(colonIndex + 1, metricValues.length()));
         
     }
-
+    
     @Test
     void testGeConfigConfigNotFound() throws NacosException {
         
@@ -449,7 +449,7 @@ class ClientWorkerTest {
                         eq(tenant), eq(null)), times(1));
         
     }
-
+    
     @Test
     void testGeConfigConfigConflict() throws NacosException {
         
@@ -472,7 +472,7 @@ class ClientWorkerTest {
             assertEquals(NacosException.CONFLICT, e.getErrCode());
         }
     }
-
+    
     @Test
     void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties prop = new Properties();
@@ -487,10 +487,10 @@ class ClientWorkerTest {
         ConfigTransportClient o = (ConfigTransportClient) agent1.get(clientWorker);
         assertTrue(o.executor.isShutdown());
         agent1.setAccessible(false);
-
+        
         assertNull(clientWorker.getAgentName());
     }
-
+    
     @Test
     void testExecuteConfigListen() throws Exception {
         Properties prop = new Properties();
@@ -616,7 +616,7 @@ class ClientWorkerTest {
                 () -> LocalConfigInfoProcessor.getFailover(envName, dataId, group, tenant)).thenReturn(failOverContent);
         return cacheData;
     }
-
+    
     @Test
     void testIsHealthServer() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Properties prop = new Properties();
@@ -631,13 +631,13 @@ class ClientWorkerTest {
         Field declaredField = ClientWorker.class.getDeclaredField("agent");
         declaredField.setAccessible(true);
         declaredField.set(clientWorker, client);
-
+        
         assertTrue(clientWorker.isHealthServer());
         
         Mockito.when(client.isHealthServer()).thenReturn(Boolean.FALSE);
         assertFalse(clientWorker.isHealthServer());
     }
-
+    
     @Test
     void testPutCache() throws Exception {
         // 反射调用私有方法putCacheIfAbsent
@@ -664,10 +664,9 @@ class ClientWorkerTest {
         // 检查key对应的value是否改变为newCacheData
         assertEquals(newCacheData, cacheMapRef.get().get(key));
     }
-
+    
     @Test
-    void testAddListenersEnsureCacheDataSafe()
-            throws NacosException, IllegalAccessException, NoSuchFieldException {
+    void testAddListenersEnsureCacheDataSafe() throws NacosException, IllegalAccessException, NoSuchFieldException {
         String dataId = "testDataId";
         String group = "testGroup";
         // 将key-cacheData插入到cacheMap中
@@ -696,7 +695,7 @@ class ClientWorkerTest {
         assertFalse(cacheDataFromCache2.isDiscard());
         assertFalse(cacheDataFromCache2.isConsistentWithServer());
     }
-
+    
     @Test
     void testAddTenantListenersEnsureCacheDataSafe()
             throws NacosException, IllegalAccessException, NoSuchFieldException {
@@ -729,7 +728,7 @@ class ClientWorkerTest {
         assertFalse(cacheDataFromCache2.isDiscard());
         assertFalse(cacheDataFromCache2.isConsistentWithServer());
     }
-
+    
     @Test
     void testAddTenantListenersWithContentEnsureCacheDataSafe()
             throws NacosException, IllegalAccessException, NoSuchFieldException {

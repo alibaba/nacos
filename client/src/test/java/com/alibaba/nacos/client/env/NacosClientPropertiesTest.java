@@ -29,24 +29,24 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class NacosClientPropertiesTest {
-
+    
     @BeforeAll
     static void init() {
         System.setProperty("nacos.env.first", "jvm");
     }
-
+    
     @AfterAll
     static void teardown() {
         System.clearProperty("nacos.env.first");
     }
-
+    
     @Test
     void testGetProperty() {
         NacosClientProperties.PROTOTYPE.setProperty("nacos.home", "/home/nacos");
         final String value = NacosClientProperties.PROTOTYPE.getProperty("nacos.home");
         assertEquals("/home/nacos", value);
     }
-
+    
     @Test
     void testGetPropertyMultiLayer() {
         
@@ -73,59 +73,59 @@ class NacosClientPropertiesTest {
         value = layerCEnv.getProperty("top.layer");
         assertEquals("top", value);
     }
-
+    
     @Test
     void testGetPropertyDefaultValue() {
         final String value = NacosClientProperties.PROTOTYPE.getProperty("nacos.home.default", "/home/default_value");
         assertEquals("/home/default_value", value);
     }
-
+    
     @Test
     void testGetBoolean() {
         NacosClientProperties.PROTOTYPE.setProperty("use.cluster", "true");
         final Boolean value = NacosClientProperties.PROTOTYPE.getBoolean("use.cluster");
         assertTrue(value);
     }
-
+    
     @Test
     void testGetBooleanDefaultValue() {
         final Boolean value = NacosClientProperties.PROTOTYPE.getBoolean("use.cluster.default", false);
         assertFalse(value);
     }
-
+    
     @Test
     void testGetInteger() {
         NacosClientProperties.PROTOTYPE.setProperty("max.timeout", "200");
         final Integer value = NacosClientProperties.PROTOTYPE.getInteger("max.timeout");
         assertEquals(200, value.intValue());
     }
-
+    
     @Test
     void testGetIntegerDefaultValue() {
         final Integer value = NacosClientProperties.PROTOTYPE.getInteger("max.timeout.default", 400);
         assertEquals(400, value.intValue());
     }
-
+    
     @Test
     void testGetLong() {
         NacosClientProperties.PROTOTYPE.setProperty("connection.timeout", "200");
         final Long value = NacosClientProperties.PROTOTYPE.getLong("connection.timeout");
         assertEquals(200L, value.longValue());
     }
-
+    
     @Test
     void testGetLongDefault() {
         final Long value = NacosClientProperties.PROTOTYPE.getLong("connection.timeout.default", 400L);
         assertEquals(400L, value.longValue());
     }
-
+    
     @Test
     void setProperty() {
         NacosClientProperties.PROTOTYPE.setProperty("nacos.set.property", "true");
         final String ret = NacosClientProperties.PROTOTYPE.getProperty("nacos.set.property");
         assertEquals("true", ret);
     }
-
+    
     @Test
     void setPropertyWithScope() {
         
@@ -138,7 +138,7 @@ class NacosClientPropertiesTest {
         ret = properties.getProperty("nacos.set.property.scope");
         assertEquals("config", ret);
     }
-
+    
     @Test
     void testAddProperties() {
         Properties properties = new Properties();
@@ -150,7 +150,7 @@ class NacosClientPropertiesTest {
         
         assertEquals("true", ret);
     }
-
+    
     @Test
     void testAddPropertiesWithScope() {
         
@@ -167,7 +167,7 @@ class NacosClientPropertiesTest {
         assertEquals("config", ret);
         
     }
-
+    
     @Test
     void testTestDerive() {
         Properties properties = new Properties();
@@ -180,7 +180,7 @@ class NacosClientPropertiesTest {
         assertEquals("derive", value);
         
     }
-
+    
     @Test
     void testContainsKey() {
         NacosClientProperties.PROTOTYPE.setProperty("nacos.contains.key", "true");
@@ -191,7 +191,7 @@ class NacosClientPropertiesTest {
         ret = NacosClientProperties.PROTOTYPE.containsKey("nacos.contains.key.in.sys");
         assertFalse(ret);
     }
-
+    
     @Test
     void testContainsKeyMultiLayers() {
         
@@ -219,7 +219,7 @@ class NacosClientPropertiesTest {
         assertTrue(exist);
         
     }
-
+    
     @Test
     void testContainsKeyWithScope() {
         NacosClientProperties.PROTOTYPE.setProperty("nacos.contains.global.scope", "global");
@@ -239,7 +239,7 @@ class NacosClientPropertiesTest {
         assertTrue(ret);
         
     }
-
+    
     @Test
     void testAsProperties() {
         NacosClientProperties.PROTOTYPE.setProperty("nacos.as.properties", "true");
@@ -247,7 +247,7 @@ class NacosClientPropertiesTest {
         assertNotNull(properties);
         assertEquals("true", properties.getProperty("nacos.as.properties"));
     }
-
+    
     @Test
     void testAsPropertiesWithScope() {
         
@@ -266,7 +266,7 @@ class NacosClientPropertiesTest {
         ret = properties.getProperty("nacos.server.addr.scope");
         assertEquals("config", ret);
     }
-
+    
     @Test
     void testGetPropertyWithScope() {
         
@@ -302,16 +302,15 @@ class NacosClientPropertiesTest {
         assertNull(ret);
         
     }
-
+    
     @Test
     void testGetPropertyFrom() {
         System.setProperty("nacos.home.default.test", "/home/jvm_args");
         NacosClientProperties.PROTOTYPE.setProperty("nacos.home.default.test", "/home/properties_args");
-
-        assertEquals(
-                "/home/jvm_args", NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.JVM, "nacos.home.default.test"));
-        assertEquals(
-                "/home/properties_args",
+        
+        assertEquals("/home/jvm_args",
+                NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.JVM, "nacos.home.default.test"));
+        assertEquals("/home/properties_args",
                 NacosClientProperties.PROTOTYPE.getPropertyFrom(SourceType.PROPERTIES, "nacos.home.default.test"));
         assertEquals(NacosClientProperties.PROTOTYPE.getPropertyFrom(null, "nacos.home.default.test"),
                 NacosClientProperties.PROTOTYPE.getProperty("nacos.home.default.test"));

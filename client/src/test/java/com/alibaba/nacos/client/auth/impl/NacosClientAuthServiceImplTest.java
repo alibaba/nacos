@@ -35,7 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class NacosClientAuthServiceImplTest {
-
+    
     @Test
     void testLoginSuccess() throws Exception {
         //given
@@ -58,7 +58,7 @@ class NacosClientAuthServiceImplTest {
         //then
         assertTrue(ret);
     }
-
+    
     @Test
     void testTestLoginFailCode() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
@@ -70,14 +70,14 @@ class NacosClientAuthServiceImplTest {
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
         List<String> serverList = new ArrayList<>();
         serverList.add("localhost");
-    
+        
         NacosClientAuthServiceImpl nacosClientAuthService = new NacosClientAuthServiceImpl();
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         boolean ret = nacosClientAuthService.login(properties);
         assertFalse(ret);
     }
-
+    
     @Test
     void testTestLoginFailHttp() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
@@ -87,7 +87,7 @@ class NacosClientAuthServiceImplTest {
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
         List<String> serverList = new ArrayList<>();
         serverList.add("localhost");
-    
+        
         NacosClientAuthServiceImpl nacosClientAuthService = new NacosClientAuthServiceImpl();
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
@@ -95,7 +95,7 @@ class NacosClientAuthServiceImplTest {
         assertFalse(ret);
         
     }
-
+    
     @Test
     void testTestLoginServerListSuccess() throws Exception {
         //given
@@ -110,14 +110,14 @@ class NacosClientAuthServiceImplTest {
         List<String> serverList = new ArrayList<>();
         serverList.add("localhost");
         serverList.add("localhost");
-    
+        
         NacosClientAuthServiceImpl nacosClientAuthService = new NacosClientAuthServiceImpl();
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         boolean ret = nacosClientAuthService.login(properties);
         assertTrue(ret);
     }
-
+    
     @Test
     void testTestLoginServerListLoginInWindow() throws Exception {
         //given
@@ -142,7 +142,7 @@ class NacosClientAuthServiceImplTest {
         assertTrue(ret);
         
     }
-
+    
     @Test
     void testGetAccessToken() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
@@ -153,19 +153,20 @@ class NacosClientAuthServiceImplTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
-    
+        
         List<String> serverList = new ArrayList<>();
         serverList.add("localhost");
-    
+        
         NacosClientAuthServiceImpl nacosClientAuthService = new NacosClientAuthServiceImpl();
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         //when
         assertTrue(nacosClientAuthService.login(properties));
         //then
-        assertEquals("abc", nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+        assertEquals("abc",
+                nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
-
+    
     @Test
     void testGetAccessEmptyToken() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
@@ -186,9 +187,10 @@ class NacosClientAuthServiceImplTest {
         //when
         assertTrue(nacosClientAuthService.login(properties));
         //then
-        assertEquals("", nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+        assertEquals("",
+                nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
-
+    
     @Test
     void testGetAccessTokenWithoutToken() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
@@ -199,19 +201,20 @@ class NacosClientAuthServiceImplTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
-    
+        
         List<String> serverList = new ArrayList<>();
         serverList.add("localhost");
-    
+        
         NacosClientAuthServiceImpl nacosClientAuthService = new NacosClientAuthServiceImpl();
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);
         //when
         assertTrue(nacosClientAuthService.login(properties));
         //then
-        assertNull(nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
+        assertNull(
+                nacosClientAuthService.getLoginIdentityContext(null).getParameter(NacosAuthLoginConstant.ACCESSTOKEN));
     }
-
+    
     @Test
     void testGetAccessTokenWithInvalidTtl() throws Exception {
         NacosRestTemplate nacosRestTemplate = mock(NacosRestTemplate.class);
@@ -222,10 +225,10 @@ class NacosClientAuthServiceImplTest {
         Properties properties = new Properties();
         properties.setProperty(PropertyKeyConst.USERNAME, "aaa");
         properties.setProperty(PropertyKeyConst.PASSWORD, "123456");
-    
+        
         List<String> serverList = new ArrayList<>();
         serverList.add("localhost");
-    
+        
         NacosClientAuthServiceImpl nacosClientAuthService = new NacosClientAuthServiceImpl();
         nacosClientAuthService.setServerList(serverList);
         nacosClientAuthService.setNacosRestTemplate(nacosRestTemplate);

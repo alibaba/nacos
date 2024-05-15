@@ -21,13 +21,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ProtectModeTest {
-
+    
     @Test
     void testProtectThresholdDefault() {
         final ProtectMode protectMode = new ProtectMode();
         assertEquals(0.8f, protectMode.getProtectThreshold(), 0.01f);
     }
-
+    
     @Test
     void testSetProtectThreshold() {
         final ProtectMode protectMode = new ProtectMode();

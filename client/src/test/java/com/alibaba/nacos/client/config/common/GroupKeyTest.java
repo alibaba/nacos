@@ -23,61 +23,61 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class GroupKeyTest {
-
+    
     @Test
     void testGetKey() {
         assertEquals("1+foo", GroupKey.getKey("1", "foo"));
         assertEquals("1+foo+bar", GroupKey.getKey("1", "foo", "bar"));
         assertEquals("1+f%2Boo+b%25ar", GroupKey.getKey("1", "f+oo", "b%ar"));
     }
-
+    
     @Test
     void testGetKeyTenant() {
         assertEquals("1+foo+bar", GroupKey.getKeyTenant("1", "foo", "bar"));
     }
-
+    
     @Test
     void testParseKey() {
         assertArrayEquals(new String[] {"a", "f+oo", null}, GroupKey.parseKey("a+f%2Boo"));
         assertArrayEquals(new String[] {"b", "f%oo", null}, GroupKey.parseKey("b+f%25oo"));
         assertArrayEquals(new String[] {"a", "b", "c"}, GroupKey.parseKey("a+b+c"));
     }
-
+    
     @Test
     void testParseKeyIllegalArgumentException1() {
         assertThrows(IllegalArgumentException.class, () -> {
             GroupKey.parseKey("");
         });
     }
-
+    
     @Test
     void testParseKeyIllegalArgumentException2() {
         assertThrows(IllegalArgumentException.class, () -> {
             GroupKey.parseKey("f%oo");
         });
     }
-
+    
     @Test
     void testParseKeyIllegalArgumentException3() {
         assertThrows(IllegalArgumentException.class, () -> {
             GroupKey.parseKey("f+o+o+bar");
         });
     }
-
+    
     @Test
     void testParseKeyIllegalArgumentException4() {
         assertThrows(IllegalArgumentException.class, () -> {
             GroupKey.parseKey("f++bar");
         });
     }
-
+    
     @Test
     void testGetKeyDatIdParam() {
         assertThrows(IllegalArgumentException.class, () -> {
             GroupKey.getKey("", "a");
         });
     }
-
+    
     @Test
     void testGetKeyGroupParam() {
         assertThrows(IllegalArgumentException.class, () -> {

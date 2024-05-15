@@ -29,6 +29,58 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class MetricsHttpAgentTest {
     
+    @Test
+    void testGetter() {
+        String name = "name";
+        String encode = "UTF-8";
+        String tenant = "aaa";
+        String namespace = "aaa";
+        final HttpAgent mockHttpAgent = new MockHttpAgent(name, encode, tenant, namespace);
+        final MetricsHttpAgent metricsHttpAgent = new MetricsHttpAgent(mockHttpAgent);
+        
+        assertEquals(name, metricsHttpAgent.getName());
+        assertEquals(encode, metricsHttpAgent.getEncode());
+        assertEquals(tenant, metricsHttpAgent.getTenant());
+        assertEquals(namespace, metricsHttpAgent.getNamespace());
+    }
+    
+    @Test
+    void testLifeCycle() throws NacosException {
+        String name = "name";
+        String encode = "UTF-8";
+        String tenant = "aaa";
+        String namespace = "aaa";
+        final MockHttpAgent mockHttpAgent = new MockHttpAgent(name, encode, tenant, namespace);
+        final MetricsHttpAgent metricsHttpAgent = new MetricsHttpAgent(mockHttpAgent);
+        
+        metricsHttpAgent.start();
+        assertTrue(mockHttpAgent.isStart());
+        
+        metricsHttpAgent.shutdown();
+        assertTrue(mockHttpAgent.isShutdown());
+    }
+    
+    @Test
+    void testHttpMethod() throws Exception {
+        String name = "name";
+        String encode = "UTF-8";
+        String tenant = "aaa";
+        String namespace = "aaa";
+        final MockHttpAgent mockHttpAgent = new MockHttpAgent(name, encode, tenant, namespace);
+        final MetricsHttpAgent metricsHttpAgent = new MetricsHttpAgent(mockHttpAgent);
+        
+        final HttpRestResult<String> result1 = metricsHttpAgent.httpGet("/aa", new HashMap<String, String>(),
+                new HashMap<String, String>(), "UTF-8", 1L);
+        assertEquals("get /aa", result1.getMessage());
+        final HttpRestResult<String> result2 = metricsHttpAgent.httpPost("/aa", new HashMap<String, String>(),
+                new HashMap<String, String>(), "UTF-8", 1L);
+        assertEquals("post /aa", result2.getMessage());
+        
+        final HttpRestResult<String> result3 = metricsHttpAgent.httpDelete("/aa", new HashMap<String, String>(),
+                new HashMap<String, String>(), "UTF-8", 1L);
+        assertEquals("delete /aa", result3.getMessage());
+    }
+    
     private static class MockHttpAgent implements HttpAgent {
         
         private String name;
@@ -105,57 +157,5 @@ class MetricsHttpAgentTest {
         public boolean isShutdown() {
             return shutdown;
         }
-    }
-
-    @Test
-    void testGetter() {
-        String name = "name";
-        String encode = "UTF-8";
-        String tenant = "aaa";
-        String namespace = "aaa";
-        final HttpAgent mockHttpAgent = new MockHttpAgent(name, encode, tenant, namespace);
-        final MetricsHttpAgent metricsHttpAgent = new MetricsHttpAgent(mockHttpAgent);
-        
-        assertEquals(name, metricsHttpAgent.getName());
-        assertEquals(encode, metricsHttpAgent.getEncode());
-        assertEquals(tenant, metricsHttpAgent.getTenant());
-        assertEquals(namespace, metricsHttpAgent.getNamespace());
-    }
-
-    @Test
-    void testLifeCycle() throws NacosException {
-        String name = "name";
-        String encode = "UTF-8";
-        String tenant = "aaa";
-        String namespace = "aaa";
-        final MockHttpAgent mockHttpAgent = new MockHttpAgent(name, encode, tenant, namespace);
-        final MetricsHttpAgent metricsHttpAgent = new MetricsHttpAgent(mockHttpAgent);
-        
-        metricsHttpAgent.start();
-        assertTrue(mockHttpAgent.isStart());
-        
-        metricsHttpAgent.shutdown();
-        assertTrue(mockHttpAgent.isShutdown());
-    }
-
-    @Test
-    void testHttpMethod() throws Exception {
-        String name = "name";
-        String encode = "UTF-8";
-        String tenant = "aaa";
-        String namespace = "aaa";
-        final MockHttpAgent mockHttpAgent = new MockHttpAgent(name, encode, tenant, namespace);
-        final MetricsHttpAgent metricsHttpAgent = new MetricsHttpAgent(mockHttpAgent);
-        
-        final HttpRestResult<String> result1 = metricsHttpAgent
-                .httpGet("/aa", new HashMap<String, String>(), new HashMap<String, String>(), "UTF-8", 1L);
-        assertEquals("get /aa", result1.getMessage());
-        final HttpRestResult<String> result2 = metricsHttpAgent
-                .httpPost("/aa", new HashMap<String, String>(), new HashMap<String, String>(), "UTF-8", 1L);
-        assertEquals("post /aa", result2.getMessage());
-        
-        final HttpRestResult<String> result3 = metricsHttpAgent
-                .httpDelete("/aa", new HashMap<String, String>(), new HashMap<String, String>(), "UTF-8", 1L);
-        assertEquals("delete /aa", result3.getMessage());
     }
 }

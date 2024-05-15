@@ -50,7 +50,7 @@ class AbstractNamingClientProxyTest {
     
     @Mock
     private SecurityProxy sc;
-
+    
     /**
      * test get security headers for accessToken.
      */
@@ -66,7 +66,7 @@ class AbstractNamingClientProxyTest {
         assertEquals(token, securityHeaders.get(Constants.ACCESS_TOKEN));
         assertEquals(AppNameUtils.getAppName(), securityHeaders.get("app"));
     }
-
+    
     /**
      * get security headers for ram.
      *

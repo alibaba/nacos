@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SpasAdapterTest {
-
+    
     @Test
     void test() {
         assertNull(SpasAdapter.getAk());
@@ -37,7 +37,7 @@ class SpasAdapterTest {
         });
         
     }
-
+    
     @Test
     void testSign() {
         
@@ -55,10 +55,9 @@ class SpasAdapterTest {
         
         final Map<String, String> map3 = SpasAdapter.getSignHeaders("", "bb", "123");
         assertEquals(2, map3.size());
-        assertEquals(SpasAdapter.signWithHmacSha1Encrypt(map3.get("Timestamp"), "123"),
-                map3.get("Spas-Signature"));
+        assertEquals(SpasAdapter.signWithHmacSha1Encrypt(map3.get("Timestamp"), "123"), map3.get("Spas-Signature"));
     }
-
+    
     @Test
     void testSign2() {
         
@@ -72,7 +71,7 @@ class SpasAdapterTest {
         assertEquals(SpasAdapter.signWithHmacSha1Encrypt("bb+aa+" + map1.get("Timestamp"), "123"),
                 map1.get("Spas-Signature"));
     }
-
+    
     @Test
     void testGetSignHeadersWithoutTenant() {
         Map<String, String> param1 = new HashMap<>();
@@ -82,7 +81,7 @@ class SpasAdapterTest {
         assertEquals(SpasAdapter.signWithHmacSha1Encrypt("aa+" + map1.get("Timestamp"), "123"),
                 map1.get("Spas-Signature"));
     }
-
+    
     @Test
     void testSignWithHmacSha1EncryptWithException() {
         assertThrows(Exception.class, () -> {

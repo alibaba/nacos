@@ -25,7 +25,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class InstancesChangeEventTest {
-
+    
     @Test
     void testGetServiceName() {
         String eventScope = "scope-001";

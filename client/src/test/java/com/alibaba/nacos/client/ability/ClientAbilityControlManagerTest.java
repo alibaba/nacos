@@ -29,12 +29,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ClientAbilityControlManagerTest {
     
     ClientAbilityControlManager clientAbilityControlManager;
-
+    
     @BeforeEach
     void setUp() {
         clientAbilityControlManager = new ClientAbilityControlManager();
     }
-
+    
     @Test
     void testInitCurrentNodeAbilities() {
         Map<AbilityMode, Map<AbilityKey, Boolean>> actual = clientAbilityControlManager.initCurrentNodeAbilities();
@@ -43,7 +43,7 @@ class ClientAbilityControlManagerTest {
         // Current not define sdk ability.
         assertEquals(0, actual.get(AbilityMode.SDK_CLIENT).size());
     }
-
+    
     @Test
     void testGetPriority() {
         assertEquals(0, clientAbilityControlManager.getPriority());

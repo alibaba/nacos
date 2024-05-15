@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class StringUtilsTest {
-
+    
     @Test
     void testisNotBlank() {
         assertTrue(isNotBlank("foo"));
@@ -41,20 +41,20 @@ class StringUtilsTest {
         assertFalse(isNotBlank(" "));
         assertFalse(isNotBlank(null));
     }
-
+    
     @Test
     void testIsNotEmpty() {
         assertFalse(isNotEmpty(""));
         
         assertTrue(isNotEmpty("foo"));
     }
-
+    
     @Test
     void testDefaultIfEmpty() {
         assertEquals("foo", defaultIfEmpty("", "foo"));
         assertEquals("bar", defaultIfEmpty("bar", "foo"));
     }
-
+    
     @Test
     void testEquals() {
         assertTrue(StringUtils.equals("foo", "foo"));
@@ -63,7 +63,7 @@ class StringUtilsTest {
         assertFalse(StringUtils.equals(" ", "foo"));
         assertFalse(StringUtils.equals("foo", null));
     }
-
+    
     @Test
     void testSubstringBetween() {
         assertNull(substringBetween(null, null, null));
@@ -72,7 +72,7 @@ class StringUtilsTest {
         
         assertEquals("", substringBetween("foo", "foo", ""));
     }
-
+    
     @Test
     void testJoin() {
         assertNull(join(null, ""));

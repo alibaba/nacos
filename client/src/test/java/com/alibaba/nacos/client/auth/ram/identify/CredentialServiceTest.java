@@ -33,32 +33,32 @@ import static org.mockito.Mockito.verify;
 class CredentialServiceTest {
     
     private static final String APP_NAME = "app";
-
+    
     @BeforeEach
     void setUp() throws Exception {
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
         System.clearProperty(IdentifyConstants.PROJECT_NAME_PROPERTY);
         CredentialService.freeInstance();
         CredentialService.freeInstance(APP_NAME);
     }
-
+    
     @Test
     void testGetInstance() {
         CredentialService credentialService1 = CredentialService.getInstance();
         CredentialService credentialService2 = CredentialService.getInstance();
         assertEquals(credentialService1, credentialService2);
     }
-
+    
     @Test
     void testGetInstance2() {
         CredentialService credentialService1 = CredentialService.getInstance(APP_NAME);
         CredentialService credentialService2 = CredentialService.getInstance(APP_NAME);
         assertEquals(credentialService1, credentialService2);
     }
-
+    
     @Test
     void testGetInstance3() throws NoSuchFieldException, IllegalAccessException {
         System.setProperty(IdentifyConstants.PROJECT_NAME_PROPERTY, APP_NAME);
@@ -68,21 +68,21 @@ class CredentialServiceTest {
         String appName = (String) appNameField.get(credentialService1);
         assertEquals(APP_NAME, appName);
     }
-
+    
     @Test
     void testFreeInstance() {
         CredentialService credentialService1 = CredentialService.getInstance();
         CredentialService credentialService2 = CredentialService.freeInstance();
         assertEquals(credentialService1, credentialService2);
     }
-
+    
     @Test
     void testFreeInstance2() {
         CredentialService credentialService1 = CredentialService.getInstance();
         CredentialService credentialService2 = CredentialService.freeInstance();
         assertEquals(credentialService1, credentialService2);
     }
-
+    
     @Test
     void testFree() throws NoSuchFieldException, IllegalAccessException {
         CredentialService credentialService1 = CredentialService.getInstance();
@@ -95,14 +95,14 @@ class CredentialServiceTest {
         //then
         verify(mockWatcher, times(1)).stop();
     }
-
+    
     @Test
     void testGetCredential() {
         CredentialService credentialService1 = CredentialService.getInstance();
         Credentials credential = credentialService1.getCredential();
         assertNotNull(credential);
     }
-
+    
     @Test
     void testSetCredential() {
         CredentialService credentialService1 = CredentialService.getInstance();
@@ -112,7 +112,7 @@ class CredentialServiceTest {
         //then
         assertEquals(credential, credentialService1.getCredential());
     }
-
+    
     @Test
     void testSetStaticCredential() throws NoSuchFieldException, IllegalAccessException {
         CredentialService credentialService1 = CredentialService.getInstance();
@@ -127,7 +127,7 @@ class CredentialServiceTest {
         assertEquals(credential, credentialService1.getCredential());
         verify(mockWatcher, times(1)).stop();
     }
-
+    
     @Test
     void testRegisterCredentialListener() {
         CredentialListener expect = mock(CredentialListener.class);

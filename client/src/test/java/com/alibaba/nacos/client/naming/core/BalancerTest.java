@@ -29,13 +29,13 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class BalancerTest {
-
+    
     @Test
     void testGetHostByRandomWeightNull() {
         assertNull(Balancer.getHostByRandomWeight(null));
         assertNull(Balancer.getHostByRandomWeight(new ArrayList<>()));
     }
-
+    
     @Test
     void testGetHostByRandomWeight() {
         List<Instance> list = new ArrayList<>();
@@ -44,7 +44,7 @@ class BalancerTest {
         final Instance actual = Balancer.getHostByRandomWeight(list);
         assertEquals(instance1, actual);
     }
-
+    
     @Test
     void testSelectHost() {
         List<Instance> hosts = new ArrayList<>();
@@ -56,12 +56,12 @@ class BalancerTest {
         final Instance actual = Balancer.RandomByWeight.selectHost(serviceInfo);
         assertEquals(instance1, actual);
     }
-
+    
     @Test
     void testSelectHostEmpty() {
         Throwable exception = assertThrows(IllegalStateException.class, () -> {
             ServiceInfo serviceInfo = new ServiceInfo();
-
+            
             Balancer.RandomByWeight.selectHost(serviceInfo);
         });
         assertTrue(exception.getMessage().contains("no host to srv for serviceInfo: null"));

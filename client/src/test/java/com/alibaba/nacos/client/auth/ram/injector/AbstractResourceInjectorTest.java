@@ -22,12 +22,13 @@ import org.junit.jupiter.api.Test;
 class AbstractResourceInjectorTest {
     
     AbstractResourceInjector injector;
-
+    
     @BeforeEach
     void setUp() {
-        injector = new AbstractResourceInjector() { };
+        injector = new AbstractResourceInjector() {
+        };
     }
-
+    
     /**
      * TODO, fill test case after AbstractResourceInjector include default logic.
      */

@@ -37,7 +37,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 class InstancesChangeNotifierTest {
-
+    
     @Test
     void testRegisterListener() {
         String eventScope = "scope-001";
@@ -59,7 +59,7 @@ class InstancesChangeNotifierTest {
         InstancesChangeEvent event = new InstancesChangeEvent(eventScope, name, group, clusters, hosts);
         assertTrue(instancesChangeNotifier.scopeMatches(event));
     }
-
+    
     @Test
     void testDeregisterListener() {
         String eventScope = "scope-001";
@@ -80,7 +80,7 @@ class InstancesChangeNotifierTest {
         instancesChangeNotifier.deregisterListener(group, name, clusters, listener);
         assertEquals(0, subscribeServices2.size());
     }
-
+    
     @Test
     void testIsSubscribed() {
         String eventScope = "scope-001";
@@ -94,7 +94,7 @@ class InstancesChangeNotifierTest {
         instancesChangeNotifier.registerListener(group, name, clusters, listener);
         assertTrue(instancesChangeNotifier.isSubscribed(group, name, clusters));
     }
-
+    
     @Test
     void testOnEvent() {
         String eventScope = "scope-001";
@@ -113,7 +113,7 @@ class InstancesChangeNotifierTest {
         instancesChangeNotifier.onEvent(event1);
         Mockito.verify(listener, times(1)).onEvent(any());
     }
-
+    
     @Test
     void testOnEventWithoutListener() {
         String eventScope = "scope-001";
@@ -130,7 +130,7 @@ class InstancesChangeNotifierTest {
         instancesChangeNotifier.onEvent(event1);
         Mockito.verify(listener, never()).onEvent(any());
     }
-
+    
     @Test
     void testOnEventByExecutor() {
         String eventScope = "scope-001";
@@ -151,7 +151,7 @@ class InstancesChangeNotifierTest {
         instancesChangeNotifier.onEvent(event1);
         Mockito.verify(executor).execute(any());
     }
-
+    
     @Test
     void testSubscribeType() {
         String eventScope = "scope-001";

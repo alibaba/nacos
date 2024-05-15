@@ -30,7 +30,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 class TemplateUtilsTest {
-
+    
     @Test
     void testStringNotEmptyAndThenExecuteSuccess() {
         String word = "run";
@@ -38,7 +38,7 @@ class TemplateUtilsTest {
         TemplateUtils.stringNotEmptyAndThenExecute(word, task);
         Mockito.verify(task, Mockito.times(1)).run();
     }
-
+    
     @Test
     void testStringNotEmptyAndThenExecuteFail() {
         String word = "";
@@ -46,7 +46,7 @@ class TemplateUtilsTest {
         TemplateUtils.stringNotEmptyAndThenExecute(word, task);
         Mockito.verify(task, Mockito.times(0)).run();
     }
-
+    
     @Test
     void testStringNotEmptyAndThenExecuteException() {
         String word = "run";
@@ -56,14 +56,14 @@ class TemplateUtilsTest {
         Mockito.verify(task, Mockito.times(1)).run();
         // NO exception thrown
     }
-
+    
     @Test
     void testStringEmptyAndThenExecuteSuccess() {
         String word = "   ";
         String actual = TemplateUtils.stringEmptyAndThenExecute(word, () -> "call");
         assertEquals("", actual);
     }
-
+    
     @Test
     void testStringEmptyAndThenExecuteFail() {
         String word = "";
@@ -71,7 +71,7 @@ class TemplateUtilsTest {
         String actual = TemplateUtils.stringEmptyAndThenExecute(word, () -> expect);
         assertEquals(expect, actual);
     }
-
+    
     @Test
     void testStringEmptyAndThenExecuteException() throws Exception {
         Callable callable = mock(Callable.class);
@@ -79,14 +79,14 @@ class TemplateUtilsTest {
         String actual = TemplateUtils.stringEmptyAndThenExecute(null, callable);
         assertNull(actual);
     }
-
+    
     @Test
     void testStringBlankAndThenExecuteSuccess() {
         String word = "success";
         String actual = TemplateUtils.stringBlankAndThenExecute(word, () -> "call");
         assertEquals(word, actual);
     }
-
+    
     @Test
     void testStringBlankAndThenExecuteFail() {
         String word = "   ";
@@ -94,7 +94,7 @@ class TemplateUtilsTest {
         String actual = TemplateUtils.stringBlankAndThenExecute(word, () -> expect);
         assertEquals(expect, actual);
     }
-
+    
     @Test
     void testStringBlankAndThenExecuteException() throws Exception {
         Callable callable = mock(Callable.class);

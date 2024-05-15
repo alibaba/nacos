@@ -40,7 +40,7 @@ class DiskCacheTest {
     private ServiceInfo serviceInfo;
     
     private Instance instance;
-
+    
     @BeforeEach
     void setUp() {
         System.out.println(CACHE_DIR);
@@ -53,7 +53,7 @@ class DiskCacheTest {
         instance.addMetadata("chinese", "中文");
         serviceInfo.setHosts(Collections.singletonList(instance));
     }
-
+    
     @AfterEach
     void tearDown() {
         File file = new File(CACHE_DIR);
@@ -64,7 +64,7 @@ class DiskCacheTest {
             file.delete();
         }
     }
-
+    
     @Test
     void testCache() {
         DiskCache.write(serviceInfo, CACHE_DIR);
@@ -73,7 +73,7 @@ class DiskCacheTest {
         assertTrue(actual.containsKey(serviceInfo.getKey()));
         assertServiceInfo(actual.get(serviceInfo.getKey()), serviceInfo);
     }
-
+    
     @Test
     void testWriteCacheWithErrorPath() {
         File file = new File(CACHE_DIR, serviceInfo.getKeyEncoded());
@@ -85,7 +85,7 @@ class DiskCacheTest {
             file.delete();
         }
     }
-
+    
     @Test
     void testReadCacheForAllSituation() {
         String dir = DiskCacheTest.class.getResource("/").getPath() + "/disk_cache_test";
@@ -96,20 +96,20 @@ class DiskCacheTest {
         assertTrue(actual.containsKey("legal@@with_name@@file"));
         assertEquals("1.1.1.1", actual.get("legal@@with_name@@file").getHosts().get(0).getIp());
     }
-
+    
     @Test
     void testReadCacheForNullFile() {
         Map<String, ServiceInfo> actual = DiskCache.read(null);
         assertTrue(actual.isEmpty());
     }
-
+    
     @Test
     void testParseServiceInfoFromNonExistFile() throws UnsupportedEncodingException {
         File file = new File("non%40%40exist%40%40file");
         Map<String, ServiceInfo> actual = DiskCache.parseServiceInfoFromCache(file);
         assertTrue(actual.isEmpty());
     }
-
+    
     @Test
     void testCreateFileIfAbsentForDir() throws Throwable {
         assertThrows(IllegalStateException.class, () -> {
@@ -117,7 +117,7 @@ class DiskCacheTest {
             DiskCache.createFileIfAbsent(file, true);
         });
     }
-
+    
     @Test
     void testCreateFileIfAbsentForFile() throws Throwable {
         assertThrows(IllegalStateException.class, () -> {
@@ -150,7 +150,7 @@ class DiskCacheTest {
         assertEquals(actual.getPort(), expected.getPort());
         assertEquals(actual.getMetadata(), expected.getMetadata());
     }
-
+    
     @Test
     void testGetLineSeparator() {
         String lineSeparator = DiskCache.getLineSeparator();

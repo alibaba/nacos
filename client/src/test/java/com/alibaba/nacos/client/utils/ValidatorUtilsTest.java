@@ -26,7 +26,7 @@ import java.util.Properties;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ValidatorUtilsTest {
-
+    
     @Test
     void testContextPathLegal() {
         String contextPath1 = "/nacos";
@@ -40,7 +40,7 @@ class ValidatorUtilsTest {
         // allow null
         ValidatorUtils.checkContextPath(null);
     }
-
+    
     @Test
     void testContextPathIllegal1() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -48,7 +48,7 @@ class ValidatorUtilsTest {
             ValidatorUtils.checkContextPath(contextPath1);
         });
     }
-
+    
     @Test
     void testContextPathIllegal2() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -56,7 +56,7 @@ class ValidatorUtilsTest {
             ValidatorUtils.checkContextPath(contextPath2);
         });
     }
-
+    
     @Test
     void testContextPathIllegal3() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -64,7 +64,7 @@ class ValidatorUtilsTest {
             ValidatorUtils.checkContextPath(contextPath3);
         });
     }
-
+    
     @Test
     void testContextPathIllegal4() {
         assertThrows(IllegalArgumentException.class, () -> {
@@ -72,7 +72,7 @@ class ValidatorUtilsTest {
             ValidatorUtils.checkContextPath(contextPath4);
         });
     }
-
+    
     @Test
     void testCheckInitParam() {
         Assertions.assertDoesNotThrow(() -> {

@@ -38,36 +38,36 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 class SearchablePropertiesTest {
     
     Method initMethod;
-
+    
     @BeforeAll
     static void init() {
         System.setProperty(Constants.SysEnv.NACOS_ENV_FIRST, "jvm");
     }
-
+    
+    @AfterAll
+    static void teardown() {
+        System.clearProperty(Constants.SysEnv.NACOS_ENV_FIRST);
+    }
+    
     @BeforeEach
     void setUp() throws Exception {
         initMethod = SearchableProperties.class.getDeclaredMethod("init");
         initMethod.setAccessible(true);
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
         init();
         initMethod.invoke(null);
     }
-
-    @AfterAll
-    static void teardown() {
-        System.clearProperty(Constants.SysEnv.NACOS_ENV_FIRST);
-    }
-
+    
     @Test
     void testInitWithInvalidOrder() throws IllegalAccessException, InvocationTargetException {
         System.setProperty(Constants.SysEnv.NACOS_ENV_FIRST, "invalid");
         List<SourceType> order = (List<SourceType>) initMethod.invoke(null);
         assertOrder(order, SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV);
     }
-
+    
     @Test
     void testInitWithoutSpecifiedOrder() throws IllegalAccessException, InvocationTargetException {
         System.clearProperty(Constants.SysEnv.NACOS_ENV_FIRST);
@@ -81,7 +81,7 @@ class SearchablePropertiesTest {
             assertEquals(sourceTypes[i], order.get(i));
         }
     }
-
+    
     @Test
     void testGetPropertyFromEnv() {
         System.setProperty("testFromSource", "jvm");
@@ -89,7 +89,7 @@ class SearchablePropertiesTest {
         properties.setProperty("testFromSource", "properties");
         assertNull(properties.getPropertyFrom(SourceType.ENV, "testFromSource"));
     }
-
+    
     @Test
     void testGetPropertyFromUnknown() {
         System.setProperty("testFromSource", "jvm");

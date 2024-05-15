@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ChooserTest {
-
+    
     @Test
     void testChooser() {
         //Test the correctness of Chooser, the weight of the final selected instance must be greater than 0
@@ -41,14 +41,14 @@ class ChooserTest {
         Instance target = getRandomInstance(hosts);
         assertTrue(hosts.contains(target) && target.getWeight() > 0);
     }
-
+    
     @Test
     void testChooserRandomForEmptyList() {
         Chooser<String, String> chooser = new Chooser<>("test");
         assertEquals("test", chooser.getUniqueKey());
         assertNull(chooser.random());
     }
-
+    
     @Test
     void testChooserRandomForOneSizeList() {
         List<Pair<String>> list = new LinkedList<>();
@@ -58,7 +58,7 @@ class ChooserTest {
         assertNotNull(actual);
         assertEquals("test", actual);
     }
-
+    
     @Test
     void testChooserRandom() {
         List<Pair<String>> list = new LinkedList<>();
@@ -69,7 +69,7 @@ class ChooserTest {
         assertNotNull(actual);
         assertTrue(actual.equals("test") || actual.equals("test2"));
     }
-
+    
     @Test
     void testOnlyOneInstanceWeightIsNotZero() {
         // If there is only one instance whose weight is not zero, it will be selected
@@ -78,7 +78,7 @@ class ChooserTest {
         Instance target = getRandomInstance(hosts);
         assertTrue(target.getWeight() > 0);
     }
-
+    
     @Test
     void testInstanceWeightAllZero() {
         // Throw an IllegalStateException when all instances have a weight of zero.
@@ -90,7 +90,7 @@ class ChooserTest {
             assertTrue(e instanceof IllegalStateException);
         }
     }
-
+    
     @Test
     void testRandomWithWeightForNaNAndInfinity() {
         assertThrows(IllegalStateException.class, () -> {
@@ -100,7 +100,7 @@ class ChooserTest {
             new Chooser<>("test", list);
         });
     }
-
+    
     @Test
     void testRefresh() {
         Chooser<String, String> chooser = new Chooser<>("test");
@@ -113,7 +113,7 @@ class ChooserTest {
         assertNotNull(actual);
         assertEquals("test", actual);
     }
-
+    
     @Test
     void testEqualsHashCode() {
         List<Pair<String>> list = new LinkedList<>();
@@ -135,7 +135,7 @@ class ChooserTest {
         Chooser<String, String> chooser4 = new Chooser<>("test", list);
         assertEquals(chooser, chooser4);
     }
-
+    
     @Test
     void testRefEqualsHashCode() {
         List<Pair<String>> list = new LinkedList<>();

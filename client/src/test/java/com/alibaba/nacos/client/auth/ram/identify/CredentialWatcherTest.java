@@ -58,17 +58,17 @@ class CredentialWatcherTest {
     private Method loadCredentialMethod;
     
     private Method loadCredentialFromPropertiesMethod;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         credentialWatcher = new CredentialWatcher("testApp", credentialService);
         loadCredentialMethod = CredentialWatcher.class.getDeclaredMethod("loadCredential", boolean.class);
         loadCredentialMethod.setAccessible(true);
-        loadCredentialFromPropertiesMethod = CredentialWatcher.class
-                .getDeclaredMethod("loadCredentialFromProperties", InputStream.class, boolean.class, Credentials.class);
+        loadCredentialFromPropertiesMethod = CredentialWatcher.class.getDeclaredMethod("loadCredentialFromProperties",
+                InputStream.class, boolean.class, Credentials.class);
         loadCredentialFromPropertiesMethod.setAccessible(true);
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
         credentialWatcher.stop();
@@ -77,7 +77,7 @@ class CredentialWatcherTest {
         System.clearProperty(IdentifyConstants.ENV_SECRET_KEY);
         CredentialService.freeInstance();
     }
-
+    
     @Test
     void testStop() throws NoSuchFieldException, IllegalAccessException {
         credentialWatcher.stop();
@@ -86,7 +86,7 @@ class CredentialWatcherTest {
         ScheduledExecutorService executor = (ScheduledExecutorService) executorField.get(credentialWatcher);
         assertTrue(executor.isShutdown());
     }
-
+    
     @Test
     void testLoadCredentialByEnv() throws InvocationTargetException, IllegalAccessException {
         System.setProperty(IdentifyConstants.ENV_ACCESS_KEY, "testAk");
@@ -106,7 +106,7 @@ class CredentialWatcherTest {
         assertEquals("testSk", readSK.get());
         assertNull(readTenantId.get());
     }
-
+    
     @Test
     void testLoadCredentialByIdentityFile() throws InvocationTargetException, IllegalAccessException {
         URL url = CredentialWatcherTest.class.getResource("/spas.identity");
@@ -126,7 +126,7 @@ class CredentialWatcherTest {
         assertEquals("testSk", readSK.get());
         assertEquals("testTenantId", readTenantId.get());
     }
-
+    
     @Test
     void testLoadCredentialByInvalidIdentityFile() throws InvocationTargetException, IllegalAccessException {
         URL url = CredentialWatcherTest.class.getResource("/spas_invalid.identity");
@@ -146,7 +146,7 @@ class CredentialWatcherTest {
         assertEquals("testSk", readSK.get());
         assertEquals("testTenantId", readTenantId.get());
     }
-
+    
     /**
      * The docker file is need /etc permission, which depend environment. So use mock InputStream to test.
      */
@@ -164,7 +164,7 @@ class CredentialWatcherTest {
         assertEquals("testSk", actual.getSecretKey());
         assertEquals("testTenantId", actual.getTenantId());
     }
-
+    
     @Test
     void testLoadCredentialByFileWithIoException()
             throws IOException, InvocationTargetException, IllegalAccessException {
@@ -177,10 +177,9 @@ class CredentialWatcherTest {
         assertNull(actual.getSecretKey());
         assertNull(actual.getTenantId());
     }
-
+    
     @Test
-    void testReLoadCredential()
-            throws InvocationTargetException, IllegalAccessException, InterruptedException {
+    void testReLoadCredential() throws InvocationTargetException, IllegalAccessException, InterruptedException {
         URL url = CredentialWatcherTest.class.getResource("/spas_modified.identity");
         modifiedFile(url, true);
         System.setProperty("spas.identity", url.getPath());

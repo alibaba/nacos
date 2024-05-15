@@ -32,13 +32,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class JvmUtilTest {
     
     Method initMethod;
-
+    
     @BeforeEach
     void setUp() throws NoSuchMethodException {
         initMethod = JvmUtil.class.getDeclaredMethod("init");
         initMethod.setAccessible(true);
     }
-
+    
     @AfterEach
     void tearDown() throws NoSuchFieldException, IllegalAccessException {
         System.clearProperty("isMultiInstance");
@@ -46,14 +46,14 @@ class JvmUtilTest {
         field.setAccessible(true);
         field.set(JvmUtil.class, false);
     }
-
+    
     @Test
     void testIsMultiInstance() throws InvocationTargetException, IllegalAccessException {
         initMethod.invoke(JvmUtil.class);
         Boolean multiInstance = JvmUtil.isMultiInstance();
         assertFalse(multiInstance);
     }
-
+    
     @Test
     void testIsMultiInstance2() throws InvocationTargetException, IllegalAccessException {
         System.setProperty("isMultiInstance", "true");

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class InitUtilsTest {
-
+    
     @AfterEach
     void tearDown() {
         System.clearProperty(SystemPropertyKeyConst.IS_USE_CLOUD_NAMESPACE_PARSING);
@@ -38,7 +38,7 @@ class InitUtilsTest {
         UtilAndComs.nacosUrlBase = "/nacos/v1/ns";
         UtilAndComs.nacosUrlInstance = "/nacos/v1/ns/instance";
     }
-
+    
     /**
      * current namespace priority 1. system.Properties 2. user.Properties 3. default value
      */
@@ -49,7 +49,7 @@ class InitUtilsTest {
         String actual = InitUtils.initNamespaceForNaming(properties);
         assertEquals(UtilAndComs.DEFAULT_NAMESPACE_ID, actual);
     }
-
+    
     @Test
     void testInitNamespaceFromAnsWithCloudParsing() {
         String expect = "ans";
@@ -59,7 +59,7 @@ class InitUtilsTest {
         String actual = InitUtils.initNamespaceForNaming(properties);
         assertEquals(expect, actual);
     }
-
+    
     @Test
     void testInitNamespaceFromAliwareWithCloudParsing() {
         String expect = "aliware";
@@ -69,7 +69,7 @@ class InitUtilsTest {
         String actual = InitUtils.initNamespaceForNaming(properties);
         assertEquals(expect, actual);
     }
-
+    
     @Test
     void testInitNamespaceFromJvmNamespaceWithCloudParsing() {
         String expect = "jvm_namespace";
@@ -78,7 +78,7 @@ class InitUtilsTest {
         String ns = InitUtils.initNamespaceForNaming(properties);
         assertEquals(expect, ns);
     }
-
+    
     @Test
     void testInitNamespaceFromPropNamespaceWithCloudParsing() {
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
@@ -87,7 +87,7 @@ class InitUtilsTest {
         String ns = InitUtils.initNamespaceForNaming(properties);
         assertEquals(expect, ns);
     }
-
+    
     @Test
     void testInitNamespaceFromDefaultNamespaceWithCloudParsing() {
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
@@ -95,7 +95,7 @@ class InitUtilsTest {
         String actual = InitUtils.initNamespaceForNaming(properties);
         assertEquals(UtilAndComs.DEFAULT_NAMESPACE_ID, actual);
     }
-
+    
     @Test
     void testInitNamespaceFromJvmNamespaceWithoutCloudParsing() {
         System.setProperty(SystemPropertyKeyConst.ANS_NAMESPACE, "ans");
@@ -106,7 +106,7 @@ class InitUtilsTest {
         String ns = InitUtils.initNamespaceForNaming(properties);
         assertEquals(expect, ns);
     }
-
+    
     @Test
     void testInitNamespaceFromPropNamespaceWithoutCloudParsing() {
         System.setProperty(SystemPropertyKeyConst.ANS_NAMESPACE, "ans");
@@ -117,7 +117,7 @@ class InitUtilsTest {
         String ns = InitUtils.initNamespaceForNaming(properties);
         assertEquals(expect, ns);
     }
-
+    
     @Test
     void testInitNamespaceFromDefaultNamespaceWithoutCloudParsing() {
         System.setProperty(SystemPropertyKeyConst.ANS_NAMESPACE, "ans");
@@ -126,7 +126,7 @@ class InitUtilsTest {
         String actual = InitUtils.initNamespaceForNaming(properties);
         assertEquals(UtilAndComs.DEFAULT_NAMESPACE_ID, actual);
     }
-
+    
     @Test
     void testInitWebRootContext() {
         String ctx = "/aaa";
@@ -137,7 +137,7 @@ class InitUtilsTest {
         assertEquals(ctx + "/v1/ns", UtilAndComs.nacosUrlBase);
         assertEquals(ctx + "/v1/ns/instance", UtilAndComs.nacosUrlInstance);
     }
-
+    
     @Test
     void testInitWebRootContextWithoutValue() {
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
@@ -146,12 +146,12 @@ class InitUtilsTest {
         assertEquals("/nacos/v1/ns", UtilAndComs.nacosUrlBase);
         assertEquals("/nacos/v1/ns/instance", UtilAndComs.nacosUrlInstance);
     }
-
+    
     @Test
     void testInitEndpointForNullProperties() {
         assertEquals("", InitUtils.initEndpoint(null));
     }
-
+    
     @Test
     void testInitEndpointFromDefaultWithoutCloudParsing() {
         System.setProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "false");
@@ -159,7 +159,7 @@ class InitUtilsTest {
         String actual = InitUtils.initEndpoint(properties);
         assertEquals("", actual);
     }
-
+    
     @Test
     void testInitEndpointFromPropertiesWithoutCloudParsing() {
         System.setProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "false");
@@ -171,7 +171,7 @@ class InitUtilsTest {
         String actual = InitUtils.initEndpoint(properties);
         assertEquals(endpoint + ":" + endpointPort, actual);
     }
-
+    
     @Test
     void testInitEndpointFromAliwareWithoutCloudParsing() {
         String endpoint = "aliware_endpoint";
@@ -184,7 +184,7 @@ class InitUtilsTest {
         String actual = InitUtils.initEndpoint(properties);
         assertEquals("", actual);
     }
-
+    
     @Test
     void testInitEndpointFromDefaultWithCloudParsing() {
         System.setProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "true");
@@ -192,7 +192,7 @@ class InitUtilsTest {
         String actual = InitUtils.initEndpoint(properties);
         assertEquals("", actual);
     }
-
+    
     @Test
     void testInitEndpointFromPropertiesWithCloudParsing() {
         System.setProperty(SystemPropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "true");
@@ -204,7 +204,7 @@ class InitUtilsTest {
         String actual = InitUtils.initEndpoint(properties);
         assertEquals(endpoint + ":" + endpointPort, actual);
     }
-
+    
     @Test
     void testInitEndpointFromAliwareWithCloudParsing() {
         String endpoint = "aliware_endpoint";
@@ -217,7 +217,7 @@ class InitUtilsTest {
         String actual = InitUtils.initEndpoint(properties);
         assertEquals(endpoint + ":" + endpointPort, actual);
     }
-
+    
     @Test
     void testInitEndpointAns() {
         try {

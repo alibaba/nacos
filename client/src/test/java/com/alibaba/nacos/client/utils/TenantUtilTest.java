@@ -24,13 +24,13 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class TenantUtilTest {
-
+    
     @AfterEach
     void tearDown() {
         System.clearProperty("acm.namespace");
         System.clearProperty("ans.namespace");
     }
-
+    
     @Test
     void testGetUserTenantForAcm() {
         String expect = "test";
@@ -38,7 +38,7 @@ class TenantUtilTest {
         String actual = TenantUtil.getUserTenantForAcm();
         assertEquals(expect, actual);
     }
-
+    
     @Test
     void testGetUserTenantForAns() {
         String expect = "test";

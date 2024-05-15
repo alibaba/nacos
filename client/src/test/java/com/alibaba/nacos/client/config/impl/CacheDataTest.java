@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CacheDataTest {
-
+    
     @Test
     void testConstructorAndEquals() {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
@@ -57,7 +57,7 @@ class CacheDataTest {
         final CacheData cacheData3 = new CacheData(filter, "name2", "key3", "group", "tenant");
         assertNotEquals(cacheData1, cacheData3);
     }
-
+    
     @Test
     void testGetter() {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
@@ -92,7 +92,7 @@ class CacheDataTest {
         assertEquals(timeStamp, cacheData1.getLastModifiedTs().longValue());
         assertEquals(timeStamp, cacheData1.getLocalConfigInfoVersion());
     }
-
+    
     @Test
     void testNotifyWarnTimeout() {
         System.setProperty("nacos.listener.notify.warn.timeout", "5000");
@@ -102,7 +102,7 @@ class CacheDataTest {
         long notifyWarnTimeout2 = CacheData.initNotifyWarnTimeout();
         assertEquals(60000, notifyWarnTimeout2);
     }
-
+    
     @Test
     void testListener() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
@@ -126,7 +126,7 @@ class CacheDataTest {
         assertEquals(0, cacheData1.getListeners().size());
         
     }
-
+    
     @Test
     void testCheckListenerMd5() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
@@ -155,7 +155,7 @@ class CacheDataTest {
         assertEquals("new", list.get(0));
         
     }
-
+    
     @Test
     void testCheckListenerMd5NotifyTimeouts() throws NacosException {
         System.setProperty("nacos.listener.notify.warn.timeout", "1000");
@@ -200,7 +200,7 @@ class CacheDataTest {
         assertTrue(data.checkListenersMd5Consistent());
         assertEquals("keytimeouts", dataIdNotifyTimeouts.get());
     }
-
+    
     @Test
     void testAbstractSharedListener() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());
@@ -233,7 +233,7 @@ class CacheDataTest {
         assertEquals("group", groupReceive[0]);
         assertEquals(contentReceive[0], content);
     }
-
+    
     @Test
     void testAbstractConfigChangeListener() throws NacosException {
         ConfigFilterChainManager filter = new ConfigFilterChainManager(new Properties());

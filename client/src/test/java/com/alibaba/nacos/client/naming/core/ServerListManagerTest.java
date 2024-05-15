@@ -64,15 +64,15 @@ class ServerListManagerTest {
     HttpRestResult httpRestResult;
     
     ServerListManager serverListManager;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         clientProperties = NacosClientProperties.PROTOTYPE.derive();
         Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
         restMapField.setAccessible(true);
         Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
-        cachedNacosRestTemplate = restMap
-                .get("com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory");
+        cachedNacosRestTemplate = restMap.get(
+                "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory");
         restMap.put("com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory",
                 nacosRestTemplate);
         httpRestResult = new HttpRestResult<>();
@@ -80,7 +80,7 @@ class ServerListManagerTest {
         httpRestResult.setCode(200);
         Mockito.when(nacosRestTemplate.get(any(), any(), any(), any())).thenReturn(httpRestResult);
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
         if (null != cachedNacosRestTemplate) {
@@ -94,14 +94,14 @@ class ServerListManagerTest {
             serverListManager.shutdown();
         }
     }
-
+    
     @Test
     void testConstructError() {
         assertThrows(NacosLoadException.class, () -> {
             serverListManager = new ServerListManager(new Properties());
         });
     }
-
+    
     @Test
     void testConstructWithAddr() {
         Properties properties = new Properties();
@@ -112,7 +112,7 @@ class ServerListManagerTest {
         assertEquals("127.0.0.1:8848", serverList.get(0));
         assertEquals("127.0.0.1:8849", serverList.get(1));
     }
-
+    
     @Test
     void testConstructWithAddrTryToRefresh()
             throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, NoSuchFieldException {
@@ -129,7 +129,7 @@ class ServerListManagerTest {
         assertEquals("127.0.0.1:8848", serverList.get(0));
         assertEquals("127.0.0.1:8849", serverList.get(1));
     }
-
+    
     @Test
     void testConstructWithEndpointAndRefresh() throws Exception {
         Properties properties = new Properties();
@@ -146,7 +146,7 @@ class ServerListManagerTest {
         assertEquals("127.0.0.1:8848", serverList.get(0));
         assertEquals("127.0.0.1:8948", serverList.get(1));
     }
-
+    
     @Test
     void testConstructWithEndpointAndTimedNotNeedRefresh() throws Exception {
         Properties properties = new Properties();
@@ -162,7 +162,7 @@ class ServerListManagerTest {
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
     }
-
+    
     @Test
     void testConstructWithEndpointAndRefreshEmpty() throws Exception {
         Properties properties = new Properties();
@@ -178,7 +178,7 @@ class ServerListManagerTest {
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
     }
-
+    
     @Test
     void testConstructWithEndpointAndRefreshException()
             throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, NoSuchFieldException {
@@ -195,7 +195,7 @@ class ServerListManagerTest {
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
     }
-
+    
     @Test
     void testConstructWithEndpointWithCustomPathAndName() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.CONTEXT_PATH, "aaa");
@@ -209,7 +209,7 @@ class ServerListManagerTest {
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
     }
-
+    
     @Test
     void testConstructWithEndpointWithEndpointPathAndName() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "aaa");
@@ -223,7 +223,7 @@ class ServerListManagerTest {
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
     }
-
+    
     @Test
     void testConstructEndpointContextPathPriority() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "aaa");
@@ -238,7 +238,7 @@ class ServerListManagerTest {
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
     }
-
+    
     @Test
     void testConstructEndpointContextPathIsEmpty() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "");
@@ -253,7 +253,7 @@ class ServerListManagerTest {
         assertEquals(1, serverList.size());
         assertEquals("127.0.0.1:8848", serverList.get(0));
     }
-
+    
     @Test
     void testIsDomain() throws IOException {
         Properties properties = new Properties();
@@ -262,7 +262,7 @@ class ServerListManagerTest {
         assertTrue(serverListManager.isDomain());
         assertEquals("127.0.0.1:8848", serverListManager.getNacosDomain());
     }
-
+    
     @Test
     void testGetCurrentServer() {
         Properties properties = new Properties();
@@ -271,7 +271,7 @@ class ServerListManagerTest {
         assertEquals("127.0.0.1:8848", serverListManager.getCurrentServer());
         assertEquals("127.0.0.1:8848", serverListManager.genNextServer());
     }
-
+    
     @Test
     void testShutdown() {
         Properties properties = new Properties();

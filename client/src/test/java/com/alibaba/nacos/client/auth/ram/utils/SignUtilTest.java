@@ -24,20 +24,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class SignUtilTest {
-
+    
     @Test
     void testSign() throws Exception {
         String actual = SignUtil.sign("aaa", "b");
         assertEquals("DxyaKScrqL26yXYOuHXE3OwfQ0Y=", actual);
     }
-
+    
     @Test
     void testSignWithException() throws Exception {
         assertThrows(Exception.class, () -> {
             SignUtil.sign(null, "b");
         });
     }
-
+    
     @Test
     void testSignWithException2() throws Exception {
         assertThrows(Exception.class, () -> {

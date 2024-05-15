@@ -45,18 +45,18 @@ class ServiceInfoHolderTest {
     NacosClientProperties nacosClientProperties;
     
     ServiceInfoHolder holder;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         nacosClientProperties = NacosClientProperties.PROTOTYPE.derive();
         holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
     
     }
-
+    
     @Test
     void testGetServiceInfoMap() throws NoSuchFieldException, IllegalAccessException {
         assertEquals(0, holder.getServiceInfoMap().size());
@@ -64,7 +64,7 @@ class ServiceInfoHolderTest {
         fieldNotifierEventScope.setAccessible(true);
         assertEquals("scope-001", fieldNotifierEventScope.get(holder));
     }
-
+    
     @Test
     void testProcessServiceInfo() {
         ServiceInfo info = new ServiceInfo("a@@b@@c");
@@ -97,7 +97,7 @@ class ServiceInfoHolderTest {
         instance.setPort(port);
         return instance;
     }
-
+    
     @Test
     void testProcessServiceInfo2() {
         String json = "{\"groupName\":\"a\",\"name\":\"b\",\"clusters\":\"c\"}";
@@ -107,7 +107,7 @@ class ServiceInfoHolderTest {
         expect.setJsonFromServer(json);
         assertEquals(expect.getKey(), actual.getKey());
     }
-
+    
     @Test
     void testProcessServiceInfoWithPushEmpty() throws NacosException {
         ServiceInfo oldInfo = new ServiceInfo("a@@b@@c");
@@ -130,12 +130,12 @@ class ServiceInfoHolderTest {
         assertEquals(oldInfo.getKey(), actual.getKey());
         assertEquals(2, actual.getHosts().size());
     }
-
+    
     @Test
     void testProcessNullServiceInfo() {
         assertNull(holder.processServiceInfo(new ServiceInfo()));
     }
-
+    
     @Test
     void testProcessServiceInfoForOlder() {
         ServiceInfo info = new ServiceInfo("a@@b@@c");
@@ -152,7 +152,7 @@ class ServiceInfoHolderTest {
         final ServiceInfo actual = holder.processServiceInfo(olderInfo);
         assertEquals(olderInfo, actual);
     }
-
+    
     @Test
     void testGetServiceInfo() {
         ServiceInfo info = new ServiceInfo("a@@b@@c");
@@ -170,7 +170,7 @@ class ServiceInfoHolderTest {
         assertEquals(expect.getHosts().size(), actual.getHosts().size());
         assertEquals(expect.getHosts().get(0), actual.getHosts().get(0));
     }
-
+    
     @Test
     void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Field field = ServiceInfoHolder.class.getDeclaredField("failoverReactor");
@@ -183,7 +183,7 @@ class ServiceInfoHolderTest {
         holder.shutdown();
         assertTrue(pool.isShutdown());
     }
-
+    
     @Test
     void testConstructWithCacheLoad() throws NacosException {
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START, "true");
@@ -193,14 +193,14 @@ class ServiceInfoHolderTest {
         assertEquals(System.getProperty("user.home") + "/nacos/non-exist/naming/aa", holder.getCacheDir());
         assertTrue(holder.getServiceInfoMap().isEmpty());
     }
-
+    
     @Test
     void testIsFailoverSwitch() throws IllegalAccessException, NoSuchFieldException, NacosException {
         FailoverReactor mock = injectMockFailoverReactor();
         when(mock.isFailoverSwitch()).thenReturn(true);
         assertTrue(holder.isFailoverSwitch());
     }
-
+    
     @Test
     void testGetFailoverServiceInfo() throws IllegalAccessException, NoSuchFieldException, NacosException {
         FailoverReactor mock = injectMockFailoverReactor();

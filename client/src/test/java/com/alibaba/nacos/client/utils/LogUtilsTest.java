@@ -22,7 +22,7 @@ import org.slf4j.Logger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class LogUtilsTest {
-
+    
     @Test
     void testLogger() {
         Logger logger = LogUtils.logger(LogUtilsTest.class);

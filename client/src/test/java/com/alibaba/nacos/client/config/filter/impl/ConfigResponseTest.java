@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ConfigResponseTest {
-
+    
     @Test
     void testGetterAndSetter() {
         ConfigResponse configResponse = new ConfigResponse();
@@ -45,7 +45,7 @@ class ConfigResponseTest {
         assertEquals(content, configResponse.getContent());
         assertEquals(type, configResponse.getConfigType());
     }
-
+    
     @Test
     void getParameter() {
         ConfigResponse configResponse = new ConfigResponse();
@@ -67,7 +67,7 @@ class ConfigResponseTest {
         assertEquals(content, configResponse.getParameter("content"));
         assertEquals(custom, configResponse.getParameter("custom"));
     }
-
+    
     @Test
     void getConfigContext() {
         ConfigResponse configResponse = new ConfigResponse();

@@ -54,7 +54,7 @@ class SecurityProxyTest {
     
     @Mock
     private NacosRestTemplate nacosRestTemplate;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         //given
@@ -67,7 +67,7 @@ class SecurityProxyTest {
         serverList.add("localhost");
         securityProxy = new SecurityProxy(serverList, nacosRestTemplate);
     }
-
+    
     @Test
     void testLoginClientAuthService() throws Exception {
         Properties properties = new Properties();
@@ -76,7 +76,7 @@ class SecurityProxyTest {
         securityProxy.login(properties);
         verify(nacosRestTemplate).postForm(any(), (Header) any(), any(), any(), any());
     }
-
+    
     @Test
     void testGetIdentityContext() {
         Properties properties = new Properties();
@@ -88,7 +88,7 @@ class SecurityProxyTest {
         //then
         assertEquals("ttttttttttttttttt", keyMap.get(NacosAuthLoginConstant.ACCESSTOKEN));
     }
-
+    
     @Test
     void testLoginWithoutAnyPlugin() throws NoSuchFieldException, IllegalAccessException {
         Field clientAuthPluginManagerField = SecurityProxy.class.getDeclaredField("clientAuthPluginManager");

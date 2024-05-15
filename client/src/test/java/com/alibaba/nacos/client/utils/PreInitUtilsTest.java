@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import java.util.concurrent.TimeUnit;
 
 class PreInitUtilsTest {
-
+    
     @Test
     void testAsyncPreLoadCostComponent() throws InterruptedException {
         // There is no things need to be assert.

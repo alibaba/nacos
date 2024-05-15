@@ -25,13 +25,13 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class ConfigChangeHandlerTest {
-
+    
     @Test
     void testParseProperties() throws IOException {
         Map properties = ConfigChangeHandler.getInstance().parseChangeData("", "app.name = nacos", "properties");
         assertEquals("nacos", ((ConfigChangeItem) properties.get("app.name")).getNewValue());
     }
-
+    
     @Test
     void testParseYaml() throws IOException {
         Map properties = ConfigChangeHandler.getInstance().parseChangeData("", "app:\n  name: nacos", "yaml");

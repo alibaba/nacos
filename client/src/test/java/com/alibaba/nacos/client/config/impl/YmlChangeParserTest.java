@@ -33,33 +33,33 @@ class YmlChangeParserTest {
     private final YmlChangeParser parser = new YmlChangeParser();
     
     private final String type = "yaml";
-
+    
     @Test
     void testType() {
         assertTrue(parser.isResponsibleFor(type));
     }
-
+    
     @Test
     void testAddKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("", "app:\n  name: nacos", type);
         assertNull(map.get("app.name").getOldValue());
         assertEquals("nacos", map.get("app.name").getNewValue());
     }
-
+    
     @Test
     void testRemoveKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("app:\n  name: nacos", "", type);
         assertEquals("nacos", map.get("app.name").getOldValue());
         assertNull(map.get("app.name").getNewValue());
     }
-
+    
     @Test
     void testModifyKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("app:\n  name: rocketMQ", "app:\n  name: nacos", type);
         assertEquals("rocketMQ", map.get("app.name").getOldValue());
         assertEquals("nacos", map.get("app.name").getNewValue());
     }
-
+    
     @Test
     void testComplexYaml() throws IOException {
         /*
@@ -76,7 +76,7 @@ class YmlChangeParserTest {
         Map<String, ConfigChangeItem> map = parser.doParse(s, s, type);
         assertEquals(0, map.size());
     }
-
+    
     @Test
     void testChangeInvalidKey() {
         assertThrows(NacosRuntimeException.class, () -> {

@@ -49,7 +49,7 @@ class StsCredentialHolderTest {
     
     @Mock
     private HttpClientRequest mockRest;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         securityCredentialsUrl = StsConfig.getInstance().getSecurityCredentialsUrl();
@@ -59,7 +59,7 @@ class StsCredentialHolderTest {
         httpClient = (HttpClientRequest) field.get(ConfigHttpClientManager.getInstance().getNacosRestTemplate());
         field.set(ConfigHttpClientManager.getInstance().getNacosRestTemplate(), mockRest);
     }
-
+    
     @AfterEach
     void tearDown() throws Exception {
         StsConfig.getInstance().setSecurityCredentials(null);
@@ -76,7 +76,7 @@ class StsCredentialHolderTest {
         field.setAccessible(true);
         field.set(StsCredentialHolder.getInstance(), null);
     }
-
+    
     @Test
     void testGetStsCredentialFromCache() throws NoSuchFieldException, IllegalAccessException {
         StsCredential stsCredential = buildMockStsCredential();
@@ -89,14 +89,14 @@ class StsCredentialHolderTest {
         field.setAccessible(true);
         field.set(StsCredentialHolder.getInstance(), stsCredential);
     }
-
+    
     @Test
     void testGetStsCredentialFromStringCache() throws NoSuchFieldException, IllegalAccessException {
         StsCredential stsCredential = buildMockStsCredential();
         StsConfig.getInstance().setSecurityCredentials(JacksonUtils.toJson(stsCredential));
         assertEquals(stsCredential.toString(), StsCredentialHolder.getInstance().getStsCredential().toString());
     }
-
+    
     @Test
     void testGetStsCredentialFromRequest() throws Exception {
         StsCredential stsCredential = buildMockStsCredential();
@@ -107,7 +107,7 @@ class StsCredentialHolderTest {
         when(mockRest.execute(any(), any(), any())).thenReturn(response);
         assertEquals(stsCredential.toString(), StsCredentialHolder.getInstance().getStsCredential().toString());
     }
-
+    
     @Test
     void testGetStsCredentialFromRequestFailure() throws Exception {
         assertThrows(NacosRuntimeException.class, () -> {
@@ -119,7 +119,7 @@ class StsCredentialHolderTest {
             StsCredentialHolder.getInstance().getStsCredential();
         });
     }
-
+    
     @Test
     void testGetStsCredentialFromRequestException() throws Exception {
         assertThrows(NacosRuntimeException.class, () -> {

@@ -36,7 +36,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 class NamingPushRequestHandlerTest {
-
+    
     @Test
     void testRequestReply() {
         //given
@@ -50,12 +50,11 @@ class NamingPushRequestHandlerTest {
         assertTrue(response instanceof NotifySubscriberResponse);
         verify(holder, times(1)).processServiceInfo(info);
     }
-
+    
     @Test
     void testRequestReplyOtherType() {
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingPushRequestHandler handler = new NamingPushRequestHandler(holder);
-        assertNull(
-                handler.requestReply(new HealthCheckRequest(), new TestConnection(new RpcClient.ServerInfo())));
+        assertNull(handler.requestReply(new HealthCheckRequest(), new TestConnection(new RpcClient.ServerInfo())));
     }
 }

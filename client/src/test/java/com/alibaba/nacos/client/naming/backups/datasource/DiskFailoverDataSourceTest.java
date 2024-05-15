@@ -32,18 +32,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class DiskFailoverDataSourceTest {
     
     DiskFailoverDataSource dataSource;
-
+    
     @BeforeEach
     void setUp() {
         dataSource = new DiskFailoverDataSource();
     }
-
+    
     @Test
     void testGetSwitchWithNonExistFailoverSwitchFile() {
         FailoverSwitch actual = dataSource.getSwitch();
         assertFalse(actual.getEnabled());
     }
-
+    
     @Test
     void testGetSwitchForFailoverDisabled() throws NoSuchFieldException, IllegalAccessException {
         String dir = DiskFailoverDataSourceTest.class.getResource("/").getPath() + "/failover_test/disabled";
@@ -52,7 +52,7 @@ class DiskFailoverDataSourceTest {
         Map<String, FailoverData> actual = dataSource.getFailoverData();
         assertTrue(actual.isEmpty());
     }
-
+    
     @Test
     void testGetSwitchForFailoverEnabled() throws NoSuchFieldException, IllegalAccessException {
         String dir = DiskFailoverDataSourceTest.class.getResource("/").getPath() + "/failover_test/enabled";
@@ -65,7 +65,7 @@ class DiskFailoverDataSourceTest {
         assertEquals("1.1.1.1",
                 ((ServiceInfo) actual.get("legal@@with_name@@file").getData()).getHosts().get(0).getIp());
     }
-
+    
     @Test
     void testGetFailoverDataForFailoverDisabled() {
         Map<String, FailoverData> actual = dataSource.getFailoverData();

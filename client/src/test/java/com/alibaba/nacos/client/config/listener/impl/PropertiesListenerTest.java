@@ -26,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class PropertiesListenerTest {
-
+    
     @Test
     void testReceiveConfigInfo() {
         final Deque<Properties> q2 = new ArrayDeque<Properties>();
@@ -42,7 +42,7 @@ class PropertiesListenerTest {
         assertEquals("bar", actual.getProperty("foo"));
         
     }
-
+    
     @Test
     void testReceiveConfigInfoEmpty() {
         final Deque<Properties> q2 = new ArrayDeque<Properties>();
@@ -56,7 +56,7 @@ class PropertiesListenerTest {
         final Properties actual = q2.poll();
         assertNull(actual);
     }
-
+    
     @Test
     void testReceiveConfigInfoIsNotProperties() {
         final Deque<Properties> q2 = new ArrayDeque<Properties>();
@@ -70,7 +70,7 @@ class PropertiesListenerTest {
         final Properties actual = q2.poll();
         assertNull(actual);
     }
-
+    
     @Test
     void testInnerReceive() {
         final Deque<Properties> q2 = new ArrayDeque<Properties>();

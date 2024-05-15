@@ -25,7 +25,7 @@ import java.util.Deque;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AbstractConfigChangeListenerTest {
-
+    
     @Test
     void receiveConfigInfo() {
         final Deque<String> data = new ArrayDeque<String>();

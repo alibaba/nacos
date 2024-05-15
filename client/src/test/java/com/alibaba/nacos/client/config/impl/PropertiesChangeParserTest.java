@@ -31,26 +31,26 @@ class PropertiesChangeParserTest {
     private final PropertiesChangeParser parser = new PropertiesChangeParser();
     
     private final String type = "properties";
-
+    
     @Test
     void testType() {
         assertTrue(parser.isResponsibleFor(type));
     }
-
+    
     @Test
     void testAddKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("", "app.name = nacos", type);
         assertNull(map.get("app.name").getOldValue());
         assertEquals("nacos", map.get("app.name").getNewValue());
     }
-
+    
     @Test
     void testRemoveKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("app.name = nacos", "", type);
         assertEquals("nacos", map.get("app.name").getOldValue());
         assertNull(map.get("app.name").getNewValue());
     }
-
+    
     @Test
     void testModifyKey() throws IOException {
         Map<String, ConfigChangeItem> map = parser.doParse("app.name = rocketMQ", "app.name = nacos", type);

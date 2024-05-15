@@ -17,10 +17,10 @@
 package com.alibaba.nacos.client.auth.ram;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.common.utils.ReflectUtils;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -53,12 +53,12 @@ class RamClientAuthServiceImplTest {
     private RamContext ramContext;
     
     private RequestResource resource;
-
+    
     @BeforeEach
     void setUp() throws Exception {
         ramClientAuthService = new RamClientAuthServiceImpl();
-        Map<String, AbstractResourceInjector> resourceInjectors = (Map<String, AbstractResourceInjector>) ReflectUtils
-                .getFieldValue(ramClientAuthService, "resourceInjectors");
+        Map<String, AbstractResourceInjector> resourceInjectors = (Map<String, AbstractResourceInjector>) ReflectUtils.getFieldValue(
+                ramClientAuthService, "resourceInjectors");
         resourceInjectors.clear();
         resourceInjectors.put(MOCK, mockResourceInjector);
         ramContext = (RamContext) ReflectUtils.getFieldValue(ramClientAuthService, "ramContext");
@@ -69,7 +69,7 @@ class RamClientAuthServiceImplTest {
         roleProperties.setProperty(PropertyKeyConst.RAM_ROLE_NAME, PropertyKeyConst.RAM_ROLE_NAME);
         resource = new RequestResource();
     }
-
+    
     @Test
     void testLoginWithAkSk() {
         assertTrue(ramClientAuthService.login(akSkProperties));
@@ -81,7 +81,7 @@ class RamClientAuthServiceImplTest {
         assertEquals(PropertyKeyConst.SECRET_KEY, ramContext.getSecretKey());
         assertNull(ramContext.getRamRoleName());
     }
-
+    
     @Test
     void testLoginWithRoleName() {
         assertTrue(ramClientAuthService.login(roleProperties));
@@ -93,14 +93,14 @@ class RamClientAuthServiceImplTest {
         assertNull(ramContext.getSecretKey(), PropertyKeyConst.SECRET_KEY);
         assertEquals(PropertyKeyConst.RAM_ROLE_NAME, ramContext.getRamRoleName());
     }
-
+    
     @Test
     void testGetLoginIdentityContextWithoutLogin() {
         LoginIdentityContext actual = ramClientAuthService.getLoginIdentityContext(resource);
         assertTrue(actual.getAllKey().isEmpty());
         verify(mockResourceInjector, never()).doInject(resource, ramContext, actual);
     }
-
+    
     @Test
     void testGetLoginIdentityContextWithoutInjector() {
         ramClientAuthService.login(akSkProperties);
@@ -108,7 +108,7 @@ class RamClientAuthServiceImplTest {
         assertTrue(actual.getAllKey().isEmpty());
         verify(mockResourceInjector, never()).doInject(resource, ramContext, actual);
     }
-
+    
     @Test
     void testGetLoginIdentityContextWithInjector() {
         ramClientAuthService.login(akSkProperties);
