@@ -17,8 +17,8 @@
 package com.alibaba.nacos.sys.env;
 
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,37 +27,37 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("empty")
 @SpringBootTest(classes = EnvUtilWithConfigTest.class)
-public class EnvUtilWithoutConfigTest {
+class EnvUtilWithoutConfigTest {
     
     @Autowired
     private Environment environment;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment((ConfigurableEnvironment) environment);
     }
     
     @Test
-    public void testGetAvailableProcessors() {
+    void testGetAvailableProcessors() {
         int expected = ThreadUtils.getSuitableThreadCount(1);
         int actual = EnvUtil.getAvailableProcessors();
         assertEquals(expected, actual);
     }
     
     @Test
-    public void testGetAvailableProcessorsWithMultiple() {
+    void testGetAvailableProcessorsWithMultiple() {
         int expected = ThreadUtils.getSuitableThreadCount(2);
         int actual = EnvUtil.getAvailableProcessors(2);
         assertEquals(expected, actual);
     }
     
     @Test
-    public void testGetAvailableProcessorsWithScale() {
+    void testGetAvailableProcessorsWithScale() {
         int expected = ThreadUtils.getSuitableThreadCount(1);
         int actual = EnvUtil.getAvailableProcessors(0.5);
         assertEquals((int) (expected * 0.5), actual);
