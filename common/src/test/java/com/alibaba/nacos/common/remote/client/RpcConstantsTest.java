@@ -26,8 +26,7 @@ public class RpcConstantsTest {
     
     @Test
     public void testGetRpcParams() {
-        Class clazz = RpcConstants.class;
-        Field[] declaredFields = clazz.getDeclaredFields();
+        Field[] declaredFields = RpcConstants.class.getDeclaredFields();
         int i = 0;
         for (Field declaredField : declaredFields) {
             declaredField.setAccessible(true);
