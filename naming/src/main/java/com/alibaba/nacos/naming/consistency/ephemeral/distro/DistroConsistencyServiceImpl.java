@@ -177,7 +177,7 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
         }
         
         try {
-            
+            List<String> healthyList = distroMapper.getHealthyList();
             List<String> toUpdateKeys = new ArrayList<>();
             List<String> toRemoveKeys = new ArrayList<>();
             for (Map.Entry<String, String> entry : checksumMap.entrySet()) {
@@ -203,6 +203,11 @@ public class DistroConsistencyServiceImpl implements EphemeralConsistencyService
                 if (!checksumMap.containsKey(key)) {
                     toRemoveKeys.add(key);
                 }
+            }
+            
+            if (!healthyList.equals(distroMapper.getHealthyList())) {
+                // healthyList changed, abort remove keys:
+                toRemoveKeys.clear();
             }
             
             Loggers.DISTRO
