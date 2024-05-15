@@ -25,8 +25,12 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * DataSource plugin Mapper sql proxy.
@@ -40,10 +44,21 @@ public class MapperProxy implements InvocationHandler {
     private Mapper mapper;
     
     private static final Map<String, Mapper> SINGLE_MAPPER_PROXY_MAP = new ConcurrentHashMap<>(16);
-    
+
+    /**
+     * Creates a proxy instance for the sub-interfaces of Mapper.class implemented by the given object.
+     */
     public <R> R createProxy(Mapper mapper) {
         this.mapper = mapper;
-        return (R) Proxy.newProxyInstance(MapperProxy.class.getClassLoader(), mapper.getClass().getInterfaces(), this);
+        Class<?> clazz = mapper.getClass();
+        Set<Class<?>> interfacesSet = new HashSet<>();
+        while (!clazz.equals(Object.class)) {
+            interfacesSet.addAll(Arrays.stream(clazz.getInterfaces())
+                    .filter(Mapper.class::isAssignableFrom)
+                    .collect(Collectors.toSet()));
+            clazz = clazz.getSuperclass();
+        }
+        return (R) Proxy.newProxyInstance(MapperProxy.class.getClassLoader(), interfacesSet.toArray(new Class<?>[interfacesSet.size()]), this);
     }
     
     /**
