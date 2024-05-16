@@ -151,7 +151,7 @@ class ClientWorkerTest {
             public void receiveConfigInfo(String configInfo) {
             }
         };
-    
+        
         clientWorker.addListeners(dataId, group, Collections.singletonList(listener));
         List<Listener> listeners = clientWorker.getCache(dataId, group).getListeners();
         assertEquals(1, listeners.size());
@@ -182,7 +182,7 @@ class ClientWorkerTest {
         
         String dataId = "a";
         String group = "b";
-    
+        
         clientWorker.addTenantListeners(dataId, group, Collections.singletonList(listener));
         List<Listener> listeners = clientWorker.getCache(dataId, group).getListeners();
         assertEquals(1, listeners.size());
