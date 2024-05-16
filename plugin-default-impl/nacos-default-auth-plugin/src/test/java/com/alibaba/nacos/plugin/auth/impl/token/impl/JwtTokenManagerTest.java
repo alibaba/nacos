@@ -115,7 +115,7 @@ public class JwtTokenManagerTest {
         Assert.assertEquals(Integer.parseInt(ttl), jwtTokenManager.getTokenTtlInSeconds(jwtTokenManager.createToken("nacos")));
         // invalid secret key
         MockEnvironment mockEnvironment = new MockEnvironment();
-        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY,"");
+        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, "");
         EnvUtil.setEnvironment(mockEnvironment);
         jwtTokenManager = new JwtTokenManager(authConfigs);
         Assert.assertEquals(Integer.parseInt(ttl), jwtTokenManager.getTokenTtlInSeconds(jwtTokenManager.createToken("nacos")));
