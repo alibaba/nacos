@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.sys.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,19 +27,19 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("prefix")
 @SpringBootTest(classes = PropertiesUtilTest.class)
-public class PropertiesUtilTest {
+class PropertiesUtilTest {
     
     @Autowired
     private ConfigurableEnvironment environment;
     
     @Test
     @SuppressWarnings("unchecked")
-    public void testGetPropertiesWithPrefixForMap() {
+    void testGetPropertiesWithPrefixForMap() {
         Map<String, Object> actual = PropertiesUtil.getPropertiesWithPrefixForMap(environment, "nacos.prefix");
         assertEquals(3, actual.size());
         for (Map.Entry<String, Object> entry : actual.entrySet()) {
@@ -62,13 +62,13 @@ public class PropertiesUtilTest {
     }
     
     @Test
-    public void testGetPropertiesWithPrefix() {
+    void testGetPropertiesWithPrefix() {
         Properties actual = PropertiesUtil.getPropertiesWithPrefix(environment, "nacos.prefix");
         assertEquals(3, actual.size());
     }
     
     @Test
-    public void testHandleSpringBinder() {
+    void testHandleSpringBinder() {
         Map properties = PropertiesUtil.handleSpringBinder(environment, "nacos.prefix", Map.class);
         assertEquals(3, properties.size());
     }
