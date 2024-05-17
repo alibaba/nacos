@@ -104,25 +104,25 @@ class WindowsEncoderTest {
      */
     @Test
     void testNeedEncode() {
-        String case1 = "aaaadsaknkf";
         // / : ? " < > | \
-        String case2 = "?asda";
-        String case3 = "/asdasd";
-        String case4 = "as\\dasda";
-        String case5 = "asd::as";
-        String case6 = "sda\"sda";
-        String case7 = "asdas<da";
-        String case8 = "sdasas>a";
-        String case9 = "das1|2e";
         assertFalse(windowsEncoder.needEncode(null));
+        String case1 = "aaaadsaknkf";
         assertFalse(windowsEncoder.needEncode(case1));
+        String case2 = "?asda";
         assertTrue(windowsEncoder.needEncode(case2));
+        String case3 = "/asdasd";
         assertTrue(windowsEncoder.needEncode(case3));
+        String case4 = "as\\dasda";
         assertTrue(windowsEncoder.needEncode(case4));
+        String case5 = "asd::as";
         assertTrue(windowsEncoder.needEncode(case5));
+        String case6 = "sda\"sda";
         assertTrue(windowsEncoder.needEncode(case6));
+        String case7 = "asdas<da";
         assertTrue(windowsEncoder.needEncode(case7));
+        String case8 = "sdasas>a";
         assertTrue(windowsEncoder.needEncode(case8));
+        String case9 = "das1|2e";
         assertTrue(windowsEncoder.needEncode(case9));
     }
 }

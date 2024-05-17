@@ -37,17 +37,17 @@ class NamespaceUtilTest {
     @Test
     void testProcessTenantParameter() {
         String strPublic = "public";
-        String strNull = "null";
         String strEmpty = "";
-        String strAbc = "abc";
-        String strdef123 = "def123";
-        String strAbcHasSpace = "  abc  ";
         assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strPublic));
+        String strNull = "null";
         assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strNull));
         assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strEmpty));
         assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(null));
+        String strAbc = "abc";
         assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbc));
+        String strdef123 = "def123";
         assertEquals(strdef123, NamespaceUtil.processNamespaceParameter(strdef123));
+        String strAbcHasSpace = "  abc  ";
         assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbcHasSpace));
     }
     

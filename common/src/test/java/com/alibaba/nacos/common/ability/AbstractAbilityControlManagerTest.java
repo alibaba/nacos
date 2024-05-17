@@ -103,12 +103,9 @@ class AbstractAbilityControlManagerTest {
     
     @Test
     void testIsCurrentNodeAbilityRunning() {
-        assertEquals(AbilityStatus.SUPPORTED,
-                abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
-        assertEquals(AbilityStatus.NOT_SUPPORTED,
-                abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
-        assertEquals(AbilityStatus.UNKNOWN,
-                abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SDK_CLIENT_TEST_1));
+        assertEquals(AbilityStatus.SUPPORTED, abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_1));
+        assertEquals(AbilityStatus.NOT_SUPPORTED, abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SERVER_TEST_2));
+        assertEquals(AbilityStatus.UNKNOWN, abilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.SDK_CLIENT_TEST_1));
     }
     
     @Test

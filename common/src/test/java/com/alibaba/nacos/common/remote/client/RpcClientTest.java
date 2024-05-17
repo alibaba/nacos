@@ -310,8 +310,7 @@ class RpcClientTest {
     }
     
     @Test
-    void testOnServerListChangeWhenCurrentConnectionIsNotInServerListThenSwitchServerAsync()
-            throws IllegalAccessException {
+    void testOnServerListChangeWhenCurrentConnectionIsNotInServerListThenSwitchServerAsync() throws IllegalAccessException {
         final int beforeSize = ((Queue<?>) reconnectionSignalField.get(rpcClient)).size();
         rpcClient.serverListFactory(serverListFactory);
         rpcClient.currentConnection = new GrpcConnection(new RpcClient.ServerInfo("10.10.10.10", 8848), null);
@@ -341,14 +340,14 @@ class RpcClientTest {
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "10.10.10.10::8848")).getAddress());
         assertEquals("10.10.10.10:8848",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "10.10.10.10:8848")).getAddress());
-        assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
-                "http://10.10.10.10:8848")).getAddress());
-        assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
-                "http://10.10.10.10::8848")).getAddress());
+        assertEquals("10.10.10.10:8848",
+                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10:8848")).getAddress());
+        assertEquals("10.10.10.10:8848",
+                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10::8848")).getAddress());
         assertEquals("10.10.10.10:8848",
                 ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "http://10.10.10.10")).getAddress());
-        assertEquals("10.10.10.10:8848", ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient,
-                "https://10.10.10.10::8848")).getAddress());
+        assertEquals("10.10.10.10:8848",
+                ((RpcClient.ServerInfo) resolveServerInfoMethod.invoke(rpcClient, "https://10.10.10.10::8848")).getAddress());
     }
     
     @Test
@@ -925,16 +924,15 @@ class RpcClientTest {
     }
     
     @Test
-    void testReconnectContextAfterStartWithOldServiceInfo()
-            throws NacosException, InterruptedException, IllegalAccessException {
+    void testReconnectContextAfterStartWithOldServiceInfo() throws NacosException, InterruptedException, IllegalAccessException {
         when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
         when(serverListFactory.getServerList()).thenReturn(Collections.singletonList("127.0.0.1:8848"));
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> connection);
         try {
             rpcClient.start();
-            RpcClient.ReconnectContext reconnectContext = new RpcClient.ReconnectContext(
-                    new RpcClient.ServerInfo("127.0.0.1", 0), false);
+            RpcClient.ReconnectContext reconnectContext = new RpcClient.ReconnectContext(new RpcClient.ServerInfo("127.0.0.1", 0),
+                    false);
             ((BlockingQueue<RpcClient.ReconnectContext>) reconnectionSignalField.get(rpcClient)).put(reconnectContext);
             TimeUnit.MILLISECONDS.sleep(100);
             assertEquals(RpcClientStatus.RUNNING, rpcClient.rpcClientStatus.get());
@@ -945,16 +943,15 @@ class RpcClientTest {
     }
     
     @Test
-    void testReconnectContextAfterStartWithNewServiceInfo()
-            throws NacosException, InterruptedException, IllegalAccessException {
+    void testReconnectContextAfterStartWithNewServiceInfo() throws NacosException, InterruptedException, IllegalAccessException {
         when(serverListFactory.genNextServer()).thenReturn("127.0.0.1:8848");
         when(serverListFactory.getServerList()).thenReturn(Collections.singletonList("1.1.1.1:8848"));
         connection.serverInfo = new RpcClient.ServerInfo("127.0.0.1", 8848);
         RpcClient rpcClient = buildTestStartClient(serverInfo -> connection);
         try {
             rpcClient.start();
-            RpcClient.ReconnectContext reconnectContext = new RpcClient.ReconnectContext(
-                    new RpcClient.ServerInfo("127.0.0.1", 0), false);
+            RpcClient.ReconnectContext reconnectContext = new RpcClient.ReconnectContext(new RpcClient.ServerInfo("127.0.0.1", 0),
+                    false);
             ((BlockingQueue<RpcClient.ReconnectContext>) reconnectionSignalField.get(rpcClient)).put(reconnectContext);
             TimeUnit.MILLISECONDS.sleep(100);
             assertEquals(RpcClientStatus.RUNNING, rpcClient.rpcClientStatus.get());

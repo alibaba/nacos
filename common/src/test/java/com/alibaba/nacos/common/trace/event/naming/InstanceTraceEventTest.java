@@ -42,8 +42,8 @@ class InstanceTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testDeregisterInstanceTraceEvent() {
-        DeregisterInstanceTraceEvent deregisterInstanceTraceEvent = new DeregisterInstanceTraceEvent(TIME, CLIENT_IP,
-                true, DeregisterInstanceReason.NATIVE_DISCONNECTED, NAMESPACE_ID, GROUP_NAME, SERVICE_NAME, IP, PORT);
+        DeregisterInstanceTraceEvent deregisterInstanceTraceEvent = new DeregisterInstanceTraceEvent(TIME, CLIENT_IP, true,
+                DeregisterInstanceReason.NATIVE_DISCONNECTED, NAMESPACE_ID, GROUP_NAME, SERVICE_NAME, IP, PORT);
         assertBasicInfo(deregisterInstanceTraceEvent);
         assertEquals("DEREGISTER_INSTANCE_TRACE_EVENT", deregisterInstanceTraceEvent.getType());
         assertEquals(CLIENT_IP, deregisterInstanceTraceEvent.getClientIp());

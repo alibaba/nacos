@@ -42,12 +42,12 @@ class ArrayUtilsTest {
     
     @Test
     void contains() {
-        Integer[] arr = new Integer[] {1, 2, 3};
-        Integer[] arr1 = new Integer[] {1, 2, 3, null};
         assertFalse(ArrayUtils.contains(nullArr, "a"));
         assertFalse(ArrayUtils.contains(nullArr, null));
         assertFalse(ArrayUtils.contains(nothingArr, "b"));
+        Integer[] arr = new Integer[] {1, 2, 3};
         assertFalse(ArrayUtils.contains(arr, null));
+        Integer[] arr1 = new Integer[] {1, 2, 3, null};
         assertTrue(ArrayUtils.contains(arr1, null));
         assertTrue(ArrayUtils.contains(arr, 1));
         assertFalse(ArrayUtils.contains(arr, "1"));

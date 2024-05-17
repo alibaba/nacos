@@ -27,16 +27,16 @@ class ServiceTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testRegisterInstanceTraceEvent() {
-        RegisterServiceTraceEvent registerServiceTraceEvent = new RegisterServiceTraceEvent(TIME, NAMESPACE_ID,
-                GROUP_NAME, SERVICE_NAME);
+        RegisterServiceTraceEvent registerServiceTraceEvent = new RegisterServiceTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
+                SERVICE_NAME);
         assertBasicInfo(registerServiceTraceEvent);
         assertEquals("REGISTER_SERVICE_TRACE_EVENT", registerServiceTraceEvent.getType());
     }
     
     @Test
     void testDeregisterInstanceTraceEvent() {
-        DeregisterServiceTraceEvent deregisterServiceTraceEvent = new DeregisterServiceTraceEvent(TIME, NAMESPACE_ID,
-                GROUP_NAME, SERVICE_NAME);
+        DeregisterServiceTraceEvent deregisterServiceTraceEvent = new DeregisterServiceTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
+                SERVICE_NAME);
         assertBasicInfo(deregisterServiceTraceEvent);
         assertEquals("DEREGISTER_SERVICE_TRACE_EVENT", deregisterServiceTraceEvent.getType());
     }

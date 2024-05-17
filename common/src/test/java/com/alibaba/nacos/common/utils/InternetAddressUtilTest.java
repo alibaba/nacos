@@ -84,8 +84,7 @@ public class InternetAddressUtilTest {
     
     @Test
     void testGetIPFromString() {
-        assertEquals("[::1]",
-                InternetAddressUtil.getIPFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
+        assertEquals("[::1]", InternetAddressUtil.getIPFromString("http://[::1]:666/xzdsfasdf/awerwef" + "?eewer=2&xxx=3"));
         assertEquals("[::1]", InternetAddressUtil.getIPFromString(
                 "jdbc:mysql://[::1]:3306/nacos_config_test?characterEncoding=utf8&connectTimeout=1000"
                         + "&socketTimeout=3000&autoReconnect=true&useUnicode=true&useSSL=false&serverTimezone=UTC"));

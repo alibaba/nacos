@@ -104,8 +104,7 @@ class JdkHttpClientRequestTest {
         body.put("a", "bo&dy");
         RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, body);
         HttpClientResponse response = httpClientRequest.execute(uri, "GET", httpEntity);
-        byte[] writeBytes = HttpUtils.encodingParams(body, StandardCharsets.UTF_8.name())
-                .getBytes(StandardCharsets.UTF_8);
+        byte[] writeBytes = HttpUtils.encodingParams(body, StandardCharsets.UTF_8.name()).getBytes(StandardCharsets.UTF_8);
         verify(outputStream).write(writeBytes, 0, writeBytes.length);
         assertEquals(connection, getActualConnection(response));
     }
@@ -120,8 +119,7 @@ class JdkHttpClientRequestTest {
         
     }
     
-    private HttpURLConnection getActualConnection(HttpClientResponse actual)
-            throws IllegalAccessException, NoSuchFieldException {
+    private HttpURLConnection getActualConnection(HttpClientResponse actual) throws IllegalAccessException, NoSuchFieldException {
         Field field = actual.getClass().getDeclaredField("conn");
         field.setAccessible(true);
         return (HttpURLConnection) field.get(actual);

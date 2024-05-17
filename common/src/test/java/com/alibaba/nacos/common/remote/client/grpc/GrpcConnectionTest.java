@@ -214,8 +214,8 @@ class GrpcConnectionTest {
         byte[] jsonBytes = JacksonUtils.toJsonBytes(null);
         Metadata.Builder metaBuilder = Metadata.newBuilder().setType(HealthCheckResponse.class.getSimpleName());
         Payload nullResponsePayload = Payload.newBuilder()
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
-                .setMetadata(metaBuilder.build()).build();
+                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes))).setMetadata(metaBuilder.build())
+                .build();
         when(future.get()).thenReturn(nullResponsePayload);
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArgument(0)).run();

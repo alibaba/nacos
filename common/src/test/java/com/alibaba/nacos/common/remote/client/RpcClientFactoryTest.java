@@ -79,8 +79,7 @@ class RpcClientFactoryTest {
     }
     
     @Test
-    void testDestroyClientWhenClientExistThenRemoveAndShutDownRpcClient()
-            throws IllegalAccessException, NacosException {
+    void testDestroyClientWhenClientExistThenRemoveAndShutDownRpcClient() throws IllegalAccessException, NacosException {
         clientMapField.set(null, new ConcurrentHashMap<>(Collections.singletonMap("testClient", rpcClient)));
         
         RpcClientFactory.destroyClient("testClient");

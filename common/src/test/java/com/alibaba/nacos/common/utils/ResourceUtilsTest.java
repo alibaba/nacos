@@ -139,15 +139,13 @@ class ResourceUtilsTest {
     
     @Test
     void testGetResourceAsFileByUrl() throws IOException {
-        File file = ResourceUtils.getResourceAsFile(
-                ResourceUtils.getResourceUrl("classpath:resource_utils_test.properties"));
+        File file = ResourceUtils.getResourceAsFile(ResourceUtils.getResourceUrl("classpath:resource_utils_test.properties"));
         assertNotNull(file);
     }
     
     @Test
     void testGetResourceAsFileByLoader() throws IOException {
-        File file = ResourceUtils.getResourceAsFile(ResourceUtils.class.getClassLoader(),
-                "resource_utils_test.properties");
+        File file = ResourceUtils.getResourceAsFile(ResourceUtils.class.getClassLoader(), "resource_utils_test.properties");
         assertNotNull(file);
     }
 }

@@ -59,8 +59,7 @@ class AbstractNacosRestTemplateTest {
     
     @Test
     void testSelectResponseHandlerForDefault() {
-        assertTrue(restTemplate.testFindResponseHandler(
-                AbstractNacosRestTemplateTest.class) instanceof BeanResponseHandler);
+        assertTrue(restTemplate.testFindResponseHandler(AbstractNacosRestTemplateTest.class) instanceof BeanResponseHandler);
     }
     
     @Test

@@ -26,8 +26,8 @@ class HealthStateChangeTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testHealthStateChangeTraceEventForClientBeat() {
-        HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID,
-                GROUP_NAME, SERVICE_NAME, IP, PORT, false, "client_beat");
+        HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
+                SERVICE_NAME, IP, PORT, false, "client_beat");
         assertBasicInfo(healthStateChangeTraceEvent);
         assertHealthChangeInfo(healthStateChangeTraceEvent);
         assertEquals(HealthCheckType.CLIENT_BEAT, healthStateChangeTraceEvent.getHealthCheckType());
@@ -36,8 +36,8 @@ class HealthStateChangeTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testHealthStateChangeTraceEventForTcp() {
-        HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID,
-                GROUP_NAME, SERVICE_NAME, IP, PORT, false, "tcp:unable2connect:");
+        HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
+                SERVICE_NAME, IP, PORT, false, "tcp:unable2connect:");
         assertBasicInfo(healthStateChangeTraceEvent);
         assertHealthChangeInfo(healthStateChangeTraceEvent);
         assertEquals(HealthCheckType.TCP_SUPER_SENSE, healthStateChangeTraceEvent.getHealthCheckType());
@@ -46,8 +46,8 @@ class HealthStateChangeTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testHealthStateChangeTraceEventForHttp() {
-        HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID,
-                GROUP_NAME, SERVICE_NAME, IP, PORT, false, "http:error:");
+        HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
+                SERVICE_NAME, IP, PORT, false, "http:error:");
         assertBasicInfo(healthStateChangeTraceEvent);
         assertHealthChangeInfo(healthStateChangeTraceEvent);
         assertEquals(HealthCheckType.HTTP_HEALTH_CHECK, healthStateChangeTraceEvent.getHealthCheckType());
@@ -56,8 +56,8 @@ class HealthStateChangeTraceEventTest extends NamingTraceEventTest {
     
     @Test
     void testHealthStateChangeTraceEventForMysql() {
-        HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID,
-                GROUP_NAME, SERVICE_NAME, IP, PORT, false, "mysql:timeout:");
+        HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,
+                SERVICE_NAME, IP, PORT, false, "mysql:timeout:");
         assertBasicInfo(healthStateChangeTraceEvent);
         assertHealthChangeInfo(healthStateChangeTraceEvent);
         assertEquals(HealthCheckType.MYSQL_HEALTH_CHECK, healthStateChangeTraceEvent.getHealthCheckType());

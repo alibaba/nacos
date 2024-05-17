@@ -39,8 +39,7 @@ class HttpClientConfigTest {
     
     @Test
     void testGetConnTimeToLive() {
-        HttpClientConfig config = HttpClientConfig.builder().setConnectionTimeToLive(3000, TimeUnit.MILLISECONDS)
-                .build();
+        HttpClientConfig config = HttpClientConfig.builder().setConnectionTimeToLive(3000, TimeUnit.MILLISECONDS).build();
         assertEquals(3000, config.getConnTimeToLive());
     }
     

@@ -129,8 +129,7 @@ class StringUtilsTest {
         assertNull(StringUtils.substringBetween(StringUtils.EMPTY, StringUtils.EMPTY, "]"));
         assertNull(StringUtils.substringBetween(StringUtils.EMPTY, "[", "]"));
         assertEquals(StringUtils.EMPTY, StringUtils.substringBetween("yabcz", StringUtils.EMPTY, StringUtils.EMPTY));
-        assertEquals(StringUtils.EMPTY,
-                StringUtils.substringBetween(StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY));
+        assertEquals(StringUtils.EMPTY, StringUtils.substringBetween(StringUtils.EMPTY, StringUtils.EMPTY, StringUtils.EMPTY));
         assertEquals("b", StringUtils.substringBetween("wx[b]yz", "[", "]"));
         assertEquals("abc", StringUtils.substringBetween("yabcz", "y", "z"));
         assertEquals("abc", StringUtils.substringBetween("yabczyabcz", "y", "z"));

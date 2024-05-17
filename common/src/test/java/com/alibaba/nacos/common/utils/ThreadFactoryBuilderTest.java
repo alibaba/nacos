@@ -60,8 +60,7 @@ class ThreadFactoryBuilderTest {
             thread.setName(threadName);
             return thread;
         };
-        ThreadFactory factory = new ThreadFactoryBuilder().daemon(true).priority(priority).customizeFactory(myFactory)
-                .build();
+        ThreadFactory factory = new ThreadFactoryBuilder().daemon(true).priority(priority).customizeFactory(myFactory).build();
         Thread thread = factory.newThread(() -> {
         });
         assertEquals(threadName, thread.getName());
@@ -103,16 +102,15 @@ class ThreadFactoryBuilderTest {
     @Test
     void propertyUncaughtExceptionHandlerTest() {
         assertThrows(IllegalArgumentException.class, () -> {
-            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d")
-                    .uncaughtExceptionHandler(null).build();
+            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d").uncaughtExceptionHandler(null)
+                    .build();
         });
     }
     
     @Test
     void propertyCustomizeFactoryHandlerTest() {
         assertThrows(IllegalArgumentException.class, () -> {
-            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d").customizeFactory(null)
-                    .build();
+            new ThreadFactoryBuilder().priority(priority).nameFormat("nacos-grpc-executor-%d").customizeFactory(null).build();
         });
     }
 }

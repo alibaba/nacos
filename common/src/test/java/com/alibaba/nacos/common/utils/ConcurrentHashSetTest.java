@@ -119,8 +119,7 @@ class ConcurrentHashSetTest {
         }
         
         public boolean hasConcurrentError() {
-            return addThread.hasConcurrentError() || deleteThread.hasConcurrentError()
-                    || iteratorThread.hasConcurrentError();
+            return addThread.hasConcurrentError() || deleteThread.hasConcurrentError() || iteratorThread.hasConcurrentError();
         }
         
         public boolean isRunning() {

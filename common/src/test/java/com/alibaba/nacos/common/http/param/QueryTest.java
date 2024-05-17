@@ -52,8 +52,8 @@ class QueryTest {
         Query query = Query.newInstance().addParam("key-1", "value-1").addParam("key-2", "value-2");
         String s1 = query.toQueryUrl();
         String s2 =
-                "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name()) + "&key-2=" + URLEncoder.encode(
-                        "value-2", StandardCharsets.UTF_8.name());
+                "key-1=" + URLEncoder.encode("value-1", StandardCharsets.UTF_8.name()) + "&key-2=" + URLEncoder.encode("value-2",
+                        StandardCharsets.UTF_8.name());
         assertEquals(s2, s1);
         assertEquals("value-1", query.getValue("key-1"));
     }
