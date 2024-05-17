@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.auth.config;
 
-import com.alibaba.nacos.auth.AuthService;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginManager;
 import com.alibaba.nacos.plugin.auth.spi.server.AuthPluginService;
 import com.alibaba.nacos.sys.module.ModuleState;
@@ -24,7 +23,6 @@ import com.alibaba.nacos.sys.module.ModuleStateBuilder;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Module state builder for auth module.
@@ -43,6 +41,8 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
     
     public static final String AUTH_ADMIN_REQUEST = "auth_admin_request";
     
+    private boolean cacheable;
+    
     @Override
     public ModuleState build() {
         ModuleState result = new ModuleState(AUTH_MODULE);
@@ -50,20 +50,28 @@ public class AuthModuleStateBuilder implements ModuleStateBuilder {
         result.newState(AUTH_ENABLED, authConfigs.isAuthEnabled());
         result.newState(LOGIN_PAGE_ENABLED, isLoginPageEnabled(authConfigs));
         result.newState(AUTH_SYSTEM_TYPE, authConfigs.getNacosAuthSystemType());
-        AtomicBoolean adminRequest = new AtomicBoolean(true);
-        ApplicationUtils.getBeanIfExist(AuthService.class, authService -> adminRequest.set(authService.isAdminRequest()));
-        result.newState(AUTH_ADMIN_REQUEST, adminRequest.get());
+        result.newState(AUTH_ADMIN_REQUEST, isAdminRequest(authConfigs));
         return result;
     }
     
     @Override
     public boolean isCacheable() {
-        return false;
+        return cacheable;
     }
     
     private Boolean isLoginPageEnabled(AuthConfigs authConfigs) {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         return authPluginService.map(AuthPluginService::isLoginEnabled).orElse(false);
+    }
+    
+    private Boolean isAdminRequest(AuthConfigs authConfigs) {
+        Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
+                .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
+        boolean isAdminRequest = authPluginService.map(AuthPluginService::isAdminRequest).orElse(true);
+        if (!isAdminRequest) {
+            cacheable = true;
+        }
+        return isAdminRequest;
     }
 }
