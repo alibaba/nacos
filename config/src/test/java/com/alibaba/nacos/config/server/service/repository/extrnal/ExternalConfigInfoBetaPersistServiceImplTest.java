@@ -28,18 +28,17 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.sql.Timestamp;
@@ -48,14 +47,26 @@ import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class ExternalConfigInfoBetaPersistServiceImplTest {
+@ExtendWith(SpringExtension.class)
+class ExternalConfigInfoBetaPersistServiceImplTest {
+    
+    MockedStatic<EnvUtil> envUtilMockedStatic;
+    
+    MockedStatic<ExternalStorageUtils> externalStorageUtilsMockedStatic;
+    
+    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
+    
+    @Mock
+    DynamicDataSource dynamicDataSource;
     
     private ExternalConfigInfoBetaPersistServiceImpl externalConfigInfoBetaPersistService;
     
@@ -67,17 +78,8 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
     
     private TransactionTemplate transactionTemplate = TestCaseUtils.createMockTransactionTemplate();
     
-    MockedStatic<EnvUtil> envUtilMockedStatic;
-    
-    MockedStatic<ExternalStorageUtils> externalStorageUtilsMockedStatic;
-    
-    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-    
-    @Mock
-    DynamicDataSource dynamicDataSource;
-    
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         externalStorageUtilsMockedStatic = Mockito.mockStatic(ExternalStorageUtils.class);
@@ -91,15 +93,15 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         externalConfigInfoBetaPersistService = new ExternalConfigInfoBetaPersistServiceImpl();
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         externalStorageUtilsMockedStatic.close();
     }
     
     @Test
-    public void testInsertOrUpdateBetaOfUpdate() {
+    void testInsertOrUpdateBetaOfUpdate() {
         String dataId = "betaDataId113";
         String group = "group";
         String tenant = "tenant";
@@ -124,8 +126,8 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         ConfigOperateResult configOperateResult = externalConfigInfoBetaPersistService.insertOrUpdateBeta(configInfo,
                 betaIps, srcIp, srcUser);
         //expect return obj
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         //verify update to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(betaIps), eq(srcIp),
@@ -134,7 +136,7 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
     }
     
     @Test
-    public void testInsertOrUpdateBetaOfAdd() {
+    void testInsertOrUpdateBetaOfAdd() {
         String dataId = "betaDataId113";
         String group = "group113";
         String tenant = "tenant113";
@@ -160,8 +162,8 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         ConfigOperateResult configOperateResult = externalConfigInfoBetaPersistService.insertOrUpdateBeta(configInfo,
                 betaIps, srcIp, srcUser);
         //expect return obj
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         //verify add to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(configInfo.getAppName()),
@@ -171,7 +173,7 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
     }
     
     @Test
-    public void testInsertOrUpdateBetaOfException() {
+    void testInsertOrUpdateBetaOfException() {
         String dataId = "betaDataId113";
         String group = "group113";
         String tenant = "tenant113";
@@ -201,9 +203,9 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         //execute of update& expect.
         try {
             externalConfigInfoBetaPersistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception exception) {
-            Assert.assertEquals("mock fail", exception.getMessage());
+            assertEquals("mock fail", exception.getMessage());
         }
         
         //mock query return null
@@ -217,9 +219,9 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         //execute of add& expect.
         try {
             externalConfigInfoBetaPersistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception exception) {
-            Assert.assertEquals("mock fail add", exception.getMessage());
+            assertEquals("mock fail add", exception.getMessage());
         }
         
         //mock query throw CannotGetJdbcConnectionException
@@ -229,15 +231,15 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         //execute of add& expect.
         try {
             externalConfigInfoBetaPersistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception exception) {
-            Assert.assertEquals("get c fail", exception.getMessage());
+            assertEquals("get c fail", exception.getMessage());
         }
         
     }
     
     @Test
-    public void testInsertOrUpdateBetaCasOfUpdate() {
+    void testInsertOrUpdateBetaCasOfUpdate() {
         String dataId = "betaDataId113";
         String group = "group";
         String tenant = "tenant";
@@ -270,8 +272,8 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         ConfigOperateResult configOperateResult = externalConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo,
                 betaIps, srcIp, srcUser);
         //expect return obj
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         //verify cas update to be invoked
         Mockito.verify(jdbcTemplate, times(1)).update(anyString(), eq(configInfo.getContent()),
                 eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(betaIps), eq(srcIp), eq(srcUser),
@@ -280,7 +282,7 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
     }
     
     @Test
-    public void testInsertOrUpdateBetaCasOfAdd() {
+    void testInsertOrUpdateBetaCasOfAdd() {
         String dataId = "betaDataId113";
         String group = "group113";
         String tenant = "tenant113";
@@ -306,8 +308,8 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         ConfigOperateResult configOperateResult = externalConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo,
                 betaIps, srcIp, srcUser);
         //expect return obj
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         //verify add to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(configInfo.getAppName()),
@@ -317,7 +319,7 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
     }
     
     @Test
-    public void testInsertOrUpdateBetaCasOfException() {
+    void testInsertOrUpdateBetaCasOfException() {
         String dataId = "betaDataId113";
         String group = "group113";
         String tenant = "tenant113";
@@ -347,9 +349,9 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         //execute of update& expect.
         try {
             externalConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp, srcUser);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception exception) {
-            Assert.assertEquals("mock fail", exception.getMessage());
+            assertEquals("mock fail", exception.getMessage());
         }
         
         //mock query return null
@@ -364,9 +366,9 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         //execute of add& expect.
         try {
             externalConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp, srcUser);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception exception) {
-            Assert.assertEquals("mock fail add", exception.getMessage());
+            assertEquals("mock fail add", exception.getMessage());
         }
         
         //mock query throw CannotGetJdbcConnectionException
@@ -376,15 +378,15 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         //execute of add& expect.
         try {
             externalConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp, srcUser);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception exception) {
-            Assert.assertEquals("get c fail", exception.getMessage());
+            assertEquals("get c fail", exception.getMessage());
         }
         
     }
     
     @Test
-    public void testRemoveConfigInfo4Beta() {
+    void testRemoveConfigInfo4Beta() {
         String dataId = "dataId456789";
         String group = "group4567";
         String tenant = "tenant56789o0";
@@ -409,14 +411,14 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         
         try {
             externalConfigInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception exception) {
-            Assert.assertEquals("mock fail11111", exception.getMessage());
+            assertEquals("mock fail11111", exception.getMessage());
         }
     }
     
     @Test
-    public void testFindConfigInfo4Beta() {
+    void testFindConfigInfo4Beta() {
         String dataId = "dataId456789";
         String group = "group4567";
         String tenant = "tenant56789o0";
@@ -431,7 +433,7 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
                 eq(CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
         ConfigInfoBetaWrapper configInfo4BetaReturn = externalConfigInfoBetaPersistService.findConfigInfo4Beta(dataId,
                 group, tenant);
-        Assert.assertEquals(mockedConfigInfoStateWrapper, configInfo4BetaReturn);
+        assertEquals(mockedConfigInfoStateWrapper, configInfo4BetaReturn);
         
         //mock query throw CannotGetJdbcConnectionException
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
@@ -439,9 +441,9 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
                 new CannotGetJdbcConnectionException("mock fail11111"));
         try {
             externalConfigInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception exception) {
-            Assert.assertEquals("mock fail11111", exception.getMessage());
+            assertEquals("mock fail11111", exception.getMessage());
         }
         
         //mock query throw EmptyResultDataAccessException
@@ -449,18 +451,18 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
                 eq(CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1));
         ConfigInfoBetaWrapper configInfo4BetaNull = externalConfigInfoBetaPersistService.findConfigInfo4Beta(dataId,
                 group, tenant);
-        Assert.assertNull(configInfo4BetaNull);
+        assertNull(configInfo4BetaNull);
     }
     
     @Test
-    public void testConfigInfoBetaCount() {
+    void testConfigInfoBetaCount() {
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(101);
         int returnCount = externalConfigInfoBetaPersistService.configInfoBetaCount();
-        Assert.assertEquals(101, returnCount);
+        assertEquals(101, returnCount);
     }
     
     @Test
-    public void testFindAllConfigInfoBetaForDumpAll() {
+    void testFindAllConfigInfoBetaForDumpAll() {
         //mock count
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(12345);
         
@@ -482,8 +484,8 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         //execute & expect
         Page<ConfigInfoBetaWrapper> pageReturn = externalConfigInfoBetaPersistService.findAllConfigInfoBetaForDumpAll(
                 pageNo, pageSize);
-        Assert.assertEquals(mockList, pageReturn.getPageItems());
-        Assert.assertEquals(101, pageReturn.getTotalCount());
+        assertEquals(mockList, pageReturn.getPageItems());
+        assertEquals(101, pageReturn.getTotalCount());
         
         //mock count throw CannotGetJdbcConnectionException
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenThrow(
@@ -491,9 +493,9 @@ public class ExternalConfigInfoBetaPersistServiceImplTest {
         //execute &expect
         try {
             externalConfigInfoBetaPersistService.findAllConfigInfoBetaForDumpAll(pageNo, pageSize);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception exception) {
-            Assert.assertEquals("345678909fail", exception.getMessage());
+            assertEquals("345678909fail", exception.getMessage());
         }
     }
     

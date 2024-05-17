@@ -16,19 +16,20 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
-public class TraceLogUtilTest {
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+class TraceLogUtilTest {
+    
     @Test
-    public void testRequestLog() {
-
+    void testRequestLog() {
+        
         Logger requestLog = TraceLogUtil.requestLog;
-        Assert.assertTrue(requestLog instanceof Logger);
-
+        assertTrue(requestLog instanceof Logger);
+        
         Logger pollingLog = TraceLogUtil.pollingLog;
-        Assert.assertTrue(pollingLog instanceof Logger);
+        assertTrue(pollingLog instanceof Logger);
     }
 }

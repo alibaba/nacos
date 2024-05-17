@@ -16,27 +16,31 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class RegexParserTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
+class RegexParserTest {
     
     @Test
-    public void testRegexFormat() {
+    void testRegexFormat() {
         try {
             RegexParser.regexFormat(null);
-            Assert.fail();
+            fail();
         } catch (NullPointerException e) {
             System.out.println(e.toString());
         }
         
-        Assert.assertEquals("^test.*\\!.{1}xxxx$", RegexParser.regexFormat("test*!?xxxx"));
+        assertEquals("^test.*\\!.{1}xxxx$", RegexParser.regexFormat("test*!?xxxx"));
     }
     
     @Test
-    public void testContainsWildcard() {
-        Assert.assertFalse(RegexParser.containsWildcard("test"));
-        Assert.assertTrue(RegexParser.containsWildcard("?"));
-        Assert.assertTrue(RegexParser.containsWildcard("*"));
+    void testContainsWildcard() {
+        assertFalse(RegexParser.containsWildcard("test"));
+        assertTrue(RegexParser.containsWildcard("?"));
+        assertTrue(RegexParser.containsWildcard("*"));
     }
 }

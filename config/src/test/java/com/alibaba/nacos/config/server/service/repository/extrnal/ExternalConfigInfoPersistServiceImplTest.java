@@ -36,11 +36,10 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -52,7 +51,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -72,6 +71,10 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -79,8 +82,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class ExternalConfigInfoPersistServiceImplTest {
+@ExtendWith(SpringExtension.class)
+class ExternalConfigInfoPersistServiceImplTest {
+    
+    MockedStatic<EnvUtil> envUtilMockedStatic;
+    
+    MockedStatic<ExternalStorageUtils> externalStorageUtilsMockedStatic;
+    
+    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
+    
+    @Mock
+    DynamicDataSource dynamicDataSource;
     
     private ExternalConfigInfoPersistServiceImpl externalConfigInfoPersistService;
     
@@ -95,17 +107,8 @@ public class ExternalConfigInfoPersistServiceImplTest {
     
     private TransactionTemplate transactionTemplate = TestCaseUtils.createMockTransactionTemplate();
     
-    MockedStatic<EnvUtil> envUtilMockedStatic;
-    
-    MockedStatic<ExternalStorageUtils> externalStorageUtilsMockedStatic;
-    
-    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-    
-    @Mock
-    DynamicDataSource dynamicDataSource;
-    
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         externalStorageUtilsMockedStatic = Mockito.mockStatic(ExternalStorageUtils.class);
@@ -121,15 +124,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
         externalConfigInfoPersistService = new ExternalConfigInfoPersistServiceImpl(historyConfigInfoPersistService);
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         externalStorageUtilsMockedStatic.close();
     }
     
     @Test
-    public void testInsertOrUpdateOfInsertConfigSuccess() {
+    void testInsertOrUpdateOfInsertConfigSuccess() {
         
         String dataId = "dataId";
         String group = "group";
@@ -189,7 +192,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
-    public void testInsertOrUpdateCasOfInsertConfigSuccess() {
+    void testInsertOrUpdateCasOfInsertConfigSuccess() {
         
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "tag1,tag2");
@@ -249,7 +252,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
-    public void testInsertOrUpdateOfException() {
+    void testInsertOrUpdateOfException() {
         String dataId = "dataId";
         String group = "group";
         String tenant = "tenant";
@@ -267,15 +270,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, null, "content");
         try {
             externalConfigInfoPersistService.insertOrUpdate("srcIp", "srcUser", configInfo, configAdvanceInfo);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertEquals(e.getMessage(), "mock fail");
+            assertEquals("mock fail", e.getMessage());
         }
         
     }
     
     @Test
-    public void testInsertOrUpdateOfUpdateConfigSuccess() {
+    void testInsertOrUpdateOfUpdateConfigSuccess() {
         
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "tag1,tag2");
@@ -357,7 +360,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
-    public void testInsertOrUpdateCasOfUpdateConfigSuccess() {
+    void testInsertOrUpdateCasOfUpdateConfigSuccess() {
         
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "tag1,tag2");
@@ -445,7 +448,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
-    public void testCreatePsForInsertConfigInfo() throws SQLException {
+    void testCreatePsForInsertConfigInfo() throws SQLException {
         
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "tag1,tag2");
@@ -476,7 +479,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
-    public void testRemoveConfigInfo() {
+    void testRemoveConfigInfo() {
         String dataId = "dataId4567";
         String group = "group3456789";
         String tenant = "tenant4567890";
@@ -509,7 +512,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
-    public void testRemoveConfigInfoByIds() {
+    void testRemoveConfigInfoByIds() {
         
         //mock exist config info
         List<ConfigInfo> configInfos = new ArrayList<>();
@@ -540,7 +543,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
-    public void testBatchInsertOrUpdateOverwrite() throws NacosException {
+    void testBatchInsertOrUpdateOverwrite() throws NacosException {
         List<ConfigAllInfo> configInfoList = new ArrayList<>();
         //insert direct
         configInfoList.add(createMockConfigAllInfo(0));
@@ -561,12 +564,12 @@ public class ExternalConfigInfoPersistServiceImplTest {
         
         Map<String, Object> stringObjectMap = externalConfigInfoPersistService.batchInsertOrUpdate(configInfoList,
                 srcUser, srcIp, configAdvanceInfo, SameConfigPolicy.OVERWRITE);
-        Assert.assertEquals(3, stringObjectMap.get("succCount"));
-        Assert.assertEquals(0, stringObjectMap.get("skipCount"));
+        assertEquals(3, stringObjectMap.get("succCount"));
+        assertEquals(0, stringObjectMap.get("skipCount"));
     }
     
     @Test
-    public void testBatchInsertOrUpdateSkip() throws NacosException {
+    void testBatchInsertOrUpdateSkip() throws NacosException {
         List<ConfigAllInfo> configInfoList = new ArrayList<>();
         //insert direct
         configInfoList.add(createMockConfigAllInfo(0));
@@ -587,14 +590,14 @@ public class ExternalConfigInfoPersistServiceImplTest {
         
         Map<String, Object> stringObjectMap = externalConfigInfoPersistService.batchInsertOrUpdate(configInfoList,
                 srcUser, srcIp, configAdvanceInfo, SameConfigPolicy.SKIP);
-        Assert.assertEquals(2, stringObjectMap.get("succCount"));
-        Assert.assertEquals(1, stringObjectMap.get("skipCount"));
-        Assert.assertEquals(configInfoList.get(1).getDataId(),
+        assertEquals(2, stringObjectMap.get("succCount"));
+        assertEquals(1, stringObjectMap.get("skipCount"));
+        assertEquals(configInfoList.get(1).getDataId(),
                 ((List<Map<String, String>>) stringObjectMap.get("skipData")).get(0).get("dataId"));
     }
     
     @Test
-    public void testBatchInsertOrUpdateAbort() throws NacosException {
+    void testBatchInsertOrUpdateAbort() throws NacosException {
         List<ConfigAllInfo> configInfoList = new ArrayList<>();
         //insert direct
         configInfoList.add(createMockConfigAllInfo(0));
@@ -614,13 +617,13 @@ public class ExternalConfigInfoPersistServiceImplTest {
         
         Map<String, Object> stringObjectMap = externalConfigInfoPersistService.batchInsertOrUpdate(configInfoList,
                 srcUser, srcIp, configAdvanceInfo, SameConfigPolicy.ABORT);
-        Assert.assertEquals(1, stringObjectMap.get("succCount"));
-        Assert.assertEquals(1, stringObjectMap.get("skipCount"));
+        assertEquals(1, stringObjectMap.get("succCount"));
+        assertEquals(1, stringObjectMap.get("skipCount"));
         // config 2 failed
-        Assert.assertEquals(configInfoList.get(1).getDataId(),
+        assertEquals(configInfoList.get(1).getDataId(),
                 ((List<Map<String, String>>) stringObjectMap.get("failData")).get(0).get("dataId"));
         //skip config 3
-        Assert.assertEquals(configInfoList.get(2).getDataId(),
+        assertEquals(configInfoList.get(2).getDataId(),
                 ((List<Map<String, String>>) stringObjectMap.get("skipData")).get(0).get("dataId"));
     }
     
@@ -660,45 +663,45 @@ public class ExternalConfigInfoPersistServiceImplTest {
     }
     
     @Test
-    public void testFindConfigMaxId() {
+    void testFindConfigMaxId() {
         
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(Long.class))).thenReturn(123456L);
         long configMaxId = externalConfigInfoPersistService.findConfigMaxId();
-        Assert.assertEquals(123456L, configMaxId);
+        assertEquals(123456L, configMaxId);
     }
     
     @Test
-    public void testFindConfigMaxId0() {
+    void testFindConfigMaxId0() {
         
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(Long.class))).thenThrow(new NullPointerException());
         long configMaxId = externalConfigInfoPersistService.findConfigMaxId();
-        Assert.assertEquals(0, configMaxId);
+        assertEquals(0, configMaxId);
     }
     
     @Test
-    public void testFindConfigInfoById() {
+    void testFindConfigInfoById() {
         long id = 1234567890876L;
         ConfigInfo configInfo = new ConfigInfo();
         configInfo.setId(id);
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {id}), eq(CONFIG_INFO_ROW_MAPPER)))
                 .thenReturn(configInfo);
         ConfigInfo configReturn = externalConfigInfoPersistService.findConfigInfo(id);
-        Assert.assertEquals(id, configReturn.getId());
+        assertEquals(id, configReturn.getId());
     }
     
     @Test
-    public void testFindConfigInfoByIdNull() {
+    void testFindConfigInfoByIdNull() {
         long id = 1234567890876L;
         ConfigInfo configInfo = new ConfigInfo();
         configInfo.setId(id);
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {id}), eq(CONFIG_INFO_ROW_MAPPER)))
                 .thenThrow(new EmptyResultDataAccessException(1));
         ConfigInfo configReturn = externalConfigInfoPersistService.findConfigInfo(id);
-        Assert.assertEquals(null, configReturn);
+        assertNull(configReturn);
     }
     
     @Test
-    public void testFindConfigInfoByIdGetConFail() {
+    void testFindConfigInfoByIdGetConFail() {
         long id = 1234567890876L;
         ConfigInfo configInfo = new ConfigInfo();
         configInfo.setId(id);
@@ -706,14 +709,14 @@ public class ExternalConfigInfoPersistServiceImplTest {
                 .thenThrow(new CannotGetJdbcConnectionException("mocked exp"));
         try {
             ConfigInfo configReturn = externalConfigInfoPersistService.findConfigInfo(id);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotGetJdbcConnectionException);
+            assertTrue(e instanceof CannotGetJdbcConnectionException);
         }
     }
     
     @Test
-    public void testFindConfigInfoByDataId() {
+    void testFindConfigInfoByDataId() {
         String dataId = "dataId4567";
         String group = "group3456789";
         String tenant = "tenant4567890";
@@ -725,22 +728,22 @@ public class ExternalConfigInfoPersistServiceImplTest {
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenReturn(configInfoWrapper);
         ConfigInfo configReturn = externalConfigInfoPersistService.findConfigInfo(dataId, group, tenant);
-        Assert.assertEquals(dataId, configReturn.getDataId());
+        assertEquals(dataId, configReturn.getDataId());
     }
     
     @Test
-    public void testFindConfigInfoByDataIdNull() {
+    void testFindConfigInfoByDataIdNull() {
         String dataId = "dataId4567";
         String group = "group3456789";
         String tenant = "tenant4567890";
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1));
         ConfigInfoWrapper configReturn = externalConfigInfoPersistService.findConfigInfo(dataId, group, tenant);
-        Assert.assertEquals(null, configReturn);
+        assertNull(configReturn);
     }
     
     @Test
-    public void testFindConfigInfoByDataIdGetConFail() {
+    void testFindConfigInfoByDataIdGetConFail() {
         String dataId = "dataId4567222";
         String group = "group3456789";
         String tenant = "tenant4567890";
@@ -749,14 +752,14 @@ public class ExternalConfigInfoPersistServiceImplTest {
                 eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenThrow(new CannotGetJdbcConnectionException("mocked exp"));
         try {
             externalConfigInfoPersistService.findConfigInfo(dataId, group, tenant);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotGetJdbcConnectionException);
+            assertTrue(e instanceof CannotGetJdbcConnectionException);
         }
     }
     
     @Test
-    public void testFindConfigInfo4Page() {
+    void testFindConfigInfo4Page() {
         String dataId = "dataId4567222";
         String group = "group3456789";
         String tenant = "tenant4567890";
@@ -774,13 +777,13 @@ public class ExternalConfigInfoPersistServiceImplTest {
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfo4Page(1, 3, dataId, group,
                 tenant, configAdvanceInfo);
-        Assert.assertEquals(result.size(), configInfo4Page.getPageItems().size());
-        Assert.assertEquals(9, configInfo4Page.getTotalCount());
+        assertEquals(result.size(), configInfo4Page.getPageItems().size());
+        assertEquals(9, configInfo4Page.getTotalCount());
         
     }
     
     @Test
-    public void testFindConfigInfo4PageWithTags() {
+    void testFindConfigInfo4PageWithTags() {
         String dataId = "dataId4567222";
         String group = "group3456789";
         String tenant = "tenant4567890";
@@ -800,50 +803,50 @@ public class ExternalConfigInfoPersistServiceImplTest {
         
         Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfo4Page(1, 3, dataId, group,
                 tenant, configAdvanceInfo);
-        Assert.assertEquals(result.size(), configInfo4Page.getPageItems().size());
-        Assert.assertEquals(9, configInfo4Page.getTotalCount());
+        assertEquals(result.size(), configInfo4Page.getPageItems().size());
+        assertEquals(9, configInfo4Page.getTotalCount());
     }
     
     @Test
-    public void testConfigInfoCount() {
+    void testConfigInfoCount() {
         
         //mock total count
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(new Integer(9));
         int count = externalConfigInfoPersistService.configInfoCount();
-        Assert.assertEquals(9, count);
+        assertEquals(9, count);
         
         when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class))).thenReturn(null);
         try {
             externalConfigInfoPersistService.configInfoCount();
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof IllegalArgumentException);
+            assertTrue(e instanceof IllegalArgumentException);
         }
         
     }
     
     @Test
-    public void testConfigInfoCountByTenant() {
+    void testConfigInfoCountByTenant() {
         
         String tenant = "tenant124";
         //mock total count
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {tenant}), eq(Integer.class))).thenReturn(
                 new Integer(90));
         int count = externalConfigInfoPersistService.configInfoCount(tenant);
-        Assert.assertEquals(90, count);
+        assertEquals(90, count);
         
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {tenant}), eq(Integer.class))).thenReturn(null);
         try {
             externalConfigInfoPersistService.configInfoCount(tenant);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof IllegalArgumentException);
+            assertTrue(e instanceof IllegalArgumentException);
         }
         
     }
     
     @Test
-    public void testFindConfigInfoLike4Page() {
+    void testFindConfigInfoLike4Page() {
         String dataId = "dataId4567222*";
         String group = "group3456789*";
         String tenant = "tenant4567890";
@@ -867,13 +870,13 @@ public class ExternalConfigInfoPersistServiceImplTest {
         
         Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfoLike4Page(1, 3, dataId, group,
                 tenant, configAdvanceInfo);
-        Assert.assertEquals(result.size(), configInfo4Page.getPageItems().size());
-        Assert.assertEquals(9, configInfo4Page.getTotalCount());
+        assertEquals(result.size(), configInfo4Page.getPageItems().size());
+        assertEquals(9, configInfo4Page.getTotalCount());
         
     }
     
     @Test
-    public void testFindConfigInfoLike4PageWithTags() {
+    void testFindConfigInfoLike4PageWithTags() {
         
         String appName = "appName1234";
         String content = "content123";
@@ -899,13 +902,13 @@ public class ExternalConfigInfoPersistServiceImplTest {
         
         Page<ConfigInfo> configInfo4Page = externalConfigInfoPersistService.findConfigInfoLike4Page(1, 3, dataId, group,
                 tenant, configAdvanceInfo);
-        Assert.assertEquals(result.size(), configInfo4Page.getPageItems().size());
-        Assert.assertEquals(9, configInfo4Page.getTotalCount());
+        assertEquals(result.size(), configInfo4Page.getPageItems().size());
+        assertEquals(9, configInfo4Page.getTotalCount());
         
     }
     
     @Test
-    public void testFindChangeConfig() {
+    void testFindChangeConfig() {
         
         //mock page list
         List<ConfigInfoStateWrapper> result = new ArrayList<>();
@@ -920,11 +923,11 @@ public class ExternalConfigInfoPersistServiceImplTest {
         
         List<ConfigInfoStateWrapper> configInfo4List = externalConfigInfoPersistService.findChangeConfig(startTime,
                 lastMaxId, pageSize);
-        Assert.assertEquals(result.size(), configInfo4List.size());
+        assertEquals(result.size(), configInfo4List.size());
     }
     
     @Test
-    public void testFindChangeConfigError() {
+    void testFindChangeConfigError() {
         Timestamp startTime = new Timestamp(System.currentTimeMillis() - 1000L);
         long lastMaxId = 10000L;
         int pageSize = 30;
@@ -934,14 +937,14 @@ public class ExternalConfigInfoPersistServiceImplTest {
         try {
             List<ConfigInfoStateWrapper> configInfo4List = externalConfigInfoPersistService.findChangeConfig(startTime,
                     lastMaxId, pageSize);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotAcquireLockException);
+            assertTrue(e instanceof CannotAcquireLockException);
         }
     }
     
     @Test
-    public void testSelectTagByConfig() {
+    void testSelectTagByConfig() {
         String dataId = "dataId4567222";
         String group = "group3456789";
         String tenant = "tenant4567890";
@@ -951,32 +954,32 @@ public class ExternalConfigInfoPersistServiceImplTest {
         when(jdbcTemplate.queryForList(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(String.class))).thenReturn(tagStrings);
         List<String> configTags = externalConfigInfoPersistService.selectTagByConfig(dataId, group, tenant);
-        Assert.assertEquals(tagStrings, configTags);
+        assertEquals(tagStrings, configTags);
         
         //mock EmptyResultDataAccessException
         when(jdbcTemplate.queryForList(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(String.class))).thenThrow(new EmptyResultDataAccessException(3));
         List<String> nullResult = externalConfigInfoPersistService.selectTagByConfig(dataId, group, tenant);
-        Assert.assertTrue(nullResult == null);
+        assertTrue(nullResult == null);
         //mock IncorrectResultSizeDataAccessException
         when(jdbcTemplate.queryForList(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(String.class))).thenThrow(new IncorrectResultSizeDataAccessException(3));
         List<String> nullResult2 = externalConfigInfoPersistService.selectTagByConfig(dataId, group, tenant);
-        Assert.assertTrue(nullResult2 == null);
+        assertTrue(nullResult2 == null);
         
         //mock IncorrectResultSizeDataAccessException
         when(jdbcTemplate.queryForList(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(String.class))).thenThrow(new CannotGetJdbcConnectionException("mock exp"));
         try {
             externalConfigInfoPersistService.selectTagByConfig(dataId, group, tenant);
-            Assert.assertFalse(true);
+            assertFalse(true);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotGetJdbcConnectionException);
+            assertTrue(e instanceof CannotGetJdbcConnectionException);
         }
     }
     
     @Test
-    public void testFindConfigInfosByIds() {
+    void testFindConfigInfosByIds() {
         
         //mock page list
         List<ConfigInfo> result = new ArrayList<>();
@@ -987,32 +990,32 @@ public class ExternalConfigInfoPersistServiceImplTest {
                 result);
         String ids = "123,1232345";
         List<ConfigInfo> configInfosByIds = externalConfigInfoPersistService.findConfigInfosByIds(ids);
-        Assert.assertEquals(result.size(), configInfosByIds.size());
-        Assert.assertEquals(result.get(2).getDataId(), configInfosByIds.get(2).getDataId());
+        assertEquals(result.size(), configInfosByIds.size());
+        assertEquals(result.get(2).getDataId(), configInfosByIds.get(2).getDataId());
         
         //mock EmptyResultDataAccessException
         when(jdbcTemplate.query(anyString(), eq(new Object[] {123L, 1232345L}), eq(CONFIG_INFO_ROW_MAPPER))).thenThrow(
                 new EmptyResultDataAccessException(3));
         List<ConfigInfo> nullResult2 = externalConfigInfoPersistService.findConfigInfosByIds(ids);
-        Assert.assertTrue(nullResult2 == null);
+        assertTrue(nullResult2 == null);
         
         //blank ids.
         List<ConfigInfo> nullResultBlankIds = externalConfigInfoPersistService.findConfigInfosByIds("");
-        Assert.assertTrue(nullResultBlankIds == null);
+        assertTrue(nullResultBlankIds == null);
         
         //mock CannotGetJdbcConnectionException
         when(jdbcTemplate.query(anyString(), eq(new Object[] {123L, 1232345L}), eq(CONFIG_INFO_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("mock exp"));
         try {
             externalConfigInfoPersistService.findConfigInfosByIds(ids);
-            Assert.assertFalse(true);
+            assertFalse(true);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotGetJdbcConnectionException);
+            assertTrue(e instanceof CannotGetJdbcConnectionException);
         }
     }
     
     @Test
-    public void testFindConfigAdvanceInfo() {
+    void testFindConfigAdvanceInfo() {
         
         String dataId = "dataId1324";
         String group = "group23546";
@@ -1033,14 +1036,14 @@ public class ExternalConfigInfoPersistServiceImplTest {
         ConfigAdvanceInfo configAdvanceInfo = externalConfigInfoPersistService.findConfigAdvanceInfo(dataId, group,
                 tenant);
         //expect check schema & tags.
-        Assert.assertEquals(mockedAdvance.getSchema(), configAdvanceInfo.getSchema());
-        Assert.assertEquals(String.join(",", mockTags), configAdvanceInfo.getConfigTags());
+        assertEquals(mockedAdvance.getSchema(), configAdvanceInfo.getSchema());
+        assertEquals(String.join(",", mockTags), configAdvanceInfo.getConfigTags());
         
         //mock EmptyResultDataAccessException
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(CONFIG_ADVANCE_INFO_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1));
         //expect return null.
-        Assert.assertNull(externalConfigInfoPersistService.findConfigAdvanceInfo(dataId, group, tenant));
+        assertNull(externalConfigInfoPersistService.findConfigAdvanceInfo(dataId, group, tenant));
         
         //mock CannotGetJdbcConnectionException
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
@@ -1048,15 +1051,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
         //expect throw exception.
         try {
             externalConfigInfoPersistService.findConfigAdvanceInfo(dataId, group, tenant);
-            Assert.assertFalse(true);
+            assertFalse(true);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotGetJdbcConnectionException);
-            Assert.assertTrue(e.getMessage().endsWith("mock exp"));
+            assertTrue(e instanceof CannotGetJdbcConnectionException);
+            assertTrue(e.getMessage().endsWith("mock exp"));
         }
     }
     
     @Test
-    public void testFindConfigAllInfo() {
+    void testFindConfigAllInfo() {
         
         String dataId = "dataId1324";
         String group = "group23546";
@@ -1076,14 +1079,14 @@ public class ExternalConfigInfoPersistServiceImplTest {
         //execute return mock obj
         ConfigAllInfo configAllInfo = externalConfigInfoPersistService.findConfigAllInfo(dataId, group, tenant);
         //expect check schema & tags.
-        Assert.assertEquals(mockedConfig.getSchema(), configAllInfo.getSchema());
-        Assert.assertEquals(String.join(",", mockTags), configAllInfo.getConfigTags());
+        assertEquals(mockedConfig.getSchema(), configAllInfo.getSchema());
+        assertEquals(String.join(",", mockTags), configAllInfo.getConfigTags());
         
         //mock EmptyResultDataAccessException
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1));
         //expect return null.
-        Assert.assertNull(externalConfigInfoPersistService.findConfigAllInfo(dataId, group, tenant));
+        assertNull(externalConfigInfoPersistService.findConfigAllInfo(dataId, group, tenant));
         
         //mock CannotGetJdbcConnectionException
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
@@ -1091,15 +1094,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
         //expect throw exception.
         try {
             externalConfigInfoPersistService.findConfigAllInfo(dataId, group, tenant);
-            Assert.assertFalse(true);
+            assertFalse(true);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotGetJdbcConnectionException);
-            Assert.assertTrue(e.getMessage().endsWith("mock exp"));
+            assertTrue(e instanceof CannotGetJdbcConnectionException);
+            assertTrue(e.getMessage().endsWith("mock exp"));
         }
     }
     
     @Test
-    public void testFindConfigInfoState() {
+    void testFindConfigInfoState() {
         
         String dataId = "dataId1324";
         String group = "group23546";
@@ -1116,14 +1119,14 @@ public class ExternalConfigInfoPersistServiceImplTest {
         ConfigInfoStateWrapper configInfoStateWrapper = externalConfigInfoPersistService.findConfigInfoState(dataId,
                 group, tenant);
         //expect check schema & tags.
-        Assert.assertEquals(mockedConfig.getId(), configInfoStateWrapper.getId());
-        Assert.assertEquals(mockedConfig.getLastModified(), configInfoStateWrapper.getLastModified());
+        assertEquals(mockedConfig.getId(), configInfoStateWrapper.getId());
+        assertEquals(mockedConfig.getLastModified(), configInfoStateWrapper.getLastModified());
         
         //mock EmptyResultDataAccessException
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1));
         //expect return null.
-        Assert.assertNull(externalConfigInfoPersistService.findConfigInfoState(dataId, group, tenant));
+        assertNull(externalConfigInfoPersistService.findConfigInfoState(dataId, group, tenant));
         
         //mock CannotGetJdbcConnectionException
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
@@ -1131,15 +1134,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
         //expect throw exception.
         try {
             externalConfigInfoPersistService.findConfigInfoState(dataId, group, tenant);
-            Assert.assertFalse(true);
+            assertFalse(true);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotGetJdbcConnectionException);
-            Assert.assertTrue(e.getMessage().endsWith("mock exp"));
+            assertTrue(e instanceof CannotGetJdbcConnectionException);
+            assertTrue(e.getMessage().endsWith("mock exp"));
         }
     }
     
     @Test
-    public void testFindAllConfigInfo4Export() {
+    void testFindAllConfigInfo4Export() {
         
         //mock select config state
         List<ConfigAllInfo> mockConfigs = new ArrayList<>();
@@ -1159,7 +1162,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         List<ConfigAllInfo> configAllInfosIds = externalConfigInfoPersistService.findAllConfigInfo4Export(dataId, group,
                 tenant, appName, ids);
         //expect check
-        Assert.assertEquals(mockConfigs, configAllInfosIds);
+        assertEquals(mockConfigs, configAllInfosIds);
         
         when(jdbcTemplate.query(anyString(), eq(new Object[] {tenant, dataId, group, appName}),
                 eq(CONFIG_ALL_INFO_ROW_MAPPER))).thenReturn(mockConfigs);
@@ -1167,7 +1170,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         List<ConfigAllInfo> configAllInfosWithDataId = externalConfigInfoPersistService.findAllConfigInfo4Export(dataId,
                 group, tenant, appName, null);
         //expect check
-        Assert.assertEquals(mockConfigs, configAllInfosWithDataId);
+        assertEquals(mockConfigs, configAllInfosWithDataId);
         
         //mock CannotGetJdbcConnectionException
         when(jdbcTemplate.query(anyString(), eq(new Object[] {132L, 1343L, 245L}),
@@ -1175,15 +1178,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
         //expect throw exception.
         try {
             externalConfigInfoPersistService.findAllConfigInfo4Export(dataId, group, tenant, appName, ids);
-            Assert.assertFalse(true);
+            assertFalse(true);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotGetJdbcConnectionException);
-            Assert.assertTrue(e.getMessage().endsWith("mock exp11"));
+            assertTrue(e instanceof CannotGetJdbcConnectionException);
+            assertTrue(e.getMessage().endsWith("mock exp11"));
         }
     }
     
     @Test
-    public void testQueryConfigInfoByNamespace() {
+    void testQueryConfigInfoByNamespace() {
         
         //mock select config state
         List<ConfigInfoWrapper> mockConfigs = new ArrayList<>();
@@ -1197,7 +1200,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         List<ConfigInfoWrapper> configInfoWrappers = externalConfigInfoPersistService.queryConfigInfoByNamespace(
                 tenant);
         //expect check
-        Assert.assertEquals(mockConfigs, configInfoWrappers);
+        assertEquals(mockConfigs, configInfoWrappers);
         
         //mock CannotGetJdbcConnectionException
         when(jdbcTemplate.query(anyString(), eq(new Object[] {tenant}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenThrow(
@@ -1206,7 +1209,7 @@ public class ExternalConfigInfoPersistServiceImplTest {
         List<ConfigInfoWrapper> configInfoWrapperNull = externalConfigInfoPersistService.queryConfigInfoByNamespace(
                 tenant);
         //expect check
-        Assert.assertEquals(Collections.EMPTY_LIST, configInfoWrapperNull);
+        assertEquals(Collections.EMPTY_LIST, configInfoWrapperNull);
         
         //mock CannotGetJdbcConnectionException
         when(jdbcTemplate.query(anyString(), eq(new Object[] {tenant}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenThrow(
@@ -1214,15 +1217,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
         //expect throw exception.
         try {
             externalConfigInfoPersistService.queryConfigInfoByNamespace(tenant);
-            Assert.assertFalse(true);
+            assertFalse(true);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof CannotGetJdbcConnectionException);
-            Assert.assertTrue(e.getMessage().endsWith("mock exp1111"));
+            assertTrue(e instanceof CannotGetJdbcConnectionException);
+            assertTrue(e.getMessage().endsWith("mock exp1111"));
         }
     }
     
     @Test
-    public void testGetTenantIdList() {
+    void testGetTenantIdList() {
         
         int page = 10;
         int pageSize = 100;
@@ -1233,11 +1236,11 @@ public class ExternalConfigInfoPersistServiceImplTest {
         List<String> returnTenants = externalConfigInfoPersistService.getTenantIdList(page, pageSize);
         
         //expect check
-        Assert.assertEquals(tenantStrings, returnTenants);
+        assertEquals(tenantStrings, returnTenants);
     }
     
     @Test
-    public void testGetGroupIdList() {
+    void testGetGroupIdList() {
         
         int page = 10;
         int pageSize = 100;
@@ -1248,11 +1251,11 @@ public class ExternalConfigInfoPersistServiceImplTest {
         List<String> returnGroups = externalConfigInfoPersistService.getGroupIdList(page, pageSize);
         
         //expect check
-        Assert.assertEquals(groupStrings, returnGroups);
+        assertEquals(groupStrings, returnGroups);
     }
     
     @Test
-    public void testFindAllConfigInfoFragment() {
+    void testFindAllConfigInfoFragment() {
         //mock page list
         List<ConfigInfoWrapper> mockConfigs = new ArrayList<>();
         mockConfigs.add(createMockConfigInfoWrapper(0));
@@ -1267,15 +1270,15 @@ public class ExternalConfigInfoPersistServiceImplTest {
                 pageSize, true);
         
         //expect check
-        Assert.assertEquals(mockConfigs, returnConfigPage.getPageItems());
+        assertEquals(mockConfigs, returnConfigPage.getPageItems());
         
         when(jdbcTemplate.query(anyString(), eq(new Object[] {lastId}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("mock fail"));
         try {
             externalConfigInfoPersistService.findAllConfigInfoFragment(lastId, pageSize, true);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertEquals("mock fail", e.getMessage());
+            assertEquals("mock fail", e.getMessage());
         }
         
     }

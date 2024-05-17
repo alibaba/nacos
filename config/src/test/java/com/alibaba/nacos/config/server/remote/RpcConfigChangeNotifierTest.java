@@ -29,14 +29,14 @@ import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
@@ -52,8 +52,24 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 
-@RunWith(MockitoJUnitRunner.class)
-public class RpcConfigChangeNotifierTest {
+@ExtendWith(MockitoExtension.class)
+class RpcConfigChangeNotifierTest {
+    
+    static final String POINT_CONFIG_PUSH = "CONFIG_PUSH_COUNT";
+    
+    static final String POINT_CONFIG_PUSH_SUCCESS = "CONFIG_PUSH_SUCCESS";
+    
+    static final String POINT_CONFIG_PUSH_FAIL = "CONFIG_PUSH_FAIL";
+    
+    @Mock
+    ControlManagerCenter controlManagerCenter;
+    
+    @Mock
+    TpsControlManager tpsControlManager;
+    
+    MockedStatic<ControlManagerCenter> controlManagerCenterMockedStatic;
+    
+    MockedStatic<EnvUtil> envUtilMockedStatic;
     
     private RpcConfigChangeNotifier rpcConfigChangeNotifier;
     
@@ -66,22 +82,12 @@ public class RpcConfigChangeNotifierTest {
     @Mock
     private ConnectionManager connectionManager;
     
-    @Mock
-    ControlManagerCenter controlManagerCenter;
-    
-    @Mock
-    TpsControlManager tpsControlManager;
-    
-    MockedStatic<ControlManagerCenter> controlManagerCenterMockedStatic;
-    
-    MockedStatic<EnvUtil> envUtilMockedStatic;
-    
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         envUtilMockedStatic.when(
-                () -> EnvUtil.getProperty(eq("nacos.config.push.maxRetryTime"), eq(Integer.class), anyInt()))
+                        () -> EnvUtil.getProperty(eq("nacos.config.push.maxRetryTime"), eq(Integer.class), anyInt()))
                 .thenReturn(3);
         controlManagerCenterMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
         Mockito.when(ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
@@ -93,14 +99,14 @@ public class RpcConfigChangeNotifierTest {
         
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         envUtilMockedStatic.close();
         controlManagerCenterMockedStatic.close();
     }
     
     @Test
-    public void testOnDataEvent() throws InterruptedException {
+    void testOnDataEvent() throws InterruptedException {
         
         final String groupKey = GroupKey2.getKey("nacos.internal.tps.control_rule_1", "nacos", "tenant");
         
@@ -141,7 +147,7 @@ public class RpcConfigChangeNotifierTest {
     }
     
     @Test
-    public void testRpcCallBack() {
+    void testRpcCallBack() {
         MockedStatic<ConfigExecutor> configExecutorMockedStatic = Mockito.mockStatic(ConfigExecutor.class);
         try {
             RpcConfigChangeNotifier.RpcPushTask task = Mockito.mock(RpcConfigChangeNotifier.RpcPushTask.class);
@@ -182,14 +188,8 @@ public class RpcConfigChangeNotifierTest {
         
     }
     
-    static final String POINT_CONFIG_PUSH = "CONFIG_PUSH_COUNT";
-    
-    static final String POINT_CONFIG_PUSH_SUCCESS = "CONFIG_PUSH_SUCCESS";
-    
-    static final String POINT_CONFIG_PUSH_FAIL = "CONFIG_PUSH_FAIL";
-    
     @Test
-    public void testRegisterTpsPoint() {
+    void testRegisterTpsPoint() {
         
         rpcConfigChangeNotifier.registerTpsPoint();
         Mockito.verify(tpsControlManager, Mockito.times(1)).registerTpsPoint(eq(POINT_CONFIG_PUSH));

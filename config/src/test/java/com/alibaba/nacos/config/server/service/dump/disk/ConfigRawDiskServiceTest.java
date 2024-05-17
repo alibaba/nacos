@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
-import junit.framework.TestCase;
-import org.junit.Before;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
@@ -25,12 +25,14 @@ import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-public class ConfigRawDiskServiceTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConfigRawDiskServiceTest {
     
     private String cachedOsName;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         cachedOsName = System.getProperty("os.name");
     }
     
@@ -41,8 +43,10 @@ public class ConfigRawDiskServiceTest extends TestCase {
     /**
      * 测试获取文件路径.
      */
-    public void testTargetFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class, String.class);
+    @Test
+    void testTargetFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class,
+                String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf");
         // 分解路径
@@ -61,8 +65,10 @@ public class ConfigRawDiskServiceTest extends TestCase {
     /**
      * 测试获取beta文件路径.
      */
-    public void testTargetBetaFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetBetaFile", String.class, String.class, String.class);
+    @Test
+    void testTargetBetaFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetBetaFile", String.class, String.class,
+                String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf");
         // 分解路径
@@ -81,12 +87,15 @@ public class ConfigRawDiskServiceTest extends TestCase {
     
     /**
      * 测试获取tag文件路径.
-     * @throws NoSuchMethodException  方法不存在异常
-     * @throws IllegalAccessException 非法访问异常
+     *
+     * @throws NoSuchMethodException     方法不存在异常
+     * @throws IllegalAccessException    非法访问异常
      * @throws InvocationTargetException 目标异常
      */
-    public void testTargetTagFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetTagFile", String.class, String.class, String.class, String.class);
+    @Test
+    void testTargetTagFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetTagFile", String.class, String.class,
+                String.class, String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf", "aaaadsaknkf");
         // 分解路径

@@ -24,15 +24,14 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -41,22 +40,20 @@ import java.util.Map;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_AGGR_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_CHANGED_ROW_MAPPER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 /**
- *  test for embedded config aggr.
+ * test for embedded config aggr.
+ *
  * @author shiyiyue
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-public class EmbeddedConfigInfoAggrPersistServiceImplTest {
-    
-    private EmbeddedConfigInfoAggrPersistServiceImpl embededConfigInfoAggrPersistService;
-    
-    @Mock
-    private DataSourceService dataSourceService;
+@ExtendWith(SpringExtension.class)
+class EmbeddedConfigInfoAggrPersistServiceImplTest {
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
@@ -70,8 +67,13 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
     @Mock
     DatabaseOperate databaseOperate;
     
-    @Before
-    public void before() {
+    private EmbeddedConfigInfoAggrPersistServiceImpl embededConfigInfoAggrPersistService;
+    
+    @Mock
+    private DataSourceService dataSourceService;
+    
+    @BeforeEach
+    void before() {
         embeddedStorageContextHolderMockedStatic = Mockito.mockStatic(EmbeddedStorageContextHolder.class);
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
@@ -83,15 +85,15 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
         embededConfigInfoAggrPersistService = new EmbeddedConfigInfoAggrPersistServiceImpl(databaseOperate);
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         embeddedStorageContextHolderMockedStatic.close();
     }
     
     @Test
-    public void testAddAggrConfigInfoOfEqualContent() {
+    void testAddAggrConfigInfoOfEqualContent() {
         String dataId = "dataId111";
         String group = "group";
         String tenant = "tenant";
@@ -108,11 +110,11 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
         
         boolean result = embededConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName,
                 content);
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
     
     @Test
-    public void testAddAggrConfigInfoOfAddNewContent() {
+    void testAddAggrConfigInfoOfAddNewContent() {
         String dataId = "dataId111";
         String group = "group";
         String tenant = "tenant";
@@ -129,11 +131,11 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
         //execute
         boolean result = embededConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName,
                 content);
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
     
     @Test
-    public void testAddAggrConfigInfoOfUpdateNotEqualContent() {
+    void testAddAggrConfigInfoOfUpdateNotEqualContent() {
         String dataId = "dataId111";
         String group = "group";
         String tenant = "tenant";
@@ -151,12 +153,12 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
         //mock update content
         boolean result = embededConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName,
                 content);
-        Assert.assertTrue(result);
+        assertTrue(result);
         
     }
     
     @Test
-    public void testBatchPublishAggrSuccess() {
+    void testBatchPublishAggrSuccess() {
         
         String dataId = "dataId111";
         String group = "group";
@@ -179,11 +181,11 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
         datumMap.put("d3", "c3");
         String appName = "appname1234";
         boolean result = embededConfigInfoAggrPersistService.batchPublishAggr(dataId, group, tenant, datumMap, appName);
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
     
     @Test
-    public void testAggrConfigInfoCount() {
+    void testAggrConfigInfoCount() {
         String dataId = "dataId11122";
         String group = "group";
         String tenant = "tenant";
@@ -192,12 +194,12 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
         Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))
                 .thenReturn(new Integer(101));
         int result = embededConfigInfoAggrPersistService.aggrConfigInfoCount(dataId, group, tenant);
-        Assert.assertEquals(101, result);
+        assertEquals(101, result);
         
     }
     
     @Test
-    public void testFindConfigInfoAggrByPage() {
+    void testFindConfigInfoAggrByPage() {
         String dataId = "dataId111";
         String group = "group";
         String tenant = "tenant";
@@ -217,13 +219,13 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
         int pageSize = 120;
         Page<ConfigInfoAggr> configInfoAggrByPage = embededConfigInfoAggrPersistService.findConfigInfoAggrByPage(dataId,
                 group, tenant, pageNo, pageSize);
-        Assert.assertEquals(101, configInfoAggrByPage.getTotalCount());
-        Assert.assertEquals(configInfoAggrs, configInfoAggrByPage.getPageItems());
+        assertEquals(101, configInfoAggrByPage.getTotalCount());
+        assertEquals(configInfoAggrs, configInfoAggrByPage.getPageItems());
         
     }
     
     @Test
-    public void testFindAllAggrGroup() {
+    void testFindAllAggrGroup() {
         List<ConfigInfoChanged> configList = new ArrayList<>();
         configList.add(create("dataId", 0));
         configList.add(create("dataId", 1));
@@ -232,7 +234,7 @@ public class EmbeddedConfigInfoAggrPersistServiceImplTest {
                 .thenReturn(configList);
         
         List<ConfigInfoChanged> allAggrGroup = embededConfigInfoAggrPersistService.findAllAggrGroup();
-        Assert.assertEquals(configList, allAggrGroup);
+        assertEquals(configList, allAggrGroup);
         
     }
     

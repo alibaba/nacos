@@ -35,25 +35,27 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DumpProcessorTest {
+@ExtendWith(MockitoExtension.class)
+class DumpProcessorTest {
     
     @Mock
     DynamicDataSource dynamicDataSource;
@@ -78,8 +80,8 @@ public class DumpProcessorTest {
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
-    @Before
-    public void init() throws Exception {
+    @BeforeEach
+    void init() throws Exception {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         when(EnvUtil.getNacosHome()).thenReturn(System.getProperty("user.home"));
@@ -107,8 +109,8 @@ public class DumpProcessorTest {
         return new ConfigRocksDbDiskService();
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         ConfigDiskServiceFactory.getInstance().clearAll();
@@ -118,7 +120,7 @@ public class DumpProcessorTest {
     }
     
     @Test
-    public void testDumpNormalAndRemove() throws IOException {
+    void testDumpNormalAndRemove() throws IOException {
         String dataId = "testDataId";
         String group = "testGroup";
         String tenant = "testTenant";
@@ -139,33 +141,33 @@ public class DumpProcessorTest {
         DumpTask dumpTask = new DumpTask(GroupKey2.getKey(dataId, group, tenant), false, false, false, null,
                 lastModified, handlerIp);
         boolean process = dumpProcessor.process(dumpTask);
-        Assert.assertTrue(process);
+        assertTrue(process);
         
         //Check cache
         CacheItem contentCache = ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant));
-        Assert.assertEquals(MD5Utils.md5Hex(content, "UTF-8"), contentCache.getConfigCache().getMd5Utf8());
-        Assert.assertEquals(time, contentCache.getConfigCache().getLastModifiedTs());
+        assertEquals(MD5Utils.md5Hex(content, "UTF-8"), contentCache.getConfigCache().getMd5Utf8());
+        assertEquals(time, contentCache.getConfigCache().getLastModifiedTs());
         //check disk
         String contentFromDisk = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
-        Assert.assertEquals(content, contentFromDisk);
+        assertEquals(content, contentFromDisk);
         
         // remove
         Mockito.when(configInfoPersistService.findConfigInfo(eq(dataId), eq(group), eq(tenant))).thenReturn(null);
         
         boolean processRemove = dumpProcessor.process(dumpTask);
-        Assert.assertTrue(processRemove);
+        assertTrue(processRemove);
         
         //Check cache
         CacheItem contentCacheAfterRemove = ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant));
-        Assert.assertTrue(contentCacheAfterRemove == null);
+        assertTrue(contentCacheAfterRemove == null);
         //check disk
         String contentFromDiskAfterRemove = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
-        Assert.assertNull(contentFromDiskAfterRemove);
+        assertNull(contentFromDiskAfterRemove);
         
     }
     
     @Test
-    public void testDumpBetaAndRemove() throws IOException {
+    void testDumpBetaAndRemove() throws IOException {
         String dataId = "testDataIdBeta";
         String group = "testGroup";
         String tenant = "testTenant";
@@ -188,35 +190,35 @@ public class DumpProcessorTest {
         DumpTask dumpTask = new DumpTask(GroupKey2.getKey(dataId, group, tenant), true, false, false, null,
                 lastModified, handlerIp);
         boolean process = dumpProcessor.process(dumpTask);
-        Assert.assertTrue(process);
+        assertTrue(process);
         
         //Check cache
         CacheItem contentCache = ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant));
-        Assert.assertEquals(MD5Utils.md5Hex(content, "UTF-8"), contentCache.getConfigCacheBeta().getMd5Utf8());
-        Assert.assertEquals(time, contentCache.getConfigCacheBeta().getLastModifiedTs());
-        Assert.assertTrue(contentCache.ips4Beta.containsAll(Arrays.asList(betaIps.split(","))));
+        assertEquals(MD5Utils.md5Hex(content, "UTF-8"), contentCache.getConfigCacheBeta().getMd5Utf8());
+        assertEquals(time, contentCache.getConfigCacheBeta().getLastModifiedTs());
+        assertTrue(contentCache.ips4Beta.containsAll(Arrays.asList(betaIps.split(","))));
         //check disk
         String contentFromDisk = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
-        Assert.assertEquals(content, contentFromDisk);
+        assertEquals(content, contentFromDisk);
         
         // remove
         Mockito.when(configInfoBetaPersistService.findConfigInfo4Beta(eq(dataId), eq(group), eq(tenant)))
                 .thenReturn(null);
         boolean processRemove = dumpProcessor.process(dumpTask);
-        Assert.assertTrue(processRemove);
+        assertTrue(processRemove);
         
         //Check cache
         CacheItem contentCacheAfterRemove = ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant));
-        Assert.assertTrue(contentCacheAfterRemove == null || contentCacheAfterRemove.getConfigCacheBeta() == null);
+        assertTrue(contentCacheAfterRemove == null || contentCacheAfterRemove.getConfigCacheBeta() == null);
         //check disk
         String contentFromDiskAfterRemove = ConfigDiskServiceFactory.getInstance()
                 .getBetaContent(dataId, group, tenant);
-        Assert.assertNull(contentFromDiskAfterRemove);
+        assertNull(contentFromDiskAfterRemove);
         
     }
     
     @Test
-    public void testDumpTagAndRemove() throws IOException {
+    void testDumpTagAndRemove() throws IOException {
         String dataId = "testDataIdBeta";
         String group = "testGroup";
         String tenant = "testTenant";
@@ -238,30 +240,30 @@ public class DumpProcessorTest {
         DumpTask dumpTask = new DumpTask(GroupKey2.getKey(dataId, group, tenant), false, false, true, tag, lastModified,
                 handlerIp);
         boolean process = dumpProcessor.process(dumpTask);
-        Assert.assertTrue(process);
+        assertTrue(process);
         
         //Check cache
         CacheItem contentCache = ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant));
-        Assert.assertEquals(MD5Utils.md5Hex(content, "UTF-8"), contentCache.getConfigCacheTags().get(tag).getMd5Utf8());
-        Assert.assertEquals(time, contentCache.getConfigCacheTags().get(tag).getLastModifiedTs());
+        assertEquals(MD5Utils.md5Hex(content, "UTF-8"), contentCache.getConfigCacheTags().get(tag).getMd5Utf8());
+        assertEquals(time, contentCache.getConfigCacheTags().get(tag).getLastModifiedTs());
         //check disk
         String contentFromDisk = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
-        Assert.assertEquals(content, contentFromDisk);
+        assertEquals(content, contentFromDisk);
         
         // remove
         Mockito.when(configInfoTagPersistService.findConfigInfo4Tag(eq(dataId), eq(group), eq(tenant), eq(tag)))
                 .thenReturn(null);
         boolean processRemove = dumpProcessor.process(dumpTask);
-        Assert.assertTrue(processRemove);
+        assertTrue(processRemove);
         
         //Check cache
         CacheItem contentCacheAfterRemove = ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant));
-        Assert.assertTrue(contentCacheAfterRemove == null || contentCache.getConfigCacheTags() == null
+        assertTrue(contentCacheAfterRemove == null || contentCache.getConfigCacheTags() == null
                 || contentCache.getConfigCacheTags().get(tag) == null);
         //check disk
         String contentFromDiskAfterRemove = ConfigDiskServiceFactory.getInstance()
                 .getTagContent(dataId, group, tenant, tag);
-        Assert.assertNull(contentFromDiskAfterRemove);
+        assertNull(contentFromDiskAfterRemove);
         
     }
 }

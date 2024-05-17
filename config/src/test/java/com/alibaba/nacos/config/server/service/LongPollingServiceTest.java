@@ -26,15 +26,16 @@ import com.alibaba.nacos.config.server.utils.MD5Util;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.connection.ConnectionControlManager;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.http.HttpServletRequest;
@@ -45,14 +46,18 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 
-@RunWith(MockitoJUnitRunner.class)
-public class LongPollingServiceTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class LongPollingServiceTest {
     
     LongPollingService longPollingService;
     
@@ -70,8 +75,8 @@ public class LongPollingServiceTest {
     
     MockedStatic<SwitchService> switchServiceMockedStatic;
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         longPollingService = new LongPollingService();
         switchServiceMockedStatic = Mockito.mockStatic(SwitchService.class);
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
@@ -83,8 +88,8 @@ public class LongPollingServiceTest {
         
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         configCacheServiceMockedStatic.close();
         if (!configExecutorMocked.isClosed()) {
             configExecutorMocked.close();
@@ -94,7 +99,7 @@ public class LongPollingServiceTest {
     }
     
     @Test
-    public void testAddLongPollingClientHasNotEqualsMd5() throws IOException {
+    void testAddLongPollingClientHasNotEqualsMd5() throws IOException {
         
         Map<String, String> clientMd5Map = new HashMap<>();
         String group = "group";
@@ -115,10 +120,10 @@ public class LongPollingServiceTest {
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
+                        () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
                 .thenReturn(false);
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
+                        () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
                 .thenReturn(true);
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         PrintWriter printWriter = Mockito.mock(PrintWriter.class);
@@ -134,7 +139,7 @@ public class LongPollingServiceTest {
     }
     
     @Test
-    public void testRejectByConnectionLimit() throws Exception {
+    void testRejectByConnectionLimit() throws Exception {
         //mock connection no limit
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         connectionCheckResponse.setSuccess(false);
@@ -159,7 +164,7 @@ public class LongPollingServiceTest {
     }
     
     @Test
-    public void testAddLongPollingClientAllEqualsMd5() throws IOException {
+    void testAddLongPollingClientAllEqualsMd5() throws IOException {
         //mock connection no limit
         ConnectionCheckResponse connectionCheckResponse = new ConnectionCheckResponse();
         connectionCheckResponse.setSuccess(true);
@@ -185,10 +190,10 @@ public class LongPollingServiceTest {
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         Mockito.when(httpServletRequest.startAsync()).thenReturn(Mockito.mock(AsyncContext.class));
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
+                        () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
                 .thenReturn(true);
         configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
+                        () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
                 .thenReturn(true);
         int propSize = 3;
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
@@ -203,7 +208,7 @@ public class LongPollingServiceTest {
     }
     
     @Test
-    public void testReceiveDataChangeEventAndNotify() throws Exception {
+    void testReceiveDataChangeEventAndNotify() throws Exception {
         configExecutorMocked.close();
         
         //mock connection no limit
@@ -240,12 +245,12 @@ public class LongPollingServiceTest {
         //test getSubscribleInfo by groupKey
         SampleResult subscribleInfo = longPollingService.getCollectSubscribleInfo(dataIdChanged, group, tenant);
         Map<String, String> lisentersGroupkeyStatus = subscribleInfo.getLisentersGroupkeyStatus();
-        Assert.assertFalse(lisentersGroupkeyStatus.isEmpty());
-        Assert.assertEquals("mockMd5", lisentersGroupkeyStatus.get(clientIp));
+        assertFalse(lisentersGroupkeyStatus.isEmpty());
+        assertEquals("mockMd5", lisentersGroupkeyStatus.get(clientIp));
         SampleResult collectSubscribleInfoByIp = longPollingService.getCollectSubscribleInfoByIp(clientIp);
         Map<String, String> lisentersGroupkeyStatus1 = collectSubscribleInfoByIp.getLisentersGroupkeyStatus();
-        Assert.assertFalse(lisentersGroupkeyStatus1.isEmpty());
-        Assert.assertEquals("mockMd5", lisentersGroupkeyStatus1.get(groupKeyChanged));
+        assertFalse(lisentersGroupkeyStatus1.isEmpty());
+        assertEquals("mockMd5", lisentersGroupkeyStatus1.get(groupKeyChanged));
         
         //test receive config change event
         LocalDataChangeEvent localDataChangeEvent = new LocalDataChangeEvent(groupKeyChanged);
@@ -260,7 +265,7 @@ public class LongPollingServiceTest {
     }
     
     @Test
-    public void testLongPollingTimeout() throws Exception {
+    void testLongPollingTimeout() throws Exception {
         configExecutorMocked.close();
         String dataIdChanged = "dataIdChanged";
         String group = "group";
