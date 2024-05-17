@@ -47,8 +47,7 @@ class ConfigRemoveRequestHandlerTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        configRemoveRequestHandler = new ConfigRemoveRequestHandler(configInfoPersistService,
-                configInfoTagPersistService);
+        configRemoveRequestHandler = new ConfigRemoveRequestHandler(configInfoPersistService, configInfoTagPersistService);
         Mockito.mockStatic(ConfigTraceService.class);
     }
     

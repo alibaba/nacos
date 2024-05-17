@@ -410,23 +410,19 @@ class CapacityServiceTest {
         GroupCapacity groupCapacity = new GroupCapacity();
         groupCapacity.setUsage(300);
         when(groupCapacityPersistService.getGroupCapacity(eq("testGroup"))).thenReturn(groupCapacity);
-        when(groupCapacityPersistService.updateGroupCapacity(eq("testGroup"), eq(0), eq(0), eq(0), eq(0))).thenReturn(
-                true);
+        when(groupCapacityPersistService.updateGroupCapacity(eq("testGroup"), eq(0), eq(0), eq(0), eq(0))).thenReturn(true);
         service.insertOrUpdateCapacity("testGroup", null, 0, 0, 0, 0);
         Mockito.verify(groupCapacityPersistService, times(1)).getGroupCapacity(eq("testGroup"));
-        Mockito.verify(groupCapacityPersistService, times(1))
-                .updateGroupCapacity(eq("testGroup"), eq(0), eq(0), eq(0), eq(0));
+        Mockito.verify(groupCapacityPersistService, times(1)).updateGroupCapacity(eq("testGroup"), eq(0), eq(0), eq(0), eq(0));
         
         //tenant is not null
         TenantCapacity tenantCapacity = new TenantCapacity();
         tenantCapacity.setTenant("testTenant");
         when(tenantCapacityPersistService.getTenantCapacity(eq("testTenant"))).thenReturn(tenantCapacity);
-        when(tenantCapacityPersistService.updateTenantCapacity(eq("testTenant"), eq(0), eq(0), eq(0),
-                eq(0))).thenReturn(true);
+        when(tenantCapacityPersistService.updateTenantCapacity(eq("testTenant"), eq(0), eq(0), eq(0), eq(0))).thenReturn(true);
         service.insertOrUpdateCapacity(null, "testTenant", 0, 0, 0, 0);
         Mockito.verify(tenantCapacityPersistService, times(1)).getTenantCapacity(eq("testTenant"));
-        Mockito.verify(tenantCapacityPersistService, times(1))
-                .updateTenantCapacity(eq("testTenant"), eq(0), eq(0), eq(0), eq(0));
+        Mockito.verify(tenantCapacityPersistService, times(1)).updateTenantCapacity(eq("testTenant"), eq(0), eq(0), eq(0), eq(0));
     }
     
     @Test

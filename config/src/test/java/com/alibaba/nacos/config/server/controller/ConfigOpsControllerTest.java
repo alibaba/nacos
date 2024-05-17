@@ -96,8 +96,7 @@ class ConfigOpsControllerTest {
     @Test
     void testUpdateLocalCacheFromStore() throws Exception {
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(
-                Constants.OPS_CONTROLLER_PATH + "/localCache");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.post(Constants.OPS_CONTROLLER_PATH + "/localCache");
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
     }
@@ -105,8 +104,8 @@ class ConfigOpsControllerTest {
     @Test
     void testSetLogLevel() throws Exception {
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(Constants.OPS_CONTROLLER_PATH + "/log")
-                .param("logName", "test").param("logLevel", "test");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(Constants.OPS_CONTROLLER_PATH + "/log").param("logName", "test")
+                .param("logLevel", "test");
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
     }
@@ -138,8 +137,8 @@ class ConfigOpsControllerTest {
         applicationUtilsMockedStatic.when(() -> ApplicationUtils.getBean(DatabaseOperate.class))
                 .thenReturn(Mockito.mock(DatabaseOperate.class));
         MockMultipartFile file = new MockMultipartFile("file", "test.zip", "application/zip", "test".getBytes());
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(
-                Constants.OPS_CONTROLLER_PATH + "/data/removal").file(file);
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.multipart(Constants.OPS_CONTROLLER_PATH + "/data/removal")
+                .file(file);
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
         

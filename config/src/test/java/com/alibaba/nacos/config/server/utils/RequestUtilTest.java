@@ -67,8 +67,7 @@ class RequestUtilTest {
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(request.getSession()).thenReturn(session);
-        Mockito.when(session.getAttribute(eq(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID)))
-                .thenReturn("test");
+        Mockito.when(session.getAttribute(eq(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID))).thenReturn("test");
         assertEquals("test", RequestUtil.getSrcUserName(request));
     }
     
@@ -77,8 +76,7 @@ class RequestUtilTest {
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
         HttpSession session = Mockito.mock(HttpSession.class);
         Mockito.when(request.getSession()).thenReturn(session);
-        Mockito.when(session.getAttribute(eq(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID)))
-                .thenReturn(null);
+        Mockito.when(session.getAttribute(eq(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID))).thenReturn(null);
         Mockito.when(request.getParameter(eq(Constants.USERNAME))).thenReturn("parameterName");
         assertEquals("parameterName", RequestUtil.getSrcUserName(request));
     }

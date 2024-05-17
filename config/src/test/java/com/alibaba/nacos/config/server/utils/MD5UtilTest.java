@@ -45,8 +45,7 @@ class MD5UtilTest {
     @Test
     void testCompareMd5() {
         
-        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(
-                ConfigCacheService.class);
+        final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         
         when(ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), anyString())).thenReturn(false);
         
@@ -114,8 +113,7 @@ class MD5UtilTest {
     void testGetClientMd5Map() {
         
         String configKeysString =
-                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
-                        + MD5Util.LINE_SEPARATOR_CHAR;
+                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2" + MD5Util.LINE_SEPARATOR_CHAR;
         
         Map<String, String> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
         
@@ -126,8 +124,8 @@ class MD5UtilTest {
     @Test
     void testGetClientMd5MapForNewProtocol() {
         String configKeysString =
-                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
-                        + MD5Util.WORD_SEPARATOR_CHAR + "test3" + MD5Util.LINE_SEPARATOR_CHAR;
+                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2" + MD5Util.WORD_SEPARATOR_CHAR
+                        + "test3" + MD5Util.LINE_SEPARATOR_CHAR;
         
         Map<String, String> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
         

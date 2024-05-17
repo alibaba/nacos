@@ -80,8 +80,7 @@ class EmbeddedHistoryConfigInfoPersistServiceImplTest {
         when(DynamicDataSource.getInstance()).thenReturn(dynamicDataSource);
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
-                .thenReturn(false);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false))).thenReturn(false);
         embeddedHistoryConfigInfoPersistService = new EmbeddedHistoryConfigInfoPersistServiceImpl(databaseOperate);
     }
     
@@ -107,14 +106,13 @@ class EmbeddedHistoryConfigInfoPersistServiceImplTest {
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setEncryptedDataKey("key23456");
         //expect insert success,verify insert invoked
-        embeddedHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp,
-                ops);
+        embeddedHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp, ops);
         
         //verify insert to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(id), eq(dataId), eq(group), eq(tenant),
-                        eq(appName), eq(content), eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(timestamp),
-                        eq(ops), eq(configInfo.getEncryptedDataKey())), times(1));
+                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(id), eq(dataId), eq(group), eq(tenant), eq(appName),
+                        eq(content), eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(timestamp), eq(ops),
+                        eq(configInfo.getEncryptedDataKey())), times(1));
     }
     
     @Test
@@ -152,8 +150,8 @@ class EmbeddedHistoryConfigInfoPersistServiceImplTest {
         Mockito.when(databaseOperate.queryMany(anyString(), eq(new Object[] {timestamp, startId, pageSize}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(list);
         //execute
-        List<ConfigInfoStateWrapper> deletedConfig = embeddedHistoryConfigInfoPersistService.findDeletedConfig(
-                timestamp, startId, pageSize);
+        List<ConfigInfoStateWrapper> deletedConfig = embeddedHistoryConfigInfoPersistService.findDeletedConfig(timestamp, startId,
+                pageSize);
         //expect verify
         assertEquals("data_id1", deletedConfig.get(0).getDataId());
         assertEquals("group_id1", deletedConfig.get(0).getGroup());
@@ -172,20 +170,19 @@ class EmbeddedHistoryConfigInfoPersistServiceImplTest {
         String tenant = "tenant34567";
         
         //mock count
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))
-                .thenReturn(300);
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class))).thenReturn(300);
         //mock list
         List<ConfigHistoryInfo> mockList = new ArrayList<>();
         mockList.add(createMockConfigHistoryInfo(0));
         mockList.add(createMockConfigHistoryInfo(1));
         mockList.add(createMockConfigHistoryInfo(2));
-        Mockito.when(databaseOperate.queryMany(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(HISTORY_LIST_ROW_MAPPER))).thenReturn(mockList);
+        Mockito.when(databaseOperate.queryMany(anyString(), eq(new Object[] {dataId, group, tenant}), eq(HISTORY_LIST_ROW_MAPPER)))
+                .thenReturn(mockList);
         int pageSize = 100;
         int pageNo = 2;
         //execute & verify
-        Page<ConfigHistoryInfo> historyReturn = embeddedHistoryConfigInfoPersistService.findConfigHistory(dataId, group,
-                tenant, pageNo, pageSize);
+        Page<ConfigHistoryInfo> historyReturn = embeddedHistoryConfigInfoPersistService.findConfigHistory(dataId, group, tenant, pageNo,
+                pageSize);
         assertEquals(mockList, historyReturn.getPageItems());
         assertEquals(300, historyReturn.getTotalCount());
         
@@ -221,8 +218,7 @@ class EmbeddedHistoryConfigInfoPersistServiceImplTest {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         
         //mock count
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {timestamp}), eq(Integer.class)))
-                .thenReturn(308);
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {timestamp}), eq(Integer.class))).thenReturn(308);
         //execute & verify
         int count = embeddedHistoryConfigInfoPersistService.findConfigHistoryCountByTime(timestamp);
         assertEquals(308, count);

@@ -80,8 +80,8 @@ public class MergeTaskProcessorTest {
         inetUtilsMockedStatic = Mockito.mockStatic(InetUtils.class);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", dataSourceService);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", dataSourceService);
-        mergeTaskProcessor = new MergeTaskProcessor(configInfoPersistService, configInfoAggrPersistService,
-                configInfoTagPersistService, mergeDatumService);
+        mergeTaskProcessor = new MergeTaskProcessor(configInfoPersistService, configInfoAggrPersistService, configInfoTagPersistService,
+                mergeDatumService);
         inetUtilsMockedStatic.when(InetUtils::getSelfIP).thenReturn("127.0.0.1");
         after();
     }
@@ -108,8 +108,8 @@ public class MergeTaskProcessorTest {
         datumPage.getPageItems().add(configInfoAggr1);
         datumPage.getPageItems().add(configInfoAggr2);
         
-        when(configInfoAggrPersistService.findConfigInfoAggrByPage(eq(dataId), eq(group), eq(tenant), anyInt(),
-                anyInt())).thenReturn(datumPage);
+        when(configInfoAggrPersistService.findConfigInfoAggrByPage(eq(dataId), eq(group), eq(tenant), anyInt(), anyInt())).thenReturn(
+                datumPage);
         
         when(configInfoPersistService.insertOrUpdate(eq(null), eq(null), any(ConfigInfo.class), eq(null))).thenReturn(
                 new ConfigOperateResult());
@@ -134,8 +134,7 @@ public class MergeTaskProcessorTest {
         MergeDataTask mergeDataTask = new MergeDataTask(dataId, group, tenant, "127.0.0.1");
         mergeTaskProcessor.process(mergeDataTask);
         
-        Mockito.verify(configInfoPersistService, times(1))
-                .insertOrUpdate(eq(null), eq(null), any(ConfigInfo.class), eq(null));
+        Mockito.verify(configInfoPersistService, times(1)).insertOrUpdate(eq(null), eq(null), any(ConfigInfo.class), eq(null));
         Thread.sleep(1000L);
         assertTrue(reference.get() != null);
         
@@ -169,12 +168,10 @@ public class MergeTaskProcessorTest {
         });
         
         MergeDataTask mergeDataTask = new MergeDataTask(dataId, group, tenant, "127.0.0.1");
-        Mockito.doNothing().when(configInfoPersistService)
-                .removeConfigInfo(eq(dataId), eq(group), eq(tenant), eq("127.0.0.1"), eq(null));
+        Mockito.doNothing().when(configInfoPersistService).removeConfigInfo(eq(dataId), eq(group), eq(tenant), eq("127.0.0.1"), eq(null));
         //Mockito.doNothing().when(configInfoTagPersistService).removeConfigInfoTag(eq(dataId), eq(group), eq(tenant),eq(),eq("127.0.0.1"),eq(null));
         mergeTaskProcessor.process(mergeDataTask);
-        Mockito.verify(configInfoPersistService, times(1))
-                .removeConfigInfo(eq(dataId), eq(group), eq(tenant), eq("127.0.0.1"), eq(null));
+        Mockito.verify(configInfoPersistService, times(1)).removeConfigInfo(eq(dataId), eq(group), eq(tenant), eq("127.0.0.1"), eq(null));
         Thread.sleep(1000L);
         assertTrue(reference.get() != null);
     }
@@ -196,8 +193,7 @@ public class MergeTaskProcessorTest {
             @Override
             public void onEvent(Event event) {
                 ConfigDataChangeEvent event1 = (ConfigDataChangeEvent) event;
-                if (event1.dataId.equals(dataId) && event1.group.equals(group) && tenant.equals(event1.tenant)
-                        && tag.equals(event1.tag)) {
+                if (event1.dataId.equals(dataId) && event1.group.equals(group) && tenant.equals(event1.tenant) && tag.equals(event1.tag)) {
                     reference.set((ConfigDataChangeEvent) event);
                 }
             }
@@ -227,8 +223,7 @@ public class MergeTaskProcessorTest {
         String dataId = "dataId12345";
         String group = "group123";
         String tenant = "tenant1234";
-        when(configInfoAggrPersistService.aggrConfigInfoCount(eq(dataId), eq(group), eq(tenant))).thenThrow(
-                new NullPointerException());
+        when(configInfoAggrPersistService.aggrConfigInfoCount(eq(dataId), eq(group), eq(tenant))).thenThrow(new NullPointerException());
         
         MergeDataTask mergeDataTask = new MergeDataTask(dataId, group, tenant, "127.0.0.1");
         

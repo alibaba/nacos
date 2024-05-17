@@ -55,10 +55,8 @@ class GlobalExceptionHandlerTest {
     @Test
     void testNacosRunTimeExceptionHandler() throws Exception {
         // 设置HistoryControllerV2的行为，使其抛出NacosRuntimeException并被GlobalExceptionHandler捕获处理
-        when(historyControllerV2.getConfigsByTenant("test")).thenThrow(
-                        new NacosRuntimeException(NacosException.INVALID_PARAM))
-                .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR))
-                .thenThrow(new NacosRuntimeException(503));
+        when(historyControllerV2.getConfigsByTenant("test")).thenThrow(new NacosRuntimeException(NacosException.INVALID_PARAM))
+                .thenThrow(new NacosRuntimeException(NacosException.SERVER_ERROR)).thenThrow(new NacosRuntimeException(503));
         
         // 执行请求并验证响应码
         ResultActions resultActions = mockMvc.perform(get("/v2/cs/history/configs").param("namespaceId", "test"));

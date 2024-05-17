@@ -66,13 +66,12 @@ class ConfigChangeBatchListenRequestHandlerTest {
         
         final String groupKeyCopy = groupKey;
         configCacheServiceMockedStatic.when(
-                        () -> ConfigCacheService.isUptodate(eq(groupKeyCopy), Mockito.any(), Mockito.any(), Mockito.any()))
-                .thenReturn(false);
+                () -> ConfigCacheService.isUptodate(eq(groupKeyCopy), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(false);
         ConfigBatchListenRequest configChangeListenRequest = new ConfigBatchListenRequest();
         configChangeListenRequest.addConfigListenContext(group, dataId, tenant, " ");
         try {
-            ConfigChangeBatchListenResponse configChangeBatchListenResponse = configQueryRequestHandler.handle(
-                    configChangeListenRequest, requestMeta);
+            ConfigChangeBatchListenResponse configChangeBatchListenResponse = configQueryRequestHandler.handle(configChangeListenRequest,
+                    requestMeta);
             boolean hasChange = false;
             for (ConfigChangeBatchListenResponse.ConfigContext changedConfig : configChangeBatchListenResponse.getChangedConfigs()) {
                 if (changedConfig.getDataId().equals(dataId)) {

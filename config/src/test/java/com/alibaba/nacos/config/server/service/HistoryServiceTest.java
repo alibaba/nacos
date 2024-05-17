@@ -85,11 +85,9 @@ class HistoryServiceTest {
         page.setPagesAvailable(2);
         page.setPageItems(configHistoryInfoList);
         
-        when(historyConfigInfoPersistService.findConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1,
-                10)).thenReturn(page);
+        when(historyConfigInfoPersistService.findConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10)).thenReturn(page);
         
-        Page<ConfigHistoryInfo> pageResult = historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1,
-                10);
+        Page<ConfigHistoryInfo> pageResult = historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10);
         
         verify(historyConfigInfoPersistService).findConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1, 10);
         
@@ -115,8 +113,7 @@ class HistoryServiceTest {
         
         when(historyConfigInfoPersistService.detailConfigHistory(1L)).thenReturn(configHistoryInfo);
         
-        ConfigHistoryInfo resConfigHistoryInfo = historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
-                TEST_TENANT, 1L);
+        ConfigHistoryInfo resConfigHistoryInfo = historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
         
         verify(historyConfigInfoPersistService).detailConfigHistory(1L);
         
@@ -139,8 +136,7 @@ class HistoryServiceTest {
         
         when(historyConfigInfoPersistService.detailPreviousConfigHistory(1L)).thenReturn(configHistoryInfo);
         
-        ConfigHistoryInfo resConfigHistoryInfo = historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
-                TEST_TENANT, 1L);
+        ConfigHistoryInfo resConfigHistoryInfo = historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_TENANT, 1L);
         
         verify(historyConfigInfoPersistService).detailPreviousConfigHistory(1L);
         

@@ -67,8 +67,7 @@ class ConfigCacheServiceTest {
     void before() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         configDiskServiceFactoryMockedStatic = Mockito.mockStatic(ConfigDiskServiceFactory.class);
-        configDiskServiceFactoryMockedStatic.when(() -> ConfigDiskServiceFactory.getInstance())
-                .thenReturn(configDiskService);
+        configDiskServiceFactoryMockedStatic.when(() -> ConfigDiskServiceFactory.getInstance()).thenReturn(configDiskService);
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
     }
     
@@ -93,8 +92,7 @@ class ConfigCacheServiceTest {
         long ts = System.currentTimeMillis();
         String type = "json";
         String encryptedDataKey = "key12345";
-        boolean result = ConfigCacheService.dumpWithMd5(dataId, group, tenant, content, md5, ts, type,
-                encryptedDataKey);
+        boolean result = ConfigCacheService.dumpWithMd5(dataId, group, tenant, content, md5, ts, type, encryptedDataKey);
         assertTrue(result);
         //verify cache.
         CacheItem contentCache1 = ConfigCacheService.getContentCache(groupKey);
@@ -134,8 +132,7 @@ class ConfigCacheServiceTest {
                 .saveToDisk(anyString(), anyString(), anyString(), anyString());
         try {
             long newTs3 = newTs2 + 123L;
-            boolean dumpErrorResult = ConfigCacheService.dump(dataId, group, tenant, contentNew + "234567", newTs3,
-                    type, encryptedDataKey);
+            boolean dumpErrorResult = ConfigCacheService.dump(dataId, group, tenant, contentNew + "234567", newTs3, type, encryptedDataKey);
             envUtilMockedStatic.verify(() -> EnvUtil.systemExit(), times(1));
             assertFalse(dumpErrorResult);
         } catch (Throwable throwable) {
@@ -163,8 +160,7 @@ class ConfigCacheServiceTest {
         List<String> betaIps = Arrays.asList("127.0.0.1", "127.0.0.2");
         long ts = System.currentTimeMillis();
         //init beta cache
-        boolean result = ConfigCacheService.dumpBeta(dataId, group, tenant, content, ts, String.join(",", betaIps),
-                encryptedDataKey);
+        boolean result = ConfigCacheService.dumpBeta(dataId, group, tenant, content, ts, String.join(",", betaIps), encryptedDataKey);
         assertTrue(result);
         CacheItem contentCache = ConfigCacheService.getContentCache(groupKey);
         assertEquals(md5, contentCache.getConfigCacheBeta().getMd5Utf8());
@@ -178,8 +174,8 @@ class ConfigCacheServiceTest {
         String contentNew = content + tsNew;
         String md5New = MD5Utils.md5Hex(contentNew, "UTF-8");
         List<String> betaIpsNew = Arrays.asList("127.0.0.1", "127.0.0.2", "127.0.0.3");
-        boolean resultNew = ConfigCacheService.dumpBeta(dataId, group, tenant, contentNew, tsNew,
-                String.join(",", betaIpsNew), encryptedDataKey);
+        boolean resultNew = ConfigCacheService.dumpBeta(dataId, group, tenant, contentNew, tsNew, String.join(",", betaIpsNew),
+                encryptedDataKey);
         assertTrue(resultNew);
         assertEquals(md5New, contentCache.getConfigCacheBeta().getMd5Utf8());
         assertEquals(tsNew, contentCache.getConfigCacheBeta().getLastModifiedTs());
@@ -191,22 +187,21 @@ class ConfigCacheServiceTest {
         long tsOld = tsNew - 1;
         String contentWithOldTs = "contentWithOldTs" + tsOld;
         List<String> betaIpsWithOldTs = Arrays.asList("127.0.0.1", "127.0.0.2", "127.0.0.4");
-        boolean resultOld = ConfigCacheService.dumpBeta(dataId, group, tenant, contentWithOldTs, tsOld,
-                String.join(",", betaIpsWithOldTs), encryptedDataKey);
+        boolean resultOld = ConfigCacheService.dumpBeta(dataId, group, tenant, contentWithOldTs, tsOld, String.join(",", betaIpsWithOldTs),
+                encryptedDataKey);
         assertTrue(resultOld);
         assertEquals(md5New, contentCache.getConfigCacheBeta().getMd5Utf8());
         assertEquals(tsNew, contentCache.getConfigCacheBeta().getLastModifiedTs());
         assertEquals(encryptedDataKey, contentCache.getConfigCacheBeta().getEncryptedDataKey());
         assertEquals(betaIpsNew, contentCache.getIps4Beta());
-        Mockito.verify(configDiskService, times(0))
-                .saveBetaToDisk(eq(dataId), eq(group), eq(tenant), eq(contentWithOldTs));
+        Mockito.verify(configDiskService, times(0)).saveBetaToDisk(eq(dataId), eq(group), eq(tenant), eq(contentWithOldTs));
         
         //ts new ,md5 not update,beta ips list changes
         long tsNew2 = tsNew + 1;
         String contentWithPrev = contentNew;
         List<String> betaIpsNew2 = Arrays.asList("127.0.0.1", "127.0.0.2", "127.0.0.4", "127.0.0.5");
-        boolean resultNew2 = ConfigCacheService.dumpBeta(dataId, group, tenant, contentWithPrev, tsNew2,
-                String.join(",", betaIpsNew2), encryptedDataKey);
+        boolean resultNew2 = ConfigCacheService.dumpBeta(dataId, group, tenant, contentWithPrev, tsNew2, String.join(",", betaIpsNew2),
+                encryptedDataKey);
         assertTrue(resultNew2);
         assertEquals(md5New, contentCache.getConfigCacheBeta().getMd5Utf8());
         assertEquals(tsNew2, contentCache.getConfigCacheBeta().getLastModifiedTs());
@@ -217,8 +212,8 @@ class ConfigCacheServiceTest {
         long tsNew3 = tsNew2 + 1;
         String contentWithPrev2 = contentNew;
         List<String> betaIpsNew3 = betaIpsNew2;
-        boolean resultNew3 = ConfigCacheService.dumpBeta(dataId, group, tenant, contentWithPrev2, tsNew3,
-                String.join(",", betaIpsNew3), encryptedDataKey);
+        boolean resultNew3 = ConfigCacheService.dumpBeta(dataId, group, tenant, contentWithPrev2, tsNew3, String.join(",", betaIpsNew3),
+                encryptedDataKey);
         assertTrue(resultNew3);
         assertEquals(md5New, contentCache.getConfigCacheBeta().getMd5Utf8());
         assertEquals(tsNew3, contentCache.getConfigCacheBeta().getLastModifiedTs());
@@ -229,8 +224,8 @@ class ConfigCacheServiceTest {
         long tsNew4 = tsNew3;
         String contentWithPrev4 = contentNew;
         List<String> betaIpsNew4 = betaIpsNew2;
-        boolean resultNew4 = ConfigCacheService.dumpBeta(dataId, group, tenant, contentWithPrev4, tsNew4,
-                String.join(",", betaIpsNew4), encryptedDataKey);
+        boolean resultNew4 = ConfigCacheService.dumpBeta(dataId, group, tenant, contentWithPrev4, tsNew4, String.join(",", betaIpsNew4),
+                encryptedDataKey);
         assertTrue(resultNew4);
         assertEquals(md5New, contentCache.getConfigCacheBeta().getMd5Utf8());
         assertEquals(tsNew3, contentCache.getConfigCacheBeta().getLastModifiedTs());
@@ -259,8 +254,7 @@ class ConfigCacheServiceTest {
         //init dump tag
         boolean dumpTagResult = ConfigCacheService.dumpTag(dataId, group, tenant, tag, content, ts, encryptedDataKey);
         assertTrue(dumpTagResult);
-        Mockito.verify(configDiskService, times(1))
-                .saveTagToDisk(eq(dataId), eq(group), eq(tenant), eq(tag), eq(content));
+        Mockito.verify(configDiskService, times(1)).saveTagToDisk(eq(dataId), eq(group), eq(tenant), eq(tag), eq(content));
         CacheItem contentCache = ConfigCacheService.getContentCache(groupKey);
         ConfigCache configCacheTag = contentCache.getConfigCacheTags().get(tag);
         assertEquals(ts, configCacheTag.getLastModifiedTs());
@@ -276,26 +270,22 @@ class ConfigCacheServiceTest {
         assertEquals(md5New, configCacheTag.getMd5Utf8());
         assertEquals(tsNew, configCacheTag.getLastModifiedTs());
         assertEquals(encryptedDataKey, configCacheTag.getEncryptedDataKey());
-        Mockito.verify(configDiskService, times(1))
-                .saveTagToDisk(eq(dataId), eq(group), eq(tenant), eq(tag), eq(contentNew));
+        Mockito.verify(configDiskService, times(1)).saveTagToDisk(eq(dataId), eq(group), eq(tenant), eq(tag), eq(contentNew));
         
         //ts old ,md5 update
         long tsOld = tsNew - 1;
         String contentWithOldTs = "contentWithOldTs" + tsOld;
-        boolean resultOld = ConfigCacheService.dumpTag(dataId, group, tenant, tag, contentWithOldTs, tsOld,
-                encryptedDataKey);
+        boolean resultOld = ConfigCacheService.dumpTag(dataId, group, tenant, tag, contentWithOldTs, tsOld, encryptedDataKey);
         assertTrue(resultOld);
         assertEquals(md5New, configCacheTag.getMd5Utf8());
         assertEquals(tsNew, configCacheTag.getLastModifiedTs());
         assertEquals(encryptedDataKey, configCacheTag.getEncryptedDataKey());
-        Mockito.verify(configDiskService, times(0))
-                .saveTagToDisk(eq(dataId), eq(group), eq(tenant), eq(tag), eq(contentWithOldTs));
+        Mockito.verify(configDiskService, times(0)).saveTagToDisk(eq(dataId), eq(group), eq(tenant), eq(tag), eq(contentWithOldTs));
         
         //ts new only,md5 not update
         long tsNew2 = tsNew + 1;
         String contentWithPrev2 = contentNew;
-        boolean resultNew2 = ConfigCacheService.dumpTag(dataId, group, tenant, tag, contentWithPrev2, tsNew2,
-                encryptedDataKey);
+        boolean resultNew2 = ConfigCacheService.dumpTag(dataId, group, tenant, tag, contentWithPrev2, tsNew2, encryptedDataKey);
         assertTrue(resultNew2);
         assertEquals(md5New, configCacheTag.getMd5Utf8());
         assertEquals(tsNew2, configCacheTag.getLastModifiedTs());
@@ -304,8 +294,7 @@ class ConfigCacheServiceTest {
         //ts not update,md5 not update
         long tsNew3 = tsNew2;
         String contentWithPrev3 = contentNew;
-        boolean resultNew3 = ConfigCacheService.dumpTag(dataId, group, tenant, tag, contentWithPrev3, tsNew3,
-                encryptedDataKey);
+        boolean resultNew3 = ConfigCacheService.dumpTag(dataId, group, tenant, tag, contentWithPrev3, tsNew3, encryptedDataKey);
         assertTrue(resultNew3);
         assertEquals(md5New, configCacheTag.getMd5Utf8());
         assertEquals(tsNew3, configCacheTag.getLastModifiedTs());

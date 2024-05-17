@@ -82,8 +82,7 @@ class LongPollingServiceTest {
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         configExecutorMocked = Mockito.mockStatic(ConfigExecutor.class);
         connectionControlManagerMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
-        connectionControlManagerMockedStatic.when(() -> ControlManagerCenter.getInstance())
-                .thenReturn(controlManagerCenter);
+        connectionControlManagerMockedStatic.when(() -> ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
         Mockito.when(controlManagerCenter.getConnectionControlManager()).thenReturn(connectionControlManager);
         
     }
@@ -114,16 +113,13 @@ class LongPollingServiceTest {
         clientMd5Map.put(groupKeyNotEquals, md5NotEquals1);
         
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
-                .thenReturn(null);
+        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER))).thenReturn(null);
         String clientIp = "192.168.0.1";
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         
         configCacheServiceMockedStatic.when(
-                        () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
-                .thenReturn(false);
-        configCacheServiceMockedStatic.when(
-                        () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
+                () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null))).thenReturn(false);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
                 .thenReturn(true);
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         PrintWriter printWriter = Mockito.mock(PrintWriter.class);
@@ -149,8 +145,7 @@ class LongPollingServiceTest {
         Mockito.when(httpServletResponse.getWriter()).thenReturn(printWriter);
         
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
-        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
-                .thenReturn(null);
+        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER))).thenReturn(null);
         String clientIp = "192.168.0.1";
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         Mockito.when(httpServletRequest.startAsync()).thenReturn(Mockito.mock(AsyncContext.class));
@@ -184,16 +179,13 @@ class LongPollingServiceTest {
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("5000");
-        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
-                .thenReturn(null);
+        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER))).thenReturn(null);
         String clientIp = "192.168.0.1";
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         Mockito.when(httpServletRequest.startAsync()).thenReturn(Mockito.mock(AsyncContext.class));
         configCacheServiceMockedStatic.when(
-                        () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null)))
-                .thenReturn(true);
-        configCacheServiceMockedStatic.when(
-                        () -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
+                () -> ConfigCacheService.isUptodate(eq(groupKeyNotEquals), eq(md5NotEquals1), eq(clientIp), eq(null))).thenReturn(true);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.isUptodate(eq(groupKeyEquals), eq(md5Equals0), eq(clientIp), eq(null)))
                 .thenReturn(true);
         int propSize = 3;
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
@@ -202,8 +194,7 @@ class LongPollingServiceTest {
         //expect response not returned
         Mockito.verify(httpServletResponse, times(0)).setStatus(anyInt());
         //expect to schedule a task
-        configExecutorMocked.verify(
-                () -> ConfigExecutor.executeLongPolling(any(LongPollingService.ClientLongPolling.class)), times(1));
+        configExecutorMocked.verify(() -> ConfigExecutor.executeLongPolling(any(LongPollingService.ClientLongPolling.class)), times(1));
         
     }
     
@@ -228,8 +219,7 @@ class LongPollingServiceTest {
         Mockito.when(httpServletResponse.getWriter()).thenReturn(printWriter);
         
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("5000");
-        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
-                .thenReturn(null);
+        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER))).thenReturn(null);
         String clientIp = "192.168.0.1";
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         AsyncContext asyncContext = Mockito.mock(AsyncContext.class);
@@ -237,8 +227,8 @@ class LongPollingServiceTest {
         Mockito.when(asyncContext.getRequest()).thenReturn(httpServletRequest);
         Mockito.when(asyncContext.getResponse()).thenReturn(httpServletResponse);
         
-        configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), eq(null))).thenReturn(true);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), eq(null)))
+                .thenReturn(true);
         
         longPollingService.addLongPollingClient(httpServletRequest, httpServletResponse, clientMd5Map, 3);
         
@@ -279,21 +269,19 @@ class LongPollingServiceTest {
         
         Map<String, String> clientMd5Map = new HashMap<>();
         clientMd5Map.put(groupKeyChanged, "md5");
-        switchServiceMockedStatic.when(() -> SwitchService.getSwitchInteger(eq("MIN_LONG_POOLING_TIMEOUT"), eq(10000)))
-                .thenReturn(1000);
+        switchServiceMockedStatic.when(() -> SwitchService.getSwitchInteger(eq("MIN_LONG_POOLING_TIMEOUT"), eq(10000))).thenReturn(1000);
         HttpServletRequest httpServletRequest = Mockito.mock(HttpServletRequest.class);
         
         Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_HEADER))).thenReturn("1000");
-        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER)))
-                .thenReturn(null);
+        Mockito.when(httpServletRequest.getHeader(eq(LongPollingService.LONG_POLLING_NO_HANG_UP_HEADER))).thenReturn(null);
         String clientIp = "192.168.0.1";
         Mockito.when(httpServletRequest.getHeader(eq("X-Forwarded-For"))).thenReturn(clientIp);
         AsyncContext asyncContext = Mockito.mock(AsyncContext.class);
         Mockito.when(httpServletRequest.startAsync()).thenReturn(asyncContext);
         Mockito.when(asyncContext.getRequest()).thenReturn(httpServletRequest);
         
-        configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), eq(null))).thenReturn(true);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), eq(null)))
+                .thenReturn(true);
         HttpServletResponse httpServletResponse = Mockito.mock(HttpServletResponse.class);
         longPollingService.addLongPollingClient(httpServletRequest, httpServletResponse, clientMd5Map, 3);
         

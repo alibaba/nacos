@@ -31,9 +31,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class YamlParserUtilTest {
     
     private static final String CONFIG_METADATA_STRING =
-            "metadata:\n" + "- dataId: testData1\n" + "  group: testGroup1\n" + "  type: text\n"
-                    + "- appName: testAppName\n" + "  dataId: testData2\n" + "  desc: test desc\n"
-                    + "  group: testGroup2\n" + "  type: yaml\n";
+            "metadata:\n" + "- dataId: testData1\n" + "  group: testGroup1\n" + "  type: text\n" + "- appName: testAppName\n"
+                    + "  dataId: testData2\n" + "  desc: test desc\n" + "  group: testGroup2\n" + "  type: yaml\n";
     
     private ConfigMetadata.ConfigExportItem item1;
     

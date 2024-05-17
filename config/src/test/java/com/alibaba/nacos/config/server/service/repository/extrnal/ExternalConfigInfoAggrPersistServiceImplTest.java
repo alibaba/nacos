@@ -87,8 +87,7 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         when(dataSourceService.getTransactionTemplate()).thenReturn(transactionTemplate);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
-                .thenReturn(false);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false))).thenReturn(false);
         externalConfigInfoAggrPersistService = new ExternalConfigInfoAggrPersistServiceImpl();
         
     }
@@ -111,11 +110,10 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         
         //mock query datumId and equal with current content param.
         String existContent = "content1234";
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}),
-                eq(String.class))).thenReturn(existContent);
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}), eq(String.class))).thenReturn(
+                existContent);
         
-        boolean result = externalConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName,
-                content);
+        boolean result = externalConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName, content);
         assertTrue(result);
     }
     
@@ -129,15 +127,14 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         String content = "content1234";
         
         //mock query datumId and throw EmptyResultDataAccessException.
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}),
-                eq(String.class))).thenThrow(new EmptyResultDataAccessException(1));
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}), eq(String.class))).thenThrow(
+                new EmptyResultDataAccessException(1));
         //mock insert success
         when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(datumId), eq(appName), eq(content),
                 any(Timestamp.class))).thenReturn(1);
         
         //execute
-        boolean result = externalConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName,
-                content);
+        boolean result = externalConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName, content);
         assertTrue(result);
     }
     
@@ -152,14 +149,13 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         
         //mock query datumId
         String existContent = "existContent111";
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}),
-                eq(String.class))).thenReturn(existContent);
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}), eq(String.class))).thenReturn(
+                existContent);
         //mock update success,return 1
         when(jdbcTemplate.update(anyString(), eq(content), any(Timestamp.class), eq(dataId), eq(group), eq(tenant),
                 eq(datumId))).thenReturn(1);
         //mock update content
-        boolean result = externalConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName,
-                content);
+        boolean result = externalConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName, content);
         assertTrue(result);
         
     }
@@ -174,8 +170,8 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         String content = "content1234";
         
         //mock query datumId and throw EmptyResultDataAccessException.
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}),
-                eq(String.class))).thenThrow(new CannotGetJdbcConnectionException("mock exp"));
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}), eq(String.class))).thenThrow(
+                new CannotGetJdbcConnectionException("mock exp"));
         try {
             externalConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName, content);
             assertTrue(false);
@@ -191,19 +187,15 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         String group = "group";
         String tenant = "tenant";
         //mock query datumId and equal with current content param.
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, "d1"}),
-                eq(String.class))).thenReturn("c1");
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, "d2"}),
-                eq(String.class))).thenReturn("c2");
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, "d3"}),
-                eq(String.class))).thenReturn("c3");
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, "d1"}), eq(String.class))).thenReturn("c1");
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, "d2"}), eq(String.class))).thenReturn("c2");
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, "d3"}), eq(String.class))).thenReturn("c3");
         Map<String, String> datumMap = new HashMap<>();
         datumMap.put("d1", "c1");
         datumMap.put("d2", "c2");
         datumMap.put("d3", "c3");
         String appName = "appname1234";
-        boolean result = externalConfigInfoAggrPersistService.batchPublishAggr(dataId, group, tenant, datumMap,
-                appName);
+        boolean result = externalConfigInfoAggrPersistService.batchPublishAggr(dataId, group, tenant, datumMap, appName);
         assertTrue(result);
     }
     
@@ -214,15 +206,14 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         String group = "group";
         String tenant = "tenant";
         //mock query datumId and equal with current content param.
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, "d1"}),
-                eq(String.class))).thenThrow(new TransactionSystemException("c1t fail"));
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, "d1"}), eq(String.class))).thenThrow(
+                new TransactionSystemException("c1t fail"));
         Map<String, String> datumMap = new HashMap<>();
         datumMap.put("d1", "c1");
         datumMap.put("d2", "c2");
         datumMap.put("d3", "c3");
         String appName = "appname1234";
-        boolean result = externalConfigInfoAggrPersistService.batchPublishAggr(dataId, group, tenant, datumMap,
-                appName);
+        boolean result = externalConfigInfoAggrPersistService.batchPublishAggr(dataId, group, tenant, datumMap, appName);
         assertFalse(result);
     }
     
@@ -233,8 +224,7 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         String tenant = "tenant";
         
         //mock select count of aggr.
-        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), eq(dataId), eq(group), eq(tenant))).thenReturn(
-                new Integer(101));
+        when(jdbcTemplate.queryForObject(anyString(), eq(Integer.class), eq(dataId), eq(group), eq(tenant))).thenReturn(new Integer(101));
         int result = externalConfigInfoAggrPersistService.aggrConfigInfoCount(dataId, group, tenant);
         assertEquals(101, result);
         
@@ -247,20 +237,19 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         String tenant = "tenant";
         
         //mock query count.
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(Integer.class))).thenReturn(101);
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class))).thenReturn(101);
         //mock query page list
         List<ConfigInfoAggr> configInfoAggrs = new ArrayList<>();
         configInfoAggrs.add(new ConfigInfoAggr());
         configInfoAggrs.add(new ConfigInfoAggr());
         configInfoAggrs.add(new ConfigInfoAggr());
         
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(CONFIG_INFO_AGGR_ROW_MAPPER))).thenReturn(configInfoAggrs);
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_AGGR_ROW_MAPPER))).thenReturn(
+                configInfoAggrs);
         int pageNo = 1;
         int pageSize = 120;
-        Page<ConfigInfoAggr> configInfoAggrByPage = externalConfigInfoAggrPersistService.findConfigInfoAggrByPage(
-                dataId, group, tenant, pageNo, pageSize);
+        Page<ConfigInfoAggr> configInfoAggrByPage = externalConfigInfoAggrPersistService.findConfigInfoAggrByPage(dataId, group, tenant,
+                pageNo, pageSize);
         assertEquals(101, configInfoAggrByPage.getTotalCount());
         assertEquals(configInfoAggrs, configInfoAggrByPage.getPageItems());
         
@@ -273,8 +262,8 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         String tenant = "tenant";
         
         //mock query count exception.
-        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(Integer.class))).thenThrow(new CannotGetJdbcConnectionException("mock fail222"));
+        when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class))).thenThrow(
+                new CannotGetJdbcConnectionException("mock fail222"));
         
         try {
             int pageNo = 1;
@@ -292,8 +281,7 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         configList.add(create("dataId", 0));
         configList.add(create("dataId", 1));
         //mock return list
-        when(jdbcTemplate.query(anyString(), eq(new Object[] {}), eq(CONFIG_INFO_CHANGED_ROW_MAPPER))).thenReturn(
-                configList);
+        when(jdbcTemplate.query(anyString(), eq(new Object[] {}), eq(CONFIG_INFO_CHANGED_ROW_MAPPER))).thenReturn(configList);
         
         List<ConfigInfoChanged> allAggrGroup = externalConfigInfoAggrPersistService.findAllAggrGroup();
         assertEquals(configList, allAggrGroup);

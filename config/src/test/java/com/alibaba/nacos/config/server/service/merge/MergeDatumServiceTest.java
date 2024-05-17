@@ -80,13 +80,11 @@ class MergeDatumServiceTest {
     void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         applicationUtilsMockedStaticc = Mockito.mockStatic(ApplicationUtils.class);
-        applicationUtilsMockedStaticc.when(() -> ApplicationUtils.getBean(eq(ProtocolManager.class)))
-                .thenReturn(protocolManager);
+        applicationUtilsMockedStaticc.when(() -> ApplicationUtils.getBean(eq(ProtocolManager.class))).thenReturn(protocolManager);
         
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", dataSourceService);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", dataSourceService);
-        mergeDatumService = new MergeDatumService(configInfoPersistService, configInfoAggrPersistService,
-                configInfoTagPersistService);
+        mergeDatumService = new MergeDatumService(configInfoPersistService, configInfoAggrPersistService, configInfoTagPersistService);
         
     }
     

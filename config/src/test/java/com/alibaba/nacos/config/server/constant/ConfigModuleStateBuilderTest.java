@@ -43,8 +43,8 @@ class ConfigModuleStateBuilderTest {
     
     @BeforeEach
     void setUp() {
-        environment = new MockEnvironment().withProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY,
-                PersistenceConstant.DERBY).withProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, "true");
+        environment = new MockEnvironment().withProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY, PersistenceConstant.DERBY)
+                .withProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, "true");
         EnvUtil.setEnvironment(environment);
     }
     
@@ -57,8 +57,7 @@ class ConfigModuleStateBuilderTest {
         assertEquals(PropertyUtil.getNotifyConnectTimeout(), states.get(PropertiesConstant.NOTIFY_CONNECT_TIMEOUT));
         assertEquals(PropertyUtil.getNotifySocketTimeout(), states.get(PropertiesConstant.NOTIFY_SOCKET_TIMEOUT));
         assertEquals(PropertyUtil.isHealthCheck(), states.get(PropertiesConstant.IS_HEALTH_CHECK));
-        assertEquals(PropertyUtil.getMaxHealthCheckFailCount(),
-                states.get(PropertiesConstant.MAX_HEALTH_CHECK_FAIL_COUNT));
+        assertEquals(PropertyUtil.getMaxHealthCheckFailCount(), states.get(PropertiesConstant.MAX_HEALTH_CHECK_FAIL_COUNT));
         assertEquals(PropertyUtil.getMaxContent(), states.get(PropertiesConstant.MAX_CONTENT));
         assertEquals(PropertyUtil.isManageCapacity(), states.get(PropertiesConstant.IS_MANAGE_CAPACITY));
         assertEquals(PropertyUtil.isCapacityLimitCheck(), states.get(PropertiesConstant.IS_CAPACITY_LIMIT_CHECK));

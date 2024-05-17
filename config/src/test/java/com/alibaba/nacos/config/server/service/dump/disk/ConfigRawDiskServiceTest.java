@@ -45,8 +45,7 @@ class ConfigRawDiskServiceTest {
      */
     @Test
     void testTargetFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class,
-                String.class);
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class, String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf");
         // 分解路径
@@ -67,8 +66,7 @@ class ConfigRawDiskServiceTest {
      */
     @Test
     void testTargetBetaFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetBetaFile", String.class, String.class,
-                String.class);
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetBetaFile", String.class, String.class, String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf");
         // 分解路径
@@ -94,8 +92,8 @@ class ConfigRawDiskServiceTest {
      */
     @Test
     void testTargetTagFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetTagFile", String.class, String.class,
-                String.class, String.class);
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetTagFile", String.class, String.class, String.class,
+                String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf", "aaaadsaknkf");
         // 分解路径

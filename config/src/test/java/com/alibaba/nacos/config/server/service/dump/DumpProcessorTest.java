@@ -85,16 +85,14 @@ class DumpProcessorTest {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         when(EnvUtil.getNacosHome()).thenReturn(System.getProperty("user.home"));
-        when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class),
-                eq(false))).thenReturn(false);
+        when(EnvUtil.getProperty(eq(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG), eq(Boolean.class), eq(false))).thenReturn(false);
         dynamicDataSourceMockedStatic.when(DynamicDataSource::getInstance).thenReturn(dynamicDataSource);
         
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         
         dumpService = new ExternalDumpService(configInfoPersistService, null, null, null, configInfoBetaPersistService,
                 configInfoTagPersistService, null, null);
-        dumpProcessor = new DumpProcessor(configInfoPersistService, configInfoBetaPersistService,
-                configInfoTagPersistService);
+        dumpProcessor = new DumpProcessor(configInfoPersistService, configInfoBetaPersistService, configInfoTagPersistService);
         Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
         for (Field filed : declaredFields) {
             if (filed.getName().equals("configDiskService")) {
@@ -133,13 +131,11 @@ class DumpProcessorTest {
         configInfoWrapper.setContent(content);
         configInfoWrapper.setLastModified(time);
         
-        Mockito.when(configInfoPersistService.findConfigInfo(eq(dataId), eq(group), eq(tenant)))
-                .thenReturn(configInfoWrapper);
+        Mockito.when(configInfoPersistService.findConfigInfo(eq(dataId), eq(group), eq(tenant))).thenReturn(configInfoWrapper);
         
         String handlerIp = "127.0.0.1";
         long lastModified = System.currentTimeMillis();
-        DumpTask dumpTask = new DumpTask(GroupKey2.getKey(dataId, group, tenant), false, false, false, null,
-                lastModified, handlerIp);
+        DumpTask dumpTask = new DumpTask(GroupKey2.getKey(dataId, group, tenant), false, false, false, null, lastModified, handlerIp);
         boolean process = dumpProcessor.process(dumpTask);
         assertTrue(process);
         
@@ -182,13 +178,11 @@ class DumpProcessorTest {
         String betaIps = "127.0.0.1123,127.0.0.11";
         configInfoWrapper.setBetaIps(betaIps);
         
-        Mockito.when(configInfoBetaPersistService.findConfigInfo4Beta(eq(dataId), eq(group), eq(tenant)))
-                .thenReturn(configInfoWrapper);
+        Mockito.when(configInfoBetaPersistService.findConfigInfo4Beta(eq(dataId), eq(group), eq(tenant))).thenReturn(configInfoWrapper);
         
         String handlerIp = "127.0.0.1";
         long lastModified = System.currentTimeMillis();
-        DumpTask dumpTask = new DumpTask(GroupKey2.getKey(dataId, group, tenant), true, false, false, null,
-                lastModified, handlerIp);
+        DumpTask dumpTask = new DumpTask(GroupKey2.getKey(dataId, group, tenant), true, false, false, null, lastModified, handlerIp);
         boolean process = dumpProcessor.process(dumpTask);
         assertTrue(process);
         
@@ -202,8 +196,7 @@ class DumpProcessorTest {
         assertEquals(content, contentFromDisk);
         
         // remove
-        Mockito.when(configInfoBetaPersistService.findConfigInfo4Beta(eq(dataId), eq(group), eq(tenant)))
-                .thenReturn(null);
+        Mockito.when(configInfoBetaPersistService.findConfigInfo4Beta(eq(dataId), eq(group), eq(tenant))).thenReturn(null);
         boolean processRemove = dumpProcessor.process(dumpTask);
         assertTrue(processRemove);
         
@@ -211,8 +204,7 @@ class DumpProcessorTest {
         CacheItem contentCacheAfterRemove = ConfigCacheService.getContentCache(GroupKey2.getKey(dataId, group, tenant));
         assertTrue(contentCacheAfterRemove == null || contentCacheAfterRemove.getConfigCacheBeta() == null);
         //check disk
-        String contentFromDiskAfterRemove = ConfigDiskServiceFactory.getInstance()
-                .getBetaContent(dataId, group, tenant);
+        String contentFromDiskAfterRemove = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
         assertNull(contentFromDiskAfterRemove);
         
     }
@@ -237,8 +229,7 @@ class DumpProcessorTest {
         
         String handlerIp = "127.0.0.1";
         long lastModified = System.currentTimeMillis();
-        DumpTask dumpTask = new DumpTask(GroupKey2.getKey(dataId, group, tenant), false, false, true, tag, lastModified,
-                handlerIp);
+        DumpTask dumpTask = new DumpTask(GroupKey2.getKey(dataId, group, tenant), false, false, true, tag, lastModified, handlerIp);
         boolean process = dumpProcessor.process(dumpTask);
         assertTrue(process);
         
@@ -251,8 +242,7 @@ class DumpProcessorTest {
         assertEquals(content, contentFromDisk);
         
         // remove
-        Mockito.when(configInfoTagPersistService.findConfigInfo4Tag(eq(dataId), eq(group), eq(tenant), eq(tag)))
-                .thenReturn(null);
+        Mockito.when(configInfoTagPersistService.findConfigInfo4Tag(eq(dataId), eq(group), eq(tenant), eq(tag))).thenReturn(null);
         boolean processRemove = dumpProcessor.process(dumpTask);
         assertTrue(processRemove);
         
@@ -261,8 +251,7 @@ class DumpProcessorTest {
         assertTrue(contentCacheAfterRemove == null || contentCache.getConfigCacheTags() == null
                 || contentCache.getConfigCacheTags().get(tag) == null);
         //check disk
-        String contentFromDiskAfterRemove = ConfigDiskServiceFactory.getInstance()
-                .getTagContent(dataId, group, tenant, tag);
+        String contentFromDiskAfterRemove = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
         assertNull(contentFromDiskAfterRemove);
         
     }

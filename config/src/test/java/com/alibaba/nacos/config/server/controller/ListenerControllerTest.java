@@ -78,12 +78,11 @@ class ListenerControllerTest {
         sampleResult.setLisentersGroupkeyStatus(map);
         when(configSubService.getCollectSampleResultByIp("localhost", 1)).thenReturn(sampleResult);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_PATH)
-                .param("ip", "localhost").param("all", "true").param("tenant", "test").param("sampleTime", "1");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_PATH).param("ip", "localhost")
+                .param("all", "true").param("tenant", "test").param("sampleTime", "1");
         
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        GroupkeyListenserStatus groupkeyListenserStatus = JacksonUtils.toObj(actualValue,
-                GroupkeyListenserStatus.class);
+        GroupkeyListenserStatus groupkeyListenserStatus = JacksonUtils.toObj(actualValue, GroupkeyListenserStatus.class);
         Map<String, String> resultMap = groupkeyListenserStatus.getLisentersGroupkeyStatus();
         
         assertEquals(map.get("test"), resultMap.get("test"));

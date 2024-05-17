@@ -80,8 +80,7 @@ class EmbeddedConfigInfoAggrPersistServiceImplTest {
         when(DynamicDataSource.getInstance()).thenReturn(dynamicDataSource);
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
-                .thenReturn(false);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false))).thenReturn(false);
         embededConfigInfoAggrPersistService = new EmbeddedConfigInfoAggrPersistServiceImpl(databaseOperate);
     }
     
@@ -103,13 +102,12 @@ class EmbeddedConfigInfoAggrPersistServiceImplTest {
         
         //mock query datumId and equal with current content param.
         String existContent = "content1234";
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, datumId}),
-                eq(String.class))).thenReturn(existContent);
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, datumId}), eq(String.class)))
+                .thenReturn(existContent);
         //mock insert success
         Mockito.when(databaseOperate.update(any(List.class))).thenReturn(true);
         
-        boolean result = embededConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName,
-                content);
+        boolean result = embededConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName, content);
         assertTrue(result);
     }
     
@@ -123,14 +121,13 @@ class EmbeddedConfigInfoAggrPersistServiceImplTest {
         String content = "content1234";
         
         //mock query datumId and return null.
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, datumId}),
-                eq(String.class))).thenReturn(null);
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, datumId}), eq(String.class)))
+                .thenReturn(null);
         //mock insert success
         Mockito.when(databaseOperate.update(any(List.class))).thenReturn(true);
         
         //execute
-        boolean result = embededConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName,
-                content);
+        boolean result = embededConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName, content);
         assertTrue(result);
     }
     
@@ -145,14 +142,13 @@ class EmbeddedConfigInfoAggrPersistServiceImplTest {
         
         //mock query datumId
         String existContent = "existContent111";
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, datumId}),
-                eq(String.class))).thenReturn(existContent);
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, datumId}), eq(String.class)))
+                .thenReturn(existContent);
         //mock update success,return 1
         Mockito.when(databaseOperate.update(any(List.class))).thenReturn(true);
         
         //mock update content
-        boolean result = embededConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName,
-                content);
+        boolean result = embededConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName, content);
         assertTrue(result);
         
     }
@@ -164,14 +160,11 @@ class EmbeddedConfigInfoAggrPersistServiceImplTest {
         String group = "group";
         String tenant = "tenant";
         //mock query datumId and equal with current content param.
-        Mockito.when(
-                        databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, "d1"}), eq(String.class)))
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, "d1"}), eq(String.class)))
                 .thenReturn("c1");
-        Mockito.when(
-                        databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, "d2"}), eq(String.class)))
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, "d2"}), eq(String.class)))
                 .thenReturn("c2");
-        Mockito.when(
-                        databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, "d3"}), eq(String.class)))
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant, "d3"}), eq(String.class)))
                 .thenReturn("c3");
         Mockito.when(databaseOperate.update(any(List.class))).thenReturn(true);
         
@@ -205,20 +198,19 @@ class EmbeddedConfigInfoAggrPersistServiceImplTest {
         String tenant = "tenant";
         
         //mock query count.
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))
-                .thenReturn(101);
+        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class))).thenReturn(101);
         //mock query page list
         List<ConfigInfoAggr> configInfoAggrs = new ArrayList<>();
         configInfoAggrs.add(new ConfigInfoAggr());
         configInfoAggrs.add(new ConfigInfoAggr());
         configInfoAggrs.add(new ConfigInfoAggr());
         
-        Mockito.when(databaseOperate.queryMany(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(CONFIG_INFO_AGGR_ROW_MAPPER))).thenReturn(configInfoAggrs);
+        Mockito.when(databaseOperate.queryMany(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_AGGR_ROW_MAPPER)))
+                .thenReturn(configInfoAggrs);
         int pageNo = 1;
         int pageSize = 120;
-        Page<ConfigInfoAggr> configInfoAggrByPage = embededConfigInfoAggrPersistService.findConfigInfoAggrByPage(dataId,
-                group, tenant, pageNo, pageSize);
+        Page<ConfigInfoAggr> configInfoAggrByPage = embededConfigInfoAggrPersistService.findConfigInfoAggrByPage(dataId, group, tenant,
+                pageNo, pageSize);
         assertEquals(101, configInfoAggrByPage.getTotalCount());
         assertEquals(configInfoAggrs, configInfoAggrByPage.getPageItems());
         

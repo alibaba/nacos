@@ -100,9 +100,8 @@ class ClientMetricsControllerTest {
         
         when(memberManager.allMembers()).thenReturn(members);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
-                        Constants.METRICS_CONTROLLER_PATH + "/cluster").param("ip", "127.0.0.1").param("tenant", "test")
-                .param("dataId", "test").param("group", "test");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_PATH + "/cluster")
+                .param("ip", "127.0.0.1").param("tenant", "test").param("dataId", "test").param("group", "test");
         int actualValue = mockMvc.perform(builder).andReturn().getResponse().getStatus();
         assertEquals(200, actualValue);
     }
@@ -156,9 +155,8 @@ class ClientMetricsControllerTest {
         connections.add(connection);
         when(connectionManager.getConnectionByIp(eq("127.0.0.1"))).thenReturn(connections);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
-                        Constants.METRICS_CONTROLLER_PATH + "/current").param("ip", "127.0.0.1").param("tenant", "test")
-                .param("dataId", "test").param("group", "test");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.METRICS_CONTROLLER_PATH + "/current")
+                .param("ip", "127.0.0.1").param("tenant", "test").param("dataId", "test").param("group", "test");
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("{\"test\":\"test\"}", actualValue);
         

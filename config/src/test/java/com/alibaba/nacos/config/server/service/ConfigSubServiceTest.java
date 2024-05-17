@@ -83,10 +83,8 @@ class ConfigSubServiceTest {
         envUtilMockedStatic.when(() -> EnvUtil.getContextPath()).thenReturn("/nacos");
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), anyString())).thenReturn("mock string");
         EnvUtil.setContextPath("/nacos");
-        httpClientManagerMockedStatic.when(() -> HttpClientManager.getNacosRestTemplate())
-                .thenReturn(nacosRestTemplate);
-        httpClientManagerMockedStatic.when(() -> HttpClientManager.getNacosAsyncRestTemplate())
-                .thenReturn(nacosAsyncRestTemplate);
+        httpClientManagerMockedStatic.when(() -> HttpClientManager.getNacosRestTemplate()).thenReturn(nacosRestTemplate);
+        httpClientManagerMockedStatic.when(() -> HttpClientManager.getNacosAsyncRestTemplate()).thenReturn(nacosAsyncRestTemplate);
     }
     
     @AfterEach
@@ -141,25 +139,20 @@ class ConfigSubServiceTest {
         String mockJsonString = JacksonUtils.toJson(sampleResult1);
         httpRestResult.setData(mockJsonString);
         //mock success
-        Mockito.when(nacosRestTemplate.get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class)))
-                .thenReturn(httpRestResult);
+        Mockito.when(nacosRestTemplate.get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class))).thenReturn(httpRestResult);
         String url = "url";
-        SampleResult returnObj = (SampleResult) ConfigSubService.runSingleJob("127.0.0.1", params, url,
-                SampleResult.class);
+        SampleResult returnObj = (SampleResult) ConfigSubService.runSingleJob("127.0.0.1", params, url, SampleResult.class);
         assertEquals(sampleResult1.getLisentersGroupkeyStatus(), returnObj.getLisentersGroupkeyStatus());
         //mock fail response
         httpRestResult.setCode(500);
-        Mockito.when(nacosRestTemplate.get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class)))
-                .thenReturn(httpRestResult);
-        SampleResult returnObj500 = (SampleResult) ConfigSubService.runSingleJob("127.0.0.1", params, url,
-                SampleResult.class);
+        Mockito.when(nacosRestTemplate.get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class))).thenReturn(httpRestResult);
+        SampleResult returnObj500 = (SampleResult) ConfigSubService.runSingleJob("127.0.0.1", params, url, SampleResult.class);
         assertNull(returnObj500);
         
         //mock get url throw exception
         Mockito.when(nacosRestTemplate.get(anyString(), any(Header.class), eq(Query.EMPTY), eq(String.class)))
                 .thenThrow(new NacosRuntimeException(500, "timeout"));
-        SampleResult returnObjTimeout = (SampleResult) ConfigSubService.runSingleJob("127.0.0.1", params, url,
-                SampleResult.class);
+        SampleResult returnObjTimeout = (SampleResult) ConfigSubService.runSingleJob("127.0.0.1", params, url, SampleResult.class);
         assertNull(returnObjTimeout);
         
     }
@@ -180,8 +173,8 @@ class ConfigSubServiceTest {
                 .thenReturn(createSampleResultFuture(true, true), createSampleResultFuture(true, true),
                         createSampleResultFuture(true, true));
         Map<String, String> params = new HashMap<>();
-        ConfigSubService.ClusterListenerJob clusterListenerJob = new ConfigSubService.ClusterListenerJob(params,
-                mockService, serverMemberManager);
+        ConfigSubService.ClusterListenerJob clusterListenerJob = new ConfigSubService.ClusterListenerJob(params, mockService,
+                serverMemberManager);
         List<SampleResult> sampleResults = clusterListenerJob.runJobs();
         assertEquals(3, sampleResults.size());
         
@@ -190,8 +183,8 @@ class ConfigSubServiceTest {
                 .thenReturn(createSampleResultFuture(true, true), createSampleResultFuture(false, false))
                 .thenThrow(new NacosRuntimeException(500, "13"));
         Map<String, String> params2 = new HashMap<>();
-        ConfigSubService.ClusterListenerJob clusterListenerJob2 = new ConfigSubService.ClusterListenerJob(params2,
-                mockService, serverMemberManager);
+        ConfigSubService.ClusterListenerJob clusterListenerJob2 = new ConfigSubService.ClusterListenerJob(params2, mockService,
+                serverMemberManager);
         List<SampleResult> sampleResults2 = clusterListenerJob2.runJobs();
         assertEquals(1, sampleResults2.size());
         assertFalse(sampleResults2.get(0).getLisentersGroupkeyStatus().isEmpty());
@@ -239,16 +232,14 @@ class ConfigSubServiceTest {
         sampleResults.add(sampleResult3);
         ListenerCheckResult sampleResult1 = new ListenerCheckResult();
         //one ip return true
-        ListenerCheckResult sampleResultMerge1 = configSubService.mergeListenerCheckResult(sampleResult1, sampleResults,
-                2);
+        ListenerCheckResult sampleResultMerge1 = configSubService.mergeListenerCheckResult(sampleResult1, sampleResults, 2);
         assertEquals(200, sampleResultMerge1.getCode());
         assertTrue(sampleResultMerge1.isHasListener());
         //all ip return false,but not equals member size
         sampleResult2.setHasListener(false);
         sampleResult3.setHasListener(false);
         sampleResult1.setHasListener(false);
-        ListenerCheckResult sampleResultMerge2 = configSubService.mergeListenerCheckResult(sampleResult1, sampleResults,
-                3);
+        ListenerCheckResult sampleResultMerge2 = configSubService.mergeListenerCheckResult(sampleResult1, sampleResults, 3);
         assertEquals(201, sampleResultMerge2.getCode());
         assertFalse(sampleResultMerge2.isHasListener());
         

@@ -76,16 +76,14 @@ class ConfigOperationServiceTest {
         ConfigRequestInfo configRequestInfo = new ConfigRequestInfo();
         
         // if betaIps is blank, tag is blank and casMd5 is blank
-        when(configInfoPersistService.insertOrUpdate(any(), any(), any(ConfigInfo.class), any())).thenReturn(
-                new ConfigOperateResult());
+        when(configInfoPersistService.insertOrUpdate(any(), any(), any(ConfigInfo.class), any())).thenReturn(new ConfigOperateResult());
         Boolean aResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         verify(configInfoPersistService).insertOrUpdate(any(), any(), any(ConfigInfo.class), any());
         assertTrue(aResult);
         
         // if betaIps is blank, tag is blank and casMd5 is not blank
         configRequestInfo.setCasMd5("test casMd5");
-        when(configInfoPersistService.insertOrUpdateCas(any(), any(), any(ConfigInfo.class), any())).thenReturn(
-                new ConfigOperateResult());
+        when(configInfoPersistService.insertOrUpdateCas(any(), any(), any(ConfigInfo.class), any())).thenReturn(new ConfigOperateResult());
         Boolean bResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         verify(configInfoPersistService).insertOrUpdateCas(any(), any(), any(ConfigInfo.class), any());
         assertTrue(bResult);
@@ -93,8 +91,8 @@ class ConfigOperationServiceTest {
         
         // if betaIps is blank, tag is not blank and casMd5 is blank
         configForm.setTag("test tag");
-        when(configInfoTagPersistService.insertOrUpdateTag(any(ConfigInfo.class), eq("test tag"), any(),
-                any())).thenReturn(new ConfigOperateResult());
+        when(configInfoTagPersistService.insertOrUpdateTag(any(ConfigInfo.class), eq("test tag"), any(), any())).thenReturn(
+                new ConfigOperateResult());
         Boolean cResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         verify(configInfoTagPersistService).insertOrUpdateTag(any(ConfigInfo.class), eq("test tag"), any(), any());
         assertTrue(cResult);
@@ -102,8 +100,8 @@ class ConfigOperationServiceTest {
         // if betaIps is blank, tag is not blank and casMd5 is not blank
         configForm.setTag("test tag");
         configRequestInfo.setCasMd5("test casMd5");
-        when(configInfoTagPersistService.insertOrUpdateTagCas(any(ConfigInfo.class), eq("test tag"), any(),
-                any())).thenReturn(new ConfigOperateResult());
+        when(configInfoTagPersistService.insertOrUpdateTagCas(any(ConfigInfo.class), eq("test tag"), any(), any())).thenReturn(
+                new ConfigOperateResult());
         Boolean dResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
         verify(configInfoTagPersistService).insertOrUpdateTagCas(any(ConfigInfo.class), eq("test tag"), any(), any());
         assertTrue(dResult);
@@ -112,21 +110,19 @@ class ConfigOperationServiceTest {
         
         // if betaIps is not blank and casMd5 is blank
         configRequestInfo.setBetaIps("test-betaIps");
-        when(configInfoBetaPersistService.insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(),
-                any())).thenReturn(new ConfigOperateResult());
+        when(configInfoBetaPersistService.insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(), any())).thenReturn(
+                new ConfigOperateResult());
         Boolean eResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
-        verify(configInfoBetaPersistService).insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(),
-                any());
+        verify(configInfoBetaPersistService).insertOrUpdateBeta(any(ConfigInfo.class), eq("test-betaIps"), any(), any());
         assertTrue(eResult);
         
         // if betaIps is not blank and casMd5 is not blank
         configRequestInfo.setBetaIps("test-betaIps");
         configRequestInfo.setCasMd5("test casMd5");
-        when(configInfoBetaPersistService.insertOrUpdateBetaCas(any(ConfigInfo.class), eq("test-betaIps"), any(),
-                any())).thenReturn(new ConfigOperateResult());
+        when(configInfoBetaPersistService.insertOrUpdateBetaCas(any(ConfigInfo.class), eq("test-betaIps"), any(), any())).thenReturn(
+                new ConfigOperateResult());
         Boolean fResult = configOperationService.publishConfig(configForm, configRequestInfo, "");
-        verify(configInfoBetaPersistService).insertOrUpdateBetaCas(any(ConfigInfo.class), eq("test-betaIps"), any(),
-                any());
+        verify(configInfoBetaPersistService).insertOrUpdateBetaCas(any(ConfigInfo.class), eq("test-betaIps"), any(), any());
         assertTrue(fResult);
     }
     
@@ -140,8 +136,7 @@ class ConfigOperationServiceTest {
         
         // if tag is not blank
         Boolean bResult = configOperationService.deleteConfig("test", "test", "", "test", "1.1.1.1", "test");
-        verify(configInfoTagPersistService).removeConfigInfoTag(eq("test"), eq("test"), eq(""), eq("test"), any(),
-                any());
+        verify(configInfoTagPersistService).removeConfigInfoTag(eq("test"), eq("test"), eq(""), eq("test"), any(), any());
         assertTrue(bResult);
     }
 }

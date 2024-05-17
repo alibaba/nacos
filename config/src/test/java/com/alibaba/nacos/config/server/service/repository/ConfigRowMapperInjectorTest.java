@@ -55,8 +55,8 @@ class ConfigRowMapperInjectorTest {
     @Test
     void testInit() {
         ConfigRowMapperInjector configRowMapperInjector = new ConfigRowMapperInjector();
-        assertEquals(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER, RowMapperManager.getRowMapper(
-                ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName()));
+        assertEquals(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER,
+                RowMapperManager.getRowMapper(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName()));
     }
     
     @Test

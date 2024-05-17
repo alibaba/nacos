@@ -251,8 +251,7 @@ class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         
         //mock disk read.
-        when(configRocksDbDiskService.getTagContent(eq(dataId), eq(group), eq(null), eq(specificTag))).thenReturn(
-                tagContent);
+        when(configRocksDbDiskService.getTagContent(eq(dataId), eq(group), eq(null), eq(specificTag))).thenReturn(tagContent);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
         //check content&md5
@@ -299,8 +298,7 @@ class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         
         //mock disk read.
-        when(configRocksDbDiskService.getTagContent(eq(dataId), eq(group), eq(null), eq(autoTag))).thenReturn(
-                tagContent);
+        when(configRocksDbDiskService.getTagContent(eq(dataId), eq(group), eq(null), eq(autoTag))).thenReturn(tagContent);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
         //check content&md5
@@ -326,8 +324,8 @@ class ConfigQueryRequestHandlerTest {
         String group = "group" + System.currentTimeMillis();
         String tenant = "tenant" + System.currentTimeMillis();
         //test config not exist
-        configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(0);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant)))
+                .thenReturn(0);
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(null);
         
@@ -347,8 +345,8 @@ class ConfigQueryRequestHandlerTest {
         
         //test config conflict
         when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(new CacheItem(groupKey));
-        configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(-1);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant)))
+                .thenReturn(-1);
         ConfigQueryResponse responseConflict = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         assertEquals(ConfigQueryResponse.CONFIG_QUERY_CONFLICT, responseConflict.getErrorCode());
         assertNull(responseConflict.getContent());

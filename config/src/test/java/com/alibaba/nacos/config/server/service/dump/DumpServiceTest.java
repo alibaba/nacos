@@ -112,9 +112,8 @@ class DumpServiceTest {
         
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", dataSourceService);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", dataSourceService);
-        dumpService = new ExternalDumpService(configInfoPersistService, namespacePersistService,
-                historyConfigInfoPersistService, configInfoAggrPersistService, configInfoBetaPersistService,
-                configInfoTagPersistService, mergeDatumService, memberManager);
+        dumpService = new ExternalDumpService(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
+                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, mergeDatumService, memberManager);
         configExecutorMocked = Mockito.mockStatic(ConfigExecutor.class);
         
     }
@@ -130,8 +129,7 @@ class DumpServiceTest {
     void dumpRequest() throws Throwable {
         String dataId = "12345667dataId";
         String group = "234445group";
-        DumpRequest dumpRequest = DumpRequest.create(dataId, group, "testtenant", System.currentTimeMillis(),
-                "127.0.0.1");
+        DumpRequest dumpRequest = DumpRequest.create(dataId, group, "testtenant", System.currentTimeMillis(), "127.0.0.1");
         // TaskManager dumpTaskMgr;
         ReflectionTestUtils.setField(dumpService, "dumpTaskMgr", dumpTaskMgr);
         Mockito.doNothing().when(dumpTaskMgr).addTask(any(), any());
@@ -141,30 +139,26 @@ class DumpServiceTest {
         dumpRequest.setBeta(true);
         dumpService.dump(dumpRequest);
         Mockito.verify(dumpTaskMgr, times(1))
-                .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+beta"),
-                        any(DumpTask.class));
+                .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+beta"), any(DumpTask.class));
         dumpRequest.setBeta(false);
         dumpRequest.setBatch(true);
         dumpService.dump(dumpRequest);
         Mockito.verify(dumpTaskMgr, times(1))
-                .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+batch"),
-                        any(DumpTask.class));
+                .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+batch"), any(DumpTask.class));
         dumpRequest.setBatch(false);
         dumpRequest.setTag("testTag111");
         dumpService.dump(dumpRequest);
-        Mockito.verify(dumpTaskMgr, times(1)).addTask(
-                eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+tag+" + dumpRequest.getTag()),
-                any(DumpTask.class));
+        Mockito.verify(dumpTaskMgr, times(1))
+                .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+tag+" + dumpRequest.getTag()),
+                        any(DumpTask.class));
         
     }
     
     @Test
     void dumpOperate() throws Throwable {
-        configExecutorMocked.when(
-                        () -> ConfigExecutor.scheduleConfigTask(any(Runnable.class), anyInt(), anyInt(), any(TimeUnit.class)))
+        configExecutorMocked.when(() -> ConfigExecutor.scheduleConfigTask(any(Runnable.class), anyInt(), anyInt(), any(TimeUnit.class)))
                 .thenAnswer(invocation -> null);
-        configExecutorMocked.when(
-                        () -> ConfigExecutor.scheduleConfigChangeTask(any(Runnable.class), anyInt(), any(TimeUnit.class)))
+        configExecutorMocked.when(() -> ConfigExecutor.scheduleConfigChangeTask(any(Runnable.class), anyInt(), any(TimeUnit.class)))
                 .thenAnswer(invocation -> null);
         Mockito.when(namespacePersistService.isExistTable(BETA_TABLE_NAME)).thenReturn(true);
         Mockito.when(namespacePersistService.isExistTable(TAG_TABLE_NAME)).thenReturn(true);
@@ -199,20 +193,19 @@ class DumpServiceTest {
         // expect dump formal,beta,tag,history clear,config change task to be scheduled.
         // expect config clear history task be scheduled.
         configExecutorMocked.verify(
-                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllProcessorRunner.class), anyLong(),
-                        anyLong(), eq(TimeUnit.MINUTES)), times(1));
-        configExecutorMocked.verify(
-                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllBetaProcessorRunner.class), anyLong(),
-                        anyLong(), eq(TimeUnit.MINUTES)), times(1));
-        configExecutorMocked.verify(
-                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllTagProcessorRunner.class), anyLong(),
-                        anyLong(), eq(TimeUnit.MINUTES)), times(1));
-        configExecutorMocked.verify(
-                () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeConfigWorker.class), anyLong(),
-                        eq(TimeUnit.MILLISECONDS)), times(1));
-        configExecutorMocked.verify(
-                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.ConfigHistoryClear.class), anyLong(), anyLong(),
+                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllProcessorRunner.class), anyLong(), anyLong(),
                         eq(TimeUnit.MINUTES)), times(1));
+        configExecutorMocked.verify(
+                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllBetaProcessorRunner.class), anyLong(), anyLong(),
+                        eq(TimeUnit.MINUTES)), times(1));
+        configExecutorMocked.verify(
+                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllTagProcessorRunner.class), anyLong(), anyLong(),
+                        eq(TimeUnit.MINUTES)), times(1));
+        configExecutorMocked.verify(
+                () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeConfigWorker.class), anyLong(), eq(TimeUnit.MILLISECONDS)),
+                times(1));
+        configExecutorMocked.verify(() -> ConfigExecutor.scheduleConfigTask(any(DumpService.ConfigHistoryClear.class), anyLong(), anyLong(),
+                eq(TimeUnit.MINUTES)), times(1));
     }
     
     @Test
@@ -225,15 +218,14 @@ class DumpServiceTest {
     
     @Test
     void testHandleConfigDataChange() {
-        ConfigDataChangeEvent configDataChangeEvent = new ConfigDataChangeEvent("dataId", "group",
-                System.currentTimeMillis());
+        ConfigDataChangeEvent configDataChangeEvent = new ConfigDataChangeEvent("dataId", "group", System.currentTimeMillis());
         ReflectionTestUtils.setField(dumpService, "dumpTaskMgr", dumpTaskMgr);
         Mockito.doNothing().when(dumpTaskMgr).addTask(any(), any());
         
         dumpService.handleConfigDataChange(configDataChangeEvent);
-        Mockito.verify(dumpTaskMgr, times(1)).addTask(
-                eq(GroupKey.getKeyTenant(configDataChangeEvent.dataId, configDataChangeEvent.group,
-                        configDataChangeEvent.tenant)), any(DumpTask.class));
+        Mockito.verify(dumpTaskMgr, times(1))
+                .addTask(eq(GroupKey.getKeyTenant(configDataChangeEvent.dataId, configDataChangeEvent.group, configDataChangeEvent.tenant)),
+                        any(DumpTask.class));
     }
     
 }
