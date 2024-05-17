@@ -16,13 +16,14 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * description.
@@ -30,10 +31,10 @@ import static org.junit.Assert.assertTrue;
  * @author rong
  * @date 2024-03-01 15:10
  */
-public class ConnLabelsUtilsTest {
+class ConnLabelsUtilsTest {
     
     @Test
-    public void testParsePropertyValue2Map() {
+    void testParsePropertyValue2Map() {
         Properties properties = new Properties();
         String property = "property";
         String rawValue = "k1 = v1, k2 = v2";
@@ -50,7 +51,7 @@ public class ConnLabelsUtilsTest {
         Map<String, String> m1 = ConnLabelsUtils.parsePropertyValue2Map(properties, property1);
         assertEquals(1, m1.size());
         assertEquals("v11", m1.get("k11"));
-        assertEquals(null, m1.get("kk2"));
+        assertNull(m1.get("kk2"));
         
         m = ConnLabelsUtils.mergeMapByOrder(m, m1);
         assertEquals(3, m.size());

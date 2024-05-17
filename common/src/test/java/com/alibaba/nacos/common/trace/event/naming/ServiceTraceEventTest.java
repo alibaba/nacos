@@ -16,17 +16,17 @@
 
 package com.alibaba.nacos.common.trace.event.naming;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ServiceTraceEventTest extends NamingTraceEventTest {
+class ServiceTraceEventTest extends NamingTraceEventTest {
     
     @Test
-    public void testRegisterInstanceTraceEvent() {
+    void testRegisterInstanceTraceEvent() {
         RegisterServiceTraceEvent registerServiceTraceEvent = new RegisterServiceTraceEvent(TIME, NAMESPACE_ID,
                 GROUP_NAME, SERVICE_NAME);
         assertBasicInfo(registerServiceTraceEvent);
@@ -34,7 +34,7 @@ public class ServiceTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testDeregisterInstanceTraceEvent() {
+    void testDeregisterInstanceTraceEvent() {
         DeregisterServiceTraceEvent deregisterServiceTraceEvent = new DeregisterServiceTraceEvent(TIME, NAMESPACE_ID,
                 GROUP_NAME, SERVICE_NAME);
         assertBasicInfo(deregisterServiceTraceEvent);
@@ -42,7 +42,7 @@ public class ServiceTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testUpdateInstanceTraceEvent() {
+    void testUpdateInstanceTraceEvent() {
         Map<String, String> metadata = new HashMap<>();
         metadata.put("test1", "testValue");
         UpdateServiceTraceEvent updateServiceTraceEvent = new UpdateServiceTraceEvent(TIME, NAMESPACE_ID, GROUP_NAME,

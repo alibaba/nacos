@@ -16,8 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,277 +35,323 @@ import java.util.Vector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * Unit test of CollectionUtil.
  *
  * @author <a href="mailto:jifeng.sun@outlook.com">sunjifeng</a>
  */
-public class CollectionUtilsTest {
+class CollectionUtilsTest {
     
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetList1() {
-        CollectionUtils.get(Collections.emptyList(), -1);
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetList2() {
-        CollectionUtils.get(Collections.emptyList(), 1);
+    @Test
+    void testGetList1() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(Collections.emptyList(), -1);
+        });
     }
     
     @Test
-    public void testGetList3() {
-        Assert.assertEquals("element", CollectionUtils.get(Collections.singletonList("element"), 0));
-        Assert.assertEquals("element2", CollectionUtils.get(Arrays.asList("element1", "element2"), 1));
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetMap1() {
-        Map<String, String> map = new HashMap<>();
-        map.put("key1", "value1");
-        CollectionUtils.get(map, -1);
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetMap2() {
-        Map<String, String> map = new HashMap<>();
-        map.put("key1", "value1");
-        CollectionUtils.get(map, -1);
-        CollectionUtils.get(map, 1);
+    void testGetList2() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(Collections.emptyList(), 1);
+        });
     }
     
     @Test
-    public void testGetMap3() {
+    void testGetList3() {
+        assertEquals("element", CollectionUtils.get(Collections.singletonList("element"), 0));
+        assertEquals("element2", CollectionUtils.get(Arrays.asList("element1", "element2"), 1));
+    }
+    
+    @Test
+    void testGetMap1() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            Map<String, String> map = new HashMap<>();
+            map.put("key1", "value1");
+            CollectionUtils.get(map, -1);
+        });
+    }
+    
+    @Test
+    void testGetMap2() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            Map<String, String> map = new HashMap<>();
+            map.put("key1", "value1");
+            CollectionUtils.get(map, -1);
+            CollectionUtils.get(map, 1);
+        });
+    }
+    
+    @Test
+    void testGetMap3() {
         Map<String, String> map1 = new LinkedHashMap(1);
         Map<String, String> map2 = new LinkedHashMap(2);
         map1.put("key", "value");
         map2.put("key1", "value1");
         map2.put("key2", "value2");
         Iterator<Map.Entry<String, String>> iter = map1.entrySet().iterator();
-        Assert.assertEquals(iter.next(), CollectionUtils.get(map1, 0));
+        assertEquals(iter.next(), CollectionUtils.get(map1, 0));
         Iterator<Map.Entry<String, String>> iter2 = map2.entrySet().iterator();
         iter2.next();
         Map.Entry<String, String> second = iter2.next();
-        Assert.assertEquals(second, CollectionUtils.get(map2, 1));
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetArray1() {
-        CollectionUtils.get(new Object[] {}, -1);
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetArray2() {
-        CollectionUtils.get(new Object[] {}, 0);
+        assertEquals(second, CollectionUtils.get(map2, 1));
     }
     
     @Test
-    public void testGetArray3() {
-        Assert.assertEquals("1", CollectionUtils.get(new Object[] {"1"}, 0));
-        Assert.assertEquals("2", CollectionUtils.get(new Object[] {"1", "2"}, 1));
-    }
-    
-    @Test(expected = ArrayIndexOutOfBoundsException.class)
-    public void testGetArray4() {
-        CollectionUtils.get(new int[] {}, 0);
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetArray5() {
-        CollectionUtils.get(new int[] {}, -1);
+    void testGetArray1() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(new Object[] {}, -1);
+        });
     }
     
     @Test
-    public void testGetArray6() {
-        Assert.assertEquals(1, CollectionUtils.get(new int[] {1, 2}, 0));
-        Assert.assertEquals(2, CollectionUtils.get(new int[] {1, 2}, 1));
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetIterator1() {
-        CollectionUtils.get(Collections.emptyIterator(), 0);
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetIterator2() {
-        CollectionUtils.get(Collections.emptyIterator(), -1);
+    void testGetArray2() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(new Object[] {}, 0);
+        });
     }
     
     @Test
-    public void testGetIterator3() {
-        Assert.assertEquals("1", CollectionUtils.get(Collections.singleton("1").iterator(), 0));
-        Assert.assertEquals("2", CollectionUtils.get(Arrays.asList("1", "2").iterator(), 1));
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetCollection1() {
-        CollectionUtils.get(Collections.emptySet(), 0);
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetCollection2() {
-        CollectionUtils.get(Collections.emptySet(), -1);
+    void testGetArray3() {
+        assertEquals("1", CollectionUtils.get(new Object[] {"1"}, 0));
+        assertEquals("2", CollectionUtils.get(new Object[] {"1", "2"}, 1));
     }
     
     @Test
-    public void testGetCollection3() {
-        Assert.assertEquals("1", CollectionUtils.get(Collections.singleton("1"), 0));
-        Assert.assertEquals("2", CollectionUtils.get(CollectionUtils.set("1", "2"), 1));
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetEnumeration1() {
-        CollectionUtils.get(asEnumeration(Collections.emptyIterator()), 0);
-    }
-    
-    @Test(expected = IndexOutOfBoundsException.class)
-    public void testGetEnumeration2() {
-        CollectionUtils.get(asEnumeration(Collections.emptyIterator()), -1);
+    void testGetArray4() {
+        assertThrows(ArrayIndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(new int[] {}, 0);
+        });
     }
     
     @Test
-    public void testGetEnumeration3() {
+    void testGetArray5() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(new int[] {}, -1);
+        });
+    }
+    
+    @Test
+    void testGetArray6() {
+        assertEquals(1, CollectionUtils.get(new int[] {1, 2}, 0));
+        assertEquals(2, CollectionUtils.get(new int[] {1, 2}, 1));
+    }
+    
+    @Test
+    void testGetIterator1() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(Collections.emptyIterator(), 0);
+        });
+    }
+    
+    @Test
+    void testGetIterator2() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(Collections.emptyIterator(), -1);
+        });
+    }
+    
+    @Test
+    void testGetIterator3() {
+        assertEquals("1", CollectionUtils.get(Collections.singleton("1").iterator(), 0));
+        assertEquals("2", CollectionUtils.get(Arrays.asList("1", "2").iterator(), 1));
+    }
+    
+    @Test
+    void testGetCollection1() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(Collections.emptySet(), 0);
+        });
+    }
+    
+    @Test
+    void testGetCollection2() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(Collections.emptySet(), -1);
+        });
+    }
+    
+    @Test
+    void testGetCollection3() {
+        assertEquals("1", CollectionUtils.get(Collections.singleton("1"), 0));
+        assertEquals("2", CollectionUtils.get(CollectionUtils.set("1", "2"), 1));
+    }
+    
+    @Test
+    void testGetEnumeration1() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(asEnumeration(Collections.emptyIterator()), 0);
+        });
+    }
+    
+    @Test
+    void testGetEnumeration2() {
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            CollectionUtils.get(asEnumeration(Collections.emptyIterator()), -1);
+        });
+    }
+    
+    @Test
+    void testGetEnumeration3() {
         Vector<Object> vector = new Vector<>();
         vector.add("1");
         vector.add("2");
         
-        Assert.assertEquals("1", CollectionUtils.get(vector.elements(), 0));
-        Assert.assertEquals("2", CollectionUtils.get(vector.elements(), 1));
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testGet1() {
-        CollectionUtils.get(null, 0);
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testGet2() {
-        CollectionUtils.get("string", 0);
+        assertEquals("1", CollectionUtils.get(vector.elements(), 0));
+        assertEquals("2", CollectionUtils.get(vector.elements(), 1));
     }
     
     @Test
-    public void testSize() {
+    void testGet1() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            CollectionUtils.get(null, 0);
+        });
+    }
+    
+    @Test
+    void testGet2() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            CollectionUtils.get("string", 0);
+        });
+    }
+    
+    @Test
+    void testSize() {
         // collection
-        Assert.assertEquals(0, CollectionUtils.size(Collections.emptyList()));
-        Assert.assertEquals(1, CollectionUtils.size(Collections.singletonList("")));
-        Assert.assertEquals(10, CollectionUtils.size(IntStream.range(0, 10).boxed().collect(Collectors.toList())));
+        assertEquals(0, CollectionUtils.size(Collections.emptyList()));
+        assertEquals(1, CollectionUtils.size(Collections.singletonList("")));
+        assertEquals(10, CollectionUtils.size(IntStream.range(0, 10).boxed().collect(Collectors.toList())));
         
         // map
         Map<String, String> map = new HashMap<>();
         map.put("key1", "value1");
-        Assert.assertEquals(1, CollectionUtils.size(map));
+        assertEquals(1, CollectionUtils.size(map));
         map.put("key2", "value2");
-        Assert.assertEquals(2, CollectionUtils.size(map));
+        assertEquals(2, CollectionUtils.size(map));
         map.put("key3", "value3");
-        Assert.assertEquals(3, CollectionUtils.size(map));
+        assertEquals(3, CollectionUtils.size(map));
         
         // array
-        Assert.assertEquals(1, CollectionUtils.size(new Object[] {"1"}));
-        Assert.assertEquals(2, CollectionUtils.size(new Object[] {"1", "2"}));
-        Assert.assertEquals(6, CollectionUtils.size(new Object[] {"1", "2", "3", "4", "5", "6"}));
-        Assert.assertEquals(1000, CollectionUtils.size(IntStream.range(0, 1000).boxed().toArray()));
+        assertEquals(1, CollectionUtils.size(new Object[] {"1"}));
+        assertEquals(2, CollectionUtils.size(new Object[] {"1", "2"}));
+        assertEquals(6, CollectionUtils.size(new Object[] {"1", "2", "3", "4", "5", "6"}));
+        assertEquals(1000, CollectionUtils.size(IntStream.range(0, 1000).boxed().toArray()));
         
         // primitive array
-        Assert.assertEquals(1, CollectionUtils.size(new int[] {1}));
-        Assert.assertEquals(2, CollectionUtils.size(new int[] {1, 2}));
-        Assert.assertEquals(6, CollectionUtils.size(new int[] {1, 2, 3, 4, 5, 6}));
-        Assert.assertEquals(1000, CollectionUtils.size(IntStream.range(0, 1000).toArray()));
+        assertEquals(1, CollectionUtils.size(new int[] {1}));
+        assertEquals(2, CollectionUtils.size(new int[] {1, 2}));
+        assertEquals(6, CollectionUtils.size(new int[] {1, 2, 3, 4, 5, 6}));
+        assertEquals(1000, CollectionUtils.size(IntStream.range(0, 1000).toArray()));
         
         // iterator
-        Assert.assertEquals(1, CollectionUtils.size(Collections.singleton("1").iterator()));
-        Assert.assertEquals(2, CollectionUtils.size(Arrays.asList("1", "2").iterator()));
+        assertEquals(1, CollectionUtils.size(Collections.singleton("1").iterator()));
+        assertEquals(2, CollectionUtils.size(Arrays.asList("1", "2").iterator()));
         
         // enumeration
-        Assert.assertEquals(0, CollectionUtils.size(asEnumeration(Collections.emptyIterator())));
-        Assert.assertEquals(1, CollectionUtils.size(asEnumeration(Collections.singleton("").iterator())));
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testSize1() {
-        CollectionUtils.size(null);
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testSize2() {
-        CollectionUtils.size("string");
+        assertEquals(0, CollectionUtils.size(asEnumeration(Collections.emptyIterator())));
+        assertEquals(1, CollectionUtils.size(asEnumeration(Collections.singleton("").iterator())));
     }
     
     @Test
-    public void testSizeIsEmpty() {
+    void testSize1() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            CollectionUtils.size(null);
+        });
+    }
+    
+    @Test
+    void testSize2() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            CollectionUtils.size("string");
+        });
+    }
+    
+    @Test
+    void testSizeIsEmpty() {
         // collection
-        Assert.assertTrue(CollectionUtils.sizeIsEmpty(Collections.emptyList()));
-        Assert.assertFalse(CollectionUtils.sizeIsEmpty(Collections.singletonList("")));
+        assertTrue(CollectionUtils.sizeIsEmpty(Collections.emptyList()));
+        assertFalse(CollectionUtils.sizeIsEmpty(Collections.singletonList("")));
         
         // map
         Map<String, String> map = new HashMap<>();
         map.put("key1", "value1");
         map.put("key2", "value2");
-        Assert.assertTrue(CollectionUtils.sizeIsEmpty(Collections.emptyMap()));
-        Assert.assertFalse(CollectionUtils.sizeIsEmpty(map));
+        assertTrue(CollectionUtils.sizeIsEmpty(Collections.emptyMap()));
+        assertFalse(CollectionUtils.sizeIsEmpty(map));
         
         // array
-        Assert.assertTrue(CollectionUtils.sizeIsEmpty(new Object[] {}));
-        Assert.assertFalse(CollectionUtils.sizeIsEmpty(new Object[] {"1", "2"}));
+        assertTrue(CollectionUtils.sizeIsEmpty(new Object[] {}));
+        assertFalse(CollectionUtils.sizeIsEmpty(new Object[] {"1", "2"}));
         
         // primitive array
-        Assert.assertTrue(CollectionUtils.sizeIsEmpty(new int[] {}));
-        Assert.assertFalse(CollectionUtils.sizeIsEmpty(new int[] {1, 2}));
+        assertTrue(CollectionUtils.sizeIsEmpty(new int[] {}));
+        assertFalse(CollectionUtils.sizeIsEmpty(new int[] {1, 2}));
         
         // iterator
-        Assert.assertTrue(CollectionUtils.sizeIsEmpty(Collections.emptyIterator()));
-        Assert.assertFalse(CollectionUtils.sizeIsEmpty(Arrays.asList("1", "2").iterator()));
+        assertTrue(CollectionUtils.sizeIsEmpty(Collections.emptyIterator()));
+        assertFalse(CollectionUtils.sizeIsEmpty(Arrays.asList("1", "2").iterator()));
         
         // enumeration
-        Assert.assertTrue(CollectionUtils.sizeIsEmpty(asEnumeration(Collections.emptyIterator())));
-        Assert.assertFalse(CollectionUtils.sizeIsEmpty(asEnumeration(Collections.singleton("").iterator())));
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testSizeIsEmpty1() {
-        CollectionUtils.sizeIsEmpty(null);
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testSizeIsEmpty2() {
-        CollectionUtils.sizeIsEmpty("string");
+        assertTrue(CollectionUtils.sizeIsEmpty(asEnumeration(Collections.emptyIterator())));
+        assertFalse(CollectionUtils.sizeIsEmpty(asEnumeration(Collections.singleton("").iterator())));
     }
     
     @Test
-    public void testContains() {
-        Assert.assertTrue(CollectionUtils.contains(Collections.singletonList("target"), "target"));
-        Assert.assertFalse(CollectionUtils.contains(Collections.emptyList(), "target"));
+    void testSizeIsEmpty1() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            CollectionUtils.sizeIsEmpty(null);
+        });
     }
     
     @Test
-    public void testIsEmpty() {
-        Assert.assertFalse(CollectionUtils.isEmpty(Collections.singletonList("target")));
-        Assert.assertTrue(CollectionUtils.isEmpty(Collections.emptyList()));
-        Assert.assertTrue(CollectionUtils.isEmpty(null));
+    void testSizeIsEmpty2() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            CollectionUtils.sizeIsEmpty("string");
+        });
     }
     
     @Test
-    public void testIsNotEmpty() {
-        Assert.assertTrue(CollectionUtils.isNotEmpty(Collections.singletonList("target")));
-        Assert.assertFalse(CollectionUtils.isNotEmpty(Collections.emptyList()));
-        Assert.assertFalse(CollectionUtils.isNotEmpty(null));
+    void testContains() {
+        assertTrue(CollectionUtils.contains(Collections.singletonList("target"), "target"));
+        assertFalse(CollectionUtils.contains(Collections.emptyList(), "target"));
     }
     
     @Test
-    public void testGetOrDefault() {
-        Assert.assertEquals("default", CollectionUtils.getOrDefault(Collections.emptyList(), 1, "default"));
-        Assert.assertEquals("element",
-                CollectionUtils.getOrDefault(Collections.singletonList("element"), 0, "default"));
+    void testIsEmpty() {
+        assertFalse(CollectionUtils.isEmpty(Collections.singletonList("target")));
+        assertTrue(CollectionUtils.isEmpty(Collections.emptyList()));
+        assertTrue(CollectionUtils.isEmpty(null));
     }
     
     @Test
-    public void testList() {
-        Assert.assertEquals(Arrays.asList(null, null, null), CollectionUtils.list(null, null, null));
-        Assert.assertEquals(Arrays.asList("", "a", "b"), CollectionUtils.list("", "a", "b"));
-        Assert.assertEquals(new ArrayList(), CollectionUtils.list());
+    void testIsNotEmpty() {
+        assertTrue(CollectionUtils.isNotEmpty(Collections.singletonList("target")));
+        assertFalse(CollectionUtils.isNotEmpty(Collections.emptyList()));
+        assertFalse(CollectionUtils.isNotEmpty(null));
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testListNullPointerException() {
-        CollectionUtils.list(null);
+    @Test
+    void testGetOrDefault() {
+        assertEquals("default", CollectionUtils.getOrDefault(Collections.emptyList(), 1, "default"));
+        assertEquals("element", CollectionUtils.getOrDefault(Collections.singletonList("element"), 0, "default"));
+    }
+    
+    @Test
+    void testList() {
+        assertEquals(Arrays.asList(null, null, null), CollectionUtils.list(null, null, null));
+        assertEquals(Arrays.asList("", "a", "b"), CollectionUtils.list("", "a", "b"));
+        assertEquals(new ArrayList(), CollectionUtils.list());
+    }
+    
+    @Test
+    void testListNullPointerException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            CollectionUtils.list(null);
+        });
     }
     
     private <T> Enumeration<T> asEnumeration(final Iterator<T> iterator) {
@@ -325,71 +370,79 @@ public class CollectionUtilsTest {
     }
     
     @Test
-    public void testSet() {
+    void testSet() {
         Set<Object> set = new HashSet<>();
         set.add(null);
-        Assert.assertEquals(set, CollectionUtils.set(null, null, null));
-        Assert.assertEquals(new LinkedHashSet(Arrays.asList("", "a", "b")), CollectionUtils.set("", "a", "b"));
-        Assert.assertEquals(new HashSet(), CollectionUtils.set());
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testSetNullPointerException() {
-        CollectionUtils.set(null);
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetOnlyElementIllegalArgumentException() {
-        List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6);
-        CollectionUtils.getOnlyElement(list);
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetOnlyElementIllegalArgumentException2() {
-        CollectionUtils.getOnlyElement(null);
-    }
-    
-    @Test(expected = NoSuchElementException.class)
-    public void testGetOnlyElementNoSuchElementException() {
-        List<Object> list = new ArrayList<>();
-        CollectionUtils.getOnlyElement(list);
+        assertEquals(set, CollectionUtils.set(null, null, null));
+        assertEquals(new LinkedHashSet(Arrays.asList("", "a", "b")), CollectionUtils.set("", "a", "b"));
+        assertEquals(new HashSet(), CollectionUtils.set());
     }
     
     @Test
-    public void testGetOnly() {
+    void testSetNullPointerException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            CollectionUtils.set(null);
+        });
+    }
+    
+    @Test
+    void testGetOnlyElementIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            List<Integer> list = Arrays.asList(1, 2, 3, 4, 5, 6);
+            CollectionUtils.getOnlyElement(list);
+        });
+    }
+    
+    @Test
+    void testGetOnlyElementIllegalArgumentException2() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            CollectionUtils.getOnlyElement(null);
+        });
+    }
+    
+    @Test
+    void testGetOnlyElementNoSuchElementException() {
+        assertThrows(NoSuchElementException.class, () -> {
+            List<Object> list = new ArrayList<>();
+            CollectionUtils.getOnlyElement(list);
+        });
+    }
+    
+    @Test
+    void testGetOnly() {
         List<Integer> list = Arrays.asList(1);
         int element = CollectionUtils.getOnlyElement(list);
-        Assert.assertEquals(1, element);
+        assertEquals(1, element);
     }
     
     @Test
-    public void testIsListEqualForNull() {
-        Assert.assertTrue(CollectionUtils.isListEqual(null, null));
-        Assert.assertFalse(CollectionUtils.isListEqual(Collections.emptyList(), null));
-        Assert.assertFalse(CollectionUtils.isListEqual(null, Collections.emptyList()));
+    void testIsListEqualForNull() {
+        assertTrue(CollectionUtils.isListEqual(null, null));
+        assertFalse(CollectionUtils.isListEqual(Collections.emptyList(), null));
+        assertFalse(CollectionUtils.isListEqual(null, Collections.emptyList()));
     }
     
     @Test
-    public void testIsListEqualForEquals() {
+    void testIsListEqualForEquals() {
         List<String> list1 = Arrays.asList("1", "2", "3");
         List<String> list2 = Arrays.asList("1", "2", "3");
-        Assert.assertTrue(CollectionUtils.isListEqual(list1, list1));
-        Assert.assertTrue(CollectionUtils.isListEqual(list1, list2));
-        Assert.assertTrue(CollectionUtils.isListEqual(list2, list1));
+        assertTrue(CollectionUtils.isListEqual(list1, list1));
+        assertTrue(CollectionUtils.isListEqual(list1, list2));
+        assertTrue(CollectionUtils.isListEqual(list2, list1));
     }
     
     @Test
-    public void testIsListEqualForNotEquals() {
+    void testIsListEqualForNotEquals() {
         List<String> list1 = Arrays.asList("1", "2", "3");
         List<String> list2 = Arrays.asList("1", "2", "3", "4");
         List<String> list3 = Arrays.asList("1", "2", "3", "5");
-        Assert.assertFalse(CollectionUtils.isListEqual(list1, list2));
-        Assert.assertFalse(CollectionUtils.isListEqual(list2, list3));
+        assertFalse(CollectionUtils.isListEqual(list1, list2));
+        assertFalse(CollectionUtils.isListEqual(list2, list3));
     }
     
     @Test
-    public void testIsMapEmpty() {
-        Assert.assertTrue(CollectionUtils.isMapEmpty(null));
-        Assert.assertTrue(CollectionUtils.isMapEmpty(Collections.emptyMap()));
+    void testIsMapEmpty() {
+        assertTrue(CollectionUtils.isMapEmpty(null));
+        assertTrue(CollectionUtils.isMapEmpty(Collections.emptyMap()));
     }
 }

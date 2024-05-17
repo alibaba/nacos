@@ -17,15 +17,15 @@
 package com.alibaba.nacos.common.trace.event.naming;
 
 import com.alibaba.nacos.common.trace.HealthCheckType;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class HealthStateChangeTraceEventTest extends NamingTraceEventTest {
+class HealthStateChangeTraceEventTest extends NamingTraceEventTest {
     
     @Test
-    public void testHealthStateChangeTraceEventForClientBeat() {
+    void testHealthStateChangeTraceEventForClientBeat() {
         HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID,
                 GROUP_NAME, SERVICE_NAME, IP, PORT, false, "client_beat");
         assertBasicInfo(healthStateChangeTraceEvent);
@@ -35,7 +35,7 @@ public class HealthStateChangeTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testHealthStateChangeTraceEventForTcp() {
+    void testHealthStateChangeTraceEventForTcp() {
         HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID,
                 GROUP_NAME, SERVICE_NAME, IP, PORT, false, "tcp:unable2connect:");
         assertBasicInfo(healthStateChangeTraceEvent);
@@ -45,7 +45,7 @@ public class HealthStateChangeTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testHealthStateChangeTraceEventForHttp() {
+    void testHealthStateChangeTraceEventForHttp() {
         HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID,
                 GROUP_NAME, SERVICE_NAME, IP, PORT, false, "http:error:");
         assertBasicInfo(healthStateChangeTraceEvent);
@@ -55,7 +55,7 @@ public class HealthStateChangeTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testHealthStateChangeTraceEventForMysql() {
+    void testHealthStateChangeTraceEventForMysql() {
         HealthStateChangeTraceEvent healthStateChangeTraceEvent = new HealthStateChangeTraceEvent(TIME, NAMESPACE_ID,
                 GROUP_NAME, SERVICE_NAME, IP, PORT, false, "mysql:timeout:");
         assertBasicInfo(healthStateChangeTraceEvent);

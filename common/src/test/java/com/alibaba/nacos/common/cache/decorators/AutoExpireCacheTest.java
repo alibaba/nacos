@@ -18,47 +18,51 @@ package com.alibaba.nacos.common.cache.decorators;
 
 import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 /**
  * auto expire cache test.
+ *
  * @author zzq
  * @date 2021/8/1
  */
-public class AutoExpireCacheTest {
+class AutoExpireCacheTest {
     
     @Test
-    public void testBasic() throws Exception {
+    void testBasic() throws Exception {
         Cache cache = CacheBuilder.builder().expireNanos(10, TimeUnit.MINUTES).build();
         IntStream.range(0, 100).forEach(item -> cache.put(item, item));
-        Assert.assertEquals(100, cache.getSize());
-        Assert.assertEquals(99, cache.get(99));
-        Assert.assertEquals(99, cache.get(99, () -> 100));
+        assertEquals(100, cache.getSize());
+        assertEquals(99, cache.get(99));
+        assertEquals(99, cache.get(99, () -> 100));
         Object removed = cache.remove(99);
-        Assert.assertEquals(99, removed);
-        Assert.assertEquals(99, cache.getSize());
-        Assert.assertEquals(100, cache.get(99, () -> 100));
+        assertEquals(99, removed);
+        assertEquals(99, cache.getSize());
+        assertEquals(100, cache.get(99, () -> 100));
         cache.clear();
-        Assert.assertEquals(0, cache.getSize());
+        assertEquals(0, cache.getSize());
     }
-
+    
     @Test
-    public void testExpire() throws Exception {
+    void testExpire() throws Exception {
         Cache cache = CacheBuilder.builder().expireNanos(1, TimeUnit.SECONDS).build();
-        cache.put("a",  "a");
+        cache.put("a", "a");
         TimeUnit.SECONDS.sleep(2);
-        Assert.assertNull(cache.get("a"));
+        assertNull(cache.get("a"));
     }
-
+    
     @Test
-    public void testGetCache() {
+    void testGetCache() {
         Cache cache = CacheBuilder.builder().expireNanos(1, TimeUnit.MINUTES).build();
         cache.put("test", "test");
-        Assert.assertNotNull(cache.get("test"));
-        Assert.assertNull(cache.get("test2"));
+        assertNotNull(cache.get("test"));
+        assertNull(cache.get("test2"));
     }
 }

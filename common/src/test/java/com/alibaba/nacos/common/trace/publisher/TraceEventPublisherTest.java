@@ -20,22 +20,22 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class TraceEventPublisherTest {
+@ExtendWith(MockitoExtension.class)
+class TraceEventPublisherTest {
     
     @Mock
     private Subscriber subscriber;
@@ -45,19 +45,19 @@ public class TraceEventPublisherTest {
     
     private TraceEventPublisher traceEventPublisher;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         traceEventPublisher = new TraceEventPublisher();
         traceEventPublisher.init(TraceTestEvent.class, Byte.SIZE);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         traceEventPublisher.shutdown();
     }
     
     @Test
-    public void testAddSubscriber() {
+    void testAddSubscriber() {
         when(subscriber.subscribeType()).thenReturn(TraceTestEvent.TraceTestEvent1.class);
         traceEventPublisher.addSubscriber(subscriber);
         traceEventPublisher.addSubscriber(smartSubscriber, TraceTestEvent.TraceTestEvent2.class);
@@ -71,7 +71,7 @@ public class TraceEventPublisherTest {
     }
     
     @Test
-    public void testRemoveSubscriber() {
+    void testRemoveSubscriber() {
         traceEventPublisher.addSubscriber(subscriber, TraceTestEvent.TraceTestEvent1.class);
         traceEventPublisher.addSubscriber(smartSubscriber, TraceTestEvent.TraceTestEvent1.class);
         TraceTestEvent.TraceTestEvent1 traceTestEvent1 = new TraceTestEvent.TraceTestEvent1();
@@ -95,7 +95,7 @@ public class TraceEventPublisherTest {
     }
     
     @Test
-    public void getStatus() throws NacosException {
+    void getStatus() throws NacosException {
         traceEventPublisher.publish(new TraceTestEvent());
         traceEventPublisher.publish(new TraceTestEvent.TraceTestEvent1());
         traceEventPublisher.publish(new TraceTestEvent.TraceTestEvent2());

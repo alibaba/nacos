@@ -18,26 +18,27 @@ package com.alibaba.nacos.common.cache.decorators;
 
 import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.stream.IntStream;
 
-public class SynchronizedCacheTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class SynchronizedCacheTest {
     
     @Test
-    public void testSync() throws Exception {
+    void testSync() throws Exception {
         Cache cache = CacheBuilder.builder().sync(true).build();
         IntStream.range(0, 100).forEach(item -> cache.put(item, item));
-        Assert.assertEquals(100, cache.getSize());
-        Assert.assertEquals(99, cache.get(99));
-        Assert.assertEquals(99, cache.get(99, () -> 100));
+        assertEquals(100, cache.getSize());
+        assertEquals(99, cache.get(99));
+        assertEquals(99, cache.get(99, () -> 100));
         Object removed = cache.remove(99);
-        Assert.assertEquals(99, removed);
-        Assert.assertEquals(99, cache.getSize());
-        Assert.assertEquals(100, cache.get(99, () -> 100));
+        assertEquals(99, removed);
+        assertEquals(99, cache.getSize());
+        assertEquals(100, cache.get(99, () -> 100));
         cache.clear();
-        Assert.assertEquals(0, cache.getSize());
+        assertEquals(0, cache.getSize());
     }
     
 }

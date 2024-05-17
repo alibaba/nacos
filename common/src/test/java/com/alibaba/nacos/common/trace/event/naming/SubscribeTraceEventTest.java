@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.common.trace.event.naming;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class SubscribeTraceEventTest extends NamingTraceEventTest {
+class SubscribeTraceEventTest extends NamingTraceEventTest {
     
     @Test
-    public void testRegisterInstanceTraceEvent() {
+    void testRegisterInstanceTraceEvent() {
         SubscribeServiceTraceEvent subscribeServiceTraceEvent = new SubscribeServiceTraceEvent(TIME, CLIENT_IP,
                 NAMESPACE_ID, GROUP_NAME, SERVICE_NAME);
         assertBasicInfo(subscribeServiceTraceEvent);
@@ -32,7 +32,7 @@ public class SubscribeTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testDeregisterInstanceTraceEvent() {
+    void testDeregisterInstanceTraceEvent() {
         UnsubscribeServiceTraceEvent unsubscribeServiceTraceEvent = new UnsubscribeServiceTraceEvent(TIME, CLIENT_IP,
                 NAMESPACE_ID, GROUP_NAME, SERVICE_NAME);
         assertBasicInfo(unsubscribeServiceTraceEvent);
@@ -41,7 +41,7 @@ public class SubscribeTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testPushServiceTraceEvent() {
+    void testPushServiceTraceEvent() {
         PushServiceTraceEvent pushServiceTraceEvent = new PushServiceTraceEvent(TIME, 10, 510, 510, CLIENT_IP,
                 NAMESPACE_ID, GROUP_NAME, SERVICE_NAME, 100);
         assertBasicInfo(pushServiceTraceEvent);
