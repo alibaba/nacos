@@ -31,25 +31,25 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 
 public class MergeTaskProcessorTest {
     
@@ -62,31 +62,30 @@ public class MergeTaskProcessorTest {
     @Mock
     ConfigInfoTagPersistService configInfoTagPersistService;
     
-    @Mock
-    private DataSourceService dataSourceService;
-    
-    @Mock
-    private MergeDatumService mergeDatumService;
-    
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     MergeTaskProcessor mergeTaskProcessor;
     
     MockedStatic<InetUtils> inetUtilsMockedStatic;
     
-    @Before
-    public void setUp() {
+    @Mock
+    private DataSourceService dataSourceService;
+    
+    @Mock
+    private MergeDatumService mergeDatumService;
+    
+    @BeforeEach
+    void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         inetUtilsMockedStatic = Mockito.mockStatic(InetUtils.class);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", dataSourceService);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", dataSourceService);
-        mergeTaskProcessor = new MergeTaskProcessor(configInfoPersistService, configInfoAggrPersistService,
-                configInfoTagPersistService, mergeDatumService);
+        mergeTaskProcessor = new MergeTaskProcessor(configInfoPersistService, configInfoAggrPersistService, configInfoTagPersistService,
+                mergeDatumService);
         inetUtilsMockedStatic.when(InetUtils::getSelfIP).thenReturn("127.0.0.1");
-        
+        after();
     }
     
-    @Before
     public void after() {
         envUtilMockedStatic.close();
         inetUtilsMockedStatic.close();
@@ -96,7 +95,7 @@ public class MergeTaskProcessorTest {
      * test aggr has datum and merge it expect: 1.config to be inserted 2.config data change event to be published
      */
     @Test
-    public void testMergerExistAggrConfig() throws InterruptedException {
+    void testMergerExistAggrConfig() throws InterruptedException {
         String dataId = "dataId12345";
         String group = "group123";
         String tenant = "tenant1234";
@@ -109,8 +108,8 @@ public class MergeTaskProcessorTest {
         datumPage.getPageItems().add(configInfoAggr1);
         datumPage.getPageItems().add(configInfoAggr2);
         
-        when(configInfoAggrPersistService.findConfigInfoAggrByPage(eq(dataId), eq(group), eq(tenant), anyInt(),
-                anyInt())).thenReturn(datumPage);
+        when(configInfoAggrPersistService.findConfigInfoAggrByPage(eq(dataId), eq(group), eq(tenant), anyInt(), anyInt())).thenReturn(
+                datumPage);
         
         when(configInfoPersistService.insertOrUpdate(eq(null), eq(null), any(ConfigInfo.class), eq(null))).thenReturn(
                 new ConfigOperateResult());
@@ -135,10 +134,9 @@ public class MergeTaskProcessorTest {
         MergeDataTask mergeDataTask = new MergeDataTask(dataId, group, tenant, "127.0.0.1");
         mergeTaskProcessor.process(mergeDataTask);
         
-        Mockito.verify(configInfoPersistService, times(1))
-                .insertOrUpdate(eq(null), eq(null), any(ConfigInfo.class), eq(null));
+        Mockito.verify(configInfoPersistService, times(1)).insertOrUpdate(eq(null), eq(null), any(ConfigInfo.class), eq(null));
         Thread.sleep(1000L);
-        Assert.assertTrue(reference.get() != null);
+        assertTrue(reference.get() != null);
         
     }
     
@@ -146,7 +144,7 @@ public class MergeTaskProcessorTest {
      * test aggr has datum and remove it.
      */
     @Test
-    public void testMergerNotExistAggrConfig() throws InterruptedException {
+    void testMergerNotExistAggrConfig() throws InterruptedException {
         String dataId = "dataId12345";
         String group = "group123";
         String tenant = "tenant1234";
@@ -170,21 +168,19 @@ public class MergeTaskProcessorTest {
         });
         
         MergeDataTask mergeDataTask = new MergeDataTask(dataId, group, tenant, "127.0.0.1");
-        Mockito.doNothing().when(configInfoPersistService)
-                .removeConfigInfo(eq(dataId), eq(group), eq(tenant), eq("127.0.0.1"), eq(null));
+        Mockito.doNothing().when(configInfoPersistService).removeConfigInfo(eq(dataId), eq(group), eq(tenant), eq("127.0.0.1"), eq(null));
         //Mockito.doNothing().when(configInfoTagPersistService).removeConfigInfoTag(eq(dataId), eq(group), eq(tenant),eq(),eq("127.0.0.1"),eq(null));
         mergeTaskProcessor.process(mergeDataTask);
-        Mockito.verify(configInfoPersistService, times(1))
-                .removeConfigInfo(eq(dataId), eq(group), eq(tenant), eq("127.0.0.1"), eq(null));
+        Mockito.verify(configInfoPersistService, times(1)).removeConfigInfo(eq(dataId), eq(group), eq(tenant), eq("127.0.0.1"), eq(null));
         Thread.sleep(1000L);
-        Assert.assertTrue(reference.get() != null);
+        assertTrue(reference.get() != null);
     }
     
     /**
      * test aggr has no datum and remove it tag.
      */
     @Test
-    public void testTagMergerNotExistAggrConfig() throws InterruptedException {
+    void testTagMergerNotExistAggrConfig() throws InterruptedException {
         String dataId = "dataId12345";
         String group = "group123";
         String tenant = "tenant1234";
@@ -197,8 +193,7 @@ public class MergeTaskProcessorTest {
             @Override
             public void onEvent(Event event) {
                 ConfigDataChangeEvent event1 = (ConfigDataChangeEvent) event;
-                if (event1.dataId.equals(dataId) && event1.group.equals(group) && tenant.equals(event1.tenant)
-                        && tag.equals(event1.tag)) {
+                if (event1.dataId.equals(dataId) && event1.group.equals(group) && tenant.equals(event1.tenant) && tag.equals(event1.tag)) {
                     reference.set((ConfigDataChangeEvent) event);
                 }
             }
@@ -217,19 +212,18 @@ public class MergeTaskProcessorTest {
         Mockito.verify(configInfoTagPersistService, times(1))
                 .removeConfigInfoTag(eq(dataId), eq(group), eq(tenant), eq(tag), eq("127.0.0.1"), eq(null));
         Thread.sleep(1000L);
-        Assert.assertTrue(reference.get() != null);
+        assertTrue(reference.get() != null);
     }
     
     /**
      * test aggr has no datum and remove it tag.
      */
     @Test
-    public void testTagMergerError() throws InterruptedException {
+    void testTagMergerError() throws InterruptedException {
         String dataId = "dataId12345";
         String group = "group123";
         String tenant = "tenant1234";
-        when(configInfoAggrPersistService.aggrConfigInfoCount(eq(dataId), eq(group), eq(tenant))).thenThrow(
-                new NullPointerException());
+        when(configInfoAggrPersistService.aggrConfigInfoCount(eq(dataId), eq(group), eq(tenant))).thenThrow(new NullPointerException());
         
         MergeDataTask mergeDataTask = new MergeDataTask(dataId, group, tenant, "127.0.0.1");
         

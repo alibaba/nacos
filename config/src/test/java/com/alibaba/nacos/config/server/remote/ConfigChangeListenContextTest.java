@@ -16,69 +16,72 @@
 
 package com.alibaba.nacos.config.server.remote;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Map;
 import java.util.Set;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigChangeListenContextTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
+@ExtendWith(MockitoExtension.class)
+class ConfigChangeListenContextTest {
+    
     private ConfigChangeListenContext configChangeListenContext;
-
-    @Before
-    public void setUp() throws Exception {
+    
+    @BeforeEach
+    void setUp() throws Exception {
         configChangeListenContext = new ConfigChangeListenContext();
     }
-
+    
     @Test
-    public void testAddListen() {
+    void testAddListen() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId");
         Set<String> groupKey = configChangeListenContext.getListeners("groupKey");
-        Assert.assertEquals(1, groupKey.size());
+        assertEquals(1, groupKey.size());
     }
-
+    
     @Test
-    public void testRemoveListen() {
+    void testRemoveListen() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId");
         configChangeListenContext.removeListen("groupKey", "connectionId");
         Set<String> groupKey = configChangeListenContext.getListeners("groupKey");
-        Assert.assertNull(groupKey);
+        assertNull(groupKey);
     }
-
+    
     @Test
-    public void testGetListeners() {
+    void testGetListeners() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId");
         Set<String> groupKey = configChangeListenContext.getListeners("groupKey");
-        Assert.assertEquals(1, groupKey.size());
+        assertEquals(1, groupKey.size());
     }
-
+    
     @Test
-    public void testClearContextForConnectionId() {
+    void testClearContextForConnectionId() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId");
         Map<String, String> connectionIdBefore = configChangeListenContext.getListenKeys("connectionId");
-        Assert.assertNotNull(connectionIdBefore);
+        assertNotNull(connectionIdBefore);
         configChangeListenContext.clearContextForConnectionId("connectionId");
         Map<String, String> connectionIdAfter = configChangeListenContext.getListenKeys("connectionId");
-        Assert.assertNull(connectionIdAfter);
+        assertNull(connectionIdAfter);
     }
-
+    
     @Test
-    public void testGetListenKeys() {
+    void testGetListenKeys() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId");
         Set<String> groupKey = configChangeListenContext.getListeners("groupKey");
-        Assert.assertEquals(1, groupKey.size());
+        assertEquals(1, groupKey.size());
     }
-
+    
     @Test
-    public void testGetListenKeyMd5() {
+    void testGetListenKeyMd5() {
         configChangeListenContext.addListen("groupKey", "md5", "connectionId");
         String listenKeyMd5 = configChangeListenContext.getListenKeyMd5("connectionId", "groupKey");
-        Assert.assertEquals("md5", listenKeyMd5);
+        assertEquals("md5", listenKeyMd5);
     }
-
+    
 }
