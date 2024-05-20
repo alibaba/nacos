@@ -103,10 +103,13 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
      * @return token
      */
     public String createToken(String userName) {
-        if (!authConfigs.isAuthEnabled()) {
+        // create a token when auth enabled or nacos.core.auth.plugin.nacos.token.secret.key is configured
+        if (!authConfigs.isAuthEnabled() && null == jwtParser) {
             return AUTH_DISABLED_TOKEN;
+        } else if (authConfigs.isAuthEnabled()) {
+            // check nacos.core.auth.plugin.nacos.token.secret.key only if auth enabled
+            checkJwtParser();
         }
-        checkJwtParser();
         return jwtParser.jwtBuilder().setUserName(userName).setExpiredTime(this.tokenValidityInSeconds).compact();
     }
     
@@ -147,7 +150,7 @@ public class JwtTokenManager extends Subscriber<ServerConfigChangeEvent> impleme
     @Override
     public long getTokenTtlInSeconds(String token) throws AccessException {
         if (!authConfigs.isAuthEnabled()) {
-            return TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis()) + tokenValidityInSeconds;
+            return tokenValidityInSeconds;
         }
         return jwtParser.getExpireTimeInSeconds(token) - TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis());
     }
