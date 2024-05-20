@@ -19,20 +19,20 @@ package com.alibaba.nacos.common.model;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
-public class RequestHttpEntityTest {
+@ExtendWith(MockitoExtension.class)
+class RequestHttpEntityTest {
     
     Header header;
     
@@ -42,8 +42,8 @@ public class RequestHttpEntityTest {
     
     Object body;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         header = Header.newInstance();
         header.addParam("testHeader", "test");
         query = Query.newInstance();
@@ -53,7 +53,7 @@ public class RequestHttpEntityTest {
     }
     
     @Test
-    public void testConstructWithoutConfigAndBody() {
+    void testConstructWithoutConfigAndBody() {
         RequestHttpEntity entity = new RequestHttpEntity(header, query);
         assertTrue(entity.isEmptyBody());
         assertNull(entity.getHttpClientConfig());
@@ -63,7 +63,7 @@ public class RequestHttpEntityTest {
     }
     
     @Test
-    public void testConstructWithoutConfigAndQuery() {
+    void testConstructWithoutConfigAndQuery() {
         RequestHttpEntity entity = new RequestHttpEntity(header, body);
         assertFalse(entity.isEmptyBody());
         assertNull(entity.getHttpClientConfig());
@@ -73,7 +73,7 @@ public class RequestHttpEntityTest {
     }
     
     @Test
-    public void testConstructWithoutConfig() {
+    void testConstructWithoutConfig() {
         RequestHttpEntity entity = new RequestHttpEntity(header, query, body);
         assertFalse(entity.isEmptyBody());
         assertNull(entity.getHttpClientConfig());
@@ -83,7 +83,7 @@ public class RequestHttpEntityTest {
     }
     
     @Test
-    public void testConstructFull() {
+    void testConstructFull() {
         RequestHttpEntity entity = new RequestHttpEntity(clientConfig, header, query, body);
         assertFalse(entity.isEmptyBody());
         assertEquals(clientConfig, entity.getHttpClientConfig());

@@ -20,22 +20,22 @@ import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class BeanResponseHandlerTest {
+class BeanResponseHandlerTest {
     
     @Test
-    public void testConvertResult() throws Exception {
+    void testConvertResult() throws Exception {
         List<Integer> testCase = new LinkedList<>();
         for (int i = 0; i < 10; i++) {
             testCase.add(i);

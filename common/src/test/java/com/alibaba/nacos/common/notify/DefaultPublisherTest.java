@@ -17,18 +17,19 @@
 package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -37,22 +38,22 @@ import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DefaultPublisherTest {
+@ExtendWith(MockitoExtension.class)
+class DefaultPublisherTest {
     
     private DefaultPublisher publisher;
     
     @Mock
     private Subscriber<MockEvent> subscriber;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         publisher = new DefaultPublisher();
         publisher.init(MockEvent.class, 1);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         try {
             publisher.shutdown();
         } catch (Exception ignored) {
@@ -60,29 +61,31 @@ public class DefaultPublisherTest {
     }
     
     @Test
-    public void testInitWithIllegalSize() {
+    void testInitWithIllegalSize() {
         publisher.shutdown();
         publisher = new DefaultPublisher();
         publisher.init(MockEvent.class, -1);
         assertTrue(publisher.isInitialized());
     }
     
-    @Test(expected = IllegalStateException.class)
-    public void testCheckIsStart() {
-        publisher.shutdown();
-        publisher = new DefaultPublisher();
-        publisher.checkIsStart();
+    @Test
+    void testCheckIsStart() {
+        assertThrows(IllegalStateException.class, () -> {
+            publisher.shutdown();
+            publisher = new DefaultPublisher();
+            publisher.checkIsStart();
+        });
     }
     
     @Test
-    public void testCurrentEventSize() {
+    void testCurrentEventSize() {
         assertEquals(0, publisher.currentEventSize());
         publisher.publish(new MockEvent());
         assertEquals(1, publisher.currentEventSize());
     }
     
     @Test
-    public void testRemoveSubscriber() {
+    void testRemoveSubscriber() {
         publisher.addSubscriber(subscriber);
         assertEquals(1, publisher.getSubscribers().size());
         publisher.removeSubscriber(subscriber);
@@ -90,7 +93,7 @@ public class DefaultPublisherTest {
     }
     
     @Test
-    public void publishEventWhenQueueFull() {
+    void publishEventWhenQueueFull() {
         // Stop the publisher thread to mock queue full.
         publisher.shutdown();
         publisher.publish(new MockEvent());
@@ -109,7 +112,7 @@ public class DefaultPublisherTest {
     }
     
     @Test
-    public void publishEventQueueNotFull() throws InterruptedException {
+    void publishEventQueueNotFull() throws InterruptedException {
         when(subscriber.scopeMatches(any(MockEvent.class))).thenReturn(true);
         MockEvent mockEvent = new MockEvent();
         // Make sure Publisher entry waiting subscribers.
@@ -131,7 +134,7 @@ public class DefaultPublisherTest {
     }
     
     @Test
-    public void testHandleEventWithThrowable() throws InterruptedException {
+    void testHandleEventWithThrowable() throws InterruptedException {
         when(subscriber.scopeMatches(any(MockEvent.class))).thenReturn(true);
         doThrow(new RuntimeException("test")).when(subscriber).onEvent(any(MockEvent.class));
         publisher.addSubscriber(subscriber);
@@ -141,7 +144,7 @@ public class DefaultPublisherTest {
     }
     
     @Test
-    public void testHandleEventWithExecutor() throws InterruptedException {
+    void testHandleEventWithExecutor() throws InterruptedException {
         Executor executor = mock(Executor.class);
         when(subscriber.scopeMatches(any(MockEvent.class))).thenReturn(true);
         when(subscriber.executor()).thenReturn(executor);
@@ -152,7 +155,7 @@ public class DefaultPublisherTest {
     }
     
     @Test
-    public void testReceiveEventWithException() throws InterruptedException {
+    void testReceiveEventWithException() throws InterruptedException {
         Executor executor = mock(Executor.class);
         when(subscriber.scopeMatches(any(MockEvent.class))).thenReturn(true);
         when(subscriber.executor()).thenThrow(new RuntimeException("test"));

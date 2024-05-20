@@ -17,89 +17,93 @@
 package com.alibaba.nacos.common.http;
 
 import org.apache.http.client.methods.HttpRequestBase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class BaseHttpMethodTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class BaseHttpMethodTest {
     
     @Test
-    public void testHttpGet() {
+    void testHttpGet() {
         BaseHttpMethod method = BaseHttpMethod.GET;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("GET", request.getMethod());
+        assertEquals("GET", request.getMethod());
     }
     
     @Test
-    public void testHttpGetLarge() {
+    void testHttpGetLarge() {
         BaseHttpMethod method = BaseHttpMethod.GET_LARGE;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("GET", request.getMethod());
+        assertEquals("GET", request.getMethod());
     }
     
     @Test
-    public void testHttpPost() {
+    void testHttpPost() {
         BaseHttpMethod method = BaseHttpMethod.POST;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("POST", request.getMethod());
+        assertEquals("POST", request.getMethod());
     }
     
     @Test
-    public void testHttpPut() {
+    void testHttpPut() {
         BaseHttpMethod method = BaseHttpMethod.PUT;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("PUT", request.getMethod());
+        assertEquals("PUT", request.getMethod());
     }
     
     @Test
-    public void testHttpDelete() {
+    void testHttpDelete() {
         BaseHttpMethod method = BaseHttpMethod.DELETE;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("DELETE", request.getMethod());
+        assertEquals("DELETE", request.getMethod());
     }
     
     @Test
-    public void testHttpDeleteLarge() {
+    void testHttpDeleteLarge() {
         BaseHttpMethod method = BaseHttpMethod.DELETE_LARGE;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("DELETE", request.getMethod());
+        assertEquals("DELETE", request.getMethod());
     }
     
     @Test
-    public void testHttpHead() {
+    void testHttpHead() {
         BaseHttpMethod method = BaseHttpMethod.HEAD;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("HEAD", request.getMethod());
+        assertEquals("HEAD", request.getMethod());
     }
     
     @Test
-    public void testHttpTrace() {
+    void testHttpTrace() {
         BaseHttpMethod method = BaseHttpMethod.TRACE;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("TRACE", request.getMethod());
+        assertEquals("TRACE", request.getMethod());
     }
     
     @Test
-    public void testHttpPatch() {
+    void testHttpPatch() {
         BaseHttpMethod method = BaseHttpMethod.PATCH;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("PATCH", request.getMethod());
+        assertEquals("PATCH", request.getMethod());
     }
     
     @Test
-    public void testHttpOptions() {
+    void testHttpOptions() {
         BaseHttpMethod method = BaseHttpMethod.OPTIONS;
         HttpRequestBase request = method.init("http://example.com");
-        Assert.assertEquals("TRACE", request.getMethod());
+        assertEquals("TRACE", request.getMethod());
     }
     
     @Test
-    public void testSourceOf() {
+    void testSourceOf() {
         BaseHttpMethod method = BaseHttpMethod.sourceOf("GET");
-        Assert.assertEquals(BaseHttpMethod.GET, method);
+        assertEquals(BaseHttpMethod.GET, method);
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testSourceOfNotFound() {
-        BaseHttpMethod.sourceOf("Not Found");
+    @Test
+    void testSourceOfNotFound() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            BaseHttpMethod.sourceOf("Not Found");
+        });
     }
 }

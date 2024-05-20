@@ -19,28 +19,28 @@ package com.alibaba.nacos.common.http;
 import com.alibaba.nacos.common.http.client.NacosAsyncRestTemplate;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
-import org.junit.After;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-@RunWith(MockitoJUnitRunner.class)
-public class AbstractHttpClientFactoryTest {
+@ExtendWith(MockitoExtension.class)
+class AbstractHttpClientFactoryTest {
     
     @Mock
     private Logger logger;
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         TlsSystemConfig.tlsEnable = false;
     }
     
     @Test
-    public void testCreateNacosRestTemplateWithSsl() throws Exception {
+    void testCreateNacosRestTemplateWithSsl() throws Exception {
         TlsSystemConfig.tlsEnable = true;
         HttpClientFactory httpClientFactory = new DefaultHttpClientFactory(logger);
         NacosRestTemplate nacosRestTemplate = httpClientFactory.createNacosRestTemplate();
@@ -48,7 +48,7 @@ public class AbstractHttpClientFactoryTest {
     }
     
     @Test
-    public void testCreateNacosAsyncRestTemplate() {
+    void testCreateNacosAsyncRestTemplate() {
         HttpClientFactory httpClientFactory = new AbstractHttpClientFactory() {
             @Override
             protected HttpClientConfig buildHttpClientConfig() {

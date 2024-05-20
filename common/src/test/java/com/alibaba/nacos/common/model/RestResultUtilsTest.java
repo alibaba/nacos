@@ -17,68 +17,68 @@
 package com.alibaba.nacos.common.model;
 
 import com.alibaba.nacos.common.model.core.IResultCode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class RestResultUtilsTest {
+class RestResultUtilsTest {
     
     @Test
-    public void testSuccessWithDefault() {
+    void testSuccessWithDefault() {
         RestResult<Object> restResult = RestResultUtils.success();
         assertRestResult(restResult, 200, null, null, true);
     }
     
     @Test
-    public void testSuccessWithData() {
+    void testSuccessWithData() {
         RestResult<String> restResult = RestResultUtils.success("content");
         assertRestResult(restResult, 200, null, "content", true);
     }
     
     @Test
-    public void testSuccessWithMsg() {
+    void testSuccessWithMsg() {
         RestResult<String> restResult = RestResultUtils.success("test", "content");
         assertRestResult(restResult, 200, "test", "content", true);
     }
     
     @Test
-    public void testSuccessWithCode() {
+    void testSuccessWithCode() {
         RestResult<String> restResult = RestResultUtils.success(203, "content");
         assertRestResult(restResult, 203, null, "content", false);
     }
     
     @Test
-    public void testFailedWithDefault() {
+    void testFailedWithDefault() {
         RestResult<Object> restResult = RestResultUtils.failed();
         assertRestResult(restResult, 500, null, null, false);
     }
     
     @Test
-    public void testFailedWithMsg() {
+    void testFailedWithMsg() {
         RestResult<String> restResult = RestResultUtils.failed("test");
         assertRestResult(restResult, 500, "test", null, false);
     }
     
     @Test
-    public void testFailedWithCode() {
+    void testFailedWithCode() {
         RestResult<String> restResult = RestResultUtils.failed(400, "content");
         assertRestResult(restResult, 400, null, "content", false);
     }
     
     @Test
-    public void testSuccessWithFull() {
+    void testSuccessWithFull() {
         RestResult<String> restResult = RestResultUtils.failed(400, "content", "test");
         assertRestResult(restResult, 400, "test", "content", false);
     }
     
     @Test
-    public void testFailedWithMsgMethod() {
+    void testFailedWithMsgMethod() {
         RestResult<String> restResult = RestResultUtils.failedWithMsg(400, "content");
         assertRestResult(restResult, 400, "content", null, false);
     }
     
     @Test
-    public void testBuildResult() {
+    void testBuildResult() {
         IResultCode mockCode = new IResultCode() {
             @Override
             public int getCode() {

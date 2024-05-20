@@ -23,12 +23,14 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.io.OutputStream;
 import java.lang.reflect.Field;
@@ -39,7 +41,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -47,8 +49,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class JdkHttpClientRequestTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class JdkHttpClientRequestTest {
+    
+    JdkHttpClientRequest httpClientRequest;
     
     @Mock
     private HttpURLConnection connection;
@@ -62,12 +68,10 @@ public class JdkHttpClientRequestTest {
     @Mock
     private OutputStream outputStream;
     
-    JdkHttpClientRequest httpClientRequest;
-    
     private HttpClientConfig httpClientConfig;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         when(uri.toURL()).thenReturn(url);
         when(url.openConnection()).thenReturn(connection);
         when(connection.getOutputStream()).thenReturn(outputStream);
@@ -75,13 +79,13 @@ public class JdkHttpClientRequestTest {
         httpClientRequest = new JdkHttpClientRequest(httpClientConfig);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         httpClientRequest.close();
     }
     
     @Test
-    public void testExecuteNormal() throws Exception {
+    void testExecuteNormal() throws Exception {
         Header header = Header.newInstance();
         HttpClientConfig config = HttpClientConfig.builder().build();
         RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, "a=bo&dy");
@@ -92,7 +96,7 @@ public class JdkHttpClientRequestTest {
     }
     
     @Test
-    public void testExecuteForm() throws Exception {
+    void testExecuteForm() throws Exception {
         Header header = Header.newInstance();
         header.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         HttpClientConfig config = HttpClientConfig.builder().build();
@@ -100,14 +104,13 @@ public class JdkHttpClientRequestTest {
         body.put("a", "bo&dy");
         RequestHttpEntity httpEntity = new RequestHttpEntity(config, header, Query.EMPTY, body);
         HttpClientResponse response = httpClientRequest.execute(uri, "GET", httpEntity);
-        byte[] writeBytes = HttpUtils.encodingParams(body, StandardCharsets.UTF_8.name())
-                .getBytes(StandardCharsets.UTF_8);
+        byte[] writeBytes = HttpUtils.encodingParams(body, StandardCharsets.UTF_8.name()).getBytes(StandardCharsets.UTF_8);
         verify(outputStream).write(writeBytes, 0, writeBytes.length);
         assertEquals(connection, getActualConnection(response));
     }
     
     @Test
-    public void testExecuteEmptyBody() throws Exception {
+    void testExecuteEmptyBody() throws Exception {
         Header header = Header.newInstance();
         RequestHttpEntity httpEntity = new RequestHttpEntity(header, Query.EMPTY);
         HttpClientResponse response = httpClientRequest.execute(uri, "GET", httpEntity);
@@ -116,8 +119,7 @@ public class JdkHttpClientRequestTest {
         
     }
     
-    private HttpURLConnection getActualConnection(HttpClientResponse actual)
-            throws IllegalAccessException, NoSuchFieldException {
+    private HttpURLConnection getActualConnection(HttpClientResponse actual) throws IllegalAccessException, NoSuchFieldException {
         Field field = actual.getClass().getDeclaredField("conn");
         field.setAccessible(true);
         return (HttpURLConnection) field.get(actual);
