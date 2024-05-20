@@ -16,16 +16,19 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 
-public class ConnectionSetupRequestTest extends BasicRequestTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ConnectionSetupRequestTest extends BasicRequestTest {
     
     @Test
-    public void testSerialize() throws Exception {
+    void testSerialize() throws Exception {
         ConnectionSetupRequest request = new ConnectionSetupRequest();
         request.setClientVersion("2.2.2");
         request.setAbilityTable(new HashMap<>());
@@ -33,27 +36,28 @@ public class ConnectionSetupRequestTest extends BasicRequestTest {
         request.setLabels(Collections.singletonMap("labelKey", "labelValue"));
         request.setRequestId("1");
         String json = mapper.writeValueAsString(request);
-        Assert.assertNotNull(json);
-        Assert.assertTrue(json.contains("\"clientVersion\":\"2.2.2\""));
-        Assert.assertTrue(json.contains("\"tenant\":\"testNamespaceId\""));
-        Assert.assertTrue(json.contains("\"labels\":{\"labelKey\":\"labelValue\"}"));
-        Assert.assertTrue(json.contains("\"abilityTable\":{"));
-        Assert.assertTrue(json.contains("\"module\":\"internal\""));
-        Assert.assertTrue(json.contains("\"requestId\":\"1\""));
+        assertNotNull(json);
+        assertTrue(json.contains("\"clientVersion\":\"2.2.2\""));
+        assertTrue(json.contains("\"tenant\":\"testNamespaceId\""));
+        assertTrue(json.contains("\"labels\":{\"labelKey\":\"labelValue\"}"));
+        assertTrue(json.contains("\"abilityTable\":{"));
+        assertTrue(json.contains("\"module\":\"internal\""));
+        assertTrue(json.contains("\"requestId\":\"1\""));
     }
     
     @Test
-    public void testDeserialize() throws Exception {
-        String json = "{\"headers\":{},\"requestId\":\"1\",\"clientVersion\":\"2.2.2\",\"abilities\":{\"remoteAbility\":"
-                + "{\"supportRemoteConnection\":false},\"configAbility\":{\"supportRemoteMetrics\":false},"
-                + "\"namingAbility\":{\"supportDeltaPush\":false,\"supportRemoteMetric\":false}},\"tenant\":\"testNamespaceId\","
-                + "\"labels\":{\"labelKey\":\"labelValue\"},\"module\":\"internal\"}";
+    void testDeserialize() throws Exception {
+        String json =
+                "{\"headers\":{},\"requestId\":\"1\",\"clientVersion\":\"2.2.2\",\"abilities\":{\"remoteAbility\":"
+                        + "{\"supportRemoteConnection\":false},\"configAbility\":{\"supportRemoteMetrics\":false},"
+                        + "\"namingAbility\":{\"supportDeltaPush\":false,\"supportRemoteMetric\":false}},\"tenant\":\"testNamespaceId\","
+                        + "\"labels\":{\"labelKey\":\"labelValue\"},\"module\":\"internal\"}";
         ConnectionSetupRequest result = mapper.readValue(json, ConnectionSetupRequest.class);
-        Assert.assertNotNull(result);
-        Assert.assertEquals("2.2.2", result.getClientVersion());
-        Assert.assertEquals("testNamespaceId", result.getTenant());
-        Assert.assertEquals(1, result.getLabels().size());
-        Assert.assertEquals("labelValue", result.getLabels().get("labelKey"));
-        Assert.assertEquals("1", result.getRequestId());
+        assertNotNull(result);
+        assertEquals("2.2.2", result.getClientVersion());
+        assertEquals("testNamespaceId", result.getTenant());
+        assertEquals(1, result.getLabels().size());
+        assertEquals("labelValue", result.getLabels().get("labelKey"));
+        assertEquals("1", result.getRequestId());
     }
 }

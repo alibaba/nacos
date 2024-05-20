@@ -16,24 +16,24 @@
 
 package com.alibaba.nacos.api.remote;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RpcScheduledExecutorTest {
+class RpcScheduledExecutorTest {
     
     private static final String NAME = "test.rpc.thread";
     
     Map<String, String> threadNameMap = new ConcurrentHashMap<>();
     
     @Test
-    public void testRpcScheduledExecutor() throws InterruptedException {
+    void testRpcScheduledExecutor() throws InterruptedException {
         RpcScheduledExecutor executor = new RpcScheduledExecutor(2, NAME);
         CountDownLatch latch = new CountDownLatch(2);
         executor.submit(new TestRunner(1, latch));

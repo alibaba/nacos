@@ -18,23 +18,23 @@ package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class MysqlTest {
+class MysqlTest {
     
     private ObjectMapper objectMapper;
     
     private Mysql mysql;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mysql = new Mysql();
         mysql.setUser("user");
         mysql.setPwd("pwd");
@@ -43,7 +43,7 @@ public class MysqlTest {
     }
     
     @Test
-    public void testSerialize() throws JsonProcessingException {
+    void testSerialize() throws JsonProcessingException {
         String actual = objectMapper.writeValueAsString(mysql);
         assertTrue(actual.contains("\"user\":\"user\""));
         assertTrue(actual.contains("\"type\":\"MYSQL\""));
@@ -52,7 +52,7 @@ public class MysqlTest {
     }
     
     @Test
-    public void testDeserialize() throws IOException {
+    void testDeserialize() throws IOException {
         String testChecker = "{\"type\":\"MYSQL\",\"user\":\"user\",\"pwd\":\"pwd\",\"cmd\":\"cmd\"}";
         Mysql actual = objectMapper.readValue(testChecker, Mysql.class);
         assertEquals("cmd", actual.getCmd());
@@ -62,23 +62,23 @@ public class MysqlTest {
     }
     
     @Test
-    public void testClone() throws CloneNotSupportedException {
+    void testClone() throws CloneNotSupportedException {
         Mysql cloned = mysql.clone();
         assertEquals(mysql.hashCode(), cloned.hashCode());
-        assertTrue(mysql.equals(cloned));
+        assertEquals(mysql, cloned);
     }
     
     @Test
-    public void testNotEquals() throws CloneNotSupportedException {
-        assertFalse(mysql.equals(new Tcp()));
+    void testNotEquals() throws CloneNotSupportedException {
+        assertNotEquals(mysql, new Tcp());
         Mysql cloned = mysql.clone();
         cloned.setUser("aaa");
-        assertFalse(mysql.equals(cloned));
+        assertNotEquals(mysql, cloned);
         cloned = mysql.clone();
         cloned.setPwd("aaa");
-        assertFalse(mysql.equals(cloned));
+        assertNotEquals(mysql, cloned);
         cloned = mysql.clone();
         cloned.setCmd("aaa");
-        assertFalse(mysql.equals(cloned));
+        assertNotEquals(mysql, cloned);
     }
 }

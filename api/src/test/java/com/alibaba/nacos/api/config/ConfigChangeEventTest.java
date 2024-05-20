@@ -16,18 +16,18 @@
 
 package com.alibaba.nacos.api.config;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class ConfigChangeEventTest {
+class ConfigChangeEventTest {
     
     @Test
-    public void testConstructor() {
+    void testConstructor() {
         Map<String, ConfigChangeItem> mockData = new HashMap<>();
         mockData.put("test", new ConfigChangeItem("testKey", null, "testValue"));
         ConfigChangeEvent event = new ConfigChangeEvent(mockData);
