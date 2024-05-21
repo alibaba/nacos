@@ -22,15 +22,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public abstract class BasedConfigRequestTest {
-    
-    protected static ObjectMapper mapper;
     
     protected static final String DATA_ID = "test_data";
     
@@ -52,11 +50,13 @@ public abstract class BasedConfigRequestTest {
     
     protected static final String CONTENT = "content";
     
+    protected static ObjectMapper mapper;
+    
     static {
         HEADERS.put(HEADER_KEY, HEADER_VALUE);
     }
     
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);

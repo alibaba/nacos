@@ -16,23 +16,24 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class TimeUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class TimeUtilsTest {
     
     @Test
-    public void testGetCurrentTimeStr() throws ParseException {
+    void testGetCurrentTimeStr() throws ParseException {
         
         Date date1 = new Date(TimeUtils.getCurrentTime().getTime());
-        Assert.assertNotNull(date1.toString());
-    
+        assertNotNull(date1.toString());
+        
         Date date2 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(TimeUtils.getCurrentTimeStr());
-        Assert.assertNotNull(date2.toString());
+        assertNotNull(date2.toString());
         
     }
 }

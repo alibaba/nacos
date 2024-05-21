@@ -16,81 +16,86 @@
 
 package com.alibaba.nacos.common.codec;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 
-public class Base64Test {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class Base64Test {
     
     @Test
-    public void test() {
+    void test() {
         String origin = "nacos";
         String encoded = "bmFjb3M=";
         
         byte[] encodeBase64 = Base64.encodeBase64(origin.getBytes(StandardCharsets.UTF_8));
-        Assert.assertEquals(encoded, new String(encodeBase64));
+        assertEquals(encoded, new String(encodeBase64));
         byte[] decodeBase64 = Base64.decodeBase64(encoded.getBytes(StandardCharsets.UTF_8));
-        Assert.assertEquals(origin, new String(decodeBase64));
+        assertEquals(origin, new String(decodeBase64));
     }
     
     @Test
-    public void testEncodeNullOrEmpty() {
+    void testEncodeNullOrEmpty() {
         byte[] b1 = Base64.encodeBase64(null);
-        Assert.assertNull(b1);
+        assertNull(b1);
         byte[] b2 = Base64.encodeBase64(new byte[] {});
-        Assert.assertEquals(0, b2.length);
+        assertEquals(0, b2.length);
     }
     
     @Test
-    public void testDecodeNullOrEmpty() {
+    void testDecodeNullOrEmpty() {
         byte[] b1 = Base64.decodeBase64(null);
-        Assert.assertNull(b1);
+        assertNull(b1);
         byte[] b2 = Base64.decodeBase64(new byte[] {});
-        Assert.assertEquals(0, b2.length);
+        assertEquals(0, b2.length);
     }
     
     @Test
-    public void testChunk() {
+    void testChunk() {
         String a = "very large characters to test chunk encoding and see if the result is expected or not";
         byte[] b1 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, Integer.MAX_VALUE);
         byte[] b2 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), true, false, Integer.MAX_VALUE);
         String s1 = new String(b1);
         String s2 = new String(b2);
-        Assert.assertEquals(s1, "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0"
+        assertEquals(s1, "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0"
                 + "aGUgcmVzdWx0IGlzIGV4cGVjdGVkIG9yIG5vdA==");
-        Assert.assertEquals(s2, "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0" + "\r\n"
+        assertEquals(s2, "dmVyeSBsYXJnZSBjaGFyYWN0ZXJzIHRvIHRlc3QgY2h1bmsgZW5jb2RpbmcgYW5kIHNlZSBpZiB0" + "\r\n"
                 + "aGUgcmVzdWx0IGlzIGV4cGVjdGVkIG9yIG5vdA==" + "\r\n");
-    
-        byte[] c1 = Base64.decodeBase64(b1);
-        byte[] c2 = Base64.decodeBase64(b2);
-        String s3 = new String(c1);
-        String s4 = new String(c2);
-        Assert.assertEquals(a, s3);
-        Assert.assertEquals(a, s4);
-    }
-    
-    @Test
-    public void testUrlSafe() {
-        String a = "aa~aa?";
-        byte[] b1 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, Integer.MAX_VALUE);
-        byte[] b2 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, true, Integer.MAX_VALUE);
-        String s1 = new String(b1);
-        String s2 = new String(b2);
-        Assert.assertEquals("YWF+YWE/", s1);
-        Assert.assertEquals("YWF-YWE_", s2);
         
         byte[] c1 = Base64.decodeBase64(b1);
         byte[] c2 = Base64.decodeBase64(b2);
         String s3 = new String(c1);
         String s4 = new String(c2);
-        Assert.assertEquals("aa~aa?", s3);
-        Assert.assertEquals("aa~aa?", s4);
+        assertEquals(a, s3);
+        assertEquals(a, s4);
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testEncodeOverMaxLength() {
-        String a = "very large characters to test chunk encoding and see if the result is expected or not";
-        Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, 10);
+    @Test
+    void testUrlSafe() {
+        String a = "aa~aa?";
+        byte[] b1 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, Integer.MAX_VALUE);
+        byte[] b2 = Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, true, Integer.MAX_VALUE);
+        String s1 = new String(b1);
+        String s2 = new String(b2);
+        assertEquals("YWF+YWE/", s1);
+        assertEquals("YWF-YWE_", s2);
+        
+        byte[] c1 = Base64.decodeBase64(b1);
+        byte[] c2 = Base64.decodeBase64(b2);
+        String s3 = new String(c1);
+        String s4 = new String(c2);
+        assertEquals("aa~aa?", s3);
+        assertEquals("aa~aa?", s4);
+    }
+    
+    @Test
+    void testEncodeOverMaxLength() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            String a = "very large characters to test chunk encoding and see if the result is expected or not";
+            Base64.encodeBase64(a.getBytes(StandardCharsets.UTF_8), false, false, 10);
+        });
     }
 }

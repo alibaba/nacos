@@ -17,14 +17,14 @@
 package com.alibaba.nacos.common.http;
 
 import com.alibaba.nacos.common.http.param.Header;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class HttpRestResultTest {
+class HttpRestResultTest {
     
     @Test
-    public void testSetHeader() {
+    void testSetHeader() {
         HttpRestResult<String> result = new HttpRestResult<>();
         result.setData("test data");
         Header header = Header.newInstance();
@@ -34,7 +34,7 @@ public class HttpRestResultTest {
     }
     
     @Test
-    public void testFullConstructor() {
+    void testFullConstructor() {
         Header header = Header.newInstance();
         HttpRestResult<String> result = new HttpRestResult<>(header, 200, "test data", "message");
         assertEquals(header, result.getHeader());

@@ -16,34 +16,34 @@
 
 package com.alibaba.nacos.common.paramcheck;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DefaultParamCheckerTest {
+class DefaultParamCheckerTest {
     
     DefaultParamChecker paramChecker;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         paramChecker = new DefaultParamChecker();
     }
     
     @Test
-    public void testCheckerType() {
+    void testCheckerType() {
         assertEquals("default", paramChecker.getCheckerType());
     }
     
     @Test
-    public void testCheckEmptyParamInfoList() {
+    void testCheckEmptyParamInfoList() {
         ParamCheckResponse actual = paramChecker.checkParamInfoList(null);
         assertTrue(actual.isSuccess());
         actual = paramChecker.checkParamInfoList(Collections.emptyList());
@@ -51,7 +51,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckEmptyParamInfo() {
+    void testCheckEmptyParamInfo() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -61,7 +61,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForNamespaceShowName() {
+    void testCheckParamInfoForNamespaceShowName() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -70,8 +70,7 @@ public class DefaultParamCheckerTest {
         paramInfo.setNamespaceShowName(namespaceShowName);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'namespaceShowName' is illegal, the param length should not exceed 256.",
-                actual.getMessage());
+        assertEquals("Param 'namespaceShowName' is illegal, the param length should not exceed 256.", actual.getMessage());
         // Pattern
         paramInfo.setNamespaceShowName("hsbfkj@$!#khdkad");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -85,7 +84,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForNamespaceId() {
+    void testCheckParamInfoForNamespaceId() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -94,8 +93,7 @@ public class DefaultParamCheckerTest {
         paramInfo.setNamespaceId(namespaceId);
         ParamCheckResponse actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'namespaceId/tenant' is illegal, the param length should not exceed 64.",
-                actual.getMessage());
+        assertEquals("Param 'namespaceId/tenant' is illegal, the param length should not exceed 64.", actual.getMessage());
         // Pattern
         paramInfo.setNamespaceId("hsbfkj@$!#khdkad");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -109,7 +107,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForDataId() {
+    void testCheckParamInfoForDataId() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -123,8 +121,7 @@ public class DefaultParamCheckerTest {
         paramInfo.setDataId("hsbfkj@$!#khdkad");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'dataId' is illegal, illegal characters should not appear in the param.",
-                actual.getMessage());
+        assertEquals("Param 'dataId' is illegal, illegal characters should not appear in the param.", actual.getMessage());
         // Success
         paramInfo.setDataId("a-zA-Z0-9-_:.");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -132,7 +129,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForServiceName() {
+    void testCheckParamInfoForServiceName() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -146,8 +143,7 @@ public class DefaultParamCheckerTest {
         paramInfo.setServiceName("@hsbfkj$@@!#khdkad啊");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'serviceName' is illegal, illegal characters should not appear in the param.",
-                actual.getMessage());
+        assertEquals("Param 'serviceName' is illegal, illegal characters should not appear in the param.", actual.getMessage());
         // Success
         paramInfo.setServiceName("com.aaa@bbb#_{}-b:v1.2.2");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -155,7 +151,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForGroup() {
+    void testCheckParamInfoForGroup() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -169,8 +165,7 @@ public class DefaultParamCheckerTest {
         paramInfo.setGroup("@hsbfkj$@@!#khdkad啊@@");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'group' is illegal, illegal characters should not appear in the param.",
-                actual.getMessage());
+        assertEquals("Param 'group' is illegal, illegal characters should not appear in the param.", actual.getMessage());
         // Success
         paramInfo.setGroup("a-zA-Z0-9-_:.");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -178,7 +173,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForClusters() {
+    void testCheckParamInfoForClusters() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -192,8 +187,7 @@ public class DefaultParamCheckerTest {
         paramInfo.setClusters("@hsbfkj$@@!#khdkad啊@@");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'cluster' is illegal, illegal characters should not appear in the param.",
-                actual.getMessage());
+        assertEquals("Param 'cluster' is illegal, illegal characters should not appear in the param.", actual.getMessage());
         // Success
         paramInfo.setClusters("0-9a-zA-Z-_,DEFAULT_abc-100");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -201,7 +195,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForCluster() {
+    void testCheckParamInfoForCluster() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -215,8 +209,7 @@ public class DefaultParamCheckerTest {
         paramInfo.setCluster("@hsbfkj$@@!#khdkad啊@@");
         actual = paramChecker.checkParamInfoList(paramInfos);
         assertFalse(actual.isSuccess());
-        assertEquals("Param 'cluster' is illegal, illegal characters should not appear in the param.",
-                actual.getMessage());
+        assertEquals("Param 'cluster' is illegal, illegal characters should not appear in the param.", actual.getMessage());
         // Success
         paramInfo.setCluster("0-9a-zA-Z-_");
         actual = paramChecker.checkParamInfoList(paramInfos);
@@ -224,7 +217,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForIp() {
+    void testCheckParamInfoForIp() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -246,7 +239,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForPort() {
+    void testCheckParamInfoForPort() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);
@@ -272,7 +265,7 @@ public class DefaultParamCheckerTest {
     }
     
     @Test
-    public void testCheckParamInfoForMetadata() {
+    void testCheckParamInfoForMetadata() {
         ParamInfo paramInfo = new ParamInfo();
         ArrayList<ParamInfo> paramInfos = new ArrayList<>();
         paramInfos.add(paramInfo);

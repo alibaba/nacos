@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.api.ability.register.impl;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ClusterClientAbilitiesTest {
+class ClusterClientAbilitiesTest {
     
     @Test
-    public void testGetStaticAbilities() {
+    void testGetStaticAbilities() {
         // TODO add the cluster client abilities.
         assertTrue(ClusterClientAbilities.getStaticAbilities().isEmpty());
     }

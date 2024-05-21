@@ -19,32 +19,36 @@ package com.alibaba.nacos.auth;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.naming.CommonParams;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.auth.mock.MockAuthPluginService;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.api.Permission;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
-import com.alibaba.nacos.auth.mock.MockAuthPluginService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HttpProtocolAuthServiceTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class HttpProtocolAuthServiceTest {
     
     @Mock
     private AuthConfigs authConfigs;
@@ -54,8 +58,8 @@ public class HttpProtocolAuthServiceTest {
     
     private HttpProtocolAuthService httpProtocolAuthService;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         httpProtocolAuthService = new HttpProtocolAuthService(authConfigs);
         httpProtocolAuthService.initialize();
         Mockito.when(request.getParameter(eq(CommonParams.NAMESPACE_ID))).thenReturn("testNNs");
@@ -68,7 +72,7 @@ public class HttpProtocolAuthServiceTest {
     
     @Test
     @Secured(resource = "testResource")
-    public void testParseResourceWithSpecifiedResource() throws NoSuchMethodException {
+    void testParseResourceWithSpecifiedResource() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithSpecifiedResource");
         Resource actual = httpProtocolAuthService.parseResource(request, secured);
         assertEquals("testResource", actual.getName());
@@ -80,7 +84,7 @@ public class HttpProtocolAuthServiceTest {
     
     @Test
     @Secured(signType = "non-exist")
-    public void testParseResourceWithNonExistType() throws NoSuchMethodException {
+    void testParseResourceWithNonExistType() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithNonExistType");
         Resource actual = httpProtocolAuthService.parseResource(request, secured);
         assertEquals(Resource.EMPTY_RESOURCE, actual);
@@ -88,7 +92,7 @@ public class HttpProtocolAuthServiceTest {
     
     @Test
     @Secured()
-    public void testParseResourceWithNamingType() throws NoSuchMethodException {
+    void testParseResourceWithNamingType() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithNamingType");
         Resource actual = httpProtocolAuthService.parseResource(request, secured);
         assertEquals(SignType.NAMING, actual.getType());
@@ -100,7 +104,7 @@ public class HttpProtocolAuthServiceTest {
     
     @Test
     @Secured(signType = SignType.CONFIG)
-    public void testParseResourceWithConfigType() throws NoSuchMethodException {
+    void testParseResourceWithConfigType() throws NoSuchMethodException {
         Secured secured = getMethodSecure("testParseResourceWithConfigType");
         Resource actual = httpProtocolAuthService.parseResource(request, secured);
         assertEquals(SignType.CONFIG, actual.getType());
@@ -111,39 +115,39 @@ public class HttpProtocolAuthServiceTest {
     }
     
     @Test
-    public void testParseIdentity() {
+    void testParseIdentity() {
         IdentityContext actual = httpProtocolAuthService.parseIdentity(request);
         assertNotNull(actual);
     }
     
     @Test
-    public void testValidateIdentityWithoutPlugin() throws AccessException {
+    void testValidateIdentityWithoutPlugin() throws AccessException {
         IdentityContext identityContext = new IdentityContext();
         assertTrue(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test
-    public void testValidateIdentityWithPlugin() throws AccessException {
+    void testValidateIdentityWithPlugin() throws AccessException {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
         IdentityContext identityContext = new IdentityContext();
         assertFalse(httpProtocolAuthService.validateIdentity(identityContext, Resource.EMPTY_RESOURCE));
     }
     
     @Test
-    public void testValidateAuthorityWithoutPlugin() throws AccessException {
-        assertTrue(httpProtocolAuthService
-                .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
+    void testValidateAuthorityWithoutPlugin() throws AccessException {
+        assertTrue(httpProtocolAuthService.validateAuthority(new IdentityContext(),
+                new Permission(Resource.EMPTY_RESOURCE, "")));
     }
     
     @Test
-    public void testValidateAuthorityWithPlugin() throws AccessException {
+    void testValidateAuthorityWithPlugin() throws AccessException {
         Mockito.when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginService.TEST_PLUGIN);
-        assertFalse(httpProtocolAuthService
-                .validateAuthority(new IdentityContext(), new Permission(Resource.EMPTY_RESOURCE, "")));
+        assertFalse(httpProtocolAuthService.validateAuthority(new IdentityContext(),
+                new Permission(Resource.EMPTY_RESOURCE, "")));
     }
     
     private Secured getMethodSecure(String methodName) throws NoSuchMethodException {
-        Method method = HttpProtocolAuthServiceTest.class.getMethod(methodName);
+        Method method = HttpProtocolAuthServiceTest.class.getDeclaredMethod(methodName);
         return method.getAnnotation(Secured.class);
     }
 }

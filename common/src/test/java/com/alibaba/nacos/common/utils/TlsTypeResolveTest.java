@@ -17,27 +17,28 @@
 package com.alibaba.nacos.common.utils;
 
 import io.grpc.netty.shaded.io.netty.handler.ssl.SslProvider;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class TlsTypeResolveTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+class TlsTypeResolveTest {
+    
     @Test
-    public void test() {
-
+    void test() {
+        
         SslProvider openssl = TlsTypeResolve.getSslProvider("openssl");
-        Assert.assertEquals(SslProvider.OPENSSL, openssl);
-
+        assertEquals(SslProvider.OPENSSL, openssl);
+        
         SslProvider openSsL = TlsTypeResolve.getSslProvider("openSSL");
-        Assert.assertEquals(SslProvider.OPENSSL, openSsL);
-
+        assertEquals(SslProvider.OPENSSL, openSsL);
+        
         SslProvider jdk = TlsTypeResolve.getSslProvider("JDK");
-        Assert.assertEquals(SslProvider.JDK, jdk);
-
+        assertEquals(SslProvider.JDK, jdk);
+        
         SslProvider anySsl = TlsTypeResolve.getSslProvider("anySSL");
-        Assert.assertEquals(SslProvider.OPENSSL, anySsl);
+        assertEquals(SslProvider.OPENSSL, anySsl);
         
         SslProvider refcnt = TlsTypeResolve.getSslProvider("openSSL_refcnt");
-        Assert.assertEquals(SslProvider.OPENSSL_REFCNT, refcnt);
+        assertEquals(SslProvider.OPENSSL_REFCNT, refcnt);
     }
 }
