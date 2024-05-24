@@ -17,15 +17,15 @@
 package com.alibaba.nacos.logger.adapter.logback12;
 
 import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class LogbackNacosLoggingAdapterBuilderTest {
+class LogbackNacosLoggingAdapterBuilderTest {
     
     @Test
-    public void build() {
+    void build() {
         LogbackNacosLoggingAdapterBuilder builder = new LogbackNacosLoggingAdapterBuilder();
         NacosLoggingAdapter adapter = builder.build();
         assertNotNull(adapter);
