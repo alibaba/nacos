@@ -17,16 +17,17 @@
 package com.alibaba.nacos.client.naming.event;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class InstancesChangeEventTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class InstancesChangeEventTest {
     
     @Test
-    public void testGetServiceName() {
+    void testGetServiceName() {
         String eventScope = "scope-001";
         String serviceName = "a";
         String groupName = "b";
@@ -35,12 +36,12 @@ public class InstancesChangeEventTest {
         Instance ins = new Instance();
         hosts.add(ins);
         InstancesChangeEvent event = new InstancesChangeEvent(eventScope, serviceName, groupName, clusters, hosts);
-        Assert.assertEquals(eventScope, event.scope());
-        Assert.assertEquals(serviceName, event.getServiceName());
-        Assert.assertEquals(clusters, event.getClusters());
-        Assert.assertEquals(groupName, event.getGroupName());
+        assertEquals(eventScope, event.scope());
+        assertEquals(serviceName, event.getServiceName());
+        assertEquals(clusters, event.getClusters());
+        assertEquals(groupName, event.getGroupName());
         List<Instance> hosts1 = event.getHosts();
-        Assert.assertEquals(hosts.size(), hosts1.size());
-        Assert.assertEquals(hosts.get(0), hosts1.get(0));
+        assertEquals(hosts.size(), hosts1.size());
+        assertEquals(hosts.get(0), hosts1.get(0));
     }
 }

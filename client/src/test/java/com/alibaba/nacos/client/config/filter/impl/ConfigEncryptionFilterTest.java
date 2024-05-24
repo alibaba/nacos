@@ -18,21 +18,22 @@ package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.config.filter.IConfigFilterChain;
 import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * ConfigCryptoFilterTest.
  *
  * @author lixiaoshuang
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigEncryptionFilterTest {
+@ExtendWith(MockitoExtension.class)
+class ConfigEncryptionFilterTest {
     
     private ConfigEncryptionFilter configEncryptionFilter;
     
@@ -45,24 +46,24 @@ public class ConfigEncryptionFilterTest {
     @Mock
     private IConfigFilterChain iConfigFilterChain;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         configEncryptionFilter = new ConfigEncryptionFilter();
-        
-        Mockito.when(configRequest.getDataId()).thenReturn("cipher-aes-test");
-        Mockito.when(configRequest.getContent()).thenReturn("nacos");
-        
-        Mockito.when(configResponse.getDataId()).thenReturn("test-dataid");
-        Mockito.when(configResponse.getContent()).thenReturn("nacos");
-        Mockito.when(configResponse.getEncryptedDataKey()).thenReturn("1234567890");
     }
     
     @Test
-    public void testDoFilter() throws NacosException {
+    void doFilter() throws NacosException {
+        Mockito.when(configRequest.getDataId()).thenReturn("cipher-aes-test");
+        Mockito.when(configRequest.getContent()).thenReturn("nacos");
+        
         configEncryptionFilter.doFilter(configRequest, null, iConfigFilterChain);
         
         Mockito.verify(configRequest, Mockito.atLeast(1)).getDataId();
         Mockito.verify(configRequest, Mockito.atLeast(1)).getContent();
+        
+        Mockito.when(configResponse.getDataId()).thenReturn("test-dataid");
+        Mockito.when(configResponse.getContent()).thenReturn("nacos");
+        Mockito.when(configResponse.getEncryptedDataKey()).thenReturn("1234567890");
         
         configEncryptionFilter.doFilter(null, configResponse, iConfigFilterChain);
         
@@ -72,8 +73,8 @@ public class ConfigEncryptionFilterTest {
     }
     
     @Test
-    public void testGetOrder() {
+    void testGetOrder() {
         int order = configEncryptionFilter.getOrder();
-        Assert.assertEquals(order, 0);
+        assertEquals(0, order);
     }
 }

@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.client.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-public class PreInitUtilsTest {
+class PreInitUtilsTest {
     
     @Test
-    public void testAsyncPreLoadCostComponent() throws InterruptedException {
+    void testAsyncPreLoadCostComponent() throws InterruptedException {
         // There is no things need to be assert.
         // The method will called when nacos-client init to async to load some components to reduce the sync load time.
         PreInitUtils.asyncPreLoadCostComponent();

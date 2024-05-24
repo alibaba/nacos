@@ -20,13 +20,12 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.common.utils.ReflectUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -37,14 +36,15 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class FailoverReactorTest {
+@ExtendWith(MockitoExtension.class)
+class FailoverReactorTest {
     
     @Mock
     ServiceInfoHolder holder;
@@ -54,33 +54,33 @@ public class FailoverReactorTest {
     
     FailoverReactor failoverReactor;
     
-    @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+    @BeforeEach
+    void setUp() throws NoSuchFieldException, IllegalAccessException {
         failoverReactor = new FailoverReactor(holder, UUID.randomUUID().toString());
         Field failoverDataSourceField = FailoverReactor.class.getDeclaredField("failoverDataSource");
         failoverDataSourceField.setAccessible(true);
         failoverDataSourceField.set(failoverReactor, failoverDataSource);
     }
     
-    @After
-    public void tearDown() throws NacosException {
+    @AfterEach
+    void tearDown() throws NacosException {
         failoverReactor.shutdown();
     }
     
     @Test
-    public void testIsFailoverSwitch() throws NacosException {
-        Assert.assertFalse(failoverReactor.isFailoverSwitch());
+    void testIsFailoverSwitch() throws NacosException {
+        assertFalse(failoverReactor.isFailoverSwitch());
         
     }
     
     @Test
-    public void testGetService() throws NacosException {
+    void testGetService() throws NacosException {
         ServiceInfo info = failoverReactor.getService("aa@@bb");
         assertEquals(new ServiceInfo("aa@@bb").toString(), info.toString());
     }
     
     @Test
-    public void testRefreshFromDisabledToEnabled() throws InterruptedException {
+    void testRefreshFromDisabledToEnabled() throws InterruptedException {
         // make sure the first no delay refresh thread finished.
         TimeUnit.MILLISECONDS.sleep(500);
         FailoverSwitch mockFailoverSwitch = new FailoverSwitch(true);
@@ -97,7 +97,7 @@ public class FailoverReactorTest {
     }
     
     @Test
-    public void testRefreshFromDisabledToEnabledWithException() throws InterruptedException {
+    void testRefreshFromDisabledToEnabledWithException() throws InterruptedException {
         // make sure the first no delay refresh thread finished.
         TimeUnit.MILLISECONDS.sleep(500);
         FailoverSwitch mockFailoverSwitch = new FailoverSwitch(true);
@@ -109,8 +109,7 @@ public class FailoverReactorTest {
     }
     
     @Test
-    public void testRefreshFromEnabledToDisabled()
-            throws InterruptedException, NoSuchFieldException, IllegalAccessException {
+    void testRefreshFromEnabledToDisabled() throws InterruptedException, NoSuchFieldException, IllegalAccessException {
         // make sure the first no delay refresh thread finished.
         TimeUnit.MILLISECONDS.sleep(500);
         FailoverSwitch mockFailoverSwitch = new FailoverSwitch(false);
@@ -133,7 +132,7 @@ public class FailoverReactorTest {
     }
     
     @Test
-    public void testFailoverServiceCntMetrics()
+    void testFailoverServiceCntMetrics()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetrics");
         method.setAccessible(true);
@@ -142,7 +141,7 @@ public class FailoverReactorTest {
     }
     
     @Test
-    public void testFailoverServiceCntMetricsClear()
+    void testFailoverServiceCntMetricsClear()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
         Field field = FailoverReactor.class.getDeclaredField("meterMap");
         field.setAccessible(true);

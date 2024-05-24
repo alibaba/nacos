@@ -16,53 +16,56 @@
 
 package com.alibaba.nacos.client.naming.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-public class CollectionUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class CollectionUtilsTest {
     
     @Test
-    public void testSubtract() {
-        List<String> subtract = (List<String>) CollectionUtils
-                .subtract(Arrays.asList("a", "b"), Arrays.asList("b", "c"));
-        Assert.assertEquals(1, subtract.size());
-        Assert.assertEquals("a", subtract.get(0));
+    void testSubtract() {
+        List<String> subtract = (List<String>) CollectionUtils.subtract(Arrays.asList("a", "b"),
+                Arrays.asList("b", "c"));
+        assertEquals(1, subtract.size());
+        assertEquals("a", subtract.get(0));
     }
     
     @Test
-    public void testGetCardinalityMap() {
+    void testGetCardinalityMap() {
         List<String> list1 = Arrays.asList("2", "2", "3");
         Map<String, Integer> map1 = CollectionUtils.getCardinalityMap(list1);
-        Assert.assertEquals(2, map1.size());
-        Assert.assertEquals(2, map1.get("2").intValue());
-        Assert.assertEquals(1, map1.get("3").intValue());
+        assertEquals(2, map1.size());
+        assertEquals(2, map1.get("2").intValue());
+        assertEquals(1, map1.get("3").intValue());
         
     }
     
     @Test
-    public void testIsEqualCollection() {
+    void testIsEqualCollection() {
         List<String> list1 = Arrays.asList("2", "2", "3");
         List<String> list2 = Arrays.asList("3", "2", "2");
         List<String> list3 = Arrays.asList("3", "2", "3");
         List<String> list4 = Arrays.asList("3", "2");
+        assertTrue(CollectionUtils.isEqualCollection(list1, list2));
+        assertFalse(CollectionUtils.isEqualCollection(list1, list3));
+        assertFalse(CollectionUtils.isEqualCollection(list1, list4));
         List<String> list5 = Arrays.asList("3", "2", "1");
+        assertFalse(CollectionUtils.isEqualCollection(list1, list5));
         List<String> list6 = Arrays.asList("2", "2", "1");
-        Assert.assertTrue(CollectionUtils.isEqualCollection(list1, list2));
-        Assert.assertFalse(CollectionUtils.isEqualCollection(list1, list3));
-        Assert.assertFalse(CollectionUtils.isEqualCollection(list1, list4));
-        Assert.assertFalse(CollectionUtils.isEqualCollection(list1, list5));
-        Assert.assertFalse(CollectionUtils.isEqualCollection(list1, list6));
+        assertFalse(CollectionUtils.isEqualCollection(list1, list6));
     }
     
     @Test
-    public void testIsEmpty() {
-        Assert.assertTrue(CollectionUtils.isEmpty(null));
-        Assert.assertTrue(CollectionUtils.isEmpty(new ArrayList<String>()));
-        Assert.assertFalse(CollectionUtils.isEmpty(Arrays.asList("aa")));
+    void testIsEmpty() {
+        assertTrue(CollectionUtils.isEmpty(null));
+        assertTrue(CollectionUtils.isEmpty(new ArrayList<String>()));
+        assertFalse(CollectionUtils.isEmpty(Arrays.asList("aa")));
     }
 }
