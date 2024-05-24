@@ -32,25 +32,28 @@ import io.grpc.StatusRuntimeException;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
 import io.grpc.netty.shaded.io.netty.channel.DefaultEventLoop;
 import io.grpc.stub.ServerCallStreamObserver;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-@RunWith(MockitoJUnitRunner.class)
-public class GrpcConnectionTest {
-    
-    @Mock
-    private Channel channel;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class GrpcConnectionTest {
     
     @Mock
     ServerCallStreamObserver streamObserver;
@@ -65,18 +68,21 @@ public class GrpcConnectionTest {
     
     MockedStatic<ControlManagerCenter> controlManagerCenterMockedStatic;
     
-    @After
-    public void setDown() throws IOException {
+    @Mock
+    private Channel channel;
+    
+    @AfterEach
+    void setDown() throws IOException {
         if (controlManagerCenterMockedStatic != null) {
             controlManagerCenterMockedStatic.close();
         }
     }
     
-    @Before
-    public void setUp() throws IOException {
+    @BeforeEach
+    void setUp() throws IOException {
         String ip = "1.1.1.1";
-        ConnectionMeta connectionMeta = new ConnectionMeta("connectId" + System.currentTimeMillis(), ip, ip, 8888, 9848,
-                "GRPC", "", "", new HashMap<>());
+        ConnectionMeta connectionMeta = new ConnectionMeta("connectId" + System.currentTimeMillis(), ip, ip, 8888, 9848, "GRPC", "", "",
+                new HashMap<>());
         Mockito.when(channel.isOpen()).thenReturn(true);
         Mockito.when(channel.isActive()).thenReturn(true);
         connection = new GrpcConnection(connectionMeta, streamObserver, channel);
@@ -85,56 +91,56 @@ public class GrpcConnectionTest {
     }
     
     @Test
-    public void testStatusRuntimeException() {
+    void testStatusRuntimeException() {
         Mockito.doReturn(new DefaultEventLoop()).when(channel).eventLoop();
         Mockito.doThrow(new StatusRuntimeException(Status.CANCELLED)).when(streamObserver).onNext(Mockito.any());
         Mockito.doReturn(true).when(streamObserver).isReady();
         
         try {
             connection.request(new NotifySubscriberRequest(), 3000L);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof ConnectionAlreadyClosedException);
-            Assert.assertTrue(e.getCause() instanceof StatusRuntimeException);
+            assertTrue(e instanceof ConnectionAlreadyClosedException);
+            assertTrue(e.getCause() instanceof StatusRuntimeException);
             
         }
     }
     
     @Test
-    public void testIllegalStateException() {
+    void testIllegalStateException() {
         Mockito.doReturn(new DefaultEventLoop()).when(channel).eventLoop();
         Mockito.doThrow(new IllegalStateException()).when(streamObserver).onNext(Mockito.any());
         Mockito.doReturn(true).when(streamObserver).isReady();
         
         try {
             connection.request(new NotifySubscriberRequest(), 1000L);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof ConnectionAlreadyClosedException);
-            Assert.assertTrue(e.getCause() instanceof IllegalStateException);
+            assertTrue(e instanceof ConnectionAlreadyClosedException);
+            assertTrue(e.getCause() instanceof IllegalStateException);
         }
     }
     
     @Test
-    public void testOtherException() {
+    void testOtherException() {
         Mockito.doReturn(new DefaultEventLoop()).when(channel).eventLoop();
         Mockito.doThrow(new Error("OOM")).when(streamObserver).onNext(Mockito.any());
         Mockito.doReturn(true).when(streamObserver).isReady();
         
         try {
             connection.request(new NotifySubscriberRequest(), 3000L);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Throwable e) {
-            Assert.assertTrue(e instanceof NacosRuntimeException);
-            Assert.assertTrue(e.getCause() instanceof Error);
+            assertTrue(e instanceof NacosRuntimeException);
+            assertTrue(e.getCause() instanceof Error);
         }
     }
     
     @Test
-    public void testNormal() {
+    void testNormal() {
         Mockito.doReturn(new DefaultEventLoop()).when(channel).eventLoop();
         Mockito.doReturn(true).when(streamObserver).isReady();
-        Assert.assertTrue(connection.isConnected());
+        assertTrue(connection.isConnected());
         try {
             new Thread(new Runnable() {
                 @Override
@@ -151,13 +157,11 @@ public class GrpcConnectionTest {
                                 throw new RuntimeException(e);
                             }
                         }
-                        Map.Entry<String, DefaultRequestFuture> next = stringDefaultRequestFutureMap.entrySet()
-                                .iterator().next();
+                        Map.Entry<String, DefaultRequestFuture> next = stringDefaultRequestFutureMap.entrySet().iterator().next();
                         NotifySubscriberResponse notifySubscriberResponse = new NotifySubscriberResponse();
                         notifySubscriberResponse.setRequestId(next.getValue().getRequestId());
                         try {
-                            RpcAckCallbackSynchronizer.ackNotify(connection.getMetaInfo().getConnectionId(),
-                                    notifySubscriberResponse);
+                            RpcAckCallbackSynchronizer.ackNotify(connection.getMetaInfo().getConnectionId(), notifySubscriberResponse);
                         } catch (Exception e) {
                             //ignore
                         }
@@ -165,15 +169,15 @@ public class GrpcConnectionTest {
                 }
             }).start();
             connection.request(new NotifySubscriberRequest(), 3000L);
-            Assert.assertTrue(true);
+            assertTrue(true);
         } catch (Throwable e) {
             e.printStackTrace();
-            Assert.assertFalse(true);
+            assertFalse(true);
         }
     }
     
     @Test
-    public void testBusy() {
+    void testBusy() {
         controlManagerCenterMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
         Mockito.when(ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
         Mockito.when(ControlManagerCenter.getInstance().getTpsControlManager()).thenReturn(tpsControlManager);
@@ -182,9 +186,9 @@ public class GrpcConnectionTest {
         
         try {
             connection.request(new NotifySubscriberRequest(), 3000L);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof ConnectionBusyException);
+            assertTrue(e instanceof ConnectionBusyException);
         }
         
         try {
@@ -194,17 +198,17 @@ public class GrpcConnectionTest {
         }
         try {
             connection.request(new NotifySubscriberRequest(), 3000L);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof ConnectionBusyException);
+            assertTrue(e instanceof ConnectionBusyException);
         }
         
-        Assert.assertTrue(connection.getMetaInfo().pushQueueBlockTimesLastOver(3000));
+        assertTrue(connection.getMetaInfo().pushQueueBlockTimesLastOver(3000));
         
     }
     
     @Test
-    public void testClose() {
+    void testClose() {
         
         Mockito.doThrow(new IllegalStateException()).when(streamObserver).onCompleted();
         connection.close();

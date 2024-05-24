@@ -17,57 +17,61 @@
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class SdkDefaultTlsProtocolNegotiatorBuilderTest {
-
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class SdkDefaultTlsProtocolNegotiatorBuilderTest {
+    
     private ConfigurableEnvironment environment;
-
+    
     private SdkDefaultTlsProtocolNegotiatorBuilder builder;
-
+    
     @Mock
     private Properties properties;
-
-    @Before
-    public void setUp() throws Exception {
+    
+    @BeforeEach
+    void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         builder = new SdkDefaultTlsProtocolNegotiatorBuilder();
     }
-
-    @After
-    public void tearDown() throws Exception {
+    
+    @AfterEach
+    void tearDown() throws Exception {
     }
-
+    
     @Test
-    public void testBuildDisabled() {
+    void testBuildDisabled() {
         assertNull(builder.build());
     }
-
+    
     @Test
-    public void testBuildEnabled() {
-        final MockedStatic<EnvUtil> envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        when(EnvUtil.getProperties()).thenReturn(properties);
-        when(properties.getProperty("nacos.remote.server.rpc.tls.enableTls")).thenReturn("true");
-        when(properties.getProperty("nacos.remote.server.rpc.tls.certPrivateKey")).thenReturn("test-server-key.pem");
-        when(properties.getProperty("nacos.remote.server.rpc.tls.certChainFile")).thenReturn("test-server-cert.pem");
-        assertNotNull(builder.build());
-        envUtilMockedStatic.close();
+    void testBuildEnabled() {
+        try (final MockedStatic<EnvUtil> envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class)) {
+            when(EnvUtil.getProperties()).thenReturn(properties);
+            when(properties.getProperty("nacos.remote.server.rpc.tls.enableTls")).thenReturn("true");
+            when(properties.getProperty("nacos.remote.server.rpc.tls.certPrivateKey")).thenReturn("test-server-key.pem");
+            when(properties.getProperty("nacos.remote.server.rpc.tls.certChainFile")).thenReturn("test-server-cert.pem");
+            assertNotNull(builder.build());
+        }
     }
 }

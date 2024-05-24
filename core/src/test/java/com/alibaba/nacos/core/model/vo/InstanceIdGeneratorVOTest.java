@@ -16,23 +16,24 @@
 
 package com.alibaba.nacos.core.model.vo;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class InstanceIdGeneratorVOTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class InstanceIdGeneratorVOTest {
     
     @Test
-    public void test() {
+    void test() {
         IdGeneratorVO vo = new IdGeneratorVO();
         IdGeneratorVO.IdInfo info = new IdGeneratorVO.IdInfo();
         info.setWorkerId(1L);
         info.setCurrentId(2L);
         vo.setResource("test");
         vo.setInfo(info);
-    
-        Assert.assertEquals(vo.getInfo(), info);
-        Assert.assertEquals(vo.getResource(), "test");
-        Assert.assertEquals(vo.getInfo().getWorkerId().longValue(), 1L);
-        Assert.assertEquals(vo.getInfo().getCurrentId().longValue(), 2L);
+        
+        assertEquals(vo.getInfo(), info);
+        assertEquals("test", vo.getResource());
+        assertEquals(1L, vo.getInfo().getWorkerId().longValue());
+        assertEquals(2L, vo.getInfo().getCurrentId().longValue());
     }
 }

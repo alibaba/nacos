@@ -16,27 +16,27 @@
 
 package com.alibaba.nacos.core.monitor.topn;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class FixedSizePriorityQueueTest {
+class FixedSizePriorityQueueTest {
     
     @Test
-    public void testOfferEmpty() {
+    void testOfferEmpty() {
         FixedSizePriorityQueue<Integer> queue = new FixedSizePriorityQueue<>(10, Comparator.<Integer>naturalOrder());
         List<Integer> list = queue.toList();
         assertTrue(list.isEmpty());
     }
     
     @Test
-    public void testOfferLessThanSize() {
+    void testOfferLessThanSize() {
         FixedSizePriorityQueue<Integer> queue = new FixedSizePriorityQueue<>(10, Comparator.<Integer>naturalOrder());
         for (int i = 0; i < 5; i++) {
             queue.offer(i);
@@ -49,7 +49,7 @@ public class FixedSizePriorityQueueTest {
     }
     
     @Test
-    public void testOfferMoreThanSizeWithIncreasing() {
+    void testOfferMoreThanSizeWithIncreasing() {
         FixedSizePriorityQueue<Integer> queue = new FixedSizePriorityQueue<>(10, Comparator.<Integer>naturalOrder());
         for (int i = 0; i < 15; i++) {
             queue.offer(i);
@@ -62,7 +62,7 @@ public class FixedSizePriorityQueueTest {
     }
     
     @Test
-    public void testOfferMoreThanSizeWithDecreasing() {
+    void testOfferMoreThanSizeWithDecreasing() {
         FixedSizePriorityQueue<Integer> queue = new FixedSizePriorityQueue<>(10, Comparator.<Integer>naturalOrder());
         for (int i = 14; i > 0; i--) {
             queue.offer(i);
@@ -75,7 +75,7 @@ public class FixedSizePriorityQueueTest {
     }
     
     @Test
-    public void testOfferMoreThanSizeWithShuffle() {
+    void testOfferMoreThanSizeWithShuffle() {
         List<Integer> testCase = new ArrayList<>(50);
         for (int i = 0; i < 50; i++) {
             testCase.add(i);

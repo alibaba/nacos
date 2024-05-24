@@ -17,12 +17,12 @@
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 
@@ -31,23 +31,23 @@ import org.springframework.core.env.ConfigurableEnvironment;
  *
  * @author stone-98
  */
-@RunWith(MockitoJUnitRunner.class)
-public class RpcServerSslContextRefresherHolderTest {
+@ExtendWith(MockitoExtension.class)
+class RpcServerSslContextRefresherHolderTest {
     
     @Mock
     private ConfigurableEnvironment environment;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(environment);
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
     }
     
     @Test
-    public void testInit() {
+    void testInit() {
     }
     
 }

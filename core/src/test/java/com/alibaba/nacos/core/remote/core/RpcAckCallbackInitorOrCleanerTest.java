@@ -20,7 +20,7 @@ package com.alibaba.nacos.core.remote.core;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionMeta;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
@@ -30,10 +30,10 @@ import java.util.HashMap;
  * @author chenglu
  * @date 2021-07-01 13:39
  */
-public class RpcAckCallbackInitorOrCleanerTest {
-   
+class RpcAckCallbackInitorOrCleanerTest {
+    
     @Test
-    public void testInitAndCleaner() {
+    void testInitAndCleaner() {
         String connectId = "11";
         ConnectionMeta meta = new ConnectionMeta(connectId, "", "", 80, 80, "GRPC", "", "", new HashMap<>());
         Connection connection = new GrpcConnection(meta, null, null);

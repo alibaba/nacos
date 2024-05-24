@@ -18,15 +18,15 @@ package com.alibaba.nacos.core.remote.grpc.negotiator;
 
 import com.alibaba.nacos.common.utils.Pair;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertSame;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 
 /**
  * Test ClusterProtocolNegotiatorBuilderSingleton.
@@ -34,36 +34,35 @@ import static org.junit.Assert.assertSame;
  * @author stone-98
  * @date 2024/2/21
  */
-public class ClusterProtocolNegotiatorBuilderSingletonTest {
+class ClusterProtocolNegotiatorBuilderSingletonTest {
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         ConfigurableEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
     }
     
     @Test
-    public void testSingletonInstance() {
+    void testSingletonInstance() {
         AbstractProtocolNegotiatorBuilderSingleton singleton1 = ClusterProtocolNegotiatorBuilderSingleton.getSingleton();
         AbstractProtocolNegotiatorBuilderSingleton singleton2 = ClusterProtocolNegotiatorBuilderSingleton.getSingleton();
         assertSame(singleton1, singleton2);
     }
     
     @Test
-    public void testDefaultBuilderPair() {
-        Pair<String, ProtocolNegotiatorBuilder> defaultPair = ClusterProtocolNegotiatorBuilderSingleton.getSingleton()
-                .defaultBuilderPair();
+    void testDefaultBuilderPair() {
+        Pair<String, ProtocolNegotiatorBuilder> defaultPair = ClusterProtocolNegotiatorBuilderSingleton.getSingleton().defaultBuilderPair();
         assertNotNull(defaultPair);
         assertEquals(ClusterProtocolNegotiatorBuilderSingleton.TYPE_PROPERTY_KEY, defaultPair.getFirst());
         assertNotNull(defaultPair.getSecond());
     }
     
     @Test
-    public void testType() {
+    void testType() {
         String type = ClusterProtocolNegotiatorBuilderSingleton.getSingleton().type();
         assertNotNull(type);
         assertEquals(ClusterProtocolNegotiatorBuilderSingleton.TYPE_PROPERTY_KEY, type);

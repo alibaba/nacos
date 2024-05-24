@@ -16,18 +16,18 @@
 
 package com.alibaba.nacos.core.distributed.distro.monitor;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DistroRecordsHolderTest {
+class DistroRecordsHolderTest {
     
     @Test
-    public void testGetRecordIfExist() {
+    void testGetRecordIfExist() {
         Optional<DistroRecord> actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetRecordIfExist");
         assertFalse(actual.isPresent());
         DistroRecordsHolder.getInstance().getRecord("testGetRecordIfExist");
@@ -36,21 +36,21 @@ public class DistroRecordsHolderTest {
     }
     
     @Test
-    public void testGetTotalSyncCount() {
+    void testGetTotalSyncCount() {
         long expected = DistroRecordsHolder.getInstance().getTotalSyncCount() + 1;
         DistroRecordsHolder.getInstance().getRecord("testGetTotalSyncCount").syncSuccess();
         assertEquals(expected, DistroRecordsHolder.getInstance().getTotalSyncCount());
     }
     
     @Test
-    public void testGetSuccessfulSyncCount() {
+    void testGetSuccessfulSyncCount() {
         long expected = DistroRecordsHolder.getInstance().getSuccessfulSyncCount() + 1;
         DistroRecordsHolder.getInstance().getRecord("testGetSuccessfulSyncCount").syncSuccess();
         assertEquals(expected, DistroRecordsHolder.getInstance().getSuccessfulSyncCount());
     }
     
     @Test
-    public void testGetFailedSyncCount() {
+    void testGetFailedSyncCount() {
         DistroRecordsHolder.getInstance().getRecord("testGetFailedSyncCount");
         Optional<DistroRecord> actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetFailedSyncCount");
         assertTrue(actual.isPresent());
@@ -61,7 +61,7 @@ public class DistroRecordsHolderTest {
     }
     
     @Test
-    public void testGetFailedVerifyCount() {
+    void testGetFailedVerifyCount() {
         DistroRecordsHolder.getInstance().getRecord("testGetFailedVerifyCount");
         Optional<DistroRecord> actual = DistroRecordsHolder.getInstance().getRecordIfExist("testGetFailedVerifyCount");
         assertTrue(actual.isPresent());
