@@ -29,6 +29,7 @@ import org.springframework.context.ConfigurableApplicationContext;
 import static com.alibaba.nacos.auth.config.AuthModuleStateBuilder.AUTH_ENABLED;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -57,5 +58,6 @@ class AuthModuleStateBuilderTest {
         assertFalse((Boolean) actual.getStates().get(AUTH_ENABLED));
         assertFalse((Boolean) actual.getStates().get("login_page_enabled"));
         assertEquals("nacos", actual.getStates().get("auth_system_type"));
+        assertTrue((Boolean) actual.getStates().get("auth_admin_request"));
     }
 }

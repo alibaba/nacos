@@ -115,18 +115,16 @@ public class UserController {
      * Create a admin user only not exist admin user can use.
      */
     @PostMapping("/admin")
-    public Object createAdminUser(@RequestParam(required = false) String username,
-            @RequestParam(required = false) String password) {
+    public Object createAdminUser(@RequestParam(required = false) String password) {
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            if (roleService.hasGlobalAdminRole()) {
+            if (iAuthenticationManager.hasGlobalAdminRole()) {
                 return RestResultUtils.failed("have admin user cannot use it");
             }
             if (StringUtils.isBlank(password)) {
                 password = PasswordGeneratorUtil.generateRandomPassword();
             }
-            if (StringUtils.isBlank(username)) {
-                username = AuthConstants.DEFAULT_USER;
-            }
+            
+            String username = AuthConstants.DEFAULT_USER;
             userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
             roleService.addAdminRole(username);
             ObjectNode result = JacksonUtils.createEmptyJsonNode();
@@ -266,10 +264,7 @@ public class UserController {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-            if (!iAuthenticationManager.hasGlobalAdminRole()) {
-                response.sendError(HttpServletResponse.SC_PRECONDITION_FAILED, "admin role user not exist");
-                return null;
-            }
+
             NacosUser user = iAuthenticationManager.authenticate(request);
             
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
