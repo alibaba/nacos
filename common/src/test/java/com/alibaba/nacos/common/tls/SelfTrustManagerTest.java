@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.common.tls;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
@@ -26,24 +26,24 @@ import java.net.URL;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SelfTrustManagerTest {
+class SelfTrustManagerTest {
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
     }
     
     @Test
-    public void testTrustManagerSuccess() throws CertificateException {
+    void testTrustManagerSuccess() throws CertificateException {
         URL url = SelfTrustManagerTest.class.getClassLoader().getResource("test-tls-cert.pem");
         String path = url.getPath();
         TrustManager[] actual = SelfTrustManager.trustManager(true, path);
@@ -59,7 +59,7 @@ public class SelfTrustManagerTest {
     }
     
     @Test
-    public void testTrustManagerNonExist() throws CertificateException {
+    void testTrustManagerNonExist() throws CertificateException {
         TrustManager[] actual = SelfTrustManager.trustManager(true, "non-exist-cert.pem");
         assertNotNull(actual);
         assertEquals(1, actual.length);

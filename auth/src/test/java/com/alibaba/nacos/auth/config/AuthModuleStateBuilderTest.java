@@ -18,21 +18,22 @@ package com.alibaba.nacos.auth.config;
 
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import static com.alibaba.nacos.auth.config.AuthModuleStateBuilder.AUTH_ENABLED;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class AuthModuleStateBuilderTest {
+@ExtendWith(MockitoExtension.class)
+class AuthModuleStateBuilderTest {
     
     @Mock
     private ConfigurableApplicationContext context;
@@ -40,22 +41,23 @@ public class AuthModuleStateBuilderTest {
     @Mock
     private AuthConfigs authConfigs;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
         ApplicationUtils.injectContext(context);
         when(authConfigs.getNacosAuthSystemType()).thenReturn("nacos");
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
     }
     
     @Test
-    public void testBuild() {
+    void testBuild() {
         ModuleState actual = new AuthModuleStateBuilder().build();
         assertFalse((Boolean) actual.getStates().get(AUTH_ENABLED));
         assertFalse((Boolean) actual.getStates().get("login_page_enabled"));
         assertEquals("nacos", actual.getStates().get("auth_system_type"));
+        assertTrue((Boolean) actual.getStates().get("auth_admin_request"));
     }
 }

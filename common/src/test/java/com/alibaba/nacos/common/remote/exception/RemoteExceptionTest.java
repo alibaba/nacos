@@ -16,15 +16,15 @@
 
 package com.alibaba.nacos.common.remote.exception;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class RemoteExceptionTest {
+class RemoteExceptionTest {
     
     @Test
-    public void testConnectionAlreadyClosedException() {
+    void testConnectionAlreadyClosedException() {
         ConnectionAlreadyClosedException exception = new ConnectionAlreadyClosedException("test message");
         
         assertEquals(600, exception.getErrCode());
@@ -45,7 +45,7 @@ public class RemoteExceptionTest {
     }
     
     @Test
-    public void testConnectionBusyException() {
+    void testConnectionBusyException() {
         String msg = "Connection is busy";
         ConnectionBusyException exception = new ConnectionBusyException(msg);
         

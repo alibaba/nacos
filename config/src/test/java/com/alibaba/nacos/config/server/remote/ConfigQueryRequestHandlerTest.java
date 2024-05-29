@@ -28,14 +28,13 @@ import com.alibaba.nacos.config.server.service.dump.disk.ConfigRocksDbDiskServic
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
 
 import java.io.IOException;
@@ -43,13 +42,15 @@ import java.util.Arrays;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 import static com.alibaba.nacos.api.config.remote.response.ConfigQueryResponse.CONFIG_NOT_FOUND;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigQueryRequestHandlerTest {
-    
-    private ConfigQueryRequestHandler configQueryRequestHandler;
+@ExtendWith(MockitoExtension.class)
+class ConfigQueryRequestHandlerTest {
     
     static MockedStatic<ConfigCacheService> configCacheServiceMockedStatic;
     
@@ -65,16 +66,18 @@ public class ConfigQueryRequestHandlerTest {
     
     String content = "content" + System.currentTimeMillis();
     
-    @After
-    public void after() {
+    private ConfigQueryRequestHandler configQueryRequestHandler;
+    
+    @AfterEach
+    void after() {
         configCacheServiceMockedStatic.close();
         propertyUtilMockedStatic.close();
         configDiskServiceFactoryMockedStatic.close();
         EnvUtil.setEnvironment(null);
     }
     
-    @Before
-    public void setUp() throws IOException {
+    @BeforeEach
+    void setUp() throws IOException {
         EnvUtil.setEnvironment(new StandardEnvironment());
         configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
         propertyUtilMockedStatic = Mockito.mockStatic(PropertyUtil.class);
@@ -92,7 +95,7 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetNormal() throws Exception {
+    void testGetNormal() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         String content = "content_from_notdirectreadÄãºÃ" + System.currentTimeMillis();
@@ -113,14 +116,14 @@ public class ConfigQueryRequestHandlerTest {
         
         when(configRocksDbDiskService.getContent(eq(dataId), eq(group), eq(null))).thenReturn(content);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
-        Assert.assertEquals(content, response.getContent());
-        Assert.assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
-        Assert.assertEquals("key_testGetNormal_NotDirectRead", response.getEncryptedDataKey());
+        assertEquals(content, response.getContent());
+        assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
+        assertEquals("key_testGetNormal_NotDirectRead", response.getEncryptedDataKey());
         
-        Assert.assertFalse(response.isBeta());
-        Assert.assertNull(response.getTag());
+        assertFalse(response.isBeta());
+        assertNull(response.getTag());
         
-        Assert.assertEquals(content, response.getContent());
+        assertEquals(content, response.getContent());
     }
     
     
@@ -130,7 +133,7 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetBeta() throws Exception {
+    void testGetBeta() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         ConfigRocksDbDiskService configRocksDbDiskService = Mockito.mock(ConfigRocksDbDiskService.class);
@@ -156,11 +159,11 @@ public class ConfigQueryRequestHandlerTest {
         when(configRocksDbDiskService.getBetaContent(eq(dataId), eq(group), eq(null))).thenReturn(content);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         //check content&md5
-        Assert.assertEquals(content, response.getContent());
-        Assert.assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
+        assertEquals(content, response.getContent());
+        assertEquals(MD5Utils.md5Hex(content, "UTF-8"), response.getMd5());
         //check flags.
-        Assert.assertTrue(response.isBeta());
-        Assert.assertNull(response.getTag());
+        assertTrue(response.isBeta());
+        assertNull(response.getTag());
         
     }
     
@@ -170,7 +173,7 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetTagNotFound() throws Exception {
+    void testGetTagNotFound() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         String content = "content_from_tag_withtagÄãºÃ" + System.currentTimeMillis();
@@ -197,14 +200,14 @@ public class ConfigQueryRequestHandlerTest {
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
         //check content&md5
-        Assert.assertNull(response.getContent());
-        Assert.assertNull(response.getMd5());
-        Assert.assertEquals(response.getErrorCode(), CONFIG_NOT_FOUND);
-        Assert.assertNull(response.getEncryptedDataKey());
+        assertNull(response.getContent());
+        assertNull(response.getMd5());
+        assertEquals(CONFIG_NOT_FOUND, response.getErrorCode());
+        assertNull(response.getEncryptedDataKey());
         
         //check flags.
-        Assert.assertFalse(response.isBeta());
-        Assert.assertEquals(response.getTag(), specificTag);
+        assertFalse(response.isBeta());
+        assertEquals(response.getTag(), specificTag);
         
     }
     
@@ -214,7 +217,7 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetTagWithTag() throws Exception {
+    void testGetTagWithTag() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         String content = "content_from_tag_notdirectreadÄãºÃ" + System.currentTimeMillis();
@@ -248,17 +251,16 @@ public class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         
         //mock disk read.
-        when(configRocksDbDiskService.getTagContent(eq(dataId), eq(group), eq(null), eq(specificTag))).thenReturn(
-                tagContent);
+        when(configRocksDbDiskService.getTagContent(eq(dataId), eq(group), eq(null), eq(specificTag))).thenReturn(tagContent);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
         //check content&md5
-        Assert.assertEquals(tagContent, response.getContent());
-        Assert.assertEquals(MD5Utils.md5Hex(tagContent, "UTF-8"), response.getMd5());
-        Assert.assertEquals("key_testGetTag_NotDirectRead", response.getEncryptedDataKey());
+        assertEquals(tagContent, response.getContent());
+        assertEquals(MD5Utils.md5Hex(tagContent, "UTF-8"), response.getMd5());
+        assertEquals("key_testGetTag_NotDirectRead", response.getEncryptedDataKey());
         //check flags.
-        Assert.assertFalse(response.isBeta());
-        Assert.assertEquals(response.getTag(), specificTag);
+        assertFalse(response.isBeta());
+        assertEquals(response.getTag(), specificTag);
         
     }
     
@@ -268,7 +270,7 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetTagAutoTag() throws Exception {
+    void testGetTagAutoTag() throws Exception {
         
         final String groupKey = GroupKey2.getKey(dataId, group, "");
         String content = "content_from_tag_notdirectreadÄãºÃ" + System.currentTimeMillis();
@@ -296,18 +298,17 @@ public class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         
         //mock disk read.
-        when(configRocksDbDiskService.getTagContent(eq(dataId), eq(group), eq(null), eq(autoTag))).thenReturn(
-                tagContent);
+        when(configRocksDbDiskService.getTagContent(eq(dataId), eq(group), eq(null), eq(autoTag))).thenReturn(tagContent);
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
         
         //check content&md5
-        Assert.assertEquals(tagContent, response.getContent());
-        Assert.assertEquals(MD5Utils.md5Hex(tagContent, "UTF-8"), response.getMd5());
-        Assert.assertEquals("key_testGetTag_AutoTag_NotDirectRead", response.getEncryptedDataKey());
+        assertEquals(tagContent, response.getContent());
+        assertEquals(MD5Utils.md5Hex(tagContent, "UTF-8"), response.getMd5());
+        assertEquals("key_testGetTag_AutoTag_NotDirectRead", response.getEncryptedDataKey());
         
         //check flags.
-        Assert.assertFalse(response.isBeta());
-        Assert.assertEquals(response.getTag(), autoTag);
+        assertFalse(response.isBeta());
+        assertEquals(response.getTag(), autoTag);
         
     }
     
@@ -317,14 +318,14 @@ public class ConfigQueryRequestHandlerTest {
      * @throws Exception Exception.
      */
     @Test
-    public void testGetConfigNotExistAndConflict() throws Exception {
+    void testGetConfigNotExistAndConflict() throws Exception {
         
         String dataId = "dataId" + System.currentTimeMillis();
         String group = "group" + System.currentTimeMillis();
         String tenant = "tenant" + System.currentTimeMillis();
         //test config not exist
-        configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(0);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant)))
+                .thenReturn(0);
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(null);
         
@@ -336,22 +337,22 @@ public class ConfigQueryRequestHandlerTest {
         requestMeta.setClientIp("127.0.0.1");
         
         ConfigQueryResponse response = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
-        Assert.assertEquals(CONFIG_NOT_FOUND, response.getErrorCode());
-        Assert.assertEquals(null, response.getContent());
-        Assert.assertEquals(null, response.getMd5());
-        Assert.assertFalse(response.isBeta());
-        Assert.assertNull(response.getTag());
+        assertEquals(CONFIG_NOT_FOUND, response.getErrorCode());
+        assertNull(response.getContent());
+        assertNull(response.getMd5());
+        assertFalse(response.isBeta());
+        assertNull(response.getTag());
         
         //test config conflict
         when(ConfigCacheService.getContentCache(eq(groupKey))).thenReturn(new CacheItem(groupKey));
-        configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant))).thenReturn(-1);
+        configCacheServiceMockedStatic.when(() -> ConfigCacheService.tryConfigReadLock(GroupKey2.getKey(dataId, group, tenant)))
+                .thenReturn(-1);
         ConfigQueryResponse responseConflict = configQueryRequestHandler.handle(configQueryRequest, requestMeta);
-        Assert.assertEquals(ConfigQueryResponse.CONFIG_QUERY_CONFLICT, responseConflict.getErrorCode());
-        Assert.assertEquals(null, responseConflict.getContent());
-        Assert.assertEquals(null, responseConflict.getMd5());
-        Assert.assertFalse(responseConflict.isBeta());
-        Assert.assertNull(responseConflict.getTag());
+        assertEquals(ConfigQueryResponse.CONFIG_QUERY_CONFLICT, responseConflict.getErrorCode());
+        assertNull(responseConflict.getContent());
+        assertNull(responseConflict.getMd5());
+        assertFalse(responseConflict.isBeta());
+        assertNull(responseConflict.getTag());
         
     }
     

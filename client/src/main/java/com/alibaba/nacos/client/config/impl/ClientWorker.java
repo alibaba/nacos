@@ -61,6 +61,7 @@ import com.alibaba.nacos.common.remote.client.ConnectionEventListener;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ConnLabelsUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -127,6 +128,8 @@ public class ClientWorker implements Closeable {
      * groupKey -> cacheData.
      */
     private final AtomicReference<Map<String, CacheData>> cacheMap = new AtomicReference<>(new HashMap<>());
+    
+    private final DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
     
     private Map<String, String> appLables = new HashMap<>();
     
@@ -578,8 +581,6 @@ public class ClientWorker implements Closeable {
     public boolean isHealthServer() {
         return agent.isHealthServer();
     }
-    
-    private static DefaultLabelsCollectorManager defaultLabelsCollectorManager = new DefaultLabelsCollectorManager();
     
     public class ConfigRpcTransportClient extends ConfigTransportClient {
         
@@ -1088,18 +1089,19 @@ public class ClientWorker implements Closeable {
         
         private RpcClient ensureRpcClient(String taskId) throws NacosException {
             synchronized (ClientWorker.this) {
-                
                 Map<String, String> labels = getLabels();
                 Map<String, String> newLabels = new HashMap<>(labels);
                 newLabels.put("taskId", taskId);
+                RpcClientTlsConfig clientTlsConfig = RpcClientTlsConfigFactory.getInstance()
+                        .createSdkConfig(properties);
                 RpcClient rpcClient = RpcClientFactory.createClient(uuid + "_config-" + taskId, getConnectionType(),
-                        newLabels, this.properties, RpcClientTlsConfig.properties(this.properties));
+                        newLabels, clientTlsConfig);
                 if (rpcClient.isWaitInitiated()) {
                     initRpcClientHandler(rpcClient);
                     rpcClient.setTenant(getTenant());
                     rpcClient.start();
                 }
-                
+    
                 return rpcClient;
             }
             

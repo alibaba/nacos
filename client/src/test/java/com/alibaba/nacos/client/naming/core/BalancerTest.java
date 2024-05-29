@@ -18,36 +18,35 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
-import org.junit.Assert;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class BalancerTest {
-    
-    @Rule
-    public final ExpectedException thrown = ExpectedException.none();
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class BalancerTest {
     
     @Test
-    public void testGetHostByRandomWeightNull() {
-        Assert.assertNull(Balancer.getHostByRandomWeight(null));
-        Assert.assertNull(Balancer.getHostByRandomWeight(new ArrayList<>()));
+    void testGetHostByRandomWeightNull() {
+        assertNull(Balancer.getHostByRandomWeight(null));
+        assertNull(Balancer.getHostByRandomWeight(new ArrayList<>()));
     }
     
     @Test
-    public void testGetHostByRandomWeight() {
+    void testGetHostByRandomWeight() {
         List<Instance> list = new ArrayList<>();
         Instance instance1 = new Instance();
         list.add(instance1);
         final Instance actual = Balancer.getHostByRandomWeight(list);
-        Assert.assertEquals(instance1, actual);
+        assertEquals(instance1, actual);
     }
     
     @Test
-    public void testSelectHost() {
+    void testSelectHost() {
         List<Instance> hosts = new ArrayList<>();
         Instance instance1 = new Instance();
         hosts.add(instance1);
@@ -55,15 +54,16 @@ public class BalancerTest {
         serviceInfo.setHosts(hosts);
         
         final Instance actual = Balancer.RandomByWeight.selectHost(serviceInfo);
-        Assert.assertEquals(instance1, actual);
+        assertEquals(instance1, actual);
     }
     
     @Test
-    public void testSelectHostEmpty() {
-        thrown.expect(IllegalStateException.class);
-        thrown.expectMessage("no host to srv for serviceInfo: null");
-        ServiceInfo serviceInfo = new ServiceInfo();
-        
-        Balancer.RandomByWeight.selectHost(serviceInfo);
+    void testSelectHostEmpty() {
+        Throwable exception = assertThrows(IllegalStateException.class, () -> {
+            ServiceInfo serviceInfo = new ServiceInfo();
+            
+            Balancer.RandomByWeight.selectHost(serviceInfo);
+        });
+        assertTrue(exception.getMessage().contains("no host to srv for serviceInfo: null"));
     }
 }

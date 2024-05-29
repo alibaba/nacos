@@ -16,47 +16,48 @@
 
 package com.alibaba.nacos.config.server.service.dump.disk;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigDiskServiceFactoryTest {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(MockitoExtension.class)
+class ConfigDiskServiceFactoryTest {
     
-    @Before
-    public void before() throws Exception {
+    @BeforeEach
+    void before() throws Exception {
         clearDiskInstance();
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
     
     }
     
     @Test
-    public void getRawDiskInstance() {
+    void getRawDiskInstance() {
         System.setProperty("config_disk_type", "rawdisk");
         ConfigDiskService instance = ConfigDiskServiceFactory.getInstance();
-        Assert.assertTrue(instance instanceof ConfigRawDiskService);
+        assertTrue(instance instanceof ConfigRawDiskService);
     }
     
     @Test
-    public void getRockDbDiskInstance() {
+    void getRockDbDiskInstance() {
         System.setProperty("config_disk_type", "rocksdb");
         ConfigDiskService instance = ConfigDiskServiceFactory.getInstance();
-        Assert.assertTrue(instance instanceof ConfigRocksDbDiskService);
+        assertTrue(instance instanceof ConfigRocksDbDiskService);
     }
     
     @Test
-    public void getDefaultRawDiskInstance() {
+    void getDefaultRawDiskInstance() {
         System.setProperty("config_disk_type", "123");
         ConfigDiskService instance = ConfigDiskServiceFactory.getInstance();
-        Assert.assertTrue(instance instanceof ConfigRawDiskService);
+        assertTrue(instance instanceof ConfigRawDiskService);
     }
     
     private void clearDiskInstance() throws Exception {

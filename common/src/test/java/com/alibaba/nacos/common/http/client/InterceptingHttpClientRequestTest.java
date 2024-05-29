@@ -21,23 +21,29 @@ import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.net.URI;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class InterceptingHttpClientRequestTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class InterceptingHttpClientRequestTest {
+    
+    InterceptingHttpClientRequest clientRequest;
     
     @Mock
     private HttpClientRequest httpClientRequest;
@@ -51,10 +57,8 @@ public class InterceptingHttpClientRequestTest {
     @Mock
     private HttpClientResponse httpClientResponse;
     
-    InterceptingHttpClientRequest clientRequest;
-    
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         List<HttpClientRequestInterceptor> interceptorList = new LinkedList<>();
         interceptorList.add(interceptor);
         clientRequest = new InterceptingHttpClientRequest(httpClientRequest, interceptorList.listIterator());
@@ -62,23 +66,23 @@ public class InterceptingHttpClientRequestTest {
         when(httpClientRequest.execute(any(), any(), any())).thenReturn(httpClientResponse);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         clientRequest.close();
     }
     
     @Test
-    public void testExecuteIntercepted() throws Exception {
+    void testExecuteIntercepted() throws Exception {
         when(interceptor.isIntercept(any(), any(), any())).thenReturn(true);
-        HttpClientResponse response = clientRequest
-                .execute(URI.create("http://example.com"), "GET", new RequestHttpEntity(Header.EMPTY, Query.EMPTY));
+        HttpClientResponse response = clientRequest.execute(URI.create("http://example.com"), "GET",
+                new RequestHttpEntity(Header.EMPTY, Query.EMPTY));
         assertEquals(interceptorResponse, response);
     }
     
     @Test
-    public void testExecuteNotIntercepted() throws Exception {
-        HttpClientResponse response = clientRequest
-                .execute(URI.create("http://example.com"), "GET", new RequestHttpEntity(Header.EMPTY, Query.EMPTY));
+    void testExecuteNotIntercepted() throws Exception {
+        HttpClientResponse response = clientRequest.execute(URI.create("http://example.com"), "GET",
+                new RequestHttpEntity(Header.EMPTY, Query.EMPTY));
         assertEquals(httpClientResponse, response);
     }
 }

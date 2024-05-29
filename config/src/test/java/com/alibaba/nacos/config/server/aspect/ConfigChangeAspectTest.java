@@ -35,15 +35,14 @@ import com.alibaba.nacos.plugin.config.model.ConfigChangeResponse;
 import com.alibaba.nacos.plugin.config.spi.ConfigChangePluginService;
 import com.alibaba.nacos.sys.utils.PropertiesUtil;
 import org.aspectj.lang.ProceedingJoinPoint;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.servlet.http.HttpServletRequest;
@@ -51,11 +50,14 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Arrays;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class ConfigChangeAspectTest {
+@ExtendWith(SpringExtension.class)
+class ConfigChangeAspectTest {
     
     ConfigChangeAspect configChangeAspect;
     
@@ -68,17 +70,17 @@ public class ConfigChangeAspectTest {
     
     MockedStatic<RequestUtil> requestUtilMockedStatic;
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         //mock config change service enabled.
         propertiesStatic = Mockito.mockStatic(PropertiesUtil.class);
         requestUtilMockedStatic = Mockito.mockStatic(RequestUtil.class);
         Properties properties = new Properties();
         properties.put("mockedConfigChangeService.enabled", "true");
-        propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(),
-                eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX))).thenReturn(properties);
-        requestUtilMockedStatic.when(() -> RequestUtil.getSrcUserName(any(HttpServletRequest.class)))
-                .thenReturn("mockedUser");
+        propertiesStatic.when(
+                () -> PropertiesUtil.getPropertiesWithPrefix(any(), eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX)))
+                .thenReturn(properties);
+        requestUtilMockedStatic.when(() -> RequestUtil.getSrcUserName(any(HttpServletRequest.class))).thenReturn("mockedUser");
         Mockito.when(configChangePluginService.getServiceType()).thenReturn("mockedConfigChangeService");
         Mockito.when(configChangePluginService.pointcutMethodNames()).thenReturn(ConfigChangePointCutTypes.values());
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
@@ -89,14 +91,14 @@ public class ConfigChangeAspectTest {
         configChangeAspect = new ConfigChangeAspect(configChangeConfigs);
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         propertiesStatic.close();
         requestUtilMockedStatic.close();
     }
     
     @Test
-    public void testImportConfigAround() throws Throwable {
+    void testImportConfigAround() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
         ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
@@ -105,19 +107,18 @@ public class ConfigChangeAspectTest {
         SameConfigPolicy policy = SameConfigPolicy.ABORT;
         MultipartFile file = Mockito.mock(MultipartFile.class);
         Mockito.when(proceedingJoinPoint.proceed(any())).thenReturn("mock success return");
-        Object o = configChangeAspect.importConfigAround(proceedingJoinPoint, request, srcUser, namespace, policy,
-                file);
+        Object o = configChangeAspect.importConfigAround(proceedingJoinPoint, request, srcUser, namespace, policy, file);
         Thread.sleep(20L);
         
         // expect service executed.
         Mockito.verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
-        Assert.assertEquals("mock success return", o);
+        assertEquals("mock success return", o);
     }
     
     @Test
-    public void testPublishOrUpdateConfigAround() throws Throwable {
+    void testPublishOrUpdateConfigAround() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
         ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
@@ -128,19 +129,19 @@ public class ConfigChangeAspectTest {
         String group = "g1";
         String tenant = "t1";
         Mockito.when(proceedingJoinPoint.proceed(any())).thenReturn("mock success return");
-        Object o = configChangeAspect.publishOrUpdateConfigAround(proceedingJoinPoint, request, response, dataId, group,
-                tenant, "c1", null, null, srcUser, null, null, null, null, null);
+        Object o = configChangeAspect.publishOrUpdateConfigAround(proceedingJoinPoint, request, response, dataId, group, tenant, "c1", null,
+                null, srcUser, null, null, null, null, null);
         Thread.sleep(20L);
         
         // expect service executed.
         Mockito.verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
-        Assert.assertEquals("mock success return", o);
+        assertEquals("mock success return", o);
     }
     
     @Test
-    public void testRemoveConfigByIdAround() throws Throwable {
+    void testRemoveConfigByIdAround() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
         ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
@@ -150,19 +151,18 @@ public class ConfigChangeAspectTest {
         String group = "g1";
         String tenant = "t1";
         Mockito.when(proceedingJoinPoint.proceed(any())).thenReturn("mock success return");
-        Object o = configChangeAspect.removeConfigByIdAround(proceedingJoinPoint, request, response, dataId, group,
-                tenant);
+        Object o = configChangeAspect.removeConfigByIdAround(proceedingJoinPoint, request, response, dataId, group, tenant);
         Thread.sleep(20L);
         
         // expect service executed.
         Mockito.verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
-        Assert.assertEquals("mock success return", o);
+        assertEquals("mock success return", o);
     }
     
     @Test
-    public void testRemoveConfigByIdsAround() throws Throwable {
+    void testRemoveConfigByIdsAround() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_AFTER_TYPE);
         ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         HttpServletRequest request = Mockito.mock(HttpServletRequest.class);
@@ -174,11 +174,11 @@ public class ConfigChangeAspectTest {
         Mockito.verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         //expect join point processed success.
-        Assert.assertEquals("mock success return", o);
+        assertEquals("mock success return", o);
     }
     
     @Test
-    public void testPublishConfigAroundRpc() throws Throwable {
+    void testPublishConfigAroundRpc() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
         ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         ConfigPublishRequest request = new ConfigPublishRequest();
@@ -190,11 +190,11 @@ public class ConfigChangeAspectTest {
         //expect
         Mockito.verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
-        Assert.assertEquals(configPublishResponse, o);
+        assertEquals(configPublishResponse, o);
     }
     
     @Test
-    public void testPublishConfigAroundRpcException() throws Throwable {
+    void testPublishConfigAroundRpcException() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
         ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         ConfigPublishRequest request = new ConfigPublishRequest();
@@ -207,11 +207,11 @@ public class ConfigChangeAspectTest {
         Mockito.verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
         
-        Assert.assertTrue(((ConfigPublishResponse) o).getMessage().contains("config change join point fail"));
+        assertTrue(((ConfigPublishResponse) o).getMessage().contains("config change join point fail"));
     }
     
     @Test
-    public void testRemoveConfigAroundRpc() throws Throwable {
+    void testRemoveConfigAroundRpc() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
         ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         ConfigRemoveRequest request = new ConfigRemoveRequest();
@@ -223,35 +223,35 @@ public class ConfigChangeAspectTest {
         //expect
         Mockito.verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
-        Assert.assertEquals(configPublishResponse, o);
+        assertEquals(configPublishResponse, o);
     }
     
     @Test
-    public void testRemoveConfigAroundRpcException() throws Throwable {
+    void testRemoveConfigAroundRpcException() throws Throwable {
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
         ProceedingJoinPoint proceedingJoinPoint = Mockito.mock(ProceedingJoinPoint.class);
         ConfigRemoveRequest request = new ConfigRemoveRequest();
         RequestMeta requestMeta = new RequestMeta();
-    
+        
         Mockito.when(proceedingJoinPoint.proceed(any())).thenThrow(new NacosRuntimeException(503));
         //execute
         Object o = configChangeAspect.removeConfigAroundRpc(proceedingJoinPoint, request, requestMeta);
         //expect
         Mockito.verify(configChangePluginService, Mockito.times(1))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
-    
-        Assert.assertTrue(((ConfigRemoveResponse) o).getMessage().contains("config change join point fail"));
+        
+        assertTrue(((ConfigRemoveResponse) o).getMessage().contains("config change join point fail"));
     }
     
     @Test
-    public void testDisEnablePluginService() throws Throwable {
+    void testDisEnablePluginService() throws Throwable {
         Properties properties = new Properties();
         properties.put("mockedConfigChangeService.enabled", "false");
-        propertiesStatic.when(() -> PropertiesUtil.getPropertiesWithPrefix(any(),
-                eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX))).thenReturn(properties);
+        propertiesStatic.when(
+                () -> PropertiesUtil.getPropertiesWithPrefix(any(), eq(ConfigChangeConstants.NACOS_CORE_CONFIG_PLUGIN_PREFIX)))
+                .thenReturn(properties);
         configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
-        Assert.assertFalse(Boolean.parseBoolean(configChangeConfigs
-                .getPluginProperties("mockedConfigChangeService").getProperty("enabled")));
+        assertFalse(Boolean.parseBoolean(configChangeConfigs.getPluginProperties("mockedConfigChangeService").getProperty("enabled")));
         
         Mockito.when(configChangePluginService.executeType()).thenReturn(ConfigChangeExecuteTypes.EXECUTE_BEFORE_TYPE);
         Mockito.when(configChangePluginService.getServiceType()).thenReturn("mockedConfigChangeService");
@@ -265,7 +265,7 @@ public class ConfigChangeAspectTest {
         //expect
         Mockito.verify(configChangePluginService, Mockito.times(0))
                 .execute(any(ConfigChangeRequest.class), any(ConfigChangeResponse.class));
-        Assert.assertEquals(configPublishResponse, o);
+        assertEquals(configPublishResponse, o);
     }
     
 }

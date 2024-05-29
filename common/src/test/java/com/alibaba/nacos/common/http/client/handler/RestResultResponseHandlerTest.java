@@ -21,19 +21,19 @@ import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class RestResultResponseHandlerTest {
+class RestResultResponseHandlerTest {
     
     @Test
-    public void testConvertResult() throws Exception {
+    void testConvertResult() throws Exception {
         RestResult<String> testCase = RestResult.<String>builder().withCode(200).withData("ok").withMsg("msg").build();
         InputStream inputStream = new ByteArrayInputStream(JacksonUtils.toJsonBytes(testCase));
         HttpClientResponse response = mock(HttpClientResponse.class);

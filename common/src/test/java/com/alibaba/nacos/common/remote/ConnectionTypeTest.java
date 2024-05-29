@@ -16,16 +16,16 @@
 
 package com.alibaba.nacos.common.remote;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class ConnectionTypeTest {
+class ConnectionTypeTest {
     
     @Test
-    public void testGetByType() {
+    void testGetByType() {
         ConnectionType connectionType = ConnectionType.getByType("GRPC");
         assertNotNull(connectionType);
         assertEquals("GRPC", connectionType.getType());
@@ -33,7 +33,7 @@ public class ConnectionTypeTest {
     }
     
     @Test
-    public void testGetByNonExistType() {
+    void testGetByNonExistType() {
         ConnectionType connectionType = ConnectionType.getByType("HTTP");
         assertNull(connectionType);
     }

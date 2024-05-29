@@ -17,13 +17,15 @@
 package com.alibaba.nacos.client.config.filter.impl;
 
 import com.alibaba.nacos.api.config.filter.IConfigContext;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ConfigResponseTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class ConfigResponseTest {
     
     @Test
-    public void testGetterAndSetter() {
+    void testGetterAndSetter() {
         ConfigResponse configResponse = new ConfigResponse();
         String dataId = "id";
         String group = "group";
@@ -37,15 +39,15 @@ public class ConfigResponseTest {
         configResponse.setTenant(tenant);
         configResponse.setConfigType(type);
         
-        Assert.assertEquals(dataId, configResponse.getDataId());
-        Assert.assertEquals(group, configResponse.getGroup());
-        Assert.assertEquals(tenant, configResponse.getTenant());
-        Assert.assertEquals(content, configResponse.getContent());
-        Assert.assertEquals(type, configResponse.getConfigType());
+        assertEquals(dataId, configResponse.getDataId());
+        assertEquals(group, configResponse.getGroup());
+        assertEquals(tenant, configResponse.getTenant());
+        assertEquals(content, configResponse.getContent());
+        assertEquals(type, configResponse.getConfigType());
     }
     
     @Test
-    public void getParameter() {
+    void getParameter() {
         ConfigResponse configResponse = new ConfigResponse();
         String dataId = "id";
         String group = "group";
@@ -59,17 +61,17 @@ public class ConfigResponseTest {
         configResponse.setTenant(tenant);
         configResponse.putParameter(custom, custom);
         
-        Assert.assertEquals(dataId, configResponse.getParameter("dataId"));
-        Assert.assertEquals(group, configResponse.getParameter("group"));
-        Assert.assertEquals(tenant, configResponse.getParameter("tenant"));
-        Assert.assertEquals(content, configResponse.getParameter("content"));
-        Assert.assertEquals(custom, configResponse.getParameter("custom"));
+        assertEquals(dataId, configResponse.getParameter("dataId"));
+        assertEquals(group, configResponse.getParameter("group"));
+        assertEquals(tenant, configResponse.getParameter("tenant"));
+        assertEquals(content, configResponse.getParameter("content"));
+        assertEquals(custom, configResponse.getParameter("custom"));
     }
     
     @Test
-    public void getConfigContext() {
+    void getConfigContext() {
         ConfigResponse configResponse = new ConfigResponse();
         IConfigContext configContext = configResponse.getConfigContext();
-        Assert.assertNotNull(configContext);
+        assertNotNull(configContext);
     }
 }

@@ -55,4 +55,15 @@ public class NacosConnectionControlManagerTest {
         ConnectionCheckResponse connectionCheckResponse = nacosConnectionControlManager.check(connectionCheckRequest);
         Assert.assertTrue(connectionCheckResponse.isSuccess());
     }
+
+    @Test
+    public void testCheckLimitCountLessThanZero() {
+        NacosConnectionControlManager nacosConnectionControlManager = new NacosConnectionControlManager();
+        ConnectionControlRule connectionControlRule = new ConnectionControlRule();
+        connectionControlRule.setCountLimit(-1);
+        nacosConnectionControlManager.applyConnectionLimitRule(connectionControlRule);
+        ConnectionCheckRequest connectionCheckRequest = new ConnectionCheckRequest("127.0.0.1", "test", "test");
+        ConnectionCheckResponse connectionCheckResponse = nacosConnectionControlManager.check(connectionCheckRequest);
+        Assert.assertTrue(connectionCheckResponse.isSuccess());
+    }
 }

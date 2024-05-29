@@ -18,21 +18,21 @@
 
 package com.alibaba.nacos.client.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.concurrent.Callable;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class TemplateUtilsTest {
+class TemplateUtilsTest {
     
     @Test
-    public void testStringNotEmptyAndThenExecuteSuccess() {
+    void testStringNotEmptyAndThenExecuteSuccess() {
         String word = "run";
         Runnable task = Mockito.mock(Runnable.class);
         TemplateUtils.stringNotEmptyAndThenExecute(word, task);
@@ -40,7 +40,7 @@ public class TemplateUtilsTest {
     }
     
     @Test
-    public void testStringNotEmptyAndThenExecuteFail() {
+    void testStringNotEmptyAndThenExecuteFail() {
         String word = "";
         Runnable task = Mockito.mock(Runnable.class);
         TemplateUtils.stringNotEmptyAndThenExecute(word, task);
@@ -48,7 +48,7 @@ public class TemplateUtilsTest {
     }
     
     @Test
-    public void testStringNotEmptyAndThenExecuteException() {
+    void testStringNotEmptyAndThenExecuteException() {
         String word = "run";
         Runnable task = Mockito.mock(Runnable.class);
         doThrow(new RuntimeException("test")).when(task).run();
@@ -58,22 +58,22 @@ public class TemplateUtilsTest {
     }
     
     @Test
-    public void testStringEmptyAndThenExecuteSuccess() {
+    void testStringEmptyAndThenExecuteSuccess() {
         String word = "   ";
         String actual = TemplateUtils.stringEmptyAndThenExecute(word, () -> "call");
-        Assert.assertEquals("", actual);
+        assertEquals("", actual);
     }
     
     @Test
-    public void testStringEmptyAndThenExecuteFail() {
+    void testStringEmptyAndThenExecuteFail() {
         String word = "";
         final String expect = "call";
         String actual = TemplateUtils.stringEmptyAndThenExecute(word, () -> expect);
-        Assert.assertEquals(expect, actual);
+        assertEquals(expect, actual);
     }
     
     @Test
-    public void testStringEmptyAndThenExecuteException() throws Exception {
+    void testStringEmptyAndThenExecuteException() throws Exception {
         Callable callable = mock(Callable.class);
         when(callable.call()).thenThrow(new RuntimeException("test"));
         String actual = TemplateUtils.stringEmptyAndThenExecute(null, callable);
@@ -81,22 +81,22 @@ public class TemplateUtilsTest {
     }
     
     @Test
-    public void testStringBlankAndThenExecuteSuccess() {
+    void testStringBlankAndThenExecuteSuccess() {
         String word = "success";
         String actual = TemplateUtils.stringBlankAndThenExecute(word, () -> "call");
-        Assert.assertEquals(word, actual);
+        assertEquals(word, actual);
     }
     
     @Test
-    public void testStringBlankAndThenExecuteFail() {
+    void testStringBlankAndThenExecuteFail() {
         String word = "   ";
         final String expect = "call";
         String actual = TemplateUtils.stringBlankAndThenExecute(word, () -> expect);
-        Assert.assertEquals(expect, actual);
+        assertEquals(expect, actual);
     }
     
     @Test
-    public void testStringBlankAndThenExecuteException() throws Exception {
+    void testStringBlankAndThenExecuteException() throws Exception {
         Callable callable = mock(Callable.class);
         when(callable.call()).thenThrow(new RuntimeException("test"));
         String actual = TemplateUtils.stringBlankAndThenExecute(null, callable);

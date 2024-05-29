@@ -16,58 +16,58 @@
 
 package com.alibaba.nacos.common.logging;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class NacosLoggingPropertiesTest {
+class NacosLoggingPropertiesTest {
     
     NacosLoggingProperties loggingProperties;
     
     Properties properties;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         properties = new Properties();
         loggingProperties = new NacosLoggingProperties("classpath:test.xml", properties);
     }
     
     @Test
-    public void testGetLocationWithDefault() {
+    void testGetLocationWithDefault() {
         assertEquals("classpath:test.xml", loggingProperties.getLocation());
     }
     
     @Test
-    public void testGetLocationWithoutDefault() {
+    void testGetLocationWithoutDefault() {
         properties.setProperty("nacos.logging.default.config.enabled", "false");
         assertNull(loggingProperties.getLocation());
     }
     
     @Test
-    public void testGetLocationForSpecified() {
+    void testGetLocationForSpecified() {
         properties.setProperty("nacos.logging.config", "classpath:specified-test.xml");
         properties.setProperty("nacos.logging.default.config.enabled", "false");
         assertEquals("classpath:specified-test.xml", loggingProperties.getLocation());
     }
     
     @Test
-    public void testGetLocationForSpecifiedWithDefault() {
+    void testGetLocationForSpecifiedWithDefault() {
         properties.setProperty("nacos.logging.config", "classpath:specified-test.xml");
         assertEquals("classpath:specified-test.xml", loggingProperties.getLocation());
     }
     
     @Test
-    public void testGetReloadInternal() {
+    void testGetReloadInternal() {
         properties.setProperty("nacos.logging.reload.interval.seconds", "50000");
         assertEquals(50000L, loggingProperties.getReloadInternal());
     }
     
     @Test
-    public void testGetValue() {
+    void testGetValue() {
         properties.setProperty("test.key", "test.value");
         assertEquals("test.value", loggingProperties.getValue("test.key", "default.value"));
         properties.clear();

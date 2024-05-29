@@ -17,34 +17,37 @@
 package com.alibaba.nacos.api.remote.request;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-public class SetupAckRequestTest extends BasicRequestTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class SetupAckRequestTest extends BasicRequestTest {
     
     @Test
-    public void testSerialize() throws Exception {
+    void testSerialize() throws Exception {
         SetupAckRequest request = new SetupAckRequest(
                 Collections.singletonMap(AbilityKey.SERVER_TEST_1.getName(), Boolean.TRUE));
         request.setRequestId("1");
         String json = mapper.writeValueAsString(request);
         System.out.println(json);
-        Assert.assertNotNull(json);
-        Assert.assertTrue(json.contains("\"abilityTable\":{\"test_1\":true}"));
-        Assert.assertTrue(json.contains("\"module\":\"internal\""));
-        Assert.assertTrue(json.contains("\"requestId\":\"1\""));
+        assertNotNull(json);
+        assertTrue(json.contains("\"abilityTable\":{\"test_1\":true}"));
+        assertTrue(json.contains("\"module\":\"internal\""));
+        assertTrue(json.contains("\"requestId\":\"1\""));
     }
     
     @Test
-    public void testDeserialize() throws Exception {
+    void testDeserialize() throws Exception {
         String json =
                 "{\"headers\":{},\"requestId\":\"1\",\"abilityTable\":{\"test_1\":true}," + "\"module\":\"internal\"}";
         SetupAckRequest result = mapper.readValue(json, SetupAckRequest.class);
-        Assert.assertNotNull(result);
-        Assert.assertTrue(result.getAbilityTable().get("test_1"));
-        Assert.assertEquals("1", result.getRequestId());
-        Assert.assertEquals("internal", result.getModule());
+        assertNotNull(result);
+        assertTrue(result.getAbilityTable().get("test_1"));
+        assertEquals("1", result.getRequestId());
+        assertEquals("internal", result.getModule());
     }
 }

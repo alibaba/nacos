@@ -30,21 +30,21 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.alibaba.nacos.persistence.constants.PersistenceConstant.CONFIG_MODEL_RAFT_GROUP;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -52,8 +52,8 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class MergeDatumServiceTest {
+@ExtendWith(SpringExtension.class)
+class MergeDatumServiceTest {
     
     @Mock
     ConfigInfoPersistService configInfoPersistService;
@@ -67,37 +67,35 @@ public class MergeDatumServiceTest {
     @Mock
     ProtocolManager protocolManager;
     
-    @Mock
-    private DataSourceService dataSourceService;
-    
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
     MockedStatic<ApplicationUtils> applicationUtilsMockedStaticc;
     
+    @Mock
+    private DataSourceService dataSourceService;
+    
     private MergeDatumService mergeDatumService;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         applicationUtilsMockedStaticc = Mockito.mockStatic(ApplicationUtils.class);
-        applicationUtilsMockedStaticc.when(() -> ApplicationUtils.getBean(eq(ProtocolManager.class)))
-                .thenReturn(protocolManager);
+        applicationUtilsMockedStaticc.when(() -> ApplicationUtils.getBean(eq(ProtocolManager.class))).thenReturn(protocolManager);
         
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", dataSourceService);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", dataSourceService);
-        mergeDatumService = new MergeDatumService(configInfoPersistService, configInfoAggrPersistService,
-                configInfoTagPersistService);
+        mergeDatumService = new MergeDatumService(configInfoPersistService, configInfoAggrPersistService, configInfoTagPersistService);
         
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         envUtilMockedStatic.close();
         applicationUtilsMockedStaticc.close();
     }
     
     @Test
-    public void testSplitList() {
+    void testSplitList() {
         String dataId = "dataID";
         int count = 5;
         List<ConfigInfoChanged> configList = new ArrayList<>();
@@ -119,11 +117,11 @@ public class MergeDatumServiceTest {
             for (int j = 0; j < indexList.size(); j++) {
                 ConfigInfoChanged configInfoChanged = indexList.get(j);
                 actualCount++;
-                Assert.assertEquals(configInfoChanged, configList.get((j * count) + i));
+                assertEquals(configInfoChanged, configList.get((j * count) + i));
             }
         }
         
-        Assert.assertEquals(originalCount, actualCount);
+        assertEquals(originalCount, actualCount);
         
     }
     
@@ -136,7 +134,7 @@ public class MergeDatumServiceTest {
     }
     
     @Test
-    public void executeMergeConfigTask() {
+    void executeMergeConfigTask() {
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(eq("nacos.config.retention.days"))).thenReturn("10");
         ConfigInfoChanged hasDatum = new ConfigInfoChanged();
         hasDatum.setDataId("hasDatumdataId1");
@@ -170,7 +168,7 @@ public class MergeDatumServiceTest {
     }
     
     @Test
-    public void testAddMergeTaskExternalModel() {
+    void testAddMergeTaskExternalModel() {
         String dataId = "dataId12345";
         String group = "group123";
         String tenant = "tenant1234";
@@ -183,7 +181,7 @@ public class MergeDatumServiceTest {
     }
     
     @Test
-    public void testAddMergeTaskEmbeddedAndStandAloneModel() {
+    void testAddMergeTaskEmbeddedAndStandAloneModel() {
         
         DatasourceConfiguration.setEmbeddedStorage(true);
         envUtilMockedStatic.when(() -> EnvUtil.getStandaloneMode()).thenReturn(true);
@@ -198,7 +196,7 @@ public class MergeDatumServiceTest {
     }
     
     @Test
-    public void testAddMergeTaskEmbeddedAndClusterModelLeader() {
+    void testAddMergeTaskEmbeddedAndClusterModelLeader() {
         
         DatasourceConfiguration.setEmbeddedStorage(true);
         envUtilMockedStatic.when(() -> EnvUtil.getStandaloneMode()).thenReturn(false);
@@ -217,7 +215,7 @@ public class MergeDatumServiceTest {
     }
     
     @Test
-    public void testAddMergeTaskEmbeddedAndClusterModelNotLeader() {
+    void testAddMergeTaskEmbeddedAndClusterModelNotLeader() {
         
         DatasourceConfiguration.setEmbeddedStorage(true);
         envUtilMockedStatic.when(() -> EnvUtil.getStandaloneMode()).thenReturn(false);

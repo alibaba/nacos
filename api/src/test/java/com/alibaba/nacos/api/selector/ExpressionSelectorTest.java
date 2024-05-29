@@ -21,25 +21,25 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ExpressionSelectorTest {
+class ExpressionSelectorTest {
     
     ObjectMapper mapper = new ObjectMapper();
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.registerSubtypes(new NamedType(ExpressionSelector.class, SelectorType.label.name()));
     }
     
     @Test
-    public void testSerialization() throws JsonProcessingException {
+    void testSerialization() throws JsonProcessingException {
         ExpressionSelector selector = new ExpressionSelector();
         selector.setExpression("test expression");
         String actual = mapper.writeValueAsString(selector);
@@ -48,7 +48,7 @@ public class ExpressionSelectorTest {
     }
     
     @Test
-    public void testDeserialization() throws JsonProcessingException {
+    void testDeserialization() throws JsonProcessingException {
         String json = "{\"type\":\"label\",\"expression\":\"test expression\"}";
         AbstractSelector actual = mapper.readValue(json, AbstractSelector.class);
         assertEquals(SelectorType.label.name(), actual.getType());

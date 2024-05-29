@@ -17,50 +17,57 @@
 package com.alibaba.nacos.core.remote.tls;
 
 import com.alibaba.nacos.common.remote.TlsConfig;
-import com.alibaba.nacos.common.utils.JacksonUtils;
-import com.alibaba.nacos.core.utils.Loggers;
-import com.alibaba.nacos.sys.env.EnvUtil;
-import com.alibaba.nacos.sys.utils.PropertiesUtil;
 
 /**
- * Grpc config.
+ * Represents the TLS configuration for an RPC server.
+ * This class extends TlsConfig to inherit common TLS configuration properties.
  *
  * @author githubcheng2978.
  */
 public class RpcServerTlsConfig extends TlsConfig {
-    
-    public static final String PREFIX = "nacos.remote.server.rpc.tls";
-    
-    private static RpcServerTlsConfig instance;
-    
+
+    /**
+     *  The class representing the configuration for SSL context refreshing in the RPC server.
+     */
     private String sslContextRefresher = "";
-    
+
+    /**
+     * Indicates whether compatibility mode is enabled.
+     */
     private Boolean compatibility = true;
-    
-    public static synchronized RpcServerTlsConfig getInstance() {
-        if (null == instance) {
-            instance = PropertiesUtil.handleSpringBinder(EnvUtil.getEnvironment(), PREFIX, RpcServerTlsConfig.class);
-            if (instance == null) {
-                Loggers.REMOTE.debug("TLS configuration is empty, use default value");
-                instance = new RpcServerTlsConfig();
-            }
-        }
-        Loggers.REMOTE.info("Nacos Rpc server tls config:{}", JacksonUtils.toJson(instance));
-        return instance;
-    }
-    
+
+    /**
+     * Gets the compatibility mode status.
+     *
+     * @return true if compatibility mode is enabled, false otherwise.
+     */
     public Boolean getCompatibility() {
         return compatibility;
     }
-    
+
+    /**
+     * Sets the compatibility mode status.
+     *
+     * @param compatibility true to enable compatibility mode, false otherwise.
+     */
     public void setCompatibility(Boolean compatibility) {
         this.compatibility = compatibility;
     }
-    
+
+    /**
+     * Gets the SSL context refresher.
+     *
+     * @return the SSL context refresher.
+     */
     public String getSslContextRefresher() {
         return sslContextRefresher;
     }
-    
+
+    /**
+     * Sets the SSL context refresher.
+     *
+     * @param sslContextRefresher the SSL context refresher to set.
+     */
     public void setSslContextRefresher(String sslContextRefresher) {
         this.sslContextRefresher = sslContextRefresher;
     }

@@ -18,26 +18,28 @@ package com.alibaba.nacos.api.utils;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**.
+/**
+ * .
+ *
  * @author Daydreamer
  * @description Ability key test
  * @date 2022/9/8 12:27
  **/
-public class AbilityKeyTest {
+class AbilityKeyTest {
     
     @Test
-    public void testMapStr() {
+    void testMapStr() {
         Map<AbilityKey, Boolean> enumMap = new HashMap<>();
         Map<String, Boolean> stringBooleanMap = AbilityKey.mapStr(enumMap);
         assertEquals(0, stringBooleanMap.size());
@@ -47,27 +49,27 @@ public class AbilityKeyTest {
         enumMap.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC, false);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
         assertEquals(3, stringBooleanMap.size());
-        Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
-        Assert.assertFalse(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
-        Assert.assertFalse(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
+        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
+        assertFalse(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
         
         enumMap.put(AbilityKey.SERVER_TEST_2, true);
         enumMap.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC, true);
         stringBooleanMap = AbilityKey.mapStr(enumMap);
         assertEquals(3, stringBooleanMap.size());
-        Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
-        Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
-        Assert.assertTrue(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_1.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_TEST_2.getName()));
+        assertTrue(stringBooleanMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName()));
     }
     
     @Test
-    public void testMapEnumForEmpty() {
+    void testMapEnumForEmpty() {
         Map<AbilityKey, Boolean> actual = AbilityKey.mapEnum(AbilityMode.SERVER, Collections.emptyMap());
         assertTrue(actual.isEmpty());
     }
     
     @Test
-    public void testMapEnum() {
+    void testMapEnum() {
         Map<String, Boolean> mapStr = new HashMap<>();
         mapStr.put("test-no-existed", true);
         Map<AbilityKey, Boolean> enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
@@ -77,23 +79,23 @@ public class AbilityKeyTest {
         mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
         mapStr.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        Assert.assertFalse(enumMap.get(AbilityKey.SERVER_TEST_2));
-        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
-        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
-    
+        assertFalse(enumMap.get(AbilityKey.SERVER_TEST_2));
+        assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
+        assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        
         mapStr.clear();
         mapStr.put(AbilityKey.SERVER_TEST_2.getName(), true);
         mapStr.put(AbilityKey.SERVER_TEST_1.getName(), true);
         mapStr.put(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC.getName(), true);
         enumMap = AbilityKey.mapEnum(AbilityMode.SERVER, mapStr);
-        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_TEST_2));
-        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
-        Assert.assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
+        assertTrue(enumMap.get(AbilityKey.SERVER_TEST_2));
+        assertTrue(enumMap.get(AbilityKey.SERVER_TEST_1));
+        assertTrue(enumMap.get(AbilityKey.SERVER_SUPPORT_PERSISTENT_INSTANCE_BY_GRPC));
         
     }
     
     @Test
-    public void testGetAllValues() {
+    void testGetAllValues() {
         Collection<AbilityKey> actual = AbilityKey.getAllValues(AbilityMode.SERVER);
         assertEquals(3, actual.size());
         actual = AbilityKey.getAllValues(AbilityMode.SDK_CLIENT);
@@ -103,7 +105,7 @@ public class AbilityKeyTest {
     }
     
     @Test
-    public void testGetAllNames() {
+    void testGetAllNames() {
         Collection<String> actual = AbilityKey.getAllNames(AbilityMode.SERVER);
         assertEquals(3, actual.size());
         actual = AbilityKey.getAllNames(AbilityMode.SDK_CLIENT);
@@ -113,7 +115,7 @@ public class AbilityKeyTest {
     }
     
     @Test
-    public void testGetDescription() {
+    void testGetDescription() {
         assertEquals("just for junit test", AbilityKey.SERVER_TEST_1.getDescription());
     }
 }

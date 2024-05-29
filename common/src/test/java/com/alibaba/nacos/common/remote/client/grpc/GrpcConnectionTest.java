@@ -34,13 +34,15 @@ import com.google.protobuf.Any;
 import com.google.protobuf.UnsafeByteOperations;
 import io.grpc.ManagedChannel;
 import io.grpc.stub.StreamObserver;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
@@ -48,8 +50,9 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -58,8 +61,19 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class GrpcConnectionTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class GrpcConnectionTest {
+    
+    @Mock
+    ListenableFuture<Payload> future;
+    
+    Payload responsePayload;
+    
+    Payload errorResponsePayload;
+    
+    GrpcConnection connection;
     
     @Mock
     private Executor executor;
@@ -73,22 +87,13 @@ public class GrpcConnectionTest {
     @Mock
     private RequestGrpc.RequestFutureStub requestFutureStub;
     
-    @Mock
-    ListenableFuture<Payload> future;
-    
-    Payload responsePayload;
-    
-    Payload errorResponsePayload;
-    
-    GrpcConnection connection;
-    
-    @BeforeClass
-    public static void setUpBeforeClass() {
+    @BeforeAll
+    static void setUpBeforeClass() {
         PayloadRegistry.init();
     }
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         connection = new GrpcConnection(new RpcClient.ServerInfo(), executor);
         connection.setChannel(channel);
         connection.setPayloadStreamObserver(payloadStreamObserver);
@@ -101,38 +106,40 @@ public class GrpcConnectionTest {
         when(future.isDone()).thenReturn(true);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         connection.close();
     }
     
     @Test
-    public void testGetAll() {
+    void testGetAll() {
         assertEquals(channel, connection.getChannel());
         assertEquals(payloadStreamObserver, connection.getPayloadStreamObserver());
         assertEquals(requestFutureStub, connection.getGrpcFutureServiceStub());
     }
     
     @Test
-    public void testRequestSuccessSync() throws NacosException {
+    void testRequestSuccessSync() throws NacosException {
         Response response = connection.request(new HealthCheckRequest(), -1);
         assertTrue(response instanceof HealthCheckResponse);
     }
     
     @Test
-    public void testRequestSuccessAsync() throws NacosException {
+    void testRequestSuccessAsync() throws NacosException {
         Response response = connection.request(new HealthCheckRequest(), 100);
         assertTrue(response instanceof HealthCheckResponse);
     }
     
-    @Test(expected = NacosException.class)
-    public void testRequestTimeout() throws InterruptedException, ExecutionException, TimeoutException, NacosException {
-        when(future.get(100L, TimeUnit.MILLISECONDS)).thenThrow(new TimeoutException("test"));
-        connection.request(new HealthCheckRequest(), 100);
+    @Test
+    void testRequestTimeout() throws InterruptedException, ExecutionException, TimeoutException, NacosException {
+        assertThrows(NacosException.class, () -> {
+            when(future.get(100L, TimeUnit.MILLISECONDS)).thenThrow(new TimeoutException("test"));
+            connection.request(new HealthCheckRequest(), 100);
+        });
     }
     
     @Test
-    public void testRequestFuture() throws Exception {
+    void testRequestFuture() throws Exception {
         RequestFuture requestFuture = connection.requestFuture(new HealthCheckRequest());
         assertTrue(requestFuture.isDone());
         Response response = requestFuture.get();
@@ -140,43 +147,47 @@ public class GrpcConnectionTest {
     }
     
     @Test
-    public void testRequestFutureWithTimeout() throws Exception {
+    void testRequestFutureWithTimeout() throws Exception {
         RequestFuture requestFuture = connection.requestFuture(new HealthCheckRequest());
         assertTrue(requestFuture.isDone());
         Response response = requestFuture.get(100L);
         assertTrue(response instanceof HealthCheckResponse);
     }
     
-    @Test(expected = NacosException.class)
-    public void testRequestFutureFailure() throws Exception {
-        when(future.get()).thenReturn(errorResponsePayload);
-        RequestFuture requestFuture = connection.requestFuture(new HealthCheckRequest());
-        assertTrue(requestFuture.isDone());
-        requestFuture.get();
-    }
-    
-    @Test(expected = NacosException.class)
-    public void testRequestFutureWithTimeoutFailure() throws Exception {
-        when(future.get(100L, TimeUnit.MILLISECONDS)).thenReturn(errorResponsePayload);
-        RequestFuture requestFuture = connection.requestFuture(new HealthCheckRequest());
-        assertTrue(requestFuture.isDone());
-        requestFuture.get(100L);
+    @Test
+    void testRequestFutureFailure() throws Exception {
+        assertThrows(NacosException.class, () -> {
+            when(future.get()).thenReturn(errorResponsePayload);
+            RequestFuture requestFuture = connection.requestFuture(new HealthCheckRequest());
+            assertTrue(requestFuture.isDone());
+            requestFuture.get();
+        });
     }
     
     @Test
-    public void testSendResponse() {
+    void testRequestFutureWithTimeoutFailure() throws Exception {
+        assertThrows(NacosException.class, () -> {
+            when(future.get(100L, TimeUnit.MILLISECONDS)).thenReturn(errorResponsePayload);
+            RequestFuture requestFuture = connection.requestFuture(new HealthCheckRequest());
+            assertTrue(requestFuture.isDone());
+            requestFuture.get(100L);
+        });
+    }
+    
+    @Test
+    void testSendResponse() {
         connection.sendResponse(new HealthCheckResponse());
         verify(payloadStreamObserver).onNext(any(Payload.class));
     }
     
     @Test
-    public void testSendRequest() {
+    void testSendRequest() {
         connection.sendRequest(new HealthCheckRequest());
         verify(payloadStreamObserver).onNext(any(Payload.class));
     }
     
     @Test
-    public void testAsyncRequestSuccess() throws NacosException {
+    void testAsyncRequestSuccess() throws NacosException {
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArgument(0)).run();
             return null;
@@ -187,7 +198,7 @@ public class GrpcConnectionTest {
     }
     
     @Test
-    public void testAsyncRequestError() throws NacosException, ExecutionException, InterruptedException {
+    void testAsyncRequestError() throws NacosException, ExecutionException, InterruptedException {
         when(future.get()).thenReturn(errorResponsePayload);
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArgument(0)).run();
@@ -199,12 +210,12 @@ public class GrpcConnectionTest {
     }
     
     @Test
-    public void testAsyncRequestNullResponse() throws NacosException, ExecutionException, InterruptedException {
+    void testAsyncRequestNullResponse() throws NacosException, ExecutionException, InterruptedException {
         byte[] jsonBytes = JacksonUtils.toJsonBytes(null);
         Metadata.Builder metaBuilder = Metadata.newBuilder().setType(HealthCheckResponse.class.getSimpleName());
         Payload nullResponsePayload = Payload.newBuilder()
-                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes)))
-                .setMetadata(metaBuilder.build()).build();
+                .setBody(Any.newBuilder().setValue(UnsafeByteOperations.unsafeWrap(jsonBytes))).setMetadata(metaBuilder.build())
+                .build();
         when(future.get()).thenReturn(nullResponsePayload);
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArgument(0)).run();
@@ -216,7 +227,7 @@ public class GrpcConnectionTest {
     }
     
     @Test
-    public void testAsyncRequestWithCancelException() throws NacosException, ExecutionException, InterruptedException {
+    void testAsyncRequestWithCancelException() throws NacosException, ExecutionException, InterruptedException {
         when(future.get()).thenThrow(new CancellationException("test"));
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArgument(0)).run();
@@ -228,7 +239,7 @@ public class GrpcConnectionTest {
     }
     
     @Test
-    public void testAsyncRequestWithOtherException() throws NacosException, ExecutionException, InterruptedException {
+    void testAsyncRequestWithOtherException() throws NacosException, ExecutionException, InterruptedException {
         when(future.get()).thenThrow(new RuntimeException("test"));
         doAnswer(invocationOnMock -> {
             ((Runnable) invocationOnMock.getArgument(0)).run();
@@ -240,7 +251,7 @@ public class GrpcConnectionTest {
     }
     
     @Test
-    public void testCloseWithException() {
+    void testCloseWithException() {
         doThrow(new RuntimeException("test")).when(payloadStreamObserver).onCompleted();
         when(channel.shutdownNow()).thenThrow(new RuntimeException("test"));
         connection.close();
