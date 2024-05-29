@@ -25,7 +25,6 @@ import com.alibaba.nacos.plugin.control.ControlManagerCenter;
 import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
-import org.apache.catalina.core.AsyncContextImpl;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -152,8 +151,6 @@ public class NacosHttpTpsFilterTest {
         MockHttpServletResponse httpServletResponse = Mockito.mock(MockHttpServletResponse.class);
         MockFilterChain filterChain = Mockito.mock(MockFilterChain.class);
         when(controllerMethodsCache.getMethod(eq(httpServletRequest))).thenReturn(method);
-        AsyncContextImpl asyncContext = Mockito.mock(AsyncContextImpl.class);
-        Mockito.when(httpServletRequest.startAsync()).thenReturn(asyncContext);
         //execute test.
         nacosHttpTpsFilter.doFilter(httpServletRequest, httpServletResponse, filterChain);
         
