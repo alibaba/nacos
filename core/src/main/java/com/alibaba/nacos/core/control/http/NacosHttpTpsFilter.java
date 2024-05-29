@@ -93,11 +93,7 @@ public class NacosHttpTpsFilter implements Filter {
                 initTpsControlManager();
                 TpsCheckResponse checkResponse = tpsControlManager.check(httpTpsCheckRequest);
                 if (!checkResponse.isSuccess()) {
-                    AsyncContext asyncContext = httpServletRequest.startAsync();
-                    asyncContext.setTimeout(0);
-                    RpcScheduledExecutor.CONTROL_SCHEDULER.schedule(
-                            () -> generate503Response(httpServletRequest, response, checkResponse.getMessage(),
-                                    asyncContext), 1000L, TimeUnit.MILLISECONDS);
+                    generate503Response(response, checkResponse.getMessage());
                     return;
                 }
                 
@@ -114,8 +110,7 @@ public class NacosHttpTpsFilter implements Filter {
         Filter.super.destroy();
     }
     
-    void generate503Response(HttpServletRequest request, HttpServletResponse response, String message,
-            AsyncContext asyncContext) {
+    void generate503Response(HttpServletResponse response, String message) {
         
         try {
             // Disable cache.
@@ -124,7 +119,6 @@ public class NacosHttpTpsFilter implements Filter {
             response.setHeader("Cache-Control", "no-cache,no-store");
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             response.getOutputStream().println(message);
-            asyncContext.complete();
         } catch (Exception ex) {
             Loggers.TPS.error("Error to generate tps 503 response", ex);
         }
