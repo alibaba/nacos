@@ -17,66 +17,66 @@
 package com.alibaba.nacos.sys.module;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class ModuleStateHolderTest {
+class ModuleStateHolderTest {
     
     private Map<String, ModuleState> moduleStateMap;
     
     private ConfigurableEnvironment environment;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-        moduleStateMap = (Map<String, ModuleState>) ReflectionTestUtils
-                .getField(ModuleStateHolder.getInstance(), ModuleStateHolder.class, "moduleStates");
+        moduleStateMap = (Map<String, ModuleState>) ReflectionTestUtils.getField(ModuleStateHolder.getInstance(),
+                ModuleStateHolder.class, "moduleStates");
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
     }
     
     @Test
-    public void testGetModuleState() {
+    void testGetModuleState() {
         assertNotNull(ModuleStateHolder.getInstance().getModuleState("mock"));
     }
     
     @Test
-    public void testGetAllModuleStates() {
+    void testGetAllModuleStates() {
         assertEquals(2, ModuleStateHolder.getInstance().getAllModuleStates().size());
     }
     
     @Test
-    public void testGetStateValueByNameFound() {
+    void testGetStateValueByNameFound() {
         assertEquals("test", ModuleStateHolder.getInstance().getStateValueByName("mock", "test"));
         assertEquals("test", ModuleStateHolder.getInstance().getStateValueByName("mock", "test", "aaa"));
     }
     
     @Test
-    public void testGetStateValueByNameWithoutModuleState() {
+    void testGetStateValueByNameWithoutModuleState() {
         assertEquals("", ModuleStateHolder.getInstance().getStateValueByName("non-exist", "test"));
         assertEquals("aaa", ModuleStateHolder.getInstance().getStateValueByName("non-exist", "test", "aaa"));
     }
     
     @Test
-    public void testGetStateValueByNameWithoutStateName() {
+    void testGetStateValueByNameWithoutStateName() {
         assertEquals("", ModuleStateHolder.getInstance().getStateValueByName("mock", "non-exist"));
         assertEquals("aaa", ModuleStateHolder.getInstance().getStateValueByName("mock", "non-exist", "aaa"));
     }
     
     @Test
-    public void testSearchStateValue() {
+    void testSearchStateValue() {
         assertEquals("test", ModuleStateHolder.getInstance().searchStateValue("test", "aaa"));
         assertEquals("aaa", ModuleStateHolder.getInstance().searchStateValue("non-exist", "aaa"));
     }

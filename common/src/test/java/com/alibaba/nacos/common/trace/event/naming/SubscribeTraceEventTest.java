@@ -16,23 +16,23 @@
 
 package com.alibaba.nacos.common.trace.event.naming;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class SubscribeTraceEventTest extends NamingTraceEventTest {
+class SubscribeTraceEventTest extends NamingTraceEventTest {
     
     @Test
-    public void testRegisterInstanceTraceEvent() {
-        SubscribeServiceTraceEvent subscribeServiceTraceEvent = new SubscribeServiceTraceEvent(TIME, CLIENT_IP,
-                NAMESPACE_ID, GROUP_NAME, SERVICE_NAME);
+    void testRegisterInstanceTraceEvent() {
+        SubscribeServiceTraceEvent subscribeServiceTraceEvent = new SubscribeServiceTraceEvent(TIME, CLIENT_IP, NAMESPACE_ID,
+                GROUP_NAME, SERVICE_NAME);
         assertBasicInfo(subscribeServiceTraceEvent);
         assertEquals("SUBSCRIBE_SERVICE_TRACE_EVENT", subscribeServiceTraceEvent.getType());
         assertEquals(CLIENT_IP, subscribeServiceTraceEvent.getClientIp());
     }
     
     @Test
-    public void testDeregisterInstanceTraceEvent() {
+    void testDeregisterInstanceTraceEvent() {
         UnsubscribeServiceTraceEvent unsubscribeServiceTraceEvent = new UnsubscribeServiceTraceEvent(TIME, CLIENT_IP,
                 NAMESPACE_ID, GROUP_NAME, SERVICE_NAME);
         assertBasicInfo(unsubscribeServiceTraceEvent);
@@ -41,9 +41,9 @@ public class SubscribeTraceEventTest extends NamingTraceEventTest {
     }
     
     @Test
-    public void testPushServiceTraceEvent() {
-        PushServiceTraceEvent pushServiceTraceEvent = new PushServiceTraceEvent(TIME, 10, 510, 510, CLIENT_IP,
-                NAMESPACE_ID, GROUP_NAME, SERVICE_NAME, 100);
+    void testPushServiceTraceEvent() {
+        PushServiceTraceEvent pushServiceTraceEvent = new PushServiceTraceEvent(TIME, 10, 510, 510, CLIENT_IP, NAMESPACE_ID,
+                GROUP_NAME, SERVICE_NAME, 100);
         assertBasicInfo(pushServiceTraceEvent);
         assertEquals("PUSH_SERVICE_TRACE_EVENT", pushServiceTraceEvent.getType());
         assertEquals(CLIENT_IP, pushServiceTraceEvent.getClientIp());

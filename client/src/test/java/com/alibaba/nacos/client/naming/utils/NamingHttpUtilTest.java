@@ -19,20 +19,22 @@ package com.alibaba.nacos.client.naming.utils;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.VersionUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class NamingHttpUtilTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class NamingHttpUtilTest {
     
     @Test
-    public void testBuilderHeader() {
+    void testBuilderHeader() {
         Header header = NamingHttpUtil.builderHeader();
-        Assert.assertNotNull(header);
-        Assert.assertEquals(header.getValue(HttpHeaderConsts.CLIENT_VERSION_HEADER), VersionUtils.version);
-        Assert.assertEquals(header.getValue(HttpHeaderConsts.USER_AGENT_HEADER), VersionUtils.getFullClientVersion());
-        Assert.assertEquals(header.getValue(HttpHeaderConsts.ACCEPT_ENCODING), "gzip,deflate,sdch");
-        Assert.assertEquals(header.getValue(HttpHeaderConsts.CONNECTION), "Keep-Alive");
-        Assert.assertNotNull(header.getValue(HttpHeaderConsts.REQUEST_ID));
-        Assert.assertEquals(header.getValue(HttpHeaderConsts.REQUEST_MODULE), "Naming");
+        assertNotNull(header);
+        assertEquals(header.getValue(HttpHeaderConsts.CLIENT_VERSION_HEADER), VersionUtils.version);
+        assertEquals(header.getValue(HttpHeaderConsts.USER_AGENT_HEADER), VersionUtils.getFullClientVersion());
+        assertEquals("gzip,deflate,sdch", header.getValue(HttpHeaderConsts.ACCEPT_ENCODING));
+        assertEquals("Keep-Alive", header.getValue(HttpHeaderConsts.CONNECTION));
+        assertNotNull(header.getValue(HttpHeaderConsts.REQUEST_ID));
+        assertEquals("Naming", header.getValue(HttpHeaderConsts.REQUEST_MODULE));
     }
 }

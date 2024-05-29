@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 
-public class LoggerUtilsTest {
+class LoggerUtilsTest {
     
     @Test
-    public void testPrintIfDebugEnabled() {
+    void testPrintIfDebugEnabled() {
         Logger logger = Mockito.mock(Logger.class);
         Mockito.when(logger.isDebugEnabled()).thenReturn(true);
         LoggerUtils.printIfDebugEnabled(logger, "test", "arg1", "arg2", "arg3");
@@ -31,7 +31,7 @@ public class LoggerUtilsTest {
     }
     
     @Test
-    public void testPrintIfInfoEnabled() {
+    void testPrintIfInfoEnabled() {
         Logger logger = Mockito.mock(Logger.class);
         Mockito.when(logger.isInfoEnabled()).thenReturn(true);
         LoggerUtils.printIfInfoEnabled(logger, "test", "arg1", "arg2", "arg3");
@@ -39,7 +39,7 @@ public class LoggerUtilsTest {
     }
     
     @Test
-    public void testPrintIfTraceEnabled() {
+    void testPrintIfTraceEnabled() {
         Logger logger = Mockito.mock(Logger.class);
         Mockito.when(logger.isTraceEnabled()).thenReturn(true);
         LoggerUtils.printIfTraceEnabled(logger, "test", "arg1", "arg2", "arg3");
@@ -47,7 +47,7 @@ public class LoggerUtilsTest {
     }
     
     @Test
-    public void testPrintIfWarnEnabled() {
+    void testPrintIfWarnEnabled() {
         Logger logger = Mockito.mock(Logger.class);
         Mockito.when(logger.isWarnEnabled()).thenReturn(true);
         LoggerUtils.printIfWarnEnabled(logger, "test", "arg1", "arg2", "arg3");
@@ -55,7 +55,7 @@ public class LoggerUtilsTest {
     }
     
     @Test
-    public void testPrintIfErrorEnabled() {
+    void testPrintIfErrorEnabled() {
         Logger logger = Mockito.mock(Logger.class);
         Mockito.when(logger.isErrorEnabled()).thenReturn(true);
         LoggerUtils.printIfErrorEnabled(logger, "test", "arg1", "arg2", "arg3");

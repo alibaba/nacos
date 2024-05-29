@@ -20,21 +20,21 @@ package com.alibaba.nacos.client.logging;
 
 import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
 import com.alibaba.nacos.common.logging.NacosLoggingProperties;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.doThrow;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NacosLoggingTest {
+@ExtendWith(MockitoExtension.class)
+class NacosLoggingTest {
     
     @Mock
     NacosLoggingAdapter loggingAdapter;
@@ -43,8 +43,8 @@ public class NacosLoggingTest {
     
     NacosLogging instance;
     
-    @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException {
+    @BeforeEach
+    void setUp() throws NoSuchFieldException, IllegalAccessException {
         loggingProperties = new NacosLoggingProperties("", new Properties());
         instance = NacosLogging.getInstance();
         Field loggingPropertiesField = NacosLogging.class.getDeclaredField("loggingProperties");
@@ -53,13 +53,13 @@ public class NacosLoggingTest {
     }
     
     @Test
-    public void testGetInstance() {
+    void testGetInstance() {
         NacosLogging instance = NacosLogging.getInstance();
-        Assert.assertNotNull(instance);
+        assertNotNull(instance);
     }
     
     @Test
-    public void testLoadConfiguration() throws NoSuchFieldException, IllegalAccessException {
+    void testLoadConfiguration() throws NoSuchFieldException, IllegalAccessException {
         instance = NacosLogging.getInstance();
         Field nacosLogging = NacosLogging.class.getDeclaredField("loggingAdapter");
         nacosLogging.setAccessible(true);
@@ -69,7 +69,7 @@ public class NacosLoggingTest {
     }
     
     @Test
-    public void testLoadConfigurationWithException() throws NoSuchFieldException, IllegalAccessException {
+    void testLoadConfigurationWithException() throws NoSuchFieldException, IllegalAccessException {
         instance = NacosLogging.getInstance();
         Field nacosLoggingField = NacosLogging.class.getDeclaredField("loggingAdapter");
         nacosLoggingField.setAccessible(true);

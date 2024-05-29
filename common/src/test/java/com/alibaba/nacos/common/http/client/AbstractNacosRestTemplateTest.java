@@ -21,50 +21,49 @@ import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.RestResultResponseHandler;
 import com.alibaba.nacos.common.http.client.handler.StringResponseHandler;
 import com.alibaba.nacos.common.model.RestResult;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Type;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
-public class AbstractNacosRestTemplateTest {
+@ExtendWith(MockitoExtension.class)
+class AbstractNacosRestTemplateTest {
+    
+    MockNacosRestTemplate restTemplate;
     
     @Mock
     private ResponseHandler mockResponseHandler;
     
-    MockNacosRestTemplate restTemplate;
-    
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         restTemplate = new MockNacosRestTemplate(null);
         restTemplate.registerResponseHandler(MockNacosRestTemplate.class.getName(), mockResponseHandler);
     }
     
     @Test
-    public void testSelectResponseHandlerForNull() {
+    void testSelectResponseHandlerForNull() {
         assertTrue(restTemplate.testFindResponseHandler(null) instanceof StringResponseHandler);
     }
     
     @Test
-    public void testSelectResponseHandlerForRestResult() {
+    void testSelectResponseHandlerForRestResult() {
         assertTrue(restTemplate.testFindResponseHandler(RestResult.class) instanceof RestResultResponseHandler);
     }
     
     @Test
-    public void testSelectResponseHandlerForDefault() {
-        assertTrue(restTemplate
-                .testFindResponseHandler(AbstractNacosRestTemplateTest.class) instanceof BeanResponseHandler);
+    void testSelectResponseHandlerForDefault() {
+        assertTrue(restTemplate.testFindResponseHandler(AbstractNacosRestTemplateTest.class) instanceof BeanResponseHandler);
     }
     
     @Test
-    public void testSelectResponseHandlerForCustom() {
+    void testSelectResponseHandlerForCustom() {
         assertEquals(mockResponseHandler, restTemplate.testFindResponseHandler(MockNacosRestTemplate.class));
     }
     

@@ -16,21 +16,20 @@
 
 package com.alibaba.nacos.api.config.ability;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class ServerConfigAbilityTest {
+class ServerConfigAbilityTest {
     
     @Test
-    public void testEquals() {
+    void testEquals() {
         ServerConfigAbility ability = new ServerConfigAbility();
         ability.setSupportRemoteMetrics(true);
         assertEquals(ability, ability);
-        assertFalse(ability.equals(null));
-        assertFalse(ability.equals(new ClientConfigAbility()));
+        assertNotEquals(null, ability);
+        assertNotEquals(ability, new ClientConfigAbility());
         ServerConfigAbility newOne = new ServerConfigAbility();
         assertNotEquals(ability, newOne);
         newOne.setSupportRemoteMetrics(true);

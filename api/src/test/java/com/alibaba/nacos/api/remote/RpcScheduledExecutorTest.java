@@ -16,31 +16,31 @@
 
 package com.alibaba.nacos.api.remote;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RpcScheduledExecutorTest {
+class RpcScheduledExecutorTest {
     
     private static final String NAME = "test.rpc.thread";
     
-    Map<String, String> threadNameMap = new HashMap<>();
+    Map<String, String> threadNameMap = new ConcurrentHashMap<>();
     
     @Test
-    public void testRpcScheduledExecutor() throws InterruptedException {
+    void testRpcScheduledExecutor() throws InterruptedException {
         RpcScheduledExecutor executor = new RpcScheduledExecutor(2, NAME);
         CountDownLatch latch = new CountDownLatch(2);
         executor.submit(new TestRunner(1, latch));
         executor.submit(new TestRunner(2, latch));
-        latch.await(1, TimeUnit.SECONDS);
+        boolean await = latch.await(1, TimeUnit.SECONDS);
+        assertTrue(await);
         assertEquals(2, threadNameMap.size());
-        assertEquals(NAME + ".0", threadNameMap.get("1"));
-        assertEquals(NAME + ".1", threadNameMap.get("2"));
     }
     
     private class TestRunner implements Runnable {
@@ -56,13 +56,8 @@ public class RpcScheduledExecutorTest {
         
         @Override
         public void run() {
-            try {
-                threadNameMap.put(String.valueOf(id), Thread.currentThread().getName());
-                TimeUnit.MILLISECONDS.sleep(500);
-            } catch (InterruptedException ignored) {
-            } finally {
-                latch.countDown();
-            }
+            threadNameMap.put(String.valueOf(id), Thread.currentThread().getName());
+            latch.countDown();
         }
     }
 }

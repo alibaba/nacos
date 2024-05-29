@@ -24,21 +24,22 @@ import com.alibaba.nacos.config.server.constant.Constants;
 import com.alibaba.nacos.config.server.controller.ConfigServletInner;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigRequestInfo;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.form.ConfigForm;
 import com.alibaba.nacos.config.server.service.ConfigDetailService;
 import com.alibaba.nacos.config.server.service.ConfigOperationService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.core.auth.AuthFilter;
+import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.mockito.stubbing.Answer;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -51,13 +52,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -65,8 +66,24 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigControllerV2Test {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ConfigControllerV2Test {
+    
+    private static final String TEST_DATA_ID = "test";
+    
+    private static final String TEST_GROUP = "test";
+    
+    private static final String TEST_NAMESPACE_ID = "";
+    
+    private static final String TEST_NAMESPACE_ID_PUBLIC = "public";
+    
+    private static final String TEST_TAG = "";
+    
+    private static final String TEST_CONTENT = "test config";
+    
+    private static final String TEST_ENCRYPTED_DATA_KEY = "test_encrypted_data_key";
     
     @InjectMocks
     private AuthFilter authFilter;
@@ -92,22 +109,8 @@ public class ConfigControllerV2Test {
     
     private ConfigDetailService configDetailService;
     
-    private static final String TEST_DATA_ID = "test";
-    
-    private static final String TEST_GROUP = "test";
-    
-    private static final String TEST_NAMESPACE_ID = "";
-    
-    private static final String TEST_NAMESPACE_ID_PUBLIC = "public";
-    
-    private static final String TEST_TAG = "";
-    
-    private static final String TEST_CONTENT = "test config";
-    
-    private static final String TEST_ENCRYPTED_DATA_KEY = "test_encrypted_data_key";
-    
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         configDetailService = new ConfigDetailService(configInfoPersistService);
         configControllerV2 = new ConfigControllerV2(inner, configOperationService, configDetailService);
@@ -116,24 +119,23 @@ public class ConfigControllerV2Test {
     }
     
     @Test
-    public void testGetConfig() throws Exception {
+    void testGetConfig() throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         Result<String> stringResult = Result.success(TEST_CONTENT);
         
         doAnswer(x -> {
             x.getArgument(1, HttpServletResponse.class).setStatus(200);
-            x.getArgument(1, HttpServletResponse.class)
-                    .setContentType(com.alibaba.nacos.common.http.param.MediaType.APPLICATION_JSON);
+            x.getArgument(1, HttpServletResponse.class).setContentType(com.alibaba.nacos.common.http.param.MediaType.APPLICATION_JSON);
             x.getArgument(1, HttpServletResponse.class).getWriter().print(JacksonUtils.toJson(stringResult));
             return null;
-        }).when(inner).doGetConfig(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(TEST_DATA_ID),
-                eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), eq(null), anyString(), eq(true));
+        }).when(inner).doGetConfig(any(HttpServletRequest.class), any(HttpServletResponse.class), eq(TEST_DATA_ID), eq(TEST_GROUP),
+                eq(TEST_NAMESPACE_ID), eq(TEST_TAG), eq(null), anyString(), eq(true));
         
         configControllerV2.getConfig(request, response, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
         
-        verify(inner).doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID),
-                eq(TEST_TAG), eq(null), anyString(), eq(true));
+        verify(inner).doGetConfig(eq(request), eq(response), eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
+                eq(null), anyString(), eq(true));
         JsonNode resNode = JacksonUtils.toObj(response.getContentAsString());
         Integer errCode = JacksonUtils.toObj(resNode.get("code").toString(), Integer.class);
         String actContent = JacksonUtils.toObj(resNode.get("data").toString(), String.class);
@@ -143,7 +145,7 @@ public class ConfigControllerV2Test {
     }
     
     @Test
-    public void testPublishConfig() throws Exception {
+    void testPublishConfig() throws Exception {
         
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId(TEST_DATA_ID);
@@ -152,19 +154,18 @@ public class ConfigControllerV2Test {
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
-                anyString())).thenReturn(true);
+        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString())).thenReturn(true);
         
         Result<Boolean> booleanResult = configControllerV2.publishConfig(configForm, request);
         
         verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
-        assertEquals(true, booleanResult.getData());
+        assertTrue(booleanResult.getData());
     }
     
     @Test
-    public void testPublishConfigWithEncryptedDataKey() throws Exception {
+    void testPublishConfigWithEncryptedDataKey() throws Exception {
         
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId(TEST_DATA_ID);
@@ -182,11 +183,11 @@ public class ConfigControllerV2Test {
         verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
-        assertEquals(true, booleanResult.getData());
+        assertTrue(booleanResult.getData());
     }
     
     @Test
-    public void testPublishConfigWhenNameSpaceIsPublic() throws Exception {
+    void testPublishConfigWhenNameSpaceIsPublic() throws Exception {
         
         ConfigForm configForm = new ConfigForm();
         configForm.setDataId(TEST_DATA_ID);
@@ -195,8 +196,8 @@ public class ConfigControllerV2Test {
         configForm.setContent(TEST_CONTENT);
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class),
-                anyString())).thenAnswer((Answer<Boolean>) invocation -> {
+        when(configOperationService.publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString())).thenAnswer(
+                (Answer<Boolean>) invocation -> {
                     if (invocation.getArgument(0, ConfigForm.class).getNamespaceId().equals(TEST_NAMESPACE_ID)) {
                         return true;
                     }
@@ -208,46 +209,43 @@ public class ConfigControllerV2Test {
         verify(configOperationService).publishConfig(any(ConfigForm.class), any(ConfigRequestInfo.class), anyString());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
-        assertEquals(true, booleanResult.getData());
+        assertTrue(booleanResult.getData());
     }
     
     @Test
-    public void testDeleteConfigWhenNameSpaceIsPublic() throws Exception {
+    void testDeleteConfigWhenNameSpaceIsPublic() throws Exception {
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
-                any(), any())).thenReturn(true);
-        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
-                TEST_NAMESPACE_ID_PUBLIC, TEST_TAG);
+        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(),
+                any())).thenReturn(true);
+        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC,
+                TEST_TAG);
         
-        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID),
-                eq(TEST_TAG), any(), any());
+        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
-        assertEquals(true, booleanResult.getData());
+        assertTrue(booleanResult.getData());
     }
     
     @Test
-    public void testDeleteConfig() throws Exception {
+    void testDeleteConfig() throws Exception {
         
         MockHttpServletRequest request = new MockHttpServletRequest();
         
-        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG),
-                any(), any())).thenReturn(true);
+        when(configOperationService.deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(),
+                any())).thenReturn(true);
         
-        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP,
-                TEST_NAMESPACE_ID, TEST_TAG);
+        Result<Boolean> booleanResult = configControllerV2.deleteConfig(request, TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, TEST_TAG);
         
-        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID),
-                eq(TEST_TAG), any(), any());
+        verify(configOperationService).deleteConfig(eq(TEST_DATA_ID), eq(TEST_GROUP), eq(TEST_NAMESPACE_ID), eq(TEST_TAG), any(), any());
         
         assertEquals(ErrorCode.SUCCESS.getCode(), booleanResult.getCode());
-        assertEquals(true, booleanResult.getData());
+        assertTrue(booleanResult.getData());
     }
     
     @Test
-    public void testGetConfigByDetail() throws Exception {
+    void testGetConfigByDetail() throws Exception {
         List<ConfigInfo> configInfoList = new ArrayList<>();
         ConfigInfo configInfo = new ConfigInfo("test", "test", "test");
         configInfoList.add(configInfo);
@@ -260,13 +258,11 @@ public class ConfigControllerV2Test {
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         configAdvanceInfo.put("content", "server.port");
         
-        when(configInfoPersistService.findConfigInfo4Page(1, 10, "test", "test", "", configAdvanceInfo))
-                .thenReturn(page);
+        when(configInfoPersistService.findConfigInfo4Page(1, 10, "test", "test", "", configAdvanceInfo)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
-                .param("search", "accurate").param("dataId", "test").param("group", "test")
-                .param("appName", "").param("tenant", "").param("config_tags", "")
-                .param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+                .param("search", "accurate").param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
+                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
@@ -274,14 +270,14 @@ public class ConfigControllerV2Test {
         List resultList = JacksonUtils.toObj(pageItemsNode.toString(), List.class);
         ConfigInfo resConfigInfo = JacksonUtils.toObj(pageItemsNode.get(0).toString(), ConfigInfo.class);
         
-        Assert.assertEquals(configInfoList.size(), resultList.size());
-        Assert.assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
-        Assert.assertEquals(configInfo.getGroup(), resConfigInfo.getGroup());
-        Assert.assertEquals(configInfo.getContent(), resConfigInfo.getContent());
+        assertEquals(configInfoList.size(), resultList.size());
+        assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
+        assertEquals(configInfo.getGroup(), resConfigInfo.getGroup());
+        assertEquals(configInfo.getContent(), resConfigInfo.getContent());
     }
     
     @Test
-    public void testGetConfigFuzzyByDetail() throws Exception {
+    void testGetConfigFuzzyByDetail() throws Exception {
         List<ConfigInfo> configInfoList = new ArrayList<>();
         ConfigInfo configInfo = new ConfigInfo("test", "test", "test");
         configInfoList.add(configInfo);
@@ -294,13 +290,11 @@ public class ConfigControllerV2Test {
         Map<String, Object> configAdvanceInfo = new HashMap<>(8);
         configAdvanceInfo.put("content", "server.port");
         
-        when(configInfoPersistService.findConfigInfoLike4Page(1, 10, "test", "test", "", configAdvanceInfo))
-                .thenReturn(page);
+        when(configInfoPersistService.findConfigInfoLike4Page(1, 10, "test", "test", "", configAdvanceInfo)).thenReturn(page);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
-                .param("search", "blur").param("dataId", "test").param("group", "test")
-                .param("appName", "").param("tenant", "").param("config_tags", "")
-                .param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+                .param("search", "blur").param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
+                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         String actualValue = response.getContentAsString();
         
@@ -308,23 +302,22 @@ public class ConfigControllerV2Test {
         List resultList = JacksonUtils.toObj(pageItemsNode.toString(), List.class);
         ConfigInfo resConfigInfo = JacksonUtils.toObj(pageItemsNode.get(0).toString(), ConfigInfo.class);
         
-        Assert.assertEquals(configInfoList.size(), resultList.size());
-        Assert.assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
-        Assert.assertEquals(configInfo.getGroup(), resConfigInfo.getGroup());
-        Assert.assertEquals(configInfo.getContent(), resConfigInfo.getContent());
+        assertEquals(configInfoList.size(), resultList.size());
+        assertEquals(configInfo.getDataId(), resConfigInfo.getDataId());
+        assertEquals(configInfo.getGroup(), resConfigInfo.getGroup());
+        assertEquals(configInfo.getContent(), resConfigInfo.getContent());
     }
     
     @Test
-    public void testGetConfigAuthFilter() throws Exception {
+    void testGetConfigAuthFilter() throws Exception {
         when(authConfigs.isAuthEnabled()).thenReturn(true);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.CONFIG_CONTROLLER_V2_PATH + "/searchDetail")
-                .param("search", "accurate").param("dataId", "test").param("group", "test")
-                .param("appName", "").param("tenant", "").param("config_tags", "")
-                .param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
+                .param("search", "accurate").param("dataId", "test").param("group", "test").param("appName", "").param("tenant", "")
+                .param("config_tags", "").param("pageNo", "1").param("pageSize", "10").param("config_detail", "server.port");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
         
-        assertEquals(response.getStatus(), HttpServletResponse.SC_FORBIDDEN);
+        assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
         assertEquals(response.getErrorMessage(),
                 "Invalid server identity key or value, Please make sure set `nacos.core.auth.server.identity.key`"
                         + " and `nacos.core.auth.server.identity.value`, or open `nacos.core.auth.enable.userAgentAuthWhite`");

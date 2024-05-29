@@ -17,14 +17,15 @@
 package com.alibaba.nacos.common.event;
 
 import com.alibaba.nacos.common.notify.Event;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ServerConfigChangeEventTest {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ServerConfigChangeEventTest {
     
     @Test
-    public void test() {
+    void test() {
         Event event = ServerConfigChangeEvent.newEvent();
-        Assert.assertTrue(event instanceof ServerConfigChangeEvent);
+        assertTrue(event instanceof ServerConfigChangeEvent);
     }
 }

@@ -18,24 +18,26 @@ package com.alibaba.nacos.config.server.configuration;
 
 import com.alibaba.nacos.common.event.ServerConfigChangeEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Nacos config change configs test.
  *
  * @author liyunfei
  **/
-public class ConfigChangeConfigsTest {
+class ConfigChangeConfigsTest {
     
     private ConfigChangeConfigs configChangeConfigs;
     
     private MockEnvironment environment;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         environment = new MockEnvironment();
         environment.setProperty("nacos.core.config.plugin.mockPlugin.enabled", "true");
         EnvUtil.setEnvironment(environment);
@@ -43,17 +45,15 @@ public class ConfigChangeConfigsTest {
     }
     
     @Test
-    public void testEnable() {
-        Assert.assertTrue(Boolean.parseBoolean(configChangeConfigs
-                .getPluginProperties("mockPlugin").getProperty("enabled")));
+    void testEnable() {
+        assertTrue(Boolean.parseBoolean(configChangeConfigs.getPluginProperties("mockPlugin").getProperty("enabled")));
     }
     
     @Test
-    public void testUpgradeEnable() {
+    void testUpgradeEnable() {
         environment.setProperty("nacos.core.config.plugin.mockPlugin.enabled", "false");
         configChangeConfigs.onEvent(ServerConfigChangeEvent.newEvent());
-        Assert.assertFalse(Boolean.parseBoolean(configChangeConfigs
-                .getPluginProperties("mockPlugin").getProperty("enabled")));
+        assertFalse(Boolean.parseBoolean(configChangeConfigs.getPluginProperties("mockPlugin").getProperty("enabled")));
     }
     
 }

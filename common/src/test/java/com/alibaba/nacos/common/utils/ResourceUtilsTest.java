@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,24 +26,27 @@ import java.io.Reader;
 import java.net.URL;
 import java.util.Properties;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ResourceUtilsTest {
+class ResourceUtilsTest {
     
     @Test
-    public void testGetResourceUrlForClasspath() throws IOException {
+    void testGetResourceUrlForClasspath() throws IOException {
         URL url = ResourceUtils.getResourceUrl("classpath:test-tls-cert.pem");
         assertNotNull(url);
     }
     
-    @Test(expected = FileNotFoundException.class)
-    public void testGetResourceUrlForClasspathNotExists() throws IOException {
-        ResourceUtils.getResourceUrl("classpath:non-exist.pem");
+    @Test
+    void testGetResourceUrlForClasspathNotExists() throws IOException {
+        assertThrows(FileNotFoundException.class, () -> {
+            ResourceUtils.getResourceUrl("classpath:non-exist.pem");
+        });
     }
     
     @Test
-    public void testGetResourceUrlForFile() throws IOException {
+    void testGetResourceUrlForFile() throws IOException {
         File file = File.createTempFile("test", ".txt");
         try {
             URL url = ResourceUtils.getResourceUrl("file://" + file.getPath());
@@ -54,7 +57,7 @@ public class ResourceUtilsTest {
     }
     
     @Test
-    public void testGetResourceUrlForFileWithoutProtocol() throws IOException {
+    void testGetResourceUrlForFileWithoutProtocol() throws IOException {
         File file = File.createTempFile("test", ".txt");
         try {
             URL url = ResourceUtils.getResourceUrl(file.getPath());
@@ -65,83 +68,84 @@ public class ResourceUtilsTest {
     }
     
     @Test
-    public void testGetResourceUrlFromLoader() throws IOException {
+    void testGetResourceUrlFromLoader() throws IOException {
         URL url = ResourceUtils.getResourceUrl(this.getClass().getClassLoader(), "test-tls-cert.pem");
         assertNotNull(url);
     }
     
     @Test
-    public void testGetResourceUrlFromSystemLoader() throws IOException {
+    void testGetResourceUrlFromSystemLoader() throws IOException {
         URL url = ResourceUtils.getResourceUrl(null, "test-tls-cert.pem");
         assertNotNull(url);
     }
     
-    @Test(expected = IOException.class)
-    public void testGetResourceUrlFromLoaderWithoutExist() throws IOException {
-        URL url = ResourceUtils.getResourceUrl(null, "non-exist");
-        assertNotNull(url);
+    @Test
+    void testGetResourceUrlFromLoaderWithoutExist() throws IOException {
+        assertThrows(IOException.class, () -> {
+            URL url = ResourceUtils.getResourceUrl(null, "non-exist");
+            assertNotNull(url);
+        });
     }
     
     @Test
-    public void testGetResourceAsStreamForClasspath() throws IOException {
+    void testGetResourceAsStreamForClasspath() throws IOException {
         try (InputStream inputStream = ResourceUtils.getResourceAsStream("test-tls-cert.pem")) {
             assertNotNull(inputStream);
         }
     }
     
     @Test
-    public void testGetResourceAsStreamForClasspathFromSystem() throws IOException {
+    void testGetResourceAsStreamForClasspathFromSystem() throws IOException {
         try (InputStream inputStream = ResourceUtils.getResourceAsStream(null, "test-tls-cert.pem")) {
             assertNotNull(inputStream);
         }
     }
     
-    @Test(expected = IOException.class)
-    public void testGetResourceAsStreamForClasspathWithoutExist() throws IOException {
-        URL url = ResourceUtils.getResourceUrl("non-exist");
-        ResourceUtils.getResourceAsStream(null, url.toString());
+    @Test
+    void testGetResourceAsStreamForClasspathWithoutExist() throws IOException {
+        assertThrows(IOException.class, () -> {
+            URL url = ResourceUtils.getResourceUrl("non-exist");
+            ResourceUtils.getResourceAsStream(null, url.toString());
+        });
     }
     
     @Test
-    public void testGetResourceAsPropertiesForClasspath() throws IOException {
+    void testGetResourceAsPropertiesForClasspath() throws IOException {
         Properties properties = ResourceUtils.getResourceAsProperties("resource_utils_test.properties");
         assertNotNull(properties);
         assertTrue(properties.containsKey("a"));
     }
     
     @Test
-    public void testGetResourceAsReader() throws IOException {
+    void testGetResourceAsReader() throws IOException {
         try (Reader reader = ResourceUtils.getResourceAsReader("resource_utils_test.properties", "UTF-8")) {
             assertNotNull(reader);
         }
     }
     
     @Test
-    public void testGetResourceAsReaderWithLoader() throws IOException {
-        try (Reader reader = ResourceUtils
-                .getResourceAsReader(ResourceUtilsTest.class.getClassLoader(), "resource_utils_test.properties",
-                        "UTF-8")) {
+    void testGetResourceAsReaderWithLoader() throws IOException {
+        try (Reader reader = ResourceUtils.getResourceAsReader(ResourceUtilsTest.class.getClassLoader(),
+                "resource_utils_test.properties", "UTF-8")) {
             assertNotNull(reader);
         }
     }
     
     @Test
-    public void testGetResourceAsFile() throws IOException {
+    void testGetResourceAsFile() throws IOException {
         File file = ResourceUtils.getResourceAsFile("classpath:resource_utils_test.properties");
         assertNotNull(file);
     }
     
     @Test
-    public void testGetResourceAsFileByUrl() throws IOException {
-        File file = ResourceUtils
-                .getResourceAsFile(ResourceUtils.getResourceUrl("classpath:resource_utils_test.properties"));
+    void testGetResourceAsFileByUrl() throws IOException {
+        File file = ResourceUtils.getResourceAsFile(ResourceUtils.getResourceUrl("classpath:resource_utils_test.properties"));
         assertNotNull(file);
     }
     
     @Test
-    public void testGetResourceAsFileByLoader() throws IOException {
-        File file = ResourceUtils
-                .getResourceAsFile(ResourceUtils.class.getClassLoader(), "resource_utils_test.properties");
+    void testGetResourceAsFileByLoader() throws IOException {
+        File file = ResourceUtils.getResourceAsFile(ResourceUtils.class.getClassLoader(), "resource_utils_test.properties");
         assertNotNull(file);
     }
 }

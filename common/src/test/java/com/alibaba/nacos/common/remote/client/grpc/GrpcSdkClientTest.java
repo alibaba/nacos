@@ -18,20 +18,19 @@ package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.exception.NacosException;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
-import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class GrpcSdkClientTest {
+class GrpcSdkClientTest {
     
     GrpcSdkClient grpcSdkClient;
     
-    @After
-    public void tearDown() throws NacosException {
+    @AfterEach
+    void tearDown() throws NacosException {
         System.clearProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY);
         if (grpcSdkClient != null) {
             grpcSdkClient.shutdown();
@@ -39,26 +38,26 @@ public class GrpcSdkClientTest {
     }
     
     @Test
-    public void testAbilityMode() {
+    void testAbilityMode() {
         grpcSdkClient = new GrpcSdkClient("test");
         assertEquals(AbilityMode.SDK_CLIENT, grpcSdkClient.abilityMode());
     }
     
     @Test
-    public void testRpcPortOffsetDefault() {
-        grpcSdkClient = new GrpcSdkClient(new Properties());
+    void testRpcPortOffsetDefault() {
+        grpcSdkClient = new GrpcSdkClient("test");
         assertEquals(1000, grpcSdkClient.rpcPortOffset());
     }
     
     @Test
-    public void testRpcPortOffsetFromSystemProperty() {
+    void testRpcPortOffsetFromSystemProperty() {
         System.setProperty(GrpcConstants.NACOS_SERVER_GRPC_PORT_OFFSET_KEY, "10000");
         grpcSdkClient = new GrpcSdkClient("test", 8, 8, Collections.emptyMap());
         assertEquals(10000, grpcSdkClient.rpcPortOffset());
     }
     
     @Test
-    public void testGrpcClientByConfig() {
+    void testGrpcClientByConfig() {
         GrpcClientConfig config = DefaultGrpcClientConfig.newBuilder().setName("test111").build();
         grpcSdkClient = new GrpcSdkClient(config);
         assertEquals("test111", grpcSdkClient.getName());

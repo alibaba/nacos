@@ -23,7 +23,6 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import org.junit.Assert;
 import org.junit.FixMethodOrder;
 import org.junit.Ignore;
@@ -42,30 +41,29 @@ import java.util.concurrent.TimeUnit;
 import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 
 /**
+ * NamingTlsServiceTls_ITCase.
+ *
  * @author githucheng2978.
  * @date .
  **/
 @RunWith(SpringRunner.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@SpringBootTest(classes = Nacos.class, properties = {
-        "server.servlet.context-path=/nacos",
-        RpcServerTlsConfig.PREFIX+".enableTls=true",
-        RpcServerTlsConfig.PREFIX+".compatibility=false",
-        RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
-        RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem",
-},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
+        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
+        RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
+        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem", RpcConstants.NACOS_SERVER_RPC
+        + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @Ignore("TODO, Fix cert expired problem")
 public class NamingTlsServiceTls_ITCase {
-
-
+    
+    
     @LocalServerPort
     private int port;
-
+    
     @Test(expected = NacosException.class)
     public void Tls_a_ServerAndPlainClient() throws NacosException {
-
-        Instance   instance = new Instance();
+        
+        Instance instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
         instance.setWeight(2);
@@ -76,20 +74,20 @@ public class NamingTlsServiceTls_ITCase {
         map.put("version", "2.0");
         namingService.registerInstance(randomDomainName(), instance);
         namingService.shutDown();
-
+        
     }
-
+    
     @Test
     public void Tls_b_ServerAndTlsClientTrustCa() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH,"test-ca-cert.pem");
-        Instance   instance = new Instance();
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
+        Instance instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
         instance.setWeight(2);
         instance.setClusterName(Constants.DEFAULT_CLUSTER_NAME);
-        NamingService namingService  = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        NamingService namingService = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external-update");
         map.put("version", "2.0");
@@ -105,20 +103,20 @@ public class NamingTlsServiceTls_ITCase {
         Assert.assertEquals(instances.size(), 1);
         Assert.assertEquals("2.0", instances.get(0).getMetadata().get("version"));
         namingService.shutDown();
-
+        
     }
-
+    
     @Test
     public void Tls_c_ServerAndTlsClientAll() throws NacosException {
         String serviceName = randomDomainName();
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE,"true");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL,"true");
-        Instance   instance = new Instance();
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
+        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL, "true");
+        Instance instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
         instance.setWeight(2);
         instance.setClusterName(Constants.DEFAULT_CLUSTER_NAME);
-        NamingService namingService  = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+        NamingService namingService = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external-update");
         map.put("version", "2.0");

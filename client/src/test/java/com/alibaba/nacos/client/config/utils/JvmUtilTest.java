@@ -18,27 +18,29 @@
 
 package com.alibaba.nacos.client.config.utils;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class JvmUtilTest {
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class JvmUtilTest {
     
     Method initMethod;
     
-    @Before
-    public void setUp() throws NoSuchMethodException {
+    @BeforeEach
+    void setUp() throws NoSuchMethodException {
         initMethod = JvmUtil.class.getDeclaredMethod("init");
         initMethod.setAccessible(true);
     }
     
-    @After
-    public void tearDown() throws NoSuchFieldException, IllegalAccessException {
+    @AfterEach
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
         System.clearProperty("isMultiInstance");
         Field field = JvmUtil.class.getDeclaredField("isMultiInstance");
         field.setAccessible(true);
@@ -46,17 +48,17 @@ public class JvmUtilTest {
     }
     
     @Test
-    public void testIsMultiInstance() throws InvocationTargetException, IllegalAccessException {
+    void testIsMultiInstance() throws InvocationTargetException, IllegalAccessException {
         initMethod.invoke(JvmUtil.class);
         Boolean multiInstance = JvmUtil.isMultiInstance();
-        Assert.assertFalse(multiInstance);
+        assertFalse(multiInstance);
     }
     
     @Test
-    public void testIsMultiInstance2() throws InvocationTargetException, IllegalAccessException {
+    void testIsMultiInstance2() throws InvocationTargetException, IllegalAccessException {
         System.setProperty("isMultiInstance", "true");
         initMethod.invoke(JvmUtil.class);
         Boolean multiInstance = JvmUtil.isMultiInstance();
-        Assert.assertTrue(multiInstance);
+        assertTrue(multiInstance);
     }
 }

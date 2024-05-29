@@ -16,56 +16,58 @@
 
 package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.lang.reflect.Field;
+import java.util.Properties;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.when;
 
-public class DefaultTlsProtocolNegotiatorBuilderTest {
-    
+@RunWith(MockitoJUnitRunner.class)
+public class SdkDefaultTlsProtocolNegotiatorBuilderTest {
+
     private ConfigurableEnvironment environment;
-    
-    private DefaultTlsProtocolNegotiatorBuilder builder;
-    
+
+    private SdkDefaultTlsProtocolNegotiatorBuilder builder;
+
+    @Mock
+    private Properties properties;
+
     @Before
     public void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
-        builder = new DefaultTlsProtocolNegotiatorBuilder();
+        builder = new SdkDefaultTlsProtocolNegotiatorBuilder();
     }
-    
+
     @After
     public void tearDown() throws Exception {
-        RpcServerTlsConfig.getInstance().setEnableTls(false);
-        RpcServerTlsConfig.getInstance().setCertChainFile(null);
-        RpcServerTlsConfig.getInstance().setCertPrivateKey(null);
-        clearRpcServerTlsConfigInstance();
     }
-    
+
     @Test
     public void testBuildDisabled() {
         assertNull(builder.build());
     }
-    
+
     @Test
     public void testBuildEnabled() {
-        RpcServerTlsConfig.getInstance().setEnableTls(true);
-        RpcServerTlsConfig.getInstance().setCertPrivateKey("test-server-key.pem");
-        RpcServerTlsConfig.getInstance().setCertChainFile("test-server-cert.pem");
+        final MockedStatic<EnvUtil> envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+        when(EnvUtil.getProperties()).thenReturn(properties);
+        when(properties.getProperty("nacos.remote.server.rpc.tls.enableTls")).thenReturn("true");
+        when(properties.getProperty("nacos.remote.server.rpc.tls.certPrivateKey")).thenReturn("test-server-key.pem");
+        when(properties.getProperty("nacos.remote.server.rpc.tls.certChainFile")).thenReturn("test-server-cert.pem");
         assertNotNull(builder.build());
-    }
-    
-    private static void clearRpcServerTlsConfigInstance() throws Exception {
-        Field instanceField = RpcServerTlsConfig.class.getDeclaredField("instance");
-        instanceField.setAccessible(true);
-        instanceField.set(null, null);
+        envUtilMockedStatic.close();
     }
 }

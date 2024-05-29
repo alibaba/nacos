@@ -16,8 +16,8 @@
 
 package com.alibaba.nacos.sys.env;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -26,37 +26,37 @@ import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @RunWith(SpringRunner.class)
 @ActiveProfiles("test")
 @SpringBootTest(classes = EnvUtilWithConfigTest.class)
-public class EnvUtilWithConfigTest {
+class EnvUtilWithConfigTest {
     
     private static final int SETTING_PROCESSORS = 10;
     
     @Autowired
     private Environment environment;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment((ConfigurableEnvironment) environment);
     }
     
     @Test
-    public void testGetAvailableProcessors() {
+    void testGetAvailableProcessors() {
         int actual = EnvUtil.getAvailableProcessors();
         assertEquals(SETTING_PROCESSORS, actual);
     }
     
     @Test
-    public void testGetAvailableProcessorsWithMultiple() {
+    void testGetAvailableProcessorsWithMultiple() {
         int actual = EnvUtil.getAvailableProcessors(2);
         assertEquals(SETTING_PROCESSORS * 2, actual);
     }
     
     @Test
-    public void testGetAvailableProcessorsWithScale() {
+    void testGetAvailableProcessorsWithScale() {
         int actual = EnvUtil.getAvailableProcessors(0.5);
         assertEquals((int) (SETTING_PROCESSORS * 0.5), actual);
     }

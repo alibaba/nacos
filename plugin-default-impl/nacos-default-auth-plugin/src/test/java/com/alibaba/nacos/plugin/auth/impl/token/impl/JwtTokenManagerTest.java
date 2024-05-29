@@ -35,6 +35,7 @@ import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -105,12 +106,48 @@ public class JwtTokenManagerTest {
     public void testGetExpiredTimeInSeconds() throws AccessException {
         Assert.assertTrue(jwtTokenManager.getExpiredTimeInSeconds(jwtTokenManager.createToken("nacos")) > 0);
     }
+
+    @Test
+    public void testGetTokenTtlInSecondsWhenAuthDisabled() throws AccessException {
+        when(authConfigs.isAuthEnabled()).thenReturn(false);
+        // valid secret key
+        String ttl = EnvUtil.getProperty(AuthConstants.TOKEN_EXPIRE_SECONDS);
+        Assert.assertEquals(Integer.parseInt(ttl), jwtTokenManager.getTokenTtlInSeconds(jwtTokenManager.createToken("nacos")));
+        // invalid secret key
+        MockEnvironment mockEnvironment = new MockEnvironment();
+        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, "");
+        EnvUtil.setEnvironment(mockEnvironment);
+        jwtTokenManager = new JwtTokenManager(authConfigs);
+        Assert.assertEquals(Integer.parseInt(ttl), jwtTokenManager.getTokenTtlInSeconds(jwtTokenManager.createToken("nacos")));
+    }
     
     @Test
-    public void testCreateTokenWhenDisableAuth() {
+    public void testCreateTokenWhenDisableAuthAndSecretKeyIsBlank() {
         when(authConfigs.isAuthEnabled()).thenReturn(false);
+        MockEnvironment mockEnvironment = new MockEnvironment();
+        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, "");
+        mockEnvironment
+                .setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
+
+        EnvUtil.setEnvironment(mockEnvironment);
         jwtTokenManager = new JwtTokenManager(authConfigs);
         assertEquals("AUTH_DISABLED", jwtTokenManager.createToken("nacos"));
+    }
+
+    @Test
+    public void testCreateTokenWhenDisableAuthAndSecretKeyIsNotBlank() throws AccessException {
+        when(authConfigs.isAuthEnabled()).thenReturn(false);
+        MockEnvironment mockEnvironment = new MockEnvironment();
+        String tmpKey = "SecretKey0123567890234567890123456789012345678901234567890123456789";
+        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY,
+                Base64.getEncoder().encodeToString(tmpKey.getBytes(StandardCharsets.UTF_8)));
+        mockEnvironment
+                .setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
+        EnvUtil.setEnvironment(mockEnvironment);
+        jwtTokenManager = new JwtTokenManager(authConfigs);
+        String token = jwtTokenManager.createToken("nacos");
+        assertNotEquals("AUTH_DISABLED", token);
+        jwtTokenManager.validateToken(token);
     }
     
     @Test

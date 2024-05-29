@@ -19,17 +19,17 @@ package com.alibaba.nacos.api.naming.remote.request;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class BatchInstanceRequestTest extends BasedNamingRequestTest {
+class BatchInstanceRequestTest extends BasedNamingRequestTest {
     
     @Test
-    public void testSerialize() throws JsonProcessingException {
+    void testSerialize() throws JsonProcessingException {
         BatchInstanceRequest request = new BatchInstanceRequest(NAMESPACE, SERVICE, GROUP,
                 NamingRemoteConstants.BATCH_REGISTER_INSTANCE, Collections.singletonList(new Instance()));
         String json = mapper.writeValueAsString(request);
@@ -39,7 +39,7 @@ public class BatchInstanceRequestTest extends BasedNamingRequestTest {
     }
     
     @Test
-    public void testDeserialize() throws JsonProcessingException {
+    void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"namespace\":\"namespace\",\"serviceName\":\"service\",\"groupName\":\"group\","
                 + "\"type\":\"batchRegisterInstance\",\"instances\":[{\"port\":0,\"weight\":1.0,\"healthy\":true,"
                 + "\"enabled\":true,\"ephemeral\":true,\"metadata\":{},\"instanceIdGenerator\":\"simple\","

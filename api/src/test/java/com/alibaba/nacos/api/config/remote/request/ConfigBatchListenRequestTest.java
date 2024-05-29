@@ -18,12 +18,12 @@ package com.alibaba.nacos.api.config.remote.request;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
+class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
     
     @Override
     @Test
@@ -47,14 +47,14 @@ public class ConfigBatchListenRequestTest extends BasedConfigRequestTest {
                 + "\"configListenContexts\":[{\"group\":\"group\",\"md5\":\"test_MD5\","
                 + "\"dataId\":\"test_data\",\"tenant\":\"test_tenant\"}],\"module\":\"config\"}";
         ConfigBatchListenRequest actual = mapper.readValue(json, ConfigBatchListenRequest.class);
-        assertEquals(actual.isListen(), true);
-        assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
-        assertEquals(actual.getHeader(HEADER_KEY), HEADER_VALUE);
-        assertEquals(actual.getConfigListenContexts().size(), 1);
+        assertEquals(true, actual.isListen());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
+        assertEquals(HEADER_VALUE, actual.getHeader(HEADER_KEY));
+        assertEquals(1, actual.getConfigListenContexts().size());
     }
     
     @Test
-    public void testConfigListenContextToString() {
+    void testConfigListenContextToString() {
         ConfigBatchListenRequest configBatchListenRequest = new ConfigBatchListenRequest();
         configBatchListenRequest.addConfigListenContext(GROUP, DATA_ID, TENANT, MD5);
         assertEquals("ConfigListenContext{group='group', md5='test_MD5', dataId='test_data', tenant='test_tenant'}",

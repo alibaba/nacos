@@ -16,28 +16,28 @@
 
 package com.alibaba.nacos.api.config.listener;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class AbstractSharedListenerTest {
+class AbstractSharedListenerTest {
     
     private static final String CONFIG_CONTENT = "test";
     
     private static Map<String, String> receivedMap;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         receivedMap = new HashMap<>();
     }
     
     @Test
-    public void testFillContext() {
+    void testFillContext() {
         assertEquals(0, receivedMap.size());
         MockShardListener listener = new MockShardListener();
         listener.receiveConfigInfo(CONFIG_CONTENT);
@@ -52,7 +52,7 @@ public class AbstractSharedListenerTest {
     }
     
     @Test
-    public void getExecutor() {
+    void getExecutor() {
         // Default listener executor is null.
         assertNull(new MockShardListener().getExecutor());
     }
