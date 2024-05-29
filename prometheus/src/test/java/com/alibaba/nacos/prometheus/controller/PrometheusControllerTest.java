@@ -39,7 +39,9 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
@@ -77,12 +79,18 @@ public class PrometheusControllerTest {
         service = Service.newService(nameSpace, group, name);
         serviceManager.getSingleton(service);
         testInstanceList = new ArrayList<>();
+        testInstanceList.add(prepareInstance("A", "127.0.0.1", 8080, Collections.singletonMap("__meta_key", "value")));
+        testInstanceList.add(prepareInstance("A", "127.0.0.1", 8081, Collections.singletonMap("__meta_key", "value2")));
+        mockMvc = MockMvcBuilders.standaloneSetup(prometheusController).build();
+    }
+
+    private Instance prepareInstance(String clusterName, String ip, int port, Map<String, String> metadata) {
         Instance instance = new Instance();
         instance.setClusterName("A");
         instance.setIp("127.0.0.1");
         instance.setPort(8080);
-        testInstanceList.add(instance);
-        mockMvc = MockMvcBuilders.standaloneSetup(prometheusController).build();
+        instance.setMetadata(metadata);
+        return instance;
     }
     
     @After
