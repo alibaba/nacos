@@ -16,7 +16,6 @@
 
 package com.alibaba.nacos.core.control.http;
 
-import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.core.control.TpsControl;
@@ -27,7 +26,6 @@ import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 
-import javax.servlet.AsyncContext;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -38,7 +36,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Nacos http tps control cut point filter.
@@ -93,11 +90,7 @@ public class NacosHttpTpsFilter implements Filter {
                 initTpsControlManager();
                 TpsCheckResponse checkResponse = tpsControlManager.check(httpTpsCheckRequest);
                 if (!checkResponse.isSuccess()) {
-                    AsyncContext asyncContext = httpServletRequest.startAsync();
-                    asyncContext.setTimeout(0);
-                    RpcScheduledExecutor.CONTROL_SCHEDULER.schedule(
-                            () -> generate503Response(httpServletRequest, response, checkResponse.getMessage(),
-                                    asyncContext), 1000L, TimeUnit.MILLISECONDS);
+                    generate503Response(response, checkResponse.getMessage());
                     return;
                 }
                 
@@ -114,8 +107,7 @@ public class NacosHttpTpsFilter implements Filter {
         Filter.super.destroy();
     }
     
-    void generate503Response(HttpServletRequest request, HttpServletResponse response, String message,
-            AsyncContext asyncContext) {
+    void generate503Response(HttpServletResponse response, String message) {
         
         try {
             // Disable cache.
@@ -124,7 +116,6 @@ public class NacosHttpTpsFilter implements Filter {
             response.setHeader("Cache-Control", "no-cache,no-store");
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             response.getOutputStream().println(message);
-            asyncContext.complete();
         } catch (Exception ex) {
             Loggers.TPS.error("Error to generate tps 503 response", ex);
         }
