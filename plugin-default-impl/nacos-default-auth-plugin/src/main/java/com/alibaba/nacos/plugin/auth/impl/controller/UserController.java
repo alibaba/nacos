@@ -118,7 +118,7 @@ public class UserController {
     public Object createAdminUser(@RequestParam(required = false) String password) {
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
             if (iAuthenticationManager.hasGlobalAdminRole()) {
-                return RestResultUtils.failed("have admin user cannot use it");
+                return RestResultUtils.failed(HttpStatus.CONFLICT.value(), "have admin user cannot use it");
             }
             if (StringUtils.isBlank(password)) {
                 password = PasswordGeneratorUtil.generateRandomPassword();
@@ -132,7 +132,7 @@ public class UserController {
             result.put(AuthConstants.PARAM_PASSWORD, password);
             return result;
         } else {
-            return RestResultUtils.failed("not support");
+            return RestResultUtils.failed(HttpStatus.NOT_IMPLEMENTED.value(), "not support");
         }
     }
     
@@ -264,7 +264,7 @@ public class UserController {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
-
+            
             NacosUser user = iAuthenticationManager.authenticate(request);
             
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());
