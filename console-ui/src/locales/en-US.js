@@ -29,11 +29,13 @@ const I18N_CONF = {
   },
   Login: {
     login: 'Login',
+    initPassword: 'Initialize password',
     internalSysTip1: 'Internal system.',
     internalSysTip2: 'Not exposed to the public network',
     submit: 'Submit',
     pleaseInputUsername: 'Please input username',
     pleaseInputPassword: 'Please input password',
+    pleaseInputPasswordTips: 'Please input password, or generate one for you.',
     invalidUsernameOrPassword: 'invalid username or password',
     productDesc:
       'an easy-to-use dynamic service discovery, configuration and service management platform for building cloud native applications',
