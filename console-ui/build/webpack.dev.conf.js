@@ -39,7 +39,7 @@ module.exports = Object.assign({}, base, {
       context: ['/'],
       changeOrigin: true,
       secure: false,
-      target: 'http://localhost:8848',
+      target: 'http://11.161.207.61:8848/',
       pathRewrite: {'^/v1' : '/nacos/v1', '^/v2' : '/nacos/v2'}
     }],
     disableHostCheck: true,
