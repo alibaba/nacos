@@ -35,13 +35,13 @@ function goRegister() {
 }
 
 function generateRandomPassword(length) {
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; // 包含所有可能字符的字符串
-  let password = ''; // 初始化密码变量
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let password = '';
   for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * charset.length); // 随机选择一个字符的索引
-    password += charset[randomIndex]; // 将随机字符添加到密码中
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
   }
-  return password; // 返回生成的密码
+  return password;
 }
 
 const global = window;

@@ -50,8 +50,7 @@ const getState = () => dispatch =>
   request
     .get('v1/console/server/state')
     .then(res => {
-      // localStorage.setItem(LOGINPAGE_ENABLED, res.login_page_enabled);
-      localStorage.setItem(LOGINPAGE_ENABLED, 'false');
+      localStorage.setItem(LOGINPAGE_ENABLED, res.login_page_enabled);
       dispatch({
         type: GET_STATE,
         data: {
