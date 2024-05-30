@@ -7,7 +7,8 @@ import Header from '../../layouts/Header';
 import PropTypes from 'prop-types';
 import { admin, guide, state } from '../../reducers/base';
 import { connect } from 'react-redux';
-import { generateRandomPassword } from '../../globalLib';
+import { generateRandomPassword, goLogin } from '../../globalLib';
+import { LOGINPAGE_ENABLED } from '../../constants';
 
 const FormItem = Form.Item;
 
@@ -73,6 +74,26 @@ class Register extends React.Component {
               content: locale.Password.newPassword + '：' + res.password,
               onOk: () => {
                 this.props.history.push('/');
+              }
+            });
+          } else {
+            Dialog.alert({
+              title: locale.Login.initPassword + locale.ListeningToQuery.failure,
+              content: res.data,
+              onOk: () => {
+                const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
+
+                if (_LOGINPAGE_ENABLED !== 'false') {
+                  let token = {};
+                  try {
+                    token = JSON.parse(localStorage.token);
+                  } catch (e) {
+                    console.log('Token Error', localStorage.token, e);
+                    goLogin();
+                  }
+                } else {
+                  this.props.history.push('/');
+                }
               }
             });
           }

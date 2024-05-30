@@ -80,6 +80,13 @@ const request = () => {
         if (auth_admin_request && auth_admin_request === 'true') {
           goRegister();
         }
+        if (
+          auth_admin_request &&
+          auth_admin_request === 'false' &&
+          window.location.href.includes('/register')
+        ) {
+          goLogin();
+        }
       }
       return response.data;
     },
