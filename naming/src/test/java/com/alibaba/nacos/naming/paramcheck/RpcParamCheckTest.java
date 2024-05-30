@@ -23,30 +23,31 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.core.remote.grpc.RemoteParamCheckFilter;
 import com.alibaba.nacos.naming.remote.rpc.handler.InstanceRequestHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * RpcParamCheckTest.
+ *
  * @author 985492783@qq.com
  * @date 2023/11/7 21:44
  */
-@RunWith(MockitoJUnitRunner.class)
-public class RpcParamCheckTest {
+@ExtendWith(MockitoExtension.class)
+class RpcParamCheckTest {
+    
     @Test
-    public void testFilter()
-            throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+    void testFilter() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         MockedStatic<EnvUtil> mockedStatic = Mockito.mockStatic(EnvUtil.class);
-        mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any()))
-                .thenAnswer((k) -> k.getArgument(2));
+        mockedStatic.when(() -> EnvUtil.getProperty(Mockito.any(), Mockito.any(), Mockito.any())).thenAnswer((k) -> k.getArgument(2));
         RemoteParamCheckFilter filter = new RemoteParamCheckFilter();
         Method method = filter.getClass().getDeclaredMethod("filter", Request.class, RequestMeta.class, Class.class);
         method.setAccessible(true);
@@ -56,7 +57,7 @@ public class RpcParamCheckTest {
         assertNull(response);
         request.setNamespace("test@@@");
         Response response2 = (Response) method.invoke(filter, request, null, InstanceRequestHandler.class);
-        assertEquals(response2.getErrorCode(), 400);
+        assertEquals(400, response2.getErrorCode());
         mockedStatic.close();
     }
 }

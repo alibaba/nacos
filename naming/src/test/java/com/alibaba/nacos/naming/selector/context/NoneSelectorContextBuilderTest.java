@@ -18,11 +18,12 @@
 package com.alibaba.nacos.naming.selector.context;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * {@link NoneSelectorContextBuilder} unit tests.
@@ -30,12 +31,12 @@ import java.util.List;
  * @author chenglu
  * @date 2021-08-05 19:44
  */
-public class NoneSelectorContextBuilderTest {
+class NoneSelectorContextBuilderTest {
     
     @Test
-    public void testBuild()  {
+    void testBuild() {
         NoneSelectorContextBuilder<Instance> contextBuilder = new NoneSelectorContextBuilder<>();
         List<Instance> providers = Collections.emptyList();
-        Assert.assertEquals(providers, contextBuilder.build("1.1.1.1", providers));
+        assertEquals(providers, contextBuilder.build("1.1.1.1", providers));
     }
 }
