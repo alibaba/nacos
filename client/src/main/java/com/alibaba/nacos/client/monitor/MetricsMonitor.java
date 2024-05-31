@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.monitor;
 
+import io.prometheus.client.Counter;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.Histogram;
 
@@ -33,12 +34,12 @@ public class MetricsMonitor {
             .labelNames("module", "method", "url", "code").name("nacos_client_request").help("nacos_client_request")
             .register();
     
+    private static final Counter NACOS_CLIENT_NAMING_REQUEST_FAILED_TOTAL = Counter.build()
+            .name("nacos_client_naming_request_failed_total").help("nacos_client_naming_request_failed_total")
+            .labelNames("module", "req_class", "res_status", "res_code", "err_class").register();
+    
     public static Gauge.Child getServiceInfoMapSizeMonitor() {
         return NACOS_MONITOR.labels("naming", "serviceInfoMapSize");
-    }
-    
-    public static Gauge.Child getDom2BeatSizeMonitor() {
-        return NACOS_MONITOR.labels("naming", "dom2BeatSize");
     }
     
     public static Gauge.Child getListenConfigCountMonitor() {
@@ -51,6 +52,11 @@ public class MetricsMonitor {
     
     public static Histogram.Child getNamingRequestMonitor(String method, String url, String code) {
         return NACOS_CLIENT_REQUEST_HISTOGRAM.labels("naming", method, url, code);
+    }
+    
+    public static Counter.Child getNamingRequestFailedMonitor(String reqClass, String resStatus, String resCode,
+            String errClass) {
+        return NACOS_CLIENT_NAMING_REQUEST_FAILED_TOTAL.labels("naming", reqClass, resStatus, resCode, errClass);
     }
 }
 

@@ -22,13 +22,15 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.core.remote.ConnectionManager;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link ServerLoaderInfoRequestHandler} unit test.
@@ -36,8 +38,8 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @author chenglu
  * @date 2021-07-01 12:48
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ServerLoaderInfoRequestHandlerTest {
+@ExtendWith(MockitoExtension.class)
+class ServerLoaderInfoRequestHandlerTest {
     
     @InjectMocks
     private ServerLoaderInfoRequestHandler handler;
@@ -46,21 +48,21 @@ public class ServerLoaderInfoRequestHandlerTest {
     private ConnectionManager connectionManager;
     
     @Test
-    public void testHandle() {
+    void testHandle() {
         Mockito.when(connectionManager.currentClientsCount()).thenReturn(1);
         Mockito.when(connectionManager.currentClientsCount(Mockito.any())).thenReturn(1);
-    
+        
         ServerLoaderInfoRequest request = new ServerLoaderInfoRequest();
         RequestMeta meta = new RequestMeta();
-
+        
         try {
             ServerLoaderInfoResponse response = handler.handle(request, meta);
             String sdkConCount = response.getMetricsValue("sdkConCount");
-            Assert.assertEquals(sdkConCount, "1");
+            assertEquals("1", sdkConCount);
             
         } catch (NacosException e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
 }

@@ -18,8 +18,7 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import org.apache.commons.io.IOUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -37,18 +36,19 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
-public class MD5UtilTest {
+class MD5UtilTest {
     
     @Test
-    public void testCompareMd5() {
+    void testCompareMd5() {
+        
         final MockedStatic<ConfigCacheService> configCacheServiceMockedStatic = Mockito.mockStatic(ConfigCacheService.class);
-    
-        configCacheServiceMockedStatic.when(
-                () -> ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), anyString()))
-                .thenReturn(false);
-    
+        
+        when(ConfigCacheService.isUptodate(anyString(), anyString(), anyString(), anyString())).thenReturn(false);
+        
         Map<String, String> clientMd5Map = new HashMap<>();
         clientMd5Map.put("test", "test");
         
@@ -58,15 +58,15 @@ public class MD5UtilTest {
         
         List<String> changedGroupKeys = MD5Util.compareMd5(request, response, clientMd5Map);
         
-        Assert.assertEquals(1, changedGroupKeys.size());
-        Assert.assertEquals("test", changedGroupKeys.get(0));
-    
-        configCacheServiceMockedStatic.close();
+        assertEquals(1, changedGroupKeys.size());
+        assertEquals("test", changedGroupKeys.get(0));
         
+        configCacheServiceMockedStatic.close();
     }
     
     @Test
-    public void testCompareMd5OldResult() {
+    void testCompareMd5OldResult() {
+        
         final MockedStatic<GroupKey2> groupKey2MockedStatic = Mockito.mockStatic(GroupKey2.class);
         
         List<String> changedGroupKeys = new ArrayList<>();
@@ -76,18 +76,18 @@ public class MD5UtilTest {
         arr[0] = "test0";
         arr[1] = "test1";
         arr[2] = "test2";
-        groupKey2MockedStatic.when(() -> GroupKey2.parseKey(anyString())).thenReturn(arr);
+        when(GroupKey2.parseKey(anyString())).thenReturn(arr);
         
         String actualValue = MD5Util.compareMd5OldResult(changedGroupKeys);
         
-        Assert.assertEquals("test0:test1;", actualValue);
-    
-        groupKey2MockedStatic.close();
+        assertEquals("test0:test1;", actualValue);
         
+        groupKey2MockedStatic.close();
     }
     
     @Test
-    public void testCompareMd5ResultString() {
+    void testCompareMd5ResultString() {
+        
         final MockedStatic<GroupKey2> groupKey2MockedStatic = Mockito.mockStatic(GroupKey2.class);
         
         List<String> changedGroupKeys = new ArrayList<>();
@@ -97,68 +97,67 @@ public class MD5UtilTest {
         arr[0] = "test0";
         arr[1] = "test1";
         arr[2] = "test2";
-        groupKey2MockedStatic.when(() -> GroupKey2.parseKey(anyString())).thenReturn(arr);
+        when(GroupKey2.parseKey(anyString())).thenReturn(arr);
         
         try {
             String actualValue = MD5Util.compareMd5ResultString(changedGroupKeys);
-            Assert.assertEquals("test0%02test1%02test2%01", actualValue);
+            assertEquals("test0%02test1%02test2%01", actualValue);
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
-    
+        
         groupKey2MockedStatic.close();
     }
     
     @Test
-    public void testGetClientMd5Map() {
+    void testGetClientMd5Map() {
         
         String configKeysString =
-                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2"
-                        + MD5Util.LINE_SEPARATOR_CHAR;
+                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2" + MD5Util.LINE_SEPARATOR_CHAR;
         
         Map<String, String> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
         
-        Assert.assertEquals("test2", actualValueMap.get("test0+test1"));
+        assertEquals("test2", actualValueMap.get("test0+test1"));
         
     }
     
     @Test
-    public void testGetClientMd5MapForNewProtocol() {
+    void testGetClientMd5MapForNewProtocol() {
         String configKeysString =
-                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2" + MD5Util.WORD_SEPARATOR_CHAR + "test3"
-                        + MD5Util.LINE_SEPARATOR_CHAR;
-    
+                "test0" + MD5Util.WORD_SEPARATOR_CHAR + "test1" + MD5Util.WORD_SEPARATOR_CHAR + "test2" + MD5Util.WORD_SEPARATOR_CHAR
+                        + "test3" + MD5Util.LINE_SEPARATOR_CHAR;
+        
         Map<String, String> actualValueMap = MD5Util.getClientMd5Map(configKeysString);
-    
-        Assert.assertEquals("test2", actualValueMap.get("test0+test1+test3"));
+        
+        assertEquals("test2", actualValueMap.get("test0+test1+test3"));
     }
     
     @Test
-    public void testToStringV1() {
+    void testToStringV1() {
         
         try {
             InputStream input = IOUtils.toInputStream("test", StandardCharsets.UTF_8);
             String actualValue = MD5Util.toString(input, "UTF-8");
-            Assert.assertEquals("test", actualValue);
+            assertEquals("test", actualValue);
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
     }
     
     @Test
-    public void testToStringV2() {
+    void testToStringV2() {
         
         try {
             Reader reader = new CharArrayReader("test".toCharArray());
             String actualValue = MD5Util.toString(reader);
-            Assert.assertEquals("test", actualValue);
+            assertEquals("test", actualValue);
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
     }
     
     @Test
-    public void testCopy() {
+    void testCopy() {
         
         try {
             String content = "test";
@@ -166,11 +165,11 @@ public class MD5UtilTest {
             Writer output = new CharArrayWriter();
             long actualValue = MD5Util.copy(input, output);
             
-            Assert.assertEquals(content.length(), actualValue);
-            Assert.assertEquals(content, output.toString());
+            assertEquals(content.length(), actualValue);
+            assertEquals(content, output.toString());
             
         } catch (IOException e) {
-            System.out.println(e);
+            System.out.println(e.toString());
         }
     }
     

@@ -16,28 +16,46 @@
 
 package com.alibaba.nacos.common.spi;
 
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collection;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class NacosServiceLoaderTest {
+class NacosServiceLoaderTest {
+    
+    @AfterEach
+    void tearDown() {
+        SpiTestImpl.newInstanceException = false;
+    }
     
     @Test
-    public void testLoad() {
+    void testLoad() {
         Collection<SpiTestInterface> actual = NacosServiceLoader.load(SpiTestInterface.class);
         assertEquals(1, actual.size());
         assertEquals(SpiTestImpl.class, actual.iterator().next().getClass());
     }
     
     @Test
-    public void newServiceInstances() {
+    void newServiceInstances() {
         SpiTestInterface loadInstance = NacosServiceLoader.load(SpiTestInterface.class).iterator().next();
         Collection<SpiTestInterface> actual = NacosServiceLoader.newServiceInstances(SpiTestInterface.class);
         assertEquals(1, actual.size());
         assertEquals(SpiTestImpl.class, actual.iterator().next().getClass());
         assertNotEquals(loadInstance, actual.iterator().next());
+    }
+    
+    @Test
+    void newServiceInstancesWithException() {
+        NacosServiceLoader.load(SpiTestInterface.class);
+        SpiTestImpl.newInstanceException = true;
+        try {
+            NacosServiceLoader.newServiceInstances(SpiTestInterface.class);
+        } catch (ServiceLoaderException e) {
+            assertEquals(SpiTestImpl.class, e.getClazz());
+            assertEquals("Can not load class `" + SpiTestImpl.class.getName() + "` by SPI ", e.getMessage());
+        }
     }
 }

@@ -16,16 +16,16 @@
 
 package com.alibaba.nacos.api.config;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConfigTypeTest {
+class ConfigTypeTest {
     
     @Test
-    public void isValidType() {
+    void isValidType() {
         assertTrue(ConfigType.isValidType("xml"));
         assertTrue(ConfigType.isValidType("properties"));
         assertTrue(ConfigType.isValidType("json"));
@@ -38,7 +38,7 @@ public class ConfigTypeTest {
     }
     
     @Test
-    public void testGetDefaultType() {
+    void testGetDefaultType() {
         assertEquals("text", ConfigType.getDefaultType().getType());
     }
 }

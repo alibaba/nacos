@@ -27,8 +27,11 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
 import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.asarkar.grpc.test.GrpcCleanupExtension;
+import com.asarkar.grpc.test.Resources;
 import io.grpc.Context;
 import io.grpc.Contexts;
+import io.grpc.ManagedChannel;
 import io.grpc.Metadata;
 import io.grpc.Server;
 import io.grpc.ServerCall;
@@ -37,19 +40,20 @@ import io.grpc.ServerInterceptor;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.inprocess.InProcessServerBuilder;
 import io.grpc.stub.StreamObserver;
-import io.grpc.testing.GrpcCleanupRule;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link GrpcBiStreamRequestAcceptor} unit test.
@@ -57,11 +61,8 @@ import java.util.UUID;
  * @author chenglu
  * @date 2021-06-30 17:11
  */
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith({MockitoExtension.class, GrpcCleanupExtension.class})
 public class GrpcBiStreamRequestAcceptorTest {
-    
-    @Rule
-    public GrpcCleanupRule grpcCleanupRule = new GrpcCleanupRule();
     
     public BiRequestStreamGrpc.BiRequestStreamStub streamStub;
     
@@ -77,13 +78,12 @@ public class GrpcBiStreamRequestAcceptorTest {
     
     private String requestId = UUID.randomUUID().toString();
     
-    @Before
-    public void setUp() throws IOException {
+    @BeforeEach
+    void setUp(Resources resources) throws IOException {
         PayloadRegistry.init();
         String serverName = InProcessServerBuilder.generateName();
         String remoteIp = "127.0.0.1";
-        Server mockServer = InProcessServerBuilder
-                .forName(serverName).directExecutor().addService(acceptor)
+        Server mockServer = InProcessServerBuilder.forName(serverName).directExecutor().addService(acceptor)
                 .intercept(new ServerInterceptor() {
                     @Override
                     public <R, S> ServerCall.Listener<R> interceptCall(ServerCall<R, S> serverCall, Metadata metadata,
@@ -94,20 +94,21 @@ public class GrpcBiStreamRequestAcceptorTest {
                                 .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_IP, remoteIp);
                         return Contexts.interceptCall(ctx, serverCall, metadata, serverCallHandler);
                     }
-                })
-                .build();
-        grpcCleanupRule.register(mockServer.start());
-        streamStub = BiRequestStreamGrpc.newStub(grpcCleanupRule.register(InProcessChannelBuilder.forName(serverName).directExecutor().build()));
+                }).build();
+        resources.register(mockServer.start(), Duration.ofSeconds(20));
+        ManagedChannel channel = InProcessChannelBuilder.forName(serverName).directExecutor().build();
+        resources.register(channel, Duration.ofSeconds(20L));
+        streamStub = BiRequestStreamGrpc.newStub(channel);
         Mockito.doReturn(true).when(connectionManager).traced(Mockito.any());
     }
     
     @Test
-    public void testConnectionSetupRequest() {
+    void testConnectionSetupRequest() {
         StreamObserver<Payload> streamObserver = new StreamObserver<Payload>() {
             @Override
             public void onNext(Payload payload) {
                 System.out.println("Receive data from server, data: " + payload);
-                Assert.assertNotNull(payload);
+                assertNotNull(payload);
                 ConnectResetRequest connectResetRequest = (ConnectResetRequest) GrpcUtils.parse(payload);
                 Response response = new ConnectResetResponse();
                 response.setRequestId(connectResetRequest.getRequestId());
@@ -115,12 +116,12 @@ public class GrpcBiStreamRequestAcceptorTest {
                 payloadStreamObserver.onNext(res);
                 payloadStreamObserver.onCompleted();
             }
-    
+            
             @Override
             public void onError(Throwable throwable) {
-                Assert.fail(throwable.getMessage());
+                fail(throwable.getMessage());
             }
-    
+            
             @Override
             public void onCompleted() {
                 System.out.println("complete");
@@ -130,7 +131,7 @@ public class GrpcBiStreamRequestAcceptorTest {
         RequestMeta metadata = new RequestMeta();
         metadata.setClientIp("127.0.0.1");
         metadata.setConnectionId(connectId);
-
+        
         ConnectionSetupRequest connectionSetupRequest = new ConnectionSetupRequest();
         connectionSetupRequest.setRequestId(requestId);
         connectionSetupRequest.setClientVersion("2.0.3");

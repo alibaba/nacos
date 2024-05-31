@@ -34,7 +34,7 @@ import java.util.List;
 public interface NamingService {
     
     /**
-     * register a instance to service.
+     * register an instance to service.
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -44,7 +44,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String ip, int port) throws NacosException;
     
     /**
-     * register a instance to service.
+     * register an instance to service.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -55,7 +55,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String groupName, String ip, int port) throws NacosException;
     
     /**
-     * register a instance to service with specified cluster name.
+     * register an instance to service with specified cluster name.
      *
      * @param serviceName name of service
      * @param ip          instance ip
@@ -66,7 +66,7 @@ public interface NamingService {
     void registerInstance(String serviceName, String ip, int port, String clusterName) throws NacosException;
     
     /**
-     * register a instance to service with specified cluster name.
+     * register an instance to service with specified cluster name.
      *
      * @param serviceName name of service
      * @param groupName   group of service
@@ -79,7 +79,7 @@ public interface NamingService {
             throws NacosException;
     
     /**
-     * register a instance to service with specified instance properties.
+     * register an instance to service with specified instance properties.
      *
      * @param serviceName name of service
      * @param instance    instance to register
@@ -88,7 +88,7 @@ public interface NamingService {
     void registerInstance(String serviceName, Instance instance) throws NacosException;
     
     /**
-     * register a instance to service with specified instance properties.
+     * register an instance to service with specified instance properties.
      *
      * @param serviceName name of service
      * @param groupName   group of service

@@ -25,7 +25,6 @@ import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
-import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.utils.ConvertUtils;
@@ -50,6 +49,8 @@ public class ServiceInfoUpdateService implements Closeable {
     private static final long DEFAULT_DELAY = 1000L;
     
     private static final int DEFAULT_UPDATE_CACHE_TIME_MULTIPLE = 6;
+    
+    private static final int MIN_THREAD_NUM = 1;
     
     private final Map<String, ScheduledFuture<?>> futureMap = new HashMap<>();
     
@@ -77,15 +78,18 @@ public class ServiceInfoUpdateService implements Closeable {
         if (properties == null || !properties.containsKey(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE)) {
             return false;
         }
-        return ConvertUtils.toBoolean(properties.getProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE), false);
+        return ConvertUtils.toBoolean(properties.getProperty(PropertyKeyConst.NAMING_ASYNC_QUERY_SUBSCRIBE_SERVICE),
+                false);
     }
     
     private int initPollingThreadCount(NacosClientProperties properties) {
+        int count = ThreadUtils.getSuitableThreadCount(1) > 1 ? ThreadUtils.getSuitableThreadCount(1) / 2 : 1;
         if (properties == null) {
-            return UtilAndComs.DEFAULT_POLLING_THREAD_COUNT;
+            return count;
         }
-        return ConvertUtils.toInt(properties.getProperty(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT),
-                UtilAndComs.DEFAULT_POLLING_THREAD_COUNT);
+        count = Math.min(properties.getInteger(PropertyKeyConst.NAMING_POLLING_MAX_THREAD_COUNT, count), count);
+        count = Math.max(count, MIN_THREAD_NUM);
+        return properties.getInteger(PropertyKeyConst.NAMING_POLLING_THREAD_COUNT, count);
     }
     
     /**
@@ -188,14 +192,16 @@ public class ServiceInfoUpdateService implements Closeable {
                 
                 ServiceInfo serviceObj = serviceInfoHolder.getServiceInfoMap().get(serviceKey);
                 if (serviceObj == null) {
-                    serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName, clusters, 0, false);
+                    serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName, clusters, false);
                     serviceInfoHolder.processServiceInfo(serviceObj);
+                    // TODO multiple time can be configured.
+                    delayTime = serviceObj.getCacheMillis() * DEFAULT_UPDATE_CACHE_TIME_MULTIPLE;
                     lastRefTime = serviceObj.getLastRefTime();
                     return;
                 }
                 
                 if (serviceObj.getLastRefTime() <= lastRefTime) {
-                    serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName, clusters, 0, false);
+                    serviceObj = namingClientProxy.queryInstancesOfService(serviceName, groupName, clusters, false);
                     serviceInfoHolder.processServiceInfo(serviceObj);
                 }
                 lastRefTime = serviceObj.getLastRefTime();

@@ -88,6 +88,16 @@ public class NamingUtils {
     }
     
     /**
+     * Check serviceName is compatibility mode or not.
+     *
+     * @param serviceName serviceName
+     * @return if serviceName is compatibility mode, return true
+     */
+    public static boolean isServiceNameCompatibilityMode(final String serviceName) {
+        return !StringUtils.isBlank(serviceName) && serviceName.contains(Constants.SERVICE_INFO_SPLITER);
+    }
+    
+    /**
      * check combineServiceName format. the serviceName can't be blank.
      * <pre>
      * serviceName = "@@";                 the length = 0; illegal
@@ -138,6 +148,10 @@ public class NamingUtils {
      * @throws NacosException if check failed, throw exception
      */
     public static void checkInstanceIsLegal(Instance instance) throws NacosException {
+        if (null == instance) {
+            throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
+                    "Instance can not be null.");
+        }
         if (instance.getInstanceHeartBeatTimeOut() < instance.getInstanceHeartBeatInterval()
                 || instance.getIpDeleteTimeout() < instance.getInstanceHeartBeatInterval()) {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,

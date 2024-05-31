@@ -22,6 +22,9 @@ import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
 import com.alibaba.nacos.api.naming.remote.response.QueryServiceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.auth.annotation.Secured;
+import com.alibaba.nacos.core.control.TpsControl;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
+import com.alibaba.nacos.core.paramcheck.impl.ServiceQueryRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
@@ -49,7 +52,9 @@ public class ServiceQueryRequestHandler extends RequestHandler<ServiceQueryReque
     }
     
     @Override
+    @TpsControl(pointName = "RemoteNamingServiceQuery", name = "RemoteNamingServiceQuery")
     @Secured(action = ActionTypes.READ)
+    @ExtractorManager.Extractor(rpcExtractor = ServiceQueryRequestParamExtractor.class)
     public QueryServiceResponse handle(ServiceQueryRequest request, RequestMeta meta) throws NacosException {
         String namespaceId = request.getNamespace();
         String groupName = request.getGroupName();

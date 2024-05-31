@@ -17,11 +17,13 @@
 package com.alibaba.nacos.core.utils;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link WebUtils} unit tests.
@@ -29,53 +31,53 @@ import java.nio.charset.StandardCharsets;
  * @author chenglu
  * @date 2021-06-10 13:33
  */
-public class WebUtilsTest {
+class WebUtilsTest {
     
     @Test
-    public void testRequired() {
+    void testRequired() {
         final String key = "key";
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         try {
             WebUtils.required(servletRequest, key);
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof IllegalArgumentException);
+            assertTrue(e instanceof IllegalArgumentException);
         }
         
         servletRequest.addParameter(key, "value");
         String val = WebUtils.required(servletRequest, key);
-        Assert.assertEquals("value", val);
+        assertEquals("value", val);
     }
     
     @Test
-    public void testOptional() {
+    void testOptional() {
         final String key = "key";
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         String val1 = WebUtils.optional(servletRequest, key, "value");
-        Assert.assertEquals("value", val1);
+        assertEquals("value", val1);
         
         servletRequest.addParameter(key, "value1");
-        Assert.assertEquals("value1", WebUtils.optional(servletRequest, key, "value"));
+        assertEquals("value1", WebUtils.optional(servletRequest, key, "value"));
     }
     
     @Test
-    public void testGetUserAgent() {
+    void testGetUserAgent() {
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         String userAgent = WebUtils.getUserAgent(servletRequest);
-        Assert.assertEquals("", userAgent);
+        assertEquals("", userAgent);
         
         servletRequest.addHeader(HttpHeaderConsts.CLIENT_VERSION_HEADER, "0");
-        Assert.assertEquals("0", WebUtils.getUserAgent(servletRequest));
+        assertEquals("0", WebUtils.getUserAgent(servletRequest));
         
         servletRequest.addHeader(HttpHeaderConsts.USER_AGENT_HEADER, "1");
-        Assert.assertEquals("1", WebUtils.getUserAgent(servletRequest));
+        assertEquals("1", WebUtils.getUserAgent(servletRequest));
     }
     
     @Test
-    public void testGetAcceptEncoding() {
+    void testGetAcceptEncoding() {
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
-        Assert.assertEquals(StandardCharsets.UTF_8.name(), WebUtils.getAcceptEncoding(servletRequest));
+        assertEquals(StandardCharsets.UTF_8.name(), WebUtils.getAcceptEncoding(servletRequest));
         
         servletRequest.addHeader(HttpHeaderConsts.ACCEPT_ENCODING, "gzip, deflate, br");
-        Assert.assertEquals("gzip", WebUtils.getAcceptEncoding(servletRequest));
+        assertEquals("gzip", WebUtils.getAcceptEncoding(servletRequest));
     }
 }

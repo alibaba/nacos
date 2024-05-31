@@ -18,12 +18,12 @@ package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Database service, providing access to his_config_info in the database.
@@ -39,14 +39,6 @@ public interface HistoryConfigInfoPersistService {
      * @return {@link PaginationHelper}
      */
     <E> PaginationHelper<E> createPaginationHelper();
-    
-    /**
-     * Convert delete config.
-     *
-     * @param list origin data
-     * @return {@link ConfigInfo} list
-     */
-    List<ConfigInfo> convertDeletedConfig(List<Map<String, Object>> list);
     
     //------------------------------------------insert---------------------------------------------//
     
@@ -78,10 +70,11 @@ public interface HistoryConfigInfoPersistService {
      * Query deleted config.
      *
      * @param startTime start time
-     * @param endTime   end time
-     * @return {@link ConfigInfo} list
+     * @param startId   last max id
+     * @param size      page size
+     * @return {@link ConfigInfoStateWrapper} list
      */
-    List<ConfigInfo> findDeletedConfig(final Timestamp startTime, final Timestamp endTime);
+    List<ConfigInfoStateWrapper> findDeletedConfig(final Timestamp startTime, final long startId, int size);
     
     /**
      * List configuration history change record.

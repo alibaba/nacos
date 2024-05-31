@@ -35,8 +35,8 @@ public class ConfigInfoAggrMapperByMySql extends AbstractMapper implements Confi
     
     @Override
     public MapperResult findConfigInfoAggrByPageFetchRows(MapperContext context) {
-        Integer startRow =  context.getStartRow();
-        Integer pageSize =  context.getPageSize();
+        int startRow =  context.getStartRow();
+        int pageSize =  context.getPageSize();
         String dataId = (String) context.getWhereParameter(FieldConstant.DATA_ID);
         String groupId = (String) context.getWhereParameter(FieldConstant.GROUP_ID);
         String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);

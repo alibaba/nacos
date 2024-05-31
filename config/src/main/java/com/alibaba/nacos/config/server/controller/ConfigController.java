@@ -33,6 +33,10 @@ import com.alibaba.nacos.config.server.model.ConfigInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.alibaba.nacos.config.server.model.ConfigMetadata;
 import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
+import com.alibaba.nacos.config.server.paramcheck.ConfigBlurSearchHttpParamExtractor;
+import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
+import com.alibaba.nacos.config.server.paramcheck.ConfigListenerHttpParamExtractor;
+import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.model.SameConfigPolicy;
 import com.alibaba.nacos.config.server.model.SampleResult;
@@ -100,6 +104,7 @@ import static com.alibaba.nacos.config.server.utils.RequestUtil.getRemoteIp;
  */
 @RestController
 @RequestMapping(Constants.CONFIG_CONTROLLER_PATH)
+@ExtractorManager.Extractor(httpExtractor = ConfigDefaultHttpParamExtractor.class)
 public class ConfigController {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigController.class);
@@ -201,6 +206,7 @@ public class ConfigController {
         configRequestInfo.setSrcIp(RequestUtil.getRemoteIp(request));
         configRequestInfo.setRequestIpApp(RequestUtil.getAppName(request));
         configRequestInfo.setBetaIps(request.getHeader("betaIps"));
+        configRequestInfo.setCasMd5(request.getHeader("casMd5"));
         
         return configOperationService.publishConfig(configForm, configRequestInfo, encryptedDataKeyFinal);
     }
@@ -299,8 +305,9 @@ public class ConfigController {
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     public RestResult<Boolean> deleteConfigs(HttpServletRequest request, @RequestParam(value = "ids") List<Long> ids) {
         String clientIp = RequestUtil.getRemoteIp(request);
+        String srcUser = RequestUtil.getSrcUserName(request);
         final Timestamp time = TimeUtils.getCurrentTime();
-        List<ConfigInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, null);
+        List<ConfigInfo> configInfoList = configInfoPersistService.removeConfigInfoByIds(ids, clientIp, srcUser);
         if (CollectionUtils.isEmpty(configInfoList)) {
             return RestResultUtils.success(true);
         }
@@ -330,6 +337,7 @@ public class ConfigController {
      */
     @PostMapping("/listener")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @ExtractorManager.Extractor(httpExtractor = ConfigListenerHttpParamExtractor.class)
     public void listener(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         
@@ -376,6 +384,7 @@ public class ConfigController {
      */
     @GetMapping(params = "search=accurate")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
     public Page<ConfigInfo> searchConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -404,6 +413,7 @@ public class ConfigController {
      */
     @GetMapping(params = "search=blur")
     @Secured(action = ActionTypes.READ, signType = SignType.CONFIG)
+    @ExtractorManager.Extractor(httpExtractor = ConfigBlurSearchHttpParamExtractor.class)
     public Page<ConfigInfo> fuzzySearchConfig(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group, @RequestParam(value = "appName", required = false) String appName,
             @RequestParam(value = "tenant", required = false, defaultValue = StringUtils.EMPTY) String tenant,
@@ -624,9 +634,9 @@ public class ConfigController {
             RestResult<Map<String, Object>> errorResult;
             if (metaDataZipItem != null && Constants.CONFIG_EXPORT_METADATA_NEW.equals(metaDataZipItem.getItemName())) {
                 // new export
-                errorResult = parseImportDataV2(unziped, configInfoList, unrecognizedList, namespace);
+                errorResult = parseImportDataV2(srcUser, unziped, configInfoList, unrecognizedList, namespace);
             } else {
-                errorResult = parseImportData(unziped, configInfoList, unrecognizedList, namespace);
+                errorResult = parseImportData(srcUser, unziped, configInfoList, unrecognizedList, namespace);
             }
             if (errorResult != null) {
                 return errorResult;
@@ -672,7 +682,7 @@ public class ConfigController {
      * @param namespace        import namespace.
      * @return error result.
      */
-    private RestResult<Map<String, Object>> parseImportData(ZipUtils.UnZipResult unziped,
+    private RestResult<Map<String, Object>> parseImportData(String srcUser, ZipUtils.UnZipResult unziped,
             List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
         ZipUtils.ZipItem metaDataZipItem = unziped.getMetaDataItem();
         
@@ -725,6 +735,7 @@ public class ConfigController {
                 }
                 ci.setTenant(namespace);
                 ci.setEncryptedDataKey(pair.getFirst());
+                ci.setCreateUser(srcUser);
                 configInfoList.add(ci);
             }
         }
@@ -740,7 +751,7 @@ public class ConfigController {
      * @param namespace        import namespace.
      * @return error result.
      */
-    private RestResult<Map<String, Object>> parseImportDataV2(ZipUtils.UnZipResult unziped,
+    private RestResult<Map<String, Object>> parseImportDataV2(String srcUser, ZipUtils.UnZipResult unziped,
             List<ConfigAllInfo> configInfoList, List<Map<String, String>> unrecognizedList, String namespace) {
         ZipUtils.ZipItem metaDataItem = unziped.getMetaDataItem();
         String metaData = metaDataItem.getItemData();
@@ -816,6 +827,7 @@ public class ConfigController {
             ci.setAppName(configExportItem.getAppName());
             ci.setTenant(namespace);
             ci.setEncryptedDataKey(pair.getFirst());
+            ci.setCreateUser(srcUser);
             configInfoList.add(ci);
         }
         return null;

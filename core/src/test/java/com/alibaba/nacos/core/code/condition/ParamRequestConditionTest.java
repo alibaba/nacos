@@ -17,10 +17,13 @@
 
 package com.alibaba.nacos.core.code.condition;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * {@link ParamRequestCondition} unit test.
@@ -28,28 +31,28 @@ import org.springframework.mock.web.MockHttpServletRequest;
  * @author chenglu
  * @date 2021-07-06 11:56
  */
-public class ParamRequestConditionTest {
+class ParamRequestConditionTest {
     
     private ParamRequestCondition paramRequestCondition;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         paramRequestCondition = new ParamRequestCondition("test=1244");
     }
     
     @Test
-    public void testGetExpressions() {
-        Assert.assertEquals(1, paramRequestCondition.getExpressions().size());
+    void testGetExpressions() {
+        assertEquals(1, paramRequestCondition.getExpressions().size());
     }
     
     @Test
-    public void testGetMatchingCondition() {
+    void testGetMatchingCondition() {
         MockHttpServletRequest request = new MockHttpServletRequest();
         ParamRequestCondition paramRequestCondition1 = paramRequestCondition.getMatchingCondition(request);
-        Assert.assertNull(paramRequestCondition1);
+        assertNull(paramRequestCondition1);
         
         request.setParameter("test", "1244");
         ParamRequestCondition paramRequestCondition2 = paramRequestCondition.getMatchingCondition(request);
-        Assert.assertNotNull(paramRequestCondition2);
+        assertNotNull(paramRequestCondition2);
     }
 }

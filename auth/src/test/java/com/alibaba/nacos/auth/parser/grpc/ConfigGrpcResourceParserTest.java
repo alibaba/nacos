@@ -23,25 +23,25 @@ import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ConfigGrpcResourceParserTest {
+class ConfigGrpcResourceParserTest {
     
     private ConfigGrpcResourceParser resourceParser;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         resourceParser = new ConfigGrpcResourceParser();
     }
     
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
-    public void testParseWithFullContext() throws NoSuchMethodException {
+    void testParseWithFullContext() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Request request = mockConfigRequest("testNs", "testG", "testD");
         Resource actual = resourceParser.parse(request, secured);
@@ -53,7 +53,7 @@ public class ConfigGrpcResourceParserTest {
     
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
-    public void testParseWithoutNamespace() throws NoSuchMethodException {
+    void testParseWithoutNamespace() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Request request = mockConfigRequest("", "testG", "testD");
         Resource actual = resourceParser.parse(request, secured);
@@ -65,7 +65,7 @@ public class ConfigGrpcResourceParserTest {
     
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
-    public void testParseWithoutGroup() throws NoSuchMethodException {
+    void testParseWithoutGroup() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Request request = mockConfigRequest("testNs", "", "testD");
         Resource actual = resourceParser.parse(request, secured);
@@ -77,7 +77,7 @@ public class ConfigGrpcResourceParserTest {
     
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
-    public void testParseWithoutDataId() throws NoSuchMethodException {
+    void testParseWithoutDataId() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Request request = mockConfigRequest("testNs", "testG", "");
         Resource actual = resourceParser.parse(request, secured);
@@ -89,7 +89,7 @@ public class ConfigGrpcResourceParserTest {
     
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
-    public void testParseWithConfigBatchListenRequest() throws NoSuchMethodException {
+    void testParseWithConfigBatchListenRequest() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         ConfigBatchListenRequest request = new ConfigBatchListenRequest();
         request.addConfigListenContext("testG", "testD", "testNs", "111");
@@ -112,7 +112,7 @@ public class ConfigGrpcResourceParserTest {
         StackTraceElement[] traces = new Exception().getStackTrace();
         StackTraceElement callerElement = traces[1];
         String methodName = callerElement.getMethodName();
-        Method method = this.getClass().getMethod(methodName);
+        Method method = this.getClass().getDeclaredMethod(methodName);
         return method.getAnnotation(Secured.class);
     }
 }

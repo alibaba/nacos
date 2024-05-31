@@ -68,7 +68,7 @@ const authorityControlMenu = {
 };
 const namespaceMenu = {
   key: 'namespace',
-  url: '/namespace'
+  url: '/namespace',
 };
 const clusterMenu = {
   key: 'clusterManagementVirtual',
@@ -79,7 +79,10 @@ const clusterMenu = {
     },
   ],
 };
-
+const settingMenu = {
+  key: 'settingCenter',
+  url: '/settingCenter',
+};
 export default function(model) {
   const { token = '{}' } = localStorage;
   const { globalAdmin } = isJsonString(token) ? JSON.parse(token) || {} : {};
@@ -96,5 +99,6 @@ export default function(model) {
   }
   result.push(namespaceMenu);
   result.push(clusterMenu);
+  result.push(settingMenu);
   return result.filter(item => item);
 }

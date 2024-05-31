@@ -17,24 +17,27 @@
 package com.alibaba.nacos.config.server.service;
 
 import com.alibaba.nacos.config.server.utils.GroupKey2;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(SpringExtension.class)
 @WebAppConfiguration
-public class ClientTrackServiceTest {
+class ClientTrackServiceTest {
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         ClientTrackService.clientRecords.clear();
     }
     
     @Test
-    public void testTrackClientMd5() {
+    void testTrackClientMd5() {
         String clientIp = "1.1.1.1";
         String dataId = "com.taobao.session.xml";
         String group = "online";
@@ -46,13 +49,13 @@ public class ClientTrackServiceTest {
         ClientTrackService.trackClientMd5(clientIp, groupKey, md5);
         ClientTrackService.trackClientMd5(clientIp, groupKey, md5);
         
-        Assert.assertEquals(true, ClientTrackService.isClientUptodate(clientIp).get(groupKey));
-        Assert.assertEquals(1, ClientTrackService.subscribeClientCount());
-        Assert.assertEquals(1, ClientTrackService.subscriberCount());
+        assertTrue(ClientTrackService.isClientUptodate(clientIp).get(groupKey));
+        assertEquals(1, ClientTrackService.subscribeClientCount());
+        assertEquals(1, ClientTrackService.subscriberCount());
         
         //服务端数据更新
         ConfigCacheService.updateMd5(groupKey, md5 + "111", System.currentTimeMillis(), "");
-        Assert.assertEquals(false, ClientTrackService.isClientUptodate(clientIp).get(groupKey));
+        assertFalse(ClientTrackService.isClientUptodate(clientIp).get(groupKey));
     }
     
 }

@@ -27,10 +27,12 @@ const I18N_CONF = {
   },
   Login: {
     login: '登录',
+    initPassword: '初始化密码',
     internalSysTip1: '内部系统，不可暴露到公网',
     submit: '提交',
     pleaseInputUsername: '请输入用户名',
     pleaseInputPassword: '请输入密码',
+    pleaseInputPasswordTips: '请输入密码（若密码为空，将使用随机密码）',
     invalidUsernameOrPassword: '用户名或密码错误',
     passwordRequired: '密码不能为空',
     usernameRequired: '用户名不能为空',
@@ -38,6 +40,7 @@ const I18N_CONF = {
   },
   MainLayout: {
     nacosName: 'NACOS',
+    nacosMode: '模式',
     doesNotExist: '您访问的页面不存在',
     configurationManagementVirtual: '配置管理',
     configurationManagement: '配置列表',
@@ -60,6 +63,8 @@ const I18N_CONF = {
     userList: '用户列表',
     roleManagement: '角色管理',
     privilegeManagement: '权限管理',
+    consoleClosed: '控制台已关闭',
+    settingCenter: '设置中心',
   },
   Password: {
     passwordNotConsistent: '两次输入密码不一致',
@@ -359,6 +364,7 @@ const I18N_CONF = {
     delSuccessMsg: '删除成功',
     cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
     authFail: '权限认证失败',
+    copyNamespaceID: '复制命名空间ID',
   },
   NewConfig: {
     newListingMain: '新建配置',
@@ -450,6 +456,7 @@ const I18N_CONF = {
     dialogCurrentArea: '当前值',
     dialogOriginalArea: '原始值',
     publishFailed403: '发布失败,请检查是否有权限',
+    publishCasFailed: '发布失败,配置修改冲突',
     namespace: '命名空间',
   },
   EditorNameSpace: {
@@ -662,6 +669,17 @@ const I18N_CONF = {
     readOnly: '只读',
     writeOnly: '只写',
     readWrite: '读写',
+  },
+  Components: {
+    copySuccessfully: '复制成功！',
+  },
+  SettingCenter: {
+    settingTitle: '设置中心',
+    settingTheme: '样式主题',
+    settingLight: '明亮',
+    settingDark: '深色',
+    settingLocale: '系统语言',
+    settingSubmit: '应用',
   },
 };
 

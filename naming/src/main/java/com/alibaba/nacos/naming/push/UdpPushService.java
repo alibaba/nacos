@@ -24,8 +24,9 @@ import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.remote.udp.AckEntry;
 import com.alibaba.nacos.naming.remote.udp.UdpConnector;
+import com.fasterxml.jackson.core.Version;
+import com.fasterxml.jackson.core.util.VersionUtil;
 import org.apache.commons.collections.MapUtils;
-import org.codehaus.jackson.util.VersionUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -153,23 +154,27 @@ public class UdpPushService {
         ClientInfo clientInfo = new ClientInfo(agent);
         
         if (ClientInfo.ClientType.JAVA == clientInfo.type
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushJavaVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushJavaVersion())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.DNS == clientInfo.type
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushPythonVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushPythonVersion())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.C == clientInfo.type
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushCVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushCVersion())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.GO == clientInfo.type
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushGoVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushGoVersion())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.CSHARP == clientInfo.type
-                && clientInfo.version.compareTo(VersionUtil.parseVersion(switchDomain.getPushCSharpVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushCSharpVersion())) >= 0) {
             return true;
         }
         
         return false;
+    }
+    
+    private Version parseVersion(String version) {
+        return VersionUtil.parseVersion(version, null, null);
     }
     
     private static byte[] compressIfNecessary(byte[] dataBytes) throws IOException {

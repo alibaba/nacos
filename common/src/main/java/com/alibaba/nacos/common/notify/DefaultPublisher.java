@@ -65,7 +65,10 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         setName("nacos.publisher-" + type.getName());
         this.eventType = type;
         this.queueMaxSize = bufferSize;
-        this.queue = new ArrayBlockingQueue<>(bufferSize);
+        if (this.queueMaxSize == -1) {
+            this.queueMaxSize = ringBufferSize;
+        }
+        this.queue = new ArrayBlockingQueue<>(this.queueMaxSize);
         start();
     }
     
@@ -78,9 +81,6 @@ public class DefaultPublisher extends Thread implements EventPublisher {
         if (!initialized) {
             // start just called once
             super.start();
-            if (queueMaxSize == -1) {
-                queueMaxSize = ringBufferSize;
-            }
             initialized = true;
         }
     }

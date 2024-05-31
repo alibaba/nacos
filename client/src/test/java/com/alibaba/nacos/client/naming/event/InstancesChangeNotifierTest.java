@@ -16,27 +16,34 @@
 
 package com.alibaba.nacos.client.naming.event;
 
+import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
 import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Executor;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
 
-public class InstancesChangeNotifierTest {
+class InstancesChangeNotifierTest {
     
     @Test
-    public void testRegisterListener() {
+    void testRegisterListener() {
         String eventScope = "scope-001";
         String group = "a";
         String name = "b";
@@ -48,9 +55,10 @@ public class InstancesChangeNotifierTest {
         NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector, listener);
         instancesChangeNotifier.registerListener(group, name, wrapper);
         List<ServiceInfo> subscribeServices = instancesChangeNotifier.getSubscribeServices();
-        Assert.assertEquals(1, subscribeServices.size());
-        Assert.assertEquals(group, subscribeServices.get(0).getGroupName());
-        Assert.assertEquals(name, subscribeServices.get(0).getName());
+        assertEquals(1, subscribeServices.size());
+        assertEquals(group, subscribeServices.get(0).getGroupName());
+        assertEquals(name, subscribeServices.get(0).getName());
+        assertEquals(clusters, subscribeServices.get(0).getClusters());
         
         List<Instance> hosts = new ArrayList<>();
         Instance ins = new Instance();
@@ -58,11 +66,11 @@ public class InstancesChangeNotifierTest {
         InstancesDiff diff = new InstancesDiff();
         diff.setAddedInstances(hosts);
         InstancesChangeEvent event = new InstancesChangeEvent(eventScope, name, group, clusterStr, hosts, diff);
-        Assert.assertEquals(true, instancesChangeNotifier.scopeMatches(event));
+        assertTrue(instancesChangeNotifier.scopeMatches(event));
     }
     
     @Test
-    public void testDeregisterListener() {
+    void testDeregisterListener() {
         String eventScope = "scope-001";
         String group = "a";
         String name = "b";
@@ -74,16 +82,19 @@ public class InstancesChangeNotifierTest {
         NamingSelectorWrapper wrapper = new NamingSelectorWrapper(selector, listener);
         instancesChangeNotifier.registerListener(group, name, wrapper);
         List<ServiceInfo> subscribeServices = instancesChangeNotifier.getSubscribeServices();
-        Assert.assertEquals(1, subscribeServices.size());
+        assertEquals(1, subscribeServices.size());
         
         instancesChangeNotifier.deregisterListener(group, name, wrapper);
         
         List<ServiceInfo> subscribeServices2 = instancesChangeNotifier.getSubscribeServices();
-        Assert.assertEquals(0, subscribeServices2.size());
+        assertEquals(0, subscribeServices2.size());
+        
+        instancesChangeNotifier.deregisterListener(group, name, clusters, listener);
+        assertEquals(0, subscribeServices2.size());
     }
     
     @Test
-    public void testIsSubscribed() {
+    void testIsSubscribed() {
         String eventScope = "scope-001";
         String group = "a";
         String name = "b";
@@ -92,15 +103,15 @@ public class InstancesChangeNotifierTest {
         InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
         EventListener listener = Mockito.mock(EventListener.class);
         NamingSelector selector = NamingSelectorFactory.newClusterSelector(clusters);
-        Assert.assertFalse(instancesChangeNotifier.isSubscribed(group, name));
+        assertFalse(instancesChangeNotifier.isSubscribed(group, name));
         
         NamingSelectorWrapper wrapper = new NamingSelectorWrapper(name, group, clusterStr, selector, listener);
         instancesChangeNotifier.registerListener(group, name, wrapper);
-        Assert.assertTrue(instancesChangeNotifier.isSubscribed(group, name));
+        assertTrue(instancesChangeNotifier.isSubscribed(group, name));
     }
     
     @Test
-    public void testOnEvent() {
+    void testOnEvent() {
         String eventScope = "scope-001";
         String group = "a";
         String name = "b";
@@ -122,9 +133,47 @@ public class InstancesChangeNotifierTest {
     }
     
     @Test
-    public void testSubscribeType() {
+    void testOnEventWithoutListener() {
+        String eventScope = "scope-001";
+        String group = "a";
+        String name = "b";
+        String clusters = "c";
+        InstancesChangeEvent event1 = Mockito.mock(InstancesChangeEvent.class);
+        when(event1.getClusters()).thenReturn(clusters);
+        when(event1.getGroupName()).thenReturn(group);
+        when(event1.getServiceName()).thenReturn(name);
+        EventListener listener = Mockito.mock(EventListener.class);
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
+        instancesChangeNotifier.registerListener(group, name + "c", clusters, listener);
+        instancesChangeNotifier.onEvent(event1);
+        Mockito.verify(listener, never()).onEvent(any());
+    }
+    
+    @Test
+    void testOnEventByExecutor() {
+        String eventScope = "scope-001";
+        String group = "a";
+        String name = "b";
+        String clusters = "c";
+        InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
+        AbstractEventListener listener = Mockito.mock(AbstractEventListener.class);
+        Executor executor = mock(Executor.class);
+        when(listener.getExecutor()).thenReturn(executor);
+        
+        instancesChangeNotifier.registerListener(group, name, clusters, listener);
+        InstancesChangeEvent event1 = Mockito.mock(InstancesChangeEvent.class);
+        when(event1.getClusters()).thenReturn(clusters);
+        when(event1.getGroupName()).thenReturn(group);
+        when(event1.getServiceName()).thenReturn(name);
+        
+        instancesChangeNotifier.onEvent(event1);
+        Mockito.verify(executor).execute(any());
+    }
+    
+    @Test
+    void testSubscribeType() {
         String eventScope = "scope-001";
         InstancesChangeNotifier instancesChangeNotifier = new InstancesChangeNotifier(eventScope);
-        Assert.assertEquals(InstancesChangeEvent.class, instancesChangeNotifier.subscribeType());
+        assertEquals(InstancesChangeEvent.class, instancesChangeNotifier.subscribeType());
     }
 }

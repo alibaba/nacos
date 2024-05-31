@@ -16,19 +16,19 @@
 
 package com.alibaba.nacos.api.naming.pojo;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ServiceTest {
+class ServiceTest {
     
     @Test
-    public void testSetAndGet() {
+    void testSetAndGet() {
         Service service = new Service();
         assertNull(service.getName());
         assertNull(service.getAppName());
@@ -51,12 +51,13 @@ public class ServiceTest {
     }
     
     @Test
-    public void testToString() {
+    void testToString() {
         Service service = new Service("service");
         service.setGroupName("group");
         service.setAppName("app");
         service.setProtectThreshold(1.0f);
         service.setMetadata(Collections.singletonMap("a", "b"));
-        assertEquals("Service{name='service', protectThreshold=1.0, appName='app', groupName='group', metadata={a=b}}", service.toString());
+        assertEquals("Service{name='service', protectThreshold=1.0, appName='app', groupName='group', metadata={a=b}}",
+                service.toString());
     }
 }

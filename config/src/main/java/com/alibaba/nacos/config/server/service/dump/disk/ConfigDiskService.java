@@ -46,18 +46,7 @@ public interface ConfigDiskService {
      * @throws IOException io exception.
      */
     void saveBetaToDisk(String dataId, String group, String tenant, String content) throws IOException;
-    
-    /**
-     * Save batch information to disk.
-     *
-     * @param dataId  dataId.
-     * @param group   group.
-     * @param tenant  tenant.
-     * @param content content.
-     * @throws IOException io exception.
-     */
-    void saveBatchToDisk(String dataId, String group, String tenant, String content) throws IOException;
-    
+
     /**
      * Save tag information to disk.
      *
@@ -87,15 +76,6 @@ public interface ConfigDiskService {
      * @param tenant tenant.
      */
     void removeConfigInfo4Beta(String dataId, String group, String tenant);
-    
-    /**
-     * Deletes batch config file on disk.
-     *
-     * @param dataId dataId.
-     * @param group  group.
-     * @param tenant tenant.
-     */
-    void removeConfigInfo4Batch(String dataId, String group, String tenant);
     
     /**
      * Deletes tag configuration files on disk.
@@ -130,18 +110,6 @@ public interface ConfigDiskService {
     String getBetaContent(String dataId, String group, String tenant) throws IOException;
     
     /**
-     * get batch content.
-     *
-     * @param dataId dataId.
-     * @param group  group.
-     * @param tenant tenant.
-     * @return batch content, null if not exist.
-     * @throws IOException io exception.
-     */
-    String getBatchContent(String dataId, String group, String tenant) throws IOException;
-    
-    
-    /**
      * Returns the path of the tag cache file in server.
      *
      * @param dataId dataId.
@@ -152,18 +120,6 @@ public interface ConfigDiskService {
      * @throws IOException io exception.
      */
     String getTagContent(String dataId, String group, String tenant, String tag) throws IOException;
-    
-    /**
-     * get the md5 of config with encode.
-     *
-     * @param dataId dataId.
-     * @param group  group.
-     * @param tenant tenant.
-     * @param encode encode.
-     * @return config md5.
-     * @throws IOException io exception.
-     */
-    String getLocalConfigMd5(String dataId, String group, String tenant, String encode) throws IOException;
     
     /**
      * Clear all config file.
@@ -179,10 +135,5 @@ public interface ConfigDiskService {
      * Clear all tag config file.
      */
     void clearAllTag();
-    
-    /**
-     * Clear all batch config file.
-     */
-    void clearAllBatch();
     
 }
