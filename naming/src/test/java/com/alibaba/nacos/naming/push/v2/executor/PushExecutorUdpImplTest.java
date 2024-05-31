@@ -75,7 +75,6 @@ class PushExecutorUdpImplTest {
         serviceMetadata = new ServiceMetadata();
         pushData = new PushDataWrapper(serviceMetadata, new ServiceInfo("G@@S"));
         pushExecutor = new PushExecutorUdpImpl(pushService);
-        doAnswer(new CallbackAnswer()).when(pushService).pushDataWithCallback(eq(subscriber), any(ServiceInfo.class), eq(pushCallBack));
         ApplicationUtils.injectContext(context);
         when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
         when(selectorManager.select(any(), any(), any())).then(
@@ -90,6 +89,7 @@ class PushExecutorUdpImplTest {
     
     @Test
     void testDoPushWithCallback() {
+        doAnswer(new CallbackAnswer()).when(pushService).pushDataWithCallback(eq(subscriber), any(ServiceInfo.class), eq(pushCallBack));
         pushExecutor.doPushWithCallback(rpcClientId, subscriber, pushData, pushCallBack);
         verify(pushCallBack).onSuccess();
     }

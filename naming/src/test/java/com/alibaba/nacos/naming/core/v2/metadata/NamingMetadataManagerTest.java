@@ -82,12 +82,11 @@ class NamingMetadataManagerTest {
         
         Field instanceMetadataMapField = namingMetadataManagerClass.getDeclaredField("instanceMetadataMap");
         instanceMetadataMapField.setAccessible(true);
-        ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>> instanceMetadataMap = (ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>>) instanceMetadataMapField.get(
-                namingMetadataManager);
         
         ConcurrentMap<String, InstanceMetadata> concurrentMap = new ConcurrentHashMap<>();
         concurrentMap.put(METADATA_ID, instanceMetadata);
-        instanceMetadataMap.put(service, concurrentMap);
+        ((ConcurrentMap<Service, ConcurrentMap<String, InstanceMetadata>>) instanceMetadataMapField.get(namingMetadataManager)).put(service,
+                concurrentMap);
     }
     
     @Test

@@ -82,9 +82,6 @@ class PushExecutorRpcImplTest {
         pushData = new PushDataWrapper(serviceMetadata, new ServiceInfo("G@@S"));
         pushExecutor = new PushExecutorRpcImpl(pushService);
         EnvUtil.setEnvironment(new MockEnvironment());
-        doAnswer(new CallbackAnswer()).when(pushService)
-                .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
-                        eq(GlobalExecutor.getCallbackExecutor()));
         ApplicationUtils.injectContext(context);
         when(context.getBean(SelectorManager.class)).thenReturn(selectorManager);
         when(selectorManager.select(any(), any(), any())).then(
@@ -99,6 +96,9 @@ class PushExecutorRpcImplTest {
     
     @Test
     void testDoPushWithCallback() {
+        doAnswer(new CallbackAnswer()).when(pushService)
+                .pushWithCallback(eq(rpcClientId), any(NotifySubscriberRequest.class), eq(pushCallBack),
+                        eq(GlobalExecutor.getCallbackExecutor()));
         pushExecutor.doPushWithCallback(rpcClientId, subscriber, pushData, pushCallBack);
         verify(pushCallBack).onSuccess();
     }
