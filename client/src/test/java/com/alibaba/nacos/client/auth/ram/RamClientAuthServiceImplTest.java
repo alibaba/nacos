@@ -17,10 +17,12 @@
 package com.alibaba.nacos.client.auth.ram;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
 import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -68,6 +70,11 @@ class RamClientAuthServiceImplTest {
         akSkProperties.setProperty(PropertyKeyConst.SECRET_KEY, PropertyKeyConst.SECRET_KEY);
         roleProperties.setProperty(PropertyKeyConst.RAM_ROLE_NAME, PropertyKeyConst.RAM_ROLE_NAME);
         resource = new RequestResource();
+    }
+    
+    @AfterEach
+    void tearDown() throws NacosException {
+        ramClientAuthService.shutdown();
     }
     
     @Test

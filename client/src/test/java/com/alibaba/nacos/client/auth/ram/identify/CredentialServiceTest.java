@@ -36,6 +36,8 @@ class CredentialServiceTest {
     
     @BeforeEach
     void setUp() throws Exception {
+        CredentialService.freeInstance();
+        CredentialService.freeInstance(APP_NAME);
     }
     
     @AfterEach
