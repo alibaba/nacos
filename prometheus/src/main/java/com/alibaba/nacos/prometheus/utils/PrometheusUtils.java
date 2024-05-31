@@ -48,23 +48,22 @@ public class PrometheusUtils {
     }
     
     /**
-     * assemble instance to json node, and export metadata to label
+     * assemble instance to json node, and export metadata to label.
      *
      * @param clusterName the cluster name
      * @param instance    instance info
      */
     private static ObjectNode assembleInstanceToArrayNode(String clusterName, Instance instance) {
-        ObjectNode jsonNode = JacksonUtils.createEmptyJsonNode();
-        ArrayNode targetsNode = JacksonUtils.createEmptyArrayNode();
-        ObjectNode labelNode = JacksonUtils.createEmptyJsonNode();
         
+        ArrayNode targetsNode = JacksonUtils.createEmptyArrayNode();
         targetsNode.add(instance.getIp() + ":" + instance.getPort());
+        ObjectNode labelNode = JacksonUtils.createEmptyJsonNode();
         //mark cluster name
         labelNode.put("__meta_clusterName", clusterName);
         //export metadata
         Map<String, String> metadata = instance.getMetadata();
         metadata.forEach(labelNode::put);
-        
+        ObjectNode jsonNode = JacksonUtils.createEmptyJsonNode();
         jsonNode.replace("targets", targetsNode);
         jsonNode.replace("labels", labelNode);
         return jsonNode;
