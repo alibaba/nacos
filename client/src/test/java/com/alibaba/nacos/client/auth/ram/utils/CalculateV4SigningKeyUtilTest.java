@@ -19,7 +19,8 @@ package com.alibaba.nacos.client.auth.ram.utils;
 import com.alibaba.nacos.client.auth.ram.RamConstants;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class CalculateV4SigningKeyUtilTest {
     
