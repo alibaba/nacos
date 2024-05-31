@@ -17,11 +17,13 @@
 package com.alibaba.nacos.persistence.datasource;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ExternalDataSourcePropertiesTest {
     
@@ -33,7 +35,7 @@ public class ExternalDataSourcePropertiesTest {
     public static final String USERNAME = "nacos_devtest";
     
     @Test
-    public void externalDatasourceNormally() {
+    void externalDatasourceNormally() {
         HikariDataSource expectedDataSource = new HikariDataSource();
         expectedDataSource.setJdbcUrl(JDBC_URL);
         expectedDataSource.setUsername(USERNAME);
@@ -44,16 +46,16 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("db.password", PASSWORD);
         environment.setProperty("db.url.0", JDBC_URL);
         List<HikariDataSource> dataSources = new ExternalDataSourceProperties().build(environment, (dataSource -> {
-            Assert.assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
-            Assert.assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
-            Assert.assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+            assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
+            assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
+            assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
             
         }));
-        Assert.assertEquals(dataSources.size(), 1);
+        assertEquals(1, dataSources.size());
     }
     
     @Test
-    public void externalDatasourceToAssertMultiJdbcUrl() {
+    void externalDatasourceToAssertMultiJdbcUrl() {
         
         HikariDataSource expectedDataSource = new HikariDataSource();
         expectedDataSource.setJdbcUrl(JDBC_URL);
@@ -66,16 +68,16 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("db.url.0", JDBC_URL);
         environment.setProperty("db.url.1", JDBC_URL);
         List<HikariDataSource> dataSources = new ExternalDataSourceProperties().build(environment, (dataSource -> {
-            Assert.assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
-            Assert.assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
-            Assert.assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+            assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
+            assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
+            assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
             
         }));
-        Assert.assertEquals(dataSources.size(), 2);
+        assertEquals(2, dataSources.size());
     }
     
     @Test
-    public void externalDatasourceToAssertMultiPasswordAndUsername() {
+    void externalDatasourceToAssertMultiPasswordAndUsername() {
         
         HikariDataSource expectedDataSource = new HikariDataSource();
         expectedDataSource.setJdbcUrl(JDBC_URL);
@@ -90,16 +92,16 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("db.url.0", JDBC_URL);
         environment.setProperty("db.url.1", JDBC_URL);
         List<HikariDataSource> dataSources = new ExternalDataSourceProperties().build(environment, (dataSource -> {
-            Assert.assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
-            Assert.assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
-            Assert.assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+            assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
+            assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
+            assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
             
         }));
-        Assert.assertEquals(dataSources.size(), 2);
+        assertEquals(2, dataSources.size());
     }
     
     @Test
-    public void externalDatasourceToAssertMinIdle() {
+    void externalDatasourceToAssertMinIdle() {
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty("db.num", "1");
         environment.setProperty("db.user", USERNAME);
@@ -107,38 +109,43 @@ public class ExternalDataSourcePropertiesTest {
         environment.setProperty("db.url.0", JDBC_URL);
         List<HikariDataSource> dataSources = new ExternalDataSourceProperties().build(environment, (dataSource -> {
             dataSource.validate();
-            Assert.assertEquals(dataSource.getMinimumIdle(), DataSourcePoolProperties.DEFAULT_MINIMUM_IDLE);
+            assertEquals(DataSourcePoolProperties.DEFAULT_MINIMUM_IDLE, dataSource.getMinimumIdle());
         }));
-        Assert.assertEquals(dataSources.size(), 1);
+        assertEquals(1, dataSources.size());
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void externalDatasourceFailureWithLarkInfo() {
-        
-        MockEnvironment environment = new MockEnvironment();
-        new ExternalDataSourceProperties().build(environment, null);
-        
-    }
-    
-    @Test(expected = IllegalArgumentException.class)
-    public void externalDatasourceFailureWithErrorInfo() {
-        
-        HikariDataSource expectedDataSource = new HikariDataSource();
-        expectedDataSource.setJdbcUrl(JDBC_URL);
-        expectedDataSource.setUsername(USERNAME);
-        expectedDataSource.setPassword(PASSWORD);
-        MockEnvironment environment = new MockEnvironment();
-        // error num of db
-        environment.setProperty("db.num", "2");
-        environment.setProperty("db.user", USERNAME);
-        environment.setProperty("db.password", PASSWORD);
-        environment.setProperty("db.url.0", JDBC_URL);
-        List<HikariDataSource> dataSources = new ExternalDataSourceProperties().build(environment, (dataSource -> {
-            Assert.assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
-            Assert.assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
-            Assert.assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+    @Test
+    void externalDatasourceFailureWithLarkInfo() {
+        assertThrows(IllegalArgumentException.class, () -> {
             
-        }));
+            MockEnvironment environment = new MockEnvironment();
+            new ExternalDataSourceProperties().build(environment, null);
+            
+        });
+        
+    }
+    
+    @Test
+    void externalDatasourceFailureWithErrorInfo() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            
+            HikariDataSource expectedDataSource = new HikariDataSource();
+            expectedDataSource.setJdbcUrl(JDBC_URL);
+            expectedDataSource.setUsername(USERNAME);
+            expectedDataSource.setPassword(PASSWORD);
+            MockEnvironment environment = new MockEnvironment();
+            // error num of db
+            environment.setProperty("db.num", "2");
+            environment.setProperty("db.user", USERNAME);
+            environment.setProperty("db.password", PASSWORD);
+            environment.setProperty("db.url.0", JDBC_URL);
+            List<HikariDataSource> dataSources = new ExternalDataSourceProperties().build(environment, (dataSource -> {
+                assertEquals(dataSource.getJdbcUrl(), expectedDataSource.getJdbcUrl());
+                assertEquals(dataSource.getUsername(), expectedDataSource.getUsername());
+                assertEquals(dataSource.getPassword(), expectedDataSource.getPassword());
+                
+            }));
+        });
     }
     
 }
