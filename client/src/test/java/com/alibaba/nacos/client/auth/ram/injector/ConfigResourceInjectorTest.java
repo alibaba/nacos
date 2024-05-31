@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.auth.ram.injector;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.auth.ram.RamConstants;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.ram.identify.IdentifyConstants;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
@@ -126,6 +127,18 @@ class ConfigResourceInjectorTest {
         assertTrue(actual.getAllKey().contains("Timestamp"));
         assertTrue(actual.getAllKey().contains("Spas-Signature"));
         assertTrue(actual.getAllKey().contains(IdentifyConstants.SECURITY_TOKEN_HEADER));
+    }
+    
+    @Test
+    void testDoInjectForV4Sign() {
+        LoginIdentityContext actual = new LoginIdentityContext();
+        ramContext.setRegionId("cn-hangzhou");
+        configResourceInjector.doInject(resource, ramContext, actual);
+        assertEquals(4, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
+        assertEquals(RamConstants.V4, actual.getParameter(RamConstants.SIGNATURE_VERSION));
+        assertTrue(actual.getAllKey().contains("Timestamp"));
+        assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
     
     private void prepareForSts() throws NoSuchFieldException, IllegalAccessException {

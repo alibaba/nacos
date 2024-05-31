@@ -43,43 +43,26 @@ public class CalculateV4SigningKeyUtil {
     
     private static final ZoneId UTC_0 = ZoneId.of("GMT+00:00");
     
-    private static byte[] firstSigningKey(String secret, String date, String signMethod) {
-        Mac mac = null;
-        try {
-            mac = Mac.getInstance(signMethod);
-            mac.init(new SecretKeySpec((PREFIX + secret).getBytes(StandardCharsets.UTF_8), signMethod));
-            return mac.doFinal(date.getBytes(StandardCharsets.UTF_8));
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("unsupported Algorithm:" + signMethod);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException("InvalidKey");
-        }
+    private static byte[] firstSigningKey(String secret, String date, String signMethod)
+            throws NoSuchAlgorithmException, InvalidKeyException {
+        Mac mac = Mac.getInstance(signMethod);
+        mac.init(new SecretKeySpec((PREFIX + secret).getBytes(StandardCharsets.UTF_8), signMethod));
+        return mac.doFinal(date.getBytes(StandardCharsets.UTF_8));
     }
     
-    private static byte[] regionSigningKey(String secret, String date, String region, String signMethod) {
+    private static byte[] regionSigningKey(String secret, String date, String region, String signMethod)
+            throws NoSuchAlgorithmException, InvalidKeyException {
         byte[] firstSignkey = firstSigningKey(secret, date, signMethod);
-        Mac mac = null;
-        try {
-            mac = Mac.getInstance(signMethod);
-            mac.init(new SecretKeySpec(firstSignkey, signMethod));
-            return mac.doFinal(region.getBytes(StandardCharsets.UTF_8));
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException("unsupported Algorithm:" + signMethod);
-        } catch (InvalidKeyException e) {
-            throw new RuntimeException("InvalidKey");
-        }
-    }
-    
-    private static String regionSigningKeyString(String secret, String date, String region, String signMethod) {
-        return Base64.getEncoder().encodeToString(regionSigningKey(secret, date, region, signMethod));
+        Mac mac = Mac.getInstance(signMethod);
+        mac.init(new SecretKeySpec(firstSignkey, signMethod));
+        return mac.doFinal(region.getBytes(StandardCharsets.UTF_8));
     }
     
     private static byte[] finalSigningKey(String secret, String date, String region, String productCode,
             String signMethod) {
-        byte[] secondSignkey = regionSigningKey(secret, date, region, signMethod);
-        Mac mac;
         try {
-            mac = Mac.getInstance(signMethod);
+            byte[] secondSignkey = regionSigningKey(secret, date, region, signMethod);
+            Mac mac = Mac.getInstance(signMethod);
             mac.init(new SecretKeySpec(secondSignkey, signMethod));
             byte[] thirdSigningKey = mac.doFinal(productCode.getBytes(StandardCharsets.UTF_8));
             // 计算最终派生秘钥

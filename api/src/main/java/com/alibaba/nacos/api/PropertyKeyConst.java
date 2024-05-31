@@ -89,8 +89,6 @@ public class PropertyKeyConst {
     
     public static final String REDO_DELAY_THREAD_COUNT = "redoDelayThreadCount";
     
-    public static final String REGION_ID = "regionId"
-            ;
     public static final String SIGNATURE_REGION_ID = "signatureRegionId";
     
     /**

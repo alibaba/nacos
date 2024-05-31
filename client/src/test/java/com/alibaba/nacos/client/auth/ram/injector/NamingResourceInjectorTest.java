@@ -17,10 +17,12 @@
 package com.alibaba.nacos.client.auth.ram.injector;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.auth.ram.RamConstants;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredential;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredentialHolder;
+import com.alibaba.nacos.client.auth.ram.utils.CalculateV4SigningKeyUtil;
 import com.alibaba.nacos.client.auth.ram.utils.SignUtil;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
@@ -129,6 +131,22 @@ class NamingResourceInjectorTest {
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
         assertEquals(0, actual.getAllKey().size());
+    }
+    
+    @Test
+    void testDoInjectForV4Sign() throws Exception {
+        resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
+        LoginIdentityContext actual = new LoginIdentityContext();
+        ramContext.setRegionId("cn-hangzhou");
+        namingResourceInjector.doInject(resource, ramContext, actual);
+        assertEquals(4, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
+        assertEquals(RamConstants.V4, actual.getParameter(RamConstants.SIGNATURE_VERSION));
+        assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
+        String signatureKey = CalculateV4SigningKeyUtil.finalSigningKeyStringWithDefaultInfo(
+                PropertyKeyConst.SECRET_KEY, "cn-hangzhou");
+        String expectSign = SignUtil.sign(actual.getParameter("data"), signatureKey);
+        assertEquals(expectSign, actual.getParameter("signature"));
     }
     
     private void prepareForSts() throws NoSuchFieldException, IllegalAccessException {
