@@ -43,6 +43,10 @@ public class InstancesChangeEvent extends Event {
 
     private InstancesDiff instancesDiff;
     
+    public InstancesChangeEvent(String eventScope, String serviceName, String groupName, String clusters, List<Instance> hosts) {
+        this(eventScope, serviceName, groupName, clusters, hosts, null);
+    }
+    
     public InstancesChangeEvent(String eventScope, String serviceName, String groupName, String clusters, List<Instance> hosts, InstancesDiff diff) {
         this.eventScope = eventScope;
         this.serviceName = serviceName;

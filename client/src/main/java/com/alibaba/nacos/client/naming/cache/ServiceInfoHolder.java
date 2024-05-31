@@ -159,6 +159,17 @@ if (!failoverReactor.isFailoverSwitch(serviceKey)) {
         return null == serviceInfo.getHosts() || (pushEmptyProtection && !serviceInfo.validate());
     }
     
+    /**
+     * isChangedServiceInfo.
+     *
+     * @param oldService old service data
+     * @param newService new service data
+     * @return {@code true} if oldService is not equal newService, {@code false} otherwise.
+     */
+    public boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
+        return getServiceInfoDiff(oldService, newService).hasDifferent();
+    }
+    
     private InstancesDiff getServiceInfoDiff(ServiceInfo oldService, ServiceInfo newService) {
         InstancesDiff instancesDiff = new InstancesDiff();
         if (null == oldService) {

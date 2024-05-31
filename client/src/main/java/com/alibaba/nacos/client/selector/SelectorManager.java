@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.selector;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -56,7 +57,7 @@ public class SelectorManager<S extends AbstractSelectorWrapper<?, ?, ?>> {
      * @return the set of SelectorWrappers
      */
     public Set<S> getSelectorWrappers(String subId) {
-        return selectorMap.get(subId);
+        return selectorMap.getOrDefault(subId, Collections.emptySet());
     }
     
     /**

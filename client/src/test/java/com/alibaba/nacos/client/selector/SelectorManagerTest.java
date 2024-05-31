@@ -25,7 +25,6 @@ import java.util.Random;
 import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -39,7 +38,7 @@ public class SelectorManagerTest {
         selectorManager.addSelectorWrapper(subId, sw);
         assertTrue(selectorManager.getSelectorWrappers(subId).contains(sw));
         selectorManager.removeSelectorWrapper(subId, sw);
-        assertNull(selectorManager.getSelectorWrappers(subId));
+        assertTrue(selectorManager.getSelectorWrappers(subId).isEmpty());
     }
     
     @Test

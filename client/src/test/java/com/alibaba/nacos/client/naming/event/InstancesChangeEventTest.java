@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class InstancesChangeEventTest {
     
@@ -47,10 +48,10 @@ class InstancesChangeEventTest {
         assertEquals(hosts.size(), hosts1.size());
         assertEquals(hosts.get(0), hosts1.get(0));
         InstancesDiff diff1 = event.getInstancesDiff();
-        Assert.assertTrue(diff1.hasDifferent());
-        Assert.assertEquals(diff.getAddedInstances().size(), diff1.getAddedInstances().size());
-        Assert.assertEquals(diff.getAddedInstances().get(0), diff.getAddedInstances().get(0));
-        Assert.assertEquals(diff.getRemovedInstances().size(), diff1.getRemovedInstances().size());
-        Assert.assertEquals(diff.getModifiedInstances().size(), diff1.getModifiedInstances().size());
+        assertTrue(diff1.hasDifferent());
+        assertEquals(diff.getAddedInstances().size(), diff1.getAddedInstances().size());
+        assertEquals(diff.getAddedInstances().get(0), diff.getAddedInstances().get(0));
+        assertEquals(diff.getRemovedInstances().size(), diff1.getRemovedInstances().size());
+        assertEquals(diff.getModifiedInstances().size(), diff1.getModifiedInstances().size());
     }
 }
