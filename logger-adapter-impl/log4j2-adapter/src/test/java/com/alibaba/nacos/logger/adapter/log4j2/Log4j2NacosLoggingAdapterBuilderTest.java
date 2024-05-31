@@ -17,15 +17,15 @@
 package com.alibaba.nacos.logger.adapter.log4j2;
 
 import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class Log4j2NacosLoggingAdapterBuilderTest {
+class Log4j2NacosLoggingAdapterBuilderTest {
     
     @Test
-    public void build() {
+    void build() {
         Log4j2NacosLoggingAdapterBuilder builder = new Log4j2NacosLoggingAdapterBuilder();
         NacosLoggingAdapter adapter = builder.build();
         assertNotNull(adapter);

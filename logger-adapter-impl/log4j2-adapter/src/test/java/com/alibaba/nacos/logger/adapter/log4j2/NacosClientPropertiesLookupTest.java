@@ -17,19 +17,20 @@
 package com.alibaba.nacos.logger.adapter.log4j2;
 
 import com.alibaba.nacos.common.logging.NacosLoggingProperties;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class NacosClientPropertiesLookupTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class NacosClientPropertiesLookupTest {
     
     @Test
-    public void testLookUp() {
+    void testLookUp() {
         System.setProperty("test.nacos.logging.lookup", "true");
         NacosLoggingProperties properties = new NacosLoggingProperties("", System.getProperties());
         Log4j2NacosLoggingPropertiesHolder.setProperties(properties);
         NacosClientPropertiesLookup nacosClientPropertiesLookup = new NacosClientPropertiesLookup();
         final String actual = nacosClientPropertiesLookup.lookup("test.nacos.logging.lookup");
-        Assert.assertEquals("true", actual);
+        assertEquals("true", actual);
     }
     
 }
