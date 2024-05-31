@@ -21,24 +21,24 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class CatalogControllerTest {
+@ExtendWith(MockitoExtension.class)
+class CatalogControllerTest {
     
     private static final String TEST_CLUSTER_NAME = "test-cluster";
     
@@ -52,31 +52,29 @@ public class CatalogControllerTest {
     @InjectMocks
     private CatalogController catalogController;
     
-    @Before
-    public void setUp() throws NoSuchFieldException, IllegalAccessException, NacosException {
+    @BeforeEach
+    void setUp() throws NoSuchFieldException, IllegalAccessException, NacosException {
     }
     
     @Test
-    public void testServiceDetail() throws Exception {
+    void testServiceDetail() throws Exception {
         Object expected = new Object();
-        when(catalogServiceV2.getServiceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME))
-                .thenReturn(expected);
+        when(catalogServiceV2.getServiceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME)).thenReturn(expected);
         Object actual = catalogController.serviceDetail(Constants.DEFAULT_NAMESPACE_ID,
                 TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME);
         assertEquals(expected, actual);
     }
     
     @Test
-    public void testInstanceList() throws NacosException {
+    void testInstanceList() throws NacosException {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
         instance.setPort(1234);
         instance.setClusterName(TEST_CLUSTER_NAME);
         List list = new ArrayList<>(1);
         list.add(instance);
-        when(catalogServiceV2
-                .listInstances(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, TEST_CLUSTER_NAME))
-                .thenReturn(list);
+        when(catalogServiceV2.listInstances(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME,
+                TEST_CLUSTER_NAME)).thenReturn(list);
         ObjectNode result = catalogController.instanceList(Constants.DEFAULT_NAMESPACE_ID,
                 TEST_GROUP_NAME + Constants.SERVICE_INFO_SPLITER + TEST_SERVICE_NAME, TEST_CLUSTER_NAME, 1, 10);
         String actual = result.toString();
@@ -88,19 +86,17 @@ public class CatalogControllerTest {
     }
     
     @Test
-    public void testListDetail() {
+    void testListDetail() {
         try {
-            when(catalogServiceV2
-                    .pageListServiceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, 1, 10))
-                    .thenReturn(Collections.emptyList());
-            Object res = catalogController
-                    .listDetail(true, Constants.DEFAULT_NAMESPACE_ID, 1, 10, TEST_SERVICE_NAME, TEST_GROUP_NAME, null,
-                            true);
-            Assert.assertTrue(res instanceof List);
-            Assert.assertEquals(0, ((List) res).size());
+            when(catalogServiceV2.pageListServiceDetail(Constants.DEFAULT_NAMESPACE_ID, TEST_GROUP_NAME, TEST_SERVICE_NAME, 1,
+                    10)).thenReturn(Collections.emptyList());
+            Object res = catalogController.listDetail(true, Constants.DEFAULT_NAMESPACE_ID, 1, 10, TEST_SERVICE_NAME, TEST_GROUP_NAME, null,
+                    true);
+            assertTrue(res instanceof List);
+            assertEquals(0, ((List) res).size());
         } catch (NacosException e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
 }
