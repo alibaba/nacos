@@ -19,8 +19,10 @@ package com.alibaba.nacos.core.storage;
 import com.alibaba.nacos.core.storage.kv.FileKvStorage;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import com.alibaba.nacos.core.storage.kv.MemoryKvStorage;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link StorageFactory} unit tests.
@@ -28,30 +30,30 @@ import org.junit.Test;
  * @author chenglu
  * @date 2021-06-10 17:55
  */
-public class StorageFactoryTest {
+class StorageFactoryTest {
     
     @Test
-    public void testCreateKvStorage() {
+    void testCreateKvStorage() {
         try {
             KvStorage kvStorage = StorageFactory.createKvStorage(KvStorage.KvType.Memory, "", "/");
-            Assert.assertTrue(kvStorage instanceof MemoryKvStorage);
+            assertTrue(kvStorage instanceof MemoryKvStorage);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         }
-    
+        
         try {
             KvStorage kvStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, "", "/");
-            Assert.assertTrue(kvStorage instanceof FileKvStorage);
+            assertTrue(kvStorage instanceof FileKvStorage);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         }
-    
+        
         try {
             StorageFactory.createKvStorage(KvStorage.KvType.RocksDB, "", "/");
         } catch (Exception e) {
-            Assert.assertTrue(e instanceof IllegalArgumentException);
+            assertTrue(e instanceof IllegalArgumentException);
         }
     }
 }

@@ -22,13 +22,12 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.Constants;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -39,14 +38,16 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * {@link AuthFilter} unit test.
  *
  * @author chenglu
  * @date 2021-07-06 13:44
  */
-@RunWith(MockitoJUnitRunner.class)
-public class AuthFilterTest {
+@ExtendWith(MockitoExtension.class)
+class AuthFilterTest {
     
     @InjectMocks
     private AuthFilter authFilter;
@@ -58,7 +59,7 @@ public class AuthFilterTest {
     private ControllerMethodsCache methodsCache;
     
     @Test
-    public void testDoFilter() {
+    void testDoFilter() {
         try {
             FilterChain filterChain = new MockFilterChain();
             Mockito.when(authConfigs.isAuthEnabled()).thenReturn(true);
@@ -79,21 +80,19 @@ public class AuthFilterTest {
             Mockito.when(authConfigs.getServerIdentityValue()).thenReturn("3");
             authFilter.doFilter(request, response, filterChain);
             
-            Mockito.when(methodsCache.getMethod(Mockito.any()))
-                    .thenReturn(filterChain.getClass().getMethod("testSecured"));
+            Mockito.when(methodsCache.getMethod(Mockito.any())).thenReturn(filterChain.getClass().getMethod("testSecured"));
             authFilter.doFilter(request, response, filterChain);
             
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     class MockFilterChain implements FilterChain {
         
         @Override
-        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse)
-                throws IOException, ServletException {
+        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse) throws IOException, ServletException {
             System.out.println("filter chain executed");
         }
         

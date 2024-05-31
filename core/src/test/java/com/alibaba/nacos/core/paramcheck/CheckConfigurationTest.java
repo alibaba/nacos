@@ -19,17 +19,19 @@ package com.alibaba.nacos.core.paramcheck;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
+
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * {@link CheckConfiguration} unit tests.
+ *
  * @author lynn.lqp
  * @date 2023/12/28
  */
-public class CheckConfigurationTest {
-
+class CheckConfigurationTest {
+    
     @Test
-    public void testCheckerFilter() {
+    void testCheckerFilter() {
         CheckConfiguration checkConfiguration = new CheckConfiguration();
         ControllerMethodsCache methodsCache = Mockito.mock(ControllerMethodsCache.class);
         ParamCheckerFilter checkerFilter = checkConfiguration.checkerFilter(methodsCache);

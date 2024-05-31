@@ -19,9 +19,9 @@ package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.core.remote.grpc.negotiator.NacosGrpcProtocolNegotiator;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertiesPropertySource;
@@ -29,8 +29,8 @@ import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * Test ClusterDefaultTlsProtocolNegotiatorBuilder.
@@ -38,45 +38,43 @@ import static org.junit.Assert.assertNull;
  * @author stone-98
  * @date 2023/12/25
  */
-public class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
+class ClusterDefaultTlsProtocolNegotiatorBuilderTest {
     
     private ConfigurableEnvironment environment;
     
     private ClusterDefaultTlsProtocolNegotiatorBuilder builder;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         builder = new ClusterDefaultTlsProtocolNegotiatorBuilder();
     }
     
-    @After
-    public void tearDown() throws NoSuchFieldException, IllegalAccessException {
+    @AfterEach
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
     }
     
     @Test
-    public void testBuildTlsDisabled() {
+    void testBuildTlsDisabled() {
         assertNull(builder.build());
     }
     
     @Test
-    public void testBuildTlsEnabled() {
+    void testBuildTlsEnabled() {
         Properties properties = new Properties();
         properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".enableTls", "true");
         properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".compatibility", "false");
-        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".ciphers",
-                "ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
+        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".ciphers", "ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".protocols", "TLSv1.2,TLSv1.3");
         properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".certPrivateKey", "test-server-key.pem");
         properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".certChainFile", "test-server-cert.pem");
-        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".trustCollectionCertFile",
-                "test-ca-cert.pem");
-    
+        properties.setProperty(RpcConstants.NACOS_PEER_RPC + ".trustCollectionCertFile", "test-ca-cert.pem");
+        
         PropertiesPropertySource propertySource = new PropertiesPropertySource("myPropertySource", properties);
         MutablePropertySources propertySources = environment.getPropertySources();
         propertySources.addLast(propertySource);
-    
+        
         NacosGrpcProtocolNegotiator negotiator = builder.build();
         assertNotNull(negotiator);
     }

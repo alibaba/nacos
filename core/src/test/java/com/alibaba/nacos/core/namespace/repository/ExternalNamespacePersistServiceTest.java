@@ -23,12 +23,11 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.exception.NJdbcException;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -41,13 +40,18 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ExternalNamespacePersistServiceTest {
+@ExtendWith(MockitoExtension.class)
+class ExternalNamespacePersistServiceTest {
     
     @Mock
     private DatabaseOperate databaseOperate;
@@ -62,8 +66,8 @@ public class ExternalNamespacePersistServiceTest {
     
     private MockEnvironment environment;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setIsStandalone(false);
         DatasourceConfiguration.setEmbeddedStorage(false);
         environment = new MockEnvironment();
@@ -76,7 +80,7 @@ public class ExternalNamespacePersistServiceTest {
     }
     
     @Test
-    public void insertTenantInfoAtomicTest() {
+    void insertTenantInfoAtomicTest() {
         String kp = "1";
         String namespaceId = "namespaceId";
         String namespaceName = "namespaceName";
@@ -85,16 +89,16 @@ public class ExternalNamespacePersistServiceTest {
         externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos",
                 System.currentTimeMillis());
         
-        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(),
-                anyLong())).thenThrow(new NJdbcException("test"));
-        Assert.assertThrows(DataAccessException.class,
-                () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName,
-                        namespaceDesc, "nacos", System.currentTimeMillis()));
+        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(), anyLong())).thenThrow(
+                new NJdbcException("test"));
+        assertThrows(DataAccessException.class,
+                () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos",
+                        System.currentTimeMillis()));
         
     }
     
     @Test
-    public void removeTenantInfoAtomicTest() {
+    void removeTenantInfoAtomicTest() {
         String kp = "1";
         String namespaceId = "namespaceId";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
@@ -102,12 +106,11 @@ public class ExternalNamespacePersistServiceTest {
         externalNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId);
         
         when(jt.update(anyString(), anyString(), anyString())).thenThrow(new CannotGetJdbcConnectionException("test"));
-        Assert.assertThrows(CannotGetJdbcConnectionException.class,
-                () -> externalNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId));
+        assertThrows(CannotGetJdbcConnectionException.class, () -> externalNamespacePersistService.removeTenantInfoAtomic(kp, namespaceId));
     }
     
     @Test
-    public void updateTenantNameAtomicTest() {
+    void updateTenantNameAtomicTest() {
         String kp = "1";
         String namespaceId = "namespaceId";
         String namespaceName = "namespaceName";
@@ -115,15 +118,13 @@ public class ExternalNamespacePersistServiceTest {
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc);
         
-        when(jt.update(anyString(), anyString(), anyString(), anyLong(), anyString(), anyString())).thenThrow(
-                new NJdbcException("test"));
-        Assert.assertThrows(DataAccessException.class,
-                () -> externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName,
-                        namespaceDesc));
+        when(jt.update(anyString(), anyString(), anyString(), anyLong(), anyString(), anyString())).thenThrow(new NJdbcException("test"));
+        assertThrows(DataAccessException.class,
+                () -> externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc));
     }
     
     @Test
-    public void findTenantByKpTest() {
+    void findTenantByKpTest() {
         String kp = "1";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         List<TenantInfo> tenantInfoList = new ArrayList<>(1);
@@ -132,97 +133,90 @@ public class ExternalNamespacePersistServiceTest {
         when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenReturn(tenantInfoList);
         
         List<TenantInfo> tenantByKp = externalNamespacePersistService.findTenantByKp(kp);
-        Assert.assertEquals(tenantInfoList.get(0), tenantByKp.get(0));
+        assertEquals(tenantInfoList.get(0), tenantByKp.get(0));
         
         when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("test"));
-        Assert.assertThrows(CannotGetJdbcConnectionException.class,
-                () -> externalNamespacePersistService.findTenantByKp(kp));
+        assertThrows(CannotGetJdbcConnectionException.class, () -> externalNamespacePersistService.findTenantByKp(kp));
         
-        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
-                new EmptyResultDataAccessException(1));
+        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1));
         List<TenantInfo> tenantByKp1 = externalNamespacePersistService.findTenantByKp(kp);
-        Assert.assertEquals(Collections.emptyList(), tenantByKp1);
+        assertEquals(Collections.emptyList(), tenantByKp1);
         
-        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
-                new RuntimeException("test"));
-        Assert.assertThrows(RuntimeException.class, () -> externalNamespacePersistService.findTenantByKp(kp));
+        when(jt.query(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(new RuntimeException("test"));
+        assertThrows(RuntimeException.class, () -> externalNamespacePersistService.findTenantByKp(kp));
         
     }
     
     @Test
-    public void findTenantByKpTest2() {
+    void findTenantByKpTest2() {
         String kp = "1";
         String namespaceId = "namespaceId";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         TenantInfo tenantInfo = new TenantInfo();
         tenantInfo.setTenantId(namespaceId);
         
-        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}), eq(TENANT_INFO_ROW_MAPPER))).thenReturn(
-                tenantInfo);
+        when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}), eq(TENANT_INFO_ROW_MAPPER))).thenReturn(tenantInfo);
         
         TenantInfo tenantByKp = externalNamespacePersistService.findTenantByKp(kp, namespaceId);
-        Assert.assertEquals(tenantInfo.getTenantId(), tenantByKp.getTenantId());
+        assertEquals(tenantInfo.getTenantId(), tenantByKp.getTenantId());
         
         when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
                 new CannotGetJdbcConnectionException("test"));
-        Assert.assertThrows(CannotGetJdbcConnectionException.class,
-                () -> externalNamespacePersistService.findTenantByKp(kp, namespaceId));
+        assertThrows(CannotGetJdbcConnectionException.class, () -> externalNamespacePersistService.findTenantByKp(kp, namespaceId));
         
         when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
                 new EmptyResultDataAccessException(1));
         TenantInfo tenantByKp1 = externalNamespacePersistService.findTenantByKp(kp, namespaceId);
-        Assert.assertNull(tenantByKp1);
+        assertNull(tenantByKp1);
         
         when(jt.queryForObject(anyString(), eq(new Object[] {kp, namespaceId}), eq(TENANT_INFO_ROW_MAPPER))).thenThrow(
                 new RuntimeException("test"));
-        Assert.assertThrows(RuntimeException.class,
-                () -> externalNamespacePersistService.findTenantByKp(kp, namespaceId));
+        assertThrows(RuntimeException.class, () -> externalNamespacePersistService.findTenantByKp(kp, namespaceId));
         
     }
     
     @Test
-    public void generateLikeArgumentTest() {
+    void generateLikeArgumentTest() {
         
         String test = externalNamespacePersistService.generateLikeArgument("test");
         
         String testB = externalNamespacePersistService.generateLikeArgument("test*");
         
-        Assert.assertEquals("test", test);
+        assertEquals("test", test);
         
-        Assert.assertEquals("test%", testB);
+        assertEquals("test%", testB);
     }
     
     @Test
-    public void isExistTableTest() {
+    void isExistTableTest() {
         String tableName = "tableName";
         String sql = String.format("SELECT 1 FROM %s LIMIT 1", tableName);
         
         when(jt.queryForObject(eq(sql), eq(Integer.class))).thenReturn(1);
         boolean existTableA = externalNamespacePersistService.isExistTable(tableName);
-        Assert.assertTrue(existTableA);
+        assertTrue(existTableA);
         
         when(jt.queryForObject(eq(sql), eq(Integer.class))).thenThrow(new RuntimeException("test"));
         boolean existTableB = externalNamespacePersistService.isExistTable(tableName);
-        Assert.assertFalse(existTableB);
+        assertFalse(existTableB);
     }
     
     @Test
-    public void tenantInfoCountByTenantIdTest() {
+    void tenantInfoCountByTenantIdTest() {
         String tenantId = "tenantId";
         
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         
-        Assert.assertThrows(IllegalArgumentException.class,
-                () -> externalNamespacePersistService.tenantInfoCountByTenantId(null));
+        assertThrows(IllegalArgumentException.class, () -> externalNamespacePersistService.tenantInfoCountByTenantId(null));
         
         when(jt.queryForObject(anyString(), eq(new String[] {tenantId}), eq(Integer.class))).thenReturn(null);
         int i = externalNamespacePersistService.tenantInfoCountByTenantId(tenantId);
-        Assert.assertEquals(0, i);
+        assertEquals(0, i);
         
         when(jt.queryForObject(anyString(), eq(new String[] {tenantId}), eq(Integer.class))).thenReturn(1);
         int j = externalNamespacePersistService.tenantInfoCountByTenantId(tenantId);
-        Assert.assertEquals(1, j);
+        assertEquals(1, j);
     }
     
 }

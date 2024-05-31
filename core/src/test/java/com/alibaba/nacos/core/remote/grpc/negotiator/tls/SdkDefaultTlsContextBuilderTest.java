@@ -19,15 +19,16 @@ package com.alibaba.nacos.core.remote.grpc.negotiator.tls;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
 import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 /**
@@ -36,40 +37,42 @@ import static org.mockito.Mockito.when;
  * @author stone-98
  * @date 2024-03-11 17:11
  */
-@RunWith(MockitoJUnitRunner.class)
-public class SdkDefaultTlsContextBuilderTest {
-
+@ExtendWith(MockitoExtension.class)
+class SdkDefaultTlsContextBuilderTest {
+    
     private ConfigurableEnvironment environment;
-
+    
     @Mock
     private RpcServerTlsConfig rpcServerTlsConfig;
-
-    @Before
-    public void setUp() throws Exception {
+    
+    @BeforeEach
+    void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
     }
-
-    @After
-    public void tearDown() throws Exception {
+    
+    @AfterEach
+    void tearDown() throws Exception {
     }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetSslContextIllegal() {
-        DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
-    }
-
+    
     @Test
-    public void testGetSslContextWithoutMutual() {
+    void testGetSslContextIllegal() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
+        });
+    }
+    
+    @Test
+    void testGetSslContextWithoutMutual() {
         when(rpcServerTlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(rpcServerTlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
         when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
         when(rpcServerTlsConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
         DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
     }
-
+    
     @Test
-    public void testGetSslContextWithMutual() {
+    void testGetSslContextWithMutual() {
         when(rpcServerTlsConfig.getTrustAll()).thenReturn(true);
         when(rpcServerTlsConfig.getMutualAuthEnable()).thenReturn(true);
         when(rpcServerTlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
@@ -78,9 +81,9 @@ public class SdkDefaultTlsContextBuilderTest {
         when(rpcServerTlsConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
         DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
     }
-
+    
     @Test
-    public void testGetSslContextWithMutualAndPart() {
+    void testGetSslContextWithMutualAndPart() {
         when(rpcServerTlsConfig.getMutualAuthEnable()).thenReturn(true);
         when(rpcServerTlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
         when(rpcServerTlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
@@ -89,22 +92,26 @@ public class SdkDefaultTlsContextBuilderTest {
         when(rpcServerTlsConfig.getTrustCollectionCertFile()).thenReturn("test-ca-cert.pem");
         DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
     }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetSslContextWithMutualAndPartIllegal() {
-        when(rpcServerTlsConfig.getMutualAuthEnable()).thenReturn(true);
-        when(rpcServerTlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
-        when(rpcServerTlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
-        when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
-        when(rpcServerTlsConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
-        DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
+    
+    @Test
+    void testGetSslContextWithMutualAndPartIllegal() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            when(rpcServerTlsConfig.getMutualAuthEnable()).thenReturn(true);
+            when(rpcServerTlsConfig.getCiphers()).thenReturn("ECDHE-RSA-AES128-GCM-SHA256,ECDHE-RSA-AES256-GCM-SHA384");
+            when(rpcServerTlsConfig.getProtocols()).thenReturn("TLSv1.2,TLSv1.3");
+            when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("test-server-key.pem");
+            when(rpcServerTlsConfig.getCertChainFile()).thenReturn("test-server-cert.pem");
+            DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
+        });
     }
-
-    @Test(expected = NacosRuntimeException.class)
-    public void testGetSslContextForNonExistFile() {
-        when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("non-exist-server-key.pem");
-        when(rpcServerTlsConfig.getCertChainFile()).thenReturn("non-exist-cert.pem");
-        DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
+    
+    @Test
+    void testGetSslContextForNonExistFile() {
+        assertThrows(NacosRuntimeException.class, () -> {
+            when(rpcServerTlsConfig.getCertPrivateKey()).thenReturn("non-exist-server-key.pem");
+            when(rpcServerTlsConfig.getCertChainFile()).thenReturn("non-exist-cert.pem");
+            DefaultTlsContextBuilder.getSslContext(rpcServerTlsConfig);
+        });
     }
-
+    
 }

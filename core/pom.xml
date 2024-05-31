@@ -143,9 +143,20 @@
         </dependency>
         <!--   micrometer end    -->
         
+        <!-- third party grpc-test package support junit5
+             https://github.com/grpc/grpc-java/issues/5331#issuecomment-1950246974
+           -->
         <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-testing</artifactId>
+            <groupId>com.asarkar.grpc</groupId>
+            <artifactId>grpc-test</artifactId>
+            <version>1.2.2</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>io.grpc</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
