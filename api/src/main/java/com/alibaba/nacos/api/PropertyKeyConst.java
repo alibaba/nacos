@@ -62,7 +62,7 @@ public class PropertyKeyConst {
     public static final String CONFIG_RETRY_TIME = "configRetryTime";
     
     public static final String CLIENT_WORKER_MAX_THREAD_COUNT = "clientWorkerMaxThreadCount";
-
+    
     public static final String CLIENT_WORKER_THREAD_COUNT = "clientWorkerThreadCount";
     
     public static final String MAX_RETRY = "maxRetry";
@@ -90,6 +90,8 @@ public class PropertyKeyConst {
     public static final String REDO_DELAY_THREAD_COUNT = "redoDelayThreadCount";
     
     public static final String SIGNATURE_REGION_ID = "signatureRegionId";
+    
+    public static final String LOG_ALL_PROPERTIES = "logAllProperties";
     
     /**
      * Get the key value of some variable value from the system property.
