@@ -35,12 +35,13 @@ import com.alibaba.nacos.client.naming.event.InstancesChangeNotifier;
 import com.alibaba.nacos.client.naming.event.InstancesDiff;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxyDelegate;
+import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
 import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.InitUtils;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.PreInitUtils;
-import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
 import com.alibaba.nacos.client.utils.ValidatorUtils;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.JacksonUtils;
@@ -52,8 +53,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 import static com.alibaba.nacos.client.naming.selector.NamingSelectorFactory.getUniqueClusterString;
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
  * Nacos Naming Service.
@@ -98,6 +99,7 @@ public class NacosNamingService implements NamingService {
     private void init(Properties properties) throws NacosException {
         PreInitUtils.asyncPreLoadCostComponent();
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        NAMING_LOGGER.info(ParamUtil.getInputParameters(nacosClientProperties.asProperties()));
         ValidatorUtils.checkInitParam(nacosClientProperties);
         this.namespace = InitUtils.initNamespaceForNaming(nacosClientProperties);
         InitUtils.initSerialization();
