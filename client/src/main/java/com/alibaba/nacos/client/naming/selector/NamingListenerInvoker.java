@@ -23,6 +23,8 @@ import com.alibaba.nacos.client.selector.ListenerInvoker;
 
 import java.util.Objects;
 
+import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
+
 /**
  * Naming listener invoker.
  *
@@ -38,11 +40,17 @@ public class NamingListenerInvoker implements ListenerInvoker<NamingEvent> {
     
     @Override
     public void invoke(NamingEvent event) {
+        logInvoke(event);
         if (listener instanceof AbstractEventListener && ((AbstractEventListener) listener).getExecutor() != null) {
             ((AbstractEventListener) listener).getExecutor().execute(() -> listener.onEvent(event));
         } else {
             listener.onEvent(event);
         }
+    }
+    
+    private void logInvoke(NamingEvent event) {
+        NAMING_LOGGER.info("Invoke event groupName: {}, serviceName: {} to Listener: {}", event.getGroupName(),
+                event.getServiceName(), listener.toString());
     }
     
     @Override
