@@ -18,13 +18,13 @@ package com.alibaba.nacos.client.naming.cache;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
 import com.alibaba.nacos.client.naming.event.InstancesChangeEvent;
+import com.alibaba.nacos.client.naming.event.InstancesDiff;
 import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -32,12 +32,7 @@ import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -56,12 +51,15 @@ public class ServiceInfoHolder implements Closeable {
     
     private final boolean pushEmptyProtection;
     
+    private final InstancesDiffer instancesDiffer;
+    
     private String cacheDir;
     
     private String notifierEventScope;
     
     public ServiceInfoHolder(String namespace, String notifierEventScope, NacosClientProperties properties) {
         cacheDir = CacheDirUtil.initCacheDir(namespace, properties);
+        instancesDiffer = new InstancesDiffer();
         if (isLoadCacheAtStart(properties)) {
             this.serviceInfoMap = new ConcurrentHashMap<>(DiskCache.read(this.cacheDir));
         } else {
@@ -130,23 +128,24 @@ public class ServiceInfoHolder implements Closeable {
         ServiceInfo oldService = serviceInfoMap.get(serviceInfo.getKey());
         if (isEmptyOrErrorPush(serviceInfo)) {
             //empty or error push, just ignore
-            NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {}, " 
+            NAMING_LOGGER.warn("process service info but found empty or error push, serviceKey: {}, "
                     + "pushEmptyProtection: {}, hosts: {}", serviceKey, pushEmptyProtection, serviceInfo.getHosts());
             return oldService;
         }
         serviceInfoMap.put(serviceInfo.getKey(), serviceInfo);
-        boolean changed = isChangedServiceInfo(oldService, serviceInfo);
+        InstancesDiff diff = getServiceInfoDiff(oldService, serviceInfo);
         if (StringUtils.isBlank(serviceInfo.getJsonFromServer())) {
             serviceInfo.setJsonFromServer(JacksonUtils.toJson(serviceInfo));
         }
         MetricsMonitor.getServiceInfoMapSizeMonitor().set(serviceInfoMap.size());
-        if (changed) {
+        if (diff.hasDifferent()) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
+            
             if (!failoverReactor.isFailoverSwitch(serviceKey)) {
                 NotifyCenter.publishEvent(
                         new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
-                                serviceInfo.getClusters(), serviceInfo.getHosts()));
+                                serviceInfo.getClusters(), serviceInfo.getHosts(), diff));
             }
             DiskCache.write(serviceInfo, cacheDir);
         }
@@ -157,81 +156,8 @@ public class ServiceInfoHolder implements Closeable {
         return null == serviceInfo.getHosts() || (pushEmptyProtection && !serviceInfo.validate());
     }
     
-    /**
-     * isChangedServiceInfo.
-     *
-     * @param oldService old service data
-     * @param newService new service data
-     * @return
-     */
-    public boolean isChangedServiceInfo(ServiceInfo oldService, ServiceInfo newService) {
-        if (null == oldService) {
-            NAMING_LOGGER.info("init new ips({}) service: {} -> {}", newService.ipCount(), newService.getKey(),
-                    JacksonUtils.toJson(newService.getHosts()));
-            return true;
-        }
-        if (oldService.getLastRefTime() > newService.getLastRefTime()) {
-            NAMING_LOGGER.warn("out of date data received, old-t: {}, new-t: {}", oldService.getLastRefTime(),
-                    newService.getLastRefTime());
-            return false;
-        }
-        boolean changed = false;
-        Map<String, Instance> oldHostMap = new HashMap<>(oldService.getHosts().size());
-        for (Instance host : oldService.getHosts()) {
-            oldHostMap.put(host.toInetAddr(), host);
-        }
-        Map<String, Instance> newHostMap = new HashMap<>(newService.getHosts().size());
-        for (Instance host : newService.getHosts()) {
-            newHostMap.put(host.toInetAddr(), host);
-        }
-        
-        Set<Instance> modHosts = new HashSet<>();
-        Set<Instance> newHosts = new HashSet<>();
-        Set<Instance> remvHosts = new HashSet<>();
-        
-        List<Map.Entry<String, Instance>> newServiceHosts = new ArrayList<>(newHostMap.entrySet());
-        for (Map.Entry<String, Instance> entry : newServiceHosts) {
-            Instance host = entry.getValue();
-            String key = entry.getKey();
-            if (oldHostMap.containsKey(key) && !StringUtils.equals(host.toString(), oldHostMap.get(key).toString())) {
-                modHosts.add(host);
-                continue;
-            }
-            
-            if (!oldHostMap.containsKey(key)) {
-                newHosts.add(host);
-            }
-        }
-        
-        for (Map.Entry<String, Instance> entry : oldHostMap.entrySet()) {
-            Instance host = entry.getValue();
-            String key = entry.getKey();
-            if (newHostMap.containsKey(key)) {
-                continue;
-            }
-            
-            //add to remove hosts
-            remvHosts.add(host);
-        }
-        
-        if (newHosts.size() > 0) {
-            changed = true;
-            NAMING_LOGGER.info("new ips({}) service: {} -> {}", newHosts.size(), newService.getKey(),
-                    JacksonUtils.toJson(newHosts));
-        }
-        
-        if (remvHosts.size() > 0) {
-            changed = true;
-            NAMING_LOGGER.info("removed ips({}) service: {} -> {}", remvHosts.size(), newService.getKey(),
-                    JacksonUtils.toJson(remvHosts));
-        }
-        
-        if (modHosts.size() > 0) {
-            changed = true;
-            NAMING_LOGGER.info("modified ips({}) service: {} -> {}", modHosts.size(), newService.getKey(),
-                    JacksonUtils.toJson(modHosts));
-        }
-        return changed;
+    private InstancesDiff getServiceInfoDiff(ServiceInfo oldService, ServiceInfo newService) {
+        return instancesDiffer.doDiff(oldService, newService);
     }
     
     public String getCacheDir() {

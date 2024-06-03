@@ -36,21 +36,36 @@ public class PrometheusUtils {
     
     /**
      * Assemble arrayNodes for prometheus sd api.
-     *
      */
     public static void assembleArrayNodes(Set<Instance> targetSet, ArrayNode arrayNode) {
         Map<String, List<Instance>> groupingInsMap = targetSet.stream().collect(groupingBy(Instance::getClusterName));
         groupingInsMap.forEach((key, value) -> {
-            ObjectNode jsonNode = JacksonUtils.createEmptyJsonNode();
-            ArrayNode targetsNode = JacksonUtils.createEmptyArrayNode();
-            ObjectNode labelNode = JacksonUtils.createEmptyJsonNode();
-            value.forEach(e -> {
-                targetsNode.add(e.getIp() + ":" + e.getPort());
-            });
-            labelNode.put("__meta_clusterName", key);
-            jsonNode.replace("targets", targetsNode);
-            jsonNode.replace("labels", labelNode);
-            arrayNode.add(jsonNode);
+            for (Instance instance : value) {
+                ObjectNode jsonNode = assembleInstanceToArrayNode(key, instance);
+                arrayNode.add(jsonNode);
+            }
         });
+    }
+    
+    /**
+     * assemble instance to json node, and export metadata to label.
+     *
+     * @param clusterName the cluster name
+     * @param instance    instance info
+     */
+    private static ObjectNode assembleInstanceToArrayNode(String clusterName, Instance instance) {
+        
+        ArrayNode targetsNode = JacksonUtils.createEmptyArrayNode();
+        targetsNode.add(instance.getIp() + ":" + instance.getPort());
+        ObjectNode labelNode = JacksonUtils.createEmptyJsonNode();
+        //mark cluster name
+        labelNode.put("__meta_clusterName", clusterName);
+        //export metadata
+        Map<String, String> metadata = instance.getMetadata();
+        metadata.forEach(labelNode::put);
+        ObjectNode jsonNode = JacksonUtils.createEmptyJsonNode();
+        jsonNode.replace("targets", targetsNode);
+        jsonNode.replace("labels", labelNode);
+        return jsonNode;
     }
 }

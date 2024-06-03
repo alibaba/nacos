@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.naming.backups;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.common.utils.ReflectUtils;
@@ -30,7 +31,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -40,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -87,9 +86,9 @@ class FailoverReactorTest {
         when(failoverDataSource.getSwitch()).thenReturn(mockFailoverSwitch);
         Map<String, FailoverData> map = new HashMap<>();
         ServiceInfo serviceInfo = new ServiceInfo("a@@b");
+        serviceInfo.addHost(new Instance());
         map.put("a@@b", NamingFailoverData.newNamingFailoverData(serviceInfo));
         when(failoverDataSource.getFailoverData()).thenReturn(map);
-        when(holder.isChangedServiceInfo(any(), any())).thenReturn(true);
         // waiting refresh thread work
         TimeUnit.MILLISECONDS.sleep(5500);
         ServiceInfo actual = failoverReactor.getService("a@@b");
@@ -119,12 +118,12 @@ class FailoverReactorTest {
         failoverSwitchEnableField.set(failoverReactor, true);
         Map<String, ServiceInfo> map = new HashMap<>();
         ServiceInfo serviceInfo = new ServiceInfo("a@@b");
+        serviceInfo.addHost(new Instance());
         map.put("a@@b", serviceInfo);
         when(holder.getServiceInfoMap()).thenReturn(map);
         Field serviceMapField = FailoverReactor.class.getDeclaredField("serviceMap");
         serviceMapField.setAccessible(true);
         serviceMapField.set(failoverReactor, map);
-        when(holder.isChangedServiceInfo(any(), any())).thenReturn(true);
         // waiting refresh thread work
         TimeUnit.MILLISECONDS.sleep(5500);
         ServiceInfo actual = failoverReactor.getService("a@@b");
@@ -143,9 +142,6 @@ class FailoverReactorTest {
     @Test
     void testFailoverServiceCntMetricsClear()
             throws NoSuchMethodException, InvocationTargetException, IllegalAccessException, NoSuchFieldException {
-        Field field = FailoverReactor.class.getDeclaredField("meterMap");
-        field.setAccessible(true);
-        field.set(failoverReactor, Collections.singletonMap("a", null));
         Method method = FailoverReactor.class.getDeclaredMethod("failoverServiceCntMetricsClear");
         method.setAccessible(true);
         method.invoke(failoverReactor);

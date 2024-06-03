@@ -20,6 +20,7 @@ package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.env.SourceType;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -32,6 +33,7 @@ import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ParamUtilTest {
     
@@ -224,5 +226,30 @@ class ParamUtilTest {
     void testSimplyEnvNameNotOverLimit() {
         String expect = "test";
         assertEquals(expect, ParamUtil.simplyEnvNameIfOverLimit(expect));
+    }
+    
+    @Test
+    void testGetInputParametersWithFullMode() {
+        Properties properties = new Properties();
+        properties.setProperty("testKey", "testValue");
+        properties.setProperty(PropertyKeyConst.LOG_ALL_PROPERTIES, "true");
+        NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        String actual = ParamUtil.getInputParameters(clientProperties.asProperties());
+        assertTrue(actual.startsWith("Log nacos client init properties with Full mode, This mode is only used for debugging and troubleshooting."));
+        assertTrue(actual.contains("\ttestKey=testValue\n"));
+        Properties envProperties = clientProperties.getProperties(SourceType.ENV);
+        String envCaseKey = envProperties.stringPropertyNames().iterator().next();
+        String envCaseValue = envProperties.getProperty(envCaseKey);
+        assertTrue(actual.contains(String.format("\t%s=%s\n", envCaseKey, envCaseValue)));
+    }
+    
+    @Test
+    void testGetInputParameters() {
+        Properties properties = new Properties();
+        properties.setProperty("testKey", "testValue");
+        properties.setProperty(PropertyKeyConst.SERVER_ADDR, "localhost:8848");
+        NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        String actual = ParamUtil.getInputParameters(clientProperties.asProperties());
+        assertEquals("Nacos client key init properties: \n\tserverAddr=localhost:8848\n", actual);
     }
 }
