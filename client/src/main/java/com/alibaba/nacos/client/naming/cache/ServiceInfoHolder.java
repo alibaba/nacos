@@ -144,8 +144,8 @@ public class ServiceInfoHolder implements Closeable {
         if (diff.hasDifferent()) {
             NAMING_LOGGER.info("current ips:({}) service: {} -> {}", serviceInfo.ipCount(), serviceInfo.getKey(),
                     JacksonUtils.toJson(serviceInfo.getHosts()));
-
-if (!failoverReactor.isFailoverSwitch(serviceKey)) {
+            
+            if (!failoverReactor.isFailoverSwitch(serviceKey)) {
                 NotifyCenter.publishEvent(
                         new InstancesChangeEvent(notifierEventScope, serviceInfo.getName(), serviceInfo.getGroupName(),
                                 serviceInfo.getClusters(), serviceInfo.getHosts(), diff));
@@ -183,7 +183,7 @@ if (!failoverReactor.isFailoverSwitch(serviceKey)) {
                     newService.getLastRefTime());
             return instancesDiff;
         }
-
+        
         Map<String, Instance> oldHostMap = new HashMap<>(oldService.getHosts().size());
         for (Instance host : oldService.getHosts()) {
             oldHostMap.put(host.toInetAddr(), host);
