@@ -553,6 +553,9 @@ public class NacosNamingService implements NamingService {
     
     private void notifyIfSubscribed(String serviceName, String groupName, NamingSelectorWrapper wrapper) {
         if (changeNotifier.isSubscribed(groupName, serviceName)) {
+            NAMING_LOGGER.warn(
+                    "Duplicate subscribe for groupName: {}, serviceName: {}; directly use current cached to notify.",
+                    groupName, serviceName);
             ServiceInfo serviceInfo = serviceInfoHolder.getServiceInfo(serviceName, groupName, Constants.NULL);
             InstancesChangeEvent event = transferToEvent(serviceInfo);
             wrapper.notifyListener(event);
