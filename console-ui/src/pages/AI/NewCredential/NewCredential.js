@@ -92,7 +92,7 @@ class NewCredential extends React.Component {
     this.credentialId = credentialId;
     if (credentialId && mcptype === 'edit') {
       request({
-        url: `v3/console/cs/config`,
+        url: 'v3/console/cs/config',
         data: {
           dataId: credentialId,
           groupName: 'credentials',
@@ -115,15 +115,13 @@ class NewCredential extends React.Component {
           }
         },
       });
-    } else {
-      if (!window.monaco) {
+    } else if (!window.monaco) {
         window.importEditor(() => {
           self.initMoacoEditor();
         });
       } else {
         self.initMoacoEditor();
       }
-    }
     this.initFullScreenEvent();
   }
 

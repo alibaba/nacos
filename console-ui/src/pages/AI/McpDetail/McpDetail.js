@@ -4,6 +4,7 @@ import { getParams, request } from '../../../globalLib';
 import PropTypes from 'prop-types';
 import ShowTools from './ShowTools';
 import { generateUrl } from '../../../utils/nacosutil';
+
 const { Row, Col } = Grid;
 
 @ConfigProvider.config
@@ -176,24 +177,24 @@ class McpDetail extends React.Component {
           </div>
           {this.state.serverConfig?.protocol === 'stdio' && (
             <>
-              <Divider></Divider>
+              <Divider />
               <h2>Local Server Config</h2>
               <pre>{localServerConfig}</pre>
             </>
           )}
-          <Divider></Divider>
+          <Divider />
           <h2>{locale.credentialsName}</h2>
           <Table dataSource={credentialsTables}>
             <Table.Column title="Credential Id" dataIndex="id" />
           </Table>
 
-          <Divider></Divider>
+          <Divider />
           <h2>Tools</h2>
           <ShowTools
             locale={locale}
             serverConfig={this.state.serverConfig}
             getServerDetail={this.getServerDetail}
-            isPreview={true}
+            isPreview
           />
         </Loading>
       </div>
