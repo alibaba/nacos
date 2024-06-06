@@ -21,10 +21,10 @@ import com.alibaba.nacos.client.naming.backups.FailoverData;
 import com.alibaba.nacos.client.naming.backups.FailoverDataSource;
 import com.alibaba.nacos.client.naming.backups.FailoverSwitch;
 import com.alibaba.nacos.client.naming.backups.NamingFailoverData;
-import com.alibaba.nacos.client.utils.ConcurrentDiskUtil;
 import com.alibaba.nacos.client.naming.cache.DiskCache;
 import com.alibaba.nacos.client.naming.utils.CacheDirUtil;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
+import com.alibaba.nacos.client.utils.ConcurrentDiskUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.io.File;
@@ -51,16 +51,72 @@ public class DiskFailoverDataSource implements FailoverDataSource {
     
     private static final String FAILOVER_MODE_PARAM = "failover-mode";
     
-    private Map<String, FailoverData> serviceMap = new ConcurrentHashMap<>();
-    
     private final Map<String, String> switchParams = new ConcurrentHashMap<>();
+    
+    private Map<String, FailoverData> serviceMap = new ConcurrentHashMap<>();
     
     private String failoverDir;
     
     private long lastModifiedMillis = 0L;
     
+    private FailoverSwitch lastSwitch;
+    
     public DiskFailoverDataSource() {
         failoverDir = CacheDirUtil.getCacheDir() + FAILOVER_DIR;
+        this.lastSwitch = new FailoverSwitch(Boolean.FALSE);
+    }
+    
+    @Override
+    public FailoverSwitch getSwitch() {
+        try {
+            File switchFile = Paths.get(failoverDir, UtilAndComs.FAILOVER_SWITCH).toFile();
+            if (!switchFile.exists()) {
+                NAMING_LOGGER.debug("failover switch is not found, {}", switchFile.getName());
+                lastSwitch = new FailoverSwitch(Boolean.FALSE);
+                return new FailoverSwitch(Boolean.FALSE);
+            }
+            
+            long modified = switchFile.lastModified();
+            
+            if (lastModifiedMillis < modified) {
+                lastModifiedMillis = modified;
+                String failover = ConcurrentDiskUtil.getFileContent(switchFile.getPath(), Charset.defaultCharset().toString());
+                if (!StringUtils.isEmpty(failover)) {
+                    String[] lines = failover.split(DiskCache.getLineSeparator());
+                    
+                    for (String line : lines) {
+                        String line1 = line.trim();
+                        if (IS_FAILOVER_MODE.equals(line1)) {
+                            switchParams.put(FAILOVER_MODE_PARAM, Boolean.TRUE.toString());
+                            NAMING_LOGGER.info("failover-mode is on");
+                            new FailoverFileReader().run();
+                            lastSwitch = new FailoverSwitch(Boolean.TRUE);
+                            return new FailoverSwitch(Boolean.TRUE);
+                        } else if (NO_FAILOVER_MODE.equals(line1)) {
+                            switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
+                            NAMING_LOGGER.info("failover-mode is off");
+                            lastSwitch = new FailoverSwitch(Boolean.FALSE);
+                            return new FailoverSwitch(Boolean.FALSE);
+                        }
+                    }
+                }
+            }
+            return lastSwitch;
+            
+        } catch (Throwable e) {
+            NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
+            switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
+            lastSwitch = new FailoverSwitch(Boolean.FALSE);
+            return new FailoverSwitch(Boolean.FALSE);
+        }
+    }
+    
+    @Override
+    public Map<String, FailoverData> getFailoverData() {
+        if (Boolean.parseBoolean(switchParams.get(FAILOVER_MODE_PARAM))) {
+            return serviceMap;
+        }
+        return new ConcurrentHashMap<>(0);
     }
     
     class FailoverFileReader implements Runnable {
@@ -99,55 +155,6 @@ public class DiskFailoverDataSource implements FailoverDataSource {
                 serviceMap = domMap;
             }
         }
-    }
-    
-    @Override
-    public FailoverSwitch getSwitch() {
-        try {
-            File switchFile = Paths.get(failoverDir, UtilAndComs.FAILOVER_SWITCH).toFile();
-            if (!switchFile.exists()) {
-                NAMING_LOGGER.debug("failover switch is not found, {}", switchFile.getName());
-                return new FailoverSwitch(Boolean.FALSE);
-            }
-            
-            long modified = switchFile.lastModified();
-            
-            if (lastModifiedMillis < modified) {
-                lastModifiedMillis = modified;
-                String failover = ConcurrentDiskUtil
-                        .getFileContent(switchFile.getPath(), Charset.defaultCharset().toString());
-                if (!StringUtils.isEmpty(failover)) {
-                    String[] lines = failover.split(DiskCache.getLineSeparator());
-                    
-                    for (String line : lines) {
-                        String line1 = line.trim();
-                        if (IS_FAILOVER_MODE.equals(line1)) {
-                            switchParams.put(FAILOVER_MODE_PARAM, Boolean.TRUE.toString());
-                            NAMING_LOGGER.info("failover-mode is on");
-                            new FailoverFileReader().run();
-                            return new FailoverSwitch(Boolean.TRUE);
-                        } else if (NO_FAILOVER_MODE.equals(line1)) {
-                            switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
-                            NAMING_LOGGER.info("failover-mode is off");
-                        }
-                    }
-                }
-            }
-            
-        } catch (Throwable e) {
-            NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
-        }
-        
-        switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
-        return new FailoverSwitch(Boolean.FALSE);
-    }
-    
-    @Override
-    public Map<String, FailoverData> getFailoverData() {
-        if (Boolean.parseBoolean(switchParams.get(FAILOVER_MODE_PARAM))) {
-            return serviceMap;
-        }
-        return new ConcurrentHashMap<>(0);
     }
     
 }
