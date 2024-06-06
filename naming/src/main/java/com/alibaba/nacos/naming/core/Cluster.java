@@ -53,7 +53,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
      */
     private String sitegroup = StringUtils.EMPTY;
     
-    private int defCkport = 80;
+    private int defCkPort = 80;
     
     private int defIpPort = -1;
     
@@ -104,7 +104,7 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
     public int getDefIPPort() {
         // for compatibility with old entries
-        return defIpPort == -1 ? defCkport : defIpPort;
+        return defIpPort == -1 ? defCkPort : defIpPort;
     }
     
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
@@ -380,12 +380,12 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
         return getName().equals(((Cluster) obj).getName());
     }
     
-    public int getDefCkport() {
-        return defCkport;
+    public int getdefCkPort() {
+        return defCkPort;
     }
     
-    public void setDefCkport(int defCkport) {
-        this.defCkport = defCkport;
+    public void setdefCkPort(int defCkPort) {
+        this.defCkPort = defCkPort;
     }
     
     /**
@@ -401,11 +401,11 @@ public class Cluster extends com.alibaba.nacos.api.naming.pojo.Cluster implement
             setHealthChecker(cluster.getHealthChecker());
         }
         
-        if (defCkport != cluster.getDefCkport()) {
+        if (defCkPort != cluster.getdefCkPort()) {
             Loggers.SRV_LOG
-                    .info("[CLUSTER-UPDATE] {}:{}, defCkport: {} -> {}", getService().getName(), getName(), defCkport,
-                            cluster.getDefCkport());
-            defCkport = cluster.getDefCkport();
+                    .info("[CLUSTER-UPDATE] {}:{}, defCkPort: {} -> {}", getService().getName(), getName(), defCkPort,
+                            cluster.getdefCkPort());
+            defCkPort = cluster.getdefCkPort();
         }
         
         if (defIpPort != cluster.getDefIPPort()) {
