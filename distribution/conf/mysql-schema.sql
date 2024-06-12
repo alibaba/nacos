@@ -190,21 +190,27 @@ CREATE TABLE `tenant_info` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='tenant_info';
 
 CREATE TABLE `users` (
-	`username` varchar(50) NOT NULL PRIMARY KEY COMMENT 'username',
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+	`username` varchar(50) NOT NULL COMMENT 'username',
 	`password` varchar(500) NOT NULL COMMENT 'password',
-	`enabled` boolean NOT NULL COMMENT 'enabled'
+	`enabled` boolean NOT NULL COMMENT 'enabled',
+    PRIMARY KEY (`id`)
 );
 
 CREATE TABLE `roles` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
 	`username` varchar(50) NOT NULL COMMENT 'username',
 	`role` varchar(50) NOT NULL COMMENT 'role',
-	UNIQUE INDEX `idx_user_role` (`username` ASC, `role` ASC) USING BTREE
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `idx_user_role` (`username` ASC, `role` ASC) USING BTREE
 );
 
 CREATE TABLE `permissions` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
     `role` varchar(50) NOT NULL COMMENT 'role',
     `resource` varchar(128) NOT NULL COMMENT 'resource',
     `action` varchar(8) NOT NULL COMMENT 'action',
+    PRIMARY KEY (`id`),
     UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`) USING BTREE
 );
 
