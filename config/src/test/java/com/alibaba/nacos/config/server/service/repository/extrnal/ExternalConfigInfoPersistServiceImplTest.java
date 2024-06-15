@@ -34,7 +34,9 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.TrustedSqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -151,12 +153,24 @@ class ExternalConfigInfoPersistServiceImplTest {
         Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class), eq(generatedKeyHolder))).thenReturn(1);
         Mockito.when(jdbcTemplate.update(eq(externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                 TableConstant.CONFIG_TAGS_RELATION)
-                        .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(insertConfigIndoId),
+                        .insert(Arrays.asList(
+                                ColumnFunctionPair.withColumn("id"),
+                                ColumnFunctionPair.withColumn("tag_name"),
+                                ColumnFunctionPair.withColumn("tag_type"),
+                                ColumnFunctionPair.withColumn("data_id"),
+                                ColumnFunctionPair.withColumn("group_id"),
+                                ColumnFunctionPair.withColumn("tenant_id")))), eq(insertConfigIndoId),
                 eq("tag1"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
         Mockito.when(jdbcTemplate.update(eq(externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                 TableConstant.CONFIG_TAGS_RELATION)
-                        .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(insertConfigIndoId),
-                eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
+                        .insert(Arrays.asList(
+                                ColumnFunctionPair.withColumn("id"),
+                                ColumnFunctionPair.withColumn("tag_name"),
+                                ColumnFunctionPair.withColumn("tag_type"),
+                                ColumnFunctionPair.withColumn("data_id"),
+                                ColumnFunctionPair.withColumn("group_id"),
+                                ColumnFunctionPair.withColumn("tenant_id")))),
+                eq(insertConfigIndoId), eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
         String srcIp = "srcIp";
         String srcUser = "srcUser";
         //mock insert config info
@@ -170,13 +184,25 @@ class ExternalConfigInfoPersistServiceImplTest {
         Mockito.verify(jdbcTemplate, times(1)).update(eq(
                         externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                         TableConstant.CONFIG_TAGS_RELATION)
-                                .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(insertConfigIndoId),
-                eq("tag1"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
+                                .insert(Arrays.asList(
+                                        ColumnFunctionPair.withColumn("id"),
+                                        ColumnFunctionPair.withColumn("tag_name"),
+                                        ColumnFunctionPair.withColumn("tag_type"),
+                                        ColumnFunctionPair.withColumn("data_id"),
+                                        ColumnFunctionPair.withColumn("group_id"),
+                                        ColumnFunctionPair.withColumn("tenant_id")))),
+                eq(insertConfigIndoId), eq("tag1"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
         Mockito.verify(jdbcTemplate, times(1)).update(eq(
                         externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                         TableConstant.CONFIG_TAGS_RELATION)
-                                .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(insertConfigIndoId),
-                eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
+                                .insert(Arrays.asList(
+                                        ColumnFunctionPair.withColumn("id"),
+                                        ColumnFunctionPair.withColumn("tag_name"),
+                                        ColumnFunctionPair.withColumn("tag_type"),
+                                        ColumnFunctionPair.withColumn("data_id"),
+                                        ColumnFunctionPair.withColumn("group_id"),
+                                        ColumnFunctionPair.withColumn("tenant_id")))),
+                eq(insertConfigIndoId), eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
         
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
@@ -205,12 +231,24 @@ class ExternalConfigInfoPersistServiceImplTest {
         Mockito.when(jdbcTemplate.update(any(PreparedStatementCreator.class), eq(generatedKeyHolder))).thenReturn(1);
         Mockito.when(jdbcTemplate.update(eq(externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                 TableConstant.CONFIG_TAGS_RELATION)
-                        .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(insertConfigIndoId),
-                eq("tag1"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
+                        .insert(Arrays.asList(
+                                ColumnFunctionPair.withColumn("id"),
+                                ColumnFunctionPair.withColumn("tag_name"),
+                                ColumnFunctionPair.withColumn("tag_type"),
+                                ColumnFunctionPair.withColumn("data_id"),
+                                ColumnFunctionPair.withColumn("group_id"),
+                                ColumnFunctionPair.withColumn("tenant_id")))),
+                eq(insertConfigIndoId), eq("tag1"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
         Mockito.when(jdbcTemplate.update(eq(externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                 TableConstant.CONFIG_TAGS_RELATION)
-                        .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(insertConfigIndoId),
-                eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
+                        .insert(Arrays.asList(
+                                ColumnFunctionPair.withColumn("id"),
+                                ColumnFunctionPair.withColumn("tag_name"),
+                                ColumnFunctionPair.withColumn("tag_type"),
+                                ColumnFunctionPair.withColumn("data_id"),
+                                ColumnFunctionPair.withColumn("group_id"),
+                                ColumnFunctionPair.withColumn("tenant_id")))),
+                eq(insertConfigIndoId), eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
         String srcIp = "srcIp";
         String srcUser = "srcUser";
         //mock insert config info
@@ -224,13 +262,25 @@ class ExternalConfigInfoPersistServiceImplTest {
         Mockito.verify(jdbcTemplate, times(1)).update(eq(
                         externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                         TableConstant.CONFIG_TAGS_RELATION)
-                                .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(insertConfigIndoId),
-                eq("tag1"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
+                                .insert(Arrays.asList(
+                                        ColumnFunctionPair.withColumn("id"),
+                                        ColumnFunctionPair.withColumn("tag_name"),
+                                        ColumnFunctionPair.withColumn("tag_type"),
+                                        ColumnFunctionPair.withColumn("data_id"),
+                                        ColumnFunctionPair.withColumn("group_id"),
+                                        ColumnFunctionPair.withColumn("tenant_id")))),
+                eq(insertConfigIndoId), eq("tag1"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
         Mockito.verify(jdbcTemplate, times(1)).update(eq(
                         externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                         TableConstant.CONFIG_TAGS_RELATION)
-                                .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(insertConfigIndoId),
-                eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
+                                .insert(Arrays.asList(
+                                        ColumnFunctionPair.withColumn("id"),
+                                        ColumnFunctionPair.withColumn("tag_name"),
+                                        ColumnFunctionPair.withColumn("tag_type"),
+                                        ColumnFunctionPair.withColumn("data_id"),
+                                        ColumnFunctionPair.withColumn("group_id"),
+                                        ColumnFunctionPair.withColumn("tenant_id")))),
+                eq(insertConfigIndoId), eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
         
         //expect insert history info
         Mockito.verify(historyConfigInfoPersistService, times(1))
@@ -301,9 +351,20 @@ class ExternalConfigInfoPersistServiceImplTest {
         String srcUser = "srcUser";
         //mock update config info
         Mockito.when(jdbcTemplate.update(eq(externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
-                                TableConstant.CONFIG_INFO)
-                        .update(Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use", "effect",
-                                "type", "c_schema", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"))),
+                        TableConstant.CONFIG_INFO).update(Arrays.asList(
+                                ColumnFunctionPair.withColumn("content"),
+                                ColumnFunctionPair.withColumn("md5"),
+                                ColumnFunctionPair.withColumn("src_ip"),
+                                ColumnFunctionPair.withColumn("src_user"),
+                                ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP),
+                                ColumnFunctionPair.withColumn("app_name"),
+                                ColumnFunctionPair.withColumn("c_desc"),
+                                ColumnFunctionPair.withColumn("c_use"),
+                                ColumnFunctionPair.withColumn("effect"),
+                                ColumnFunctionPair.withColumn("type"),
+                                ColumnFunctionPair.withColumn("c_schema"),
+                                ColumnFunctionPair.withColumn("encrypted_data_key")),
+                        Arrays.asList("data_id", "group_id", "tenant_id"))),
                 eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), any(), eq(configInfoWrapperOld.getAppName()),
                 eq(configAdvanceInfo.get("desc")), eq(configAdvanceInfo.get("use")), eq(configAdvanceInfo.get("effect")),
                 eq(configAdvanceInfo.get("type")), eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(configInfo.getDataId()),
@@ -312,8 +373,14 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock insert config tags.
         Mockito.when(jdbcTemplate.update(eq(externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                 TableConstant.CONFIG_TAGS_RELATION)
-                        .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(12345678765L), anyString(),
-                eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
+                        .insert(Arrays.asList(
+                                ColumnFunctionPair.withColumn("id"),
+                                ColumnFunctionPair.withColumn("tag_name"),
+                                ColumnFunctionPair.withColumn("tag_type"),
+                                ColumnFunctionPair.withColumn("data_id"),
+                                ColumnFunctionPair.withColumn("group_id"),
+                                ColumnFunctionPair.withColumn("tenant_id")))),
+                eq(12345678765L), anyString(), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
         
         //mock insert his config info
         Mockito.doNothing().when(historyConfigInfoPersistService)
@@ -326,12 +393,24 @@ class ExternalConfigInfoPersistServiceImplTest {
         Mockito.verify(jdbcTemplate, times(1)).update(eq(
                         externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                         TableConstant.CONFIG_TAGS_RELATION)
-                                .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))),
+                                .insert(Arrays.asList(
+                                        ColumnFunctionPair.withColumn("id"),
+                                        ColumnFunctionPair.withColumn("tag_name"),
+                                        ColumnFunctionPair.withColumn("tag_type"),
+                                        ColumnFunctionPair.withColumn("data_id"),
+                                        ColumnFunctionPair.withColumn("group_id"),
+                                        ColumnFunctionPair.withColumn("tenant_id")))),
                 eq(configInfoWrapperOld.getId()), eq("tag1"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
         Mockito.verify(jdbcTemplate, times(1)).update(eq(
                         externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                         TableConstant.CONFIG_TAGS_RELATION)
-                                .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))),
+                                .insert(Arrays.asList(
+                                        ColumnFunctionPair.withColumn("id"),
+                                        ColumnFunctionPair.withColumn("tag_name"),
+                                        ColumnFunctionPair.withColumn("tag_type"),
+                                        ColumnFunctionPair.withColumn("data_id"),
+                                        ColumnFunctionPair.withColumn("group_id"),
+                                        ColumnFunctionPair.withColumn("tenant_id")))),
                 eq(configInfoWrapperOld.getId()), eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
         
         //expect insert history info
@@ -343,7 +422,6 @@ class ExternalConfigInfoPersistServiceImplTest {
     
     @Test
     void testInsertOrUpdateCasOfUpdateConfigSuccess() {
-        
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "tag1,tag2");
         configAdvanceInfo.put("desc", "desc11");
@@ -379,15 +457,21 @@ class ExternalConfigInfoPersistServiceImplTest {
         String srcUser = "srcUser";
         //mock update config info cas
         Mockito.when(jdbcTemplate.update(anyString(), eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp),
-                eq(srcUser), any(Timestamp.class), eq(configInfoWrapperOld.getAppName()), eq(configAdvanceInfo.get("desc")),
+                eq(srcUser), eq(configInfoWrapperOld.getAppName()), eq(configAdvanceInfo.get("desc")),
                 eq(configAdvanceInfo.get("use")), eq(configAdvanceInfo.get("effect")), eq(configAdvanceInfo.get("type")),
                 eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant), eq(casMd5))).thenReturn(1);
         
         //mock insert config tags.
         Mockito.when(jdbcTemplate.update(eq(externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                 TableConstant.CONFIG_TAGS_RELATION)
-                        .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(configInfoWrapperOld.getId()),
-                anyString(), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
+                        .insert(Arrays.asList(
+                                ColumnFunctionPair.withColumn("id"),
+                                ColumnFunctionPair.withColumn("tag_name"),
+                                ColumnFunctionPair.withColumn("tag_type"),
+                                ColumnFunctionPair.withColumn("data_id"),
+                                ColumnFunctionPair.withColumn("group_id"),
+                                ColumnFunctionPair.withColumn("tenant_id")))),
+                eq(configInfoWrapperOld.getId()), anyString(), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
         
         //mock insert his config info
         Mockito.doNothing().when(historyConfigInfoPersistService)
@@ -398,7 +482,7 @@ class ExternalConfigInfoPersistServiceImplTest {
         //expect update config cas
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq(configInfoWrapperOld.getAppName()), eq(configAdvanceInfo.get("desc")),
+                        eq(configInfoWrapperOld.getAppName()), eq(configAdvanceInfo.get("desc")),
                         eq(configAdvanceInfo.get("use")), eq(configAdvanceInfo.get("effect")), eq(configAdvanceInfo.get("type")),
                         eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant), eq(casMd5));
         
@@ -406,12 +490,24 @@ class ExternalConfigInfoPersistServiceImplTest {
         Mockito.verify(jdbcTemplate, times(1)).update(eq(
                         externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                         TableConstant.CONFIG_TAGS_RELATION)
-                                .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))),
+                                .insert(Arrays.asList(
+                                        ColumnFunctionPair.withColumn("id"),
+                                        ColumnFunctionPair.withColumn("tag_name"),
+                                        ColumnFunctionPair.withColumn("tag_type"),
+                                        ColumnFunctionPair.withColumn("data_id"),
+                                        ColumnFunctionPair.withColumn("group_id"),
+                                        ColumnFunctionPair.withColumn("tenant_id")))),
                 eq(configInfoWrapperOld.getId()), eq("tag1"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
         Mockito.verify(jdbcTemplate, times(1)).update(eq(
                         externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                         TableConstant.CONFIG_TAGS_RELATION)
-                                .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))),
+                                .insert(Arrays.asList(
+                                        ColumnFunctionPair.withColumn("id"),
+                                        ColumnFunctionPair.withColumn("tag_name"),
+                                        ColumnFunctionPair.withColumn("tag_type"),
+                                        ColumnFunctionPair.withColumn("data_id"),
+                                        ColumnFunctionPair.withColumn("group_id"),
+                                        ColumnFunctionPair.withColumn("tenant_id")))),
                 eq(configInfoWrapperOld.getId()), eq("tag2"), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant));
         
         //expect insert history info
@@ -448,8 +544,6 @@ class ExternalConfigInfoPersistServiceImplTest {
         externalConfigInfoPersistService.createPsForInsertConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo, mockConnection,
                 configInfoMapper);
         Mockito.verify(preparedStatement, times(14)).setString(anyInt(), anyString());
-        Mockito.verify(preparedStatement, times(2)).setTimestamp(anyInt(), any(Timestamp.class));
-        
     }
     
     @Test

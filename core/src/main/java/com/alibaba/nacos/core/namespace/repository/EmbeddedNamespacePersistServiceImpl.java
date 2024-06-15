@@ -29,7 +29,9 @@ import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.TrustedSqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
@@ -70,20 +72,23 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
         NotifyCenter.registerToSharePublisher(DerbyImportEvent.class);
     }
-    
+
     @Override
     public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResource, final long time) {
-        
+                                       String createResource) {
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper.insert(Arrays
-                .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
-                        "gmt_modified"));
-        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResource, time, time};
-        
+                .asList(
+                        ColumnFunctionPair.withColumn("kp"),
+                        ColumnFunctionPair.withColumn("tenant_id"),
+                        ColumnFunctionPair.withColumn("tenant_name"),
+                        ColumnFunctionPair.withColumn("tenant_desc"),
+                        ColumnFunctionPair.withColumn("create_source"),
+                        ColumnFunctionPair.withColumnAndFunction("gmt_create", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP),
+                        ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP)));
+        final Object[] args = new Object[]{kp, tenantId, tenantName, tenantDesc, createResource};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
-        
         try {
             boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
@@ -110,15 +115,19 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     
     @Override
     public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
-        
+
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper
-                .update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"), Arrays.asList("kp", "tenant_id"));
-        final Object[] args = new Object[] {tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId};
-        
+                .update(Arrays.asList(
+                                ColumnFunctionPair.withColumn("tenant_name"),
+                                ColumnFunctionPair.withColumn("tenant_desc"),
+                                ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP)),
+                        Arrays.asList("kp", "tenant_id"));
+        final Object[] args = new Object[]{tenantName, tenantDesc, kp, tenantId};
+
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
-        
+
         try {
             boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {

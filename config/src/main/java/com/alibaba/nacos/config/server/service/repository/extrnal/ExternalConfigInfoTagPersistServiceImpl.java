@@ -35,7 +35,9 @@ import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.TrustedSqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoTagMapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -46,7 +48,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -122,14 +123,21 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         try {
             ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_TAG);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
             jt.update(configInfoTagMapper.insert(
-                            Arrays.asList("data_id", "group_id", "tenant_id", "tag_id", "app_name", "content", "md5", "src_ip",
-                                    "src_user", "gmt_create", "gmt_modified")), configInfo.getDataId(), configInfo.getGroup(),
-                    tenantTmp, tagTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time);
+                            Arrays.asList(
+                                    ColumnFunctionPair.withColumn("data_id"),
+                                    ColumnFunctionPair.withColumn("group_id"),
+                                    ColumnFunctionPair.withColumn("tenant_id"),
+                                    ColumnFunctionPair.withColumn("tag_id"),
+                                    ColumnFunctionPair.withColumn("app_name"),
+                                    ColumnFunctionPair.withColumn("content"),
+                                    ColumnFunctionPair.withColumn("md5"),
+                                    ColumnFunctionPair.withColumn("src_ip"),
+                                    ColumnFunctionPair.withColumn("src_user"),
+                                    ColumnFunctionPair.withColumnAndFunction("gmt_create", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP),
+                                    ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP))),
+                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser);
             return getTagOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
-            
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -183,13 +191,17 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_TAG);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
             jt.update(configInfoTagMapper.update(
-                            Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name"),
-                            Arrays.asList("data_id", "group_id", "tenant_id", "tag_id")), configInfo.getContent(), md5, srcIp,
-                    srcUser, time, appNameTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
+                            Arrays.asList(
+                                    ColumnFunctionPair.withColumn("content"),
+                                    ColumnFunctionPair.withColumn("md5"),
+                                    ColumnFunctionPair.withColumn("src_ip"),
+                                    ColumnFunctionPair.withColumn("src_user"),
+                                    ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP),
+                                    ColumnFunctionPair.withColumn("app_name")),
+                            Arrays.asList("data_id", "group_id", "tenant_id", "tag_id")),
+                    configInfo.getContent(), md5, srcIp, srcUser, appNameTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
             return getTagOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
-            
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -206,14 +218,11 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_TAG);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
             context.putUpdateParameter(FieldConstant.MD5, md5);
             context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
             context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-            context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
             context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
             
             context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());

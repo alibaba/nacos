@@ -19,15 +19,17 @@ package com.alibaba.nacos.config.server.service.capacity;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
+import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.TrustedSqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.GroupCapacityMapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -257,33 +259,33 @@ public class GroupCapacityPersistService {
     public boolean updateGroupCapacity(String group, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
         List<Object> argList = CollectionUtils.list();
-        List<String> columnList = CollectionUtils.list();
+        List<ColumnFunctionPair> columnAndFuncctionList = CollectionUtils.list();
         if (quota != null) {
-            columnList.add("quota");
+            columnAndFuncctionList.add(ColumnFunctionPair.withColumn("quota"));
             argList.add(quota);
         }
         if (maxSize != null) {
-            columnList.add("max_size");
+            columnAndFuncctionList.add(ColumnFunctionPair.withColumn("max_size"));
             argList.add(maxSize);
         }
         if (maxAggrCount != null) {
-            columnList.add("max_aggr_count");
+            columnAndFuncctionList.add(ColumnFunctionPair.withColumn("max_aggr_count"));
             argList.add(maxAggrCount);
         }
         if (maxAggrSize != null) {
-            columnList.add("max_aggr_size");
+            columnAndFuncctionList.add(ColumnFunctionPair.withColumn("max_aggr_size"));
             argList.add(maxAggrSize);
         }
-        columnList.add("gmt_modified");
+        columnAndFuncctionList.add(ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP));
         argList.add(TimeUtils.getCurrentTime());
         
         List<String> whereList = CollectionUtils.list();
         whereList.add("group_id");
         argList.add(group);
-        
+
         GroupCapacityMapper groupCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.GROUP_CAPACITY);
-        String sql = groupCapacityMapper.update(columnList, whereList);
+        String sql = groupCapacityMapper.update(columnAndFuncctionList, whereList);
         try {
             return jdbcTemplate.update(sql, argList.toArray()) == 1;
         } catch (CannotGetJdbcConnectionException e) {

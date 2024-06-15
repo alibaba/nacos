@@ -51,7 +51,6 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -115,7 +114,7 @@ class ExternalConfigInfoTagPersistServiceImplTest {
         configInfoStateWrapper.setLastModified(System.currentTimeMillis());
         configInfoStateWrapper.setId(234567890L);
         String tag = "tag123";
-        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[]{dataId, group, tenant, tag}),
                         eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenThrow(new EmptyResultDataAccessException(1))
                 .thenReturn(configInfoStateWrapper);
         String srcIp = "ip345678";
@@ -124,10 +123,10 @@ class ExternalConfigInfoTagPersistServiceImplTest {
         //verify insert to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(tag), eq(appName), eq(configInfo.getContent()),
-                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), any(Timestamp.class), any(Timestamp.class));
+                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
-        
+
     }
     
     @Test
@@ -152,7 +151,7 @@ class ExternalConfigInfoTagPersistServiceImplTest {
         ConfigOperateResult configOperateResult = externalConfigInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser);
         //verify update to be invoked
         Mockito.verify(jdbcTemplate, times(1))
-                .update(anyString(), eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), any(Timestamp.class),
+                .update(anyString(), eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(srcIp), eq(srcUser),
                         eq(appName), eq(dataId), eq(group), eq(tenant), eq(tag));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
@@ -184,8 +183,7 @@ class ExternalConfigInfoTagPersistServiceImplTest {
         //verify insert to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(tag), eq(appName), eq(configInfo.getContent()),
-                        eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), any(Timestamp.class));
+                        eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         
@@ -214,13 +212,13 @@ class ExternalConfigInfoTagPersistServiceImplTest {
         
         //mock cas update return 1
         Mockito.when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()),
-                eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
+                eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
                 eq(appName), eq(dataId), eq(group), eq(tenant), eq(tag), eq(configInfo.getMd5()))).thenReturn(1);
         ConfigOperateResult configOperateResult = externalConfigInfoTagPersistService.insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser);
         //verify update to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)),
-                        eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName), eq(dataId), eq(group), eq(tenant), eq(tag),
+                        eq(srcIp), eq(srcUser), eq(appName), eq(dataId), eq(group), eq(tenant), eq(tag),
                         eq(configInfo.getMd5()));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
@@ -253,11 +251,11 @@ class ExternalConfigInfoTagPersistServiceImplTest {
             assertEquals("state query throw exception", e.getMessage());
         }
         //mock get state return null,and execute add throw CannotGetJdbcConnectionException
-        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[]{dataId, group, tenant, tag}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
         Mockito.when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(tag), eq(appName), eq(configInfo.getContent()),
-                eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                any(Timestamp.class))).thenThrow(new CannotGetJdbcConnectionException("throw exception add config tag"));
+                        eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser)))
+                .thenThrow(new CannotGetJdbcConnectionException("throw exception add config tag"));
         try {
             externalConfigInfoTagPersistService.insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser);
             assertTrue(false);
@@ -269,7 +267,7 @@ class ExternalConfigInfoTagPersistServiceImplTest {
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, tag}),
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(configInfoStateWrapper);
         Mockito.when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()),
-                        eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
+                        eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
                         eq(appName), eq(dataId), eq(group), eq(tenant), eq(tag), eq(configInfo.getMd5())))
                 .thenThrow(new CannotGetJdbcConnectionException("throw exception update config tag"));
         try {

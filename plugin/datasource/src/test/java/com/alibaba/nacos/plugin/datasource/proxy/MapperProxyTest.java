@@ -17,6 +17,7 @@
 package com.alibaba.nacos.plugin.datasource.proxy;
 
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,22 +41,22 @@ public class MapperProxyTest {
             public String select(List<String> columns, List<String> where) {
                 return "select-test";
             }
-    
+
             @Override
-            public String insert(List<String> columns) {
+            public String insert(List<ColumnFunctionPair> columnFunctionPairs) {
                 return "insert-test";
             }
-    
+
             @Override
-            public String update(List<String> columns, List<String> where) {
+            public String update(List<ColumnFunctionPair> columnFunctionPairs, List<String> where) {
                 return "update-test";
             }
-    
+
             @Override
             public String delete(List<String> params) {
                 return "delete-test";
             }
-    
+
             @Override
             public String count(List<String> where) {
                 return "count-test";

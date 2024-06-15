@@ -73,7 +73,6 @@ public class ConfigInfoTagMapperByMySqlTest {
         String newMD5 = "newMD5";
         String srcIp = "1.1.1.1";
         Object srcUser = "nacos";
-        Object time = new Timestamp(System.currentTimeMillis());
         Object appNameTmp = "newAppName";
         Object desc = "description";
         Object use = "use";
@@ -85,7 +84,6 @@ public class ConfigInfoTagMapperByMySqlTest {
         context.putUpdateParameter(FieldConstant.MD5, newMD5);
         context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
         context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
         context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
         context.putUpdateParameter(FieldConstant.C_DESC, desc);
         context.putUpdateParameter(FieldConstant.C_USE, use);
@@ -107,12 +105,11 @@ public class ConfigInfoTagMapperByMySqlTest {
         MapperResult mapperResult = configInfoTagMapperByMySql.updateConfigInfo4TagCas(context);
         
         Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,"
+                "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = CURRENT_TIMESTAMP,"
                         + "app_name = ? WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND tag_id = ? AND "
                         + "(md5 = ? OR md5 IS NULL OR md5 = '')");
         Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
-                new Object[] {newContent, newMD5, srcIp, srcUser, time, appNameTmp, dataId, group, tenantId, tagId,
-                        md5});
+                new Object[]{newContent, newMD5, srcIp, srcUser, appNameTmp, dataId, group, tenantId, tagId, md5});
     }
     
     @Test

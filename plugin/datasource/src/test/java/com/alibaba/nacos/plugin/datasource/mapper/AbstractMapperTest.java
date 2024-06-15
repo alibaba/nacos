@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
+import com.alibaba.nacos.plugin.datasource.enums.TrustedSqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.impl.mysql.TenantInfoMapperByMySql;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,25 +39,48 @@ public class AbstractMapperTest {
         String sql = abstractMapper.select(Arrays.asList("id", "name"), Arrays.asList("id"));
         Assert.assertEquals(sql, "SELECT id,name FROM tenant_info WHERE id = ?");
     }
-    
+
     @Test
     public void testInsert() {
-        String sql = abstractMapper.insert(Arrays.asList("id", "name"));
-        Assert.assertEquals(sql, "INSERT INTO tenant_info(id, name) VALUES(?,?)");
+        String sql = abstractMapper.insert(Arrays.asList(
+                ColumnFunctionPair.withColumn("id"),
+                ColumnFunctionPair.withColumn("name")));
+        Assert.assertEquals(sql, "INSERT INTO tenant_info (id, name) VALUES (?, ?)");
     }
-    
+
+    @Test
+    public void testInsertWithFunction() {
+        String sql = abstractMapper.insert(Arrays.asList(
+                ColumnFunctionPair.withColumn("id"),
+                ColumnFunctionPair.withColumn("name"),
+                ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP)));
+        Assert.assertEquals(sql, "INSERT INTO tenant_info (id, name, gmt_modified) VALUES (?, ?, CURRENT_TIMESTAMP)");
+    }
+
     @Test
     public void testUpdate() {
-        String sql = abstractMapper.update(Arrays.asList("id", "name"), Arrays.asList("id"));
-        Assert.assertEquals(sql, "UPDATE tenant_info SET id = ?,name = ? WHERE id = ?");
+        String sql = abstractMapper.update(Arrays.asList(
+                ColumnFunctionPair.withColumn("id"),
+                ColumnFunctionPair.withColumn("name")), Arrays.asList("id"));
+        Assert.assertEquals(sql, "UPDATE tenant_info SET id = ?, name = ? WHERE id = ?");
     }
-    
+
+    @Test
+    public void testUpdateWithFunction() {
+        String sql = abstractMapper.update(Arrays.asList(
+                        ColumnFunctionPair.withColumn("id"),
+                        ColumnFunctionPair.withColumn("name"),
+                        ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP)),
+                Arrays.asList("id"));
+        Assert.assertEquals(sql, "UPDATE tenant_info SET id = ?, name = ?, gmt_modified = CURRENT_TIMESTAMP WHERE id = ?");
+    }
+
     @Test
     public void testDelete() {
         String sql = abstractMapper.delete(Arrays.asList("id"));
         Assert.assertEquals(sql, "DELETE FROM tenant_info WHERE id = ? ");
     }
-    
+
     @Test
     public void testCount() {
         String sql = abstractMapper.count(Arrays.asList("id"));

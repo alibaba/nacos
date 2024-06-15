@@ -80,8 +80,7 @@ class EmbeddedNamespacePersistServiceTest {
         when(databaseOperate.update(anyList())).thenReturn(true);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         
-        embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, createRes,
-                System.currentTimeMillis());
+        embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, createRes);
         
         verify(databaseOperate).update(anyList());
     }
@@ -96,10 +95,9 @@ class EmbeddedNamespacePersistServiceTest {
         String createRes = "nacos";
         when(databaseOperate.update(anyList())).thenReturn(false);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
-        
+
         assertThrows(NacosRuntimeException.class,
-                () -> embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, createRes,
-                        System.currentTimeMillis()));
+                () -> embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, createRes));
         
         verify(databaseOperate).update(anyList());
     }

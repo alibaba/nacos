@@ -35,7 +35,9 @@ import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.TrustedSqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoBetaMapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -46,7 +48,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
@@ -94,15 +95,23 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
             jt.update(configInfoBetaMapper.insert(
-                            Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips",
-                                    "src_ip", "src_user", "gmt_create", "gmt_modified", "encrypted_data_key")),
+                            Arrays.asList(
+                                    ColumnFunctionPair.withColumn("data_id"),
+                                    ColumnFunctionPair.withColumn("group_id"),
+                                    ColumnFunctionPair.withColumn("tenant_id"),
+                                    ColumnFunctionPair.withColumn("app_name"),
+                                    ColumnFunctionPair.withColumn("content"),
+                                    ColumnFunctionPair.withColumn("md5"),
+                                    ColumnFunctionPair.withColumn("beta_ips"),
+                                    ColumnFunctionPair.withColumn("src_ip"),
+                                    ColumnFunctionPair.withColumn("src_user"),
+                                    ColumnFunctionPair.withColumnAndFunction("gmt_create", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP),
+                                    ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP),
+                                    ColumnFunctionPair.withColumn("encrypted_data_key"))),
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5,
-                    betaIps, srcIp, srcUser, time, time, encryptedDataKey);
+                    betaIps, srcIp, srcUser, encryptedDataKey);
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
-            
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -117,7 +126,6 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                 configInfo.getGroup(), configInfo.getTenant());
         if (configInfo4BetaState == null) {
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
-            
         } else {
             return updateConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         }
@@ -165,15 +173,20 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
             jt.update(configInfoBetaMapper.update(
-                            Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified", "app_name",
-                                    "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
-                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp, encryptedDataKey,
+                            Arrays.asList(
+                                    ColumnFunctionPair.withColumn("content"),
+                                    ColumnFunctionPair.withColumn("md5"),
+                                    ColumnFunctionPair.withColumn("beta_ips"),
+                                    ColumnFunctionPair.withColumn("src_ip"),
+                                    ColumnFunctionPair.withColumn("src_user"),
+                                    ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP),
+                                    ColumnFunctionPair.withColumn("app_name"),
+                                    ColumnFunctionPair.withColumn("encrypted_data_key")),
+                            Arrays.asList("data_id", "group_id", "tenant_id")),
+                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, appNameTmp, encryptedDataKey,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
-            
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -214,15 +227,13 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
+
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
             context.putUpdateParameter(FieldConstant.MD5, md5);
             context.putUpdateParameter(FieldConstant.BETA_IPS, betaIps);
             context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
             context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-            context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
             context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
             
             context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());

@@ -21,7 +21,6 @@ import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.exception.NJdbcException;
-import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,17 +44,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ExternalNamespacePersistServiceTest {
-    
-    @Mock
-    private DatabaseOperate databaseOperate;
-    
+
     @Mock
     private DataSourceService dataSourceService;
     
@@ -86,14 +81,12 @@ class ExternalNamespacePersistServiceTest {
         String namespaceName = "namespaceName";
         String namespaceDesc = "namespaceDesc";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
-        externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos",
-                System.currentTimeMillis());
+        externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos");
         
-        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(), anyLong())).thenThrow(
+        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenThrow(
                 new NJdbcException("test"));
         assertThrows(DataAccessException.class,
-                () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos",
-                        System.currentTimeMillis()));
+                () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos"));
         
     }
     
@@ -117,8 +110,8 @@ class ExternalNamespacePersistServiceTest {
         String namespaceDesc = "namespaceDesc";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc);
-        
-        when(jt.update(anyString(), anyString(), anyString(), anyLong(), anyString(), anyString())).thenThrow(new NJdbcException("test"));
+
+        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString())).thenThrow(new NJdbcException("test"));
         assertThrows(DataAccessException.class,
                 () -> externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc));
     }

@@ -44,7 +44,6 @@ public interface ConfigInfoTagMapper extends Mapper {
         Object md5 = context.getUpdateParameter(FieldConstant.MD5);
         Object srcIp = context.getUpdateParameter(FieldConstant.SRC_IP);
         Object srcUser = context.getUpdateParameter(FieldConstant.SRC_USER);
-        Object gmtModified = context.getUpdateParameter(FieldConstant.GMT_MODIFIED);
         Object appName = context.getUpdateParameter(FieldConstant.APP_NAME);
         
         Object dataId = context.getWhereParameter(FieldConstant.DATA_ID);
@@ -53,10 +52,10 @@ public interface ConfigInfoTagMapper extends Mapper {
         Object tagId = context.getWhereParameter(FieldConstant.TAG_ID);
         Object oldMd5 = context.getWhereParameter(FieldConstant.MD5);
         String sql =
-                "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
+                "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = CURRENT_TIMESTAMP,app_name = ? "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND tag_id = ? AND (md5 = ? OR md5 IS NULL OR md5 = '')";
         return new MapperResult(sql,
-                CollectionUtils.list(content, md5, srcIp, srcUser, gmtModified, appName, dataId, groupId, tenantId,
+                CollectionUtils.list(content, md5, srcIp, srcUser, appName, dataId, groupId, tenantId,
                         tagId, oldMd5));
     }
     

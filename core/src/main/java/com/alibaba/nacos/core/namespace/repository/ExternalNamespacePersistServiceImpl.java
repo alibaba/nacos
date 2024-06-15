@@ -24,7 +24,9 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.TrustedSqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.dao.DataAccessException;
@@ -67,16 +69,22 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
                 .getProperty(CommonConstant.NACOS_PLUGIN_DATASOURCE_LOG, Boolean.class, false);
         this.mapperManager = MapperManager.instance(isDataSourceLogEnable);
     }
-    
+
     @Override
-    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResource, final long time) {
+    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResource) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
                     .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.insert(Arrays
-                    .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
-                            "gmt_modified")), kp, tenantId, tenantName, tenantDesc, createResource, time, time);
+                            .asList(
+                                    ColumnFunctionPair.withColumn("kp"),
+                                    ColumnFunctionPair.withColumn("tenant_id"),
+                                    ColumnFunctionPair.withColumn("tenant_name"),
+                                    ColumnFunctionPair.withColumn("tenant_desc"),
+                                    ColumnFunctionPair.withColumn("create_source"),
+                                    ColumnFunctionPair.withColumnAndFunction("gmt_create", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP),
+                                    ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP))),
+                    kp, tenantId, tenantName, tenantDesc, createResource);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
@@ -100,8 +108,11 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
                     .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
-            jt.update(tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"),
-                    Arrays.asList("kp", "tenant_id")), tenantName, tenantDesc, System.currentTimeMillis(), kp,
+            jt.update(tenantInfoMapper.update(Arrays.asList(
+                                    ColumnFunctionPair.withColumn("tenant_name"),
+                                    ColumnFunctionPair.withColumn("tenant_desc"),
+                                    ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP)),
+                            Arrays.asList("kp", "tenant_id")), tenantName, tenantDesc, kp,
                     tenantId);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);

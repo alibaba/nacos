@@ -18,14 +18,16 @@ package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
+import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.TrustedSqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantCapacityMapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -238,35 +240,35 @@ public class TenantCapacityPersistService {
     public boolean updateTenantCapacity(String tenant, Integer quota, Integer maxSize, Integer maxAggrCount,
             Integer maxAggrSize) {
         List<Object> argList = CollectionUtils.list();
-        
-        List<String> columns = new ArrayList<>();
+
+        List<ColumnFunctionPair> columnAndFunctionPairs = new ArrayList<>();
         if (quota != null) {
-            columns.add("quota");
+            columnAndFunctionPairs.add(ColumnFunctionPair.withColumn("quota"));
             argList.add(quota);
         }
         if (maxSize != null) {
-            columns.add("max_size");
+            columnAndFunctionPairs.add(ColumnFunctionPair.withColumn("max_size"));
             argList.add(maxSize);
         }
         if (maxAggrCount != null) {
-            columns.add("max_aggr_count");
+            columnAndFunctionPairs.add(ColumnFunctionPair.withColumn("max_aggr_count"));
             argList.add(maxAggrCount);
         }
         if (maxAggrSize != null) {
-            columns.add("max_aggr_size");
+            columnAndFunctionPairs.add(ColumnFunctionPair.withColumn("max_aggr_size"));
             argList.add(maxAggrSize);
         }
-        columns.add("gmt_modified");
+        columnAndFunctionPairs.add(ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP));
         argList.add(TimeUtils.getCurrentTime());
         
         List<String> where = new ArrayList<>();
         where.add("tenant_id");
         
         argList.add(tenant);
-        
+
         TenantCapacityMapper tenantCapacityMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.TENANT_CAPACITY);
-        String sql = tenantCapacityMapper.update(columns, where);
+        String sql = tenantCapacityMapper.update(columnAndFunctionPairs, where);
         try {
             return jdbcTemplate.update(sql, argList.toArray()) == 1;
         } catch (CannotGetJdbcConnectionException e) {

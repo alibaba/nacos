@@ -122,8 +122,7 @@ public class NamespaceOperationService {
         }
         
         namespacePersistService
-                .insertTenantInfoAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc, DEFAULT_CREATE_SOURCE,
-                        System.currentTimeMillis());
+                .insertTenantInfoAtomic(DEFAULT_KP, namespaceId, namespaceName, namespaceDesc, DEFAULT_CREATE_SOURCE);
         return true;
     }
     

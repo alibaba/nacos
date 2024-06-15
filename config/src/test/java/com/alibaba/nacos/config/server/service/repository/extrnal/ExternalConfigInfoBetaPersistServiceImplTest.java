@@ -41,7 +41,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +49,6 @@ import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapper
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -129,8 +127,7 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
         //verify update to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq(configInfo.getAppName()), eq(configInfo.getEncryptedDataKey()), eq(dataId), eq(group),
-                        eq(tenant));
+                        eq(configInfo.getAppName()), eq(configInfo.getEncryptedDataKey()), eq(dataId), eq(group), eq(tenant));
     }
     
     @Test
@@ -165,8 +162,7 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
         //verify add to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(configInfo.getAppName()), eq(configInfo.getContent()),
-                        eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser), any(Timestamp.class), any(Timestamp.class),
-                        eq(configInfo.getEncryptedDataKey()));
+                        eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser), eq(configInfo.getEncryptedDataKey()));
         
     }
     
@@ -195,7 +191,7 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
         
         // mock update throw CannotGetJdbcConnectionException
         when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser),
-                any(Timestamp.class), eq(configInfo.getAppName()), eq(configInfo.getEncryptedDataKey()), eq(dataId), eq(group),
+                eq(configInfo.getAppName()), eq(configInfo.getEncryptedDataKey()), eq(dataId), eq(group),
                 eq(tenant))).thenThrow(new CannotGetJdbcConnectionException("mock fail"));
         //execute of update& expect.
         try {
@@ -210,7 +206,7 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
                 eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null);
         //mock add throw CannotGetJdbcConnectionException
         when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(configInfo.getAppName()), eq(configInfo.getContent()),
-                eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser), any(Timestamp.class), any(Timestamp.class),
+                eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser),
                 eq(configInfo.getEncryptedDataKey()))).thenThrow(new CannotGetJdbcConnectionException("mock fail add"));
         //execute of add& expect.
         try {
@@ -259,7 +255,7 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
         configInfo.setMd5("casMd5");
         //mock cas update
         when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)),
-                eq(betaIps), eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName), eq(dataId), eq(group), eq(tenant),
+                eq(betaIps), eq(srcIp), eq(srcUser), eq(appName), eq(dataId), eq(group), eq(tenant),
                 eq(configInfo.getMd5()))).thenReturn(1);
         
         ConfigOperateResult configOperateResult = externalConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp,
@@ -270,7 +266,7 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
         //verify cas update to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(betaIps),
-                        eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName), eq(dataId), eq(group), eq(tenant),
+                        eq(srcIp), eq(srcUser), eq(appName), eq(dataId), eq(group), eq(tenant),
                         eq(configInfo.getMd5()));
         
     }
@@ -307,8 +303,7 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
         //verify add to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(configInfo.getAppName()), eq(configInfo.getContent()),
-                        eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser), any(Timestamp.class), any(Timestamp.class),
-                        eq(configInfo.getEncryptedDataKey()));
+                        eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser), eq(configInfo.getEncryptedDataKey()));
         
     }
     
@@ -337,7 +332,7 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
         configInfo.setMd5("casMd5");
         // mock update throw CannotGetJdbcConnectionException
         when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)),
-                eq(betaIps), eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName), eq(dataId), eq(group), eq(tenant),
+                eq(betaIps), eq(srcIp), eq(srcUser), eq(appName), eq(dataId), eq(group), eq(tenant),
                 eq(configInfo.getMd5()))).thenThrow(new CannotGetJdbcConnectionException("mock fail"));
         //execute of update& expect.
         try {
@@ -353,7 +348,7 @@ class ExternalConfigInfoBetaPersistServiceImplTest {
         //mock add throw CannotGetJdbcConnectionException
         when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(configInfo.getAppName()), eq(configInfo.getContent()),
                 eq(MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE)), eq(betaIps), eq(srcIp), eq(srcUser),
-                any(Timestamp.class), any(Timestamp.class), eq(configInfo.getEncryptedDataKey()))).thenThrow(
+                eq(configInfo.getEncryptedDataKey()))).thenThrow(
                 new CannotGetJdbcConnectionException("mock fail add"));
         
         //execute of add& expect.

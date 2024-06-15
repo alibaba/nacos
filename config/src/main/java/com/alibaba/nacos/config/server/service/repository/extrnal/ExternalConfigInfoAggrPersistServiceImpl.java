@@ -31,7 +31,9 @@ import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.TrustedSqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -45,7 +47,6 @@ import org.springframework.transaction.TransactionException;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -91,28 +92,34 @@ public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
             String appName, final String content) {
         String appNameTmp = StringUtils.isBlank(appName) ? StringUtils.EMPTY : appName;
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
-        final Timestamp now = new Timestamp(System.currentTimeMillis());
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
         String select = configInfoAggrMapper.select(Collections.singletonList("content"),
                 Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
         String insert = configInfoAggrMapper.insert(
-                Arrays.asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified"));
-        String update = configInfoAggrMapper.update(Arrays.asList("content", "gmt_modified"),
+                Arrays.asList(
+                        ColumnFunctionPair.withColumn("data_id"),
+                        ColumnFunctionPair.withColumn("group_id"),
+                        ColumnFunctionPair.withColumn("tenant_id"),
+                        ColumnFunctionPair.withColumn("datum_id"),
+                        ColumnFunctionPair.withColumn("app_name"),
+                        ColumnFunctionPair.withColumn("content"),
+                        ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP)));
+        String update = configInfoAggrMapper.update(Arrays.asList(
+                        ColumnFunctionPair.withColumn("content"),
+                        ColumnFunctionPair.withColumnAndFunction("gmt_modified", TrustedSqlFunctionEnum.CURRENT_TIMESTAMP)),
                 Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
-        
         try {
             try {
-                String dbContent = jt.queryForObject(select, new Object[] {dataId, group, tenantTmp, datumId},
+                String dbContent = jt.queryForObject(select, new Object[]{dataId, group, tenantTmp, datumId},
                         String.class);
-                
                 if (dbContent != null && dbContent.equals(content)) {
                     return true;
                 } else {
-                    return jt.update(update, content, now, dataId, group, tenantTmp, datumId) > 0;
+                    return jt.update(update, content, dataId, group, tenantTmp, datumId) > 0;
                 }
             } catch (EmptyResultDataAccessException ex) { // no data, insert
-                return jt.update(insert, dataId, group, tenantTmp, datumId, appNameTmp, content, now) > 0;
+                return jt.update(insert, dataId, group, tenantTmp, datumId, appNameTmp, content) > 0;
             }
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);

@@ -17,6 +17,8 @@
 package com.alibaba.nacos.plugin.datasource.mapper;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 
 import java.util.List;
 
@@ -52,60 +54,72 @@ public abstract class AbstractMapper implements Mapper {
         appendWhereClause(where, sql);
         return sql.toString();
     }
-    
+
     @Override
-    public String insert(List<String> columns) {
-        StringBuilder sql = new StringBuilder();
-        String method = "INSERT INTO ";
-        sql.append(method);
-        sql.append(getTableName());
-        
-        int size = columns.size();
-        sql.append("(");
-        for (int i = 0; i < size; i++) {
-            sql.append(columns.get(i));
-            if (i != columns.size() - 1) {
-                sql.append(", ");
+    public String insert(List<ColumnFunctionPair> columnFunctionPairs) {
+        if (columnFunctionPairs == null || columnFunctionPairs.isEmpty()) {
+            throw new IllegalArgumentException("The columnFunctionPairs list is null or empty.");
+        }
+
+        StringBuilder columns = new StringBuilder();
+        StringBuilder values = new StringBuilder();
+
+        // Iterate and validate each ColumnFunctionPair object, building column names and ?/functions
+        for (int i = 0; i < columnFunctionPairs.size(); i++) {
+            ColumnFunctionPair pair = columnFunctionPairs.get(i);
+
+            if (pair == null || StringUtils.isBlank(pair.getColumn())) {
+                throw new IllegalArgumentException("The column is blank, creating SQL error.");
+            }
+
+            columns.append(pair.getColumn());
+            values.append(StringUtils.isBlank(pair.getFunction()) ? "?" : pair.getFunction());
+
+            if (i != columnFunctionPairs.size() - 1) {
+                columns.append(", ");
+                values.append(", ");
             }
         }
-        sql.append(") ");
-        
-        sql.append("VALUES");
-        sql.append("(");
-        for (int i = 0; i < size; i++) {
-            sql.append("?");
-            if (i != columns.size() - 1) {
-                sql.append(",");
-            }
-        }
-        sql.append(")");
-        return sql.toString();
+
+        // Construct SQL
+        return "INSERT INTO " + getTableName() + " ("
+                + columns + ") VALUES ("
+                + values + ")";
     }
-    
+
     @Override
-    public String update(List<String> columns, List<String> where) {
+    public String update(List<ColumnFunctionPair> columnFunctionPairs, List<String> where) {
+        if (columnFunctionPairs == null || columnFunctionPairs.isEmpty()) {
+            throw new IllegalArgumentException("The columnFunctionPairs list is null or empty.");
+        }
+
         StringBuilder sql = new StringBuilder();
         String method = "UPDATE ";
         sql.append(method);
         sql.append(getTableName()).append(" ").append("SET ");
-        
-        for (int i = 0; i < columns.size(); i++) {
-            sql.append(columns.get(i)).append(" = ").append("?");
-            if (i != columns.size() - 1) {
-                sql.append(",");
+
+        for (int i = 0; i < columnFunctionPairs.size(); i++) {
+            ColumnFunctionPair pair = columnFunctionPairs.get(i);
+            if (pair == null || StringUtils.isBlank(pair.getColumn())) {
+                throw new IllegalArgumentException("The column is blank, creating SQL error.");
+            }
+            sql.append(pair.getColumn()).append(" = ")
+                    .append(StringUtils.isBlank(pair.getFunction()) ? "?" : pair.getFunction());
+            if (i != columnFunctionPairs.size() - 1) {
+                sql.append(", ");
             }
         }
-        
+
         if (CollectionUtils.isEmpty(where)) {
             return sql.toString();
         }
-        
+
         sql.append(" ");
         appendWhereClause(where, sql);
-        
+
         return sql.toString();
     }
-    
+
     @Override
     public String delete(List<String> params) {
         StringBuilder sql = new StringBuilder();

@@ -38,6 +38,7 @@ import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.mapper.HistoryConfigInfoMapper;
+import com.alibaba.nacos.plugin.datasource.model.ColumnFunctionPair;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -95,15 +96,26 @@ public class EmbeddedHistoryConfigInfoPersistServiceImpl implements HistoryConfi
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         final String md5Tmp = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
-        
+
         HistoryConfigInfoMapper historyConfigInfoMapper = mapperManager.findMapper(
                 dataSourceService.getDataSourceType(), TableConstant.HIS_CONFIG_INFO);
         final String sql = historyConfigInfoMapper.insert(
-                Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
-                        "src_user", "gmt_modified", "op_type", "encrypted_data_key"));
-        final Object[] args = new Object[] {configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
+                Arrays.asList(
+                        ColumnFunctionPair.withColumn("id"),
+                        ColumnFunctionPair.withColumn("data_id"),
+                        ColumnFunctionPair.withColumn("group_id"),
+                        ColumnFunctionPair.withColumn("tenant_id"),
+                        ColumnFunctionPair.withColumn("app_name"),
+                        ColumnFunctionPair.withColumn("content"),
+                        ColumnFunctionPair.withColumn("md5"),
+                        ColumnFunctionPair.withColumn("src_ip"),
+                        ColumnFunctionPair.withColumn("src_user"),
+                        ColumnFunctionPair.withColumn("gmt_modified"),
+                        ColumnFunctionPair.withColumn("op_type"),
+                        ColumnFunctionPair.withColumn("encrypted_data_key")));
+        final Object[] args = new Object[]{configHistoryId, configInfo.getDataId(), configInfo.getGroup(), tenantTmp,
                 appNameTmp, configInfo.getContent(), md5Tmp, srcIp, srcUser, time, ops, encryptedDataKey};
-        
+
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
     
