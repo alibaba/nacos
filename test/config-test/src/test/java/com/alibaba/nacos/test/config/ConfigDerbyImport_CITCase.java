@@ -26,74 +26,32 @@ import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Data import integration tests.
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class ConfigDerbyImport_CITCase {
-    
-    @Autowired
-    private ApplicationContext context;
-    
-    @BeforeClass
-    public static void beforeClass() {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigDerbyImport_CITCase.class.getSimpleName());
-    }
-    
-    @Before
-    public void setUp() {
-        DynamicDataSource.getInstance().getDataSource().getJdbcTemplate().execute("TRUNCATE TABLE config_info");
-    }
-    
-    @Test()
-    public void testDerbyImport() throws Throwable {
-        DatabaseOperate operate = context.getBean(DatabaseOperate.class);
-        File file = DiskUtils.createTmpFile("derby_import" + System.currentTimeMillis(), ".tmp");
-        DiskUtils.writeFile(file, ByteUtils.toBytes(SQL_SCRIPT_CONTEXT), false);
-        try {
-            List<Integer> ids = operate.queryMany("SELECT id FROM config_info", new Object[]{}, Integer.class);
-            for (Integer each : ids) {
-                System.out.println("current id in table config_info contain: " + each);
-            }
-            CompletableFuture<RestResult<String>> future = operate.dataImport(file);
-            RestResult<String> result = future.join();
-            System.out.println(result);
-            Assert.assertTrue(result.ok());
-    
-            final String queryDataId = "people";
-            final String queryGroup = "DEFAULT_GROUP";
-            final String expectContent = "people.enable=true";
-    
-            ConfigInfoPersistService persistService = context.getBean(ConfigInfoPersistService.class);
-            ConfigInfo configInfo = persistService.findConfigInfo(queryDataId, queryGroup, "");
-            System.out.println(configInfo);
-            Assert.assertNotNull(configInfo);
-            Assert.assertEquals(queryDataId, configInfo.getDataId());
-            Assert.assertEquals(queryGroup, configInfo.getGroup());
-            Assert.assertEquals("", configInfo.getTenant());
-            Assert.assertEquals(expectContent, configInfo.getContent());
-        } finally {
-            DiskUtils.deleteQuietly(file);
-        }
-    }
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+class ConfigDerbyImport_CITCase {
     
     private static String SQL_SCRIPT_CONTEXT =
             "INSERT INTO `config_info` (`id`, `data_id`, `group_id`, `content`, `md5`, `gmt_create`, `gmt_modified`, `src_user`, `src_ip`, `app_name`, `tenant_id`, `c_desc`, `c_use`, `effect`, `type`, `c_schema`) VALUES (1,'boot-test','ALIBABA','dept:123123123\\ngroup:123123123','2ca50d002a7dabf81497f666a7967e15','2020-04-13 13:44:43','2020-04-30 10:45:21',NULL,'127.0.0.1','','',NULL,NULL,NULL,NULL,NULL);\n"
@@ -114,5 +72,50 @@ public class ConfigDerbyImport_CITCase {
                     + "INSERT INTO `config_info` (`id`, `data_id`, `group_id`, `content`, `md5`, `gmt_create`, `gmt_modified`, `src_user`, `src_ip`, `app_name`, `tenant_id`, `c_desc`, `c_use`, `effect`, `type`, `c_schema`) VALUES (17,'develop_test','DEFAULT_GROUP','develop_test=develop_testdevelop_testdevelop_testdevelop_test','cc4ffd21bdd54362b84d629fd243e050','2020-04-13 13:51:48','2020-04-13 13:51:48',NULL,'127.0.0.1','','188c49ac-d06f-4abe-9d05-7bb87185ac34',NULL,NULL,NULL,'properties',NULL);\n"
                     + "INSERT INTO `config_info` (`id`, `data_id`, `group_id`, `content`, `md5`, `gmt_create`, `gmt_modified`, `src_user`, `src_ip`, `app_name`, `tenant_id`, `c_desc`, `c_use`, `effect`, `type`, `c_schema`) VALUES (33,'application.properties','DEFAULT_GROUP','name=liaochuntao is man','17581188a1cdc684721dde500c693c07','2020-04-30 10:45:21','2020-04-30 10:45:21',NULL,'127.0.0.1','','',NULL,NULL,NULL,'properties',NULL);\n"
                     + "\n";
+    
+    @Autowired
+    private ApplicationContext context;
+    
+    @BeforeAll
+    static void beforeClass() {
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigDerbyImport_CITCase.class.getSimpleName());
+    }
+    
+    @BeforeEach
+    void setUp() {
+        DynamicDataSource.getInstance().getDataSource().getJdbcTemplate().execute("TRUNCATE TABLE config_info");
+    }
+    
+    @Test
+    void testDerbyImport() throws Throwable {
+        DatabaseOperate operate = context.getBean(DatabaseOperate.class);
+        File file = DiskUtils.createTmpFile("derby_import" + System.currentTimeMillis(), ".tmp");
+        DiskUtils.writeFile(file, ByteUtils.toBytes(SQL_SCRIPT_CONTEXT), false);
+        try {
+            List<Integer> ids = operate.queryMany("SELECT id FROM config_info", new Object[] {}, Integer.class);
+            for (Integer each : ids) {
+                System.out.println("current id in table config_info contain: " + each);
+            }
+            CompletableFuture<RestResult<String>> future = operate.dataImport(file);
+            RestResult<String> result = future.join();
+            System.out.println(result);
+            assertTrue(result.ok());
+            
+            final String queryDataId = "people";
+            final String queryGroup = "DEFAULT_GROUP";
+            final String expectContent = "people.enable=true";
+            
+            ConfigInfoPersistService persistService = context.getBean(ConfigInfoPersistService.class);
+            ConfigInfo configInfo = persistService.findConfigInfo(queryDataId, queryGroup, "");
+            System.out.println(configInfo);
+            assertNotNull(configInfo);
+            assertEquals(queryDataId, configInfo.getDataId());
+            assertEquals(queryGroup, configInfo.getGroup());
+            assertEquals("", configInfo.getTenant());
+            assertEquals(expectContent, configInfo.getContent());
+        } finally {
+            DiskUtils.deleteQuietly(file);
+        }
+    }
     
 }

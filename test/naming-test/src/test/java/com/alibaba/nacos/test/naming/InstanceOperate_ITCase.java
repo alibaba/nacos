@@ -17,9 +17,9 @@
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.Nacos;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * Created by wangtong.wt on 2018/6/20.
@@ -27,9 +27,9 @@ import org.springframework.test.context.junit4.SpringRunner;
  * @author wangtong.wt
  * @date 2018/6/20
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class InstanceOperate_ITCase extends AbstractInstanceOperate_ITCase {
-
+    
 }

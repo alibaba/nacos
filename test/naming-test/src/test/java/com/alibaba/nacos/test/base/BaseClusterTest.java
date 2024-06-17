@@ -24,16 +24,16 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
-import com.alibaba.nacos.core.persistence.DistributedDatabaseOperateImpl;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
+import com.alibaba.nacos.core.persistence.DistributedDatabaseOperateImpl;
+import com.alibaba.nacos.persistence.model.event.RaftDbErrorEvent;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.DiskUtils;
 import com.alibaba.nacos.sys.utils.InetUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -57,18 +57,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class BaseClusterTest extends HttpClient4Test {
     
+    protected static final AtomicBoolean[] FINISHED = new AtomicBoolean[] {new AtomicBoolean(false), new AtomicBoolean(false),
+            new AtomicBoolean(false)};
+    
     private static final Logger LOGGER = LoggerFactory.getLogger(BaseClusterTest.class);
+    
+    protected static final NacosRestTemplate NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(LOGGER);
     
     protected static NamingService inaming7;
     
     protected static NamingService inaming8;
     
     protected static NamingService inaming9;
-    
-    protected static final NacosRestTemplate NACOS_REST_TEMPLATE = HttpClientBeanHolder.getNacosRestTemplate(LOGGER);
-    
-    protected static final AtomicBoolean[] FINISHED = new AtomicBoolean[] {new AtomicBoolean(false),
-            new AtomicBoolean(false), new AtomicBoolean(false)};
     
     protected static Map<String, ConfigurableApplicationContext> applications = new HashMap<>();
     
@@ -93,8 +93,8 @@ public class BaseClusterTest extends HttpClient4Test {
         });
     }
     
-    @BeforeClass
-    public static void before() throws Exception {
+    @BeforeAll
+    static void before() throws Exception {
         
         CountDownLatch latch = new CountDownLatch(3);
         
@@ -142,8 +142,8 @@ public class BaseClusterTest extends HttpClient4Test {
         TimeUnit.SECONDS.sleep(20L);
     }
     
-    @AfterClass
-    public static void after() throws Exception {
+    @AfterAll
+    static void after() throws Exception {
         CountDownLatch latch = new CountDownLatch(applications.size());
         for (ConfigurableApplicationContext context : applications.values()) {
             new Thread(() -> {
@@ -177,15 +177,14 @@ public class BaseClusterTest extends HttpClient4Test {
                 Map<String, Object> properties = new HashMap<>();
                 properties.put("server.port", "884" + (7 + index));
                 properties.put("nacos.home", path);
-                properties.put("nacos.logs.path",
-                        Paths.get(System.getProperty("user.home"), "nacos-" + index, "/logs/").toString());
+                properties.put("nacos.logs.path", Paths.get(System.getProperty("user.home"), "nacos-" + index, "/logs/").toString());
                 properties.put("spring.jmx.enabled", false);
                 properties.put("nacos.core.snowflake.worker-id", index + 1);
                 MapPropertySource propertySource = new MapPropertySource("nacos_cluster_test", properties);
                 ConfigurableEnvironment environment = new StandardServletEnvironment();
                 environment.getPropertySources().addFirst(propertySource);
-                SpringApplication cluster = new SpringApplicationBuilder(cls).web(WebApplicationType.SERVLET)
-                        .environment(environment).properties(clusterInfo).properties("embeddedStorage=true").build();
+                SpringApplication cluster = new SpringApplicationBuilder(cls).web(WebApplicationType.SERVLET).environment(environment)
+                        .properties(clusterInfo).properties("embeddedStorage=true").build();
                 
                 ConfigurableApplicationContext context = cluster.run();
                 

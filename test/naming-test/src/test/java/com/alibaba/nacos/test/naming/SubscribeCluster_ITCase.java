@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.Nacos;
@@ -22,21 +23,24 @@ import com.alibaba.nacos.api.naming.listener.Event;
 import com.alibaba.nacos.api.naming.listener.EventListener;
 import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.alibaba.nacos.test.naming.NamingBase.*;
+import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT;
+import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
+import static com.alibaba.nacos.test.naming.NamingBase.verifyInstanceList;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Created by wangtong.wt on 2018/6/20.
@@ -44,35 +48,37 @@ import static com.alibaba.nacos.test.naming.NamingBase.*;
  * @author wangtong.wt
  * @date 2018/6/20
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class SubscribeCluster_ITCase {
-
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+class SubscribeCluster_ITCase {
+    
     private NamingService naming;
+    
     @LocalServerPort
     private int port;
-
-    @Before
-    public void init() throws Exception {
+    
+    private volatile List<Instance> instances = Collections.emptyList();
+    
+    @BeforeEach
+    void init() throws Exception {
         instances.clear();
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
-
-    private volatile List<Instance> instances = Collections.emptyList();
-
+    
     /**
      * 添加IP，收到通知
      *
      * @throws Exception
      */
-    @Test(timeout = 10000L)
-    public void subscribeAdd() throws Exception {
+    @Test
+    @Timeout(value = 10000L, unit = TimeUnit.MILLISECONDS)
+    void subscribeAdd() throws Exception {
         String serviceName = randomDomainName();
-
+        
         naming.subscribe(serviceName, Arrays.asList("c1"), new EventListener() {
             @Override
             public void onEvent(Event event) {
@@ -81,31 +87,32 @@ public class SubscribeCluster_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
-
+        
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-
+        
         while (instances.isEmpty()) {
             Thread.sleep(1000L);
         }
-
-        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        
+        assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
-
+    
     /**
      * 删除IP，收到通知
      *
      * @throws Exception
      */
-    @Test(timeout = 10000L)
-    public void subscribeDelete() throws Exception {
+    @Test
+    @Timeout(value = 10000L, unit = TimeUnit.MILLISECONDS)
+    void subscribeDelete() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-
+        
         TimeUnit.SECONDS.sleep(3);
-
+        
         naming.subscribe(serviceName, Arrays.asList("c1"), new EventListener() {
             int index = 0;
-
+            
             @Override
             public void onEvent(Event event) {
                 if (index == 0) {
@@ -117,27 +124,28 @@ public class SubscribeCluster_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
-    
+        
         TimeUnit.SECONDS.sleep(1);
-
+        
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
-
+        
         while (!instances.isEmpty()) {
             Thread.sleep(1000L);
         }
-
-        Assert.assertTrue(instances.isEmpty());
+        
+        assertTrue(instances.isEmpty());
     }
-
+    
     /**
      * 添加不可用IP，收到通知
      *
      * @throws Exception
      */
-    @Test(timeout = 10000L)
-    public void subscribeUnhealthy() throws Exception {
+    @Test
+    @Timeout(value = 10000L, unit = TimeUnit.MILLISECONDS)
+    void subscribeUnhealthy() throws Exception {
         String serviceName = randomDomainName();
-
+        
         naming.subscribe(serviceName, Arrays.asList("c1"), new EventListener() {
             @Override
             public void onEvent(Event event) {
@@ -146,28 +154,28 @@ public class SubscribeCluster_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
-
+        
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
-
+        
         while (instances.isEmpty()) {
             Thread.sleep(1000L);
         }
-
-        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        
+        assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
-
+    
     /**
      * 新增其他cluster IP，不会收到通知
      *
      * @throws Exception
      */
     @Test
-    public void subscribeOtherCluster() throws Exception {
+    void subscribeOtherCluster() throws Exception {
         String serviceName = randomDomainName();
-
+        
         naming.subscribe(serviceName, Arrays.asList("c2"), new EventListener() {
             int index = 0;
-
+            
             @Override
             public void onEvent(Event event) {
                 if (index == 0) {
@@ -179,9 +187,9 @@ public class SubscribeCluster_ITCase {
                 instances = ((NamingEvent) event).getInstances();
             }
         });
-
+        
         naming.registerInstance(serviceName, "1.1.1.1", TEST_PORT, "c1");
-
+        
         int i = 0;
         while (instances.isEmpty()) {
             Thread.sleep(1000L);
@@ -189,7 +197,7 @@ public class SubscribeCluster_ITCase {
                 return;
             }
         }
-
-        Assert.fail();
+        
+        fail();
     }
 }

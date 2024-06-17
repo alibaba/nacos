@@ -24,14 +24,13 @@ import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -40,15 +39,17 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * use  configPublishRequest for  communication verification between client and server.
  *
  * @author githubcheng2978.
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
-        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true",
-        RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
+        RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
         RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
         RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem", RpcConstants.NACOS_SERVER_RPC
         + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -57,20 +58,20 @@ public class NacosConfigV2MutualAuth_CITCase {
     
     public static AtomicInteger increment = new AtomicInteger(100);
     
-    @BeforeClass
-    public static void beforeClass() throws IOException {
+    @BeforeAll
+    static void beforeClass() throws IOException {
         ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigV2MutualAuth_CITCase.class.getSimpleName());
         
     }
     
-    @After
-    public void cleanClientCache() throws Exception {
+    @AfterEach
+    void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
     
     @Test
-    @Ignore("TODO, Fix cert expired problem")
-    public void test_d_MutualAuth() throws Exception {
+    @Disabled("TODO, Fix cert expired problem")
+    void test_d_MutualAuth() throws Exception {
         Properties propertiesfalse = new Properties();
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         propertiesfalse.put(RpcConstants.RPC_CLIENT_MUTUAL_AUTH, "true");
@@ -96,11 +97,11 @@ public class NacosConfigV2MutualAuth_CITCase {
             }
         });
         latch2.await(5, TimeUnit.SECONDS);
-        Assert.assertTrue(res);
+        assertTrue(res);
     }
     
     @Test
-    public void test_d_MutualAuthButClientNot() throws Exception {
+    void test_d_MutualAuthButClientNot() throws Exception {
         
         Properties propertiesfalse = new Properties();
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
@@ -125,6 +126,6 @@ public class NacosConfigV2MutualAuth_CITCase {
             }
         });
         latch2.await(5, TimeUnit.SECONDS);
-        Assert.assertFalse(res);
+        assertFalse(res);
     }
 }

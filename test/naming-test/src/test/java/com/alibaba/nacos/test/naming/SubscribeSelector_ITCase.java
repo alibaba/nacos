@@ -25,26 +25,28 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.client.naming.selector.DefaultNamingSelector;
-import com.alibaba.nacos.client.naming.selector.NamingSelectorFactory;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * @author lideyou
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class SubscribeSelector_ITCase extends NamingBase {
+class SubscribeSelector_ITCase extends NamingBase {
     
     private NamingService naming;
     
@@ -53,23 +55,24 @@ public class SubscribeSelector_ITCase extends NamingBase {
     @LocalServerPort
     private int port;
     
-    @Before
-    public void init() throws Exception {
+    private volatile List<Instance> instances = Collections.emptyList();
+    
+    @BeforeEach
+    void init() throws Exception {
         instances.clear();
         if (naming == null) {
             naming = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
     }
     
-    private volatile List<Instance> instances = Collections.emptyList();
-    
     /**
      * Add IP and receive notification.
      *
      * @throws Exception
      */
-    @Test(timeout = 10000L)
-    public void subscribeAdd() throws Exception {
+    @Test
+    @Timeout(value = 10000L, unit = TimeUnit.MILLISECONDS)
+    void subscribeAdd() throws Exception {
         String serviceName = randomDomainName();
         
         naming.subscribe(serviceName, selector, new EventListener() {
@@ -87,7 +90,7 @@ public class SubscribeSelector_ITCase extends NamingBase {
             Thread.sleep(1000L);
         }
         
-        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
     }
     
     /**
@@ -95,8 +98,9 @@ public class SubscribeSelector_ITCase extends NamingBase {
      *
      * @throws Exception
      */
-    @Test(timeout = 10000L)
-    public void subscribeDelete() throws Exception {
+    @Test
+    @Timeout(value = 10000L, unit = TimeUnit.MILLISECONDS)
+    void subscribeDelete() throws Exception {
         String serviceName = randomDomainName();
         naming.registerInstance(serviceName, "172.18.137.1", TEST_PORT, "c1");
         
@@ -125,7 +129,7 @@ public class SubscribeSelector_ITCase extends NamingBase {
             Thread.sleep(1000L);
         }
         
-        Assert.assertTrue(instances.isEmpty());
+        assertTrue(instances.isEmpty());
     }
     
     /**
@@ -134,7 +138,7 @@ public class SubscribeSelector_ITCase extends NamingBase {
      * @throws Exception
      */
     @Test
-    public void subscribeOtherIp() throws Exception {
+    void subscribeOtherIp() throws Exception {
         String serviceName = randomDomainName();
         
         naming.subscribe(serviceName, selector, new EventListener() {
@@ -162,6 +166,6 @@ public class SubscribeSelector_ITCase extends NamingBase {
             }
         }
         
-        Assert.fail();
+        fail();
     }
 }

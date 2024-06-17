@@ -18,29 +18,28 @@ package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.Nacos;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * @author xiaochun.xxc
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class ConfigAPI_CITCase extends AbstractConfigAPI_CITCase {
+class ConfigAPI_CITCase extends AbstractConfigAPI_CITCase {
     
-    @BeforeClass
-    public static void beforeClass() {
+    @BeforeAll
+    static void beforeClass() {
         ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPI_CITCase.class.getSimpleName());
     }
     
-    @BeforeClass
-    @AfterClass
-    public static void cleanClientCache() throws Exception {
+    @BeforeAll
+    @AfterAll
+    static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
 }

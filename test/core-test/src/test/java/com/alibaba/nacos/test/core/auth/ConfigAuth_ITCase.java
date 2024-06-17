@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.core.auth;
 
 import com.alibaba.nacos.Nacos;
@@ -24,10 +25,9 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import org.apache.http.HttpStatus;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
@@ -37,71 +37,74 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author nkorange
  * @since 1.2.0
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigAuth_ITCase extends AuthBase {
-
+    
+    public static final long TIME_OUT = 2000;
+    
+    public ConfigService iconfig = null;
+    
     @LocalServerPort
     private int port;
-
-    public static final long TIME_OUT = 2000;
-
-    public ConfigService iconfig = null;
-
+    
     private String dataId = "yanlin";
+    
     private String group = "yanlin";
-
-    @Before
-    public void init() throws Exception {
+    
+    @BeforeEach
+    void init() throws Exception {
         super.init(port);
     }
-
-    @After
-    public void destroy(){
+    
+    @AfterEach
+    public void destroy() {
         super.destroy();
         try {
             iconfig.shutDown();
-        }catch (NacosException ex) {
-
+        } catch (NacosException ex) {
+        
         }
     }
-
-
+    
+    
     @Test
-    public void writeWithReadPermission() throws Exception {
-
+    void writeWithReadPermission() throws Exception {
+        
         // Construct configService:
         properties.put(PropertyKeyConst.USERNAME, username1);
         properties.put(PropertyKeyConst.PASSWORD, password1);
         properties.put(PropertyKeyConst.NAMESPACE, namespace1);
         iconfig = NacosFactory.createConfigService(properties);
-
+        
         final String content = "test";
         assertFalse(iconfig.publishConfig(dataId, group, content));
         assertFalse(iconfig.removeConfig(dataId, group));
     }
-
+    
     @Test
-    public void readWithReadPermission() throws Exception {
-
+    void readWithReadPermission() throws Exception {
+        
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger ai = new AtomicInteger(0);
-
+        
         properties.put(PropertyKeyConst.USERNAME, username1);
         properties.put(PropertyKeyConst.PASSWORD, password1);
         iconfig = NacosFactory.createConfigService(properties);
-
+        
         final String content = "test" + System.currentTimeMillis();
         System.out.println(content);
-
+        
         iconfig.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
@@ -113,52 +116,52 @@ public class ConfigAuth_ITCase extends AuthBase {
                 latch.countDown();
             }
         });
-
+        
         TimeUnit.SECONDS.sleep(3L);
-
+        
         properties.put(PropertyKeyConst.USERNAME, username2);
         properties.put(PropertyKeyConst.PASSWORD, password2);
         ConfigService configService = NacosFactory.createConfigService(properties);
-
+        
         boolean result = configService.publishConfig(dataId, group, content);
-        Assert.assertTrue(result);
+        assertTrue(result);
         TimeUnit.SECONDS.sleep(5L);
-
+        
         String res = iconfig.getConfig(dataId, group, TIME_OUT);
-        Assert.assertEquals(content, res);
-
+        assertEquals(content, res);
+        
         latch.await(5L, TimeUnit.SECONDS);
-        Assert.assertEquals(0, latch.getCount());
+        assertEquals(0, latch.getCount());
     }
-
+    
     @Test
-    public void writeWithWritePermission() throws Exception {
-
+    void writeWithWritePermission() throws Exception {
+        
         // Construct configService:
         properties.put(PropertyKeyConst.USERNAME, username2);
         properties.put(PropertyKeyConst.PASSWORD, password2);
         iconfig = NacosFactory.createConfigService(properties);
-
+        
         final String content = "test";
         boolean res = iconfig.publishConfig(dataId, group, content);
-        Assert.assertTrue(res);
-
+        assertTrue(res);
+        
         res = iconfig.removeConfig(dataId, group);
-        Assert.assertTrue(res);
+        assertTrue(res);
     }
-
+    
     @Test
-    public void readWithWritePermission() throws Exception {
-
+    void readWithWritePermission() throws Exception {
+        
         CountDownLatch latch = new CountDownLatch(1);
-
+        
         properties.put(PropertyKeyConst.NAMESPACE, namespace1);
         properties.put(PropertyKeyConst.USERNAME, username2);
         properties.put(PropertyKeyConst.PASSWORD, password2);
         iconfig = NacosFactory.createConfigService(properties);
-
+        
         final String content = "test" + System.currentTimeMillis();
-
+        
         iconfig.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
@@ -170,38 +173,38 @@ public class ConfigAuth_ITCase extends AuthBase {
                 latch.countDown();
             }
         });
-
+        
         TimeUnit.SECONDS.sleep(3L);
-
+        
         boolean result = iconfig.publishConfig(dataId, group, content);
-        Assert.assertTrue(result);
+        assertTrue(result);
         TimeUnit.SECONDS.sleep(5L);
-
+        
         try {
             iconfig.getConfig(dataId, group, TIME_OUT);
             fail();
         } catch (NacosException ne) {
-            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
+            assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
         }
-
+        
         latch.await(5L, TimeUnit.SECONDS);
-
-        Assert.assertTrue(latch.getCount() > 0);
+        
+        assertTrue(latch.getCount() > 0);
     }
-
-
+    
+    
     @Test
-    public void ReadWriteWithFullPermission() throws Exception {
-
+    void ReadWriteWithFullPermission() throws Exception {
+        
         CountDownLatch latch = new CountDownLatch(1);
         AtomicInteger ai = new AtomicInteger(0);
-
+        
         properties.put(PropertyKeyConst.USERNAME, username3);
         properties.put(PropertyKeyConst.PASSWORD, password3);
         iconfig = NacosFactory.createConfigService(properties);
-
+        
         final String content = "test" + System.currentTimeMillis();
-
+        
         iconfig.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
@@ -213,22 +216,22 @@ public class ConfigAuth_ITCase extends AuthBase {
                 latch.countDown();
             }
         });
-
+        
         TimeUnit.SECONDS.sleep(3L);
-
+        
         boolean result = iconfig.publishConfig(dataId, group, content);
-        Assert.assertTrue(result);
+        assertTrue(result);
         TimeUnit.SECONDS.sleep(5L);
-
+        
         String res = iconfig.getConfig(dataId, group, TIME_OUT);
-        Assert.assertEquals(content, res);
-
+        assertEquals(content, res);
+        
         latch.await(5L, TimeUnit.SECONDS);
-
-        Assert.assertEquals(0, latch.getCount());
-
+        
+        assertEquals(0, latch.getCount());
+        
         result = iconfig.removeConfig(dataId, group);
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
-
+    
 }
