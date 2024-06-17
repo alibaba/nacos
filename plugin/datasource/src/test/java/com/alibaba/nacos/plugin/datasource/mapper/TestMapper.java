@@ -22,18 +22,19 @@ import com.alibaba.nacos.plugin.datasource.impl.mysql.ConfigInfoAggrMapperByMySq
 
 /**
  * Implement interfaces other than Mapper. just for test
+ *
  * @author mikolls
  **/
 public class TestMapper extends ConfigInfoAggrMapperByMySql implements TestInterface {
-
+    
     @Override
     public String getTableName() {
         return "enable_data_source_log_test";
     }
-
+    
     @Override
     public String getDataSource() {
         return DataSourceConstant.MYSQL;
     }
-
+    
 }

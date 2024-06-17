@@ -17,60 +17,61 @@
 package com.alibaba.nacos.plugin.datasource.proxy;
 
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
-public class MapperProxyTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class MapperProxyTest {
     
     private MapperProxy mapperProxy;
     
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         this.mapperProxy = new MapperProxy();
     }
     
     @Test
-    public void testCreateProxy() {
+    void testCreateProxy() {
         Mapper mapper = new Mapper() {
             @Override
             public String select(List<String> columns, List<String> where) {
                 return "select-test";
             }
-    
+            
             @Override
             public String insert(List<String> columns) {
                 return "insert-test";
             }
-    
+            
             @Override
             public String update(List<String> columns, List<String> where) {
                 return "update-test";
             }
-    
+            
             @Override
             public String delete(List<String> params) {
                 return "delete-test";
             }
-    
+            
             @Override
             public String count(List<String> where) {
                 return "count-test";
             }
-    
+            
             @Override
             public String getTableName() {
                 return "test";
             }
-    
+            
             @Override
             public String getDataSource() {
                 return "test";
             }
-    
+            
             @Override
             public String[] getPrimaryKeyGeneratedKeys() {
                 return new String[0];
@@ -84,7 +85,7 @@ public class MapperProxyTest {
             Field mapperField = mapperProxy.getClass().getDeclaredField("mapper");
             mapperField.setAccessible(true);
             Class<?> clazz = mapperField.getDeclaringClass();
-            Assert.assertEquals(MapperProxy.class, clazz);
+            assertEquals(MapperProxy.class, clazz);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }

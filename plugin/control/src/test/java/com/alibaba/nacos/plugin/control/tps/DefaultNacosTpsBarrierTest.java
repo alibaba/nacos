@@ -16,31 +16,32 @@
 
 package com.alibaba.nacos.plugin.control.tps;
 
-import com.alibaba.nacos.plugin.control.tps.barrier.TpsBarrier;
 import com.alibaba.nacos.plugin.control.tps.barrier.DefaultNacosTpsBarrier;
+import com.alibaba.nacos.plugin.control.tps.barrier.TpsBarrier;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-public class DefaultNacosTpsBarrierTest {
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class DefaultNacosTpsBarrierTest {
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
     }
     
     @Test
-    public void testNormalPointPassAndDeny() {
+    void testNormalPointPassAndDeny() {
         String testTpsBarrier = "test_barrier";
         
         // max 5tps
@@ -63,7 +64,7 @@ public class DefaultNacosTpsBarrierTest {
         // 5tps check pass
         for (int i = 0; i < 5; i++) {
             TpsCheckResponse tpsCheckResponse = tpsBarrier.applyTps(tpsCheckRequest);
-            Assert.assertTrue(tpsCheckResponse.isSuccess());
+            assertTrue(tpsCheckResponse.isSuccess());
         }
         
     }
