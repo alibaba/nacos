@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.datasource;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
+import com.alibaba.nacos.plugin.datasource.impl.mysql.AbstractMapperByMysql;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TestMapper;
@@ -50,12 +50,12 @@ class MapperManagerTest {
     
     @Test
     void testJoin() {
-        MapperManager.join(new AbstractMapper() {
+        MapperManager.join(new AbstractMapperByMysql() {
             @Override
             public String getTableName() {
                 return "test";
             }
-            
+
             @Override
             public String getDataSource() {
                 return DataSourceConstant.MYSQL;
