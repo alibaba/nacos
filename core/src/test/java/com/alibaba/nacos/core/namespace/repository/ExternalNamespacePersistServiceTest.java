@@ -45,7 +45,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -86,15 +85,13 @@ class ExternalNamespacePersistServiceTest {
         String namespaceName = "namespaceName";
         String namespaceDesc = "namespaceDesc";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
-        externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos",
-                System.currentTimeMillis());
-        
-        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString(), anyLong(), anyLong())).thenThrow(
+        externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos");
+
+        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString(), anyString())).thenThrow(
                 new NJdbcException("test"));
         assertThrows(DataAccessException.class,
-                () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos",
-                        System.currentTimeMillis()));
-        
+                () -> externalNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, "nacos"));
+
     }
     
     @Test
@@ -117,8 +114,8 @@ class ExternalNamespacePersistServiceTest {
         String namespaceDesc = "namespaceDesc";
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
         externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc);
-        
-        when(jt.update(anyString(), anyString(), anyString(), anyLong(), anyString(), anyString())).thenThrow(new NJdbcException("test"));
+
+        when(jt.update(anyString(), anyString(), anyString(), anyString(), anyString())).thenThrow(new NJdbcException("test"));
         assertThrows(DataAccessException.class,
                 () -> externalNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc));
     }

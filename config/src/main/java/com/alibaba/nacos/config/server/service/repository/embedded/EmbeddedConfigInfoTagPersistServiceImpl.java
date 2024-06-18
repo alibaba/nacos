@@ -127,18 +127,18 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
                     TableConstant.CONFIG_INFO_TAG);
             final String sql = configInfoTagMapper.insert(
                     Arrays.asList("data_id", "group_id", "tenant_id", "tag_id", "app_name", "content", "md5", "src_ip",
-                            "src_user", "gmt_create", "gmt_modified"));
+                            "src_user", "gmt_create@NOW()", "gmt_modified@NOW()"));
+
+            final Object[] args = new Object[]{configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp,
+                    appNameTmp, configInfo.getContent(), md5, srcIp, srcUser};
+
             Timestamp time = new Timestamp(System.currentTimeMillis());
-            
-            final Object[] args = new Object[] {configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp,
-                    appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time};
-            
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
-            
+
             databaseOperate.blockUpdate();
             return getTagOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
-            
+
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
@@ -189,28 +189,25 @@ public class EmbeddedConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
         String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String tagTmp = StringUtils.isBlank(tag) ? StringUtils.EMPTY : tag.trim();
-        
         configInfo.setTenant(tenantTmp);
-        
         try {
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-            
+
             ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_TAG);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
+
             final String sql = configInfoTagMapper.update(
-                    Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name"),
+                    Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name"),
                     Arrays.asList("data_id", "group_id", "tenant_id", "tag_id"));
-            final Object[] args = new Object[] {configInfo.getContent(), md5, srcIp, srcUser, time, appNameTmp,
+            final Object[] args = new Object[]{configInfo.getContent(), md5, srcIp, srcUser, appNameTmp,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp};
-            
+
+            Timestamp time = new Timestamp(System.currentTimeMillis());
             EmbeddedStorageContextUtils.onModifyConfigTagInfo(configInfo, tagTmp, srcIp, time);
             EmbeddedStorageContextHolder.addSqlContext(sql, args);
-            
+
             databaseOperate.blockUpdate();
             return getTagOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
-            
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }

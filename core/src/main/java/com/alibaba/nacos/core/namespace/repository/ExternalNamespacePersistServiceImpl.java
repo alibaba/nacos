@@ -69,14 +69,13 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
     }
     
     @Override
-    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResource, final long time) {
+    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResource) {
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
                     .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
             jt.update(tenantInfoMapper.insert(Arrays
-                    .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
-                            "gmt_modified")), kp, tenantId, tenantName, tenantDesc, createResource, time, time);
+                    .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create@NOW()",
+                            "gmt_modified@NOW()")), kp, tenantId, tenantName, tenantDesc, createResource);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;
@@ -100,9 +99,8 @@ public class ExternalNamespacePersistServiceImpl implements NamespacePersistServ
         try {
             TenantInfoMapper tenantInfoMapper = mapperManager
                     .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
-            jt.update(tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"),
-                    Arrays.asList("kp", "tenant_id")), tenantName, tenantDesc, System.currentTimeMillis(), kp,
-                    tenantId);
+            jt.update(tenantInfoMapper.update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified@NOW()"),
+                    Arrays.asList("kp", "tenant_id")), tenantName, tenantDesc, kp, tenantId);
         } catch (DataAccessException e) {
             Loggers.CLUSTER.error("[db-error] " + e, e);
             throw e;

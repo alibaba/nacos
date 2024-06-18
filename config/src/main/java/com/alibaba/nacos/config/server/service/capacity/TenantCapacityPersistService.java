@@ -20,7 +20,6 @@ import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -256,9 +255,8 @@ public class TenantCapacityPersistService {
             columns.add("max_aggr_size");
             argList.add(maxAggrSize);
         }
-        columns.add("gmt_modified");
-        argList.add(TimeUtils.getCurrentTime());
-        
+        columns.add("gmt_modified@NOW()");
+
         List<String> where = new ArrayList<>();
         where.add("tenant_id");
         

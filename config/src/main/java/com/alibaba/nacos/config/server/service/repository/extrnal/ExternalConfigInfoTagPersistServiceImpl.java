@@ -122,14 +122,13 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
         try {
             ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_TAG);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
+
             jt.update(configInfoTagMapper.insert(
-                            Arrays.asList("data_id", "group_id", "tenant_id", "tag_id", "app_name", "content", "md5", "src_ip",
-                                    "src_user", "gmt_create", "gmt_modified")), configInfo.getDataId(), configInfo.getGroup(),
-                    tenantTmp, tagTmp, appNameTmp, configInfo.getContent(), md5, srcIp, srcUser, time, time);
+                            Arrays.asList("data_id", "group_id", "tenant_id", "tag_id", "app_name", "content",
+                                    "md5", "src_ip", "src_user", "gmt_create@NOW()", "gmt_modified@NOW()")),
+                    configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp, appNameTmp, configInfo.getContent(),
+                    md5, srcIp, srcUser);
             return getTagOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
-            
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;
@@ -183,13 +182,11 @@ public class ExternalConfigInfoTagPersistServiceImpl implements ConfigInfoTagPer
             String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
             ConfigInfoTagMapper configInfoTagMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_TAG);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
             jt.update(configInfoTagMapper.update(
-                            Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name"),
-                            Arrays.asList("data_id", "group_id", "tenant_id", "tag_id")), configInfo.getContent(), md5, srcIp,
-                    srcUser, time, appNameTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
+                            Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name"),
+                            Arrays.asList("data_id", "group_id", "tenant_id", "tag_id")), configInfo.getContent(),
+                    md5, srcIp, srcUser, appNameTmp, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
             return getTagOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp, tagTmp);
-            
         } catch (CannotGetJdbcConnectionException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);
             throw e;

@@ -42,7 +42,6 @@ import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.stereotype.Service;
 
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -93,28 +92,27 @@ public class EmbeddedConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         String appNameTmp = StringUtils.isBlank(appName) ? StringUtils.EMPTY : appName;
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         String contentTmp = StringUtils.isBlank(content) ? StringUtils.EMPTY : content;
-        final Timestamp now = new Timestamp(System.currentTimeMillis());
-        
+
         ConfigInfoAggrMapper configInfoAggrMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_AGGR);
         final String select = configInfoAggrMapper.select(Collections.singletonList("content"),
                 Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
         final String insert = configInfoAggrMapper.insert(
-                Arrays.asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified"));
-        final String update = configInfoAggrMapper.update(Arrays.asList("content", "gmt_modified"),
+                Arrays.asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified@NOW()"));
+        final String update = configInfoAggrMapper.update(Arrays.asList("content", "gmt_modified@NOW()"),
                 Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
-        
-        String dbContent = databaseOperate.queryOne(select, new Object[] {dataId, group, tenantTmp, datumId},
+
+        String dbContent = databaseOperate.queryOne(select, new Object[]{dataId, group, tenantTmp, datumId},
                 String.class);
-        
+
         if (Objects.isNull(dbContent)) {
-            final Object[] args = new Object[] {dataId, group, tenantTmp, datumId, appNameTmp, contentTmp, now};
+            final Object[] args = new Object[]{dataId, group, tenantTmp, datumId, appNameTmp, contentTmp};
             EmbeddedStorageContextHolder.addSqlContext(insert, args);
         } else if (!dbContent.equals(content)) {
-            final Object[] args = new Object[] {contentTmp, now, dataId, group, tenantTmp, datumId};
+            final Object[] args = new Object[]{contentTmp, dataId, group, tenantTmp, datumId};
             EmbeddedStorageContextHolder.addSqlContext(update, args);
         }
-        
+
         try {
             boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {

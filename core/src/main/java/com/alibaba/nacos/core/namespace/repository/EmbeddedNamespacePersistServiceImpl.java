@@ -72,18 +72,14 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     }
     
     @Override
-    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc,
-            String createResource, final long time) {
-        
+    public void insertTenantInfoAtomic(String kp, String tenantId, String tenantName, String tenantDesc, String createResource) {
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper.insert(Arrays
-                .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source", "gmt_create",
-                        "gmt_modified"));
-        final Object[] args = new Object[] {kp, tenantId, tenantName, tenantDesc, createResource, time, time};
-        
+                .asList("kp", "tenant_id", "tenant_name", "tenant_desc", "create_source",
+                        "gmt_create@NOW()", "gmt_modified@NOW()"));
+        final Object[] args = new Object[]{kp, tenantId, tenantName, tenantDesc, createResource};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
-        
         try {
             boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {
@@ -110,15 +106,15 @@ public class EmbeddedNamespacePersistServiceImpl implements NamespacePersistServ
     
     @Override
     public void updateTenantNameAtomic(String kp, String tenantId, String tenantName, String tenantDesc) {
-        
+
         TenantInfoMapper tenantInfoMapper = mapperManager
                 .findMapper(dataSourceService.getDataSourceType(), TableConstant.TENANT_INFO);
         final String sql = tenantInfoMapper
-                .update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified"), Arrays.asList("kp", "tenant_id"));
-        final Object[] args = new Object[] {tenantName, tenantDesc, System.currentTimeMillis(), kp, tenantId};
-        
+                .update(Arrays.asList("tenant_name", "tenant_desc", "gmt_modified@NOW()"), Arrays.asList("kp", "tenant_id"));
+        final Object[] args = new Object[]{tenantName, tenantDesc, kp, tenantId};
+
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
-        
+
         try {
             boolean result = databaseOperate.update(EmbeddedStorageContextHolder.getCurrentSqlContext());
             if (!result) {

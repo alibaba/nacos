@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.plugin.datasource.proxy;
 
+import com.alibaba.nacos.plugin.datasource.enums.mysql.TrustedMysqlFunctionEnum;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,15 +67,20 @@ class MapperProxyTest {
             public String getTableName() {
                 return "test";
             }
-            
+
             @Override
             public String getDataSource() {
                 return "test";
             }
-            
+
             @Override
             public String[] getPrimaryKeyGeneratedKeys() {
                 return new String[0];
+            }
+
+            @Override
+            public String getFunction(String functionName) {
+                return TrustedMysqlFunctionEnum.getFunctionByName(functionName);
             }
         };
         Mapper proxy = mapperProxy.createProxy(mapper);

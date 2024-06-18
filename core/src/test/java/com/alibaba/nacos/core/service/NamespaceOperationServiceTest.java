@@ -36,7 +36,6 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -133,7 +132,7 @@ class NamespaceOperationServiceTest {
         when(namespacePersistService.tenantInfoCountByTenantId(anyString())).thenReturn(0);
         namespaceOperationService.createNamespace(TEST_NAMESPACE_ID, TEST_NAMESPACE_NAME, TEST_NAMESPACE_DESC);
         verify(namespacePersistService).insertTenantInfoAtomic(eq(DEFAULT_KP), eq(TEST_NAMESPACE_ID), eq(TEST_NAMESPACE_NAME),
-                eq(TEST_NAMESPACE_DESC), any(), anyLong());
+                eq(TEST_NAMESPACE_DESC), any());
     }
     
     @Test

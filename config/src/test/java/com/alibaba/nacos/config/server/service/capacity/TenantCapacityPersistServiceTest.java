@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.service.capacity;
 
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.config.server.model.capacity.TenantCapacity;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
@@ -28,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.stubbing.Answer;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
@@ -203,8 +201,6 @@ class TenantCapacityPersistServiceTest {
     
     @Test
     void testUpdateTenantCapacity() {
-        final MockedStatic<TimeUtils> timeUtilsMockedStatic = Mockito.mockStatic(TimeUtils.class);
-        
         List<Object> argList = CollectionUtils.list();
         
         Integer quota = 1;
@@ -218,25 +214,19 @@ class TenantCapacityPersistServiceTest {
         
         Integer maxAggrSize = 4;
         argList.add(maxAggrSize);
-        
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        timeUtilsMockedStatic.when(TimeUtils::getCurrentTime).thenReturn(timestamp);
-        argList.add(timestamp);
-        
+
         String tenant = "test";
         argList.add(tenant);
         
         when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
             if (invocationOnMock.getArgument(1).equals(quota) && invocationOnMock.getArgument(2).equals(maxSize)
                     && invocationOnMock.getArgument(3).equals(maxAggrCount) && invocationOnMock.getArgument(4).equals(maxAggrSize)
-                    && invocationOnMock.getArgument(5).equals(timestamp) && invocationOnMock.getArgument(6).equals(tenant)) {
+                    && invocationOnMock.getArgument(5).equals(tenant)) {
                 return 1;
             }
             return 0;
         });
         assertTrue(service.updateTenantCapacity(tenant, quota, maxSize, maxAggrCount, maxAggrSize));
-        
-        timeUtilsMockedStatic.close();
     }
     
     @Test
@@ -250,7 +240,7 @@ class TenantCapacityPersistServiceTest {
         argList.add(tenant);
         
         when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
-            if (invocationOnMock.getArgument(1).equals(quota) && invocationOnMock.getArgument(3).equals(tenant)) {
+            if (invocationOnMock.getArgument(1).equals(quota) && invocationOnMock.getArgument(2).equals(tenant)) {
                 return 1;
             }
             return 0;

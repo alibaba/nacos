@@ -242,7 +242,6 @@ class GroupCapacityPersistServiceTest {
     
     @Test
     void testUpdateGroupCapacity() {
-        
         List<Object> argList = CollectionUtils.list();
         
         Integer quota = 1;
@@ -256,18 +255,14 @@ class GroupCapacityPersistServiceTest {
         
         Integer maxAggrSize = 4;
         argList.add(maxAggrSize);
-        
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        when(TimeUtils.getCurrentTime()).thenReturn(timestamp);
-        argList.add(timestamp);
-        
+
         String group = "test";
         argList.add(group);
         
         when(jdbcTemplate.update(anyString(), any(Object.class))).thenAnswer((Answer<Integer>) invocationOnMock -> {
             if (invocationOnMock.getArgument(1).equals(quota) && invocationOnMock.getArgument(2).equals(maxSize)
                     && invocationOnMock.getArgument(3).equals(maxAggrCount) && invocationOnMock.getArgument(4).equals(maxAggrSize)
-                    && invocationOnMock.getArgument(5).equals(timestamp) && invocationOnMock.getArgument(6).equals(group)) {
+                    && invocationOnMock.getArgument(5).equals(group)) {
                 return 1;
             }
             return 0;
@@ -312,33 +307,28 @@ class GroupCapacityPersistServiceTest {
     
     @Test
     void testUpdateQuota() {
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        when(TimeUtils.getCurrentTime()).thenReturn(timestamp);
         List<Object> argList = CollectionUtils.list();
-        
+
         Integer quota = 2;
         argList.add(quota);
-        
+
         String group = "test2";
         argList.add(group);
-        
-        when(jdbcTemplate.update(anyString(), eq(2), eq(timestamp), eq(group))).thenReturn(1);
-        
+
+        when(jdbcTemplate.update(anyString(), eq(2), eq(group))).thenReturn(1);
+
         assertTrue(service.updateQuota(group, quota));
     }
     
     @Test
     void testUpdateMaxSize() {
-        
         List<Object> argList = CollectionUtils.list();
-        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        when(TimeUtils.getCurrentTime()).thenReturn(timestamp);
         Integer maxSize = 3;
         argList.add(maxSize);
         
         String group = "test3";
         argList.add(group);
-        when(jdbcTemplate.update(anyString(), eq(3), eq(timestamp), eq(group))).thenReturn(1);
+        when(jdbcTemplate.update(anyString(), eq(3), eq(group))).thenReturn(1);
         
         assertTrue(service.updateMaxSize(group, maxSize));
     }

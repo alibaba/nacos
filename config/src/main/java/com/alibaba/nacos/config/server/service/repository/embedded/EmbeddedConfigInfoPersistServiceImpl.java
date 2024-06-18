@@ -264,15 +264,13 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
-        Timestamp time = new Timestamp(System.currentTimeMillis());
-        
+
         final String sql = configInfoMapper.insert(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
-                        "src_user", "gmt_create", "gmt_modified", "c_desc", "c_use", "effect", "type", "c_schema",
-                        "encrypted_data_key"));
-        final Object[] args = new Object[] {id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
-                configInfo.getContent(), md5Tmp, srcIp, srcUser, time, time, desc, use, effect, type, schema,
-                encryptedDataKey};
+                        "src_user", "gmt_create@NOW()", "gmt_modified@NOW()", "c_desc", "c_use", "effect",
+                        "type", "c_schema", "encrypted_data_key"));
+        final Object[] args = new Object[]{id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
+                configInfo.getContent(), md5Tmp, srcIp, srcUser, desc, use, effect, type, schema, encryptedDataKey};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         return id;
     }
@@ -632,18 +630,17 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
-        
+
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.update(
-                Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use",
-                        "effect", "type", "c_schema", "encrypted_data_key"),
+                Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name",
+                        "c_desc", "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
-        Timestamp time = new Timestamp(System.currentTimeMillis());
-        
-        final Object[] args = new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, time, appNameTmp, desc,
+
+        final Object[] args = new Object[]{configInfo.getContent(), md5Tmp, srcIp, srcUser, appNameTmp, desc,
                 use, effect, type, schema, encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
-        
+
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
     

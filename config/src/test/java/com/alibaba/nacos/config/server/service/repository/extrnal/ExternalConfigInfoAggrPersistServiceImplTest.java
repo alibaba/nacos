@@ -38,7 +38,6 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.TransactionSystemException;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -50,7 +49,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
@@ -130,8 +128,7 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}), eq(String.class))).thenThrow(
                 new EmptyResultDataAccessException(1));
         //mock insert success
-        when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(datumId), eq(appName), eq(content),
-                any(Timestamp.class))).thenReturn(1);
+        when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(datumId), eq(appName), eq(content))).thenReturn(1);
         
         //execute
         boolean result = externalConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName, content);
@@ -152,8 +149,7 @@ class ExternalConfigInfoAggrPersistServiceImplTest {
         when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant, datumId}), eq(String.class))).thenReturn(
                 existContent);
         //mock update success,return 1
-        when(jdbcTemplate.update(anyString(), eq(content), any(Timestamp.class), eq(dataId), eq(group), eq(tenant),
-                eq(datumId))).thenReturn(1);
+        when(jdbcTemplate.update(anyString(), eq(content), eq(dataId), eq(group), eq(tenant), eq(datumId))).thenReturn(1);
         //mock update content
         boolean result = externalConfigInfoAggrPersistService.addAggrConfigInfo(dataId, group, tenant, datumId, appName, content);
         assertTrue(result);

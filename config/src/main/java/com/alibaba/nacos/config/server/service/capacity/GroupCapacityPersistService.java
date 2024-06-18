@@ -21,7 +21,6 @@ import com.alibaba.nacos.config.server.model.capacity.Capacity;
 import com.alibaba.nacos.config.server.model.capacity.GroupCapacity;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
-import com.alibaba.nacos.config.server.utils.TimeUtils;
 import com.alibaba.nacos.plugin.datasource.MapperManager;
 import com.alibaba.nacos.plugin.datasource.constants.CommonConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
@@ -274,8 +273,7 @@ public class GroupCapacityPersistService {
             columnList.add("max_aggr_size");
             argList.add(maxAggrSize);
         }
-        columnList.add("gmt_modified");
-        argList.add(TimeUtils.getCurrentTime());
+        columnList.add("gmt_modified@NOW()");
         
         List<String> whereList = CollectionUtils.list();
         whereList.add("group_id");

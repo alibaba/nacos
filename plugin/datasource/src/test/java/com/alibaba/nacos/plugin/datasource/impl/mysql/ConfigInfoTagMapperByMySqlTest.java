@@ -54,7 +54,7 @@ class ConfigInfoTagMapperByMySqlTest {
     MapperContext context;
     
     private ConfigInfoTagMapperByMySql configInfoTagMapperByMySql;
-    
+
     @BeforeEach
     void setUp() throws Exception {
         configInfoTagMapperByMySql = new ConfigInfoTagMapperByMySql();
@@ -75,7 +75,6 @@ class ConfigInfoTagMapperByMySqlTest {
         String newMD5 = "newMD5";
         String srcIp = "1.1.1.1";
         Object srcUser = "nacos";
-        Object time = new Timestamp(System.currentTimeMillis());
         Object appNameTmp = "newAppName";
         Object desc = "description";
         Object use = "use";
@@ -87,7 +86,6 @@ class ConfigInfoTagMapperByMySqlTest {
         context.putUpdateParameter(FieldConstant.MD5, newMD5);
         context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
         context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
         context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
         context.putUpdateParameter(FieldConstant.C_DESC, desc);
         context.putUpdateParameter(FieldConstant.C_USE, use);
@@ -99,19 +97,19 @@ class ConfigInfoTagMapperByMySqlTest {
         Object group = "group";
         Object md5 = "md5";
         Object tagId = "tagId";
-        
+
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
         context.putWhereParameter(FieldConstant.GROUP_ID, group);
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         context.putWhereParameter(FieldConstant.TAG_ID, tagId);
         context.putWhereParameter(FieldConstant.MD5, md5);
-        
+
         MapperResult mapperResult = configInfoTagMapperByMySql.updateConfigInfo4TagCas(context);
-        
-        assertEquals(mapperResult.getSql(), "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,"
+
+        assertEquals(mapperResult.getSql(), "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = NOW(3),"
                 + "app_name = ? WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND tag_id = ? AND "
                 + "(md5 = ? OR md5 IS NULL OR md5 = '')");
-        assertArrayEquals(new Object[] {newContent, newMD5, srcIp, srcUser, time, appNameTmp, dataId, group, tenantId, tagId, md5},
+        assertArrayEquals(new Object[]{newContent, newMD5, srcIp, srcUser, appNameTmp, dataId, group, tenantId, tagId, md5},
                 mapperResult.getParamList().toArray());
     }
     

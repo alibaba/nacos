@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
-import com.alibaba.nacos.plugin.datasource.impl.mysql.TenantInfoMapperByMySql;
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.impl.mysql.AbstractMapperByMysql;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -25,12 +27,22 @@ import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class AbstractMapperTest {
-    
-    private AbstractMapper abstractMapper;
-    
+
+    private AbstractMapperByMysql abstractMapper;
+
     @BeforeEach
     void setUp() throws Exception {
-        abstractMapper = new TenantInfoMapperByMySql();
+        abstractMapper = new AbstractMapperByMysql() {
+            @Override
+            public String getTableName() {
+                return TableConstant.TENANT_INFO;
+            }
+
+            @Override
+            public String getDataSource() {
+                return DataSourceConstant.MYSQL;
+            }
+        };
     }
     
     @Test

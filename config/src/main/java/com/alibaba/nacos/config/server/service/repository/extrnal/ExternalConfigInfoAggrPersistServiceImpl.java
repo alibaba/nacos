@@ -97,22 +97,22 @@ public class ExternalConfigInfoAggrPersistServiceImpl implements ConfigInfoAggrP
         String select = configInfoAggrMapper.select(Collections.singletonList("content"),
                 Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
         String insert = configInfoAggrMapper.insert(
-                Arrays.asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified"));
-        String update = configInfoAggrMapper.update(Arrays.asList("content", "gmt_modified"),
+                Arrays.asList("data_id", "group_id", "tenant_id", "datum_id", "app_name", "content", "gmt_modified@NOW()"));
+        String update = configInfoAggrMapper.update(Arrays.asList("content", "gmt_modified@NOW()"),
                 Arrays.asList("data_id", "group_id", "tenant_id", "datum_id"));
-        
+
         try {
             try {
-                String dbContent = jt.queryForObject(select, new Object[] {dataId, group, tenantTmp, datumId},
+                String dbContent = jt.queryForObject(select, new Object[]{dataId, group, tenantTmp, datumId},
                         String.class);
-                
+
                 if (dbContent != null && dbContent.equals(content)) {
                     return true;
                 } else {
-                    return jt.update(update, content, now, dataId, group, tenantTmp, datumId) > 0;
+                    return jt.update(update, content, dataId, group, tenantTmp, datumId) > 0;
                 }
             } catch (EmptyResultDataAccessException ex) { // no data, insert
-                return jt.update(insert, dataId, group, tenantTmp, datumId, appNameTmp, content, now) > 0;
+                return jt.update(insert, dataId, group, tenantTmp, datumId, appNameTmp, content) > 0;
             }
         } catch (DataAccessException e) {
             LogUtil.FATAL_LOG.error("[db-error] " + e, e);

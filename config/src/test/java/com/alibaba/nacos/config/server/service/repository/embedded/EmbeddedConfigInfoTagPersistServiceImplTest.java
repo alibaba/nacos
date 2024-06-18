@@ -45,7 +45,6 @@ import java.util.List;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -121,8 +120,7 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         //mock insert invoked.
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant), eq(tag), eq(appName),
-                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        any(Timestamp.class)), times(1));
+                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser)), times(1));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         
@@ -151,7 +149,7 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         ConfigOperateResult configOperateResult = embeddedConfigInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser);
         //verify update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(() -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
-                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName),
+                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), eq(appName),
                 eq(dataId), eq(group), eq(tenant), eq(tag)), times(1));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
@@ -185,8 +183,7 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         //mock insert invoked.
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant), eq(tag), eq(appName),
-                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        any(Timestamp.class)), times(1));
+                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser)), times(1));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         
@@ -218,7 +215,7 @@ class EmbeddedConfigInfoTagPersistServiceImplTest {
         ConfigOperateResult configOperateResult = embeddedConfigInfoTagPersistService.insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser);
         //verify update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(() -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
-                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName),
+                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), eq(appName),
                 eq(dataId), eq(group), eq(tenant), eq(tag), eq(configInfo.getMd5())), times(1));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
