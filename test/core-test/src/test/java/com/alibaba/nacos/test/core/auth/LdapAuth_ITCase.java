@@ -21,6 +21,7 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.mockito.Mockito;
@@ -28,7 +29,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.ldap.core.LdapTemplate;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
@@ -56,7 +57,7 @@ class LdapAuth_ITCase extends AuthBase {
     }
     
     @Nested
-    @RunWith(SpringRunner.class)
+    @ExtendWith(SpringExtension.class)
     @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
             "nacos.core.auth.system.type=ldap"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
     class NonTlsTest extends LdapAuth_ITCase {
@@ -68,7 +69,7 @@ class LdapAuth_ITCase extends AuthBase {
     }
     
     @Nested
-    @RunWith(SpringRunner.class)
+    @ExtendWith(SpringExtension.class)
     @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "nacos.core.auth.system.type=ldap",
             "nacos.core.auth.ldap.url=ldaps://localhost:636"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
     class TlsTest extends LdapAuth_ITCase {

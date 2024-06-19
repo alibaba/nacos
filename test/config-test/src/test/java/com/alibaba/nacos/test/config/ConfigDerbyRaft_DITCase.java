@@ -63,6 +63,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @SuppressWarnings("all")
 @TestMethodOrder(MethodName.class)
+// todo the suffix is _DITCase, the case will be skipped by default
 class ConfigDerbyRaft_DITCase extends BaseClusterTest {
     
     @BeforeAll
