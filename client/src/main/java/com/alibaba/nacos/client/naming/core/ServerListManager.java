@@ -111,7 +111,7 @@ public class ServerListManager implements ServerListFactory, Closeable {
             if (!StringUtils.isBlank(contentPathTmp)) {
                 this.contentPath = contentPathTmp;
             }
-            String serverListNameTmp = properties.getProperty(PropertyKeyConst.CLUSTER_NAME);
+            String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME);
             if (!StringUtils.isBlank(serverListNameTmp)) {
                 this.serverListName = serverListNameTmp;
             }
