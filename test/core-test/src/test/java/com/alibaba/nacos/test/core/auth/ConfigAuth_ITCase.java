@@ -28,10 +28,8 @@ import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -46,9 +44,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author nkorange
  * @since 1.2.0
  */
-@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
-        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+        "server.servlet.contextPath=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class ConfigAuth_ITCase extends AuthBase {
     
     public static final long TIME_OUT = 2000;
@@ -71,7 +68,9 @@ public class ConfigAuth_ITCase extends AuthBase {
     public void destroy() {
         super.destroy();
         try {
-            iconfig.shutDown();
+            if (iconfig != null) {
+                iconfig.shutDown();
+            }
         } catch (NacosException ex) {
         
         }

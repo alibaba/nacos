@@ -30,11 +30,9 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -50,7 +48,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author githubcheng2978
  */
-@ExtendWith(SpringExtension.class)
 @TestConfiguration
 @SpringBootTest(classes = {Nacos.class}, properties = {"server.servlet.context-path=/nacos",
         RpcConstants.NACOS_SERVER_RPC + ".compatibility=false", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",

@@ -30,10 +30,8 @@ import com.alibaba.nacos.api.selector.NoneSelector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author liaochuntao
  * @date 2019-05-07 10:13
  **/
-@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 class NamingMaintainService_ITCase {

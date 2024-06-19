@@ -58,6 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
 @TestMethodOrder(MethodName.class)
+        // todo fix
 class ServerMemberManager_ITCase {
     
     private ServerMemberManager memberManager;
@@ -176,7 +177,7 @@ class ServerMemberManager_ITCase {
         
         memberManager.memberJoin(map.values());
         
-        first.await();
+        first.await(); //fix blocking
         Set<Member> copy = new HashSet<>(firstMemberList);
         copy.removeAll(healthMembers.get());
         assertEquals(2, copy.size());
@@ -185,7 +186,7 @@ class ServerMemberManager_ITCase {
         member.setState(NodeState.DOWN);
         assertTrue(memberManager.update(member));
         
-        second.await();
+        second.await();//fix blocking
         copy = new HashSet<>(firstMemberList);
         copy.removeAll(healthMembers.get());
         assertEquals(3, copy.size());

@@ -32,10 +32,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -50,7 +48,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author githubcheng2978
  */
-@ExtendWith(SpringExtension.class)
+//todo fix this test case
+//ConfigIntegrationV3_CITCase and ConfigIntegrationV2MutualAuth_CITCase will fail when run together
 @SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
         RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
         RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -115,8 +114,8 @@ public class ConfigIntegrationV3_CITCase {
         
     }
     
-    @Test
     @Disabled("TODO, Fix cert expired problem")
+    @Test
     void test_g_ServerTlsTrustCa() throws Exception {
         
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();

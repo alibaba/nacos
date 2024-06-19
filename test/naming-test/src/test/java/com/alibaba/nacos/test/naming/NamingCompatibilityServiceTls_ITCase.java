@@ -31,10 +31,8 @@ import com.alibaba.nacos.common.remote.client.RpcConstants;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.HashMap;
 import java.util.List;
@@ -51,7 +49,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author githucheng2978.
  * @date .
  **/
-@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
         RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=true",
         RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",

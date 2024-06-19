@@ -28,10 +28,8 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.HashMap;
 import java.util.List;
@@ -48,7 +46,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
  * @author githucheng2978.
  * @date .
  **/
-@ExtendWith(SpringExtension.class)
 @TestMethodOrder(MethodName.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
         RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true",
