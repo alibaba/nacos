@@ -19,17 +19,14 @@ package com.alibaba.nacos.sys.env;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-@RunWith(SpringRunner.class)
 @ActiveProfiles("empty")
 @SpringBootTest(classes = EnvUtilWithConfigTest.class)
 class EnvUtilWithoutConfigTest {
