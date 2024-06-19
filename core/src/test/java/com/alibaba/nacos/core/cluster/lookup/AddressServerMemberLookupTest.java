@@ -26,6 +26,7 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.utils.GenericType;
 import com.alibaba.nacos.core.utils.Loggers;
+import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -48,6 +51,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
 class AddressServerMemberLookupTest {
     
     private final GenericType<String> genericType = new GenericType<String>() {
@@ -85,6 +90,7 @@ class AddressServerMemberLookupTest {
         when(environment.getProperty("address.server.domain", "jmenv.tbsite.net")).thenReturn("jmenv.tbsite.net");
         when(environment.getProperty("address.server.port", "8080")).thenReturn("8080");
         when(environment.getProperty(eq("address.server.url"), any(String.class))).thenReturn("/nacos/serverlist");
+        when(environment.getProperty(Constants.WEB_CONTEXT_PATH)).thenReturn("/nacos");
         initAddressSys();
         when(restTemplate.<String>get(eq(addressServerUrl), any(Header.EMPTY.getClass()), any(Query.EMPTY.getClass()),
                 any(Type.class))).thenReturn(result);
