@@ -60,6 +60,17 @@ public class ClientAuthPluginManager implements Closeable {
             LOGGER.warn("[ClientAuthPluginManager] Load ClientAuthService fail, No ClientAuthService implements");
         }
     }
+
+    /**
+     * refresh ClientAuthService server list.
+     *
+     * @param serverList new server list.
+     */
+    public void refreshServerList(List<String> serverList) {
+        for (ClientAuthService clientAuthService : clientAuthServiceHashSet) {
+            clientAuthService.setServerList(serverList);
+        }
+    }
     
     /**
      * get all ClientAuthService instance.

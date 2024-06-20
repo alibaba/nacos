@@ -19,16 +19,18 @@ package com.alibaba.nacos.client.config.impl;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.security.SecurityProxy;
+import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -79,7 +81,23 @@ public abstract class ConfigTransportClient {
         this.tenant = properties.getProperty(PropertyKeyConst.NAMESPACE);
         this.serverListManager = serverListManager;
         this.properties = properties.asProperties();
-        this.securityProxy = new SecurityProxy(serverListManager.getServerUrls(),
+        ServerListFactory serverListFactory = new ServerListFactory() {
+            @Override
+            public String genNextServer() {
+                return serverListManager.getNextServerAddr();
+            }
+
+            @Override
+            public String getCurrentServer() {
+                return serverListManager.getCurrentServerAddr();
+            }
+
+            @Override
+            public List<String> getServerList() {
+                return serverListManager.getServerUrls();
+            }
+        };
+        this.securityProxy = new SecurityProxy(serverListFactory,
                 ConfigHttpClientManager.getInstance().getNacosRestTemplate());
     }
     

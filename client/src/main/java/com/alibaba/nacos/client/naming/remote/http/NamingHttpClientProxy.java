@@ -118,7 +118,7 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void onEvent(ServerListChangedEvent event) {
-        // do nothing in http client
+        securityProxy.refreshServerList();
     }
     
     @Override

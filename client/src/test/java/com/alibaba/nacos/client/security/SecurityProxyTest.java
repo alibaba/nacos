@@ -21,6 +21,7 @@ import com.alibaba.nacos.client.auth.impl.NacosAuthLoginConstant;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -65,7 +66,23 @@ class SecurityProxyTest {
         
         List<String> serverList = new ArrayList<>();
         serverList.add("localhost");
-        securityProxy = new SecurityProxy(serverList, nacosRestTemplate);
+        ServerListFactory serverListFactory = new ServerListFactory() {
+            @Override
+            public String genNextServer() {
+                return serverList.get(0);
+            }
+
+            @Override
+            public String getCurrentServer() {
+                return serverList.get(0);
+            }
+
+            @Override
+            public List<String> getServerList() {
+                return serverList;
+            }
+        };
+        securityProxy = new SecurityProxy(serverListFactory, nacosRestTemplate);
     }
     
     @Test

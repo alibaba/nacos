@@ -34,8 +34,8 @@ public abstract class AbstractNamingClientProxy extends Subscriber<ServerListCha
         implements NamingClientProxy {
     
     private static final String APP_FILED = "app";
-    
-    private final SecurityProxy securityProxy;
+
+    protected final SecurityProxy securityProxy;
     
     protected AbstractNamingClientProxy(SecurityProxy securityProxy) {
         this.securityProxy = securityProxy;

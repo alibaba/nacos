@@ -757,6 +757,7 @@ public class ClientWorker implements Closeable {
             subscriber = new Subscriber() {
                 @Override
                 public void onEvent(Event event) {
+                    securityProxy.refreshServerList();
                     rpcClientInner.onServerListChange();
                 }
                 

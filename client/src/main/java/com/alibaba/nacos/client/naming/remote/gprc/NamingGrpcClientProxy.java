@@ -120,6 +120,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     @Override
     public void onEvent(ServerListChangedEvent event) {
+        securityProxy.refreshServerList();
         rpcClient.onServerListChange();
     }
     

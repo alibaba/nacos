@@ -17,15 +17,15 @@
 package com.alibaba.nacos.client.security;
 
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
-import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthPluginManager;
+import com.alibaba.nacos.plugin.auth.spi.client.ClientAuthService;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -38,17 +38,20 @@ import java.util.Properties;
 public class SecurityProxy implements Closeable {
     
     private ClientAuthPluginManager clientAuthPluginManager;
+
+    private ServerListFactory serverListFactory;
     
     /**
      * Construct from serverList, nacosRestTemplate, init client auth plugin.
      * // TODO change server list to serverListManager after serverListManager refactor and unite.
      *
-     * @param serverList a server list that client request to.
+     * @param serverListFactory a server list factory.
      * @Param nacosRestTemplate http request template.
      */
-    public SecurityProxy(List<String> serverList, NacosRestTemplate nacosRestTemplate) {
+    public SecurityProxy(ServerListFactory serverListFactory, NacosRestTemplate nacosRestTemplate) {
         clientAuthPluginManager = new ClientAuthPluginManager();
-        clientAuthPluginManager.init(serverList, nacosRestTemplate);
+        this.serverListFactory = serverListFactory;
+        clientAuthPluginManager.init(serverListFactory.getServerList(), nacosRestTemplate);
     }
     
     /**
@@ -63,6 +66,13 @@ public class SecurityProxy implements Closeable {
         for (ClientAuthService clientAuthService : clientAuthPluginManager.getAuthServiceSpiImplSet()) {
             clientAuthService.login(properties);
         }
+    }
+
+    /**
+     * refresh auth plugin server list.
+     */
+    public void refreshServerList() {
+        clientAuthPluginManager.refreshServerList(serverListFactory.getServerList());
     }
     
     /**
