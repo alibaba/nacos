@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.config.impl.ServerListManager;
+import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -62,7 +62,7 @@ class ServerHttpAgentTest {
     private static final String SERVER_ADDRESS_2 = "http://2.2.2.2:8848";
     
     @Mock
-    ServerListManager serverListManager;
+    ConfigServerListManager serverListManager;
     
     @Mock
     HttpRestResult<String> mockResult;
@@ -79,7 +79,7 @@ class ServerHttpAgentTest {
     void setUp() throws NoSuchFieldException, IllegalAccessException {
         serverHttpAgent = new ServerHttpAgent(serverListManager, new Properties());
         injectRestTemplate();
-        when(serverListManager.getCurrentServerAddr()).thenReturn(SERVER_ADDRESS_1);
+        when(serverListManager.getCurrentServer()).thenReturn(SERVER_ADDRESS_1);
         when(serverListManager.getIterator()).thenReturn(mockIterator);
         when(mockIterator.next()).thenReturn(SERVER_ADDRESS_2);
     }
@@ -97,7 +97,7 @@ class ServerHttpAgentTest {
     
     @Test
     void testConstruct() throws NacosException {
-        ServerListManager server = new ServerListManager();
+        ConfigServerListManager server = new ConfigServerListManager();
         final ServerHttpAgent serverHttpAgent1 = new ServerHttpAgent(server);
         assertNotNull(serverHttpAgent1);
         
@@ -113,7 +113,7 @@ class ServerHttpAgentTest {
     
     @Test
     void testGetterAndSetter() throws NacosException {
-        ServerListManager server = new ServerListManager("aaa", "namespace1");
+        ConfigServerListManager server = new ConfigServerListManager("aaa", "namespace1");
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, new Properties());
         
         final String appname = ServerHttpAgent.getAppname();
@@ -135,7 +135,7 @@ class ServerHttpAgentTest {
     void testLifCycle() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "aaa");
-        ServerListManager server = Mockito.mock(ServerListManager.class);
+        ConfigServerListManager server = Mockito.mock(ConfigServerListManager.class);
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, properties);
         
         serverHttpAgent.start();

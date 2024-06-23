@@ -480,7 +480,7 @@ public class ClientWorker implements Closeable {
     }
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ServerListManager serverListManager,
+    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ConfigServerListManager serverListManager,
             final NacosClientProperties properties) throws NacosException {
         this.configFilterChainManager = configFilterChainManager;
         
@@ -527,9 +527,9 @@ public class ClientWorker implements Closeable {
         metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
-        boolean isFixServer = agent.serverListManager.isFixed;
+        boolean isFixServer = agent.serverListManager.isFixed();
         metric.put("isFixedServer", isFixServer);
-        metric.put("addressUrl", agent.serverListManager.addressServerUrl);
+        metric.put("addressUrl", agent.serverListManager.getAddressServerUrl());
         metric.put("serverUrls", agent.serverListManager.getUrlString());
         
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
@@ -599,7 +599,7 @@ public class ClientWorker implements Closeable {
          */
         private static final long ALL_SYNC_INTERNAL = 3 * 60 * 1000L;
         
-        public ConfigRpcTransportClient(NacosClientProperties properties, ServerListManager serverListManager) {
+        public ConfigRpcTransportClient(NacosClientProperties properties, ConfigServerListManager serverListManager) {
             super(properties, serverListManager);
         }
         
@@ -737,19 +737,19 @@ public class ClientWorker implements Closeable {
             rpcClientInner.serverListFactory(new ServerListFactory() {
                 @Override
                 public String genNextServer() {
-                    return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
+                    return ConfigRpcTransportClient.super.serverListManager.genNextServer();
                     
                 }
                 
                 @Override
                 public String getCurrentServer() {
-                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServerAddr();
+                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServer();
                     
                 }
                 
                 @Override
                 public List<String> getServerList() {
-                    return ConfigRpcTransportClient.super.serverListManager.getServerUrls();
+                    return ConfigRpcTransportClient.super.serverListManager.getServerList();
                     
                 }
             });
@@ -762,7 +762,7 @@ public class ClientWorker implements Closeable {
                 
                 @Override
                 public Class<? extends Event> subscribeType() {
-                    return ServerListChangeEvent.class;
+                    return ConfigServerListChangeEvent.class;
                 }
             };
             NotifyCenter.registerSubscriber(subscriber);
