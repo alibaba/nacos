@@ -30,8 +30,8 @@ import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
-import com.alibaba.nacos.client.naming.core.ServerListManager;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.naming.core.NamingServerListManager;
+import com.alibaba.nacos.client.naming.event.NamingServerListChangeEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
@@ -100,13 +100,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     
     private final String namespaceId;
     
-    private final ServerListManager serverListManager;
+    private final NamingServerListManager serverListManager;
     
     private final int maxRetry;
     
     private int serverPort = DEFAULT_SERVER_PORT;
     
-    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListManager serverListManager,
+    public NamingHttpClientProxy(String namespaceId, SecurityProxy securityProxy, NamingServerListManager serverListManager,
             NacosClientProperties properties) {
         super(securityProxy);
         this.serverListManager = serverListManager;
@@ -117,13 +117,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void onEvent(ServerListChangedEvent event) {
+    public void onEvent(NamingServerListChangeEvent event) {
         // do nothing in http client
     }
     
     @Override
     public Class<? extends Event> subscribeType() {
-        return ServerListChangedEvent.class;
+        return NamingServerListChangeEvent.class;
     }
     
     @Override

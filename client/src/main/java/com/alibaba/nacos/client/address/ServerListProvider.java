@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.impl;
+package com.alibaba.nacos.client.address;
 
-import com.alibaba.nacos.common.notify.SlowEvent;
+import java.util.List;
 
 /**
- * Server List Change Event.
- *
- * @author zongtanghu
+ * Server list provider.
+ * @author totalo 
  */
-public class ServerListChangeEvent extends SlowEvent {
+public interface ServerListProvider {
+    
+    List<String> getServerList();
 }

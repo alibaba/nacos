@@ -26,8 +26,8 @@ import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.naming.core.ServerListManager;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
+import com.alibaba.nacos.client.naming.core.NamingServerListManager;
+import com.alibaba.nacos.client.naming.event.NamingServerListChangeEvent;
 import com.alibaba.nacos.client.naming.utils.UtilAndComs;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -74,7 +74,7 @@ class NamingHttpClientProxyTest {
     private SecurityProxy proxy;
     
     @Mock
-    private ServerListManager mgr;
+    private NamingServerListManager mgr;
     
     private Properties props;
     
@@ -96,13 +96,13 @@ class NamingHttpClientProxyTest {
     
     @Test
     void testOnEvent() {
-        clientProxy.onEvent(new ServerListChangedEvent());
+        clientProxy.onEvent(new NamingServerListChangeEvent());
         // Do nothing
     }
     
     @Test
     void testSubscribeType() {
-        assertEquals(ServerListChangedEvent.class, clientProxy.subscribeType());
+        assertEquals(NamingServerListChangeEvent.class, clientProxy.subscribeType());
     }
     
     @Test
