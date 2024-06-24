@@ -129,7 +129,7 @@ public class ServiceManager implements RecordListener<Service> {
     }
     
     /**
-     * Init service maneger.
+     * Init service manager.
      */
     @PostConstruct
     public void init() {
