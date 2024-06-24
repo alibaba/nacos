@@ -129,6 +129,7 @@ const I18N_CONF = {
     promptDelete: 'Do you want to delete the service?',
     create: 'Create Service',
     subscriber: 'Subscriber',
+    total: 'Total:',
   },
   SubscriberList: {
     subscriberList: 'Subscriber List',
@@ -369,6 +370,7 @@ const I18N_CONF = {
     cloneEditableTitle: 'Modify Data Id and Group (optional)',
     authFail: 'Auth failed',
     copyNamespaceID: 'Copy namespace ID',
+    total: 'Total:',
   },
   NewConfig: {
     newListingMain: 'Create Configuration',
