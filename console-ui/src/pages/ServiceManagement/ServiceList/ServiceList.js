@@ -344,7 +344,7 @@ class ServiceList extends React.Component {
             popupProps={{ align: 'bl tl' }}
             total={this.state.total}
             pageSize={this.state.pageSize}
-            totalRender={(total, range) => <TotalRender total={total} range={range} />}
+            totalRender={total => <TotalRender locale={locale} total={total} />}
             onPageSizeChange={pageSize => this.handlePageSizeChange(pageSize)}
             onChange={currentPage => this.setState({ currentPage }, () => this.queryServiceList())}
           />
