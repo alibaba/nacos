@@ -26,16 +26,13 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.test.ConfigCleanUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -43,19 +40,20 @@ import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * use  configPublishRequest for  communication verification between client and server.
  *
  * @author githubcheng2978
  */
-@RunWith(SpringRunner.class)
 @TestConfiguration
 @SpringBootTest(classes = {Nacos.class}, properties = {"server.servlet.context-path=/nacos",
-        RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
-        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
-        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem", RpcConstants.NACOS_SERVER_RPC
-        + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@Ignore("TODO, Fix cert expired problem")
+        RpcConstants.NACOS_SERVER_RPC + ".compatibility=false", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
+        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
+        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@Disabled("TODO, Fix cert expired problem")
 public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
     
     public static AtomicInteger increment = new AtomicInteger(100);
@@ -63,20 +61,19 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
     @LocalServerPort
     private int port;
     
-    @BeforeClass
-    public static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(
-                ConfigIntegrationV1ServerNonCompatibility_CITCase.class.getSimpleName());
+    @BeforeAll
+    static void beforeClass() throws IOException {
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV1ServerNonCompatibility_CITCase.class.getSimpleName());
     }
     
-    @BeforeClass
-    @AfterClass
-    public static void cleanClientCache() throws Exception {
+    @BeforeAll
+    @AfterAll
+    static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
     
     @Test
-    public void test_a_TlsServer() throws Exception {
+    void test_a_TlsServer() throws Exception {
         RpcClient client = RpcClientFactory.createClient("testTlsServer", ConnectionType.GRPC,
                 Collections.singletonMap("labelKey", "labelValue"), null);
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
@@ -84,11 +81,11 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
         serverInfo.setServerPort(port);
         
         Connection connection = client.connectToServer(serverInfo);
-        Assert.assertNull(connection);
+        assertNull(connection);
     }
     
     @Test
-    public void test_b_ServerTlsTrustAll() throws Exception {
+    void test_b_ServerTlsTrustAll() throws Exception {
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustAll(true);
@@ -106,12 +103,12 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
         configPublishRequest.setDataId("test-data" + increment.getAndIncrement());
         
         Response response = connectionTrustCa.request(configPublishRequest, TimeUnit.SECONDS.toMillis(3));
-        Assert.assertTrue(response.isSuccess());
+        assertTrue(response.isSuccess());
         connectionTrustCa.close();
     }
     
     @Test
-    public void test_c_ServerTlsTrustCa() throws Exception {
+    void test_c_ServerTlsTrustCa() throws Exception {
         
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
@@ -130,7 +127,7 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
         configPublishRequestCa.setGroup("test-group" + increment.getAndIncrement());
         configPublishRequestCa.setDataId("test-data" + increment.getAndIncrement());
         Response responseCa = connectionTrustCa.request(configPublishRequestCa, TimeUnit.SECONDS.toMillis(3));
-        Assert.assertTrue(responseCa.isSuccess());
+        assertTrue(responseCa.isSuccess());
         connectionTrustCa.close();
     }
 }

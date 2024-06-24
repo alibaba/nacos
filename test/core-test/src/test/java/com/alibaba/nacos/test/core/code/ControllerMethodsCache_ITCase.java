@@ -16,66 +16,67 @@
 
 package com.alibaba.nacos.test.core.code;
 
-import static org.junit.Assert.assertEquals;
-
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.catalina.connector.Connector;
 import org.apache.catalina.connector.Request;
 import org.apache.tomcat.util.buf.MessageBytes;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @author horizonzy
  * @since 1.3.2
  */
-public class ControllerMethodsCache_ITCase {
-
+class ControllerMethodsCache_ITCase {
+    
     private ControllerMethodsCache methodsCache;
-
-    @Before
-    public void setUp() throws Exception {
+    
+    @BeforeEach
+    void setUp() throws Exception {
         methodsCache = new ControllerMethodsCache();
         EnvUtil.setContextPath("/nacos");
         methodsCache.initClassMethod("com.alibaba.nacos.config.server.controller");
     }
-
+    
     @Test
-    public void testGetMethod() {
+    void testGetMethod() {
         Request getConfigRequest = buildGetConfigRequest();
         Method getConfigMethod = methodsCache.getMethod(getConfigRequest);
         assertEquals("getConfig", getConfigMethod.getName());
-
+        
         Request searchConfigRequest = buildSearchConfigRequest();
         Method searchConfigMethod = methodsCache.getMethod(searchConfigRequest);
         assertEquals("searchConfig", searchConfigMethod.getName());
-
+        
         Request detailConfigInfoRequest = buildDetailConfigInfoRequest();
         Method detailConfigInfoMethod = methodsCache.getMethod(detailConfigInfoRequest);
         assertEquals("detailConfigInfo", detailConfigInfoMethod.getName());
     }
-
+    
     private Request buildDetailConfigInfoRequest() {
         Map<String, String> parameter = new HashMap<>();
         parameter.put("show", "all");
         return buildRequest("GET", "/nacos/v1/cs/configs", parameter);
     }
-
+    
     private Request buildSearchConfigRequest() {
         Map<String, String> parameter = new HashMap<>();
         parameter.put("search", "accurate");
         return buildRequest("GET", "/nacos/v1/cs/configs", parameter);
     }
-
+    
     private Request buildGetConfigRequest() {
         Map<String, String> parameter = new HashMap<>();
         return buildRequest("GET", "/nacos/v1/cs/configs", parameter);
     }
-
+    
     private Request buildRequest(String method, String path, Map<String, String> parameters) {
         Connector connector = new Connector();
         connector.setParseBodyMethods("GET,POST,PUT,DELETE,PATCH");
@@ -92,5 +93,5 @@ public class ControllerMethodsCache_ITCase {
         }
         return request;
     }
-
+    
 }

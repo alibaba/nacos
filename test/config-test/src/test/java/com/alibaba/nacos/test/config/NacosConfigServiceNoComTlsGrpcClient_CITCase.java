@@ -24,14 +24,13 @@ import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
 import java.util.Properties;
@@ -40,34 +39,36 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * use  configPublishRequest for  communication verification between client and server.
  *
  * @author githubcheng2978.
  */
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
-        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
-        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem", RpcConstants.NACOS_SERVER_RPC
-        + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
+        RpcConstants.NACOS_SERVER_RPC + ".compatibility=false", RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
+        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
     
     public static AtomicInteger increment = new AtomicInteger(100);
     
-    @BeforeClass
-    public static void beforeClass() throws IOException {
+    @BeforeAll
+    static void beforeClass() throws IOException {
         ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceNoComTlsGrpcClient_CITCase.class.getSimpleName());
     }
     
-    @BeforeClass
-    @AfterClass
-    public static void cleanClientCache() throws Exception {
+    @BeforeAll
+    @AfterAll
+    static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
     
     @Test
-    @Ignore("TODO, Fix cert expired problem")
-    public void test_e_TlsServerAndTlsClient() throws Exception {
+    @Disabled("TODO, Fix cert expired problem")
+    void test_e_TlsServerAndTlsClient() throws Exception {
         Properties properties = new Properties();
         properties.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         properties.put(RpcConstants.RPC_CLIENT_TLS_PROVIDER, "openssl");
@@ -77,8 +78,8 @@ public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
         String content = UUID.randomUUID().toString();
         String dataId = "test-group" + increment.getAndIncrement();
         String groupId = "test-data" + increment.getAndIncrement();
-        boolean b = configService.publishConfig("test-group" + increment.getAndIncrement(),
-                "test-data" + increment.getAndIncrement(), content);
+        boolean b = configService.publishConfig("test-group" + increment.getAndIncrement(), "test-data" + increment.getAndIncrement(),
+                content);
         CountDownLatch latch = new CountDownLatch(1);
         configService.addListener(dataId, groupId, new AbstractConfigChangeListener() {
             @Override
@@ -92,11 +93,11 @@ public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
             }
         });
         latch.await(5, TimeUnit.SECONDS);
-        Assert.assertTrue(b);
+        assertTrue(b);
     }
     
     @Test
-    public void test_e_TlsServerAndPlainClient() throws Exception {
+    void test_e_TlsServerAndPlainClient() throws Exception {
         Properties propertiesfalse = new Properties();
         propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "false");
         propertiesfalse.put("serverAddr", "127.0.0.1");
@@ -118,6 +119,6 @@ public class NacosConfigServiceNoComTlsGrpcClient_CITCase {
             }
         });
         latch2.await(5, TimeUnit.SECONDS);
-        Assert.assertFalse(res);
+        assertFalse(res);
     }
 }

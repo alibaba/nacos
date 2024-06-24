@@ -26,132 +26,129 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.config.server.model.ConfigInfo4Beta;
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * NacosRestTemplate_ITCase.
  *
  * @author mai.jh
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@FixMethodOrder(MethodSorters.JVM)
-public class NacosRestTemplate_ITCase {
-    
-    @LocalServerPort
-    private int port;
-    
-    private NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder
-            .getNacosRestTemplate(LoggerFactory.getLogger(NacosRestTemplate_ITCase.class));
+@TestMethodOrder(MethodName.class)
+class NacosRestTemplate_ITCase {
     
     private final String INSTANCE_PATH = "/nacos/v1/ns";
     
     private final String CONFIG_PATH = "/nacos/v1/cs";
     
+    @LocalServerPort
+    private int port;
+    
+    private NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder.getNacosRestTemplate(
+            LoggerFactory.getLogger(NacosRestTemplate_ITCase.class));
+    
     private String IP = null;
     
-    @Before
-    public void init() throws NacosException {
+    @BeforeEach
+    void init() throws NacosException {
         IP = String.format("http://localhost:%d", port);
     }
     
     @Test
-    public void test_url_post_config() throws Exception {
+    void test_url_post_config() throws Exception {
         String url = IP + CONFIG_PATH + "/configs";
         Map<String, String> param = new HashMap<>();
         param.put("dataId", "test-1");
         param.put("group", "DEFAULT_GROUP");
         param.put("content", "aaa=b");
-        HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), param, String.class);
-        Assert.assertTrue(restResult.ok());
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.newInstance(), param, String.class);
+        assertTrue(restResult.ok());
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
     }
     
     @Test
-    public void test_url_get_return_restResult() throws Exception {
+    void test_url_get_return_restResult() throws Exception {
         String url = IP + CONFIG_PATH + "/configs";
-        Query query = Query.newInstance().addParam("beta", true).addParam("dataId", "test-1")
-                .addParam("group", "DEFAULT_GROUP");
-        HttpRestResult<ConfigInfo4Beta> restResult = nacosRestTemplate
-                .get(url, Header.newInstance(), query, new TypeReference<RestResult<ConfigInfo4Beta>>() {
+        Query query = Query.newInstance().addParam("beta", true).addParam("dataId", "test-1").addParam("group", "DEFAULT_GROUP");
+        HttpRestResult<ConfigInfo4Beta> restResult = nacosRestTemplate.get(url, Header.newInstance(), query,
+                new TypeReference<RestResult<ConfigInfo4Beta>>() {
                 }.getType());
-        Assert.assertTrue(restResult.ok());
+        assertTrue(restResult.ok());
         System.out.println(restResult.getData());
         System.out.println(restResult.getHeader());
     }
     
     
     @Test
-    public void test_url_post_form() throws Exception {
+    void test_url_post_form() throws Exception {
         String url = IP + INSTANCE_PATH + "/instance";
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test");
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
-        HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), param, String.class);
-        Assert.assertTrue(restResult.ok());
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.newInstance(), param, String.class);
+        assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
     
     @Test
-    @Ignore("new version can't update instance when service and instance is not exist")
-    public void test_url_put_from() throws Exception {
+    @Disabled("new version can't update instance when service and instance is not exist")
+    void test_url_put_from() throws Exception {
         String url = IP + INSTANCE_PATH + "/instance";
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test-change");
         param.put("port", "8080");
         param.put("ip", "11.11.11.11");
-        HttpRestResult<String> restResult = nacosRestTemplate
-                .putForm(url, Header.newInstance(), param, String.class);
-        Assert.assertTrue(restResult.ok());
+        HttpRestResult<String> restResult = nacosRestTemplate.putForm(url, Header.newInstance(), param, String.class);
+        assertTrue(restResult.ok());
         System.out.println(restResult.getData());
     }
     
     @Test
-    public void test_url_get() throws Exception {
+    void test_url_get() throws Exception {
         String url = IP + INSTANCE_PATH + "/instance/list";
         Query query = Query.newInstance().addParam("serviceName", "app-test");
         HttpRestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), query, Map.class);
-        Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
+        assertTrue(restResult.ok());
+        assertEquals("DEFAULT_GROUP@@app-test", restResult.getData().get("name"));
         System.out.println(restResult.getData());
     }
     
     @Test
-    public void test_url_get_by_map() throws Exception {
+    void test_url_get_by_map() throws Exception {
         String url = IP + INSTANCE_PATH + "/instance/list";
         Map<String, String> param = new HashMap<>();
         param.put("serviceName", "app-test");
         HttpRestResult<Map> restResult = nacosRestTemplate.get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class);
-        Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
+        assertTrue(restResult.ok());
+        assertEquals("DEFAULT_GROUP@@app-test", restResult.getData().get("name"));
         System.out.println(restResult.getData());
     }
     
     @Test
-    public void test_url_delete() throws Exception {
+    void test_url_delete() throws Exception {
         String url = IP + INSTANCE_PATH + "/instance";
-        Query query = Query.newInstance().addParam("ip", "11.11.11.11").addParam("port", "8080")
-                .addParam("serviceName", "app-test");
+        Query query = Query.newInstance().addParam("ip", "11.11.11.11").addParam("port", "8080").addParam("serviceName", "app-test");
         HttpRestResult<String> restResult = nacosRestTemplate.delete(url, Header.newInstance(), query, String.class);
-        Assert.assertTrue(restResult.ok());
+        assertTrue(restResult.ok());
         System.out.println(restResult);
     }
     

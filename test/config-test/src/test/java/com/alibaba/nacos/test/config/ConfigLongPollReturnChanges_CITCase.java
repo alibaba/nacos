@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.config;
 
 import com.alibaba.nacos.Nacos;
@@ -25,40 +26,43 @@ import com.alibaba.nacos.api.config.PropertyChangeType;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Properties;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class ConfigLongPollReturnChanges_CITCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+class ConfigLongPollReturnChanges_CITCase {
+    
     @LocalServerPort
     private int port;
-
+    
     private ConfigService configService;
     
-    @BeforeClass
-    @AfterClass
-    public static void cleanClientCache() throws Exception {
+    @BeforeAll
+    @AfterAll
+    static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
         ConfigCleanUtils.changeToNewTestNacosHome(ConfigLongPollReturnChanges_CITCase.class.getSimpleName());
     }
-
-    @Before
-    public void init() throws NacosException {
+    
+    @BeforeEach
+    void init() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:" + port);
         properties.put(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT, "20000");
@@ -66,31 +70,31 @@ public class ConfigLongPollReturnChanges_CITCase {
         properties.put(PropertyKeyConst.MAX_RETRY, "5");
         configService = NacosFactory.createConfigService(properties);
     }
-
-    @After
-    public void destroy(){
+    
+    @AfterEach
+    void destroy() {
         try {
             configService.shutDown();
-        }catch (NacosException ex) {
+        } catch (NacosException ex) {
         }
     }
-
+    
     @Test
-    public void testAdd() throws InterruptedException, NacosException {
+    void testAdd() throws InterruptedException, NacosException {
         CountDownLatch latch = new CountDownLatch(1);
-
+        
         final String dataId = "test" + System.currentTimeMillis();
         final String group = "DEFAULT_GROUP";
         final String content = "config data";
-
+        
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
                 try {
                     ConfigChangeItem cci = event.getChangeItem("content");
-                    Assert.assertNull(cci.getOldValue());
-                    Assert.assertEquals(content, cci.getNewValue());
-                    Assert.assertEquals(PropertyChangeType.ADDED, cci.getType());
+                    assertNull(cci.getOldValue());
+                    assertEquals(content, cci.getNewValue());
+                    assertEquals(PropertyChangeType.ADDED, cci.getType());
                     System.out.println(cci);
                 } finally {
                     latch.countDown();
@@ -98,75 +102,75 @@ public class ConfigLongPollReturnChanges_CITCase {
             }
         });
         boolean result = configService.publishConfig(dataId, group, content);
-        Assert.assertTrue(result);
-
+        assertTrue(result);
+        
         configService.getConfig(dataId, group, 50);
-
+        
         latch.await(10_000L, TimeUnit.MILLISECONDS);
     }
-
+    
     @Test
-    public void testModify() throws InterruptedException, NacosException {
+    void testModify() throws InterruptedException, NacosException {
         CountDownLatch latch = new CountDownLatch(1);
-
+        
         final String dataId = "test" + System.currentTimeMillis();
         final String group = "DEFAULT_GROUP";
         final String oldData = "old data";
         final String newData = "new data";
-
+        
         boolean result = configService.publishConfig(dataId, group, oldData);
-
-        Assert.assertTrue(result);
-
+        
+        assertTrue(result);
+        
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
                 try {
                     ConfigChangeItem cci = event.getChangeItem("content");
-                    Assert.assertEquals(oldData, cci.getOldValue());
-                    Assert.assertEquals(newData, cci.getNewValue());
-                    Assert.assertEquals(PropertyChangeType.MODIFIED, cci.getType());
+                    assertEquals(oldData, cci.getOldValue());
+                    assertEquals(newData, cci.getNewValue());
+                    assertEquals(PropertyChangeType.MODIFIED, cci.getType());
                     System.out.println(cci);
                 } finally {
                     latch.countDown();
                 }
             }
-
+            
         });
         configService.publishConfig(dataId, group, newData);
-
+        
         latch.await(10_000L, TimeUnit.MILLISECONDS);
     }
-
+    
     @Test
-    public void testDelete() throws InterruptedException, NacosException {
+    void testDelete() throws InterruptedException, NacosException {
         CountDownLatch latch = new CountDownLatch(1);
-
+        
         final String dataId = "test" + System.currentTimeMillis();
         final String group = "DEFAULT_GROUP";
         final String oldData = "old data";
-
+        
         boolean result = configService.publishConfig(dataId, group, oldData);
-        Assert.assertTrue(result);
-
+        assertTrue(result);
+        
         configService.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
                 try {
                     ConfigChangeItem cci = event.getChangeItem("content");
-                    Assert.assertEquals(oldData, cci.getOldValue());
-                    Assert.assertNull(cci.getNewValue());
-                    Assert.assertEquals(PropertyChangeType.DELETED, cci.getType());
+                    assertEquals(oldData, cci.getOldValue());
+                    assertNull(cci.getNewValue());
+                    assertEquals(PropertyChangeType.DELETED, cci.getType());
                     System.out.println(cci);
                 } finally {
                     latch.countDown();
                 }
             }
-
+            
         });
         configService.removeConfig(dataId, group);
-
+        
         latch.await(10_000L, TimeUnit.MILLISECONDS);
     }
-
+    
 }
