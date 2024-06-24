@@ -35,6 +35,8 @@ public class PropertyKeyConst {
     
     public static final String ENDPOINT_CONTEXT_PATH = "endpointContextPath";
     
+    public static final String ENDPOINT_CLUSTER_NAME = "endpointClusterName";
+    
     public static final String SERVER_NAME = "serverName";
     
     public static final String NAMESPACE = "namespace";

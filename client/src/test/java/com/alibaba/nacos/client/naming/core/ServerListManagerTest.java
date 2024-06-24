@@ -190,7 +190,7 @@ public class ServerListManagerTest {
     @Test
     public void testConstructWithEndpointWithCustomPathAndName() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.CONTEXT_PATH, "aaa");
-        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "bbb");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "bbb");
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
@@ -204,7 +204,7 @@ public class ServerListManagerTest {
     @Test
     public void testConstructWithEndpointWithEndpointPathAndName() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "aaa");
-        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "bbb");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "bbb");
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
@@ -219,7 +219,7 @@ public class ServerListManagerTest {
     public void testConstructEndpointContextPathPriority() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "aaa");
         clientProperties.setProperty(PropertyKeyConst.CONTEXT_PATH, "bbb");
-        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "ccc");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "ccc");
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/ccc"), any(), any(), any()))
@@ -234,7 +234,7 @@ public class ServerListManagerTest {
     public void testConstructEndpointContextPathIsEmpty() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "");
         clientProperties.setProperty(PropertyKeyConst.CONTEXT_PATH, "bbb");
-        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "ccc");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "ccc");
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/bbb/ccc"), any(), any(), any()))
