@@ -27,19 +27,19 @@ import com.alibaba.nacos.naming.model.form.UpdateSwitchForm;
 import com.alibaba.nacos.naming.model.vo.MetricsInfoVo;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collection;
 import java.util.HashSet;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * OperatorControllerV2Test.
@@ -48,8 +48,8 @@ import static org.junit.Assert.assertEquals;
  * @date 2022/9/15
  */
 
-@RunWith(MockitoJUnitRunner.class)
-public class OperatorControllerV2Test {
+@ExtendWith(MockitoExtension.class)
+class OperatorControllerV2Test {
     
     private OperatorControllerV2 operatorControllerV2;
     
@@ -65,24 +65,23 @@ public class OperatorControllerV2Test {
     @Mock
     private ClientManager clientManager;
     
-    @Before
-    public void setUp() {
-        this.operatorControllerV2 = new OperatorControllerV2(switchManager, serverStatusManager, switchDomain,
-                clientManager);
+    @BeforeEach
+    void setUp() {
+        this.operatorControllerV2 = new OperatorControllerV2(switchManager, serverStatusManager, switchDomain, clientManager);
         MockEnvironment environment = new MockEnvironment();
         environment.setProperty(Constants.SUPPORT_UPGRADE_FROM_1X, "true");
         EnvUtil.setEnvironment(environment);
     }
     
     @Test
-    public void testSwitches() {
+    void testSwitches() {
         Result<SwitchDomain> result = operatorControllerV2.switches();
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(this.switchDomain, result.getData());
     }
     
     @Test
-    public void testUpdateSwitches() {
+    void testUpdateSwitches() {
         UpdateSwitchForm updateSwitchForm = new UpdateSwitchForm();
         updateSwitchForm.setDebug(true);
         updateSwitchForm.setEntry("test");
@@ -94,12 +93,12 @@ public class OperatorControllerV2Test {
             assertEquals("ok", result.getData());
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testMetrics() {
+    void testMetrics() {
         Mockito.when(serverStatusManager.getServerStatus()).thenReturn(ServerStatus.UP);
         Collection<String> clients = new HashSet<>();
         clients.add("1628132208793_127.0.0.1_8080");
@@ -113,11 +112,11 @@ public class OperatorControllerV2Test {
         
         MetricsInfoVo metricsInfoVo = result.getData();
         
-        Assert.assertEquals(ServerStatus.UP.toString(), metricsInfoVo.getStatus());
-        Assert.assertEquals(3, metricsInfoVo.getClientCount().intValue());
-        Assert.assertEquals(1, metricsInfoVo.getConnectionBasedClientCount().intValue());
-        Assert.assertEquals(1, metricsInfoVo.getEphemeralIpPortClientCount().intValue());
-        Assert.assertEquals(1, metricsInfoVo.getPersistentIpPortClientCount().intValue());
-        Assert.assertEquals(3, metricsInfoVo.getResponsibleClientCount().intValue());
+        assertEquals(ServerStatus.UP.toString(), metricsInfoVo.getStatus());
+        assertEquals(3, metricsInfoVo.getClientCount().intValue());
+        assertEquals(1, metricsInfoVo.getConnectionBasedClientCount().intValue());
+        assertEquals(1, metricsInfoVo.getEphemeralIpPortClientCount().intValue());
+        assertEquals(1, metricsInfoVo.getPersistentIpPortClientCount().intValue());
+        assertEquals(3, metricsInfoVo.getResponsibleClientCount().intValue());
     }
 }

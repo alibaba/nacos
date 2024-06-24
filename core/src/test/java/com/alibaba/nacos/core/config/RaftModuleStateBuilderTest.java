@@ -20,33 +20,34 @@ package com.alibaba.nacos.core.config;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * raft module state builder test.
+ *
  * @author 985492783@qq.com
  * @date 2023/4/8 0:18
  */
-public class RaftModuleStateBuilderTest {
+class RaftModuleStateBuilderTest {
     
     private ConfigurableEnvironment environment;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
     }
     
     @Test
-    public void testBuild() {
+    void testBuild() {
         ModuleState actual = new RaftModuleStateBuilder().build();
         Map<String, Object> states = actual.getStates();
         assertEquals(RaftSysConstants.RAFT_STATE, actual.getModuleName());

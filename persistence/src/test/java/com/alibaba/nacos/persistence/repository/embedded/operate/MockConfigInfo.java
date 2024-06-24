@@ -69,8 +69,8 @@ public class MockConfigInfo {
             return false;
         }
         MockConfigInfo that = (MockConfigInfo) o;
-        return id == that.id && Objects.equals(dataId, that.dataId) && Objects.equals(group, that.group) && Objects
-                .equals(content, that.content);
+        return id == that.id && Objects.equals(dataId, that.dataId) && Objects.equals(group, that.group) && Objects.equals(content,
+                that.content);
     }
     
     @Override

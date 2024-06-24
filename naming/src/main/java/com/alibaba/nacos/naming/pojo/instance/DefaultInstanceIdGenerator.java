@@ -16,34 +16,29 @@
 
 package com.alibaba.nacos.naming.pojo.instance;
 
-import com.alibaba.nacos.api.naming.spi.generator.IdGenerator;
+import com.alibaba.nacos.api.naming.pojo.Instance;
+import com.alibaba.nacos.api.naming.spi.generator.InstanceIdGenerator;
+
+import static com.alibaba.nacos.api.common.Constants.DEFAULT_INSTANCE_ID_GENERATOR;
+import static com.alibaba.nacos.api.common.Constants.NAMING_INSTANCE_ID_SPLITTER;
 
 /**
  * Default instance id generator.
  *
  * @author xiweng.yy
  */
-public class DefaultInstanceIdGenerator implements IdGenerator {
+public class DefaultInstanceIdGenerator implements InstanceIdGenerator {
     
-    public static final String ID_DELIMITER = "#";
-    
-    private final String serviceName;
-    
-    private final String clusterName;
-    
-    private final String ip;
-    
-    private final int port;
-    
-    public DefaultInstanceIdGenerator(String serviceName, String clusterName, String ip, int port) {
-        this.serviceName = serviceName;
-        this.clusterName = clusterName;
-        this.ip = ip;
-        this.port = port;
+    @Override
+    public String generateInstanceId(Instance instance) {
+        return instance.getIp() + NAMING_INSTANCE_ID_SPLITTER
+                + instance.getPort() + NAMING_INSTANCE_ID_SPLITTER
+                + instance.getClusterName() + NAMING_INSTANCE_ID_SPLITTER
+                + instance.getServiceName();
     }
     
     @Override
-    public String generateInstanceId() {
-        return ip + ID_DELIMITER + port + ID_DELIMITER + clusterName + ID_DELIMITER + serviceName;
+    public String type() {
+        return DEFAULT_INSTANCE_ID_GENERATOR;
     }
 }

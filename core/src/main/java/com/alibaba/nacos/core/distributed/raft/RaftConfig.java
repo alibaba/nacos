@@ -98,7 +98,7 @@ public class RaftConfig implements Config<RequestProcessor4CP> {
     @Override
     public String toString() {
         try {
-            return JacksonUtils.toJson(data);
+            return JacksonUtils.toJson(this);
         } catch (Exception e) {
             return String.valueOf(data);
         }

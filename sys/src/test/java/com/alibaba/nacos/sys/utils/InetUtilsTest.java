@@ -19,53 +19,56 @@ package com.alibaba.nacos.sys.utils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.net.InetAddress;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class InetUtilsTest {
+class InetUtilsTest {
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
         System.setProperty(NACOS_SERVER_IP, "1.1.1.1");
         System.setProperty(Constants.AUTO_REFRESH_TIME, "100");
     }
     
     @Test
-    public void testRefreshIp() throws InterruptedException {
-        Assert.assertEquals("1.1.1.1", InetUtils.getSelfIP());
+    void testRefreshIp() throws InterruptedException {
+        assertEquals("1.1.1.1", InetUtils.getSelfIP());
         
         System.setProperty(NACOS_SERVER_IP, "1.1.1.2");
         TimeUnit.MILLISECONDS.sleep(300L);
-    
-        Assert.assertTrue(StringUtils.equalsIgnoreCase(InetUtils.getSelfIP(), "1.1.1.2"));
+        
+        assertTrue(StringUtils.equalsIgnoreCase(InetUtils.getSelfIP(), "1.1.1.2"));
         
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         System.clearProperty(NACOS_SERVER_IP);
         System.clearProperty(Constants.AUTO_REFRESH_TIME);
     }
     
     @Test
-    public void getSelfIP() {
-        Assert.assertNotNull(InetUtils.getSelfIP());
+    void getSelfIP() {
+        assertNotNull(InetUtils.getSelfIP());
     }
     
     @Test
-    public void findFirstNonLoopbackAddress() {
+    void findFirstNonLoopbackAddress() {
         InetAddress address = InetUtils.findFirstNonLoopbackAddress();
         
-        Assert.assertNotNull(address);
-        Assert.assertFalse(address.isLoopbackAddress());
+        assertNotNull(address);
+        assertFalse(address.isLoopbackAddress());
     }
 }

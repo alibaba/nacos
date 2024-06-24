@@ -142,7 +142,11 @@ class PermissionsManagement extends React.Component {
             <Button
               type={'primary'}
               style={{ marginRight: 10 }}
-              onClick={() => this.getPermissions()}
+              onClick={() => {
+                this.setState({ pageNo: 1 }, () => {
+                  this.getPermissions();
+                });
+              }}
               data-spm-click={'gostr=/aliyun;locaid=dashsearch'}
             >
               {locale.query}

@@ -20,21 +20,21 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.misc.SwitchDomain;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.StandardEnvironment;
 
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DistroMapperTest {
+@ExtendWith(MockitoExtension.class)
+class DistroMapperTest {
     
     private DistroMapper distroMapper;
     
@@ -55,8 +55,8 @@ public class DistroMapperTest {
     
     private int port = 8848;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         ConcurrentSkipListMap<String, Member> serverList = new ConcurrentSkipListMap<>();
         EnvUtil.setEnvironment(new StandardEnvironment());
         EnvUtil.setIsStandalone(true);
@@ -71,12 +71,12 @@ public class DistroMapperTest {
     }
     
     @Test
-    public void testResponsible() {
+    void testResponsible() {
         assertTrue(distroMapper.responsible(serviceName));
     }
     
     @Test
-    public void testMapSrv() {
+    void testMapSrv() {
         String server = distroMapper.mapSrv(serviceName);
         assertEquals(server, ip4);
     }

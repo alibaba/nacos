@@ -16,11 +16,16 @@
 
 package com.alibaba.nacos.core.remote;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.remote.RemoteConstants;
+import com.alibaba.nacos.common.utils.ConnLabelsUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 
@@ -87,6 +92,10 @@ public class ConnectionMeta {
      */
     String tenant;
     
+    long firstPushQueueBlockTime = 0;
+    
+    long lastPushQueueBlockTime = 0;
+    
     protected Map<String, String> labels = new HashMap<>();
     
     public String getLabel(String labelKey) {
@@ -139,6 +148,26 @@ public class ConnectionMeta {
      */
     public Map<String, String> getLabels() {
         return labels;
+    }
+    
+    /**
+     * get labels map with filter of starting with prefix #{@link Constants#APP_CONN_PREFIX}
+     * and return a new map trim the prefix #{@link Constants#APP_CONN_PREFIX}.
+     * @date 2024/2/29
+     * @return map of labels.
+     */
+    public Map<String, String> getAppLabels() {
+        HashMap<String, String> labelsMap = new HashMap<String, String>(8) {
+            {
+                put(Constants.APPNAME, labels.get(Constants.APPNAME));
+                put(Constants.CLIENT_VERSION_KEY, version);
+            }
+        };
+        return ConnLabelsUtils.mergeMapByOrder(labelsMap, labels.entrySet().stream().filter(Objects::nonNull)
+                .filter(e -> e.getKey().startsWith(Constants.APP_CONN_PREFIX)
+                && e.getKey().length() > Constants.APP_CONN_PREFIX.length()
+                && StringUtils.isNotBlank(e.getValue())).collect(
+                Collectors.toMap(k -> k.getKey().substring(Constants.APP_CONN_PREFIX.length()), Map.Entry::getValue)));
     }
     
     /**
@@ -290,6 +319,34 @@ public class ConnectionMeta {
     
     public void setTenant(String tenant) {
         this.tenant = tenant;
+    }
+    
+    /**
+     * recordPushQueueBlockTimes.
+     */
+    public void recordPushQueueBlockTimes() {
+        if (this.firstPushQueueBlockTime == 0) {
+            firstPushQueueBlockTime = System.currentTimeMillis();
+        } else {
+            lastPushQueueBlockTime = System.currentTimeMillis();
+        }
+    }
+    
+    /**
+     * clear push queue block times.
+     */
+    public void clearPushQueueBlockTimes() {
+        this.firstPushQueueBlockTime = 0;
+        this.lastPushQueueBlockTime = 0;
+    }
+    
+    /**
+     * check block greater than the specific time.
+     * @param timeMillsSeconds check times.
+     * @return
+     */
+    public boolean pushQueueBlockTimesLastOver(long timeMillsSeconds) {
+        return this.lastPushQueueBlockTime - this.firstPushQueueBlockTime > timeMillsSeconds;
     }
     
     @Override

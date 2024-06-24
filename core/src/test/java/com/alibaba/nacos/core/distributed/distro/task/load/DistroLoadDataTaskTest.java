@@ -27,13 +27,12 @@ import com.alibaba.nacos.core.distributed.distro.component.DistroFailedTaskHandl
 import com.alibaba.nacos.core.distributed.distro.component.DistroTransportAgent;
 import com.alibaba.nacos.core.distributed.distro.entity.DistroData;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -41,12 +40,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DistroLoadDataTaskTest extends TestCase {
+@ExtendWith(MockitoExtension.class)
+class DistroLoadDataTaskTest {
     
     private final String type = "com.alibaba.nacos.naming.iplist.";
     
@@ -78,13 +79,13 @@ public class DistroLoadDataTaskTest extends TestCase {
     @Mock
     private DistroCallback loadCallback;
     
-    @BeforeClass
-    public static void setUpBeforeClass() {
+    @BeforeAll
+    static void setUpBeforeClass() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         List<Member> memberList = new LinkedList<>();
         memberList.add(Member.builder().ip("2.2.2.2").port(8848).build());
         memberList.add(Member.builder().ip("1.1.1.1").port(8848).build());
@@ -101,10 +102,9 @@ public class DistroLoadDataTaskTest extends TestCase {
     }
     
     @Test
-    public void testRun() {
+    void testRun() {
         distroLoadDataTask.run();
-        Map<String, Boolean> loadCompletedMap = (Map<String, Boolean>) ReflectionTestUtils
-                .getField(distroLoadDataTask, "loadCompletedMap");
+        Map<String, Boolean> loadCompletedMap = (Map<String, Boolean>) ReflectionTestUtils.getField(distroLoadDataTask, "loadCompletedMap");
         assertNotNull(loadCompletedMap);
         assertTrue(loadCompletedMap.containsKey(type));
         verify(distroTransportAgent).getDatumSnapshot(any(String.class));

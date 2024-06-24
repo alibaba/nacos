@@ -16,18 +16,17 @@
 
 package com.alibaba.nacos.test.common;
 
+import com.alibaba.nacos.common.utils.ByteUtils;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.sys.file.FileChangeEvent;
 import com.alibaba.nacos.sys.file.FileWatcher;
 import com.alibaba.nacos.sys.file.WatchFileCenter;
-import com.alibaba.nacos.common.utils.ByteUtils;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.sys.utils.DiskUtils;
-import com.alibaba.nacos.common.utils.ThreadUtils;
-import com.alibaba.nacos.common.utils.StringUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -41,31 +40,33 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-public class WatchFileCenter_ITCase {
+class WatchFileCenter_ITCase {
     
     static final String path = Paths.get(System.getProperty("user.home"), "/watch_file_change_test").toString();
     
-    final Object monitor = new Object();
-    
     static final Executor executor = Executors.newFixedThreadPool(32);
     
-    @BeforeClass
-    public static void beforeCls() throws Exception {
+    final Object monitor = new Object();
+    
+    @BeforeAll
+    static void beforeCls() throws Exception {
         DiskUtils.deleteDirThenMkdir(path);
     }
     
-    @AfterClass
-    public static void afterCls() throws Exception {
+    @AfterAll
+    static void afterCls() throws Exception {
         DiskUtils.deleteDirectory(path);
     }
     
     // The last file change must be notified
     
     @Test
-    public void test_high_concurrency_modify() throws Exception {
+    void test_high_concurrency_modify() throws Exception {
         AtomicInteger count = new AtomicInteger(0);
         Set<String> set = new ConcurrentHashSet<>();
         
@@ -81,7 +82,7 @@ public class WatchFileCenter_ITCase {
     }
     
     @Test
-    public void test_modify_file_much() throws Exception {
+    void test_modify_file_much() throws Exception {
         final String fileName = "modify_file_much";
         final File file = Paths.get(path, fileName).toFile();
         
@@ -113,11 +114,11 @@ public class WatchFileCenter_ITCase {
         
         latch.await(10_000L, TimeUnit.MILLISECONDS);
         
-        Assert.assertEquals(3, count.get());
+        assertEquals(3, count.get());
     }
     
     @Test
-    public void test_multi_file_modify() throws Exception {
+    void test_multi_file_modify() throws Exception {
         CountDownLatch latch = new CountDownLatch(10);
         for (int i = 0; i < 10; i++) {
             AtomicInteger count = new AtomicInteger(0);

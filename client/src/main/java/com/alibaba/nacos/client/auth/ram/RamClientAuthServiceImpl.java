@@ -63,6 +63,7 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
         loadRoleName(properties);
         loadAccessKey(properties);
         loadSecretKey(properties);
+        loadRegionId(properties);
         return true;
     }
     
@@ -82,6 +83,11 @@ public class RamClientAuthServiceImpl extends AbstractClientAuthService {
     private void loadSecretKey(Properties properties) {
         String secretKey = properties.getProperty(PropertyKeyConst.SECRET_KEY);
         ramContext.setSecretKey(StringUtils.isBlank(secretKey) ? SpasAdapter.getSk() : secretKey);
+    }
+    
+    private void loadRegionId(Properties properties) {
+        String regionId = properties.getProperty(PropertyKeyConst.SIGNATURE_REGION_ID);
+        ramContext.setRegionId(regionId);
     }
     
     @Override

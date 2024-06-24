@@ -32,6 +32,7 @@ import {
 import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
+import PageTitle from '../../../components/PageTitle';
 
 const FormItem = Form.Item;
 const { Row, Col } = Grid;
@@ -54,6 +55,7 @@ class ListeningToQuery extends React.Component {
       pageSize: 10,
       currentPage: 1,
       dataSource: [],
+      totalDataSource: [],
     };
     this.field = new Field(this);
     this.group = getParams('listeningGroup') || '';
@@ -126,8 +128,9 @@ class ListeningToQuery extends React.Component {
             }
           }
           self.setState({
-            dataSource: dataSoureTmp || [],
+            totalDataSource: dataSoureTmp || [],
             total: dataSoureTmp.length || 0,
+            dataSource: dataSoureTmp.slice(0, self.state.pageSize),
           });
         }
       },
@@ -140,8 +143,10 @@ class ListeningToQuery extends React.Component {
   showMore() {}
 
   changePage = value => {
+    const startIndex = (value - 1) * this.state.pageSize;
     this.setState({
       currentPage: value,
+      dataSource: this.state.totalDataSource.slice(startIndex, startIndex + this.state.pageSize),
     });
   };
 
@@ -170,7 +175,15 @@ class ListeningToQuery extends React.Component {
     });
   };
 
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId, nowNamespaceDesc) =>
+    this.setState({
+      nowNamespaceName,
+      nowNamespaceId,
+      nowNamespaceDesc,
+    });
+
   render() {
+    const { nowNamespaceName, nowNamespaceId, nowNamespaceDesc } = this.state;
     const { locale = {} } = this.props;
     const { init, getValue } = this.field;
     this.init = init;
@@ -195,7 +208,17 @@ class ListeningToQuery extends React.Component {
           tip="Loading..."
           color="#333"
         >
-          <RegionGroup left={locale.listenerQuery} namespaceCallBack={this.getQueryLater} />
+          <PageTitle
+            title={locale.listenerQuery}
+            desc={nowNamespaceDesc}
+            namespaceId={nowNamespaceId}
+            namespaceName={nowNamespaceName}
+            nameSpace
+          />
+          <RegionGroup
+            setNowNameSpace={this.setNowNameSpace}
+            namespaceCallBack={this.getQueryLater}
+          />
           <Row className="demo-row" style={{ marginBottom: 10, padding: 0 }}>
             <Col span="24">
               <Form inline field={this.field}>
@@ -311,7 +334,6 @@ class ListeningToQuery extends React.Component {
               pageSize={this.state.pageSize}
               onChange={this.changePage}
             />
-            ,
           </div>
         </Loading>
       </>

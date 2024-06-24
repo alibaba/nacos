@@ -51,8 +51,7 @@ public final class PersistentNotifier extends Subscriber<ValueChangeEvent> {
      * @param listener {@link RecordListener}
      */
     public void registerListener(final String key, final RecordListener listener) {
-        listenerMap.computeIfAbsent(key, s -> new ConcurrentHashSet<>());
-        listenerMap.get(key).add(listener);
+        listenerMap.computeIfAbsent(key, s -> new ConcurrentHashSet<>()).add(listener);
     }
     
     /**

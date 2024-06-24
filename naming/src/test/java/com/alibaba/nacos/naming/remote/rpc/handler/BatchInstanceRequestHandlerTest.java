@@ -23,16 +23,17 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * {@link BatchInstanceRequestHandler} unit tests.
@@ -40,8 +41,8 @@ import java.util.List;
  * @author chenhao26
  * @date 2022-07-07
  */
-@RunWith(MockitoJUnitRunner.class)
-public class BatchInstanceRequestHandlerTest {
+@ExtendWith(MockitoExtension.class)
+class BatchInstanceRequestHandlerTest {
     
     @InjectMocks
     private BatchInstanceRequestHandler batchInstanceRequestHandler;
@@ -50,7 +51,7 @@ public class BatchInstanceRequestHandlerTest {
     private EphemeralClientOperationServiceImpl clientOperationService;
     
     @Test
-    public void testHandle() throws NacosException {
+    void testHandle() throws NacosException {
         BatchInstanceRequest batchInstanceRequest = new BatchInstanceRequest();
         batchInstanceRequest.setType(NamingRemoteConstants.BATCH_REGISTER_INSTANCE);
         batchInstanceRequest.setServiceName("service1");
@@ -66,7 +67,7 @@ public class BatchInstanceRequestHandlerTest {
         try {
             batchInstanceRequestHandler.handle(batchInstanceRequest, requestMeta);
         } catch (Exception e) {
-            Assert.assertEquals(((NacosException) e).getErrCode(), NacosException.INVALID_PARAM);
+            assertEquals(NacosException.INVALID_PARAM, ((NacosException) e).getErrCode());
         }
     }
 }

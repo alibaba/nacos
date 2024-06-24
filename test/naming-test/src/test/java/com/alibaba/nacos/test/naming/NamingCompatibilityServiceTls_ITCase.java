@@ -27,15 +27,12 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.Service;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
-import com.alibaba.nacos.core.remote.tls.RpcServerTlsConfig;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.common.remote.client.RpcConstants;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,45 +40,47 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * NamingCompatibilityServiceTls_ITCase.
+ *
  * @author githucheng2978.
  * @date .
  **/
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {
-        "server.servlet.context-path=/nacos",
-        RpcServerTlsConfig.PREFIX+".enableTls=true",
-        RpcServerTlsConfig.PREFIX+".compatibility=true",
-        RpcServerTlsConfig.PREFIX+".certChainFile=test-server-cert.pem",
-        RpcServerTlsConfig.PREFIX+".certPrivateKey=test-server-key.pem",
-},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class NamingCompatibilityServiceTls_ITCase {
-
+@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
+        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=true",
+        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
+        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+class NamingCompatibilityServiceTls_ITCase {
+    
     private NamingMaintainService namingMaintainService;
+    
     private NamingService namingService;
+    
     private Instance instance;
+    
     private String serviceName;
-
+    
     @LocalServerPort
     private int port;
-
-    @Before
-    public void init() throws Exception {
-
+    
+    @BeforeEach
+    void init() throws Exception {
+        
         NamingBase.prepareServer(port);
-
+        
         if (namingMaintainService == null) {
             TimeUnit.SECONDS.sleep(10);
             namingMaintainService = NamingMaintainFactory.createMaintainService("127.0.0.1" + ":" + port);
         }
-
+        
         if (namingService == null) {
             TimeUnit.SECONDS.sleep(10);
             namingService = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
         }
-
+        
         instance = new Instance();
         instance.setIp("127.0.0.1");
         instance.setPort(8081);
@@ -91,13 +90,13 @@ public class NamingCompatibilityServiceTls_ITCase {
         map.put("netType", "external");
         map.put("version", "1.0");
         instance.setMetadata(map);
-
+        
         serviceName = randomDomainName();
-
+        
     }
-
+    
     @Test
-    public void updateInstance() throws NacosException, InterruptedException {
+    void updateInstance() throws NacosException, InterruptedException {
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external-update");
         map.put("version", "2.0");
@@ -106,13 +105,13 @@ public class NamingCompatibilityServiceTls_ITCase {
         namingMaintainService.updateInstance(serviceName, instance);
         TimeUnit.SECONDS.sleep(3L);
         List<Instance> instances = namingService.getAllInstances(serviceName, false);
-        Assert.assertEquals(instances.size(), 1);
-        Assert.assertEquals("2.0", instances.get(0).getMetadata().get("version"));
+        assertEquals(1, instances.size());
+        assertEquals("2.0", instances.get(0).getMetadata().get("version"));
         System.out.println(instances.get(0));
     }
-
+    
     @Test
-    public void updateInstanceWithDisable() throws NacosException, InterruptedException {
+    void updateInstanceWithDisable() throws NacosException, InterruptedException {
         Map<String, String> map = new HashMap<String, String>();
         map.put("netType", "external-update");
         map.put("version", "2.0");
@@ -122,11 +121,11 @@ public class NamingCompatibilityServiceTls_ITCase {
         namingMaintainService.updateInstance(serviceName, instance);
         TimeUnit.SECONDS.sleep(3L);
         List<Instance> instances = namingService.getAllInstances(serviceName, false);
-        Assert.assertEquals(0, instances.size());
+        assertEquals(0, instances.size());
     }
-
+    
     @Test
-    public void createAndUpdateService() throws NacosException {
+    void createAndUpdateService() throws NacosException {
         String serviceName = randomDomainName();
         // register service
         Service preService = new Service();
@@ -138,13 +137,13 @@ public class NamingCompatibilityServiceTls_ITCase {
         preService.setMetadata(metadata);
         ExpressionSelector selector = new ExpressionSelector();
         selector.setExpression("CONSUMER.label.A=PROVIDER.label.A &CONSUMER.label.B=PROVIDER.label.B");
-
+        
         System.out.println("service info : " + preService);
         namingMaintainService.createService(preService, selector);
         Service remoteService = namingMaintainService.queryService(serviceName);
         System.out.println("remote service info : " + remoteService);
-        Assert.assertEquals(preService.toString(), remoteService.toString());
-
+        assertEquals(preService.toString(), remoteService.toString());
+        
         // update service
         Service nowService = new Service();
         nowService.setName(serviceName);
@@ -153,26 +152,26 @@ public class NamingCompatibilityServiceTls_ITCase {
         metadata.clear();
         metadata.put(serviceName, "this is a update metadata");
         nowService.setMetadata(metadata);
-
+        
         namingMaintainService.updateService(nowService, new NoneSelector());
         remoteService = namingMaintainService.queryService(serviceName);
         System.out.println("remote service info : " + remoteService);
-        Assert.assertEquals(nowService.toString(), remoteService.toString());
+        assertEquals(nowService.toString(), remoteService.toString());
     }
-
+    
     @Test
-    public void deleteService() throws NacosException {
+    void deleteService() throws NacosException {
         String serviceName = randomDomainName();
         Service preService = new Service();
         preService.setName(serviceName);
         System.out.println("service info : " + preService);
         namingMaintainService.createService(preService, new NoneSelector());
-
-        Assert.assertTrue(namingMaintainService.deleteService(serviceName));
+        
+        assertTrue(namingMaintainService.deleteService(serviceName));
     }
     
-    @After
-    public void tearDown() throws NacosException {
+    @AfterEach
+    void tearDown() throws NacosException {
         namingMaintainService.shutDown();
         namingService.shutDown();
     }

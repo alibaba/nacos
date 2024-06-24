@@ -16,29 +16,102 @@
 
 package com.alibaba.nacos.config.server.paramcheck;
 
-import com.alibaba.nacos.common.utils.HttpMethod;
-import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.core.paramcheck.AbstractHttpParamExtractor;
-import com.alibaba.nacos.core.paramcheck.HttpParamExtractorManager;
-import org.junit.Test;
-import org.springframework.mock.web.MockHttpServletRequest;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.ConfigInfo;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.Assert.assertEquals;
+import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.List;
 
-/**
- * The type Config listener http param extractor test.
- *
- * @author zhuoguang
- */
-public class ConfigListenerHttpParamExtractorTest {
+import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
+import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
+
+@ExtendWith(MockitoExtension.class)
+class ConfigListenerHttpParamExtractorTest {
+    
+    ConfigListenerHttpParamExtractor configListenerHttpParamExtractor;
+    
+    @Mock
+    HttpServletRequest httpServletRequest;
     
     @Test
-    public void extractParamAndCheck() {
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/nacos" + Constants.CONFIG_CONTROLLER_PATH + "/listener");
-        request.setMethod(HttpMethod.POST);
-        HttpParamExtractorManager manager = HttpParamExtractorManager.getInstance();
-        AbstractHttpParamExtractor extractor = manager.getExtractor(request.getRequestURI(), request.getMethod(), "config");
-        assertEquals(ConfigListenerHttpParamExtractor.class.getSimpleName(), extractor.getClass().getSimpleName());
+    void testNormal() {
+        String listenerConfigsString = getListenerConfigsString();
+        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs"))).thenReturn(listenerConfigsString);
+        configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
+        configListenerHttpParamExtractor.extractParam(httpServletRequest);
+    }
+    
+    @Test
+    void testError() {
+        String listenerConfigsString = getErrorListenerConfigsString();
+        Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs"))).thenReturn(listenerConfigsString);
+        configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
+        try {
+            configListenerHttpParamExtractor.extractParam(httpServletRequest);
+            assertTrue(false);
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+            assertTrue(throwable instanceof IllegalArgumentException);
+        }
+    }
+    
+    private String getListenerConfigsString() {
+        ConfigInfo configInfo1 = new ConfigInfo();
+        configInfo1.setDataId("2345678901");
+        configInfo1.setGroup("1234445");
+        configInfo1.setMd5("234567");
+        configInfo1.setTenant("222345");
+        ConfigInfo configInfo2 = new ConfigInfo();
+        configInfo2.setDataId("2345678902");
+        configInfo2.setGroup("1234445");
+        configInfo2.setMd5(null);
+        configInfo2.setTenant(null);
+        ConfigInfo configInfo3 = new ConfigInfo();
+        configInfo3.setDataId("2345678903");
+        configInfo3.setGroup("1234445");
+        configInfo3.setMd5("12345");
+        configInfo3.setTenant(null);
+        ConfigInfo configInfo4 = new ConfigInfo();
+        configInfo4.setDataId("234567844");
+        configInfo4.setGroup("1234445");
+        configInfo4.setMd5("12345");
+        configInfo4.setTenant(null);
+        List<ConfigInfo> configInfoList = Arrays.asList(configInfo4, configInfo3, configInfo2, configInfo1);
+        StringBuilder sb = new StringBuilder();
+        for (ConfigInfo configInfo : configInfoList) {
+            sb.append(configInfo.getDataId()).append(WORD_SEPARATOR);
+            sb.append(configInfo.getGroup()).append(WORD_SEPARATOR);
+            if (StringUtils.isBlank(configInfo.getTenant())) {
+                sb.append(configInfo.getMd5()).append(LINE_SEPARATOR);
+            } else {
+                sb.append(configInfo.getMd5()).append(WORD_SEPARATOR);
+                sb.append(configInfo.getTenant()).append(LINE_SEPARATOR);
+            }
+        }
+        
+        return sb.toString();
+        
+    }
+    
+    private String getErrorListenerConfigsString() {
+        ConfigInfo configInfo1 = new ConfigInfo();
+        configInfo1.setDataId("2345678901");
+        
+        List<ConfigInfo> configInfoList = Arrays.asList(configInfo1);
+        StringBuilder sb = new StringBuilder();
+        for (ConfigInfo configInfo : configInfoList) {
+            sb.append(configInfo.getDataId()).append(WORD_SEPARATOR);
+        }
+        
+        return sb.toString();
+        
     }
 }

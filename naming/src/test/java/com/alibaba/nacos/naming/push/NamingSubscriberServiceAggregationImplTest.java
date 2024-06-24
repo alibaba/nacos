@@ -20,23 +20,27 @@ import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.pojo.Subscriber;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NamingSubscriberServiceAggregationImplTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class NamingSubscriberServiceAggregationImplTest {
     
     private final String namespace = "N";
     
@@ -57,8 +61,8 @@ public class NamingSubscriberServiceAggregationImplTest {
     
     private NamingSubscriberServiceAggregationImpl aggregation;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         aggregation = new NamingSubscriberServiceAggregationImpl(local, memberManager);
         Subscriber subscriber = new Subscriber("local", "", "", "", namespace, serviceName, 0);
         when(local.getSubscribers(namespace, serviceName)).thenReturn(Collections.singletonList(subscriber));
@@ -71,38 +75,38 @@ public class NamingSubscriberServiceAggregationImplTest {
     }
     
     @Test
-    public void testGetSubscribersByStringWithLocal() {
+    void testGetSubscribersByStringWithLocal() {
         Collection<Subscriber> actual = aggregation.getSubscribers(namespace, serviceName);
         assertEquals(1, actual.size());
         assertEquals("local", actual.iterator().next().getAddrStr());
     }
     
     @Test
-    public void testGetSubscribersByStringWithRemote() {
+    void testGetSubscribersByStringWithRemote() {
         // TODO
     }
     
     @Test
-    public void testGetSubscribersByServiceWithLocal() {
+    void testGetSubscribersByServiceWithLocal() {
         Collection<Subscriber> actual = aggregation.getSubscribers(service);
         assertEquals(1, actual.size());
         assertEquals("local", actual.iterator().next().getAddrStr());
     }
     
     @Test
-    public void testGetSubscribersByServiceWithRemote() {
+    void testGetSubscribersByServiceWithRemote() {
         // TODO
     }
     
     @Test
-    public void testGetFuzzySubscribersByStringWithLocal() {
+    void testGetFuzzySubscribersByStringWithLocal() {
         Collection<Subscriber> actual = aggregation.getFuzzySubscribers(namespace, serviceName);
         assertEquals(1, actual.size());
         assertEquals("local", actual.iterator().next().getAddrStr());
     }
     
     @Test
-    public void testGetFuzzySubscribersByServiceWithLocal() {
+    void testGetFuzzySubscribersByServiceWithLocal() {
         Collection<Subscriber> actual = aggregation.getFuzzySubscribers(service);
         assertEquals(1, actual.size());
         assertEquals("local", actual.iterator().next().getAddrStr());

@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * test NamespaceUtil.
@@ -25,23 +27,33 @@ import org.junit.Test;
  * @author klw(213539 @ qq.com)
  * @date 2020/10/13 9:46
  */
-public class NamespaceUtilTest {
+class NamespaceUtilTest {
     
-    @Test
-    public void testProcessTenantParameter() {
-        String strPublic = "public";
-        String strNull = "null";
-        String strEmpty = "";
-        String strAbc = "abc";
-        String strdef123 = "def123";
-        String strAbcHasSpace = "  abc  ";
-        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strPublic));
-        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strNull));
-        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strEmpty));
-        Assert.assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(null));
-        Assert.assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbc));
-        Assert.assertEquals(strdef123, NamespaceUtil.processNamespaceParameter(strdef123));
-        Assert.assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbcHasSpace));
+    @AfterEach
+    void tearDown() {
+        NamespaceUtil.setNamespaceDefaultId("");
     }
     
+    @Test
+    void testProcessTenantParameter() {
+        String strPublic = "public";
+        String strEmpty = "";
+        assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strPublic));
+        String strNull = "null";
+        assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strNull));
+        assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(strEmpty));
+        assertEquals(strEmpty, NamespaceUtil.processNamespaceParameter(null));
+        String strAbc = "abc";
+        assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbc));
+        String strdef123 = "def123";
+        assertEquals(strdef123, NamespaceUtil.processNamespaceParameter(strdef123));
+        String strAbcHasSpace = "  abc  ";
+        assertEquals(strAbc, NamespaceUtil.processNamespaceParameter(strAbcHasSpace));
+    }
+    
+    @Test
+    void testSetNamespaceDefaultId() {
+        NamespaceUtil.setNamespaceDefaultId("Deprecated");
+        assertEquals("Deprecated", NamespaceUtil.getNamespaceDefaultId());
+    }
 }

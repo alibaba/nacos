@@ -17,7 +17,7 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -27,15 +27,15 @@ import static com.alibaba.nacos.common.utils.StringUtils.isNotBlank;
 import static com.alibaba.nacos.common.utils.StringUtils.isNotEmpty;
 import static com.alibaba.nacos.common.utils.StringUtils.join;
 import static com.alibaba.nacos.common.utils.StringUtils.substringBetween;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class StringUtilsTest {
+class StringUtilsTest {
     
     @Test
-    public void testisNotBlank() {
+    void testisNotBlank() {
         assertTrue(isNotBlank("foo"));
         
         assertFalse(isNotBlank(" "));
@@ -43,20 +43,20 @@ public class StringUtilsTest {
     }
     
     @Test
-    public void testIsNotEmpty() {
+    void testIsNotEmpty() {
         assertFalse(isNotEmpty(""));
         
         assertTrue(isNotEmpty("foo"));
     }
     
     @Test
-    public void testDefaultIfEmpty() {
+    void testDefaultIfEmpty() {
         assertEquals("foo", defaultIfEmpty("", "foo"));
         assertEquals("bar", defaultIfEmpty("bar", "foo"));
     }
     
     @Test
-    public void testEquals() {
+    void testEquals() {
         assertTrue(StringUtils.equals("foo", "foo"));
         
         assertFalse(StringUtils.equals("bar", "foo"));
@@ -65,7 +65,7 @@ public class StringUtilsTest {
     }
     
     @Test
-    public void testSubstringBetween() {
+    void testSubstringBetween() {
         assertNull(substringBetween(null, null, null));
         assertNull(substringBetween("", "foo", ""));
         assertNull(substringBetween("foo", "bar", "baz"));
@@ -74,7 +74,7 @@ public class StringUtilsTest {
     }
     
     @Test
-    public void testJoin() {
+    void testJoin() {
         assertNull(join(null, ""));
         
         Collection collection = new ArrayList();

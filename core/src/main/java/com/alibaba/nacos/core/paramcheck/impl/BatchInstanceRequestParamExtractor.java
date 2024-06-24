@@ -33,12 +33,7 @@ import java.util.List;
 public class BatchInstanceRequestParamExtractor extends AbstractRpcParamExtractor {
     
     @Override
-    public void init() {
-        addTargetRequest(BatchInstanceRequest.class.getSimpleName());
-    }
-    
-    @Override
-    public List<ParamInfo> extractParam(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) {
         BatchInstanceRequest req = (BatchInstanceRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(req.getNamespace());

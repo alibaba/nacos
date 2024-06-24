@@ -32,12 +32,7 @@ import java.util.List;
 public class ConsoleDefaultHttpParamExtractor extends AbstractHttpParamExtractor {
     
     @Override
-    public void init() {
-        addDefaultTargetRequest("console");
-    }
-    
-    @Override
-    public List<ParamInfo> extractParam(HttpServletRequest request) throws Exception {
+    public List<ParamInfo> extractParam(HttpServletRequest request) {
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(getAliasNamespaceId(request));
         paramInfo.setNamespaceShowName(getAliasNamespaceShowName(request));

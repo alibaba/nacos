@@ -18,24 +18,24 @@ package com.alibaba.nacos.api.config.remote.request;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConfigPublishRequestTest extends BasedConfigRequestTest {
-    
-    ConfigPublishRequest configPublishRequest;
+class ConfigPublishRequestTest extends BasedConfigRequestTest {
     
     private static final String TAG_PARAM = "tag";
     
     private static final String APP_NAME_PARAM = "appName";
     
+    ConfigPublishRequest configPublishRequest;
+    
     String requestId;
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         configPublishRequest = new ConfigPublishRequest(DATA_ID, GROUP, TENANT, CONTENT);
         configPublishRequest.putAdditionalParam(TAG_PARAM, TAG_PARAM);
         configPublishRequest.putAdditionalParam(APP_NAME_PARAM, APP_NAME_PARAM);
@@ -64,13 +64,13 @@ public class ConfigPublishRequestTest extends BasedConfigRequestTest {
                 + "\"tenant\":\"test_tenant\",\"content\":\"content\",\"casMd5\":\"test_MD5\","
                 + "\"additionMap\":{\"appName\":\"appName\",\"tag\":\"tag\"},\"module\":\"config\"}";
         ConfigPublishRequest actual = mapper.readValue(json, ConfigPublishRequest.class);
-        assertEquals(actual.getDataId(), DATA_ID);
-        assertEquals(actual.getGroup(), GROUP);
-        assertEquals(actual.getTenant(), TENANT);
-        assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
-        assertEquals(actual.getContent(), CONTENT);
-        assertEquals(actual.getCasMd5(), MD5);
-        assertEquals(actual.getAdditionParam(TAG_PARAM), TAG_PARAM);
-        assertEquals(actual.getAdditionParam(APP_NAME_PARAM), APP_NAME_PARAM);
+        assertEquals(DATA_ID, actual.getDataId());
+        assertEquals(GROUP, actual.getGroup());
+        assertEquals(TENANT, actual.getTenant());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
+        assertEquals(CONTENT, actual.getContent());
+        assertEquals(MD5, actual.getCasMd5());
+        assertEquals(TAG_PARAM, actual.getAdditionParam(TAG_PARAM));
+        assertEquals(APP_NAME_PARAM, actual.getAdditionParam(APP_NAME_PARAM));
     }
 }

@@ -29,19 +29,19 @@ import java.util.regex.Pattern;
  */
 public class DefaultParamChecker extends AbstractParamChecker {
     
-    private static final Pattern NAMESPACE_SHOW_NAME_PATTERN = Pattern.compile(ParamCheckRules.NAMESPACE_SHOW_NAME_PATTERN_STRING);
+    private Pattern namespaceShowNamePattern;
     
-    private static final Pattern NAMESPACE_ID_PATTERN = Pattern.compile(ParamCheckRules.NAMESPACE_ID_PATTERN_STRING);
+    private Pattern namespaceIdPattern;
     
-    private static final Pattern DATA_ID_PATTERN = Pattern.compile(ParamCheckRules.DATA_ID_PATTERN_STRING);
+    private Pattern dataIdPattern;
     
-    private static final Pattern SERVICE_NAME_PATTERN = Pattern.compile(ParamCheckRules.SERVICE_NAME_PATTERN_STRING);
+    private Pattern serviceNamePattern;
     
-    private static final Pattern GROUP_PATTERN = Pattern.compile(ParamCheckRules.GROUP_PATTERN_STRING);
+    private Pattern groupPattern;
     
-    private static final Pattern CLUSTER_PATTERN = Pattern.compile(ParamCheckRules.CLUSTER_PATTERN_STRING);
+    private Pattern clusterPattern;
     
-    private static final Pattern IP_PATTERN = Pattern.compile(ParamCheckRules.IP_PATTERN_STRING);
+    private Pattern ipPattern;
     
     private static final String CHECKER_TYPE = "default";
     
@@ -51,224 +51,349 @@ public class DefaultParamChecker extends AbstractParamChecker {
     }
     
     @Override
-    public void checkParamInfoList(List<ParamInfo> paramInfos) {
+    public ParamCheckResponse checkParamInfoList(List<ParamInfo> paramInfos) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (paramInfos == null) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
         for (ParamInfo paramInfo : paramInfos) {
-            checkParamInfoFormat(paramInfo);
+            paramCheckResponse = checkParamInfoFormat(paramInfo);
+            if (!paramCheckResponse.isSuccess()) {
+                return paramCheckResponse;
+            }
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
+    }
+    
+    @Override
+    public void initParamCheckRule() {
+        this.paramCheckRule = new ParamCheckRule();
+        initFormatPattern();
+    }
+    
+    private void initFormatPattern() {
+        this.namespaceShowNamePattern = Pattern.compile(this.paramCheckRule.namespaceShowNamePatternString);
+        this.namespaceIdPattern = Pattern.compile(this.paramCheckRule.namespaceIdPatternString);
+        this.dataIdPattern = Pattern.compile(this.paramCheckRule.dataIdPatternString);
+        this.serviceNamePattern = Pattern.compile(this.paramCheckRule.serviceNamePatternString);
+        this.groupPattern = Pattern.compile(this.paramCheckRule.groupPatternString);
+        this.clusterPattern = Pattern.compile(this.paramCheckRule.clusterPatternString);
+        this.ipPattern = Pattern.compile(this.paramCheckRule.ipPatternString);
     }
     
     /**
      * Check param info format.
      *
      * @param paramInfo the param info
+     * @return the param check response
      */
-    public void checkParamInfoFormat(ParamInfo paramInfo) {
+    public ParamCheckResponse checkParamInfoFormat(ParamInfo paramInfo) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (paramInfo == null) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
-        checkNamespaceShowNameFormat(paramInfo.getNamespaceShowName());
-        checkNamespaceIdFormat(paramInfo.getNamespaceId());
-        checkDataIdFormat(paramInfo.getDataId());
-        checkServiceNameFormat(paramInfo.getServiceName());
-        checkGroupFormat(paramInfo.getGroup());
-        checkClusterFormat(paramInfo.getClusters());
-        checkSingleClusterFormat(paramInfo.getCluster());
-        checkIpFormat(paramInfo.getIp());
-        checkPortFormat(paramInfo.getPort());
-        checkMetadataFormat(paramInfo.getMetadata());
+        paramCheckResponse = checkNamespaceShowNameFormat(paramInfo.getNamespaceShowName());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkNamespaceIdFormat(paramInfo.getNamespaceId());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkDataIdFormat(paramInfo.getDataId());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkServiceNameFormat(paramInfo.getServiceName());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkGroupFormat(paramInfo.getGroup());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkClusterFormat(paramInfo.getClusters());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkSingleClusterFormat(paramInfo.getCluster());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkIpFormat(paramInfo.getIp());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkPortFormat(paramInfo.getPort());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse = checkMetadataFormat(paramInfo.getMetadata());
+        if (!paramCheckResponse.isSuccess()) {
+            return paramCheckResponse;
+        }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check namespace show name format.
      *
      * @param namespaceShowName the namespace show name
+     * @return the param check response
      */
-    public void checkNamespaceShowNameFormat(String namespaceShowName) {
+    public ParamCheckResponse checkNamespaceShowNameFormat(String namespaceShowName) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (StringUtils.isBlank(namespaceShowName)) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
-        if (namespaceShowName.length() > ParamCheckRules.MAX_NAMESPACE_SHOW_NAME_LENGTH) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'namespaceShowName' is illegal, the param length should not exceed %d.",
-                            ParamCheckRules.MAX_NAMESPACE_SHOW_NAME_LENGTH));
+        if (namespaceShowName.length() > paramCheckRule.maxNamespaceShowNameLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'namespaceShowName' is illegal, the param length should not exceed %d.",
+                    paramCheckRule.maxNamespaceShowNameLength));
+            return paramCheckResponse;
         }
-        if (!NAMESPACE_SHOW_NAME_PATTERN.matcher(namespaceShowName).matches()) {
-            throw new IllegalArgumentException(
-                    "Param 'namespaceShowName' is illegal, illegal characters should not appear in the param.");
+        if (!namespaceShowNamePattern.matcher(namespaceShowName).matches()) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Param 'namespaceShowName' is illegal, illegal characters should not appear in the param.");
+            return paramCheckResponse;
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check namespace id format.
      *
      * @param namespaceId the namespace id
+     * @return the param check response
      */
-    public void checkNamespaceIdFormat(String namespaceId) {
+    public ParamCheckResponse checkNamespaceIdFormat(String namespaceId) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (StringUtils.isBlank(namespaceId)) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
-        if (namespaceId.length() > ParamCheckRules.MAX_NAMESPACE_ID_LENGTH) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'namespaceId/tenant' is illegal, the param length should not exceed %d.",
-                            ParamCheckRules.MAX_NAMESPACE_ID_LENGTH));
+        if (namespaceId.length() > paramCheckRule.maxNamespaceIdLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'namespaceId/tenant' is illegal, the param length should not exceed %d.",
+                    paramCheckRule.maxNamespaceIdLength));
+            return paramCheckResponse;
         }
-        if (!NAMESPACE_ID_PATTERN.matcher(namespaceId).matches()) {
-            throw new IllegalArgumentException(
-                    "Param 'namespaceId/tenant' is illegal, illegal characters should not appear in the param.");
+        if (!namespaceIdPattern.matcher(namespaceId).matches()) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Param 'namespaceId/tenant' is illegal, illegal characters should not appear in the param.");
+            return paramCheckResponse;
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check data id format.
      *
      * @param dataId the data id
+     * @return the param check response
      */
-    public void checkDataIdFormat(String dataId) {
+    public ParamCheckResponse checkDataIdFormat(String dataId) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (StringUtils.isBlank(dataId)) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
-        if (dataId.length() > ParamCheckRules.MAX_DATA_ID_LENGTH) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'dataId' is illegal, the param length should not exceed %d.",
-                            ParamCheckRules.MAX_NAMESPACE_ID_LENGTH));
+        if (dataId.length() > paramCheckRule.maxDataIdLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'dataId' is illegal, the param length should not exceed %d.",
+                    paramCheckRule.maxDataIdLength));
+            return paramCheckResponse;
         }
-        if (!DATA_ID_PATTERN.matcher(dataId).matches()) {
-            throw new IllegalArgumentException(
-                    "Param 'dataId' is illegal, illegal characters should not appear in the param.");
+        if (!dataIdPattern.matcher(dataId).matches()) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Param 'dataId' is illegal, illegal characters should not appear in the param.");
+            return paramCheckResponse;
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check service name format.
      *
      * @param serviceName the service name
+     * @return the param check response
      */
-    public void checkServiceNameFormat(String serviceName) {
+    public ParamCheckResponse checkServiceNameFormat(String serviceName) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (StringUtils.isBlank(serviceName)) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
-        if (serviceName.length() > ParamCheckRules.MAX_SERVICE_NAME_LENGTH) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'serviceName' is illegal, the param length should not exceed %d.",
-                            ParamCheckRules.MAX_SERVICE_NAME_LENGTH));
+        if (serviceName.length() > paramCheckRule.maxServiceNameLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'serviceName' is illegal, the param length should not exceed %d.",
+                    paramCheckRule.maxServiceNameLength));
+            return paramCheckResponse;
         }
-        if (!SERVICE_NAME_PATTERN.matcher(serviceName).matches()) {
-            throw new IllegalArgumentException(
-                    "Param 'serviceName' is illegal, illegal characters should not appear in the param.");
+        if (!serviceNamePattern.matcher(serviceName).matches()) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Param 'serviceName' is illegal, illegal characters should not appear in the param.");
+            return paramCheckResponse;
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check group format.
      *
      * @param group the group
+     * @return the param check response
      */
-    public void checkGroupFormat(String group) {
+    public ParamCheckResponse checkGroupFormat(String group) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (StringUtils.isBlank(group)) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
-        if (group.length() > ParamCheckRules.MAX_GROUP_LENGTH) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'group' is illegal, the param length should not exceed %d.",
-                            ParamCheckRules.MAX_GROUP_LENGTH));
+        if (group.length() > paramCheckRule.maxGroupLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'group' is illegal, the param length should not exceed %d.",
+                    paramCheckRule.maxGroupLength));
+            return paramCheckResponse;
         }
-        if (!GROUP_PATTERN.matcher(group).matches()) {
-            throw new IllegalArgumentException(
-                    "Param 'group' is illegal, illegal characters should not appear in the param.");
+        if (!groupPattern.matcher(group).matches()) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Param 'group' is illegal, illegal characters should not appear in the param.");
+            return paramCheckResponse;
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check cluster format.
      *
      * @param clusterString the cluster string
+     * @return the param check response
      */
-    public void checkClusterFormat(String clusterString) {
+    public ParamCheckResponse checkClusterFormat(String clusterString) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (StringUtils.isBlank(clusterString)) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
         String[] clusters = clusterString.split(",");
         for (String cluster : clusters) {
-            checkSingleClusterFormat(cluster);
+            paramCheckResponse = checkSingleClusterFormat(cluster);
+            if (!paramCheckResponse.isSuccess()) {
+                return paramCheckResponse;
+            }
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check single cluster format.
      *
      * @param cluster the cluster
+     * @return the param check response
      */
-    public void checkSingleClusterFormat(String cluster) {
+    public ParamCheckResponse checkSingleClusterFormat(String cluster) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (StringUtils.isBlank(cluster)) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
         
-        if (cluster.length() > ParamCheckRules.MAX_CLUSTER_LENGTH) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'cluster' is illegal, the param length should not exceed %d.",
-                            ParamCheckRules.MAX_CLUSTER_LENGTH));
+        if (cluster.length() > paramCheckRule.maxClusterLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'cluster' is illegal, the param length should not exceed %d.",
+                    paramCheckRule.maxClusterLength));
+            return paramCheckResponse;
         }
-        if (!CLUSTER_PATTERN.matcher(cluster).matches()) {
-            throw new IllegalArgumentException(
-                    "Param 'cluster' is illegal, illegal characters should not appear in the param.");
+        if (!clusterPattern.matcher(cluster).matches()) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Param 'cluster' is illegal, illegal characters should not appear in the param.");
+            return paramCheckResponse;
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check ip format.
      *
      * @param ip the ip
+     * @return the param check response
      */
-    public void checkIpFormat(String ip) {
+    public ParamCheckResponse checkIpFormat(String ip) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (StringUtils.isBlank(ip)) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
-        if (ip.length() > ParamCheckRules.MAX_IP_LENGTH) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'ip' is illegal, the param length should not exceed %d.",
-                            ParamCheckRules.MAX_IP_LENGTH));
+        if (ip.length() > paramCheckRule.maxIpLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'ip' is illegal, the param length should not exceed %d.",
+                    paramCheckRule.maxIpLength));
+            return paramCheckResponse;
         }
-        if (!IP_PATTERN.matcher(ip).matches()) {
-            throw new IllegalArgumentException(
-                    "Param 'ip' is illegal, illegal characters should not appear in the param.");
+        if (!ipPattern.matcher(ip).matches()) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage("Param 'ip' is illegal, illegal characters should not appear in the param.");
+            return paramCheckResponse;
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check port format.
      *
      * @param port the port
+     * @return the param check response
      */
-    public void checkPortFormat(String port) {
+    public ParamCheckResponse checkPortFormat(String port) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (StringUtils.isBlank(port)) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
         int portInt = 0;
         try {
             portInt = Integer.parseInt(port);
         } catch (Exception e) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'port' is illegal, the value should be between %d and %d",
-                            ParamCheckRules.MIN_PORT, ParamCheckRules.MAX_PORT));
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d.",
+                    paramCheckRule.minPort, paramCheckRule.maxPort));
+            return paramCheckResponse;
         }
-        if (portInt > ParamCheckRules.MAX_PORT || portInt < ParamCheckRules.MIN_PORT) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'port' is illegal, the value should be between %d and %d",
-                            ParamCheckRules.MIN_PORT, ParamCheckRules.MAX_PORT));
+        if (portInt > paramCheckRule.maxPort || portInt < paramCheckRule.minPort) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'port' is illegal, the value should be between %d and %d.",
+                    paramCheckRule.minPort, paramCheckRule.maxPort));
+            return paramCheckResponse;
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
     
     /**
      * Check metadata format.
      *
      * @param metadata the metadata
+     * @return the param check response
      */
-    public void checkMetadataFormat(Map<String, String> metadata) {
+    public ParamCheckResponse checkMetadataFormat(Map<String, String> metadata) {
+        ParamCheckResponse paramCheckResponse = new ParamCheckResponse();
         if (metadata == null || metadata.isEmpty()) {
-            return;
+            paramCheckResponse.setSuccess(true);
+            return paramCheckResponse;
         }
         int totalLength = 0;
         for (Map.Entry<String, String> entry : metadata.entrySet()) {
@@ -279,10 +404,13 @@ public class DefaultParamChecker extends AbstractParamChecker {
                 totalLength = totalLength + entry.getValue().length();
             }
         }
-        if (totalLength > ParamCheckRules.MAX_METADATA_LENGTH) {
-            throw new IllegalArgumentException(
-                    String.format("Param 'Metadata' is illegal, the param length should not exceed %d.",
-                            ParamCheckRules.MAX_METADATA_LENGTH));
+        if (totalLength > paramCheckRule.maxMetadataLength) {
+            paramCheckResponse.setSuccess(false);
+            paramCheckResponse.setMessage(String.format("Param 'Metadata' is illegal, the param length should not exceed %d.",
+                    paramCheckRule.maxMetadataLength));
+            return paramCheckResponse;
         }
+        paramCheckResponse.setSuccess(true);
+        return paramCheckResponse;
     }
 }

@@ -33,12 +33,7 @@ import java.util.List;
 public class InstanceRequestParamExtractor extends AbstractRpcParamExtractor {
     
     @Override
-    public void init() {
-        addTargetRequest(InstanceRequest.class.getSimpleName());
-    }
-    
-    @Override
-    public List<ParamInfo> extractParam(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) {
         InstanceRequest req = (InstanceRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setNamespaceId(req.getNamespace());

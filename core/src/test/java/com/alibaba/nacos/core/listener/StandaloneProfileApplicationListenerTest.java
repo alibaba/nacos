@@ -16,18 +16,18 @@
 
 package com.alibaba.nacos.core.listener;
 
-import com.alibaba.nacos.core.code.StandaloneProfileApplicationListener;
 import com.alibaba.nacos.common.utils.ArrayUtils;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.core.code.StandaloneProfileApplicationListener;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.env.Environment;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.alibaba.nacos.sys.env.Constants.STANDALONE_SPRING_PROFILE;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link StandaloneProfileApplicationListener} Test.
@@ -35,21 +35,21 @@ import static com.alibaba.nacos.sys.env.Constants.STANDALONE_SPRING_PROFILE;
  * @author <a href="mailto:mercyblitz@gmail.com">Mercy</a>
  * @since 0.2.2
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = StandaloneProfileApplicationListenerTest.class, webEnvironment = SpringBootTest.WebEnvironment.NONE)
-public class StandaloneProfileApplicationListenerTest {
+class StandaloneProfileApplicationListenerTest {
     
     @Autowired
     private Environment environment;
     
-    @BeforeClass
-    public static void init() {
+    @BeforeAll
+    static void init() {
         System.setProperty("nacos.standalone", "true");
     }
     
     @Test
-    public void testProfile() {
-        Assert.assertTrue(ArrayUtils.contains(environment.getActiveProfiles(), STANDALONE_SPRING_PROFILE));
+    void testProfile() {
+        assertTrue(ArrayUtils.contains(environment.getActiveProfiles(), STANDALONE_SPRING_PROFILE));
     }
     
 }

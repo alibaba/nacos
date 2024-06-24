@@ -20,9 +20,11 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.naming.core.v2.metadata.InstanceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.InstancePublishInfo;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import com.alibaba.nacos.naming.pojo.instance.DefaultInstanceIdGenerator;
-import org.junit.Before;
-import org.junit.Test;
+import com.alibaba.nacos.naming.pojo.instance.InstanceIdGeneratorManager;
+import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,29 +32,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class InstanceUtilTest {
+class InstanceUtilTest {
     
     private Service service;
     
     private InstancePublishInfo instancePublishInfo;
     
-    @Before
-    public void init() {
+    @BeforeEach
+    void init() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         service = Service.newService("namespace", "group", "serviceName");
         instancePublishInfo = new InstancePublishInfo("1.1.1.1", 8080);
     }
     
     @Test
-    public void testParseToApiInstance() {
+    void testParseToApiInstance() {
         Instance instance = InstanceUtil.parseToApiInstance(service, instancePublishInfo);
         assertNotNull(instance);
     }
     
     @Test
-    public void testUpdateInstanceMetadata() {
+    void testUpdateInstanceMetadata() {
         InstanceMetadata metaData = new InstanceMetadata();
         Map<String, Object> extendData = new ConcurrentHashMap<>(1);
         extendData.put("k1", "v1");
@@ -64,11 +67,11 @@ public class InstanceUtilTest {
         
         InstanceUtil.updateInstanceMetadata(instance, metaData);
         assertNotNull(instance.getMetadata());
-        assertEquals(metaData.getExtendData().size(), 2);
+        assertEquals(2, metaData.getExtendData().size());
     }
     
     @Test
-    public void testDeepCopy() {
+    void testDeepCopy() {
         Instance source = new Instance();
         source.setInstanceId("instanceId");
         source.setIp("1.1.1.1");
@@ -88,16 +91,15 @@ public class InstanceUtilTest {
     }
     
     @Test
-    public void testSetInstanceIdIfEmpty() {
+    void testSetInstanceIdIfEmpty() {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
         instance.setPort(8890);
         String groupedServiceName = "test";
+        instance.setClusterName("testCluster");
         InstanceUtil.setInstanceIdIfEmpty(instance, groupedServiceName);
         assertNotNull(instance.getInstanceId());
-        DefaultInstanceIdGenerator idGenerator = new DefaultInstanceIdGenerator(groupedServiceName,
-                instance.getClusterName(), instance.getIp(), instance.getPort());
-        assertEquals(instance.getInstanceId(), idGenerator.generateInstanceId());
+        assertEquals(instance.getInstanceId(), InstanceIdGeneratorManager.generateInstanceId(instance));
         String customInsId = "customInstanceId_1";
         Instance instance1 = new Instance();
         instance1.setInstanceId(customInsId);
@@ -106,16 +108,18 @@ public class InstanceUtilTest {
     }
     
     @Test
-    public void testBatchSetInstanceIdIfEmpty() {
-        List<Instance> instances = new ArrayList<>();
+    void testBatchSetInstanceIdIfEmpty() {
+        final List<Instance> instances = new ArrayList<>();
         Instance instance1 = new Instance();
+        instance1.setServiceName("test");
         Instance instance2 = new Instance();
+        instance2.setServiceName("test");
         Instance instance3 = new Instance();
+        instance3.setServiceName("test");
         instances.add(instance1);
         instances.add(instance2);
         instances.add(instance3);
-        String groupedServiceName = "test";
-        InstanceUtil.batchSetInstanceIdIfEmpty(instances, groupedServiceName);
+        InstanceUtil.batchSetInstanceIdIfEmpty(instances, "test");
         assertNotNull(instance1.getInstanceId());
         assertNotNull(instance2.getInstanceId());
         assertNotNull(instance3.getInstanceId());

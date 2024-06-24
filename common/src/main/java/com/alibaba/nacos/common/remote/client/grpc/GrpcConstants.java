@@ -79,6 +79,9 @@ public class GrpcConstants {
     @GRpcConfigLabel
     public static final String GRPC_CHANNEL_KEEP_ALIVE_TIMEOUT = NACOS_CLIENT_GRPC + ".channel.keep.alive.timeout";
 
+    @GRpcConfigLabel
+    public static final String GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT = NACOS_CLIENT_GRPC + ".channel.capability.negotiation.timeout";
+
     private static final Set<String> CONFIG_NAMES = new HashSet<>();
     
     @Documented
@@ -97,8 +100,7 @@ public class GrpcConstants {
                     GRpcConfigLabel.class)) {
                 try {
                     CONFIG_NAMES.add((String) declaredField.get(null));
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
+                } catch (IllegalAccessException ignored) {
                 }
             }
         }

@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.CharArrayWriter;
 import java.io.Closeable;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +32,6 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.HttpURLConnection;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +44,7 @@ import java.util.zip.GZIPOutputStream;
  * @author nacos
  */
 public class IoUtils {
-
+    
     private IoUtils() {
     }
     
@@ -75,11 +73,7 @@ public class IoUtils {
         if (!isGzipStream(raw)) {
             return raw;
         }
-        try (GZIPInputStream gis = new GZIPInputStream(new ByteArrayInputStream(raw));
-                ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            copy(gis, out);
-            return out.toByteArray();
-        }
+        return tryDecompress(new ByteArrayInputStream(raw));
     }
     
     /**
@@ -273,31 +267,6 @@ public class IoUtils {
         
         if (null != exception) {
             throw exception;
-        }
-    }
-    
-    /**
-     * Copy File.
-     *
-     * @param source source file path
-     * @param target target file path
-     * @throws IOException io exception
-     */
-    public static void copyFile(String source, String target) throws IOException {
-        File sf = new File(source);
-        if (!sf.exists()) {
-            throw new IllegalArgumentException("source file does not exist.");
-        }
-        File tf = new File(target);
-        if (!tf.getParentFile().mkdirs()) {
-            throw new RuntimeException("failed to create parent directory.");
-        }
-        if (!tf.exists() && !tf.createNewFile()) {
-            throw new RuntimeException("failed to create target file.");
-        }
-        try (FileChannel sc = new FileInputStream(sf).getChannel();
-                FileChannel tc = new FileOutputStream(tf).getChannel()) {
-            sc.transferTo(0, sc.size(), tc);
         }
     }
     

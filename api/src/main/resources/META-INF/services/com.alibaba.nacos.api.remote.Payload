@@ -22,6 +22,8 @@ com.alibaba.nacos.api.remote.request.PushAckRequest
 com.alibaba.nacos.api.remote.request.ServerCheckRequest
 com.alibaba.nacos.api.remote.request.ServerLoaderInfoRequest
 com.alibaba.nacos.api.remote.request.ServerReloadRequest
+com.alibaba.nacos.api.remote.request.SetupAckRequest
+com.alibaba.nacos.api.remote.response.SetupAckResponse
 com.alibaba.nacos.api.remote.response.ClientDetectionResponse
 com.alibaba.nacos.api.remote.response.ConnectResetResponse
 com.alibaba.nacos.api.remote.response.ErrorResponse
@@ -45,6 +47,7 @@ com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncReque
 com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse
 com.alibaba.nacos.api.naming.remote.request.BatchInstanceRequest
 com.alibaba.nacos.api.naming.remote.request.InstanceRequest
+com.alibaba.nacos.api.naming.remote.request.PersistentInstanceRequest
 com.alibaba.nacos.api.naming.remote.request.NotifySubscriberRequest
 com.alibaba.nacos.api.naming.remote.request.ServiceListRequest
 com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest

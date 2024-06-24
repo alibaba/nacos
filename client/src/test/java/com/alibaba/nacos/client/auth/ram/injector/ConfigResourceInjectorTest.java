@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.auth.ram.injector;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.auth.ram.RamConstants;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.ram.identify.IdentifyConstants;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
@@ -25,15 +26,17 @@ import com.alibaba.nacos.client.auth.ram.identify.StsCredentialHolder;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.plugin.auth.constant.SignType;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.Date;
 
-public class ConfigResourceInjectorTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ConfigResourceInjectorTest {
     
     private ConfigResourceInjector configResourceInjector;
     
@@ -47,8 +50,8 @@ public class ConfigResourceInjectorTest {
     
     private StsCredential stsCredential;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         configResourceInjector = new ConfigResourceInjector();
         ramContext = new RamContext();
         ramContext.setAccessKey(PropertyKeyConst.ACCESS_KEY);
@@ -64,66 +67,78 @@ public class ConfigResourceInjectorTest {
         stsCredential = new StsCredential();
     }
     
-    @After
-    public void tearDown() throws NoSuchFieldException, IllegalAccessException {
+    @AfterEach
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
         StsConfig.getInstance().setSecurityCredentialsUrl(cachedSecurityCredentialsUrl);
         StsConfig.getInstance().setSecurityCredentials(cachedSecurityCredentials);
         clearForSts();
     }
     
     @Test
-    public void testDoInjectWithFullResource() throws Exception {
+    void testDoInjectWithFullResource() throws Exception {
         LoginIdentityContext actual = new LoginIdentityContext();
         configResourceInjector.doInject(resource, ramContext, actual);
-        Assert.assertEquals(3, actual.getAllKey().size());
-        Assert.assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
-        Assert.assertTrue(actual.getAllKey().contains("Timestamp"));
-        Assert.assertTrue(actual.getAllKey().contains("Spas-Signature"));
+        assertEquals(3, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
+        assertTrue(actual.getAllKey().contains("Timestamp"));
+        assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
     
     @Test
-    public void testDoInjectWithTenant() throws Exception {
+    void testDoInjectWithTenant() throws Exception {
         resource.setGroup("");
         LoginIdentityContext actual = new LoginIdentityContext();
         configResourceInjector.doInject(resource, ramContext, actual);
-        Assert.assertEquals(3, actual.getAllKey().size());
-        Assert.assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
-        Assert.assertTrue(actual.getAllKey().contains("Timestamp"));
-        Assert.assertTrue(actual.getAllKey().contains("Spas-Signature"));
+        assertEquals(3, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
+        assertTrue(actual.getAllKey().contains("Timestamp"));
+        assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
     
     @Test
-    public void testDoInjectWithGroup() throws Exception {
+    void testDoInjectWithGroup() throws Exception {
         resource.setNamespace("");
         LoginIdentityContext actual = new LoginIdentityContext();
         configResourceInjector.doInject(resource, ramContext, actual);
-        Assert.assertEquals(3, actual.getAllKey().size());
-        Assert.assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
-        Assert.assertTrue(actual.getAllKey().contains("Timestamp"));
-        Assert.assertTrue(actual.getAllKey().contains("Spas-Signature"));
+        assertEquals(3, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
+        assertTrue(actual.getAllKey().contains("Timestamp"));
+        assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
     
     @Test
-    public void testDoInjectWithoutResource() throws Exception {
+    void testDoInjectWithoutResource() throws Exception {
         resource = new RequestResource();
         LoginIdentityContext actual = new LoginIdentityContext();
         configResourceInjector.doInject(resource, ramContext, actual);
-        Assert.assertEquals(3, actual.getAllKey().size());
-        Assert.assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
-        Assert.assertTrue(actual.getAllKey().contains("Timestamp"));
-        Assert.assertTrue(actual.getAllKey().contains("Spas-Signature"));
+        assertEquals(3, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
+        assertTrue(actual.getAllKey().contains("Timestamp"));
+        assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
     
     @Test
-    public void testDoInjectForSts() throws NoSuchFieldException, IllegalAccessException {
+    void testDoInjectForSts() throws NoSuchFieldException, IllegalAccessException {
         prepareForSts();
         LoginIdentityContext actual = new LoginIdentityContext();
         configResourceInjector.doInject(resource, ramContext, actual);
-        Assert.assertEquals(4, actual.getAllKey().size());
-        Assert.assertEquals("test-sts-ak", actual.getParameter("Spas-AccessKey"));
-        Assert.assertTrue(actual.getAllKey().contains("Timestamp"));
-        Assert.assertTrue(actual.getAllKey().contains("Spas-Signature"));
-        Assert.assertTrue(actual.getAllKey().contains(IdentifyConstants.SECURITY_TOKEN_HEADER));
+        assertEquals(4, actual.getAllKey().size());
+        assertEquals("test-sts-ak", actual.getParameter("Spas-AccessKey"));
+        assertTrue(actual.getAllKey().contains("Timestamp"));
+        assertTrue(actual.getAllKey().contains("Spas-Signature"));
+        assertTrue(actual.getAllKey().contains(IdentifyConstants.SECURITY_TOKEN_HEADER));
+    }
+    
+    @Test
+    void testDoInjectForV4Sign() {
+        LoginIdentityContext actual = new LoginIdentityContext();
+        ramContext.setRegionId("cn-hangzhou");
+        configResourceInjector.doInject(resource, ramContext, actual);
+        assertEquals(4, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("Spas-AccessKey"));
+        assertEquals(RamConstants.V4, actual.getParameter(RamConstants.SIGNATURE_VERSION));
+        assertTrue(actual.getAllKey().contains("Timestamp"));
+        assertTrue(actual.getAllKey().contains("Spas-Signature"));
     }
     
     private void prepareForSts() throws NoSuchFieldException, IllegalAccessException {

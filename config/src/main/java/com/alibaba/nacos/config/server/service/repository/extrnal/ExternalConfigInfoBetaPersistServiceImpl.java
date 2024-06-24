@@ -40,7 +40,6 @@ import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -88,11 +87,10 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     
     @Override
     public ConfigOperateResult addConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp, String srcUser) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
-        String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-        String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
-                : configInfo.getEncryptedDataKey();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
+        String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.PERSIST_ENCODE);
+        String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
@@ -114,9 +112,13 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigOperateResult insertOrUpdateBeta(final ConfigInfo configInfo, final String betaIps, final String srcIp,
             final String srcUser) {
-        try {
+        
+        ConfigInfoStateWrapper configInfo4BetaState = this.findConfigInfo4BetaState(configInfo.getDataId(),
+                configInfo.getGroup(), configInfo.getTenant());
+        if (configInfo4BetaState == null) {
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+            
+        } else {
             return updateConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
         }
     }
@@ -124,9 +126,11 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigOperateResult insertOrUpdateBetaCas(final ConfigInfo configInfo, final String betaIps,
             final String srcIp, final String srcUser) {
-        try {
+        ConfigInfoStateWrapper configInfo4BetaState = this.findConfigInfo4BetaState(configInfo.getDataId(),
+                configInfo.getGroup(), configInfo.getTenant());
+        if (configInfo4BetaState == null) {
             return addConfigInfo4Beta(configInfo, betaIps, srcIp, srcUser);
-        } catch (DataIntegrityViolationException ive) { // Unique constraint conflict
+        } else {
             return updateConfigInfo4BetaCas(configInfo, betaIps, srcIp, srcUser);
         }
     }
@@ -136,7 +140,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         final String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         tjt.execute(status -> {
             try {
-                ConfigInfo configInfo = findConfigInfo4Beta(dataId, group, tenant);
+                ConfigInfoStateWrapper configInfo = findConfigInfo4BetaState(dataId, group, tenant);
                 if (configInfo != null) {
                     ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(
                             dataSourceService.getDataSourceType(), TableConstant.CONFIG_INFO_BETA);
@@ -154,11 +158,10 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigOperateResult updateConfigInfo4Beta(ConfigInfo configInfo, String betaIps, String srcIp,
             String srcUser) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
-        String encryptedDataKey = StringUtils.isBlank(configInfo.getEncryptedDataKey()) ? StringUtils.EMPTY
-                : configInfo.getEncryptedDataKey();
+        String encryptedDataKey = StringUtils.defaultEmptyIfBlank(configInfo.getEncryptedDataKey());
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
@@ -205,8 +208,8 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
     @Override
     public ConfigOperateResult updateConfigInfo4BetaCas(ConfigInfo configInfo, String betaIps, String srcIp,
             String srcUser) {
-        String appNameTmp = StringUtils.isBlank(configInfo.getAppName()) ? StringUtils.EMPTY : configInfo.getAppName();
-        String tenantTmp = StringUtils.isBlank(configInfo.getTenant()) ? StringUtils.EMPTY : configInfo.getTenant();
+        String appNameTmp = StringUtils.defaultEmptyIfBlank(configInfo.getAppName());
+        String tenantTmp = StringUtils.defaultEmptyIfBlank(configInfo.getTenant());
         String md5 = MD5Utils.md5Hex(configInfo.getContent(), Constants.ENCODE);
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
@@ -251,7 +254,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                     TableConstant.CONFIG_INFO_BETA);
             return this.jt.queryForObject(configInfoBetaMapper.select(
                             Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "beta_ips",
-                                    "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
+                                    "encrypted_data_key", "gmt_modified"), Arrays.asList("data_id", "group_id", "tenant_id")),
                     new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
@@ -267,9 +270,7 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
                 TableConstant.CONFIG_INFO_BETA);
         String sql = configInfoBetaMapper.count(null);
         Integer result = jt.queryForObject(sql, Integer.class);
-        if (result == null) {
-            throw new IllegalArgumentException("configInfoBetaCount error");
-        }
+        
         return result.intValue();
     }
     

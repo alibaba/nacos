@@ -16,18 +16,17 @@
 
 package com.alibaba.nacos.api.naming.pojo.healthcheck.impl;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TcpTest {
+class TcpTest {
     
     @Test
-    public void testClone() throws CloneNotSupportedException {
+    void testClone() throws CloneNotSupportedException {
         Tcp original = new Tcp();
         Tcp cloned = original.clone();
         assertEquals(original.hashCode(), cloned.hashCode());
-        assertTrue(original.equals(cloned));
+        assertEquals(original, cloned);
     }
 }

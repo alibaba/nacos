@@ -32,6 +32,7 @@ import { getParams, setParams, request } from '@/globalLib';
 import './index.scss';
 import DiffEditorDialog from '../../../components/DiffEditorDialog';
 import QueryResult from '../../../components/QueryResult';
+import PageTitle from '../../../components/PageTitle';
 
 @ConfigProvider.config
 class HistoryRollback extends React.Component {
@@ -213,8 +214,8 @@ class HistoryRollback extends React.Component {
   goCompare(record) {
     let tenant = getParams('namespace') || '';
     let serverId = getParams('serverId') || 'center';
-    this.getConfig(-1, tenant, serverId, this.dataId, this.group).then(lasted => {
-      this.getHistoryConfig(record.id, this.dataId, this.group).then(selected => {
+    this.getConfig(-1, tenant, serverId, record.dataId, record.group).then(lasted => {
+      this.getHistoryConfig(record.id, record.dataId, record.group).then(selected => {
         this.diffEditorDialog.current.getInstance().openDialog(selected.content, lasted.content);
       });
     });
@@ -314,7 +315,15 @@ class HistoryRollback extends React.Component {
     });
   }
 
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId, nowNamespaceDesc) =>
+    this.setState({
+      nowNamespaceName,
+      nowNamespaceId,
+      nowNamespaceDesc,
+    });
+
   render() {
+    const { nowNamespaceName, nowNamespaceId, nowNamespaceDesc } = this.state;
     const { locale = {} } = this.props;
     const { init } = this.field;
     this.init = init;
@@ -327,8 +336,15 @@ class HistoryRollback extends React.Component {
           tip="Loading..."
           color="#333"
         >
+          <PageTitle
+            title={locale.toConfigure}
+            desc={nowNamespaceDesc}
+            namespaceId={nowNamespaceId}
+            namespaceName={nowNamespaceName}
+            nameSpace
+          />
           <RegionGroup
-            left={locale.toConfigure}
+            setNowNameSpace={this.setNowNameSpace}
             namespaceCallBack={this.cleanAndGetData.bind(this)}
           />
           <div>
@@ -441,7 +457,6 @@ class HistoryRollback extends React.Component {
               pageSize={this.state.pageSize}
               onChange={this.changePage.bind(this)}
             />
-            ,
           </div>
           <DiffEditorDialog
             ref={this.diffEditorDialog}

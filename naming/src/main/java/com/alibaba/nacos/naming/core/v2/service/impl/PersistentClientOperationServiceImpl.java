@@ -60,6 +60,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -461,15 +462,19 @@ public class PersistentClientOperationServiceImpl extends RequestProcessor4CP im
             List<String> groupNames = data.getGroupNames();
             List<String> serviceNames = data.getServiceNames();
             List<InstancePublishInfo> instances = data.getInstancePublishInfos();
+            List<ClientOperationEvent.ClientRegisterServiceEvent> waitPublishEvents = new ArrayList<>();
             for (int i = 0; i < namespaces.size(); i++) {
                 Service service = Service.newService(namespaces.get(i), groupNames.get(i), serviceNames.get(i), false);
                 Service singleton = ServiceManager.getInstance().getSingleton(service);
                 client.putServiceInstance(singleton, instances.get(i));
                 Loggers.RAFT.info("[SNAPSHOT-DATA-ADD] service={}, instance={}", service, instances.get(i));
-                NotifyCenter.publishEvent(
+                waitPublishEvents.add(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
             }
             clientManager.addSyncClient(client);
+            for (ClientOperationEvent.ClientRegisterServiceEvent waitPublishEvent : waitPublishEvents) {
+                NotifyCenter.publishEvent(waitPublishEvent);
+            }
         }
         
         @Override

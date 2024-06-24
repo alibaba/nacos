@@ -16,11 +16,12 @@
 
 package com.alibaba.nacos.core.distributed.distro.entity;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class DistroKeyTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class DistroKeyTest {
     
     private final String type = "com.alibaba.nacos.naming.iplist.";
     
@@ -32,8 +33,8 @@ public class DistroKeyTest {
     
     private DistroKey distroKey2;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         distroKey1 = new DistroKey(resourceKey, type, targetServer);
         distroKey2 = new DistroKey();
         distroKey2.setResourceKey(resourceKey);
@@ -42,15 +43,15 @@ public class DistroKeyTest {
     }
     
     @Test
-    public void testGetters() {
-        Assert.assertEquals(distroKey2.getResourceKey(), resourceKey);
-        Assert.assertEquals(distroKey2.getResourceType(), type);
-        Assert.assertEquals(distroKey2.getTargetServer(), targetServer);
-    
+    void testGetters() {
+        assertEquals(distroKey2.getResourceKey(), resourceKey);
+        assertEquals(distroKey2.getResourceType(), type);
+        assertEquals(distroKey2.getTargetServer(), targetServer);
+        
     }
     
     @Test
-    public void testEquals() {
-        Assert.assertEquals(distroKey1, distroKey2);
+    void testEquals() {
+        assertEquals(distroKey1, distroKey2);
     }
 }

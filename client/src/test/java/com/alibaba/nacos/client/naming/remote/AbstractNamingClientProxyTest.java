@@ -31,21 +31,22 @@ import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.client.utils.AppNameUtils;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class AbstractNamingClientProxyTest {
+@ExtendWith(MockitoExtension.class)
+class AbstractNamingClientProxyTest {
     
     @Mock
     private SecurityProxy sc;
@@ -54,16 +55,16 @@ public class AbstractNamingClientProxyTest {
      * test get security headers for accessToken.
      */
     @Test
-    public void testGetSecurityHeadersForAccessToken() {
+    void testGetSecurityHeadersForAccessToken() {
         AbstractNamingClientProxy proxy = new MockNamingClientProxy(sc);
         String token = "aa";
         Map<String, String> keyMap = new HashMap<>();
         keyMap.put(Constants.ACCESS_TOKEN, token);
         when(sc.getIdentityContext(any(RequestResource.class))).thenReturn(keyMap);
         Map<String, String> securityHeaders = proxy.getSecurityHeaders("", "", "");
-        Assert.assertEquals(2, securityHeaders.size());
-        Assert.assertEquals(token, securityHeaders.get(Constants.ACCESS_TOKEN));
-        Assert.assertEquals(AppNameUtils.getAppName(), securityHeaders.get("app"));
+        assertEquals(2, securityHeaders.size());
+        assertEquals(token, securityHeaders.get(Constants.ACCESS_TOKEN));
+        assertEquals(AppNameUtils.getAppName(), securityHeaders.get("app"));
     }
     
     /**
@@ -72,7 +73,7 @@ public class AbstractNamingClientProxyTest {
      * @throws Exception exception
      */
     @Test
-    public void testGetSecurityHeadersForRam() throws Exception {
+    void testGetSecurityHeadersForRam() throws Exception {
         String ak = "aa";
         String sk = "bb";
         Map<String, String> mockIdentityContext = new HashMap<>();
@@ -84,12 +85,12 @@ public class AbstractNamingClientProxyTest {
         when(sc.getIdentityContext(any(RequestResource.class))).thenReturn(mockIdentityContext);
         AbstractNamingClientProxy proxy = new MockNamingClientProxy(sc);
         Map<String, String> spasHeaders = proxy.getSecurityHeaders("", "", serviceName);
-        Assert.assertEquals(4, spasHeaders.size());
-        Assert.assertEquals(AppNameUtils.getAppName(), spasHeaders.get("app"));
-        Assert.assertEquals(ak, spasHeaders.get("ak"));
-        Assert.assertTrue(spasHeaders.get("data").endsWith("@@" + serviceName));
+        assertEquals(4, spasHeaders.size());
+        assertEquals(AppNameUtils.getAppName(), spasHeaders.get("app"));
+        assertEquals(ak, spasHeaders.get("ak"));
+        assertTrue(spasHeaders.get("data").endsWith("@@" + serviceName));
         String expectSign = SignUtil.sign(spasHeaders.get("data"), sk);
-        Assert.assertEquals(expectSign, spasHeaders.get("signature"));
+        assertEquals(expectSign, spasHeaders.get("signature"));
         
     }
     

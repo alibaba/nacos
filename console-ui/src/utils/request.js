@@ -20,6 +20,7 @@ import { Message } from '@alifd/next';
 import { browserHistory } from 'react-router';
 import { isPlainObject } from './nacosutil';
 // import { SUCCESS_RESULT_CODE } from '../constants';
+import { goRegister } from '../globalLib';
 
 const API_GENERAL_ERROR_MESSAGE = 'Request error, please try again later!';
 
@@ -74,6 +75,19 @@ const request = () => {
       //   Message.error(resultMessage);
       //   return Promise.reject(new Error(resultMessage));
       // }
+      if (response.config && response.config.url === 'v1/console/server/state') {
+        const { auth_admin_request = '' } = response.data;
+        if (auth_admin_request && auth_admin_request === 'true') {
+          goRegister();
+        }
+        if (
+          auth_admin_request &&
+          auth_admin_request === 'false' &&
+          window.location.href.includes('/register')
+        ) {
+          goLogin();
+        }
+      }
       return response.data;
     },
     error => {
