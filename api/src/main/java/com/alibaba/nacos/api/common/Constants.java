@@ -248,6 +248,11 @@ public class Constants {
     public static final String CONFIG_GRAY_LABEL = "nacos.config.gray.label";
     
     /**
+     * Since 2.3.3, For some situation like java agent using nacos-client which can't use env ram info.
+     */
+    public static final String DEFAULT_USE_RAM_INFO_PARSING = "true";
+    
+    /**
      * The constants in config directory.
      */
     public static class Config {
