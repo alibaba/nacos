@@ -229,7 +229,7 @@ public class ServerListManagerTest {
     }
     
     @Test
-    void testWithEndpointClusterName() throws NacosException {
+    public void testWithEndpointClusterName() throws NacosException {
         Properties properties = new Properties();
         String endpoint = "127.0.0.1";
         properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
@@ -245,14 +245,14 @@ public class ServerListManagerTest {
         properties.setProperty(PropertyKeyConst.CONTEXT_PATH, contextPath);
         final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
         ServerListManager serverListManager = new ServerListManager(clientProperties);
-        assertTrue(serverListManager.addressServerUrl.contains(endpointContextPath));
-        assertTrue(serverListManager.getName().contains("endpointContextPath"));
+        Assert.assertTrue(serverListManager.addressServerUrl.contains(endpointContextPath));
+        Assert.assertTrue(serverListManager.getName().contains("endpointContextPath"));
         
-        assertTrue(serverListManager.addressServerUrl.contains(testEndpointClusterName));
-        assertTrue(serverListManager.getName().contains(testEndpointClusterName));
-    
-        assertFalse(serverListManager.addressServerUrl.contains(testClusterName));
-        assertFalse(serverListManager.getName().contains(testClusterName));
+        Assert.assertTrue(serverListManager.addressServerUrl.contains(testEndpointClusterName));
+        Assert.assertTrue(serverListManager.getName().contains(testEndpointClusterName));
+        
+        Assert.assertFalse(serverListManager.addressServerUrl.contains(testClusterName));
+        Assert.assertFalse(serverListManager.getName().contains(testClusterName));
     
     }
     
