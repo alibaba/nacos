@@ -92,6 +92,11 @@ public class PropertyKeyConst {
     public static final String REDO_DELAY_THREAD_COUNT = "redoDelayThreadCount";
     
     /**
+     * Since 2.3.3, For some situation like java agent using nacos-client which can't use env ram info.
+     */
+    public static final String IS_USE_RAM_INFO_PARSING = "isUseRamInfoParsing";
+    
+    /**
      * Get the key value of some variable value from the system property.
      */
     public static class SystemEnv {
