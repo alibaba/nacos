@@ -25,7 +25,8 @@ import org.junit.Test;
 
 import java.util.Properties;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class RamUtilTest {
     
@@ -47,19 +48,19 @@ public class RamUtilTest {
     }
     
     @Test
-    public void testGetAccessKeyWithUserAKSK() {
+    public void testGetAccessKeyWithUserAkSk() {
         assertEquals("userAk", RamUtil.getAccessKey(properties));
         assertEquals("userSk", RamUtil.getSecretKey(properties));
     }
     
     @Test
-    public void testGetAccessKeyWithSpasAKSK() {
+    public void testGetAccessKeyWithSpasAkSk() {
         assertEquals("spasAk", RamUtil.getAccessKey(new Properties()));
         assertEquals("spasSk", RamUtil.getSecretKey(new Properties()));
     }
     
     @Test
-    public void testGetAccessKeyWithoutSpasAKSK() {
+    public void testGetAccessKeyWithoutSpasAkSk() {
         Properties properties1 = new Properties();
         properties1.setProperty(PropertyKeyConst.IS_USE_RAM_INFO_PARSING, "false");
         assertNull(RamUtil.getAccessKey(properties1));
