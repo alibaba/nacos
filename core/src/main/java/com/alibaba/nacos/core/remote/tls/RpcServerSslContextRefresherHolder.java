@@ -69,7 +69,7 @@ public class RpcServerSslContextRefresherHolder {
      * Initializes the holder by loading SSL context refreshers and matching them with the configured types (SDK and
      * Cluster).
      */
-    protected static void init() {
+    private static void init() {
         synchronized (RpcServerSslContextRefresherHolder.class) {
             Properties properties = EnvUtil.getProperties();
             RpcServerTlsConfig clusterServerTlsConfig = RpcServerTlsConfigFactory.getInstance().createClusterConfig(properties);

@@ -26,6 +26,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
+import java.lang.reflect.Method;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -85,12 +86,20 @@ public class RpcServerSslContextRefresherHolderTest {
     }
     
     @Test
-    public void testInitAndGet() {
-        RpcServerSslContextRefresherHolder.init();
+    public void testInitAndGet() throws Exception {
+        // Call init method.
+        callInit();
         RpcServerSslContextRefresher sdkInstance = RpcServerSslContextRefresherHolder.getSdkInstance();
         RpcServerSslContextRefresher clusterInstance = RpcServerSslContextRefresherHolder.getClusterInstance();
         
         assertEquals(RpcSdkServerSslContextRefresherTest.NAME, sdkInstance.getName());
         assertEquals(RpcClusterServerSslContextRefresherTest.NAME, clusterInstance.getName());
+    }
+    
+    private void callInit() throws Exception {
+        Class<?> clazz = RpcServerSslContextRefresherHolder.class;
+        Method method = clazz.getDeclaredMethod("init");
+        method.setAccessible(true);
+        method.invoke(null);
     }
 }
