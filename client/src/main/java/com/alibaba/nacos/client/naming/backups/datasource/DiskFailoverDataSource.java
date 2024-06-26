@@ -51,6 +51,10 @@ public class DiskFailoverDataSource implements FailoverDataSource {
     
     private static final String FAILOVER_MODE_PARAM = "failover-mode";
     
+    private static final FailoverSwitch FAILOVER_SWITCH_FALSE = new FailoverSwitch(Boolean.FALSE);
+    
+    private static final FailoverSwitch FAILOVER_SWITCH_TRUE = new FailoverSwitch(Boolean.TRUE);
+    
     private final Map<String, String> switchParams = new ConcurrentHashMap<>();
     
     private Map<String, FailoverData> serviceMap = new ConcurrentHashMap<>();
@@ -59,11 +63,9 @@ public class DiskFailoverDataSource implements FailoverDataSource {
     
     private long lastModifiedMillis = 0L;
     
-    private FailoverSwitch lastSwitch;
-    
     public DiskFailoverDataSource() {
         failoverDir = CacheDirUtil.getCacheDir() + FAILOVER_DIR;
-        this.lastSwitch = new FailoverSwitch(Boolean.FALSE);
+        switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
     }
     
     class FailoverFileReader implements Runnable {
@@ -110,8 +112,8 @@ public class DiskFailoverDataSource implements FailoverDataSource {
             File switchFile = Paths.get(failoverDir, UtilAndComs.FAILOVER_SWITCH).toFile();
             if (!switchFile.exists()) {
                 NAMING_LOGGER.debug("failover switch is not found, {}", switchFile.getName());
-                lastSwitch = new FailoverSwitch(Boolean.FALSE);
-                return new FailoverSwitch(Boolean.FALSE);
+                switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
+                return FAILOVER_SWITCH_FALSE;
             }
             
             long modified = switchFile.lastModified();
@@ -128,24 +130,21 @@ public class DiskFailoverDataSource implements FailoverDataSource {
                             switchParams.put(FAILOVER_MODE_PARAM, Boolean.TRUE.toString());
                             NAMING_LOGGER.info("failover-mode is on");
                             new FailoverFileReader().run();
-                            lastSwitch = new FailoverSwitch(Boolean.TRUE);
-                            return new FailoverSwitch(Boolean.TRUE);
+                            return FAILOVER_SWITCH_TRUE;
                         } else if (NO_FAILOVER_MODE.equals(line1)) {
                             switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
                             NAMING_LOGGER.info("failover-mode is off");
-                            lastSwitch = new FailoverSwitch(Boolean.FALSE);
-                            return new FailoverSwitch(Boolean.FALSE);
+                            return FAILOVER_SWITCH_FALSE;
                         }
                     }
                 }
             }
-            return lastSwitch;
+            return switchParams.get(FAILOVER_MODE_PARAM).equals(Boolean.TRUE.toString()) ? FAILOVER_SWITCH_TRUE : FAILOVER_SWITCH_FALSE;
             
         } catch (Throwable e) {
             NAMING_LOGGER.error("[NA] failed to read failover switch.", e);
             switchParams.put(FAILOVER_MODE_PARAM, Boolean.FALSE.toString());
-            lastSwitch = new FailoverSwitch(Boolean.FALSE);
-            return new FailoverSwitch(Boolean.FALSE);
+            return FAILOVER_SWITCH_FALSE;
         }
     }
     
