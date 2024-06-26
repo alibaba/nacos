@@ -18,6 +18,7 @@ package com.alibaba.nacos.config.server.controller;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.enums.ConfigSearchRequestTypeEnum;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
 import com.alibaba.nacos.config.server.service.LongPollingService;
@@ -145,6 +146,57 @@ class CommunicationControllerTest {
         when(configChangeListenContext.getListenKeys(ip)).thenReturn(map);
         
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.COMMUNICATION_CONTROLLER_PATH + "/watcherConfigs")
+                .param("ip", ip);
+        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        assertEquals("{\"test\":\"test\"}", JacksonUtils.toObj(actualValue).get("lisentersGroupkeyStatus").toString());
+        
+    }
+    
+    @Test
+    void testGetSubClientConfigV21x() throws Exception {
+        
+        SampleResult result = new SampleResult();
+        result.setLisentersGroupkeyStatus(new HashMap<>());
+        when(longPollingService.getCollectSubscribleInfo("test", "test", "test")).thenReturn(result);
+        String groupKey = GroupKey2.getKey("test", "test", "test");
+        Set<String> listenersClients = new HashSet<>();
+        String connectionId = "127.0.0.1";
+        listenersClients.add(connectionId);
+        when(configChangeListenContext.getListeners(groupKey)).thenReturn(listenersClients);
+        ConnectionMeta connectionMeta = new ConnectionMeta(connectionId, connectionId, connectionId, 8888, 9848, "GRPC", "", "",
+                new HashMap<>());
+        Connection client = new GrpcConnection(connectionMeta, null, null);
+        when(connectionManager.getConnection(connectionId)).thenReturn(client);
+        when(configChangeListenContext.getListenKeyMd5(connectionId, groupKey)).thenReturn("md5");
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.COMMUNICATION_CONTROLLER_PATH + "/config")
+                .param("type", ConfigSearchRequestTypeEnum.CONFIG.getType())
+                .param("dataId", "test")
+                .param("group", "test")
+                .param("tenant", "test");
+        String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
+        assertEquals("{\"127.0.0.1\":\"md5\"}", JacksonUtils.toObj(actualValue).get("lisentersGroupkeyStatus").toString());
+        
+    }
+    
+    @Test
+    void testGetSubClientConfigV22x() throws Exception {
+        
+        String ip = "127.0.0.1";
+        SampleResult result = new SampleResult();
+        result.setLisentersGroupkeyStatus(new HashMap<>());
+        when(longPollingService.getCollectSubscribleInfoByIp(ip)).thenReturn(result);
+        ConnectionMeta connectionMeta = new ConnectionMeta(ip, ip, ip, 8888, 9848, "GRPC", "", "", new HashMap<>());
+        Connection connection = new GrpcConnection(connectionMeta, null, null);
+        List<Connection> connectionList = new ArrayList<>();
+        connectionList.add(connection);
+        when(connectionManager.getConnectionByIp(ip)).thenReturn(connectionList);
+        Map<String, String> map = new HashMap<>();
+        map.put("test", "test");
+        when(configChangeListenContext.getListenKeys(ip)).thenReturn(map);
+        
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.COMMUNICATION_CONTROLLER_PATH + "/watcherConfigs")
+                .param("type", ConfigSearchRequestTypeEnum.IP.getType())
                 .param("ip", ip);
         String actualValue = mockMvc.perform(builder).andReturn().getResponse().getContentAsString();
         assertEquals("{\"test\":\"test\"}", JacksonUtils.toObj(actualValue).get("lisentersGroupkeyStatus").toString());

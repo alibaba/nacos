@@ -19,6 +19,7 @@ package com.alibaba.nacos.config.server.controller;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.enums.ConfigSearchRequestTypeEnum;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.paramcheck.ConfigDefaultHttpParamExtractor;
 import com.alibaba.nacos.config.server.remote.ConfigChangeListenContext;
@@ -67,9 +68,17 @@ public class CommunicationController {
     /**
      * Get client config information of subscriber in local machine.
      */
+    @Deprecated
     @GetMapping("/configWatchers")
     public SampleResult getSubClientConfig(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false) String tenant, ModelMap modelMap) {
+        return searchByConfig(dataId, group, tenant);
+    }
+    
+    private SampleResult searchByConfig(String dataId, String group, String tenant) {
+        if (StringUtils.isBlank(dataId)) {
+            return new SampleResult();
+        }
         group = StringUtils.isBlank(group) ? Constants.DEFAULT_GROUP : group;
         // long polling listeners.
         SampleResult result = longPollingService.getCollectSubscribleInfo(dataId, group, tenant);
@@ -96,21 +105,55 @@ public class CommunicationController {
     /**
      * Get client config listener lists of subscriber in local machine.
      */
+    @Deprecated
     @GetMapping("/watcherConfigs")
     public SampleResult getSubClientConfigByIp(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("ip") String ip, ModelMap modelMap) {
-        
+        return searchByIp(ip);
+    }
+    
+    private SampleResult searchByIp(String ip) {
+        if (StringUtils.isBlank(ip)) {
+            return new SampleResult();
+        }
         SampleResult result = longPollingService.getCollectSubscribleInfoByIp(ip);
         List<Connection> connectionsByIp = connectionManager.getConnectionByIp(ip);
         for (Connection connectionByIp : connectionsByIp) {
-            Map<String, String> listenKeys = configChangeListenContext
-                    .getListenKeys(connectionByIp.getMetaInfo().getConnectionId());
+            Map<String, String> listenKeys = configChangeListenContext.getListenKeys(
+                    connectionByIp.getMetaInfo().getConnectionId());
             if (listenKeys != null) {
                 result.getLisentersGroupkeyStatus().putAll(listenKeys);
             }
         }
         return result;
-        
+    }
+    
+    /**
+     * Get client config information of subscriber in local machine.
+     *
+     * @param type   {@link ConfigSearchRequestTypeEnum}
+     * @param ip     machine ip
+     * @param dataId config dataId
+     * @param group  config group
+     * @param tenant config tenant
+     * @return SampleResult
+     */
+    @GetMapping("/config")
+    public SampleResult getSubClientConfigV2(
+            @RequestParam("type") String type,
+            @RequestParam(value = "ip", required = false) String ip,
+            @RequestParam(value = "dataId", required = false) String dataId,
+            @RequestParam(value = "group", required = false) String group,
+            @RequestParam(value = "tenant", required = false) String tenant) {
+        if (!ConfigSearchRequestTypeEnum.checkTypeLegal(type)) {
+            return new SampleResult();
+        }
+        if (ConfigSearchRequestTypeEnum.IP.getType().equals(type)) {
+            return searchByIp(ip);
+        } else if (ConfigSearchRequestTypeEnum.CONFIG.getType().equals(type)) {
+            return searchByConfig(dataId, group, tenant);
+        }
+        return new SampleResult();
     }
     
 }

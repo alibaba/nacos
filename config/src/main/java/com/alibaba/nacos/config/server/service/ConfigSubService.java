@@ -23,6 +23,7 @@ import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.constant.Constants;
+import com.alibaba.nacos.config.server.enums.ConfigSearchRequestTypeEnum;
 import com.alibaba.nacos.config.server.model.ListenerCheckResult;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.notify.HttpClientManager;
@@ -85,7 +86,7 @@ public class ConfigSubService {
     
     static class ClusterListenerJob extends ClusterJob<SampleResult> {
         
-        static final String URL = Constants.COMMUNICATION_CONTROLLER_PATH + "/configWatchers";
+        static final String URL = Constants.COMMUNICATION_CONTROLLER_PATH + "/config";
         
         ClusterListenerJob(Map<String, String> params, CompletionService<SampleResult> completionService,
                 ServerMemberManager serverMemberManager) {
@@ -295,7 +296,8 @@ public class ConfigSubService {
     
     public SampleResult getCollectSampleResult(String dataId, String group, String tenant, int sampleTime)
             throws Exception {
-        Map<String, String> params = new HashMap<>(5);
+        Map<String, String> params = new HashMap<>(4);
+        params.put("type", ConfigSearchRequestTypeEnum.CONFIG.getType());
         params.put("dataId", dataId);
         params.put("group", group);
         if (!StringUtils.isBlank(tenant)) {
@@ -316,7 +318,8 @@ public class ConfigSubService {
     }
     
     public SampleResult getCollectSampleResultByIp(String ip, int sampleTime) {
-        Map<String, String> params = new HashMap<>(50);
+        Map<String, String> params = new HashMap<>(2);
+        params.put("type", ConfigSearchRequestTypeEnum.IP.getType());
         params.put("ip", ip);
         BlockingQueue<Future<SampleResult>> queue = new LinkedBlockingDeque<>(memberManager.getServerList().size());
         CompletionService<SampleResult> completionService = new ExecutorCompletionService<>(

@@ -70,7 +70,7 @@ public class LongPollingService {
     
     private Map<String, Long> retainIps = new ConcurrentHashMap<>();
     
-    public SampleResult getSubscribleInfo(String dataId, String group, String tenant) {
+    public SampleResult getSubscribeInfo(String dataId, String group, String tenant) {
         String groupKey = GroupKey.getKeyTenant(dataId, group, tenant);
         SampleResult sampleResult = new SampleResult();
         Map<String, String> lisentersGroupkeyStatus = new HashMap<>(50);
@@ -123,7 +123,7 @@ public class LongPollingService {
     public SampleResult getCollectSubscribleInfo(String dataId, String group, String tenant) {
         List<SampleResult> sampleResultLst = new ArrayList<>(50);
         for (int i = 0; i < SAMPLE_TIMES; i++) {
-            SampleResult sampleTmp = getSubscribleInfo(dataId, group, tenant);
+            SampleResult sampleTmp = getSubscribeInfo(dataId, group, tenant);
             if (sampleTmp != null) {
                 sampleResultLst.add(sampleTmp);
             }
