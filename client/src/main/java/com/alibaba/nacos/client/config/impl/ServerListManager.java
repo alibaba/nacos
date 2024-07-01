@@ -318,7 +318,7 @@ public class ServerListManager implements Closeable {
             if (StringUtils.isNotBlank(endpointUrl)) {
                 this.serverAddrsStr = "";
             }
-            this.endpoint = endpointUrl;
+            endpointTmp = endpointUrl;
         }
         this.endpoint = StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
