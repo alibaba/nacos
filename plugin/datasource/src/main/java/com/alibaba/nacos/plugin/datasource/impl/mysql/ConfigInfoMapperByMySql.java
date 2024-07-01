@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -38,16 +37,16 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInfoMapper {
-    
+public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements ConfigInfoMapper {
+
     private static final String DATA_ID = "dataId";
-    
+
     private static final String GROUP = "group";
-    
+
     private static final String APP_NAME = "appName";
-    
+
     private static final String CONTENT = "content";
-    
+
     private static final String TENANT = "tenant";
     
     @Override

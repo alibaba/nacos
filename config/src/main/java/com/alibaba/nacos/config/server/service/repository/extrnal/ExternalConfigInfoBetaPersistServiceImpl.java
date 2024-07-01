@@ -46,7 +46,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
@@ -94,13 +93,12 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
             
             jt.update(configInfoBetaMapper.insert(
                             Arrays.asList("data_id", "group_id", "tenant_id", "app_name", "content", "md5", "beta_ips",
-                                    "src_ip", "src_user", "gmt_create", "gmt_modified", "encrypted_data_key")),
+                                    "src_ip", "src_user", "gmt_create@NOW()", "gmt_modified@NOW()", "encrypted_data_key")),
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp, configInfo.getContent(), md5,
-                    betaIps, srcIp, srcUser, time, time, encryptedDataKey);
+                    betaIps, srcIp, srcUser, encryptedDataKey);
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             
         } catch (CannotGetJdbcConnectionException e) {
@@ -165,12 +163,11 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
+
             jt.update(configInfoBetaMapper.update(
-                            Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified", "app_name",
-                                    "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
-                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, time, appNameTmp, encryptedDataKey,
+                            Arrays.asList("content", "md5", "beta_ips", "src_ip", "src_user", "gmt_modified@NOW()",
+                                    "app_name", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id")),
+                    configInfo.getContent(), md5, betaIps, srcIp, srcUser, appNameTmp, encryptedDataKey,
                     configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             return getBetaOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
             
@@ -214,15 +211,13 @@ public class ExternalConfigInfoBetaPersistServiceImpl implements ConfigInfoBetaP
         try {
             ConfigInfoBetaMapper configInfoBetaMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                     TableConstant.CONFIG_INFO_BETA);
-            Timestamp time = new Timestamp(System.currentTimeMillis());
-            
+
             MapperContext context = new MapperContext();
             context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
             context.putUpdateParameter(FieldConstant.MD5, md5);
             context.putUpdateParameter(FieldConstant.BETA_IPS, betaIps);
             context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
             context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-            context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
             context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
             
             context.putWhereParameter(FieldConstant.DATA_ID, configInfo.getDataId());

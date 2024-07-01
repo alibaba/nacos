@@ -315,7 +315,6 @@ class ConfigInfoMapperByMySqlTest {
         String newMD5 = "newMD5";
         String srcIp = "1.1.1.1";
         Object srcUser = "nacos";
-        Object time = new Timestamp(System.currentTimeMillis());
         Object appNameTmp = "newAppName";
         Object desc = "description";
         Object use = "use";
@@ -327,7 +326,6 @@ class ConfigInfoMapperByMySqlTest {
         context.putUpdateParameter(FieldConstant.MD5, newMD5);
         context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
         context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
         context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
         context.putUpdateParameter(FieldConstant.C_DESC, desc);
         context.putUpdateParameter(FieldConstant.C_USE, use);
@@ -346,11 +344,11 @@ class ConfigInfoMapperByMySqlTest {
         
         MapperResult mapperResult = configInfoMapperByMySql.updateConfigInfoAtomicCas(context);
         assertEquals(mapperResult.getSql(),
-                "UPDATE config_info SET " + "content=?, md5 = ?, src_ip=?,src_user=?,gmt_modified=?, app_name=?,c_desc=?,"
-                        + "c_use=?,effect=?,type=?,c_schema=?,encrypted_data_key=? "
+                "UPDATE config_info SET " + "content=?, md5=?, src_ip=?, src_user=?, gmt_modified=NOW(3),"
+                        + " app_name=?, c_desc=?, c_use=?, effect=?, type=?, c_schema=?, encrypted_data_key=? "
                         + "WHERE data_id=? AND group_id=? AND tenant_id=? AND (md5=? OR md5 IS NULL OR md5='')");
         assertArrayEquals(
-                new Object[] {newContent, newMD5, srcIp, srcUser, time, appNameTmp, desc, use, effect, type, schema, encryptedDataKey,
-                        dataId, group, tenantId, md5}, mapperResult.getParamList().toArray());
+                new Object[]{newContent, newMD5, srcIp, srcUser, appNameTmp, desc, use, effect, type, schema,
+                        encryptedDataKey, dataId, group, tenantId, md5}, mapperResult.getParamList().toArray());
     }
 }

@@ -16,19 +16,18 @@
 
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
-import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
+import com.alibaba.nacos.plugin.datasource.enums.mysql.TrustedMysqlFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 
 /**
- * The mysql implementation of TenantInfoMapper.
+ * The abstract mysql mapper contains CRUD methods.
  *
- * @author hyx
+ * @author blake.qiu
  **/
-
-public class TenantInfoMapperByMySql extends AbstractMapperByMysql implements TenantInfoMapper {
+public abstract class AbstractMapperByMysql extends AbstractMapper {
 
     @Override
-    public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+    public String getFunction(String functionName) {
+        return TrustedMysqlFunctionEnum.getFunctionByName(functionName);
     }
 }

@@ -22,7 +22,6 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -38,13 +37,13 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigInfoMapperByDerby extends AbstractMapper implements ConfigInfoMapper {
-    
+public class ConfigInfoMapperByDerby extends AbstractMapperByDerby implements ConfigInfoMapper {
+
     @Override
     public MapperResult findConfigInfoByAppFetchRows(MapperContext context) {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
-        
+
         String sql =
                 "SELECT ID,data_id,group_id,tenant_id,app_name,content FROM config_info WHERE tenant_id LIKE ? AND "
                         + "app_name = ?" + " OFFSET " + context.getStartRow() + " ROWS FETCH NEXT "

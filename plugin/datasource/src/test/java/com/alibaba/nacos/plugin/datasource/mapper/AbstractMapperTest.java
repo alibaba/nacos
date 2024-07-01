@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.plugin.datasource.mapper;
 
-import com.alibaba.nacos.plugin.datasource.impl.mysql.TenantInfoMapperByMySql;
+import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
+import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
+import com.alibaba.nacos.plugin.datasource.enums.mysql.TrustedMysqlFunctionEnum;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -30,7 +32,22 @@ class AbstractMapperTest {
     
     @BeforeEach
     void setUp() throws Exception {
-        abstractMapper = new TenantInfoMapperByMySql();
+        abstractMapper = new AbstractMapper() {
+            @Override
+            public String getTableName() {
+                return TableConstant.TENANT_INFO;
+            }
+
+            @Override
+            public String getDataSource() {
+                return DataSourceConstant.MYSQL;
+            }
+
+            @Override
+            public String getFunction(String functionName) {
+                return TrustedMysqlFunctionEnum.getFunctionByName(functionName);
+            }
+        };
     }
     
     @Test
