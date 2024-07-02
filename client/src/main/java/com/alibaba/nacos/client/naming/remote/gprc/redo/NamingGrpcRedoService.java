@@ -41,7 +41,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Naming client gprc redo service.
+ * Naming client grpc redo service.
  *
  * <p>When connection reconnect to server, redo the register and subscribe.
  *
