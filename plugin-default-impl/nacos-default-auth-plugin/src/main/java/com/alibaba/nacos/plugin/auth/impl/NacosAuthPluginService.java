@@ -67,11 +67,16 @@ public class NacosAuthPluginService implements AuthPluginService {
         // enable all of action and type
         return true;
     }
-    
+
     @Override
     public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+        return false;
+    }
+
+    @Override
+    public boolean validateIdentityInHeader(IdentityContext identityContext, Resource resource,String tokenInhead) throws AccessException {
         checkNacosAuthManager();
-        String token = resolveToken(identityContext);
+        String token = resolveToken(identityContext,tokenInhead);
         NacosUser nacosUser;
         if (StringUtils.isNotBlank(token)) {
             nacosUser = authenticationManager.authenticate(token);
@@ -86,13 +91,16 @@ public class NacosAuthPluginService implements AuthPluginService {
         return true;
     }
     
-    private String resolveToken(IdentityContext identityContext) {
+    private String resolveToken(IdentityContext identityContext,String token) {
         String bearerToken = identityContext.getParameter(AuthConstants.AUTHORIZATION_HEADER, StringUtils.EMPTY);
         if (StringUtils.isNotBlank(bearerToken) && bearerToken.startsWith(AuthConstants.TOKEN_PREFIX)) {
             return bearerToken.substring(AuthConstants.TOKEN_PREFIX.length());
         }
-        
-        return identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY);
+        String result = identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY);
+        if(result.equals(StringUtils.EMPTY)){
+            return token;
+        }
+        return result;
     }
     
     @Override

@@ -525,8 +525,9 @@ const request = (function(_global) {
         console.log('Token Error', localStorage.token, e);
         goLogin();
       }
-      const { accessToken = '' } = token;
-      params.push(`accessToken=${accessToken}`);
+      // fix accessToken in url
+      //const { accessToken = '' } = token;
+      //params.push(`accessToken=${accessToken}`);
     }
 
     return $.ajax(
@@ -540,6 +541,7 @@ const request = (function(_global) {
         },
         headers: {
           Authorization: localStorage.getItem('token'),
+          accessToken: accessToken,
         },
       })
     ).then(

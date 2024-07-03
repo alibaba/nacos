@@ -57,6 +57,17 @@ public interface AuthPluginService {
      * @throws AccessException if authentication is failed
      */
     boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
+
+    /**
+     * To validate whether the identity context from request is legal or illegal.
+     *
+     * @param identityContext where we can find the user information
+     * @param resource        resource about this user information
+     * @param tokenInHeader    token in header
+     * @return {@code true} if legal, otherwise {@code false}
+     * @throws AccessException if authentication is failed
+     */
+    boolean validateIdentityInHeader(IdentityContext identityContext, Resource resource,String tokenInHeader) throws AccessException;
     
     /**
      * Validate the identity whether has the resource authority.

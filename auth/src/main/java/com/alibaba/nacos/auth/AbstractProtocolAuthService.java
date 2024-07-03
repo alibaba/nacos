@@ -58,11 +58,11 @@ public abstract class AbstractProtocolAuthService<R> implements ProtocolAuthServ
     }
     
     @Override
-    public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
+    public boolean validateIdentity(IdentityContext identityContext, Resource resource,String token) throws AccessException {
         Optional<AuthPluginService> authPluginService = AuthPluginManager.getInstance()
                 .findAuthServiceSpiImpl(authConfigs.getNacosAuthSystemType());
         if (authPluginService.isPresent()) {
-            return authPluginService.get().validateIdentity(identityContext, resource);
+            return authPluginService.get().validateIdentityInHeader(identityContext, resource,token);
         }
         return true;
     }

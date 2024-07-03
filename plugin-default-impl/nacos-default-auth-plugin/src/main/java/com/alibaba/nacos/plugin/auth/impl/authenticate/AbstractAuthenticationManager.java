@@ -111,7 +111,9 @@ public class AbstractAuthenticationManager implements IAuthenticationManager {
             return bearerToken.substring(AuthConstants.TOKEN_PREFIX.length());
         }
         bearerToken = request.getParameter(Constants.ACCESS_TOKEN);
-        
+        if(StringUtils.isBlank(bearerToken)){
+            bearerToken = request.getHeader(Constants.ACCESS_TOKEN);
+        }
         return bearerToken;
     }
     

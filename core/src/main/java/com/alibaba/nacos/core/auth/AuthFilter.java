@@ -40,6 +40,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.lang.reflect.Method;
 
+import static com.alibaba.nacos.api.common.Constants.ACCESS_TOKEN;
+
 /**
  * Unified filter to handle authentication and authorization.
  *
@@ -117,9 +119,10 @@ public class AuthFilter implements Filter {
                     chain.doFilter(request, response);
                     return;
                 }
+                String token = req.getHeader(ACCESS_TOKEN);
                 Resource resource = protocolAuthService.parseResource(req, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(req);
-                boolean result = protocolAuthService.validateIdentity(identityContext, resource);
+                boolean result = protocolAuthService.validateIdentity(identityContext, resource,token);
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Identity failed.");
