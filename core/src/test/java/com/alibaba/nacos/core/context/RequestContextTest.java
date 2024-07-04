@@ -53,20 +53,6 @@ class RequestContextTest {
     }
     
     @Test
-    public void testSetRequestParameter() {
-        assertNull(requestContext.getRequestParameter("testKey"));
-        requestContext.addRequestParameter("testKey", "testValue");
-        assertEquals("testValue", requestContext.getRequestParameter("testKey"));
-    }
-    
-    @Test
-    public void testSetResponseContext() {
-        assertNull(requestContext.getResponseContext("testKey"));
-        requestContext.addResponseContext("testKey", "testValue");
-        assertEquals("testValue", requestContext.getResponseContext("testKey"));
-    }
-    
-    @Test
     public void testSetExtensionContext() {
         assertNull(requestContext.getExtensionContext("testKey"));
         requestContext.addExtensionContext("testKey", "testValue");

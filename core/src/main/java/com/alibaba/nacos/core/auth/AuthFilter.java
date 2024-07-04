@@ -22,6 +22,8 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.context.RequestContext;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
@@ -120,6 +122,12 @@ public class AuthFilter implements Filter {
                 Resource resource = protocolAuthService.parseResource(req, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(req);
                 boolean result = protocolAuthService.validateIdentity(identityContext, resource);
+                RequestContext requestContext = RequestContextHolder.getContext();
+                requestContext.getAuthContext().setIdentityContext(identityContext);
+                requestContext.getAuthContext().setResource(resource);
+                if (null == requestContext.getAuthContext().getAuthResult()) {
+                    requestContext.getAuthContext().setAuthResult(result);
+                }
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Identity failed.");

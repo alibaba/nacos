@@ -51,20 +51,14 @@ public class RequestContext {
     
     private final AuthContext authContext;
     
-    private final Map<String, Object> requestParameters;
-    
-    private final Map<String, Object> responseContexts;
-    
     private final Map<String, Object> extensionContexts;
     
-    public RequestContext(long requestTimestamp) {
+    RequestContext(long requestTimestamp) {
         this.requestId = UUID.randomUUID().toString();
         this.requestTimestamp = requestTimestamp;
         this.basicContext = new BasicContext();
         this.engineContext = new EngineContext();
         this.authContext = new AuthContext();
-        this.requestParameters = new HashMap<>(1);
-        this.responseContexts = new HashMap<>(1);
         this.extensionContexts = new HashMap<>(1);
     }
     
@@ -90,22 +84,6 @@ public class RequestContext {
     
     public AuthContext getAuthContext() {
         return authContext;
-    }
-    
-    public Object getRequestParameter(String key) {
-        return requestParameters.get(key);
-    }
-    
-    public void addRequestParameter(String key, Object value) {
-        requestParameters.put(key, value);
-    }
-    
-    public Object getResponseContext(String key) {
-        return responseContexts.get(key);
-    }
-    
-    public void addResponseContext(String key, Object value) {
-        responseContexts.put(key, value);
     }
     
     public Object getExtensionContext(String key) {

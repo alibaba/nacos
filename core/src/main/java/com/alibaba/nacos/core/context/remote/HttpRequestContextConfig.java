@@ -14,34 +14,33 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.core.paramcheck;
+package com.alibaba.nacos.core.context.remote;
 
-import com.alibaba.nacos.core.code.ControllerMethodsCache;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * ParamCheckerFilter registration.
+ * Spring Configuration for request context of HTTP.
  *
- * @author 985492783@qq.com
- * @date 2023/11/7 17:52
+ * @author xiweng.yy
  */
 @Configuration
-public class CheckConfiguration {
+public class HttpRequestContextConfig {
     
     @Bean
-    public FilterRegistrationBean<ParamCheckerFilter> checkerFilterRegistration(ParamCheckerFilter checkerFilter) {
-        FilterRegistrationBean<ParamCheckerFilter> registration = new FilterRegistrationBean<>();
-        registration.setFilter(checkerFilter);
+    public FilterRegistrationBean<HttpRequestContextFilter> requestContextFilterRegistration(
+            HttpRequestContextFilter requestContextFilter) {
+        FilterRegistrationBean<HttpRequestContextFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(requestContextFilter);
         registration.addUrlPatterns("/*");
         registration.setName("requestContextFilter");
-        registration.setOrder(8);
+        registration.setOrder(Integer.MIN_VALUE);
         return registration;
     }
     
     @Bean
-    public ParamCheckerFilter checkerFilter(ControllerMethodsCache methodsCache) {
-        return new ParamCheckerFilter(methodsCache);
+    public HttpRequestContextFilter requestContextFilter() {
+        return new HttpRequestContextFilter();
     }
 }
