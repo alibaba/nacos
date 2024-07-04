@@ -19,7 +19,15 @@ package com.alibaba.nacos.core.remote.tls;
 
 import com.alibaba.nacos.core.remote.BaseRpcServer;
 
+/**
+ * {@link RpcServerSslContextRefresher} uint test.
+ *
+ * @author stone-98
+ * @date 2024-06-21 21:43
+ */
 public class RpcSdkServerSslContextRefresherTest implements RpcServerSslContextRefresher {
+    
+    public static final String NAME = "sdk-refresher-test";
     
     @Override
     public SslContextChangeAware refresh(BaseRpcServer baseRpcServer) {
@@ -43,6 +51,6 @@ public class RpcSdkServerSslContextRefresherTest implements RpcServerSslContextR
     
     @Override
     public String getName() {
-        return "sdk-refresher-test";
+        return NAME;
     }
 }

@@ -237,6 +237,34 @@ class ConfigServerListManagerTest {
     }
     
     @Test
+    void testWithEndpointClusterName() throws NacosException {
+        Properties properties = new Properties();
+        String endpoint = "127.0.0.1";
+        properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
+        String endpointPort = "9090";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_PORT, endpointPort);
+        String testEndpointClusterName = "testEndpointClusterName";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, testEndpointClusterName);
+        String testClusterName = "testClusterName";
+        properties.setProperty(PropertyKeyConst.CLUSTER_NAME, testClusterName);
+        String endpointContextPath = "/endpointContextPath";
+        properties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, endpointContextPath);
+        String contextPath = "/contextPath";
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, contextPath);
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
+        assertTrue(serverListManager.getAddressServerUrl().contains(endpointContextPath));
+        assertTrue(serverListManager.getName().contains("endpointContextPath"));
+        
+        assertTrue(serverListManager.getAddressServerUrl().contains(testEndpointClusterName));
+        assertTrue(serverListManager.getName().contains(testEndpointClusterName));
+    
+        assertFalse(serverListManager.getAddressServerUrl().contains(testClusterName));
+        assertFalse(serverListManager.getName().contains(testClusterName));
+    
+    }
+    
+    @Test
     void testWithoutEndpointContextPath() throws NacosException {
         Properties properties = new Properties();
         String endpoint = "127.0.0.1";
@@ -252,5 +280,18 @@ class ConfigServerListManagerTest {
         assertTrue(serverListManager.getAddressServerUrl().contains(contextPath));
         assertFalse(serverListManager.getName().contains("endpointContextPath"));
         assertTrue(serverListManager.getName().contains("contextPath"));
+    }
+
+    @Test
+    void testUseEndpointParsingRule() throws NacosException {
+        System.setProperty("nacos.endpoint", "127.0.0.1");
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.ENDPOINT, "${nacos.endpoint}");
+        properties.setProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "true");
+        properties.setProperty(PropertyKeyConst.ENDPOINT_PORT, "9090");
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ConfigServerListManager serverListManager = new ConfigServerListManager(clientProperties);
+        String addressServerUrl = serverListManager.getAddressServerUrl();
+        assertTrue(addressServerUrl.startsWith("http://127.0.0.1"));
     }
 }

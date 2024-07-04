@@ -51,6 +51,7 @@ import QueryResult from '../../../components/QueryResult';
 
 import './index.scss';
 import { LANGUAGE_KEY, GLOBAL_PAGE_SIZE_LIST, LOGINPAGE_ENABLED } from '../../../constants';
+import TotalRender from '../../../components/Page/TotalRender';
 
 const { Item } = MenuButton;
 const { Panel } = Collapse;
@@ -1405,6 +1406,7 @@ class ConfigurationManagement extends React.Component {
                   onPageSizeChange={val => this.handlePageSizeChange(val)}
                   current={configurations.pageNumber}
                   total={configurations.totalCount}
+                  totalRender={total => <TotalRender locale={locale} total={total} />}
                   pageSize={this.state.pageSize}
                   onChange={this.changePage.bind(this)}
                 />

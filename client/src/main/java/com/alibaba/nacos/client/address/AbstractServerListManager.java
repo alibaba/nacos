@@ -41,7 +41,7 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
- * Serverlist Manager.
+ * Server list Manager.
  *
  * @author totalo
  */
@@ -83,10 +83,6 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     public AbstractServerListManager() {
         this.isFixed = false;
-    }
-    
-    public AbstractServerListManager(List<String> fixed) {
-        this(fixed, null);
     }
     
     public AbstractServerListManager(List<String> fixed, String namespace) {
@@ -228,7 +224,8 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     }
     
     private void initServerListName(NacosClientProperties properties) {
-        String serverListNameTmp = properties.getProperty(PropertyKeyConst.CLUSTER_NAME);
+        String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME,
+                properties.getProperty(PropertyKeyConst.CLUSTER_NAME));
         if (!StringUtils.isBlank(serverListNameTmp)) {
             this.serverListName = serverListNameTmp;
         }

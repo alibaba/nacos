@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.base;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,35 +34,31 @@ import java.net.URL;
  * @since 1.2.0
  */
 public class HttpClient4Test {
-
+    
     protected URL base;
-
+    
     @Autowired
     protected TestRestTemplate restTemplate;
-
+    
     protected <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz) {
-
+        
         HttpHeaders headers = new HttpHeaders();
-
+        
         HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), HttpMethod.GET, entity, clazz);
+        
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path).queryParams(params);
+        
+        return this.restTemplate.exchange(builder.toUriString(), HttpMethod.GET, entity, clazz);
     }
-
+    
     protected <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
-
+        
         HttpHeaders headers = new HttpHeaders();
-
+        
         HttpEntity<?> entity = new HttpEntity<T>(headers);
-
-        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path)
-            .queryParams(params);
-
-        return this.restTemplate.exchange(
-            builder.toUriString(), httpMethod, entity, clazz);
+        
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path).queryParams(params);
+        
+        return this.restTemplate.exchange(builder.toUriString(), httpMethod, entity, clazz);
     }
 }

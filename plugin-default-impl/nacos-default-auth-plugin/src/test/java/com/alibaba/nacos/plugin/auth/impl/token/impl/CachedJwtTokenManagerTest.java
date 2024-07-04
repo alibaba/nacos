@@ -18,16 +18,20 @@ package com.alibaba.nacos.plugin.auth.impl.token.impl;
 
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.security.core.Authentication;
 
 import java.lang.reflect.Field;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
@@ -36,8 +40,10 @@ import static org.mockito.Mockito.when;
  *
  * @author Majorhe
  */
-@RunWith(MockitoJUnitRunner.class)
-public class CachedJwtTokenManagerTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class CachedJwtTokenManagerTest {
     
     private CachedJwtTokenManager cachedJwtTokenManager;
     
@@ -50,8 +56,8 @@ public class CachedJwtTokenManagerTest {
     @Mock
     private NacosUser user;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         cachedJwtTokenManager = new CachedJwtTokenManager();
         injectObject("jwtTokenManager", jwtTokenManager);
         when(jwtTokenManager.getTokenValidityInSeconds()).thenReturn(100L);
@@ -64,38 +70,38 @@ public class CachedJwtTokenManagerTest {
     }
     
     @Test
-    public void testCreateToken1() throws AccessException {
-        Assert.assertEquals("token", cachedJwtTokenManager.createToken(authentication));
+    void testCreateToken1() throws AccessException {
+        assertEquals("token", cachedJwtTokenManager.createToken(authentication));
     }
     
     @Test
-    public void testCreateToken2() throws AccessException {
-        Assert.assertEquals("token", cachedJwtTokenManager.createToken("nacos"));
+    void testCreateToken2() throws AccessException {
+        assertEquals("token", cachedJwtTokenManager.createToken("nacos"));
     }
     
     @Test
-    public void testGetAuthentication() throws AccessException {
-        Assert.assertNotNull(cachedJwtTokenManager.getAuthentication("token"));
+    void testGetAuthentication() throws AccessException {
+        assertNotNull(cachedJwtTokenManager.getAuthentication("token"));
     }
     
     @Test
-    public void testValidateToken() throws AccessException {
+    void testValidateToken() throws AccessException {
         cachedJwtTokenManager.validateToken("token");
     }
     
     @Test
-    public void testParseToken() throws AccessException {
-        Assert.assertNotNull(cachedJwtTokenManager.parseToken("token"));
+    void testParseToken() throws AccessException {
+        assertNotNull(cachedJwtTokenManager.parseToken("token"));
     }
     
     @Test
-    public void testGetTokenTtlInSeconds() throws AccessException {
-        Assert.assertTrue(cachedJwtTokenManager.getTokenTtlInSeconds("token") > 0);
+    void testGetTokenTtlInSeconds() throws AccessException {
+        assertTrue(cachedJwtTokenManager.getTokenTtlInSeconds("token") > 0);
     }
     
     @Test
-    public void testGetTokenValidityInSeconds() {
-        Assert.assertTrue(cachedJwtTokenManager.getTokenValidityInSeconds() > 0);
+    void testGetTokenValidityInSeconds() {
+        assertTrue(cachedJwtTokenManager.getTokenValidityInSeconds() > 0);
     }
     
     private void injectObject(String fieldName, Object value) throws NoSuchFieldException, IllegalAccessException {

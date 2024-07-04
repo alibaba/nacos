@@ -18,7 +18,9 @@ package com.alibaba.nacos.plugin.datasource.impl;
 
 /**
  * A custom interface. just for test
+ *
  * @author mikolls
  **/
 public interface TestInterface {
+
 }

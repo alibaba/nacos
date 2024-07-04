@@ -21,15 +21,15 @@ import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
 
-public class HistoryConfigInfoMapperByMySqlTest {
-    
-    private HistoryConfigInfoMapperByMySql historyConfigInfoMapperByMySql;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class HistoryConfigInfoMapperByMySqlTest {
     
     int startRow = 0;
     
@@ -45,8 +45,10 @@ public class HistoryConfigInfoMapperByMySqlTest {
     
     MapperContext context;
     
-    @Before
-    public void setUp() throws Exception {
+    private HistoryConfigInfoMapperByMySql historyConfigInfoMapperByMySql;
+    
+    @BeforeEach
+    void setUp() throws Exception {
         historyConfigInfoMapperByMySql = new HistoryConfigInfoMapperByMySql();
         context = new MapperContext(startRow, pageSize);
         context.putWhereParameter(FieldConstant.START_TIME, startTime);
@@ -57,31 +59,30 @@ public class HistoryConfigInfoMapperByMySqlTest {
     }
     
     @Test
-    public void testRemoveConfigHistory() {
+    void testRemoveConfigHistory() {
         MapperResult mapperResult = historyConfigInfoMapperByMySql.removeConfigHistory(context);
-        Assert.assertEquals(mapperResult.getSql(), "DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, limitSize});
+        assertEquals("DELETE FROM his_config_info WHERE gmt_modified < ? LIMIT ?", mapperResult.getSql());
+        assertArrayEquals(new Object[] {startTime, limitSize}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testFindConfigHistoryCountByTime() {
+    void testFindConfigHistoryCountByTime() {
         MapperResult mapperResult = historyConfigInfoMapperByMySql.findConfigHistoryCountByTime(context);
-        Assert.assertEquals(mapperResult.getSql(), "SELECT count(*) FROM his_config_info WHERE gmt_modified < ?");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime});
+        assertEquals("SELECT count(*) FROM his_config_info WHERE gmt_modified < ?", mapperResult.getSql());
+        assertArrayEquals(new Object[] {startTime}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testFindDeletedConfig() {
+    void testFindDeletedConfig() {
         MapperResult mapperResult = historyConfigInfoMapperByMySql.findDeletedConfig(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info "
-                        + "WHERE op_type = 'D' AND gmt_modified >= ? and nid > ? order by nid limit ? ");
+        assertEquals(mapperResult.getSql(), "SELECT data_id, group_id, tenant_id,gmt_modified,nid FROM his_config_info "
+                + "WHERE op_type = 'D' AND gmt_modified >= ? and nid > ? order by nid limit ? ");
         
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {startTime, lastMaxId, pageSize});
+        assertArrayEquals(new Object[] {startTime, lastMaxId, pageSize}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testFindConfigHistoryFetchRows() {
+    void testFindConfigHistoryFetchRows() {
         Object dataId = "dataId";
         Object groupId = "groupId";
         Object tenantId = "tenantId";
@@ -91,32 +92,31 @@ public class HistoryConfigInfoMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         context.putWhereParameter(FieldConstant.DATA_ID, dataId);
         MapperResult mapperResult = historyConfigInfoMapperByMySql.findConfigHistoryFetchRows(context);
-        Assert.assertEquals(mapperResult.getSql(),
+        assertEquals(mapperResult.getSql(),
                 "SELECT nid,data_id,group_id,tenant_id,app_name,src_ip,src_user,op_type,gmt_create,gmt_modified FROM his_config_info "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY nid DESC");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {dataId, groupId, tenantId});
+        assertArrayEquals(new Object[] {dataId, groupId, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testDetailPreviousConfigHistory() {
+    void testDetailPreviousConfigHistory() {
         Object id = "1";
         context.putWhereParameter(FieldConstant.ID, id);
         MapperResult mapperResult = historyConfigInfoMapperByMySql.detailPreviousConfigHistory(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,"
-                        + "gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id});
+        assertEquals(mapperResult.getSql(), "SELECT nid,data_id,group_id,tenant_id,app_name,content,md5,src_user,src_ip,op_type,gmt_create,"
+                + "gmt_modified,encrypted_data_key FROM his_config_info WHERE nid = (SELECT max(nid) FROM his_config_info WHERE id = ?)");
+        assertArrayEquals(new Object[] {id}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testGetTableName() {
+    void testGetTableName() {
         String tableName = historyConfigInfoMapperByMySql.getTableName();
-        Assert.assertEquals(tableName, TableConstant.HIS_CONFIG_INFO);
+        assertEquals(TableConstant.HIS_CONFIG_INFO, tableName);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         String dataSource = historyConfigInfoMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        assertEquals(DataSourceConstant.MYSQL, dataSource);
     }
 }

@@ -25,11 +25,11 @@ import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import javax.servlet.http.HttpServletRequest;
@@ -39,12 +39,12 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class UserControllerTest {
+@ExtendWith(MockitoExtension.class)
+class UserControllerTest {
     
     @Mock
     private HttpServletRequest request;
@@ -65,8 +65,8 @@ public class UserControllerTest {
     
     private NacosUser user;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         userController = new UserController();
         user = new NacosUser();
         user.setUserName("nacos");
@@ -76,18 +76,16 @@ public class UserControllerTest {
         injectObject("iAuthenticationManager", authenticationManager);
         
         MockEnvironment mockEnvironment = new MockEnvironment();
-        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Base64.getEncoder().encodeToString(
-                "SecretKey0123$567890$234567890123456789012345678901234567890123456789".getBytes(
-                        StandardCharsets.UTF_8)));
-        mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS,
-                AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
+        mockEnvironment.setProperty(AuthConstants.TOKEN_SECRET_KEY, Base64.getEncoder()
+                .encodeToString("SecretKey0123$567890$234567890123456789012345678901234567890123456789".getBytes(StandardCharsets.UTF_8)));
+        mockEnvironment.setProperty(AuthConstants.TOKEN_EXPIRE_SECONDS, AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
         
         EnvUtil.setEnvironment(mockEnvironment);
         injectObject("jwtTokenManager", tokenManagerDelegate);
     }
     
     @Test
-    public void testLoginWithAuthedUser() throws AccessException, IOException {
+    void testLoginWithAuthedUser() throws AccessException, IOException {
         when(authenticationManager.authenticate(request)).thenReturn(user);
         when(authenticationManager.hasGlobalAdminRole(user)).thenReturn(true);
         when(authConfigs.getNacosAuthSystemType()).thenReturn(AuthSystemTypes.NACOS.name());

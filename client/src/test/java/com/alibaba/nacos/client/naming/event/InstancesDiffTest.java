@@ -18,15 +18,26 @@ package com.alibaba.nacos.client.naming.event;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.builder.InstanceBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class InstancesDiffTest {
+    
+    private static List<Instance> getInstanceList(int count) {
+        ArrayList<Instance> list = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            list.add(new Instance());
+        }
+        return list;
+    }
     
     @Test
     public void testGetDiff() {
@@ -40,13 +51,13 @@ public class InstancesDiffTest {
         instancesDiff.setRemovedInstances(Collections.singletonList(removedIns));
         instancesDiff.setModifiedInstances(Collections.singletonList(modifiedIns));
         
-        Assert.assertTrue(instancesDiff.hasDifferent());
-        Assert.assertTrue(instancesDiff.isAdded());
-        Assert.assertTrue(instancesDiff.isRemoved());
-        Assert.assertTrue(instancesDiff.isModified());
-        Assert.assertEquals(addedIns, instancesDiff.getAddedInstances().get(0));
-        Assert.assertEquals(removedIns, instancesDiff.getRemovedInstances().get(0));
-        Assert.assertEquals(modifiedIns, instancesDiff.getModifiedInstances().get(0));
+        assertTrue(instancesDiff.hasDifferent());
+        assertTrue(instancesDiff.isAdded());
+        assertTrue(instancesDiff.isRemoved());
+        assertTrue(instancesDiff.isModified());
+        assertEquals(addedIns, instancesDiff.getAddedInstances().get(0));
+        assertEquals(removedIns, instancesDiff.getRemovedInstances().get(0));
+        assertEquals(modifiedIns, instancesDiff.getModifiedInstances().get(0));
     }
     
     @Test
@@ -58,21 +69,21 @@ public class InstancesDiffTest {
         InstancesDiff instancesDiff = new InstancesDiff(getInstanceList(addedCount), getInstanceList(removedCount),
                 getInstanceList(modifiedCount));
         
-        Assert.assertTrue(instancesDiff.hasDifferent());
-        Assert.assertTrue(instancesDiff.isAdded());
-        Assert.assertTrue(instancesDiff.isRemoved());
-        Assert.assertTrue(instancesDiff.isModified());
-        Assert.assertEquals(addedCount, instancesDiff.getAddedInstances().size());
-        Assert.assertEquals(removedCount, instancesDiff.getRemovedInstances().size());
-        Assert.assertEquals(modifiedCount, instancesDiff.getModifiedInstances().size());
+        assertTrue(instancesDiff.hasDifferent());
+        assertTrue(instancesDiff.isAdded());
+        assertTrue(instancesDiff.isRemoved());
+        assertTrue(instancesDiff.isModified());
+        assertEquals(addedCount, instancesDiff.getAddedInstances().size());
+        assertEquals(removedCount, instancesDiff.getRemovedInstances().size());
+        assertEquals(modifiedCount, instancesDiff.getModifiedInstances().size());
         instancesDiff.getAddedInstances().clear();
         instancesDiff.getRemovedInstances().clear();
         instancesDiff.getModifiedInstances().clear();
-        Assert.assertFalse(instancesDiff.hasDifferent());
-        Assert.assertFalse(instancesDiff.hasDifferent());
-        Assert.assertFalse(instancesDiff.isAdded());
-        Assert.assertFalse(instancesDiff.isRemoved());
-        Assert.assertFalse(instancesDiff.isModified());
+        assertFalse(instancesDiff.hasDifferent());
+        assertFalse(instancesDiff.hasDifferent());
+        assertFalse(instancesDiff.isAdded());
+        assertFalse(instancesDiff.isRemoved());
+        assertFalse(instancesDiff.isModified());
     }
     
     @Test
@@ -86,24 +97,16 @@ public class InstancesDiffTest {
         instancesDiff.setRemovedInstances(getInstanceList(removedCount));
         instancesDiff.setModifiedInstances(getInstanceList(modifiedCount));
         
-        Assert.assertTrue(instancesDiff.hasDifferent());
-        Assert.assertEquals(addedCount, instancesDiff.getAddedInstances().size());
-        Assert.assertEquals(removedCount, instancesDiff.getRemovedInstances().size());
-        Assert.assertEquals(modifiedCount, instancesDiff.getModifiedInstances().size());
+        assertTrue(instancesDiff.hasDifferent());
+        assertEquals(addedCount, instancesDiff.getAddedInstances().size());
+        assertEquals(removedCount, instancesDiff.getRemovedInstances().size());
+        assertEquals(modifiedCount, instancesDiff.getModifiedInstances().size());
         instancesDiff.getAddedInstances().clear();
         instancesDiff.getRemovedInstances().clear();
         instancesDiff.getModifiedInstances().clear();
-        Assert.assertFalse(instancesDiff.hasDifferent());
-        Assert.assertFalse(instancesDiff.isAdded());
-        Assert.assertFalse(instancesDiff.isRemoved());
-        Assert.assertFalse(instancesDiff.isModified());
-    }
-    
-    private static List<Instance> getInstanceList(int count) {
-        ArrayList<Instance> list = new ArrayList<>(count);
-        for (int i = 0; i < count; i++) {
-            list.add(new Instance());
-        }
-        return list;
+        assertFalse(instancesDiff.hasDifferent());
+        assertFalse(instancesDiff.isAdded());
+        assertFalse(instancesDiff.isRemoved());
+        assertFalse(instancesDiff.isModified());
     }
 }

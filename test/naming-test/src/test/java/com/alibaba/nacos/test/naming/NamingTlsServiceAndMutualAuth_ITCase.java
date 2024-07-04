@@ -23,16 +23,13 @@ import com.alibaba.nacos.api.naming.NamingFactory;
 import com.alibaba.nacos.api.naming.NamingService;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.FixMethodOrder;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,6 +37,8 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * NamingTlsServiceAndMutualAuth_ITCase.
@@ -47,24 +46,21 @@ import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
  * @author githucheng2978.
  * @date .
  **/
-@RunWith(SpringRunner.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@TestMethodOrder(MethodName.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
-        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
-        RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true",
-        RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
-        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
+        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true", RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true",
+        RpcConstants.NACOS_SERVER_RPC + ".compatibility=false", RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
         RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem", RpcConstants.NACOS_SERVER_RPC
         + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@Ignore("TODO, Fix cert expired problem")
-public class NamingTlsServiceAndMutualAuth_ITCase {
+@Disabled("TODO, Fix cert expired problem")
+class NamingTlsServiceAndMutualAuth_ITCase {
     
     
     @LocalServerPort
     private int port;
     
     @Test
-    public void test_a_MutualAuth() throws NacosException {
+    void test_a_MutualAuth() throws NacosException {
         String serviceName = randomDomainName();
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
@@ -88,60 +84,65 @@ public class NamingTlsServiceAndMutualAuth_ITCase {
             throw new RuntimeException(e);
         }
         List<Instance> instances = namingService.getAllInstances(serviceName, false);
-        Assert.assertEquals(instances.size(), 1);
-        Assert.assertEquals("2.0", instances.get(0).getMetadata().get("version"));
+        assertEquals(1, instances.size());
+        assertEquals("2.0", instances.get(0).getMetadata().get("version"));
         namingService.shutDown();
         
     }
     
     
-    @Test(expected = NacosException.class)
-    public void test_b_MutualAuthClientTrustCa() throws NacosException {
-        String serviceName = randomDomainName();
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
-        System.setProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH, "true");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH, "");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY, "");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
-        Instance instance = new Instance();
-        instance.setIp("127.0.0.1");
-        instance.setPort(8081);
-        instance.setWeight(2);
-        instance.setClusterName(Constants.DEFAULT_CLUSTER_NAME);
-        NamingService namingService = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("netType", "external-update");
-        map.put("version", "2.0");
-        instance.setMetadata(map);
-        namingService.registerInstance(serviceName, instance);
-        namingService.shutDown();
+    @Test
+    void test_b_MutualAuthClientTrustCa() throws NacosException {
+        assertThrows(NacosException.class, () -> {
+            String serviceName = randomDomainName();
+            System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
+            System.setProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH, "true");
+            System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH, "");
+            System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY, "");
+            System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
+            Instance instance = new Instance();
+            instance.setIp("127.0.0.1");
+            instance.setPort(8081);
+            instance.setWeight(2);
+            instance.setClusterName(Constants.DEFAULT_CLUSTER_NAME);
+            NamingService namingService = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("netType", "external-update");
+            map.put("version", "2.0");
+            instance.setMetadata(map);
+            namingService.registerInstance(serviceName, instance);
+            namingService.shutDown();
+            
+        });
         
     }
     
-    @Test(expected = NacosException.class)
-    public void test_c_MutualAuthClientTrustALl() throws NacosException {
-        String serviceName = randomDomainName();
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
-        System.setProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH, "true");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH, "");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY, "");
-        System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL, "true");
-        Instance instance = new Instance();
-        instance.setIp("127.0.0.1");
-        instance.setPort(8081);
-        instance.setWeight(2);
-        instance.setClusterName(Constants.DEFAULT_CLUSTER_NAME);
-        NamingService namingService = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
-        Map<String, String> map = new HashMap<String, String>();
-        map.put("netType", "external-update");
-        map.put("version", "2.0");
-        instance.setMetadata(map);
-        namingService.registerInstance(serviceName, instance);
-        namingService.shutDown();
+    @Test
+    void test_c_MutualAuthClientTrustALl() throws NacosException {
+        assertThrows(NacosException.class, () -> {
+            String serviceName = randomDomainName();
+            System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
+            System.setProperty(RpcConstants.RPC_CLIENT_MUTUAL_AUTH, "true");
+            System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH, "");
+            System.setProperty(RpcConstants.RPC_CLIENT_TLS_CERT_KEY, "");
+            System.setProperty(RpcConstants.RPC_CLIENT_TLS_TRUST_ALL, "true");
+            Instance instance = new Instance();
+            instance.setIp("127.0.0.1");
+            instance.setPort(8081);
+            instance.setWeight(2);
+            instance.setClusterName(Constants.DEFAULT_CLUSTER_NAME);
+            NamingService namingService = NamingFactory.createNamingService("127.0.0.1" + ":" + port);
+            Map<String, String> map = new HashMap<String, String>();
+            map.put("netType", "external-update");
+            map.put("version", "2.0");
+            instance.setMetadata(map);
+            namingService.registerInstance(serviceName, instance);
+            namingService.shutDown();
+        });
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         System.setProperty(RpcConstants.RPC_CLIENT_TLS_ENABLE, "");
     }
 }

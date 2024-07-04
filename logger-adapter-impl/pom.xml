@@ -38,6 +38,7 @@
         <dependency>
             <groupId>com.alibaba.nacos</groupId>
             <artifactId>nacos-common</artifactId>
+            <optional>true</optional>
         </dependency>
     </dependencies>
     

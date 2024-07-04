@@ -49,7 +49,7 @@ import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
- * Serverlist Manager.
+ * Config server list Manager.
  *
  * @author Nacos
  */
@@ -78,9 +78,6 @@ public class ConfigServerListManager extends AbstractServerListManager {
     private final int initServerListRetryTimes = 5;
     
     boolean isStarted;
-    
-    // 这个换成 getServerList()
-    // volatile List<String> serverUrls = new ArrayList<>();
     
     private volatile String currentServerAddr;
     

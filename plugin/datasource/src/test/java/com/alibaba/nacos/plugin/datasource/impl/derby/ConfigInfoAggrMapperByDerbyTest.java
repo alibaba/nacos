@@ -22,24 +22,25 @@ import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class ConfigInfoAggrMapperByDerbyTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConfigInfoAggrMapperByDerbyTest {
     
     private ConfigInfoAggrMapperByDerby configInfoAggrMapperByDerby;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         this.configInfoAggrMapperByDerby = new ConfigInfoAggrMapperByDerby();
     }
     
     @Test
-    public void testBatchRemoveAggr() {
+    void testBatchRemoveAggr() {
         List<String> datumList = Arrays.asList("1", "2", "3", "4", "5");
         String dataId = "data-id";
         String groupId = "group-id";
@@ -57,13 +58,13 @@ public class ConfigInfoAggrMapperByDerbyTest {
         String sql = result.getSql();
         List<Object> paramList = result.getParamList();
         
-        Assert.assertEquals(sql, "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? "
-                + "AND datum_id IN (?, ?, ?, ?, ?)");
-        Assert.assertEquals(paramList, argList);
+        assertEquals(sql,
+                "DELETE FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? " + "AND datum_id IN (?, ?, ?, ?, ?)");
+        assertEquals(paramList, argList);
     }
     
     @Test
-    public void testAggrConfigInfoCount() {
+    void testAggrConfigInfoCount() {
         List<String> datumIds = Arrays.asList("1", "2", "3", "4", "5");
         String dataId = "data-id";
         String groupId = "group-id";
@@ -82,14 +83,13 @@ public class ConfigInfoAggrMapperByDerbyTest {
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
         
-        Assert.assertEquals(sql,
-                "SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? "
-                        + "AND datum_id IN (?, ?, ?, ?, ?)");
-        Assert.assertEquals(paramList, argList);
+        assertEquals(sql, "SELECT count(*) FROM config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? "
+                + "AND datum_id IN (?, ?, ?, ?, ?)");
+        assertEquals(paramList, argList);
     }
     
     @Test
-    public void testFindConfigInfoAggrIsOrdered() {
+    void testFindConfigInfoAggrIsOrdered() {
         String dataId = "data-id";
         String groupId = "group-id";
         String tenantId = "tenant-id";
@@ -103,13 +103,13 @@ public class ConfigInfoAggrMapperByDerbyTest {
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
         
-        Assert.assertEquals(sql, "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM "
+        assertEquals(sql, "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM "
                 + "config_info_aggr WHERE data_id = ? AND group_id = ? AND tenant_id = ? ORDER BY datum_id");
-        Assert.assertEquals(paramList, CollectionUtils.list(dataId, groupId, tenantId));
+        assertEquals(paramList, CollectionUtils.list(dataId, groupId, tenantId));
     }
     
     @Test
-    public void testFindConfigInfoAggrByPageFetchRows() {
+    void testFindConfigInfoAggrByPageFetchRows() {
         String dataId = "data-id";
         String groupId = "group-id";
         String tenantId = "tenant-id";
@@ -126,27 +126,26 @@ public class ConfigInfoAggrMapperByDerbyTest {
         MapperResult mapperResult = configInfoAggrMapperByDerby.findConfigInfoAggrByPageFetchRows(context);
         String sql = mapperResult.getSql();
         List<Object> paramList = mapperResult.getParamList();
-        Assert.assertEquals(sql,
-                "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE "
-                        + "data_id=? AND group_id=? AND tenant_id=? ORDER BY datum_id OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
-        Assert.assertEquals(paramList, CollectionUtils.list(dataId, groupId, tenantId));
+        assertEquals(sql, "SELECT data_id,group_id,tenant_id,datum_id,app_name,content FROM config_info_aggr WHERE "
+                + "data_id=? AND group_id=? AND tenant_id=? ORDER BY datum_id OFFSET 0 ROWS FETCH NEXT 5 ROWS ONLY");
+        assertEquals(paramList, CollectionUtils.list(dataId, groupId, tenantId));
     }
     
     @Test
-    public void testFindAllAggrGroupByDistinct() {
+    void testFindAllAggrGroupByDistinct() {
         MapperResult sql = configInfoAggrMapperByDerby.findAllAggrGroupByDistinct(null);
-        Assert.assertEquals(sql.getSql(), "SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr");
+        assertEquals("SELECT DISTINCT data_id, group_id, tenant_id FROM config_info_aggr", sql.getSql());
     }
     
     @Test
-    public void testGetTableName() {
+    void testGetTableName() {
         String tableName = configInfoAggrMapperByDerby.getTableName();
-        Assert.assertEquals(tableName, TableConstant.CONFIG_INFO_AGGR);
+        assertEquals(TableConstant.CONFIG_INFO_AGGR, tableName);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         String dataSource = configInfoAggrMapperByDerby.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.DERBY);
+        assertEquals(DataSourceConstant.DERBY, dataSource);
     }
 }

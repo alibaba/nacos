@@ -21,33 +21,35 @@ import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoAggrMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.Mapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TestMapper;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.Map;
 
-public class MapperManagerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class MapperManagerTest {
     
     @Test
-    public void testInstance() {
+    void testInstance() {
         MapperManager instance = MapperManager.instance(false);
-        Assert.assertNotNull(instance);
+        assertNotNull(instance);
     }
     
     @Test
-    public void testLoadInitial() throws NoSuchFieldException, IllegalAccessException {
+    void testLoadInitial() throws NoSuchFieldException, IllegalAccessException {
         MapperManager instance = MapperManager.instance(false);
         instance.loadInitial();
         Class<MapperManager> mapperManagerClass = MapperManager.class;
         Field declaredField = mapperManagerClass.getDeclaredField("MAPPER_SPI_MAP");
         declaredField.setAccessible(true);
         Map<String, Map<String, Mapper>> map = (Map<String, Map<String, Mapper>>) declaredField.get(instance);
-        Assert.assertEquals(2, map.size());
+        assertEquals(2, map.size());
     }
     
     @Test
-    public void testJoin() {
+    void testJoin() {
         MapperManager.join(new AbstractMapper() {
             @Override
             public String getTableName() {
@@ -61,23 +63,23 @@ public class MapperManagerTest {
         });
         MapperManager instance = MapperManager.instance(false);
         Mapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "test");
-        Assert.assertNotNull(mapper);
+        assertNotNull(mapper);
     }
     
     @Test
-    public void testFindMapper() {
+    void testFindMapper() {
         testJoin();
         MapperManager instance = MapperManager.instance(false);
         Mapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "test");
-        Assert.assertNotNull(mapper);
+        assertNotNull(mapper);
     }
-
+    
     @Test
-    public void testEnableDataSourceLogJoin() {
+    void testEnableDataSourceLogJoin() {
         MapperManager.join(new TestMapper());
         MapperManager instance = MapperManager.instance(true);
         ConfigInfoAggrMapper mapper = instance.findMapper(DataSourceConstant.MYSQL, "enable_data_source_log_test");
-        Assert.assertNotNull(mapper);
+        assertNotNull(mapper);
     }
-
+    
 }

@@ -49,7 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
 
 /**
- * Server list manager.
+ * Naming server list manager.
  *
  * @author xiweng.yy
  */
