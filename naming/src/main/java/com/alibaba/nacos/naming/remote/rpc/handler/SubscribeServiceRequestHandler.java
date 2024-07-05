@@ -27,6 +27,7 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.trace.event.naming.SubscribeServiceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UnsubscribeServiceTraceEvent;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.SubscribeServiceRequestParamExtractor;
@@ -70,7 +71,7 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         String namespaceId = request.getNamespace();
         String serviceName = request.getServiceName();
         String groupName = request.getGroupName();
-        String app = request.getHeader("app", "unknown");
+        String app = RequestContextHolder.getContext().getBasicContext().getApp();
         String groupedServiceName = NamingUtils.getGroupedName(serviceName, groupName);
         Service service = Service.newService(namespaceId, groupName, serviceName, true);
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app, meta.getClientIp(),

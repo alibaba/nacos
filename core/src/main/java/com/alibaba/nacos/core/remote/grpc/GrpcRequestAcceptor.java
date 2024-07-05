@@ -27,7 +27,9 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.context.RequestContext;
 import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.context.addition.BasicContext;
@@ -228,7 +230,11 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
         requestContext.getBasicContext().setUserAgent(requestMeta.getClientVersion());
         requestContext.getBasicContext().setRequestProtocol(BasicContext.GRPC_PROTOCOL);
         requestContext.getBasicContext().setRequestTarget(request.getClass().getSimpleName());
-        requestContext.getBasicContext().setApp(connection.getMetaInfo().getAppName());
+        String app = connection.getMetaInfo().getAppName();
+        if (StringUtils.isBlank(app)) {
+            app = request.getHeader(HttpHeaderConsts.APP_FILED, "unknown");
+        }
+        requestContext.getBasicContext().setApp(app);
         requestContext.getBasicContext().getAddressContext().setRemoteIp(connection.getMetaInfo().getRemoteIp());
         requestContext.getBasicContext().getAddressContext().setRemotePort(connection.getMetaInfo().getRemotePort());
         requestContext.getBasicContext().getAddressContext().setSourceIp(connection.getMetaInfo().getClientIp());
