@@ -128,8 +128,10 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     public AbstractServerListManager(NacosClientProperties properties) throws NacosException {
         initParam(properties);
-        // 若这个不为空，说明是固定的地址
-        if (StringUtils.isNotEmpty(serverAddrsStr)) {
+        if (StringUtils.isNotBlank(endpoint)) {
+            return;
+        }
+        if (StringUtils.isNotBlank(serverAddrsStr)) {
             this.isFixed = true;
             StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
             while (serverAddrsTokens.hasMoreTokens()) {
@@ -139,17 +141,14 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
                 } else {
                     String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
                     if (serverAddrArr.length == 1) {
-                        this.serverList.add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil
-                                .getDefaultServerPort());
+                        this.serverList.add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
                     } else {
                         this.serverList.add(serverAddr);
                     }
                 }
             }
         } else {
-            if (StringUtils.isBlank(endpoint)) {
-                throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
-            }
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint and serverAddr is blank");
         }
     }
     
