@@ -71,11 +71,10 @@ public interface ProtocolAuthService<R> {
      *
      * @param identityContext identity context
      * @param resource        resource
-     * @param token       token in header
      * @return {@code true} if legal, otherwise {@code false}
      * @throws AccessException exception during validating
      */
-    boolean validateIdentity(IdentityContext identityContext, Resource resource,String token) throws AccessException;
+    boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException;
     
     /**
      * Validate identity whether had permission for the resource and action.

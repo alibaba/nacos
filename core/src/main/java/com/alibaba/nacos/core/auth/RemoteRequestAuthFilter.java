@@ -35,8 +35,6 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
 
-import static com.alibaba.nacos.api.common.Constants.ACCESS_TOKEN;
-
 /**
  * request auth filter for remote.
  *
@@ -74,10 +72,9 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 }
                 String clientIp = meta.getClientIp();
                 request.putHeader(Constants.Identity.X_REAL_IP, clientIp);
-                String token = request.getHeader(ACCESS_TOKEN);
                 Resource resource = protocolAuthService.parseResource(request, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(request);
-                boolean result = protocolAuthService.validateIdentity(identityContext, resource,token);
+                boolean result = protocolAuthService.validateIdentity(identityContext, resource);
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Identity failed.");

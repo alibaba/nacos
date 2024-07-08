@@ -72,9 +72,6 @@ public class JwtAuthenticationTokenFilter extends OncePerRequestFilter {
             return bearerToken.substring(TOKEN_PREFIX.length());
         }
         String jwt = request.getParameter(Constants.ACCESS_TOKEN);
-        if(StringUtils.isBlank(jwt)){
-            jwt = request.getHeader(Constants.ACCESS_TOKEN);
-        }
         if (StringUtils.isNotBlank(jwt)) {
             return jwt;
         }

@@ -103,9 +103,6 @@ public class NacosAuthManager {
             return bearerToken.substring(7);
         }
         bearerToken = request.getParameter(Constants.ACCESS_TOKEN);
-        if(StringUtils.isBlank(bearerToken)){
-            bearerToken = request.getHeader(Constants.ACCESS_TOKEN);
-        }
         if (StringUtils.isBlank(bearerToken)) {
             String userName = request.getParameter(AuthConstants.PARAM_USERNAME);
             String password = request.getParameter(AuthConstants.PARAM_PASSWORD);
@@ -121,7 +118,6 @@ public class NacosAuthManager {
             return bearerToken.substring(7);
         }
         bearerToken = identityContext.getParameter(Constants.ACCESS_TOKEN, StringUtils.EMPTY);
-
         if (StringUtils.isBlank(bearerToken)) {
             String userName = (String) identityContext.getParameter(AuthConstants.PARAM_USERNAME);
             String password = (String) identityContext.getParameter(AuthConstants.PARAM_PASSWORD);

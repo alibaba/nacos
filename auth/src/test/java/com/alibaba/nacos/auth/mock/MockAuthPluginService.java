@@ -46,12 +46,7 @@ public class MockAuthPluginService implements AuthPluginService {
     public boolean validateIdentity(IdentityContext identityContext, Resource resource) throws AccessException {
         return false;
     }
-
-    @Override
-    public boolean validateIdentityInHeader(IdentityContext identityContext, Resource resource, String tokenInHeader) throws AccessException {
-        return false;
-    }
-
+    
     @Override
     public Boolean validateAuthority(IdentityContext identityContext, Permission permission) {
         return false;
