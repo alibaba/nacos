@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.auth.config;
 
+import com.alibaba.nacos.auth.mock.MockAuthPluginServiceB;
 import com.alibaba.nacos.sys.module.ModuleState;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import org.junit.jupiter.api.AfterEach;
@@ -45,7 +46,6 @@ class AuthModuleStateBuilderTest {
     void setUp() throws Exception {
         when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
         ApplicationUtils.injectContext(context);
-        when(authConfigs.getNacosAuthSystemType()).thenReturn("nacos");
     }
     
     @AfterEach
@@ -54,10 +54,32 @@ class AuthModuleStateBuilderTest {
     
     @Test
     void testBuild() {
+        when(authConfigs.getNacosAuthSystemType()).thenReturn("nacos");
+        
         ModuleState actual = new AuthModuleStateBuilder().build();
         assertFalse((Boolean) actual.getStates().get(AUTH_ENABLED));
         assertFalse((Boolean) actual.getStates().get("login_page_enabled"));
         assertEquals("nacos", actual.getStates().get("auth_system_type"));
         assertTrue((Boolean) actual.getStates().get("auth_admin_request"));
+    
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginServiceB.TEST_PLUGIN);
+        ModuleState actual2 = new AuthModuleStateBuilder().build();
+        assertTrue((Boolean) actual2.getStates().get("login_page_enabled"));
+        assertEquals(MockAuthPluginServiceB.TEST_PLUGIN, actual2.getStates().get("auth_system_type"));
+        assertFalse((Boolean) actual2.getStates().get("auth_admin_request"));
+    }
+    
+    @Test
+    void testCacheable() {
+        AuthModuleStateBuilder authModuleStateBuilder = new AuthModuleStateBuilder();
+        authModuleStateBuilder.build();
+        boolean cacheable = authModuleStateBuilder.isCacheable();
+        assertFalse(cacheable);
+        
+        when(authConfigs.getNacosAuthSystemType()).thenReturn(MockAuthPluginServiceB.TEST_PLUGIN);
+        AuthModuleStateBuilder authModuleStateBuilder2 = new AuthModuleStateBuilder();
+        authModuleStateBuilder2.build();
+        boolean cacheable2 = authModuleStateBuilder2.isCacheable();
+        assertTrue(cacheable2);
     }
 }

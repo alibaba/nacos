@@ -15,3 +15,4 @@
 #
 
 com.alibaba.nacos.auth.mock.MockAuthPluginService
+com.alibaba.nacos.auth.mock.MockAuthPluginServiceB
