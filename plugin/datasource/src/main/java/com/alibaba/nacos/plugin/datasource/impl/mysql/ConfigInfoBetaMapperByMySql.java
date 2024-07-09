@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoBetaMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -31,7 +30,7 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigInfoBetaMapperByMySql extends AbstractMapper implements ConfigInfoBetaMapper {
+public class ConfigInfoBetaMapperByMySql extends AbstractMapperByMysql implements ConfigInfoBetaMapper {
 
     @Override
     public MapperResult findAllConfigInfoBetaForDumpAllFetchRows(MapperContext context) {

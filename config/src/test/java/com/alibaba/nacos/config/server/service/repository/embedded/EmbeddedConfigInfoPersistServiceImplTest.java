@@ -164,8 +164,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert config info invoked.
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), anyLong(), eq(dataId), eq(group), eq(tenant), eq(appName),
-                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        any(Timestamp.class), eq(desc), eq(use), eq(effect), eq(type), eq(schema), eq(encryptedDataKey)), times(1));
+                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), eq(desc),
+                        eq(use), eq(effect), eq(type), eq(schema), eq(encryptedDataKey)), times(1));
         //expect insert config tags
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), anyLong(), eq("tag1"), eq(StringUtils.EMPTY), eq(dataId),
@@ -221,8 +221,8 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect insert config info invoked.
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), anyLong(), eq(dataId), eq(group), eq(tenant), eq(appName),
-                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        any(Timestamp.class), eq(desc), eq(use), eq(effect), eq(type), eq(schema), eq(encryptedDatakey)), times(1));
+                        eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
+                        eq(desc), eq(use), eq(effect), eq(type), eq(schema), eq(encryptedDatakey)), times(1));
         //expect insert config tags
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), anyLong(), eq("tag1"), eq(StringUtils.EMPTY), eq(dataId),
@@ -281,7 +281,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         
         //expect update config info invoked.
         embeddedStorageContextHolderMockedStatic.verify(() -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
-                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName), eq(desc),
+                eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), eq(appName), eq(desc),
                 eq(use), eq(effect), eq(type), eq(schema), eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant)), times(1));
         
         //expect insert config tags
@@ -347,7 +347,7 @@ class EmbeddedConfigInfoPersistServiceImplTest {
         //expect update config info invoked.
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(eq(Boolean.TRUE), anyString(), eq(content),
-                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class), eq(appName),
+                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), eq(appName),
                         eq(desc), eq(use), eq(effect), eq(type), eq(schema), eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant),
                         eq(casMd5)), times(1));
         

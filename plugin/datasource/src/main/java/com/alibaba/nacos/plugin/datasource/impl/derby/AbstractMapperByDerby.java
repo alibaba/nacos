@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.plugin.datasource.impl.mysql;
+package com.alibaba.nacos.plugin.datasource.impl.derby;
 
-import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
+import com.alibaba.nacos.plugin.datasource.enums.derby.TrustedDerbylFunctionEnum;
+import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 
 /**
- * The mysql implementation of TenantInfoMapper.
+ * The abstract derby mapper contains CRUD methods.
  *
- * @author hyx
+ * @author blake.qiu
  **/
-
-public class TenantInfoMapperByMySql extends AbstractMapperByMysql implements TenantInfoMapper {
+public abstract class AbstractMapperByDerby extends AbstractMapper {
 
     @Override
-    public String getDataSource() {
-        return DataSourceConstant.MYSQL;
+    public String getFunction(String functionName) {
+        return TrustedDerbylFunctionEnum.getFunctionByName(functionName);
     }
+
 }
