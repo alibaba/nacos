@@ -23,12 +23,14 @@ import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.remote.request.SubscribeServiceRequest;
 import com.alibaba.nacos.api.naming.remote.response.SubscribeServiceResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import com.alibaba.nacos.naming.selector.SelectorManager;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -76,6 +78,11 @@ class SubscribeServiceRequestHandlerTest {
         ApplicationUtils applicationUtils = new ApplicationUtils();
         applicationUtils.initialize(applicationContext);
         Mockito.when(applicationContext.getBean(SelectorManager.class)).thenReturn(selectorManager);
+    }
+    
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.removeContext();
     }
     
     @Test
