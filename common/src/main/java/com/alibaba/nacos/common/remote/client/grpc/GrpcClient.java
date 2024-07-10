@@ -47,10 +47,17 @@ import com.alibaba.nacos.common.utils.ThreadFactoryBuilder;
 import com.alibaba.nacos.common.utils.TlsTypeResolve;
 import com.alibaba.nacos.common.utils.VersionUtils;
 import com.google.common.util.concurrent.ListenableFuture;
+import io.grpc.CallOptions;
+import io.grpc.Channel;
+import io.grpc.ClientCall;
+import io.grpc.ClientInterceptor;
 import io.grpc.CompressorRegistry;
 import io.grpc.DecompressorRegistry;
+import io.grpc.ForwardingClientCall;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
+import io.grpc.MethodDescriptor;
 import io.grpc.netty.shaded.io.grpc.netty.GrpcSslContexts;
 import io.grpc.netty.shaded.io.grpc.netty.NegotiationType;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -65,6 +72,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -94,6 +102,8 @@ public abstract class GrpcClient extends RpcClient {
      * for receiving server abilities.
      */
     private SetupRequestHandler setupRequestHandler;
+    
+    private final String clientId = UUID.randomUUID().toString();
     
     @Override
     public ConnectionType getConnectionType() {
@@ -198,12 +208,26 @@ public abstract class GrpcClient extends RpcClient {
      * @return if server check success,return a non-null channel.
      */
     private ManagedChannel createNewManagedChannel(String serverIp, int serverPort) {
-        LOGGER.info("grpc client connection server:{} ip,serverPort:{},grpcTslConfig:{}", serverIp, serverPort,
-                JacksonUtils.toJson(clientConfig.tlsConfig()));
+        LOGGER.info("grpc client connection server:{} ip,serverPort:{},grpcTslConfig:{},clientId:{}", serverIp,
+                serverPort, JacksonUtils.toJson(clientConfig.tlsConfig()), clientId);
         ManagedChannelBuilder<?> managedChannelBuilder = buildChannel(serverIp, serverPort, buildSslContext()).executor(
                         grpcExecutor).compressorRegistry(CompressorRegistry.getDefaultInstance())
-                .decompressorRegistry(DecompressorRegistry.getDefaultInstance())
-                .maxInboundMessageSize(clientConfig.maxInboundMessageSize())
+                .decompressorRegistry(DecompressorRegistry.getDefaultInstance()).intercept(new ClientInterceptor() {
+                    @Override
+                    public <T, S> ClientCall<T, S> interceptCall(MethodDescriptor<T, S> method, CallOptions callOptions,
+                            Channel next) {
+                        return new ForwardingClientCall.SimpleForwardingClientCall<T, S>(
+                                next.newCall(method, callOptions)) {
+                            @Override
+                            public void start(Listener<S> responseListener, Metadata headers) {
+                                headers.put(
+                                        Metadata.Key.of(GrpcConstants.CLIENT_ID_KEY, Metadata.ASCII_STRING_MARSHALLER),
+                                        clientId);
+                                super.start(responseListener, headers);
+                            }
+                        };
+                    }
+                }).maxInboundMessageSize(clientConfig.maxInboundMessageSize())
                 .keepAliveTime(clientConfig.channelKeepAlive(), TimeUnit.MILLISECONDS)
                 .keepAliveTimeout(clientConfig.channelKeepAliveTimeout(), TimeUnit.MILLISECONDS);
         return managedChannelBuilder.build();
@@ -228,6 +252,7 @@ public abstract class GrpcClient extends RpcClient {
      */
     private Response serverCheck(String ip, int port, RequestGrpc.RequestFutureStub requestBlockingStub) {
         try {
+            //requestBlockingStub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(extraHeaders))
             ServerCheckRequest serverCheckRequest = new ServerCheckRequest();
             Payload grpcRequest = GrpcUtils.convert(serverCheckRequest);
             ListenableFuture<Payload> responseFuture = requestBlockingStub.request(grpcRequest);

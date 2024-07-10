@@ -24,6 +24,7 @@ import com.alibaba.nacos.api.remote.RpcScheduledExecutor;
 import com.alibaba.nacos.api.remote.request.ConnectResetRequest;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
+import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.plugin.control.ControlManagerCenter;
@@ -42,6 +43,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -61,6 +63,8 @@ public class ConnectionManager {
     private Map<String, AtomicInteger> connectionForClientIp = new ConcurrentHashMap<>(16);
     
     Map<String, Connection> connections = new ConcurrentHashMap<>();
+    
+    Map<String, Set<String>> index = new ConcurrentHashMap<>();
     
     private RuntimeConnectionEjector runtimeConnectionEjector;
     
@@ -113,6 +117,7 @@ public class ConnectionManager {
                 connection.setTraced(true);
             }
             connections.put(connectionId, connection);
+            buildIndex(connectionId);
             connectionForClientIp.computeIfAbsent(clientIp, k -> new AtomicInteger(0)).getAndIncrement();
             
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
@@ -124,6 +129,25 @@ public class ConnectionManager {
         }
         return false;
         
+    }
+    
+    private String getConnectionPrefix(String connectionId) {
+        return connectionId.split("/")[0];
+    }
+    
+    private void buildIndex(String connectionId) {
+        index.computeIfAbsent(getConnectionPrefix(connectionId), k -> new ConcurrentHashSet<>())
+                .add(connectionId);
+    }
+    
+    private void removeIndex(String connectionId) {
+        final String prefix = getConnectionPrefix(connectionId);
+        Optional.ofNullable(index.get(prefix)).ifPresent(keys -> {
+            keys.remove(connectionId);
+            if (keys.isEmpty()) {
+                index.remove(prefix);
+            }
+        });
     }
     
     private boolean checkLimit(Connection connection) {
@@ -145,20 +169,29 @@ public class ConnectionManager {
      * @param connectionId connectionId.
      */
     public synchronized void unregister(String connectionId) {
-        Connection remove = this.connections.remove(connectionId);
-        if (remove != null) {
-            String clientIp = remove.getMetaInfo().clientIp;
-            AtomicInteger atomicInteger = connectionForClientIp.get(clientIp);
-            if (atomicInteger != null) {
-                int count = atomicInteger.decrementAndGet();
-                if (count <= 0) {
-                    connectionForClientIp.remove(clientIp);
-                }
-            }
-            remove.close();
-            LOGGER.info("[{}]Connection unregistered successfully. ", connectionId);
-            clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
+        final String prefix = getConnectionPrefix(connectionId);
+        if (!index.containsKey(prefix)) {
+            return;
         }
+        //remove the key prefix is connectionId
+        Set<String> keys = index.get(prefix);
+        keys.stream().filter(key -> key.startsWith(connectionId)).forEach(key -> {
+            Connection remove = this.connections.remove(key);
+            if (remove != null) {
+                removeIndex(connectionId);
+                String clientIp = remove.getMetaInfo().clientIp;
+                AtomicInteger atomicInteger = connectionForClientIp.get(clientIp);
+                if (atomicInteger != null) {
+                    int count = atomicInteger.decrementAndGet();
+                    if (count <= 0) {
+                        connectionForClientIp.remove(clientIp);
+                    }
+                }
+                remove.close();
+                LOGGER.info("[{}]Connection unregistered successfully. ", connectionId);
+                clientConnectionEventListenerRegistry.notifyClientDisConnected(remove);
+            }
+        });
     }
     
     /**
@@ -209,8 +242,8 @@ public class ConnectionManager {
         }
         
         if (runtimeConnectionEjector == null) {
-            Loggers.CONNECTION
-                    .info("Fail to find connection runtime ejector for name {},use default", connectionRuntimeEjector);
+            Loggers.CONNECTION.info("Fail to find connection runtime ejector for name {},use default",
+                    connectionRuntimeEjector);
             NacosRuntimeConnectionEjector nacosRuntimeConnectionEjector = new NacosRuntimeConnectionEjector();
             nacosRuntimeConnectionEjector.setConnectionManager(this);
             runtimeConnectionEjector = nacosRuntimeConnectionEjector;
@@ -250,7 +283,7 @@ public class ConnectionManager {
             runtimeConnectionEjector.doEject();
             MetricsMonitor.getLongConnectionMonitor().set(connections.size());
         }, 1000L, 3000L, TimeUnit.MILLISECONDS);
-
+    
         Boolean enabled = EnvUtil.getProperty("nacos.metric.grpc.server.connection.enabled", Boolean.class, true);
         if (enabled) {
             RpcScheduledExecutor.COMMON_SERVER_EXECUTOR.scheduleWithFixedDelay(() -> {

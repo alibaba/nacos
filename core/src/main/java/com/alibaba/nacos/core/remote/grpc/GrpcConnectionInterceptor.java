@@ -16,8 +16,13 @@
 
 package com.alibaba.nacos.core.remote.grpc;
 
+import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.remote.ConnectionManager;
+import com.alibaba.nacos.core.utils.Loggers;
 import io.grpc.Context;
 import io.grpc.Contexts;
+import io.grpc.ForwardingServerCall;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
@@ -35,11 +40,24 @@ import io.grpc.netty.shaded.io.netty.channel.Channel;
  */
 public class GrpcConnectionInterceptor implements ServerInterceptor {
     
+    private final ConnectionManager connectionManager;
+    
+    public GrpcConnectionInterceptor(ConnectionManager connectionManager) {
+        this.connectionManager = connectionManager;
+    }
+    
     @Override
     public <T, S> ServerCall.Listener<T> interceptCall(ServerCall<T, S> call, Metadata headers,
             ServerCallHandler<T, S> next) {
-        Context ctx = Context.current().withValue(GrpcServerConstants.CONTEXT_KEY_CONN_ID,
-                        call.getAttributes().get(GrpcServerConstants.ATTR_TRANS_KEY_CONN_ID))
+        final String connectionId;
+        final String clientId = headers.get(
+                Metadata.Key.of(GrpcConstants.CLIENT_ID_KEY, Metadata.ASCII_STRING_MARSHALLER));
+        if (StringUtils.isNotBlank(clientId)) {
+            connectionId = call.getAttributes().get(GrpcServerConstants.ATTR_TRANS_KEY_CONN_ID) + "/" + clientId;
+        } else {
+            connectionId = call.getAttributes().get(GrpcServerConstants.ATTR_TRANS_KEY_CONN_ID);
+        }
+        Context ctx = Context.current().withValue(GrpcServerConstants.CONTEXT_KEY_CONN_ID, connectionId)
                 .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_IP,
                         call.getAttributes().get(GrpcServerConstants.ATTR_TRANS_KEY_REMOTE_IP))
                 .withValue(GrpcServerConstants.CONTEXT_KEY_CONN_REMOTE_PORT,
@@ -49,6 +67,19 @@ public class GrpcConnectionInterceptor implements ServerInterceptor {
         if (GrpcServerConstants.REQUEST_BI_STREAM_SERVICE_NAME.equals(call.getMethodDescriptor().getServiceName())) {
             Channel internalChannel = getInternalChannel(call);
             ctx = ctx.withValue(GrpcServerConstants.CONTEXT_KEY_CHANNEL, internalChannel);
+            // Wrap the ServerCall to add unregister on stream cancel
+            ServerCall<T, S> wrappedCall = new ForwardingServerCall.SimpleForwardingServerCall<T, S>(call) {
+                @Override
+                public boolean isCancelled() {
+                    if (StringUtils.isNotBlank(connectionId)) {
+                        Loggers.REMOTE_DIGEST
+                                .info("Connection isCancelled,connectionId = {} ", connectionId);
+                        connectionManager.unregister(connectionId);
+                    }
+                    return super.isCancelled();
+                }
+            };
+            return Contexts.interceptCall(ctx, wrappedCall, headers, next);
         }
         
         return Contexts.interceptCall(ctx, call, headers, next);
