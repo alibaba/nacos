@@ -16,6 +16,10 @@
   -->
 
 <Configuration status="WARN">
+    <Packages>
+        <Package name="com.alibaba.nacos.client.logging.log4j2"/>
+    </Packages>
+
     <Properties>
         <Property name="userHome" value="${nacosClientProperty:user.home}"/>
         <Property name="logPath" value="${nacosClientProperty:JM.LOG.PATH:-${userHome}/logs}"/>
