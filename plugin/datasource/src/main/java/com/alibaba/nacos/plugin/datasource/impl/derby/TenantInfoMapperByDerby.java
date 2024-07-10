@@ -17,7 +17,6 @@
 package com.alibaba.nacos.plugin.datasource.impl.derby;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
 
 /**
@@ -26,7 +25,7 @@ import com.alibaba.nacos.plugin.datasource.mapper.TenantInfoMapper;
  * @author hyx
  **/
 
-public class TenantInfoMapperByDerby extends AbstractMapper implements TenantInfoMapper {
+public class TenantInfoMapperByDerby extends AbstractMapperByDerby implements TenantInfoMapper {
 
     @Override
     public String getDataSource() {

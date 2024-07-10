@@ -215,8 +215,8 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             
             addConfigTagsRelation(configId, configTags, configInfo.getDataId(), configInfo.getGroup(),
                     configInfo.getTenant());
+
             Timestamp now = new Timestamp(System.currentTimeMillis());
-            
             historyConfigInfoPersistService.insertConfigHistoryAtomic(hisId, configInfo, srcIp, srcUser, now, "I");
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, now);
             databaseOperate.blockUpdate(consumer);
@@ -264,15 +264,13 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
-        Timestamp time = new Timestamp(System.currentTimeMillis());
-        
+
         final String sql = configInfoMapper.insert(
                 Arrays.asList("id", "data_id", "group_id", "tenant_id", "app_name", "content", "md5", "src_ip",
-                        "src_user", "gmt_create", "gmt_modified", "c_desc", "c_use", "effect", "type", "c_schema",
-                        "encrypted_data_key"));
-        final Object[] args = new Object[] {id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
-                configInfo.getContent(), md5Tmp, srcIp, srcUser, time, time, desc, use, effect, type, schema,
-                encryptedDataKey};
+                        "src_user", "gmt_create@NOW()", "gmt_modified@NOW()", "c_desc", "c_use", "effect",
+                        "type", "c_schema", "encrypted_data_key"));
+        final Object[] args = new Object[]{id, configInfo.getDataId(), configInfo.getGroup(), tenantTmp, appNameTmp,
+                configInfo.getContent(), md5Tmp, srcIp, srcUser, desc, use, effect, type, schema, encryptedDataKey};
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
         return id;
     }
@@ -522,14 +520,11 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
             }
             
             Timestamp time = new Timestamp(System.currentTimeMillis());
-            
             historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
                     srcUser, time, "U");
-            
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
             databaseOperate.blockUpdate();
             return getConfigInfoOperateResult(configInfo.getDataId(), configInfo.getGroup(), tenantTmp);
-            
         } finally {
             EmbeddedStorageContextHolder.cleanAllContext();
         }
@@ -563,11 +558,10 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 addConfigTagsRelation(oldConfigInfo.getId(), configTags, configInfo.getDataId(), configInfo.getGroup(),
                         configInfo.getTenant());
             }
+
             Timestamp time = new Timestamp(System.currentTimeMillis());
-            
             historyConfigInfoPersistService.insertConfigHistoryAtomic(oldConfigInfo.getId(), oldConfigInfo, srcIp,
                     srcUser, time, "U");
-            
             EmbeddedStorageContextUtils.onModifyConfigInfo(configInfo, srcIp, time);
             boolean success = databaseOperate.blockUpdate();
             if (success) {
@@ -594,13 +588,11 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
-        Timestamp time = new Timestamp(System.currentTimeMillis());
         MapperContext context = new MapperContext();
         context.putUpdateParameter(FieldConstant.CONTENT, configInfo.getContent());
         context.putUpdateParameter(FieldConstant.MD5, md5Tmp);
         context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
         context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
         context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
         context.putUpdateParameter(FieldConstant.C_DESC, desc);
         context.putUpdateParameter(FieldConstant.C_USE, use);
@@ -632,18 +624,17 @@ public class EmbeddedConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
         final String schema = configAdvanceInfo == null ? null : (String) configAdvanceInfo.get("schema");
         final String encryptedDataKey =
                 configInfo.getEncryptedDataKey() == null ? StringUtils.EMPTY : configInfo.getEncryptedDataKey();
-        
+
         ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO);
         final String sql = configInfoMapper.update(
-                Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use",
-                        "effect", "type", "c_schema", "encrypted_data_key"),
+                Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name",
+                        "c_desc", "c_use", "effect", "type", "c_schema", "encrypted_data_key"),
                 Arrays.asList("data_id", "group_id", "tenant_id"));
-        Timestamp time = new Timestamp(System.currentTimeMillis());
-        
-        final Object[] args = new Object[] {configInfo.getContent(), md5Tmp, srcIp, srcUser, time, appNameTmp, desc,
+
+        final Object[] args = new Object[]{configInfo.getContent(), md5Tmp, srcIp, srcUser, appNameTmp, desc,
                 use, effect, type, schema, encryptedDataKey, configInfo.getDataId(), configInfo.getGroup(), tenantTmp};
-        
+
         EmbeddedStorageContextHolder.addSqlContext(sql, args);
     }
     

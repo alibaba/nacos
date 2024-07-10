@@ -280,4 +280,17 @@ class ServerListManagerTest {
         assertFalse(serverListManager.getName().contains("endpointContextPath"));
         assertTrue(serverListManager.getName().contains("contextPath"));
     }
+
+    @Test
+    void testUseEndpointParsingRule() throws NacosException {
+        System.setProperty("nacos.endpoint", "127.0.0.1");
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.ENDPOINT, "${nacos.endpoint}");
+        properties.setProperty(PropertyKeyConst.IS_USE_ENDPOINT_PARSING_RULE, "true");
+        properties.setProperty(PropertyKeyConst.ENDPOINT_PORT, "9090");
+        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        ServerListManager serverListManager = new ServerListManager(clientProperties);
+        String addressServerUrl = serverListManager.addressServerUrl;
+        assertTrue(addressServerUrl.startsWith("http://127.0.0.1"));
+    }
 }

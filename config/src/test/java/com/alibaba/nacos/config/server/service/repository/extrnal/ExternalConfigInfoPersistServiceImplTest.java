@@ -302,9 +302,9 @@ class ExternalConfigInfoPersistServiceImplTest {
         //mock update config info
         Mockito.when(jdbcTemplate.update(eq(externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                 TableConstant.CONFIG_INFO)
-                        .update(Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified", "app_name", "c_desc", "c_use", "effect",
-                                "type", "c_schema", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"))),
-                eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), any(), eq(configInfoWrapperOld.getAppName()),
+                        .update(Arrays.asList("content", "md5", "src_ip", "src_user", "gmt_modified@NOW()", "app_name", "c_desc", "c_use",
+                                "effect", "type", "c_schema", "encrypted_data_key"), Arrays.asList("data_id", "group_id", "tenant_id"))),
+                eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(configInfoWrapperOld.getAppName()),
                 eq(configAdvanceInfo.get("desc")), eq(configAdvanceInfo.get("use")), eq(configAdvanceInfo.get("effect")),
                 eq(configAdvanceInfo.get("type")), eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(configInfo.getDataId()),
                 eq(configInfo.getGroup()), eq(tenant))).thenReturn(1);
@@ -343,7 +343,6 @@ class ExternalConfigInfoPersistServiceImplTest {
     
     @Test
     void testInsertOrUpdateCasOfUpdateConfigSuccess() {
-        
         Map<String, Object> configAdvanceInfo = new HashMap<>();
         configAdvanceInfo.put("config_tags", "tag1,tag2");
         configAdvanceInfo.put("desc", "desc11");
@@ -373,22 +372,22 @@ class ExternalConfigInfoPersistServiceImplTest {
         configInfoWrapperOld.setAppName("old_app11");
         configInfoWrapperOld.setMd5("old_md5");
         configInfoWrapperOld.setId(123456799L);
-        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER)))
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[]{dataId, group, tenant}), eq(CONFIG_INFO_WRAPPER_ROW_MAPPER)))
                 .thenReturn(configInfoWrapperOld);
         String srcIp = "srcIp";
         String srcUser = "srcUser";
         //mock update config info cas
-        Mockito.when(jdbcTemplate.update(anyString(), eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp),
-                eq(srcUser), any(Timestamp.class), eq(configInfoWrapperOld.getAppName()), eq(configAdvanceInfo.get("desc")),
+        Mockito.when(jdbcTemplate.update(anyString(), eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)),
+                eq(srcIp), eq(srcUser), eq(configInfoWrapperOld.getAppName()), eq(configAdvanceInfo.get("desc")),
                 eq(configAdvanceInfo.get("use")), eq(configAdvanceInfo.get("effect")), eq(configAdvanceInfo.get("type")),
                 eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant), eq(casMd5))).thenReturn(1);
-        
+
         //mock insert config tags.
         Mockito.when(jdbcTemplate.update(eq(externalConfigInfoPersistService.mapperManager.findMapper(dataSourceService.getDataSourceType(),
                                 TableConstant.CONFIG_TAGS_RELATION)
                         .insert(Arrays.asList("id", "tag_name", "tag_type", "data_id", "group_id", "tenant_id"))), eq(configInfoWrapperOld.getId()),
                 anyString(), eq(StringUtils.EMPTY), eq(dataId), eq(group), eq(tenant))).thenReturn(1);
-        
+
         //mock insert his config info
         Mockito.doNothing().when(historyConfigInfoPersistService)
                 .insertConfigHistoryAtomic(eq(configInfoWrapperOld.getId()), eq(configInfo), eq(srcIp), eq(srcUser), any(Timestamp.class),
@@ -397,8 +396,8 @@ class ExternalConfigInfoPersistServiceImplTest {
         externalConfigInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo, configAdvanceInfo);
         //expect update config cas
         Mockito.verify(jdbcTemplate, times(1))
-                .update(anyString(), eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq(configInfoWrapperOld.getAppName()), eq(configAdvanceInfo.get("desc")),
+                .update(anyString(), eq(content), eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp),
+                        eq(srcUser), eq(configInfoWrapperOld.getAppName()), eq(configAdvanceInfo.get("desc")),
                         eq(configAdvanceInfo.get("use")), eq(configAdvanceInfo.get("effect")), eq(configAdvanceInfo.get("type")),
                         eq(configAdvanceInfo.get("schema")), eq(encryptedDataKey), eq(dataId), eq(group), eq(tenant), eq(casMd5));
         
@@ -448,8 +447,6 @@ class ExternalConfigInfoPersistServiceImplTest {
         externalConfigInfoPersistService.createPsForInsertConfigInfo(srcIp, srcUser, configInfo, configAdvanceInfo, mockConnection,
                 configInfoMapper);
         Mockito.verify(preparedStatement, times(14)).setString(anyInt(), anyString());
-        Mockito.verify(preparedStatement, times(2)).setTimestamp(anyInt(), any(Timestamp.class));
-        
     }
     
     @Test

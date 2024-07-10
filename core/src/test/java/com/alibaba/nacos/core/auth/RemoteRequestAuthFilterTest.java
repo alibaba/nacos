@@ -24,7 +24,9 @@ import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.remote.RequestHandler;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -49,6 +51,11 @@ class RemoteRequestAuthFilterTest {
     
     @Mock
     private AuthConfigs authConfigs;
+    
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.removeContext();
+    }
     
     @Test
     void testFilter() {
