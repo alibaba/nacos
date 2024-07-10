@@ -40,7 +40,7 @@ public class HttpRequestContextConfig {
     }
     
     @Bean
-    public HttpRequestContextFilter requestContextFilter() {
+    public HttpRequestContextFilter nacosRequestContextFilter() {
         return new HttpRequestContextFilter();
     }
 }

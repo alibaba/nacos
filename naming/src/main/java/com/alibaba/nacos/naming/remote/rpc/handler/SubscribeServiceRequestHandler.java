@@ -37,6 +37,7 @@ import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
 import com.alibaba.nacos.naming.pojo.Subscriber;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.utils.ServiceUtil;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import org.springframework.stereotype.Component;
@@ -77,16 +78,18 @@ public class SubscribeServiceRequestHandler extends RequestHandler<SubscribeServ
         Subscriber subscriber = new Subscriber(meta.getClientIp(), meta.getClientVersion(), app, meta.getClientIp(),
                 namespaceId, groupedServiceName, 0, request.getClusters());
         ServiceInfo serviceInfo = ServiceUtil.selectInstancesWithHealthyProtection(serviceStorage.getData(service),
-                metadataManager.getServiceMetadata(service).orElse(null), subscriber.getCluster(), false,
-                true, subscriber.getIp());
+                metadataManager.getServiceMetadata(service).orElse(null), subscriber.getCluster(), false, true,
+                subscriber.getIp());
         if (request.isSubscribe()) {
             clientOperationService.subscribeService(service, subscriber, meta.getConnectionId());
             NotifyCenter.publishEvent(new SubscribeServiceTraceEvent(System.currentTimeMillis(),
-                    meta.getClientIp(), service.getNamespace(), service.getGroup(), service.getName()));
+                    NamingRequestUtil.getSourceIpForGrpcRequest(meta), service.getNamespace(), service.getGroup(),
+                    service.getName()));
         } else {
             clientOperationService.unsubscribeService(service, subscriber, meta.getConnectionId());
             NotifyCenter.publishEvent(new UnsubscribeServiceTraceEvent(System.currentTimeMillis(),
-                    meta.getClientIp(), service.getNamespace(), service.getGroup(), service.getName()));
+                    NamingRequestUtil.getSourceIpForGrpcRequest(meta), service.getNamespace(), service.getGroup(),
+                    service.getName()));
         }
         return new SubscribeServiceResponse(ResponseCode.SUCCESS.getCode(), "success", serviceInfo);
     }

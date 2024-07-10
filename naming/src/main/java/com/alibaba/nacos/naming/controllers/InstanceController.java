@@ -31,7 +31,6 @@ import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.utils.WebUtils;
@@ -52,6 +51,7 @@ import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
 import com.alibaba.nacos.naming.pojo.instance.HttpRequestInstanceBuilder;
 import com.alibaba.nacos.naming.pojo.instance.InstanceExtensionHandler;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -121,10 +121,10 @@ public class InstanceController {
                 .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         
         getInstanceOperator().registerInstance(namespaceId, serviceName, instance);
-        NotifyCenter.publishEvent(
-                new RegisterInstanceTraceEvent(System.currentTimeMillis(), getClientIp(request), false, namespaceId,
-                        NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
-                        instance.getIp(), instance.getPort()));
+        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForHttpRequest(request), false, namespaceId,
+                NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName), instance.getIp(),
+                instance.getPort()));
         return "ok";
     }
     
@@ -147,10 +147,10 @@ public class InstanceController {
         NamingUtils.checkServiceNameFormat(serviceName);
         
         getInstanceOperator().removeInstance(namespaceId, serviceName, instance);
-        NotifyCenter.publishEvent(
-                new DeregisterInstanceTraceEvent(System.currentTimeMillis(), getClientIp(request), false,
-                        DeregisterInstanceReason.REQUEST, namespaceId, NamingUtils.getGroupName(serviceName),
-                        NamingUtils.getServiceName(serviceName), instance.getIp(), instance.getPort()));
+        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForHttpRequest(request), false, DeregisterInstanceReason.REQUEST,
+                namespaceId, NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
+                instance.getIp(), instance.getPort()));
         return "ok";
     }
     
@@ -172,10 +172,10 @@ public class InstanceController {
         Instance instance = HttpRequestInstanceBuilder.newBuilder()
                 .setDefaultInstanceEphemeral(switchDomain.isDefaultInstanceEphemeral()).setRequest(request).build();
         getInstanceOperator().updateInstance(namespaceId, serviceName, instance);
-        NotifyCenter.publishEvent(
-                new UpdateInstanceTraceEvent(System.currentTimeMillis(), getClientIp(request), namespaceId,
-                        NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName),
-                        instance.getIp(), instance.getPort(), instance.getMetadata()));
+        NotifyCenter.publishEvent(new UpdateInstanceTraceEvent(System.currentTimeMillis(),
+                NamingRequestUtil.getSourceIpForHttpRequest(request), namespaceId,
+                NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName), instance.getIp(),
+                instance.getPort(), instance.getMetadata()));
         return "ok";
     }
     
@@ -462,16 +462,5 @@ public class InstanceController {
     
     private InstanceOperator getInstanceOperator() {
         return instanceServiceV2;
-    }
-    
-    private String getClientIp(HttpServletRequest request) {
-        String clientIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getSourceIp();
-        if (StringUtils.isBlank(clientIp)) {
-            clientIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getRemoteIp();
-        }
-        if (StringUtils.isBlank(clientIp)) {
-            clientIp = WebUtils.getRemoteIp(request);
-        }
-        return clientIp;
     }
 }

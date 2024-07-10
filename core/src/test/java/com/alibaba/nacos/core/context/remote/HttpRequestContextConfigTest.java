@@ -26,7 +26,7 @@ class HttpRequestContextConfigTest {
     @Test
     void testRequestContextFilterRegistration() {
         HttpRequestContextConfig contextConfig = new HttpRequestContextConfig();
-        HttpRequestContextFilter filter = contextConfig.requestContextFilter();
+        HttpRequestContextFilter filter = contextConfig.nacosRequestContextFilter();
         FilterRegistrationBean<HttpRequestContextFilter> actual = contextConfig.requestContextFilterRegistration(
                 filter);
         assertEquals(filter, actual.getFilter());

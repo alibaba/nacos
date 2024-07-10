@@ -36,7 +36,6 @@ import com.alibaba.nacos.common.trace.event.naming.RegisterInstanceTraceEvent;
 import com.alibaba.nacos.common.trace.event.naming.UpdateInstanceTraceEvent;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.control.TpsControl;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.naming.core.InstanceOperatorClientImpl;
@@ -57,6 +56,7 @@ import com.alibaba.nacos.naming.paramcheck.NamingInstanceMetadataBatchHttpParamE
 import com.alibaba.nacos.naming.pojo.InstanceOperationInfo;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.alibaba.nacos.naming.pojo.instance.BeatInfoInstanceBuilder;
+import com.alibaba.nacos.naming.utils.NamingRequestUtil;
 import com.alibaba.nacos.naming.web.CanDistro;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -115,9 +115,10 @@ public class InstanceControllerV2 {
         Instance instance = buildInstance(instanceForm);
         instanceServiceV2.registerInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
                 instance);
-        NotifyCenter.publishEvent(new RegisterInstanceTraceEvent(System.currentTimeMillis(), getClientIp(), false,
-                instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
-                instance.getIp(), instance.getPort()));
+        NotifyCenter.publishEvent(
+                new RegisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
+                        instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
+                        instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
     
@@ -136,9 +137,10 @@ public class InstanceControllerV2 {
         Instance instance = buildInstance(instanceForm);
         instanceServiceV2.removeInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
                 instance);
-        NotifyCenter.publishEvent(new DeregisterInstanceTraceEvent(System.currentTimeMillis(), getClientIp(), false,
-                DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
-                instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
+        NotifyCenter.publishEvent(
+                new DeregisterInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(), false,
+                        DeregisterInstanceReason.REQUEST, instanceForm.getNamespaceId(), instanceForm.getGroupName(),
+                        instanceForm.getServiceName(), instance.getIp(), instance.getPort()));
         return Result.success("ok");
     }
     
@@ -158,9 +160,9 @@ public class InstanceControllerV2 {
         instanceServiceV2.updateInstance(instanceForm.getNamespaceId(), buildCompositeServiceName(instanceForm),
                 instance);
         NotifyCenter.publishEvent(
-                new UpdateInstanceTraceEvent(System.currentTimeMillis(), getClientIp(), instanceForm.getNamespaceId(),
-                        instanceForm.getGroupName(), instanceForm.getServiceName(), instance.getIp(),
-                        instance.getPort(), instance.getMetadata()));
+                new UpdateInstanceTraceEvent(System.currentTimeMillis(), NamingRequestUtil.getSourceIp(),
+                        instanceForm.getNamespaceId(), instanceForm.getGroupName(), instanceForm.getServiceName(),
+                        instance.getIp(), instance.getPort(), instance.getMetadata()));
         return Result.success("ok");
     }
     
@@ -463,11 +465,4 @@ public class InstanceControllerV2 {
         return NamingUtils.getGroupedName(form.getServiceName(), form.getGroupName());
     }
     
-    private String getClientIp() {
-        String clientIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getSourceIp();
-        if (StringUtils.isBlank(clientIp)) {
-            clientIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getRemoteIp();
-        }
-        return clientIp;
-    }
 }
