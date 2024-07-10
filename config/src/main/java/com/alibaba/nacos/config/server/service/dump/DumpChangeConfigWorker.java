@@ -18,16 +18,19 @@ package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.config.server.constant.Constants;
-import com.alibaba.nacos.config.server.model.ConfigInfo;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
 import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
+import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey2;
 import com.alibaba.nacos.config.server.utils.LogUtil;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 
 import java.sql.Timestamp;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Dump change processor.
@@ -43,10 +46,17 @@ public class DumpChangeConfigWorker implements Runnable {
     
     Timestamp startTime;
     
-    public DumpChangeConfigWorker(DumpService dumpService, Timestamp startTime) {
-        this.configInfoPersistService = dumpService.getConfigInfoPersistService();
-        this.historyConfigInfoPersistService = dumpService.getHistoryConfigInfoPersistService();
+    public DumpChangeConfigWorker(ConfigInfoPersistService configInfoPersistService,
+            HistoryConfigInfoPersistService historyConfigInfoPersistService, Timestamp startTime) {
+        this.configInfoPersistService = configInfoPersistService;
+        this.historyConfigInfoPersistService = historyConfigInfoPersistService;
         this.startTime = startTime;
+    }
+    
+    int pageSize = 100;
+    
+    public void setPageSize(int pageSize) {
+        this.pageSize = pageSize;
     }
     
     /**
@@ -55,22 +65,26 @@ public class DumpChangeConfigWorker implements Runnable {
     public void run() {
         
         try {
+            
+            if (!PropertyUtil.isDumpChangeOn()) {
+                LogUtil.DEFAULT_LOG.info("DumpChange task is not open");
+                return;
+            }
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             LogUtil.DEFAULT_LOG.info("DumpChange start ,from time {},current time {}", startTime, currentTime);
             
             LogUtil.DEFAULT_LOG.info("Start to check delete configs from  time {}", startTime);
             
-            int pageSize = 100;
             long startDeletedConfigTime = System.currentTimeMillis();
             LogUtil.DEFAULT_LOG.info("Check delete configs from  time {}", startTime);
             
             long deleteCursorId = 0L;
             
             while (true) {
-                List<ConfigInfoWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
+                List<ConfigInfoStateWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize);
-                for (ConfigInfo configInfo : configDeleted) {
-                    if (configInfoPersistService.findConfigInfo(configInfo.getDataId(), configInfo.getGroup(),
+                for (ConfigInfoStateWrapper configInfo : configDeleted) {
+                    if (configInfoPersistService.findConfigInfoState(configInfo.getDataId(), configInfo.getGroup(),
                             configInfo.getTenant()) == null) {
                         ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(),
                                 configInfo.getTenant());
@@ -93,17 +107,33 @@ public class DumpChangeConfigWorker implements Runnable {
             long changeCursorId = 0L;
             while (true) {
                 LogUtil.DEFAULT_LOG.info("Check changed configs from  time {},lastMaxId={}", startTime, changeCursorId);
-                List<ConfigInfoWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime,
+                List<ConfigInfoStateWrapper> changeConfigs = configInfoPersistService.findChangeConfig(startTime,
                         changeCursorId, pageSize);
-                for (ConfigInfoWrapper cf : changeConfigs) {
-                    ConfigCacheService.dumpChange(cf.getDataId(), cf.getGroup(), cf.getTenant(), cf.getContent(),
-                            cf.getLastModified(), cf.getEncryptedDataKey());
-                    final String content = cf.getContent();
-                    final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
-                    
-                    LogUtil.DEFAULT_LOG.info("[dump-change-check-ok] {}, {}, length={}, md5={}",
-                            new Object[] {GroupKey2.getKey(cf.getDataId(), cf.getGroup()), cf.getLastModified(),
-                                    content.length(), md5});
+                for (ConfigInfoStateWrapper cf : changeConfigs) {
+                    final String groupKey = GroupKey2.getKey(cf.getDataId(), cf.getGroup(), cf.getTenant());
+                    //check md5 & localtimestamp update local disk cache.
+                    boolean newLastModified = cf.getLastModified() > ConfigCacheService.getLastModifiedTs(groupKey);
+                    String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
+                    boolean md5Update = !localContentMd5.equals(cf.getMd5());
+                    if (newLastModified || md5Update) {
+                        LogUtil.DEFAULT_LOG.info("[dump-change] find change config  {}, {}, md5={}",
+                                new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
+                        ConfigInfoWrapper configInfoWrapper = configInfoPersistService.findConfigInfo(cf.getDataId(),
+                                cf.getGroup(), cf.getTenant());
+                        LogUtil.DUMP_LOG.info("[dump-change] find change config  {}, {}, md5={}",
+                                new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
+                        ConfigCacheService.dump(configInfoWrapper.getDataId(), configInfoWrapper.getGroup(),
+                                configInfoWrapper.getTenant(), configInfoWrapper.getContent(),
+                                configInfoWrapper.getLastModified(), configInfoWrapper.getType(),
+                                configInfoWrapper.getEncryptedDataKey());
+                        final String content = configInfoWrapper.getContent();
+                        final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_GBK);
+                        final String md5Utf8 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
+                        
+                        LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={},md5UTF8={}",
+                                new Object[] {groupKey, configInfoWrapper.getLastModified(), content.length(), md5,
+                                        md5Utf8});
+                    }
                 }
                 if (changeConfigs.size() < pageSize) {
                     break;
@@ -111,13 +141,19 @@ public class DumpChangeConfigWorker implements Runnable {
                 changeCursorId = changeConfigs.get(changeConfigs.size() - 1).getId();
             }
             
-            ConfigCacheService.reloadConfig();
             long endChangeConfigTime = System.currentTimeMillis();
-            LogUtil.DEFAULT_LOG.info("Check changed configs finished,cost:{},set next start time to {}",
+            LogUtil.DEFAULT_LOG.info(
+                    "Check changed configs finished,cost:{}, next task running will from start time  {}",
                     endChangeConfigTime - startChangeConfigTime, currentTime);
             startTime = currentTime;
         } catch (Throwable e) {
             LogUtil.DEFAULT_LOG.error("Check changed configs error", e);
+        } finally {
+            ConfigExecutor.scheduleConfigChangeTask(this, PropertyUtil.getDumpChangeWorkerInterval(),
+                    TimeUnit.MILLISECONDS);
+            LogUtil.DEFAULT_LOG.info("Next dump change will scheduled after {} milliseconds",
+                    PropertyUtil.getDumpChangeWorkerInterval());
+            
         }
     }
 }

@@ -17,7 +17,7 @@
 package com.alibaba.nacos.plugin.control.connection.response;
 
 /**
- * conection check code.
+ * connection check code.
  *
  * @author shiyiyue
  */

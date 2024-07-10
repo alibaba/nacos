@@ -84,4 +84,13 @@ public interface AuthPluginService {
     default boolean isLoginEnabled() {
         return false;
     }
+    
+    /**
+     * Whether need administrator .
+     *
+     * @return if need the administrator role.
+     */
+    default boolean isAdminRequest() {
+        return true;
+    }
 }

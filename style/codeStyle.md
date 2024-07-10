@@ -46,14 +46,14 @@ Volunteer wanted.
 [p3c插件idea IDE上安装方法](https://github.com/alibaba/p3c/blob/master/idea-plugin/README_cn.md)
 
 #### checkstyle
-[chechstyle-idea-install](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea)
+[checkstyle-idea-install](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea)
 
 1. `Preferences/Settings --> Other Settings --> Checkstyle` OR `Preferences/Settings --> Tools --> Checkstyle`
 2. Set checkstyle version at least 8.30 and scan scope `All resource(including tests)` in checkstyle plugin.
 3. Import `style/NacosCheckStyle.xml` to checkstyle plugin.
 4. Scan and check your modified code by plugin.
 
-[chechstyle插件idea安装](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea)
+[checkstyle插件idea安装](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea)
 
 1. `Preferences/Settings --> Other Settings --> Checkstyle` 或者 `Preferences/Settings --> Tools --> Checkstyle`
 2. 在checkstyle插件中设置checkstyle版本至少为8.30,并将扫描作用域设置为`All resource(including tests)`

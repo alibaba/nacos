@@ -23,15 +23,15 @@ import com.alibaba.nacos.api.config.ConfigService;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.Properties;
 import java.util.concurrent.Executor;
@@ -41,26 +41,26 @@ import java.util.concurrent.TimeUnit;
  * @author liaochuntao
  * @date 2019-06-07 22:24
  **/
-@RunWith(SpringRunner.class)
-@SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos"},
-        webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class ConfigLongPoll_CITCase {
-
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = Nacos.class, properties = {
+        "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+class ConfigLongPoll_CITCase {
+    
     @LocalServerPort
     private int port;
-
+    
     private ConfigService configService;
     
-    @BeforeClass
-    @AfterClass
-    public static void cleanClientCache() throws Exception {
+    @BeforeAll
+    @AfterAll
+    static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
         ConfigCleanUtils.changeToNewTestNacosHome(ConfigLongPoll_CITCase.class.getSimpleName());
-    
+        
     }
-
-    @Before
-    public void init() throws NacosException {
+    
+    @BeforeEach
+    void init() throws NacosException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:" + port);
         properties.put(PropertyKeyConst.CONFIG_LONG_POLL_TIMEOUT, "20000");
@@ -68,44 +68,44 @@ public class ConfigLongPoll_CITCase {
         properties.put(PropertyKeyConst.MAX_RETRY, "5");
         configService = NacosFactory.createConfigService(properties);
     }
-
-    @After
-    public void destroy(){
+    
+    @AfterEach
+    void destroy() {
         try {
             configService.shutDown();
-        }catch (NacosException ex) {
+        } catch (NacosException ex) {
         }
     }
-
+    
     @Test
-    public void test() throws InterruptedException, NacosException {
-
+    void test() throws InterruptedException, NacosException {
+        
         configService.addListener("test", "DEFAULT_GROUP", new Listener() {
             @Override
             public Executor getExecutor() {
                 return null;
             }
-
+            
             @Override
             public void receiveConfigInfo(String configInfo) {
                 System.out.println(configInfo);
             }
         });
-
+        
         configService.addListener("test-1", "DEFAULT_GROUP", new Listener() {
             @Override
             public Executor getExecutor() {
                 return null;
             }
-
+            
             @Override
             public void receiveConfigInfo(String configInfo) {
                 System.out.println(configInfo);
             }
         });
-
+        
         TimeUnit.SECONDS.sleep(10);
-
+        
     }
-
+    
 }

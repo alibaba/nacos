@@ -19,9 +19,9 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.NamespaceUtil;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.plugin.datasource.constants.ContextConstant;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigInfoMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -37,16 +37,16 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInfoMapper {
-    
+public class ConfigInfoMapperByMySql extends AbstractMapperByMysql implements ConfigInfoMapper {
+
     private static final String DATA_ID = "dataId";
-    
+
     private static final String GROUP = "group";
-    
+
     private static final String APP_NAME = "appName";
-    
+
     private static final String CONTENT = "content";
-    
+
     private static final String TENANT = "tenant";
     
     @Override
@@ -83,21 +83,19 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
     
     @Override
     public MapperResult findAllConfigInfoBaseFetchRows(MapperContext context) {
-        String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
-        final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
-        
         String sql = "SELECT t.id,data_id,group_id,content,md5"
-                + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT ?,?  ) "
-                + " g, config_info t  WHERE g.id = t.id ";
+                + " FROM ( SELECT id FROM config_info ORDER BY id LIMIT " + context.getStartRow() + ","
+                + context.getPageSize() + " )" + " g, config_info t  WHERE g.id = t.id ";
         return new MapperResult(sql, Collections.emptyList());
     }
     
     @Override
     public MapperResult findAllConfigInfoFragment(MapperContext context) {
-        
-        String sql = "SELECT id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,type,encrypted_data_key "
-                + "FROM config_info WHERE id > ? ORDER BY id ASC LIMIT " + context.getStartRow() + ","
-                + context.getPageSize();
+        String contextParameter = context.getContextParameter(ContextConstant.NEED_CONTENT);
+        boolean needContent = contextParameter != null && Boolean.parseBoolean(contextParameter);
+        String sql = "SELECT id,data_id,group_id,tenant_id,app_name," + (needContent ? "content," : "")
+                + "md5,gmt_modified,type,encrypted_data_key FROM config_info WHERE id > ? ORDER BY id ASC LIMIT "
+                + context.getStartRow() + "," + context.getPageSize();
         return new MapperResult(sql, CollectionUtils.list(context.getWhereParameter(FieldConstant.ID)));
     }
     
@@ -113,7 +111,7 @@ public class ConfigInfoMapperByMySql extends AbstractMapper implements ConfigInf
         
         List<Object> paramList = new ArrayList<>();
         
-        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,content,type,md5,gmt_modified FROM config_info WHERE ";
+        final String sqlFetchRows = "SELECT id,data_id,group_id,tenant_id,app_name,type,md5,gmt_modified FROM config_info WHERE ";
         String where = " 1=1 ";
         if (!StringUtils.isBlank(dataId)) {
             where += " AND data_id LIKE ? ";

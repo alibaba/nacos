@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.packagescan.resource;
 
-import com.alibaba.nacos.common.utils.AbstractAssert;
+import com.alibaba.nacos.common.packagescan.util.AbstractAssert;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;

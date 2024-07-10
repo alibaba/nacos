@@ -28,6 +28,7 @@ import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListene
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.TenantUtil;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.NumberUtils;
@@ -54,17 +55,25 @@ public class CacheData {
     
     private static final Logger LOGGER = LogUtils.logger(CacheData.class);
     
-    private static long notifyWarnTimeout = 60000;
+    private static final long DEFAULT_NOTIF_WARN_TIMEOUTS = 60000;
+    
+    private static long notifyWarnTimeout = DEFAULT_NOTIF_WARN_TIMEOUTS;
     
     static {
+        initNotifyWarnTimeout();
+    }
+    
+    static long initNotifyWarnTimeout() {
         String notifyTimeouts = System.getProperty("nacos.listener.notify.warn.timeout");
         if (StringUtils.isNotBlank(notifyTimeouts) && NumberUtils.isDigits(notifyTimeouts)) {
             notifyWarnTimeout = Long.valueOf(notifyTimeouts);
             LOGGER.info("config listener notify warn timeout millis is set to {}", notifyWarnTimeout);
         } else {
-            LOGGER.info("config listener notify warn timeout millis use default {} millis ", notifyWarnTimeout);
-            
+            LOGGER.info("config listener notify warn timeout millis use default {} millis ",
+                    DEFAULT_NOTIF_WARN_TIMEOUTS);
+            notifyWarnTimeout = DEFAULT_NOTIF_WARN_TIMEOUTS;
         }
+        return notifyWarnTimeout;
     }
     
     static ScheduledThreadPoolExecutor scheduledExecutor;
@@ -73,12 +82,9 @@ public class CacheData {
         if (scheduledExecutor == null) {
             synchronized (CacheData.class) {
                 if (scheduledExecutor == null) {
-                    scheduledExecutor = new ScheduledThreadPoolExecutor(1, r -> {
-                        Thread t = new Thread(r);
-                        t.setName("com.alibaba.nacos.client.notify.block.monitor");
-                        t.setDaemon(true);
-                        return t;
-                    }, new ThreadPoolExecutor.DiscardPolicy());
+                    scheduledExecutor = new ScheduledThreadPoolExecutor(1,
+                            new NameThreadFactory("com.alibaba.nacos.client.notify.block.monitor"),
+                            new ThreadPoolExecutor.DiscardPolicy());
                     scheduledExecutor.setRemoveOnCancelPolicy(true);
                 }
             }
@@ -93,7 +99,7 @@ public class CacheData {
         LOGGER.info("nacos.cache.data.init.snapshot = {} ", initSnapshot);
     }
     
-    private final String envName;
+    public final String envName;
     
     private final ConfigFilterChainManager configFilterChainManager;
     
@@ -124,13 +130,13 @@ public class CacheData {
     /**
      * local cache change timestamp.
      */
-    private volatile AtomicLong lastModifiedTs = new AtomicLong(0);
+    private final AtomicLong lastModifiedTs = new AtomicLong(0);
     
     /**
      * notify change flag,for notify&sync concurrent control. 1.reset to false if starting to sync with server. 2.update
      * to true if receive config change notification.
      */
-    private volatile AtomicBoolean receiveNotifyChanged = new AtomicBoolean(false);
+    private final AtomicBoolean receiveNotifyChanged = new AtomicBoolean(false);
     
     private int taskId;
     
@@ -139,7 +145,7 @@ public class CacheData {
     /**
      * if is cache data md5 sync with the server.
      */
-    private volatile AtomicBoolean isConsistentWithServer = new AtomicBoolean();
+    private final AtomicBoolean isConsistentWithServer = new AtomicBoolean();
     
     /**
      * if is cache data is discard,need to remove.
@@ -596,8 +602,7 @@ public class CacheData {
         }
         
         ManagerListenerWrap(Listener listener, String md5, String lastContent) {
-            this.listener = listener;
-            this.lastCallMd5 = md5;
+            this(listener, md5);
             this.lastContent = lastContent;
         }
         

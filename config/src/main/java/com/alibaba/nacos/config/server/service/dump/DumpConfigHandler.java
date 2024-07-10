@@ -102,7 +102,7 @@ public class DumpConfigHandler extends Subscriber<ConfigDumpEvent> {
             ClientIpWhiteList.load(content);
         }
         
-        if (dataId.equals(SwitchService.SWITCH_META_DATAID)) {
+        if (dataId.equals(SwitchService.SWITCH_META_DATA_ID)) {
             SwitchService.load(content);
         }
         

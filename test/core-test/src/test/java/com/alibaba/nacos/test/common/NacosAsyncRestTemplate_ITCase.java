@@ -28,23 +28,24 @@ import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.naming.misc.HttpClientManager.ProcessorHttpClientFactory;
 import com.alibaba.nacos.sys.env.EnvUtil;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * NacosAsyncRestTemplate_ITCase.
@@ -52,35 +53,124 @@ import java.util.Map;
  * @author mai.jh
  */
 @SuppressWarnings("all")
-@FixMethodOrder(MethodSorters.JVM)
-@RunWith(SpringRunner.class)
+@TestMethodOrder(MethodName.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class NacosAsyncRestTemplate_ITCase {
+class NacosAsyncRestTemplate_ITCase {
+    
+    private static final HttpClientFactory PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY = new ProcessorHttpClientFactory();
+    
+    private final String CONFIG_INSTANCE_PATH = "/nacos/v1/ns";
     
     @LocalServerPort
     private int port;
     
-    private NacosAsyncRestTemplate nacosRestTemplate = HttpClientBeanHolder
-            .getNacosAsyncRestTemplate(LoggerFactory.getLogger(NacosAsyncRestTemplate_ITCase.class));
-    
-    private static final HttpClientFactory PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY = new ProcessorHttpClientFactory();
+    private NacosAsyncRestTemplate nacosRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(
+            LoggerFactory.getLogger(NacosAsyncRestTemplate_ITCase.class));
     
     private NacosAsyncRestTemplate processorRestTemplate = null;
-    
-    private final String CONFIG_INSTANCE_PATH = "/nacos/v1/ns";
     
     private String IP = null;
     
     @Autowired
     private Environment environment;
     
-    @Before
-    public void init() throws NacosException {
+    @BeforeEach
+    void init() throws NacosException {
         IP = String.format("http://localhost:%d", port);
         EnvUtil.setEnvironment((ConfigurableEnvironment) environment);
-        processorRestTemplate = HttpClientBeanHolder
-                .getNacosAsyncRestTemplate(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY);
+        processorRestTemplate = HttpClientBeanHolder.getNacosAsyncRestTemplate(PROCESSOR_ASYNC_HTTP_CLIENT_FACTORY);
+    }
+    
+    @Test
+    void test_url_post_form() throws Exception {
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
+        Map<String, String> param = new HashMap<>();
+        param.put("serviceName", "app-test");
+        param.put("port", "8080");
+        param.put("ip", "11.11.11.11");
+        CallbackMap<String> callbackMap = new CallbackMap<>();
+        nacosRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
+        Thread.sleep(2000);
+        HttpRestResult<String> restResult = callbackMap.getRestResult();
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
+        assertTrue(restResult.ok());
+    }
+    
+    @Test
+    void test_url_post_form_by_processor() throws Exception {
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
+        Map<String, String> param = new HashMap<>();
+        param.put("serviceName", "app-test2");
+        param.put("port", "8080");
+        param.put("ip", "11.11.11.11");
+        CallbackMap<String> callbackMap = new CallbackMap<>();
+        processorRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
+        Thread.sleep(2000);
+        HttpRestResult<String> restResult = callbackMap.getRestResult();
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
+        assertTrue(restResult.ok());
+    }
+    
+    @Test
+    void test_url_put_form() throws Exception {
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
+        Map<String, String> param = new HashMap<>();
+        param.put("serviceName", "app-test-change");
+        param.put("port", "8080");
+        param.put("ip", "11.11.11.11");
+        CallbackMap<String> callbackMap = new CallbackMap<>();
+        nacosRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
+        Thread.sleep(2000);
+        HttpRestResult<String> restResult = callbackMap.getRestResult();
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
+        assertTrue(restResult.ok());
+    }
+    
+    @Test
+    void test_url_get() throws Exception {
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance/list";
+        Query query = Query.newInstance().addParam("serviceName", "app-test");
+        CallbackMap<Map> callbackMap = new CallbackMap<>();
+        nacosRestTemplate.get(url, Header.newInstance(), query, Map.class, callbackMap);
+        Thread.sleep(2000);
+        HttpRestResult<Map> restResult = callbackMap.getRestResult();
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
+        assertTrue(restResult.ok());
+        assertEquals("DEFAULT_GROUP@@app-test", restResult.getData().get("name"));
+    }
+    
+    @Test
+    void test_url_by_map() throws Exception {
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance/list";
+        Map<String, String> param = new HashMap<>();
+        param.put("serviceName", "app-test");
+        CallbackMap<Map> callbackMap = new CallbackMap<>();
+        nacosRestTemplate.get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class, callbackMap);
+        Thread.sleep(2000);
+        HttpRestResult<Map> restResult = callbackMap.getRestResult();
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
+        assertTrue(restResult.ok());
+        assertEquals("DEFAULT_GROUP@@app-test", restResult.getData().get("name"));
+    }
+    
+    @Test
+    void test_url_delete() throws Exception {
+        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
+        Query query = Query.newInstance().addParam("ip", "11.11.11.11").addParam("port", "8080").addParam("serviceName", "app-test");
+        CallbackMap<String> callbackMap = new CallbackMap<>();
+        nacosRestTemplate.delete(url, Header.newInstance(), query, String.class, callbackMap);
+        Thread.sleep(2000);
+        HttpRestResult<String> restResult = callbackMap.getRestResult();
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
+        assertTrue(restResult.ok());
     }
     
     private class CallbackMap<T> implements Callback<T> {
@@ -98,7 +188,7 @@ public class NacosAsyncRestTemplate_ITCase {
         public void onError(Throwable throwable) {
             this.throwable = throwable;
         }
-    
+        
         @Override
         public void onCancel() {
         
@@ -111,98 +201,6 @@ public class NacosAsyncRestTemplate_ITCase {
         public Throwable getThrowable() {
             return throwable;
         }
-    }
-    
-    @Test
-    public void test_url_post_form() throws Exception {
-        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
-        Map<String, String> param = new HashMap<>();
-        param.put("serviceName", "app-test");
-        param.put("port", "8080");
-        param.put("ip", "11.11.11.11");
-        CallbackMap<String> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
-        Thread.sleep(2000);
-        HttpRestResult<String> restResult = callbackMap.getRestResult();
-        System.out.println(restResult.getData());
-        System.out.println(restResult.getHeader());
-        Assert.assertTrue(restResult.ok());
-    }
-    
-    @Test
-    public void test_url_post_form_by_processor() throws Exception {
-        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
-        Map<String, String> param = new HashMap<>();
-        param.put("serviceName", "app-test2");
-        param.put("port", "8080");
-        param.put("ip", "11.11.11.11");
-        CallbackMap<String> callbackMap = new CallbackMap<>();
-        processorRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
-        Thread.sleep(2000);
-        HttpRestResult<String> restResult = callbackMap.getRestResult();
-        System.out.println(restResult.getData());
-        System.out.println(restResult.getHeader());
-        Assert.assertTrue(restResult.ok());
-    }
-    
-    @Test
-    public void test_url_put_form() throws Exception {
-        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
-        Map<String, String> param = new HashMap<>();
-        param.put("serviceName", "app-test-change");
-        param.put("port", "8080");
-        param.put("ip", "11.11.11.11");
-        CallbackMap<String> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.postForm(url, Header.newInstance(), Query.newInstance(), param, String.class, callbackMap);
-        Thread.sleep(2000);
-        HttpRestResult<String> restResult = callbackMap.getRestResult();
-        System.out.println(restResult.getData());
-        System.out.println(restResult.getHeader());
-        Assert.assertTrue(restResult.ok());
-    }
-    
-    
-    @Test
-    public void test_url_get() throws Exception {
-        String url = IP + CONFIG_INSTANCE_PATH + "/instance/list";
-        Query query = Query.newInstance().addParam("serviceName", "app-test");
-        CallbackMap<Map> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.get(url, Header.newInstance(), query, Map.class, callbackMap);
-        Thread.sleep(2000);
-        HttpRestResult<Map> restResult = callbackMap.getRestResult();
-        System.out.println(restResult.getData());
-        System.out.println(restResult.getHeader());
-        Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
-    }
-    
-    @Test
-    public void test_url_by_map() throws Exception {
-        String url = IP + CONFIG_INSTANCE_PATH + "/instance/list";
-        Map<String, String> param = new HashMap<>();
-        param.put("serviceName", "app-test");
-        CallbackMap<Map> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.get(url, Header.newInstance(), Query.newInstance().initParams(param), Map.class, callbackMap);
-        Thread.sleep(2000);
-        HttpRestResult<Map> restResult = callbackMap.getRestResult();
-        System.out.println(restResult.getData());
-        System.out.println(restResult.getHeader());
-        Assert.assertTrue(restResult.ok());
-        Assert.assertEquals(restResult.getData().get("name"), "DEFAULT_GROUP@@app-test");
-    }
-    
-    @Test
-    public void test_url_delete() throws Exception {
-        String url = IP + CONFIG_INSTANCE_PATH + "/instance";
-        Query query = Query.newInstance().addParam("ip", "11.11.11.11").addParam("port", "8080")
-                .addParam("serviceName", "app-test");
-        CallbackMap<String> callbackMap = new CallbackMap<>();
-        nacosRestTemplate.delete(url, Header.newInstance(), query, String.class, callbackMap);
-        Thread.sleep(2000);
-        HttpRestResult<String> restResult = callbackMap.getRestResult();
-        System.out.println(restResult.getData());
-        System.out.println(restResult.getHeader());
-        Assert.assertTrue(restResult.ok());
     }
     
 }

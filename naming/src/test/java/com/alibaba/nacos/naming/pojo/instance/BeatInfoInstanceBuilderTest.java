@@ -19,23 +19,23 @@ package com.alibaba.nacos.naming.pojo.instance;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.naming.healthcheck.RsInfo;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class BeatInfoInstanceBuilderTest {
+@ExtendWith(MockitoExtension.class)
+class BeatInfoInstanceBuilderTest {
     
     @Mock
     private HttpServletRequest request;
@@ -44,13 +44,13 @@ public class BeatInfoInstanceBuilderTest {
     
     private BeatInfoInstanceBuilder builder;
     
-    @BeforeClass
-    public static void setUpBeforeClass() {
+    @BeforeAll
+    static void setUpBeforeClass() {
         NacosServiceLoader.load(InstanceExtensionHandler.class);
     }
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         builder = BeatInfoInstanceBuilder.newBuilder();
         builder.setRequest(request);
         beatInfo = new RsInfo();
@@ -63,7 +63,7 @@ public class BeatInfoInstanceBuilderTest {
     }
     
     @Test
-    public void testBuild() {
+    void testBuild() {
         Instance actual = builder.setServiceName("g@@s").setBeatInfo(beatInfo).build();
         assertThat(actual.getServiceName(), is("g@@s"));
         assertThat(actual.getIp(), is("1.1.1.1"));

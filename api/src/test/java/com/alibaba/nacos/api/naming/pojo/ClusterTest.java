@@ -22,29 +22,29 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ClusterTest {
+class ClusterTest {
     
     private static ObjectMapper mapper;
     
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @BeforeAll
+    static void setUp() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
     
     @Test
-    public void testSetAndGet() {
+    void testSetAndGet() {
         Cluster actual = new Cluster();
         assertNull(actual.getName());
         assertNull(actual.getServiceName());
@@ -72,7 +72,7 @@ public class ClusterTest {
     }
     
     @Test
-    public void testJsonSerialize() throws JsonProcessingException {
+    void testJsonSerialize() throws JsonProcessingException {
         Cluster actual = new Cluster("cluster");
         actual.setServiceName("group@@service");
         actual.setHealthChecker(new Http());
@@ -91,7 +91,7 @@ public class ClusterTest {
     }
     
     @Test
-    public void testJsonDeserialize() throws JsonProcessingException {
+    void testJsonDeserialize() throws JsonProcessingException {
         String json = "{\"serviceName\":\"group@@service\",\"name\":\"cluster\","
                 + "\"healthChecker\":{\"type\":\"HTTP\",\"path\":\"\",\"headers\":\"\",\"expectedResponseCode\":200},"
                 + "\"defaultPort\":81,\"defaultCheckPort\":82,\"useIPPort4Check\":false,\"metadata\":{\"a\":\"a\"}}";

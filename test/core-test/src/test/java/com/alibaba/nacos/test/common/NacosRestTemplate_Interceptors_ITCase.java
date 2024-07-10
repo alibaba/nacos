@@ -25,16 +25,15 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.response.HttpClientResponse;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -44,26 +43,48 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * NacosRestTemplate_Interceptors_ITCase
  *
  * @author mai.jh
  */
-@RunWith(SpringRunner.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@FixMethodOrder(MethodSorters.JVM)
-public class NacosRestTemplate_Interceptors_ITCase {
+@TestMethodOrder(MethodName.class)
+class NacosRestTemplate_Interceptors_ITCase {
+    
+    private final String CONFIG_PATH = "/nacos/v1/cs";
     
     @LocalServerPort
     private int port;
     
-    private NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder
-            .getNacosRestTemplate(LoggerFactory.getLogger(NacosRestTemplate_Interceptors_ITCase.class));
-    
-    private final String CONFIG_PATH = "/nacos/v1/cs";
+    private NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder.getNacosRestTemplate(
+            LoggerFactory.getLogger(NacosRestTemplate_Interceptors_ITCase.class));
     
     private String IP = null;
+    
+    @BeforeEach
+    void init() throws NacosException {
+        nacosRestTemplate.setInterceptors(Arrays.asList(new TerminationInterceptor()));
+        IP = String.format("http://localhost:%d", port);
+    }
+    
+    @Test
+    void test_url_post_config() throws Exception {
+        String url = IP + CONFIG_PATH + "/configs";
+        Map<String, String> param = new HashMap<>();
+        param.put("dataId", "test-1");
+        param.put("group", "DEFAULT_GROUP");
+        param.put("content", "aaa=b");
+        HttpRestResult<String> restResult = nacosRestTemplate.postForm(url, Header.newInstance(), param, String.class);
+        assertEquals(500, restResult.getCode());
+        assertEquals("Stop request", restResult.getMessage());
+        System.out.println(restResult.getData());
+        System.out.println(restResult.getHeader());
+    }
     
     private class TerminationInterceptor implements HttpClientRequestInterceptor {
         
@@ -102,26 +123,5 @@ public class NacosRestTemplate_Interceptors_ITCase {
             return true;
         }
         
-    }
-    
-    @Before
-    public void init() throws NacosException {
-        nacosRestTemplate.setInterceptors(Arrays.asList(new TerminationInterceptor()));
-        IP = String.format("http://localhost:%d", port);
-    }
-    
-    @Test
-    public void test_url_post_config() throws Exception {
-        String url = IP + CONFIG_PATH + "/configs";
-        Map<String, String> param = new HashMap<>();
-        param.put("dataId", "test-1");
-        param.put("group", "DEFAULT_GROUP");
-        param.put("content", "aaa=b");
-        HttpRestResult<String> restResult = nacosRestTemplate
-                .postForm(url, Header.newInstance(), param, String.class);
-        Assert.assertEquals(500, restResult.getCode());
-        Assert.assertEquals("Stop request", restResult.getMessage());
-        System.out.println(restResult.getData());
-        System.out.println(restResult.getHeader());
     }
 }

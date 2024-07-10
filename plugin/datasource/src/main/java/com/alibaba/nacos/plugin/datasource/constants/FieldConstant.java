@@ -36,6 +36,8 @@ public class FieldConstant {
     
     public static final String APP_NAME = "app_name";
     
+    public static final String ENCRYPTED_DATA_KEY = "encrypted_data_key";
+    
     public static final String START_ROW = "startRow";
     
     public static final String PAGE_SIZE = "pageSize";

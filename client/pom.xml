@@ -39,25 +39,12 @@
             <artifactId>slf4j-api</artifactId>
             <optional>true</optional>
         </dependency>
-        
+    
         <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-core</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>nacos-api</artifactId>
             <optional>true</optional>
         </dependency>
-        
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-api</artifactId>
-            <optional>true</optional>
-        </dependency>
-        
-        <dependency>
-            <groupId>org.apache.logging.log4j</groupId>
-            <artifactId>log4j-slf4j-impl</artifactId>
-            <optional>true</optional>
-        </dependency>
-        
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>nacos-common</artifactId>
@@ -75,20 +62,18 @@
         </dependency>
         
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>nacos-api</artifactId>
-            <optional>true</optional>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-logback-adapter-12</artifactId>
         </dependency>
+    
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <optional>true</optional>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>logback-adapter</artifactId>
         </dependency>
-        
+    
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-core</artifactId>
-            <optional>true</optional>
+            <groupId>com.alibaba.nacos</groupId>
+            <artifactId>nacos-log4j2-adapter</artifactId>
         </dependency>
         
         <dependency>
@@ -112,12 +97,22 @@
         </dependency>
         
         <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+        </dependency>
+        
+        <dependency>
             <groupId>io.prometheus</groupId>
             <artifactId>simpleclient</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
         </dependency>
     </dependencies>
     
@@ -189,7 +184,6 @@
                                         <include>org.conscrypt:conscrypt-openjdk</include>
                                         <include>org.mortbay.jetty.alpn:alpn-boot</include>
                                         <include>org.eclipse.jetty.npn:npn-api</include>
-                                        <include>org.reflections:reflections</include>
                                         <include>com.google.guava:guava</include>
                                         <include>io.grpc:*</include>
                                         <include>io.opencensus:*</include>

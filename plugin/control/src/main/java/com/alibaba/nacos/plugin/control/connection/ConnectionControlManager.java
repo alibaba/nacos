@@ -23,8 +23,9 @@ import com.alibaba.nacos.plugin.control.Loggers;
 import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckRequest;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
-import com.alibaba.nacos.plugin.control.ruleactivator.RuleParserProxy;
-import com.alibaba.nacos.plugin.control.ruleactivator.RuleStorageProxy;
+import com.alibaba.nacos.plugin.control.rule.parser.ConnectionControlRuleParser;
+import com.alibaba.nacos.plugin.control.rule.parser.NacosConnectionControlRuleParser;
+import com.alibaba.nacos.plugin.control.rule.storage.RuleStorageProxy;
 
 import java.util.Collection;
 import java.util.Map;
@@ -40,9 +41,25 @@ import java.util.stream.Collectors;
 @SuppressWarnings("PMD.AbstractClassShouldStartWithAbstractNamingRule")
 public abstract class ConnectionControlManager {
     
+    private final ConnectionControlRuleParser connectionControlRuleParser;
+    
     protected ConnectionControlRule connectionControlRule;
     
     protected Collection<ConnectionMetricsCollector> metricsCollectorList;
+    
+    private ScheduledExecutorService executorService;
+    
+    public ConnectionControlManager() {
+        metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
+        Loggers.CONTROL.info("Load connection metrics collector,size={},{}", metricsCollectorList.size(),
+                metricsCollectorList);
+        this.connectionControlRuleParser = buildConnectionControlRuleParser();
+        initConnectionRule();
+        if (!metricsCollectorList.isEmpty()) {
+            initExecuteService();
+            startConnectionMetricsReport();
+        }
+    }
     
     /**
      * get manager name.
@@ -51,18 +68,12 @@ public abstract class ConnectionControlManager {
      */
     public abstract String getName();
     
-    private ScheduledExecutorService executorService;
+    protected ConnectionControlRuleParser buildConnectionControlRuleParser() {
+        return new NacosConnectionControlRuleParser();
+    }
     
-    public ConnectionControlManager() {
-        metricsCollectorList = NacosServiceLoader.load(ConnectionMetricsCollector.class);
-        Loggers.CONTROL.info("Load connection metrics collector,size={},{}", metricsCollectorList.size(),
-                metricsCollectorList);
-        initConnectionRule();
-        if (!metricsCollectorList.isEmpty()) {
-            initExecuteService();
-            startConnectionMetricsReport();
-        }
-        
+    public ConnectionControlRuleParser getConnectionControlRuleParser() {
+        return connectionControlRuleParser;
     }
     
     private void initExecuteService() {
@@ -71,10 +82,6 @@ public abstract class ConnectionControlManager {
             thread.setDaemon(true);
             return thread;
         });
-    }
-    
-    private void startConnectionMetricsReport() {
-        executorService.scheduleWithFixedDelay(new ConnectionMetricsReporter(), 0, 3000, TimeUnit.MILLISECONDS);
     }
     
     private void initConnectionRule() {
@@ -86,19 +93,23 @@ public abstract class ConnectionControlManager {
                 && ruleStorageProxy.getExternalStorage().getConnectionRule() != null) {
             localRuleContent = ruleStorageProxy.getExternalStorage().getConnectionRule();
             if (StringUtils.isNotBlank(localRuleContent)) {
-                Loggers.CONTROL
-                        .info("Found persist disk connection rule content on start up ,value  ={}", localRuleContent);
+                Loggers.CONTROL.info("Found persist disk connection rule content on start up ,value  ={}",
+                        localRuleContent);
             }
         }
         
         if (StringUtils.isNotBlank(localRuleContent)) {
-            connectionControlRule = RuleParserProxy.getInstance().parseConnectionRule(localRuleContent);
+            connectionControlRule = connectionControlRuleParser.parseRule(localRuleContent);
             Loggers.CONTROL.info("init connection rule end");
             
         } else {
             Loggers.CONTROL.info("No connection rule content found ,use default empty rule ");
             connectionControlRule = new ConnectionControlRule();
         }
+    }
+    
+    private void startConnectionMetricsReport() {
+        executorService.scheduleWithFixedDelay(new ConnectionMetricsReporter(), 0, 3000, TimeUnit.MILLISECONDS);
     }
     
     public ConnectionControlRule getConnectionLimitRule() {
@@ -128,9 +139,7 @@ public abstract class ConnectionControlManager {
                     Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));
             int totalCount = metricsTotalCount.values().stream().mapToInt(Integer::intValue).sum();
             
-            Loggers.CONNECTION.info(String.format("ConnectionMetrics, totalCount = %s, detail = %s", totalCount,
-                    metricsTotalCount.toString()));
-            
+            Loggers.CONNECTION.info("ConnectionMetrics, totalCount = {}, detail = {}", totalCount, metricsTotalCount);
         }
     }
 }

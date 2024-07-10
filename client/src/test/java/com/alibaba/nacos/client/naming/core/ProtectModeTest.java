@@ -16,22 +16,23 @@
 
 package com.alibaba.nacos.client.naming.core;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ProtectModeTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ProtectModeTest {
     
     @Test
-    public void testProtectThresholdDefault() {
+    void testProtectThresholdDefault() {
         final ProtectMode protectMode = new ProtectMode();
-        Assert.assertEquals(0.8f, protectMode.getProtectThreshold(), 0.01f);
+        assertEquals(0.8f, protectMode.getProtectThreshold(), 0.01f);
     }
     
     @Test
-    public void testSetProtectThreshold() {
+    void testSetProtectThreshold() {
         final ProtectMode protectMode = new ProtectMode();
         float expect = 0.7f;
         protectMode.setProtectThreshold(expect);
-        Assert.assertEquals(expect, protectMode.getProtectThreshold(), 0.01f);
+        assertEquals(expect, protectMode.getProtectThreshold(), 0.01f);
     }
 }

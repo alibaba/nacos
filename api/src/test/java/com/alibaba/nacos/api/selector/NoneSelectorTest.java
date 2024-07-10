@@ -21,32 +21,32 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.NamedType;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class NoneSelectorTest {
+class NoneSelectorTest {
     
     ObjectMapper mapper = new ObjectMapper();
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
         mapper.registerSubtypes(new NamedType(NoneSelector.class, SelectorType.none.name()));
     }
     
     @Test
-    public void testSerialization() throws JsonProcessingException {
+    void testSerialization() throws JsonProcessingException {
         NoneSelector selector = new NoneSelector();
         String actual = mapper.writeValueAsString(selector);
         assertTrue(actual.contains("\"type\":\"" + SelectorType.none.name() + "\""));
     }
     
     @Test
-    public void testDeserialization() throws JsonProcessingException {
+    void testDeserialization() throws JsonProcessingException {
         String json = "{\"type\":\"none\"}";
         AbstractSelector actual = mapper.readValue(json, AbstractSelector.class);
         assertEquals(SelectorType.none.name(), actual.getType());

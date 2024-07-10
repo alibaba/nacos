@@ -16,22 +16,18 @@
 
 package com.alibaba.nacos.client.naming.event;
 
-import com.alibaba.nacos.api.naming.listener.AbstractEventListener;
-import com.alibaba.nacos.api.naming.listener.EventListener;
-import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.api.naming.utils.NamingUtils;
+import com.alibaba.nacos.client.naming.selector.NamingSelectorWrapper;
+import com.alibaba.nacos.client.selector.SelectorManager;
 import com.alibaba.nacos.common.JustForTest;
 import com.alibaba.nacos.common.notify.Event;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
-import com.alibaba.nacos.common.utils.CollectionUtils;
-import com.alibaba.nacos.common.utils.ConcurrentHashSet;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A subscriber to notify eventListener callback.
@@ -43,7 +39,7 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     private final String eventScope;
     
-    private final Map<String, ConcurrentHashSet<EventListener>> listenerMap = new ConcurrentHashMap<>();
+    private final SelectorManager<NamingSelectorWrapper> selectorManager = new SelectorManager<>();
     
     @JustForTest
     public InstancesChangeNotifier() {
@@ -59,13 +55,14 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      *
      * @param groupName   group name
      * @param serviceName serviceName
-     * @param clusters    clusters, concat by ','. such as 'xxx,yyy'
-     * @param listener    custom listener
+     * @param wrapper     selectorWrapper
      */
-    public void registerListener(String groupName, String serviceName, String clusters, EventListener listener) {
-        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
-        ConcurrentHashSet<EventListener> eventListeners = listenerMap.computeIfAbsent(key, keyInner -> new ConcurrentHashSet<>());
-        eventListeners.add(listener);
+    public void registerListener(String groupName, String serviceName, NamingSelectorWrapper wrapper) {
+        if (wrapper == null) {
+            return;
+        }
+        String subId = NamingUtils.getGroupedName(serviceName, groupName);
+        selectorManager.addSelectorWrapper(subId, wrapper);
     }
     
     /**
@@ -73,38 +70,31 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
      *
      * @param groupName   group name
      * @param serviceName serviceName
-     * @param clusters    clusters, concat by ','. such as 'xxx,yyy'
-     * @param listener    custom listener
+     * @param wrapper     selectorWrapper
      */
-    public void deregisterListener(String groupName, String serviceName, String clusters, EventListener listener) {
-        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
-        ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
-        if (eventListeners == null) {
+    public void deregisterListener(String groupName, String serviceName, NamingSelectorWrapper wrapper) {
+        if (wrapper == null) {
             return;
         }
-        eventListeners.remove(listener);
-        if (CollectionUtils.isEmpty(eventListeners)) {
-            listenerMap.remove(key);
-        }
+        String subId = NamingUtils.getGroupedName(serviceName, groupName);
+        selectorManager.removeSelectorWrapper(subId, wrapper);
     }
     
     /**
-     * check serviceName,clusters is subscribed.
+     * check serviceName,groupName is subscribed.
      *
      * @param groupName   group name
      * @param serviceName serviceName
-     * @param clusters    clusters, concat by ','. such as 'xxx,yyy'
      * @return is serviceName,clusters subscribed
      */
-    public boolean isSubscribed(String groupName, String serviceName, String clusters) {
-        String key = ServiceInfo.getKey(NamingUtils.getGroupedName(serviceName, groupName), clusters);
-        ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
-        return CollectionUtils.isNotEmpty(eventListeners);
+    public boolean isSubscribed(String groupName, String serviceName) {
+        String subId = NamingUtils.getGroupedName(serviceName, groupName);
+        return selectorManager.isSubscribed(subId);
     }
     
     public List<ServiceInfo> getSubscribeServices() {
         List<ServiceInfo> serviceInfos = new ArrayList<>();
-        for (String key : listenerMap.keySet()) {
+        for (String key : selectorManager.getSubscriptions()) {
             serviceInfos.add(ServiceInfo.fromKey(key));
         }
         return serviceInfos;
@@ -112,26 +102,11 @@ public class InstancesChangeNotifier extends Subscriber<InstancesChangeEvent> {
     
     @Override
     public void onEvent(InstancesChangeEvent event) {
-        String key = ServiceInfo
-                .getKey(NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName()), event.getClusters());
-        ConcurrentHashSet<EventListener> eventListeners = listenerMap.get(key);
-        if (CollectionUtils.isEmpty(eventListeners)) {
-            return;
+        String subId = NamingUtils.getGroupedName(event.getServiceName(), event.getGroupName());
+        Collection<NamingSelectorWrapper> selectorWrappers = selectorManager.getSelectorWrappers(subId);
+        for (NamingSelectorWrapper selectorWrapper : selectorWrappers) {
+            selectorWrapper.notifyListener(event);
         }
-        for (final EventListener listener : eventListeners) {
-            final com.alibaba.nacos.api.naming.listener.Event namingEvent = transferToNamingEvent(event);
-            if (listener instanceof AbstractEventListener && ((AbstractEventListener) listener).getExecutor() != null) {
-                ((AbstractEventListener) listener).getExecutor().execute(() -> listener.onEvent(namingEvent));
-            } else {
-                listener.onEvent(namingEvent);
-            }
-        }
-    }
-    
-    private com.alibaba.nacos.api.naming.listener.Event transferToNamingEvent(
-            InstancesChangeEvent instancesChangeEvent) {
-        return new NamingEvent(instancesChangeEvent.getServiceName(), instancesChangeEvent.getGroupName(),
-                instancesChangeEvent.getClusters(), instancesChangeEvent.getHosts());
     }
     
     @Override

@@ -25,18 +25,19 @@ import com.alibaba.nacos.core.distributed.ProtocolManager;
 import com.alibaba.nacos.core.distributed.id.IdGeneratorManager;
 import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * {@link CoreOpsController} unit test.
@@ -44,8 +45,8 @@ import java.util.Map;
  * @author chenglu
  * @date 2021-07-07 22:20
  */
-@RunWith(MockitoJUnitRunner.class)
-public class CoreOpsControllerTest {
+@ExtendWith(MockitoExtension.class)
+class CoreOpsControllerTest {
     
     @InjectMocks
     private CoreOpsController coreOpsController;
@@ -56,36 +57,36 @@ public class CoreOpsControllerTest {
     @Mock
     private IdGeneratorManager idGeneratorManager;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
     
     @Test
-    public void testRaftOps() {
+    void testRaftOps() {
         Mockito.when(protocolManager.getCpProtocol()).thenAnswer(invocationOnMock -> {
             CPProtocol cpProtocol = Mockito.mock(CPProtocol.class);
             Mockito.when(cpProtocol.execute(Mockito.anyMap())).thenReturn(RestResultUtils.success("res"));
             return cpProtocol;
         });
-    
+        
         RestResult<String> result = coreOpsController.raftOps(new HashMap<>());
-        Assert.assertEquals("res", result.getData());
+        assertEquals("res", result.getData());
     }
     
     @Test
-    public void testIdInfo() {
+    void testIdInfo() {
         Map<String, IdGenerator> idGeneratorMap = new HashMap<>();
         idGeneratorMap.put("1", new SnowFlowerIdGenerator());
         Mockito.when(idGeneratorManager.getGeneratorMap()).thenReturn(idGeneratorMap);
-    
+        
         RestResult<Map<String, Map<Object, Object>>> res = coreOpsController.idInfo();
-        Assert.assertEquals(2, res.getData().get("1").size());
+        assertEquals(2, res.getData().get("1").size());
     }
     
     @Test
-    public void testSetLogLevel() {
+    void testSetLogLevel() {
         String res = coreOpsController.setLogLevel("1", "info");
-        Assert.assertEquals("200", res);
+        assertEquals("200", res);
     }
 }

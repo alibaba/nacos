@@ -18,10 +18,11 @@ import React from 'react';
 import { withRouter } from 'react-router-dom';
 import { connect } from 'react-redux';
 import PropTypes from 'prop-types';
-import { ConfigProvider, Icon, Menu, Message } from '@alifd/next';
+import { ConfigProvider, Icon, Menu, Message, Dialog, Button } from '@alifd/next';
 import Header from './Header';
 import { getState, getNotice, getGuide } from '../reducers/base';
 import getMenuData from './menu';
+import './index.scss';
 
 const { SubMenu, Item } = Menu;
 
@@ -29,6 +30,12 @@ const { SubMenu, Item } = Menu;
 @connect(state => ({ ...state.locale, ...state.base }), { getState, getNotice, getGuide })
 @ConfigProvider.config
 class MainLayout extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      visible: true,
+    };
+  }
   static displayName = 'MainLayout';
 
   static propTypes = {
@@ -36,6 +43,7 @@ class MainLayout extends React.Component {
     location: PropTypes.object,
     history: PropTypes.object,
     version: PropTypes.any,
+    startupMode: PropTypes.any,
     getState: PropTypes.func,
     functionMode: PropTypes.string,
     authEnabled: PropTypes.string,
@@ -91,7 +99,15 @@ class MainLayout extends React.Component {
   }
 
   render() {
-    const { locale = {}, version, functionMode, authEnabled, consoleUiEnable } = this.props;
+    const {
+      locale = {},
+      version,
+      functionMode,
+      authEnabled,
+      consoleUiEnable,
+      startupMode,
+    } = this.props;
+    const { visible } = this.state;
     const MenuData = getMenuData(functionMode);
     return (
       <section
@@ -115,6 +131,10 @@ class MainLayout extends React.Component {
                     <h1 className="nav-title">
                       {locale.nacosName}
                       <span>{version}</span>
+                    </h1>
+                    <h1 className="nav-mode">
+                      {locale.nacosMode}
+                      <span>{startupMode}</span>
                     </h1>
                     <Menu
                       defaultOpenKeys={this.defaultOpenKeys()}
@@ -163,9 +183,21 @@ class MainLayout extends React.Component {
                 </Message>
               ) : null}
               {consoleUiEnable === 'false' && (
-                <Message type="notice">
-                  <div dangerouslySetInnerHTML={{ __html: this.props.guideMsg }} />
-                </Message>
+                <Dialog
+                  visible={visible}
+                  title={locale.consoleClosed}
+                  style={{ width: 600 }}
+                  hasMask={false}
+                  footer={false}
+                  className="enable-dialog"
+                >
+                  <Message type="notice">
+                    <div
+                      style={{ lineHeight: '24px' }}
+                      dangerouslySetInnerHTML={{ __html: this.props.guideMsg }}
+                    />
+                  </Message>
+                </Dialog>
               )}
               {this.props.children}
             </div>

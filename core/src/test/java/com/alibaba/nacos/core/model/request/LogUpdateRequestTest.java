@@ -16,18 +16,19 @@
 
 package com.alibaba.nacos.core.model.request;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class LogUpdateRequestTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class LogUpdateRequestTest {
     
     @Test
-    public void test() {
+    void test() {
         LogUpdateRequest request = new LogUpdateRequest();
         request.setLogName("test");
         request.setLogLevel("info");
-    
-        Assert.assertEquals(request.getLogName(), "test");
-        Assert.assertEquals(request.getLogLevel(), "info");
+        
+        assertEquals("test", request.getLogName());
+        assertEquals("info", request.getLogLevel());
     }
 }

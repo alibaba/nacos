@@ -17,25 +17,25 @@
 package com.alibaba.nacos.test.smoke;
 
 import org.apache.log4j.Logger;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class nacosSmoke_ITCase {
-
+class nacosSmoke_ITCase {
+    
     private static Logger logger = Logger.getLogger(nacosSmoke_ITCase.class);
-
-    @Before
-    public void setUp() {
+    
+    @BeforeEach
+    void setUp() {
         logger.info(String.format("nacosSmoke_ITCase: %s;", "setUp"));
     }
-
-    @After
-    public void tearDown() {
+    
+    @AfterEach
+    void tearDown() {
         logger.info(String.format("nacosSmoke_ITCase: %s;", "tearDown"));
     }
-
+    
     @Test
-    public void testSmoke() {
+    void testSmoke() {
     }
 }

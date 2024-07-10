@@ -121,19 +121,21 @@ Contributors are welcomed to join Nacos project. Please check [CONTRIBUTING](./C
      * commits-nacos@googlegroups.com: Commits notice, very high frequency.
 * Join us from DingDing(Group 1: 21708933(full), Group 2: 30438813(full), Group 3: 31222241(full), Group 4: 12810027056). 
 
- ![Nacos](https://img.alicdn.com/imgextra/i1/O1CN01ULSVXu1DRbANwVC6r_!!6000000000213-2-tps-666-884.png)
+
+<img src="https://img.alicdn.com/imgextra/i4/O1CN01MI7re41xTrZNdB7Yv_!!6000000006445-0-tps-974-1228.jpg" width="500">
 
 ## Enterprise Service
 If you need Nacos enterprise service support, or purchase cloud product services, you can join the discussion by scanning the following DingTalk group. It can also be directly activated and used through the microservice engine (MSE) provided by Alibaba Cloud.
 https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0
 
-![image](https://user-images.githubusercontent.com/17695352/128659442-65b030b8-c5f4-4bb7-baa2-e5b3ef0cbc15.png)
+<img src="https://img.alicdn.com/imgextra/i3/O1CN01RTfN7q1KUzX4TcH08_!!6000000001168-2-tps-864-814.png" width="500">
+
 
 ## Download
 
+- [Nacos Official Website](https://nacos.io/download/nacos-server)
 - [Github Release](https://github.com/alibaba/nacos/releases)
-- [Baidu Netdisk](https://pan.baidu.com/s/1186nmlqPGows9gUZKAx8Zw) Fetch Code : `rest`
-
+  
 ## Who is using
 
 These are only part of the companies using Nacos, for reference only. If you are using Nacos, please [add your company here](https://github.com/alibaba/nacos/issues/273) to tell us your scenario to make Nacos better.

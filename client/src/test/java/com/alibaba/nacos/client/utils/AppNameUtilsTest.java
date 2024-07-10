@@ -18,15 +18,58 @@
 
 package com.alibaba.nacos.client.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import com.alibaba.nacos.client.constant.Constants;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class AppNameUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class AppNameUtilsTest {
     
-    @Test
-    public void testGetAppName() {
-        String appName = AppNameUtils.getAppName();
-        Assert.assertEquals("unknown", appName);
+    @BeforeEach
+    void setUp() throws Exception {
     }
     
+    @AfterEach
+    void tearDown() throws Exception {
+        System.clearProperty(Constants.SysEnv.PROJECT_NAME);
+        System.clearProperty("jboss.server.home.dir");
+        System.clearProperty("jetty.home");
+        System.clearProperty("catalina.base");
+    }
+    
+    @Test
+    void testGetAppNameByDefault() {
+        String appName = AppNameUtils.getAppName();
+        assertEquals("unknown", appName);
+    }
+    
+    @Test
+    void testGetAppNameByProjectName() {
+        System.setProperty(Constants.SysEnv.PROJECT_NAME, "testAppName");
+        String appName = AppNameUtils.getAppName();
+        assertEquals("testAppName", appName);
+    }
+    
+    @Test
+    void testGetAppNameByServerTypeForJboss() {
+        System.setProperty("jboss.server.home.dir", "/home/admin/testAppName/");
+        String appName = AppNameUtils.getAppName();
+        assertEquals("testAppName", appName);
+    }
+    
+    @Test
+    void testGetAppNameByServerTypeForJetty() {
+        System.setProperty("jetty.home", "/home/admin/testAppName/");
+        String appName = AppNameUtils.getAppName();
+        assertEquals("testAppName", appName);
+    }
+    
+    @Test
+    void testGetAppNameByServerTypeForTomcat() {
+        System.setProperty("catalina.base", "/home/admin/testAppName/");
+        String appName = AppNameUtils.getAppName();
+        assertEquals("testAppName", appName);
+    }
 }

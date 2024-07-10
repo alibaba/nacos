@@ -27,6 +27,23 @@ function goLogin() {
   window.location = `${base_url}#/login`;
 }
 
+function goRegister() {
+  const url = window.location.href;
+  localStorage.removeItem('token');
+  const base_url = url.split('#')[0];
+  window.location = `${base_url}#/register`;
+}
+
+function generateRandomPassword(length) {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+  return password;
+}
+
 const global = window;
 
 /**
@@ -564,5 +581,7 @@ export {
   setParam,
   setParams,
   goLogin,
+  goRegister,
+  generateRandomPassword,
   request,
 };

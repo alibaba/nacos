@@ -19,24 +19,30 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.api.config.remote.response.ClientConfigMetricResponse;
+import com.alibaba.nacos.api.grpc.auto.Metadata;
 import com.alibaba.nacos.api.grpc.auto.Payload;
 import com.alibaba.nacos.api.naming.remote.request.ServiceQueryRequest;
+import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.common.remote.PayloadRegistry;
-import org.junit.Before;
-import org.junit.Test;
+import com.alibaba.nacos.common.remote.exception.RemoteException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
-public class GrpcUtilsTest {
+class GrpcUtilsTest {
     
     private ServiceQueryRequest request;
     
     private ClientConfigMetricResponse response;
     
-    @Before
-    public void setup() {
+    @BeforeEach
+    void setup() {
         PayloadRegistry.init();
         this.request = createRequest();
         this.response = createResponse();
@@ -68,7 +74,7 @@ public class GrpcUtilsTest {
     }
     
     @Test
-    public void testConvertRequest() {
+    void testConvertRequest() {
         Payload convert = GrpcUtils.convert(request);
         assertEquals(request.getClass().getSimpleName(), convert.getMetadata().getType());
         assertEquals("v1", convert.getMetadata().getHeadersMap().get("h1"));
@@ -77,24 +83,44 @@ public class GrpcUtilsTest {
     }
     
     @Test
-    public void testConvertResponse() {
+    void testConvertRequestWithMeta() {
+        RequestMeta meta = new RequestMeta();
+        Payload convert = GrpcUtils.convert(request, meta);
+        assertEquals(request.getClass().getSimpleName(), convert.getMetadata().getType());
+        assertEquals("v1", convert.getMetadata().getHeadersMap().get("h1"));
+        assertEquals("v2", convert.getMetadata().getHeadersMap().get("h2"));
+        assertEquals("v3", convert.getMetadata().getHeadersMap().get("h3"));
+    }
+    
+    @Test
+    void testConvertResponse() {
         Payload convert = GrpcUtils.convert(response);
         assertEquals(response.getClass().getSimpleName(), convert.getMetadata().getType());
     }
     
     @Test
-    public void parse() {
+    void testParse() {
         Payload requestPayload = GrpcUtils.convert(request);
-    
+        
         ServiceQueryRequest request = (ServiceQueryRequest) GrpcUtils.parse(requestPayload);
         assertEquals(this.request.getHeaders(), request.getHeaders());
         assertEquals(this.request.getCluster(), request.getCluster());
         assertEquals(this.request.isHealthyOnly(), request.isHealthyOnly());
         assertEquals(this.request.getNamespace(), request.getNamespace());
-    
+        
         Payload responsePayload = GrpcUtils.convert(response);
         ClientConfigMetricResponse response = (ClientConfigMetricResponse) GrpcUtils.parse(responsePayload);
         assertEquals(this.response.getMetrics(), response.getMetrics());
         
+    }
+    
+    @Test
+    void testParseNullType() {
+        assertThrows(RemoteException.class, () -> {
+            Payload mockPayload = mock(Payload.class);
+            Metadata mockMetadata = mock(Metadata.class);
+            when(mockPayload.getMetadata()).thenReturn(mockMetadata);
+            GrpcUtils.parse(mockPayload);
+        });
     }
 }
