@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.sys.env.Constants.NACOS_SERVER_IP;
@@ -32,6 +34,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class InetUtilsTest {
     
@@ -70,5 +74,18 @@ class InetUtilsTest {
         
         assertNotNull(address);
         assertFalse(address.isLoopbackAddress());
+    }
+    
+    @Test
+    void testisUp() throws SocketException {
+        NetworkInterface nic = mock(NetworkInterface.class);
+        when(nic.isUp()).thenReturn(true);
+        assertTrue(InetUtils.isUp(nic));
+        
+        when(nic.isUp()).thenReturn(false);
+        assertFalse(InetUtils.isUp(nic));
+        
+        when(nic.isUp()).thenThrow(new SocketException());
+        assertFalse(InetUtils.isUp(nic));
     }
 }
