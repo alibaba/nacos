@@ -53,12 +53,16 @@ Volunteer wanted.
 3. Import `style/NacosCheckStyle.xml` to checkstyle plugin.
 4. Scan and check your modified code by plugin.
 
+> If you install the latest version of CheckStyle plugin, it may not support the previous version of CheckStyle(9.0), you can modify the `style/NacosCheckStyle.xml` file to `style/NacosCheckStyle_9.xml` instead.
+
 [checkstyle插件idea安装](https://plugins.jetbrains.com/plugin/1065-checkstyle-idea)
 
 1. `Preferences/Settings --> Other Settings --> Checkstyle` 或者 `Preferences/Settings --> Tools --> Checkstyle`
 2. 在checkstyle插件中设置checkstyle版本至少为8.30,并将扫描作用域设置为`All resource(including tests)`
 3. 导入源代码下`style/NacosCheckStyle.xml`文件到checkstyle插件。
 4. 用checkstyle插件扫描你修改的代码。
+
+> 如果安装的CheckStyle的插件较新，已不支持9.0之前的Checkstyle版本，将上述第3步的`style/NacosCheckStyle.xml`文件修改为`style/NacosCheckStyle_9.xml`即可。
 
 ### eclipse IDE
 

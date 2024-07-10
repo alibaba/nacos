@@ -27,9 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/**
- * @author xiweng.yy
- */
 class AuthContextTest {
     
     AuthContext authContext;

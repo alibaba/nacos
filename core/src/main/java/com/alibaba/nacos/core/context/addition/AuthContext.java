@@ -32,8 +32,8 @@ public class AuthContext {
     
     /**
      * Auth result, default is {@code true} or {@code false}.
-     * <p>
-     * TODO with more auth result by auth plugin.
+     *
+     * <p>TODO with more auth result by auth plugin.
      */
     private Object authResult;
     

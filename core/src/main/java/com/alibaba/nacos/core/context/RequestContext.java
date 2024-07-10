@@ -32,7 +32,7 @@ import java.util.UUID;
 public class RequestContext {
     
     /**
-     * Optional, the request id
+     * Optional, the request id.
      * <ul>
      *     <li>For HTTP request, the id not usage, will generate automatically.</li>
      *     <li>For GRPC, the id is same with real request id.</li>

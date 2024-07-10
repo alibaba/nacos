@@ -60,7 +60,6 @@ public class NamingRequestUtil {
         return sourceIp;
     }
     
-    
     /**
      * Get source ip from request context first, if it can't found, get from http request.
      *
