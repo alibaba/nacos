@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.alibaba.nacos.test.client;
 
 import com.alibaba.nacos.Nacos;
@@ -48,12 +47,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author githubcheng2978
  */
-@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true", RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true",
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
+        RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true",
         RpcConstants.NACOS_SERVER_RPC + ".compatibility=false", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
         RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
         RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem", RpcConstants.NACOS_SERVER_RPC
         + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class ConfigIntegrationV2MutualAuth_CITCase {
+public class ConfigIntegrationV2MutualAuthITCase {
     
     public static AtomicInteger increment = new AtomicInteger(100);
     
@@ -62,7 +63,7 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
     
     @BeforeAll
     static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV2MutualAuth_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV2MutualAuthITCase.class.getSimpleName());
         
     }
     
@@ -73,7 +74,7 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
     
     @Test
     @Disabled("TODO, fix the cert expired problem")
-    void test_d_MutualAuth() throws Exception {
+    void testMutualAuth() throws Exception {
         
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
@@ -103,7 +104,7 @@ public class ConfigIntegrationV2MutualAuth_CITCase {
     }
     
     @Test
-    void test_e_ServerMutualAuthOnly() throws Exception {
+    void testServerMutualAuthOnly() throws Exception {
         
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
