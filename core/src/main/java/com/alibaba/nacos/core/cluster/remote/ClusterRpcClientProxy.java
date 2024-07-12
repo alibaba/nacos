@@ -231,7 +231,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
     }
     
     /**
-     * Check whether client for member is running.
+     * Check whether client for member is ready.
      *
      * @param member member
      * @return {@code true} if target client is connected, otherwise {@code false}
