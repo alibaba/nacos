@@ -17,7 +17,7 @@
 package com.alibaba.nacos.core.monitor;
 
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
