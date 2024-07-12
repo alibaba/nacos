@@ -1030,8 +1030,11 @@ public class ExternalConfigInfoPersistServiceImpl implements ConfigInfoPersistSe
     public ConfigInfoStateWrapper findConfigInfoState(final String dataId, final String group, final String tenant) {
         String tenantTmp = StringUtils.isBlank(tenant) ? StringUtils.EMPTY : tenant;
         try {
-            return this.jt.queryForObject(
-                    "SELECT id,data_id,group_id,tenant_id,gmt_modified FROM config_info WHERE data_id=? AND group_id=? AND tenant_id=?",
+            ConfigInfoMapper configInfoMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
+                    TableConstant.CONFIG_INFO);
+            return this.jt.queryForObject(configInfoMapper.select(
+                            Arrays.asList("id", "data_id", "group_id", "tenant_id", "gmt_modified"),
+                            Arrays.asList("data_id", "group_id", "tenant_id")),
                     new Object[] {dataId, group, tenantTmp}, CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER);
         } catch (EmptyResultDataAccessException e) { // Indicates that the data does not exist, returns null.
             return null;
