@@ -21,8 +21,8 @@ import com.alibaba.nacos.config.server.service.ConfigCacheService;
 import com.alibaba.nacos.core.utils.StringPool;
 import com.alibaba.nacos.common.utils.StringUtils;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.io.InputStream;
