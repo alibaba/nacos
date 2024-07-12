@@ -54,7 +54,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
         RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
         RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem", RpcConstants.NACOS_SERVER_RPC
         + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class ConfigIntegrationV3ITCase {
+public class ConfigIntegrationV3CoreITCase {
     
     public static AtomicInteger increment = new AtomicInteger(100);
     
@@ -63,7 +63,7 @@ public class ConfigIntegrationV3ITCase {
     
     @BeforeAll
     static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV3ITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV3CoreITCase.class.getSimpleName());
     }
     
     @BeforeAll
