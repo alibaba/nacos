@@ -172,7 +172,7 @@ public final class MetricsMonitor {
         private String type;
 
         /**
-         * cout of thread are running job.
+         * cout of thread are ready job.
          */
         private AtomicInteger activeCount = new AtomicInteger();
 

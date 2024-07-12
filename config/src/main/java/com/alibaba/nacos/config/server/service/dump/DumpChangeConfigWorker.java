@@ -143,7 +143,7 @@ public class DumpChangeConfigWorker implements Runnable {
             
             long endChangeConfigTime = System.currentTimeMillis();
             LogUtil.DEFAULT_LOG.info(
-                    "Check changed configs finished,cost:{}, next task running will from start time  {}",
+                    "Check changed configs finished,cost:{}, next task ready will from start time  {}",
                     endChangeConfigTime - startChangeConfigTime, currentTime);
             startTime = currentTime;
         } catch (Throwable e) {
