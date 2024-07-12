@@ -874,6 +874,7 @@
                 <version>${project.version}</version>
             </dependency>
             
+            <!-- issue#12028 switch javax.servlet to jakarta.servlet -->
             <dependency>
                 <groupId>jakarta.servlet</groupId>
                 <artifactId>servlet-api</artifactId>
