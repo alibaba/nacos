@@ -128,8 +128,10 @@
         
         <!-- dependency version -->
         <nacos.logback.adapter.version>1.1.3</nacos.logback.adapter.version>
-        <spring-boot-dependencies.version>2.7.18</spring-boot-dependencies.version>
-        <servlet-api.version>3.0</servlet-api.version>
+        <!-- issue#12028 switch 2.7.18 to 3.3.1 -->
+        <spring-boot-dependencies.version>3.3.1</spring-boot-dependencies.version>
+        <!-- issue#12028 switch 3.0 to 6.1.0 -->
+        <servlet-api.version>6.1.0</servlet-api.version>
         <commons-io.version>2.14.0</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <slf4j-api.version>1.7.26</slf4j-api.version>
@@ -152,8 +154,8 @@
         <junit5.version>5.10.2</junit5.version>
         
         <!-- override dependency version -->
-        <spring.version>5.3.39</spring.version>
-        <spring-security.version>5.7.12</spring-security.version>
+        <spring.version>6.1.10</spring.version>
+        <spring-security.version>6.3.1</spring-security.version>
         <tomcat.version>9.0.93</tomcat.version>
     </properties>
     <!-- == -->
@@ -868,7 +870,7 @@
             </dependency>
             
             <dependency>
-                <groupId>javax.servlet</groupId>
+                <groupId>jakarta.servlet</groupId>
                 <artifactId>servlet-api</artifactId>
                 <version>${servlet-api.version}</version>
                 <scope>provided</scope>
