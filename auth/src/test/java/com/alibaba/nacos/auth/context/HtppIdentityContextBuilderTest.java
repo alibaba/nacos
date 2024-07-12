@@ -27,7 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -94,7 +94,7 @@ class HtppIdentityContextBuilderTest {
     private void mockHeader(boolean contained) {
         when(request.getHeaderNames()).thenReturn(headerNames);
         if (contained) {
-            when(headerNames.hasMoreElements()).thenReturn(true, false);
+            when(headerNames.hasMoreElements()).thenReturn(Boolean.TRUE, Boolean.FALSE);
             when(headerNames.nextElement()).thenReturn(IDENTITY_TEST_KEY, (String) null);
             when(request.getHeader(IDENTITY_TEST_KEY)).thenReturn(IDENTITY_TEST_VALUE);
             when(request.getHeader(Constants.Identity.X_REAL_IP)).thenReturn("1.1.1.1");
@@ -104,7 +104,7 @@ class HtppIdentityContextBuilderTest {
     private void mockParameter(boolean contained) {
         when(request.getParameterNames()).thenReturn(parameterNames);
         if (contained) {
-            when(parameterNames.hasMoreElements()).thenReturn(true, false);
+            when(parameterNames.hasMoreElements()).thenReturn(Boolean.TRUE, Boolean.FALSE);
             when(parameterNames.nextElement()).thenReturn(IDENTITY_TEST_KEY, (String) null);
             when(request.getParameter(IDENTITY_TEST_KEY)).thenReturn(IDENTITY_TEST_VALUE);
         }
