@@ -41,6 +41,8 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -123,7 +125,8 @@ public class NacosAuthConfig {
             }
             if (StringUtils.isNotBlank(ignoreUrls)) {
                 for (String each : ignoreUrls.trim().split(SECURITY_IGNORE_URLS_SPILT_CHAR)) {
-                    web.ignoring().antMatchers(each.trim());
+                    // switch this to springboot3 syntax
+                    web.ignoring().requestMatchers(each.trim());
                 }
             }
         };
@@ -146,14 +149,18 @@ public class NacosAuthConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
-            http.csrf().disable().cors()// We don't need CSRF for JWT based authentication
-                    .and().sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-                    .authorizeRequests().requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
-                    .antMatchers(LOGIN_ENTRY_POINT).permitAll().and().authorizeRequests()
-                    .antMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated().and().exceptionHandling()
-                    .authenticationEntryPoint(new JwtAuthenticationEntryPoint());
+            // switch this to springboot3 syntax
+            http.csrf(AbstractHttpConfigurer::disable)
+                    .cors(AbstractHttpConfigurer::disable) // We don't need CSRF for JWT based authentication
+                    .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .authorizeHttpRequests(auth -> {
+                        auth.requestMatchers(CorsUtils::isPreFlightRequest).permitAll();
+                        auth.requestMatchers(LOGIN_ENTRY_POINT).permitAll();
+                        auth.requestMatchers(TOKEN_BASED_AUTH_ENTRY_POINT).authenticated();
+                    })
+                    .exceptionHandling(exp -> exp.authenticationEntryPoint(new JwtAuthenticationEntryPoint()));
             // disable cache
-            http.headers().cacheControl();
+            http.headers(headers -> headers.cacheControl(HeadersConfigurer.CacheControlConfig::disable));
             
             http.addFilterBefore(new JwtAuthenticationTokenFilter(tokenProvider),
                     UsernamePasswordAuthenticationFilter.class);
