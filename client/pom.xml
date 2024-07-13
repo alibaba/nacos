@@ -97,9 +97,10 @@
             <artifactId>httpclient5</artifactId>
         </dependency>
         
+        <!-- issue#12028 upgrade org.apache.httpcomponents:httpcore to org.apache.httpcomponents.core5:httpcore5 -->
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpcore</artifactId>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
         </dependency>
         
         <dependency>
