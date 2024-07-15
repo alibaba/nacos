@@ -22,7 +22,7 @@ import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.context.addition.AddressContext;
 import com.alibaba.nacos.core.utils.WebUtils;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 
 /**
  * Naming request util.
