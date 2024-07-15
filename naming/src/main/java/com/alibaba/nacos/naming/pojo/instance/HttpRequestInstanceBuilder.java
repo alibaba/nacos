@@ -27,7 +27,7 @@ import com.alibaba.nacos.core.utils.WebUtils;
 import com.alibaba.nacos.naming.constants.Constants;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collection;
 
 /**
