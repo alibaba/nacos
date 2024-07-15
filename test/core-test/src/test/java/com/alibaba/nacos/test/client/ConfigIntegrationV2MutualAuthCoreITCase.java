@@ -26,12 +26,11 @@ import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.test.ConfigCleanUtils;
-import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.web.server.LocalServerPort;
 
 import java.io.IOException;
@@ -48,13 +47,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author githubcheng2978
  */
-@TestConfiguration
-@SpringBootTest(classes = {Nacos.class}, properties = {"server.servlet.context-path=/nacos",
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
+        RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true",
         RpcConstants.NACOS_SERVER_RPC + ".compatibility=false", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
         RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
-        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@Disabled("TODO, Fix cert expired problem")
-public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
+        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem", RpcConstants.NACOS_SERVER_RPC
+        + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class ConfigIntegrationV2MutualAuthCoreITCase {
     
     public static AtomicInteger increment = new AtomicInteger(100);
     
@@ -63,71 +63,60 @@ public class ConfigIntegrationV1ServerNonCompatibility_CITCase {
     
     @BeforeAll
     static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV1ServerNonCompatibility_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV2MutualAuthCoreITCase.class.getSimpleName());
+        
     }
     
-    @BeforeAll
-    @AfterAll
-    static void cleanClientCache() throws Exception {
+    @AfterEach
+    void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
     
     @Test
-    void test_a_TlsServer() throws Exception {
-        RpcClient client = RpcClientFactory.createClient("testTlsServer", ConnectionType.GRPC,
-                Collections.singletonMap("labelKey", "labelValue"), null);
+    @Disabled("TODO, fix the cert expired problem")
+    void testMutualAuth() throws Exception {
+        
+        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
+        tlsConfig.setEnableTls(true);
+        tlsConfig.setMutualAuthEnable(true);
+        tlsConfig.setCertChainFile("test-client-cert.pem");
+        tlsConfig.setCertPrivateKey("test-client-key.pem");
+        tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
+        RpcClient client = RpcClientFactory.createClient("testMutualAuth", ConnectionType.GRPC,
+                Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
+        
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
         serverInfo.setServerPort(port);
         
         Connection connection = client.connectToServer(serverInfo);
-        assertNull(connection);
-    }
-    
-    @Test
-    void test_b_ServerTlsTrustAll() throws Exception {
-        RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
-        tlsConfig.setEnableTls(true);
-        tlsConfig.setTrustAll(true);
-        RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
-        serverInfo.setServerIp("127.0.0.1");
-        serverInfo.setServerPort(port);
-        
-        RpcClient clientTrustCa = RpcClientFactory.createClient("testServerTlsTrustCa", ConnectionType.GRPC,
-                Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
-        Connection connectionTrustCa = clientTrustCa.connectToServer(serverInfo);
         ConfigPublishRequest configPublishRequest = new ConfigPublishRequest();
+        
         String content = UUID.randomUUID().toString();
+        
         configPublishRequest.setContent(content);
         configPublishRequest.setGroup("test-group" + increment.getAndIncrement());
         configPublishRequest.setDataId("test-data" + increment.getAndIncrement());
-        
-        Response response = connectionTrustCa.request(configPublishRequest, TimeUnit.SECONDS.toMillis(3));
+        configPublishRequest.setRequestId(content);
+        Response response = connection.request(configPublishRequest, TimeUnit.SECONDS.toMillis(5));
         assertTrue(response.isSuccess());
-        connectionTrustCa.close();
+        connection.close();
     }
     
     @Test
-    void test_c_ServerTlsTrustCa() throws Exception {
-        
-        RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
-        serverInfo.setServerIp("127.0.0.1");
-        serverInfo.setServerPort(port);
+    void testServerMutualAuthOnly() throws Exception {
         
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustCollectionCertFile("test-ca-cert.pem");
-        RpcClient clientTrustCa = RpcClientFactory.createClient("testServerTlsTrustCa", ConnectionType.GRPC,
+        RpcClient client = RpcClientFactory.createClient("testServerMutualAuthNoly", ConnectionType.GRPC,
                 Collections.singletonMap("labelKey", "labelValue"), tlsConfig);
-        Connection connectionTrustCa = clientTrustCa.connectToServer(serverInfo);
-        ConfigPublishRequest configPublishRequestCa = new ConfigPublishRequest();
-        String contentCa = UUID.randomUUID().toString();
         
-        configPublishRequestCa.setContent(contentCa);
-        configPublishRequestCa.setGroup("test-group" + increment.getAndIncrement());
-        configPublishRequestCa.setDataId("test-data" + increment.getAndIncrement());
-        Response responseCa = connectionTrustCa.request(configPublishRequestCa, TimeUnit.SECONDS.toMillis(3));
-        assertTrue(responseCa.isSuccess());
-        connectionTrustCa.close();
+        RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
+        serverInfo.setServerIp("127.0.0.1");
+        serverInfo.setServerPort(port);
+        Connection connection = client.connectToServer(serverInfo);
+        assertNull(connection);
+        TimeUnit.SECONDS.sleep(3);
     }
 }

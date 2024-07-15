@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.alibaba.nacos.test.client;
 
 import com.alibaba.nacos.Nacos;
@@ -44,16 +43,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * use  configPublishRequest for  communication verification between client and server
+ * Use configPublishRequest for  communication verification between client and server.
  *
  * @author githubcheng2978
  */
 //todo fix this test case
 //ConfigIntegrationV3_CITCase and ConfigIntegrationV2MutualAuth_CITCase will fail when run together
-@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
-        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
-        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class ConfigIntegrationV3_CITCase {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+@SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true",
+        RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
+        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem", RpcConstants.NACOS_SERVER_RPC
+        + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class ConfigIntegrationV3CoreITCase {
     
     public static AtomicInteger increment = new AtomicInteger(100);
     
@@ -62,7 +63,7 @@ public class ConfigIntegrationV3_CITCase {
     
     @BeforeAll
     static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV3_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigIntegrationV3CoreITCase.class.getSimpleName());
     }
     
     @BeforeAll
@@ -72,7 +73,7 @@ public class ConfigIntegrationV3_CITCase {
     }
     
     @Test
-    void test_e_TlsServerAndPlainClient() throws Exception {
+    void testTlsServerAndPlainClient() throws Exception {
         RpcClient client = RpcClientFactory.createClient("testTlsServerAndPlainClient", ConnectionType.GRPC,
                 Collections.singletonMap("labelKey", "labelValue"), null);
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
@@ -93,7 +94,7 @@ public class ConfigIntegrationV3_CITCase {
     }
     
     @Test
-    void test_f_ServerTlsTrustAll() throws Exception {
+    void testServerTlsTrustAll() throws Exception {
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         tlsConfig.setEnableTls(true);
         tlsConfig.setTrustAll(true);
@@ -116,7 +117,7 @@ public class ConfigIntegrationV3_CITCase {
     
     @Disabled("TODO, Fix cert expired problem")
     @Test
-    void test_g_ServerTlsTrustCa() throws Exception {
+    void testServerTlsTrustCa() throws Exception {
         
         RpcClient.ServerInfo serverInfo = new RpcClient.ServerInfo();
         serverInfo.setServerIp("127.0.0.1");
