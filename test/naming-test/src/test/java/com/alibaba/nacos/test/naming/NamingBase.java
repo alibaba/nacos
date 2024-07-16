@@ -25,7 +25,7 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import com.alibaba.nacos.test.base.Params;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.HashMap;
