@@ -17,11 +17,12 @@
 package com.alibaba.nacos.common.http.client.response;
 
 import com.alibaba.nacos.common.http.param.Header;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.utils.HttpClientUtils;
+import com.alibaba.nacos.common.utils.IoUtils;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
-import java.io.IOException;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Iterator;
 
 /**
  * ApacheClientHttpResponse implementation {@link HttpClientResponse}.
@@ -30,30 +31,34 @@ import java.io.InputStream;
  */
 public class DefaultClientHttpResponse implements HttpClientResponse {
     
-    private HttpResponse response;
+    private SimpleHttpResponse response;
+    
+    private InputStream responseStream;
     
     private Header responseHeader;
     
-    public DefaultClientHttpResponse(HttpResponse response) {
+    public DefaultClientHttpResponse(SimpleHttpResponse response) {
         this.response = response;
     }
     
     @Override
     public int getStatusCode() {
-        return this.response.getStatusLine().getStatusCode();
+        return this.response.getCode();
     }
     
     @Override
     public String getStatusText() {
-        return this.response.getStatusLine().getReasonPhrase();
+        return this.response.getReasonPhrase();
     }
     
     @Override
     public Header getHeaders() {
         if (this.responseHeader == null) {
             this.responseHeader = Header.newInstance();
-            org.apache.http.Header[] allHeaders = response.getAllHeaders();
-            for (org.apache.http.Header header : allHeaders) {
+            // use iterator to get better performance
+            Iterator<org.apache.hc.core5.http.Header> headerIterator = response.headerIterator();
+            while (headerIterator.hasNext()) {
+                org.apache.hc.core5.http.Header header = headerIterator.next();
                 this.responseHeader.addParam(header.getName(), header.getValue());
             }
         }
@@ -61,18 +66,13 @@ public class DefaultClientHttpResponse implements HttpClientResponse {
     }
     
     @Override
-    public InputStream getBody() throws IOException {
-        return response.getEntity().getContent();
+    public InputStream getBody() {
+        this.responseStream =  new ByteArrayInputStream(response.getBody().getBodyBytes());
+        return this.responseStream;
     }
     
     @Override
     public void close() {
-        try {
-            if (this.response != null) {
-                HttpClientUtils.closeQuietly(response);
-            }
-        } catch (Exception ex) {
-            // ignore
-        }
+        IoUtils.closeQuietly(this.responseStream);
     }
 }
