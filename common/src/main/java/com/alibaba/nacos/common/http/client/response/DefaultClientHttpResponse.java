@@ -22,6 +22,7 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Iterator;
 
 /**
  * ApacheClientHttpResponse implementation {@link HttpClientResponse}.
@@ -55,8 +56,9 @@ public class DefaultClientHttpResponse implements HttpClientResponse {
         if (this.responseHeader == null) {
             this.responseHeader = Header.newInstance();
             // use iterator to get better performance
-            org.apache.hc.core5.http.Header[] allHeaders = response.getHeaders();
-            for (org.apache.hc.core5.http.Header header : allHeaders) {
+            Iterator<org.apache.hc.core5.http.Header> headerIterator = response.headerIterator();
+            while (headerIterator.hasNext()) {
+                org.apache.hc.core5.http.Header header = headerIterator.next();
                 this.responseHeader.addParam(header.getName(), header.getValue());
             }
         }
