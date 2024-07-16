@@ -151,7 +151,8 @@ public class NacosAuthConfig {
         if (StringUtils.isBlank(authConfigs.getNacosAuthSystemType())) {
             // switch this to springboot3 syntax
             http.csrf(AbstractHttpConfigurer::disable)
-                    .cors(AbstractHttpConfigurer::disable) // We don't need CSRF for JWT based authentication
+                    // We don't need CSRF for JWT based authentication
+                    .cors(AbstractHttpConfigurer::disable)
                     .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                     .authorizeHttpRequests(auth -> {
                         auth.requestMatchers(CorsUtils::isPreFlightRequest).permitAll();
