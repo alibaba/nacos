@@ -22,16 +22,17 @@ import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.message.BasicNameValuePair;
+import org.apache.hc.client5.http.ConnectTimeoutException;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.core5.http.ClassicHttpRequest;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpEntityContainer;
+import org.apache.hc.core5.http.NameValuePair;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+import org.apache.hc.core5.http.io.entity.StringEntity;
+import org.apache.hc.core5.http.message.BasicNameValuePair;
 
 import java.io.UnsupportedEncodingException;
 import java.net.SocketTimeoutException;
@@ -39,6 +40,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -63,10 +65,10 @@ public final class HttpUtils {
     /**
      * Init http header.
      *
-     * @param requestBase requestBase {@link HttpRequestBase}
+     * @param requestBase requestBase {@link HttpUriRequestBase}
      * @param header      header
      */
-    public static void initRequestHeader(HttpRequestBase requestBase, Header header) {
+    public static void initRequestHeader(ClassicHttpRequest requestBase, Header header) {
         Iterator<Map.Entry<String, String>> iterator = header.iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, String> entry = iterator.next();
@@ -77,17 +79,17 @@ public final class HttpUtils {
     /**
      * Init http entity.
      *
-     * @param requestBase requestBase {@link HttpRequestBase}
+     * @param requestBase requestBase {@link HttpUriRequestBase}
      * @param body        body
      * @param header      request header
      * @throws Exception exception
      */
-    public static void initRequestEntity(HttpRequestBase requestBase, Object body, Header header) throws Exception {
+    public static void initRequestEntity(ClassicHttpRequest requestBase, Object body, Header header) throws Exception {
         if (body == null) {
             return;
         }
-        if (requestBase instanceof HttpEntityEnclosingRequest) {
-            HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
+        if (requestBase instanceof HttpEntityContainer) {
+            HttpEntityContainer request = requestBase;
             MediaType mediaType = MediaType.valueOf(header.getValue(HttpHeaderConsts.CONTENT_TYPE));
             ContentType contentType = ContentType.create(mediaType.getType(), mediaType.getCharset());
             HttpEntity entity;
@@ -104,12 +106,12 @@ public final class HttpUtils {
     /**
      * Init request from entity map.
      *
-     * @param requestBase requestBase {@link HttpRequestBase}
+     * @param requestBase requestBase {@link HttpUriRequestBase}
      * @param body        body map
      * @param charset     charset of entity
      * @throws Exception exception
      */
-    public static void initRequestFromEntity(HttpRequestBase requestBase, Map<String, String> body, String charset)
+    public static void initRequestFromEntity(ClassicHttpRequest requestBase, Map<String, String> body, String charset)
             throws Exception {
         if (body == null || body.isEmpty()) {
             return;
@@ -118,9 +120,9 @@ public final class HttpUtils {
         for (Map.Entry<String, String> entry : body.entrySet()) {
             params.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
         }
-        if (requestBase instanceof HttpEntityEnclosingRequest) {
-            HttpEntityEnclosingRequest request = (HttpEntityEnclosingRequest) requestBase;
-            HttpEntity entity = new UrlEncodedFormEntity(params, charset);
+        if (requestBase instanceof HttpEntityContainer) {
+            HttpEntityContainer request = requestBase;
+            HttpEntity entity = new UrlEncodedFormEntity(params, Charset.forName(charset));
             request.setEntity(entity);
         }
     }
