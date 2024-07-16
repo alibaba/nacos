@@ -36,9 +36,9 @@ public class PrometheusSecurityConfiguration {
     @Bean
     public WebSecurityCustomizer prometheusWebSecurityCustomizer() {
         return web -> {
-            web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_PATH);
-            web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_NAMESPACE_PATH);
-            web.ignoring().mvcMatchers(PROMETHEUS_CONTROLLER_SERVICE_PATH);
+            web.ignoring().requestMatchers(PROMETHEUS_CONTROLLER_PATH);
+            web.ignoring().requestMatchers(PROMETHEUS_CONTROLLER_NAMESPACE_PATH);
+            web.ignoring().requestMatchers(PROMETHEUS_CONTROLLER_SERVICE_PATH);
         };
     }
     
