@@ -22,6 +22,8 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Iterator;
+import java.util.Objects;
 
 /**
  * ApacheClientHttpResponse implementation {@link HttpClientResponse}.
@@ -65,11 +67,7 @@ public class DefaultClientHttpResponse implements HttpClientResponse {
     @Override
     public InputStream getBody() {
         byte[] bodyBytes = response.getBody().getBodyBytes();
-        if (bodyBytes != null) {
-            this.responseStream = new ByteArrayInputStream(bodyBytes);
-        } else {
-            this.responseStream = new ByteArrayInputStream(new byte[0]);
-        }
+        this.responseStream = new ByteArrayInputStream(Objects.requireNonNullElseGet(bodyBytes, () -> new byte[0]));
         return this.responseStream;
     }
     
