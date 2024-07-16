@@ -26,25 +26,23 @@ import com.alibaba.nacos.common.tls.TlsFileWatcher;
 import com.alibaba.nacos.common.tls.TlsHelper;
 import com.alibaba.nacos.common.tls.TlsSystemConfig;
 
+import java.nio.ByteBuffer;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.ssl.DefaultHostnameVerifier;
-import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
-import org.apache.http.impl.nio.client.HttpAsyncClients;
-import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
-import org.apache.http.impl.nio.reactor.DefaultConnectingIOReactor;
-import org.apache.http.impl.nio.reactor.IOReactorConfig;
-import org.apache.http.nio.conn.NHttpClientConnectionManager;
-import org.apache.http.nio.conn.NoopIOSessionStrategy;
-import org.apache.http.nio.conn.SchemeIOSessionStrategy;
-import org.apache.http.nio.conn.ssl.SSLIOSessionStrategy;
-import org.apache.http.nio.reactor.IOReactorException;
-import org.apache.http.nio.reactor.IOReactorExceptionHandler;
-import org.apache.http.protocol.RequestContent;
-import org.apache.http.ssl.SSLContexts;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.async.HttpAsyncClients;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.nio.AsyncClientConnectionManager;
+import org.apache.hc.client5.http.ssl.DefaultClientTlsStrategy;
+import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
+import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
+import org.apache.hc.core5.http.protocol.RequestContent;
+import org.apache.hc.core5.reactor.DefaultConnectingIOReactor;
+import org.apache.hc.core5.reactor.IOEventHandler;
+import org.apache.hc.core5.reactor.IOReactorConfig;
+import org.apache.hc.core5.reactor.IOSession;
+import org.apache.hc.core5.util.Timeout;
 import org.slf4j.Logger;
 
 import javax.net.ssl.HostnameVerifier;
@@ -81,81 +79,111 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     
     @Override
     public NacosAsyncRestTemplate createNacosAsyncRestTemplate() {
+        final IOReactorConfig ioReactorConfig = getIoReactorConfig();
         final HttpClientConfig originalRequestConfig = buildHttpClientConfig();
         final DefaultConnectingIOReactor ioreactor = getIoReactor(ASYNC_IO_REACTOR_NAME);
         final RequestConfig defaultConfig = getRequestConfig();
-        final NHttpClientConnectionManager connectionManager = getConnectionManager(originalRequestConfig, ioreactor);
+        final AsyncClientConnectionManager connectionManager = getConnectionManager(originalRequestConfig);
         monitorAndExtension(connectionManager);
+        
+        // issue#12028 upgrade to httpclient5
         return new NacosAsyncRestTemplate(assignLogger(), new DefaultAsyncHttpClientRequest(
-                HttpAsyncClients.custom().addInterceptorLast(new RequestContent(true))
+                HttpAsyncClients.custom()
+                        .addRequestInterceptorLast(new RequestContent(true))
                         .setThreadFactory(new NameThreadFactory(ASYNC_THREAD_NAME))
-                        .setDefaultIOReactorConfig(getIoReactorConfig()).setDefaultRequestConfig(defaultConfig)
-                        .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
-                        .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
+                        .setIOReactorConfig(ioReactorConfig)
+                        // catch all exceptions here instead of in DefaultConnectingIOReactor
+                        .setIoReactorExceptionCallback((ex) -> {
+                        
+                        })
+                        .setDefaultRequestConfig(defaultConfig)
                         .setUserAgent(originalRequestConfig.getUserAgent())
-                        .setConnectionManager(connectionManager).build(),
-                ioreactor, defaultConfig));
+                        .setConnectionManager(connectionManager)
+                        .build(),
+                ioreactor, defaultConfig)
+        );
     }
     
     private DefaultConnectingIOReactor getIoReactor(String threadName) {
-        final DefaultConnectingIOReactor ioreactor;
-        try {
-            ioreactor = new DefaultConnectingIOReactor(getIoReactorConfig(), new NameThreadFactory(threadName));
-        } catch (IOReactorException e) {
-            assignLogger().error("[NHttpClientConnectionManager] Create DefaultConnectingIOReactor failed", e);
-            throw new IllegalStateException();
-        }
-        
-        // if the handle return true, then the exception thrown by IOReactor will be ignore, and will not finish the IOReactor.
-        ioreactor.setExceptionHandler(new IOReactorExceptionHandler() {
-            
-            @Override
-            public boolean handle(IOException ex) {
-                assignLogger().warn("[NHttpClientConnectionManager] handle IOException, ignore it.", ex);
-                return true;
-            }
-            
-            @Override
-            public boolean handle(RuntimeException ex) {
-                assignLogger().warn("[NHttpClientConnectionManager] handle RuntimeException, ignore it.", ex);
-                return true;
-            }
-        });
-        
-        return ioreactor;
+        return new DefaultConnectingIOReactor(
+                (session, ojb) -> new IOEventHandler() {
+                    @Override
+                    public void connected(IOSession ioSession) throws IOException {
+                    
+                    }
+                    
+                    @Override
+                    public void inputReady(IOSession ioSession, ByteBuffer byteBuffer) throws IOException {
+                    
+                    }
+                    
+                    @Override
+                    public void outputReady(IOSession ioSession) throws IOException {
+                    
+                    }
+                    
+                    @Override
+                    public void timeout(IOSession ioSession, Timeout timeout) throws IOException {
+                    
+                    }
+                    
+                    @Override
+                    public void exception(IOSession ioSession, Exception e) {
+                    
+                    }
+                    
+                    @Override
+                    public void disconnected(IOSession ioSession) {
+                    
+                    }
+                },
+                getIoReactorConfig(),
+                new NameThreadFactory(threadName),
+                null,
+                // handle exception in io reactor
+                (ex) -> {
+                    if (ex instanceof IOException) {
+                        assignLogger().warn("[AsyncClientConnectionManager] handle IOException, ignore it.", ex);
+                    } else if (ex instanceof RuntimeException) {
+                        assignLogger().warn("[AsyncClientConnectionManager] handle RuntimeException, ignore it.", ex);
+                    } else {
+                        assignLogger().error("[DefaultConnectingIOReactor] Exception! I/O Reactor error time: {}",
+                                System.currentTimeMillis(), ex.getCause());
+                    }
+                },
+                null,
+                null
+        );
     }
     
     /**
-     * create the {@link NHttpClientConnectionManager}, the code mainly from {@link HttpAsyncClientBuilder#build()}. we
-     * add the {@link IOReactorExceptionHandler} to handle the {@link IOException} and {@link RuntimeException} thrown
-     * by the {@link org.apache.http.impl.nio.reactor.BaseIOReactor} when process the event of Network. Using this way
+     * create the {@link AsyncClientConnectionManager}, the code mainly from {@link PoolingAsyncClientConnectionManagerBuilder#build()}. we
+     * add the {@link Callback} to handle the {@link IOException} and {@link RuntimeException} thrown
+     * by the {@link DefaultConnectingIOReactor} when process the event of Network. Using this way
      * to avoid the {@link DefaultConnectingIOReactor} killed by unknown error of network.
      *
      * @param originalRequestConfig request config.
-     * @param ioreactor             I/O reactor.
-     * @return {@link NHttpClientConnectionManager}.
+     * @return {@link AsyncClientConnectionManager}.
      */
-    private NHttpClientConnectionManager getConnectionManager(HttpClientConfig originalRequestConfig,
-            DefaultConnectingIOReactor ioreactor) {
-        SSLContext sslcontext = SSLContexts.createDefault();
-        HostnameVerifier hostnameVerifier = new DefaultHostnameVerifier();
-        SchemeIOSessionStrategy sslStrategy = new SSLIOSessionStrategy(sslcontext, null, null, hostnameVerifier);
-        
-        Registry<SchemeIOSessionStrategy> registry = RegistryBuilder.<SchemeIOSessionStrategy>create()
-                .register("http", NoopIOSessionStrategy.INSTANCE).register("https", sslStrategy).build();
-        final PoolingNHttpClientConnectionManager poolingmgr = new PoolingNHttpClientConnectionManager(ioreactor,
-                registry);
-        
-        int maxTotal = originalRequestConfig.getMaxConnTotal();
-        if (maxTotal > 0) {
-            poolingmgr.setMaxTotal(maxTotal);
+    private AsyncClientConnectionManager getConnectionManager(HttpClientConfig originalRequestConfig) {
+        try {
+            SSLContext sslcontext = SSLContext.getDefault();
+            HostnameVerifier hostnameVerifier = new DefaultHostnameVerifier();
+            TlsStrategy sslStrategy = new DefaultClientTlsStrategy(sslcontext, hostnameVerifier);
+            // manager no more needs IOReactor
+            return PoolingAsyncClientConnectionManagerBuilder
+                    // old method Registry::register("http", NoopIOSessionStrategy.INSTANCE) has been a default strategy
+                    .create()
+                    // refers to old Registry::register("https", sslStrategy)
+                    .setTlsStrategy(sslStrategy)
+                    // setMaxTotal now can be used in builder
+                    .setMaxConnTotal(originalRequestConfig.getMaxConnTotal())
+                    // setDefaultMaxPerRoute now can be used in builder
+                    .setMaxConnPerRoute(originalRequestConfig.getMaxConnPerRoute())
+                    .build();
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
-        
-        int maxPerRoute = originalRequestConfig.getMaxConnPerRoute();
-        if (maxPerRoute > 0) {
-            poolingmgr.setDefaultMaxPerRoute(maxPerRoute);
-        }
-        return poolingmgr;
     }
     
     protected IOReactorConfig getIoReactorConfig() {
@@ -165,9 +193,11 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     
     protected RequestConfig getRequestConfig() {
         HttpClientConfig httpClientConfig = buildHttpClientConfig();
-        return RequestConfig.custom().setConnectTimeout(httpClientConfig.getConTimeOutMillis())
-                .setSocketTimeout(httpClientConfig.getReadTimeOutMillis())
-                .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout())
+        return RequestConfig
+                .custom()
+                .setConnectTimeout(httpClientConfig.getConTimeOutMillis(), TimeUnit.MILLISECONDS)
+                .setResponseTimeout(httpClientConfig.getReadTimeOutMillis(), TimeUnit.MILLISECONDS)
+                .setConnectionRequestTimeout(httpClientConfig.getConnectionRequestTimeout(), TimeUnit.MILLISECONDS)
                 .setContentCompressionEnabled(httpClientConfig.getContentCompressionEnabled())
                 .setMaxRedirects(httpClientConfig.getMaxRedirects()).build();
     }
@@ -221,6 +251,6 @@ public abstract class AbstractHttpClientFactory implements HttpClientFactory {
     /**
      * add some monitor and do some extension. default empty implementation, implemented by subclass
      */
-    protected void monitorAndExtension(NHttpClientConnectionManager connectionManager) {
+    protected void monitorAndExtension(AsyncClientConnectionManager connectionManager) {
     }
 }
