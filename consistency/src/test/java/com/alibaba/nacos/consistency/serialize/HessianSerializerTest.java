@@ -18,7 +18,7 @@
 package com.alibaba.nacos.consistency.serialize;
 
 import com.alibaba.nacos.api.exception.runtime.NacosDeserializationException;
-import org.apache.http.HttpException;
+import org.apache.hc.core5.http.HttpException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
