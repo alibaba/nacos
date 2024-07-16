@@ -16,10 +16,10 @@
 
 package com.alibaba.nacos.common.http.client.response;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.StatusLine;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.message.StatusLine;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,7 +43,7 @@ class DefaultClientHttpResponseTest {
     DefaultClientHttpResponse clientHttpResponse;
     
     @Mock
-    private HttpResponse response;
+    private SimpleHttpResponse response;
     
     @Mock
     private StatusLine statusLine;
@@ -60,9 +60,9 @@ class DefaultClientHttpResponseTest {
     @BeforeEach
     void setUp() throws Exception {
         when(httpEntity.getContent()).thenReturn(inputStream);
-        when(response.getEntity()).thenReturn(httpEntity);
-        when(response.getStatusLine()).thenReturn(statusLine);
-        when(response.getAllHeaders()).thenReturn(new Header[] {header});
+        // when(response.getEntity()).thenReturn(httpEntity);
+        // when(response.getStatusLine()).thenReturn(statusLine);
+        when(response.getHeaders()).thenReturn(new Header[] {header});
         when(header.getName()).thenReturn("testName");
         when(header.getValue()).thenReturn("testValue");
         clientHttpResponse = new DefaultClientHttpResponse(response);
@@ -94,11 +94,5 @@ class DefaultClientHttpResponseTest {
     @Test
     void testGetBody() throws IOException {
         assertEquals(inputStream, clientHttpResponse.getBody());
-    }
-    
-    @Test
-    void testCloseResponseWithException() {
-        when(response.getEntity()).thenThrow(new RuntimeException("test"));
-        clientHttpResponse.close();
     }
 }
