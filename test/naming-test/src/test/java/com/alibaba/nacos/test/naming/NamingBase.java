@@ -24,7 +24,7 @@ import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
-import org.apache.http.HttpStatus;
+import org.apache.hc.core5.http.HttpStatus;
 
 import java.util.HashMap;
 import java.util.List;

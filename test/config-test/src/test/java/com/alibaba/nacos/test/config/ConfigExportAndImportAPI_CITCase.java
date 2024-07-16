@@ -38,16 +38,16 @@ import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.entity.mime.content.ByteArrayBody;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.entity.mime.ByteArrayBody;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -57,7 +57,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.io.IOException;
@@ -149,61 +149,61 @@ class ConfigExportAndImportAPI_CITCase {
     @AfterEach
     void cleanup() throws Exception {
         Assertions.assertDoesNotThrow(() -> {
-            HttpRestResult<String> result;
+            HttpRestResult<String> testResult;
             Map<String, String> params = new HashMap<>();
             params.put("dataId", "testNoAppname1.yml");
             params.put("group", "EXPORT_IMPORT_TEST_GROUP");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            testResult = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            assertEquals(HttpURLConnection.HTTP_OK, testResult.getCode());
             
             params.put("dataId", "testNoAppname2.txt");
             params.put("group", "TEST1_GROUP");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            testResult = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            assertEquals(HttpURLConnection.HTTP_OK, testResult.getCode());
             
             params.put("dataId", "testHasAppname1.properties");
             params.put("group", "EXPORT_IMPORT_TEST_GROUP");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            testResult = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            assertEquals(HttpURLConnection.HTTP_OK, testResult.getCode());
             
             params.put("dataId", "test1.yml");
             params.put("group", "TEST_IMPORT");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            testResult = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            assertEquals(HttpURLConnection.HTTP_OK, testResult.getCode());
             
             params.put("dataId", "test2.txt");
             params.put("group", "TEST_IMPORT");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            testResult = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            assertEquals(HttpURLConnection.HTTP_OK, testResult.getCode());
             
             params.put("dataId", "test3.properties");
             params.put("group", "TEST_IMPORT");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            testResult = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            assertEquals(HttpURLConnection.HTTP_OK, testResult.getCode());
             
             params.put("dataId", "test1");
             params.put("group", "TEST_IMPORT2");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            testResult = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            assertEquals(HttpURLConnection.HTTP_OK, testResult.getCode());
             
             params.put("dataId", "test3");
             params.put("group", "TEST_IMPORT2");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            testResult = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            assertEquals(HttpURLConnection.HTTP_OK, testResult.getCode());
             
             params.put("dataId", "test4");
             params.put("group", "TEST_IMPORT2");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
-            assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
+            testResult = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            assertEquals(HttpURLConnection.HTTP_OK, testResult.getCode());
         });
         agent.shutdown();
     }
@@ -587,7 +587,10 @@ class ConfigExportAndImportAPI_CITCase {
             int connectTimeout = 10000;
             int socketTimeout = 10000;
             HttpPost httpPost = new HttpPost(url);
-            RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout).build();
+            RequestConfig requestConfig = RequestConfig.custom()
+                    .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(connectTimeout))
+                    .setConnectionRequestTimeout(org.apache.hc.core5.util.Timeout.ofMicroseconds(socketTimeout))
+                    .build();
             httpPost.setConfig(requestConfig);
             
             MultipartEntityBuilder builder = MultipartEntityBuilder.create();
@@ -605,7 +608,6 @@ class ConfigExportAndImportAPI_CITCase {
             
             CloseableHttpResponse response = httpclient.execute(httpPost);
             try {
-                System.out.println(response.getStatusLine());
                 HttpEntity resEntity = response.getEntity();
                 String responseToStr = null;
                 if (resEntity != null) {
