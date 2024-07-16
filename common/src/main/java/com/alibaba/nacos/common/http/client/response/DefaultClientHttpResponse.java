@@ -22,6 +22,7 @@ import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.Iterator;
 
 /**
  * ApacheClientHttpResponse implementation {@link HttpClientResponse}.
