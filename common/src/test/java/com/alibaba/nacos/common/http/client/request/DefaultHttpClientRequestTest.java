@@ -23,12 +23,12 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
-import org.apache.http.HttpEntityEnclosingRequest;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.HttpEntityContainer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,9 +69,9 @@ class DefaultHttpClientRequestTest {
         defaultConfig = RequestConfig.DEFAULT;
         httpClientRequest = new DefaultHttpClientRequest(client, defaultConfig);
         when(client.execute(argThat(httpUriRequest -> {
-            HttpEntityEnclosingRequest entityRequest = (HttpEntityEnclosingRequest) httpUriRequest;
+            HttpEntityContainer entityRequest = (HttpEntityContainer) httpUriRequest;
             boolean result = isForm == (entityRequest.getEntity() instanceof UrlEncodedFormEntity);
-            HttpRequestBase baseHttpRequest = (HttpRequestBase) httpUriRequest;
+            HttpUriRequestBase baseHttpRequest = (HttpUriRequestBase) httpUriRequest;
             if (withConfig) {
                 result &= null != baseHttpRequest.getConfig();
             }
