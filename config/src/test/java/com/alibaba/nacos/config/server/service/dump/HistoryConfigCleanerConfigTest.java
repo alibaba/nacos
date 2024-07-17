@@ -17,6 +17,8 @@
 package com.alibaba.nacos.config.server.service.dump;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.MockedStatic;
@@ -24,23 +26,31 @@ import org.mockito.Mockito;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 
 @ExtendWith(SpringExtension.class)
 class HistoryConfigCleanerConfigTest {
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
+    @BeforeEach
+    public void before() {
+        envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
+    }
+    
     @Test
     public void test() {
-        envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.history.clear.name", String.class, "nacos"))
-                .thenReturn("test");
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), any(), anyString())).thenReturn("test");
         HistoryConfigCleanerConfig historyConfigCleanerConfig = HistoryConfigCleanerConfig.getInstance();
         assertEquals("test", historyConfigCleanerConfig.getActiveHistoryConfigCleaner());
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty("nacos.config.history.clear.name", String.class, "nacos"))
-                .thenReturn(null);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), any(), anyString())).thenReturn(null);
         historyConfigCleanerConfig.getConfigFromEnv();
         assertEquals("nacos", historyConfigCleanerConfig.getActiveHistoryConfigCleaner());
+    }
+    
+    @AfterEach
+    public void after() {
         envUtilMockedStatic.close();
     }
     
