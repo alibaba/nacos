@@ -19,10 +19,9 @@ package com.alibaba.nacos.client.address;
 import com.alibaba.nacos.common.notify.SlowEvent;
 
 /**
- * Event of server list changed for naming.
+ * Event of server list changed.
  * 
- * @author gengtuo.ygt
- * on 2021/6/7
+ * @author totalo
  */
 public class ServerListChangeEvent extends SlowEvent {
 }
