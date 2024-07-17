@@ -45,9 +45,10 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.ExpressionSelector;
 import com.alibaba.nacos.api.selector.NoneSelector;
+import com.alibaba.nacos.client.address.base.AbstractServerListManager;
+import com.alibaba.nacos.client.address.impl.ServerListUpdatedEvent;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.security.SecurityProxy;
 import com.alibaba.nacos.common.notify.NotifyCenter;
@@ -56,7 +57,6 @@ import com.alibaba.nacos.common.remote.client.Connection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientConfig;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
-import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClient;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcClientConfig;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcConstants;
@@ -115,7 +115,7 @@ class NamingGrpcClientProxyTest {
     private SecurityProxy proxy;
     
     @Mock
-    private ServerListFactory factory;
+    private AbstractServerListManager serverListManager;
     
     @Mock
     private ServiceInfoHolder holder;
@@ -140,12 +140,12 @@ class NamingGrpcClientProxyTest {
         System.setProperty(GrpcConstants.GRPC_RETRY_TIMES, "1");
         System.setProperty(GrpcConstants.GRPC_SERVER_CHECK_TIMEOUT, "100");
         List<String> serverList = Stream.of(ORIGIN_SERVER, "anotherServer").collect(Collectors.toList());
-        when(factory.getServerList()).thenReturn(serverList);
-        when(factory.genNextServer()).thenReturn(ORIGIN_SERVER);
+        when(serverListManager.getServerList()).thenReturn(serverList);
+        when(serverListManager.getNextServer()).thenReturn(ORIGIN_SERVER);
         prop = new Properties();
         
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
-        client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, nacosClientProperties, holder);
+        client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, serverListManager, nacosClientProperties, holder);
         
         Field uuidField = NamingGrpcClientProxy.class.getDeclaredField("uuid");
         uuidField.setAccessible(true);
@@ -620,7 +620,7 @@ class NamingGrpcClientProxyTest {
             public Map<String, String> labels() {
                 return new HashMap<>();
             }
-        }, factory) {
+        }, serverListManager) {
             @Override
             public ConnectionType getConnectionType() {
                 return ConnectionType.GRPC;
@@ -663,7 +663,7 @@ class NamingGrpcClientProxyTest {
         rpcClient.setAccessible(true);
         rpcClient.set(client, rpc);
         
-        rpc.serverListFactory(factory);
+        rpc.serverListFactory(serverListManager);
         rpc.registerServerRequestHandler(new NamingPushRequestHandler(holder));
         Field listenerField = NamingGrpcClientProxy.class.getDeclaredField("redoService");
         listenerField.setAccessible(true);
@@ -681,9 +681,9 @@ class NamingGrpcClientProxyTest {
         assertEquals(ORIGIN_SERVER, rpc.getCurrentServer().getServerIp());
         
         String newServer = "www.aliyun.com";
-        when(factory.genNextServer()).thenReturn(newServer);
-        when(factory.getServerList()).thenReturn(Stream.of(newServer, "anotherServer").collect(Collectors.toList()));
-        NotifyCenter.publishEvent(new ServerListChangedEvent());
+        when(serverListManager.getNextServer()).thenReturn(newServer);
+        when(serverListManager.getServerList()).thenReturn(Stream.of(newServer, "anotherServer").collect(Collectors.toList()));
+        NotifyCenter.publishEvent(new ServerListUpdatedEvent());
         
         retry = 10;
         while (ORIGIN_SERVER.equals(rpc.getCurrentServer().getServerIp())) {
@@ -699,7 +699,7 @@ class NamingGrpcClientProxyTest {
     @Test
     void testConfigAppNameLabels() throws Exception {
         final NacosClientProperties nacosClientProperties = NacosClientProperties.PROTOTYPE.derive(prop);
-        client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, factory, nacosClientProperties, holder);
+        client = new NamingGrpcClientProxy(NAMESPACE_ID, proxy, serverListManager, nacosClientProperties, holder);
         Field rpcClientField = NamingGrpcClientProxy.class.getDeclaredField("rpcClient");
         rpcClientField.setAccessible(true);
         RpcClient rpcClient = (RpcClient) rpcClientField.get(client);

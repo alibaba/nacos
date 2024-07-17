@@ -36,6 +36,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.address.base.AbstractServerListManager;
+import com.alibaba.nacos.client.address.impl.AddressServerListManager;
+import com.alibaba.nacos.client.address.impl.PropertiesServerListManager;
+import com.alibaba.nacos.client.address.impl.ServerListUpdatedEvent;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
@@ -62,11 +66,11 @@ import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
-import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.utils.ConnLabelsUtils;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
+import com.alibaba.nacos.common.utils.ReflectUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.common.utils.VersionUtils;
@@ -480,7 +484,7 @@ public class ClientWorker implements Closeable {
     }
     
     @SuppressWarnings("PMD.ThreadPoolCreationRule")
-    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, ServerListManager serverListManager,
+    public ClientWorker(final ConfigFilterChainManager configFilterChainManager, AbstractServerListManager serverListManager,
             final NacosClientProperties properties) throws NacosException {
         this.configFilterChainManager = configFilterChainManager;
         
@@ -527,10 +531,13 @@ public class ClientWorker implements Closeable {
         metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
-        boolean isFixServer = agent.serverListManager.isFixed;
+        AbstractServerListManager serverListManager = agent.serverListManager;
+        boolean isFixServer = serverListManager instanceof PropertiesServerListManager;
         metric.put("isFixedServer", isFixServer);
-        metric.put("addressUrl", agent.serverListManager.addressServerUrl);
-        metric.put("serverUrls", agent.serverListManager.getUrlString());
+        if (serverListManager instanceof AddressServerListManager) {
+            metric.put("addressUrl", ReflectUtils.getFieldValue(serverListManager, "addressServerUrl"));
+        }
+        metric.put("serverUrls", serverListManager.getServerList().toString());
         
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);
         metric.put("metricValues", metricValues);
@@ -599,7 +606,7 @@ public class ClientWorker implements Closeable {
          */
         private static final long ALL_SYNC_INTERNAL = 3 * 60 * 1000L;
         
-        public ConfigRpcTransportClient(NacosClientProperties properties, ServerListManager serverListManager) {
+        public ConfigRpcTransportClient(NacosClientProperties properties, AbstractServerListManager serverListManager) {
             super(properties, serverListManager);
         }
         
@@ -734,25 +741,7 @@ public class ClientWorker implements Closeable {
                 
             });
             
-            rpcClientInner.serverListFactory(new ServerListFactory() {
-                @Override
-                public String genNextServer() {
-                    return ConfigRpcTransportClient.super.serverListManager.getNextServerAddr();
-                    
-                }
-                
-                @Override
-                public String getCurrentServer() {
-                    return ConfigRpcTransportClient.super.serverListManager.getCurrentServerAddr();
-                    
-                }
-                
-                @Override
-                public List<String> getServerList() {
-                    return ConfigRpcTransportClient.super.serverListManager.getServerUrls();
-                    
-                }
-            });
+            rpcClientInner.serverListFactory(ConfigRpcTransportClient.super.serverListManager);
             
             subscriber = new Subscriber() {
                 @Override
@@ -762,7 +751,7 @@ public class ClientWorker implements Closeable {
                 
                 @Override
                 public Class<? extends Event> subscribeType() {
-                    return ServerListChangeEvent.class;
+                    return ServerListUpdatedEvent.class;
                 }
             };
             NotifyCenter.registerSubscriber(subscriber);

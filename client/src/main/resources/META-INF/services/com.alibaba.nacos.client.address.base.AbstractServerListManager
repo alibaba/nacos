@@ -1,0 +1,3 @@
+com.alibaba.nacos.client.address.impl.AddressServerListManager
+com.alibaba.nacos.client.address.impl.PropertiesServerListManager
+com.alibaba.nacos.client.address.impl.FileServerListManager

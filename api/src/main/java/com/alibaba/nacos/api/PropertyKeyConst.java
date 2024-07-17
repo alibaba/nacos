@@ -52,6 +52,8 @@ public class PropertyKeyConst {
     public static final String RAM_ROLE_NAME = "ramRoleName";
     
     public static final String SERVER_ADDR = "serverAddr";
+
+    public static final String SERVER_FILE = "serverFile";
     
     public static final String CONTEXT_PATH = "contextPath";
     
@@ -107,6 +109,8 @@ public class PropertyKeyConst {
         public static final String ALIBABA_ALIWARE_NAMESPACE = "ALIBABA_ALIWARE_NAMESPACE";
         
         public static final String ALIBABA_ALIWARE_ENDPOINT_URL = "ALIBABA_ALIWARE_ENDPOINT_URL";
+
+        public static final String ALIBABA_ALIWARE_SERVER_FILE = "ALIBABA_ALIWARE_SERVER_FILE";
     }
     
 }

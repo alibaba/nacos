@@ -19,11 +19,11 @@ package com.alibaba.nacos.client.config;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.address.base.AbstractServerListManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -182,7 +182,13 @@ class NacosConfigServiceTest {
         };
         
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
-        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ServerListManager()) {
+        AbstractServerListManager serverListManager = new AbstractServerListManager(properties) {
+            @Override
+            protected String initServerName(NacosClientProperties properties) {
+                return "unknown";
+            }
+        };
+        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, serverListManager) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP

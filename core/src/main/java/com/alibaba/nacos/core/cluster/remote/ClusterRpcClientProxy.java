@@ -132,7 +132,7 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             //one fixed server
             client.serverListFactory(new ServerListFactory() {
                 @Override
-                public String genNextServer() {
+                public String getNextServer() {
                     return member.getAddress();
                 }
                 

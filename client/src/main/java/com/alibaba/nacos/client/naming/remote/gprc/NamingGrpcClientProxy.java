@@ -43,10 +43,11 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.selector.AbstractSelector;
 import com.alibaba.nacos.api.selector.SelectorType;
+import com.alibaba.nacos.client.address.base.AbstractServerListManager;
+import com.alibaba.nacos.client.address.impl.ServerListUpdatedEvent;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
-import com.alibaba.nacos.client.naming.event.ServerListChangedEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.NamingGrpcRedoService;
 import com.alibaba.nacos.client.naming.remote.gprc.redo.data.BatchInstanceRedoData;
@@ -93,7 +94,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     
     private final NamingGrpcRedoService redoService;
     
-    public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, ServerListFactory serverListFactory,
+    public NamingGrpcClientProxy(String namespaceId, SecurityProxy securityProxy, AbstractServerListManager serverListManager,
             NacosClientProperties properties, ServiceInfoHolder serviceInfoHolder) throws NacosException {
         super(securityProxy);
         this.namespaceId = namespaceId;
@@ -107,7 +108,7 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
                 RpcClientTlsConfigFactory.getInstance().createSdkConfig(properties.asProperties()));
         this.redoService = new NamingGrpcRedoService(this, properties);
         NAMING_LOGGER.info("Create naming rpc client for uuid->{}", uuid);
-        start(serverListFactory, serviceInfoHolder);
+        start(serverListManager, serviceInfoHolder);
     }
     
     private void start(ServerListFactory serverListFactory, ServiceInfoHolder serviceInfoHolder) throws NacosException {
@@ -119,13 +120,13 @@ public class NamingGrpcClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void onEvent(ServerListChangedEvent event) {
+    public void onEvent(ServerListUpdatedEvent event) {
         rpcClient.onServerListChange();
     }
     
     @Override
     public Class<? extends Event> subscribeType() {
-        return ServerListChangedEvent.class;
+        return ServerListUpdatedEvent.class;
     }
     
     @Override
