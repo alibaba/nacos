@@ -23,9 +23,7 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Properties;
 
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
@@ -35,18 +33,23 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 class ConfigServerListManagerTest {
     
     @Test
     void testStart() throws NacosException {
-        final ConfigServerListManager mgr = new ConfigServerListManager("localhost", 0);
+        NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("localhost");
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_PORT)).thenReturn("0");
+        final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
         try {
             mgr.start();
             fail();
         } catch (NacosException e) {
             assertEquals(
-                    "fail to get NACOS-server serverlist! env:custom-localhost_0_nacos_serverlist, not connnect url:http://localhost:0/nacos/serverlist",
+                    "fail to get NACOS-server serverlist! not connnect url:http://localhost:0/nacos/serverlist",
                     e.getErrMsg());
         }
         mgr.shutdown();
@@ -55,9 +58,11 @@ class ConfigServerListManagerTest {
     @Test
     void testGetter() throws NacosException {
         {
-            final ConfigServerListManager mgr = new ConfigServerListManager();
+            NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
+            when(mockedProperties.getProperty(PropertyKeyConst.SERVER_ADDR)).thenReturn("1.1.1.1");
+            final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
             assertEquals("nacos", mgr.getContentPath());
-            assertEquals("default", mgr.getName());
+            assertEquals("fixed-1.1.1.1_8848", mgr.getName());
             assertEquals("", mgr.getTenant());
             assertEquals("", mgr.getNamespace());
             assertEquals("1.1.1.1-2.2.2.2_8848", mgr.getFixedNameSuffix("http://1.1.1.1", "2.2.2.2:8848"));
@@ -131,26 +136,26 @@ class ConfigServerListManagerTest {
     }
     
     @Test
-    void testIterator() {
-        List<String> addrs = new ArrayList<>();
-        String addr = "1.1.1.1:8848";
-        addrs.add(addr);
-        final ConfigServerListManager mgr = new ConfigServerListManager(addrs, "aaa");
+    void testIterator() throws NacosException {
+        NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
+        when(mockedProperties.getProperty(PropertyKeyConst.SERVER_ADDR)).thenReturn("1.1.1.1:8848");
+        when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("aaa");
+        final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
         
         // new iterator
         final Iterator<String> it = mgr.iterator();
         assertTrue(it.hasNext());
-        assertEquals(addr, it.next());
+        assertEquals("1.1.1.1:8848", it.next());
         
         assertNull(mgr.getIterator());
         mgr.refreshCurrentServerAddr();
         assertNotNull(mgr.getIterator());
         
         final String currentServerAddr = mgr.getCurrentServer();
-        assertEquals(addr, currentServerAddr);
+        assertEquals("1.1.1.1:8848", currentServerAddr);
         
         final String nextServerAddr = mgr.genNextServer();
-        assertEquals(addr, nextServerAddr);
+        assertEquals("1.1.1.1:8848", nextServerAddr);
         
         final Iterator<String> iterator1 = mgr.iterator();
         assertTrue(iterator1.hasNext());

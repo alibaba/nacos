@@ -20,33 +20,15 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.client.utils.EnvUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
-import com.alibaba.nacos.client.utils.ParamUtil;
-import com.alibaba.nacos.common.executor.NameThreadFactory;
-import com.alibaba.nacos.common.http.HttpRestResult;
-import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
-import com.alibaba.nacos.common.http.param.Query;
-import com.alibaba.nacos.common.notify.NotifyCenter;
-import com.alibaba.nacos.common.utils.InternetAddressUtil;
-import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
-import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-
-import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
-import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
 /**
  * Config server list Manager.
@@ -57,11 +39,6 @@ public class ConfigServerListManager extends AbstractServerListManager {
     
     private static final Logger LOGGER = LogUtils.logger(ConfigServerListManager.class);
     
-    private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
-    
-    private final ScheduledExecutorService executorService =
-            new ScheduledThreadPoolExecutor(1, new NameThreadFactory("com.alibaba.nacos.client.AbstractServerListManager"));
-    
     /**
      * The name of the different environment.
      */
@@ -69,62 +46,28 @@ public class ConfigServerListManager extends AbstractServerListManager {
     
     private String tenant = "";
     
-    public static final String DEFAULT_NAME = "default";
-    
     public static final String CUSTOM_NAME = "custom";
     
     public static final String FIXED_NAME = "fixed";
-    
-    private final int initServerListRetryTimes = 5;
-    
-    boolean isStarted;
     
     private volatile String currentServerAddr;
     
     private Iterator<String> iterator;
     
-    public ConfigServerListManager() {
-        super();
-        this.isStarted = false;
-        this.name = DEFAULT_NAME;
-    }
-    
-    public ConfigServerListManager(List<String> fixed) {
-        this(fixed, null);
-    }
-    
-    public ConfigServerListManager(List<String> fixed, String namespace) {
-        super(fixed, namespace);
-        this.isFixed = true;
-        this.isStarted = true;
-        if (StringUtils.isNotBlank(namespace)) {
-            this.tenant = namespace;
-        }
-        this.name = initServerName(null);
-    }
-    
-    public ConfigServerListManager(String host, int port) {
-        super(host, port);
-        this.isStarted = false;
-        this.name = initServerName(null);
-    }
-    
-    public ConfigServerListManager(String endpoint) throws NacosException {
-        this(endpoint, null);
-    }
-    
-    public ConfigServerListManager(String endpoint, String namespace) throws NacosException {
-        super(endpoint, namespace);
-        if (StringUtils.isNotBlank(namespace)) {
-            this.tenant = namespace;
-        }
-        this.name = initServerName(null);
-    }
-    
     public ConfigServerListManager(NacosClientProperties properties) throws NacosException {
         super(properties);
         this.isStarted = false;
         this.name = initServerName(properties);
+        if (StringUtils.isNotBlank(namespace)) {
+            this.tenant = namespace;
+        }
+    }
+    
+    @Override
+    public synchronized void start() throws NacosException {
+        super.start();
+        iterator = iterator();
+        currentServerAddr = iterator.next();
     }
     
     private String initServerName(NacosClientProperties properties) {
@@ -152,59 +95,12 @@ public class ConfigServerListManager extends AbstractServerListManager {
         return serverName;
     }
     
-    /**
-     * Start.
-     *
-     * @throws NacosException nacos exception
-     */
-    public synchronized void start() throws NacosException {
-        
-        if (isStarted || isFixed()) {
-            return;
-        }
-        
-        GetServerListTask getServersTask = new GetServerListTask(addressServerUrl);
-        for (int i = 0; i < initServerListRetryTimes && getServerList().isEmpty(); ++i) {
-            getServersTask.run();
-            if (!getServerList().isEmpty()) {
-                break;
-            }
-            try {
-                this.wait((i + 1) * 100L);
-            } catch (Exception e) {
-                LOGGER.warn("get serverlist fail,url: {}", addressServerUrl);
-            }
-        }
-        
-        if (getServerList().isEmpty()) {
-            LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! env: {}, url: {}", name,
-                    addressServerUrl);
-            throw new NacosException(NacosException.SERVER_ERROR,
-                    "fail to get NACOS-server serverlist! env:" + name + ", not connnect url:" + addressServerUrl);
-        }
-        
-        // executor schedules the timer task
-        this.executorService.scheduleWithFixedDelay(getServersTask, 0L, 30L, TimeUnit.SECONDS);
-        isStarted = true;
-    }
-    
     Iterator<String> iterator() {
         List<String> serverList = getServerList();
         if (serverList.isEmpty()) {
             LOGGER.error("[{}] [iterator-serverlist] No server address defined!", name);
         }
         return new ServerAddressIterator(serverList);
-    }
-    
-    @Override
-    public void shutdown() throws NacosException {
-        String className = this.getClass().getName();
-        LOGGER.info("{} do shutdown begin", className);
-        ThreadUtils.shutdownThreadPool(executorService, LOGGER);
-        if (isStarted) {
-            isStarted = false;
-        }
-        LOGGER.info("{} do shutdown stop", className);
     }
     
     @Override
@@ -229,90 +125,6 @@ public class ConfigServerListManager extends AbstractServerListManager {
             currentServerAddr = iterator.next();
         }
         return currentServerAddr;
-    }
-    
-    class GetServerListTask implements Runnable {
-        
-        final String url;
-        
-        GetServerListTask(String url) {
-            this.url = url;
-        }
-        
-        @Override
-        public void run() {
-            /*
-             get serverlist from nameserver
-             */
-            try {
-                updateIfChanged(getApacheServerList(url, name));
-            } catch (Exception e) {
-                LOGGER.error("[" + name + "][update-serverlist] failed to update serverlist from address server!", e);
-            }
-        }
-    }
-    
-    private void updateIfChanged(List<String> newList) {
-        if (null == newList || newList.isEmpty()) {
-            LOGGER.warn("[update-serverlist] current serverlist from address server is empty!!!");
-            return;
-        }
-        
-        List<String> newServerAddrList = new ArrayList<>();
-        for (String server : newList) {
-            if (server.startsWith(HTTP_PREFIX) || server.startsWith(HTTPS_PREFIX)) {
-                newServerAddrList.add(server);
-            } else {
-                newServerAddrList.add(HTTP_PREFIX + server);
-            }
-        }
-        
-        /*
-         no change
-         */
-        if (newServerAddrList.equals(getServerList())) {
-            return;
-        }
-        serversFromEndpoint = new ArrayList<>(newServerAddrList);
-        iterator = iterator();
-        currentServerAddr = iterator.next();
-        
-        // Using unified event processor, NotifyCenter
-        NotifyCenter.publishEvent(new ConfigServerListChangeEvent());
-        LOGGER.info("[{}] [update-serverList] serverList updated to {}", name, getServerList());
-    }
-    
-    private List<String> getApacheServerList(String url, String name) {
-        try {
-            HttpRestResult<String> httpResult = nacosRestTemplate.get(url, Header.EMPTY, Query.EMPTY, String.class);
-            
-            if (httpResult.ok()) {
-                if (DEFAULT_NAME.equals(name)) {
-                    EnvUtil.setSelfEnv(httpResult.getHeader().getOriginalResponseHeader());
-                }
-                List<String> lines = IoUtils.readLines(new StringReader(httpResult.getData()));
-                List<String> result = new ArrayList<>(lines.size());
-                for (String serverAddr : lines) {
-                    if (StringUtils.isNotBlank(serverAddr)) {
-                        String[] ipPort = InternetAddressUtil.splitIPPortStr(serverAddr.trim());
-                        String ip = ipPort[0].trim();
-                        if (ipPort.length == 1) {
-                            result.add(ip + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
-                        } else {
-                            result.add(serverAddr);
-                        }
-                    }
-                }
-                return result;
-            } else {
-                LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}", addressServerUrl,
-                        httpResult.getCode());
-                return null;
-            }
-        } catch (Exception e) {
-            LOGGER.error("[check-serverlist] exception. url: " + url, e);
-            return null;
-        }
     }
     
     public String getUrlString() {
@@ -359,10 +171,6 @@ public class ConfigServerListManager extends AbstractServerListManager {
     
     public String getName() {
         return name;
-    }
-    
-    public String getNamespace() {
-        return namespace;
     }
     
     public String getTenant() {

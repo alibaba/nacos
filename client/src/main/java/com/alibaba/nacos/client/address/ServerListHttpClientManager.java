@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package com.alibaba.nacos.client.config.impl;
+package com.alibaba.nacos.client.address;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.config.impl.Limiter;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.http.AbstractHttpClientFactory;
@@ -40,18 +41,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 
-import static com.alibaba.nacos.client.utils.LogUtils.NAMING_LOGGER;
-
 /**
- * config http Manager.
+ * ServerList http Manager.
  *
- * @author mai.jh
+ * @author totalo
  */
-public class ConfigHttpClientManager implements Closeable {
+public class ServerListHttpClientManager implements Closeable {
     
-    private static final Logger LOGGER = LogUtils.logger(ConfigHttpClientManager.class);
+    private static final Logger LOGGER = LogUtils.logger(ServerListHttpClientManager.class);
     
-    private static final HttpClientFactory HTTP_CLIENT_FACTORY = new ConfigHttpClientFactory();
+    private static final HttpClientFactory HTTP_CLIENT_FACTORY = new ServerListHttpClientFactory();
     
     private static final int CON_TIME_OUT_MILLIS = ParamUtil.getConnectTimeout();
     
@@ -59,25 +58,25 @@ public class ConfigHttpClientManager implements Closeable {
     
     private final LimiterHttpClientRequestInterceptor limiterHttpClientRequestInterceptor = new LimiterHttpClientRequestInterceptor();
     
-    private static class ConfigHttpClientManagerInstance {
+    private static class ServerListHttpClientManagerInstance {
         
-        private static final ConfigHttpClientManager INSTANCE = new ConfigHttpClientManager();
+        private static final ServerListHttpClientManager INSTANCE = new ServerListHttpClientManager();
     }
     
-    public static ConfigHttpClientManager getInstance() {
-        return ConfigHttpClientManagerInstance.INSTANCE;
+    public static ServerListHttpClientManager getInstance() {
+        return ServerListHttpClientManagerInstance.INSTANCE;
     }
     
     @Override
     public void shutdown() throws NacosException {
-        NAMING_LOGGER.warn("[ConfigHttpClientManager] Start destroying NacosRestTemplate");
+        LOGGER.warn("[ServerListHttpClientManager] Start destroying NacosRestTemplate");
         try {
             HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
-            NAMING_LOGGER.error("[ConfigHttpClientManager] An exception occurred when the HTTP client was closed : {}",
+            LOGGER.error("[ServerListHttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
         }
-        NAMING_LOGGER.warn("[ConfigHttpClientManager] Destruction of the end");
+        LOGGER.warn("[ServerListHttpClientManager] Destruction of the end");
     }
     
     /**
@@ -102,9 +101,9 @@ public class ConfigHttpClientManager implements Closeable {
     }
     
     /**
-     * ConfigHttpClientFactory.
+     * ServerListHttpClientFactory.
      */
-    private static class ConfigHttpClientFactory extends AbstractHttpClientFactory {
+    private static class ServerListHttpClientFactory extends AbstractHttpClientFactory {
         
         @Override
         protected HttpClientConfig buildHttpClientConfig() {

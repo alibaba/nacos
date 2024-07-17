@@ -24,5 +24,15 @@ import java.util.List;
  */
 public interface ServerListProvider {
     
+    /**
+     * Get server list.
+     * @return server list
+     */
     List<String> getServerList();
+    
+    /**
+     * server list type.
+     * @return type
+     */
+    String type();
 }

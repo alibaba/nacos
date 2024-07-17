@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.config.ConfigType;
 import com.alibaba.nacos.api.config.listener.Listener;
 import com.alibaba.nacos.api.exception.NacosException;
@@ -181,8 +182,10 @@ class NacosConfigServiceTest {
             }
         };
         
-        final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
-        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ConfigServerListManager()) {
+        Properties properties = new Properties();
+        properties.put(PropertyKeyConst.SERVER_ADDR, "aaa");
+        final NacosClientProperties nacosProperties = NacosClientProperties.PROTOTYPE.derive(properties);
+        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(nacosProperties, new ConfigServerListManager(nacosProperties)) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP

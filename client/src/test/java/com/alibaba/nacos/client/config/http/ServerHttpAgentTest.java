@@ -19,6 +19,7 @@ package com.alibaba.nacos.client.config.http;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
+import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -50,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -97,7 +99,9 @@ class ServerHttpAgentTest {
     
     @Test
     void testConstruct() throws NacosException {
-        ConfigServerListManager server = new ConfigServerListManager();
+        NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("localhost");
+        ConfigServerListManager server = new ConfigServerListManager(mockedProperties);
         final ServerHttpAgent serverHttpAgent1 = new ServerHttpAgent(server);
         assertNotNull(serverHttpAgent1);
         
@@ -113,7 +117,10 @@ class ServerHttpAgentTest {
     
     @Test
     void testGetterAndSetter() throws NacosException {
-        ConfigServerListManager server = new ConfigServerListManager("aaa", "namespace1");
+        NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("aaa");
+        when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("namespace1");
+        ConfigServerListManager server = new ConfigServerListManager(mockedProperties);
         final ServerHttpAgent serverHttpAgent = new ServerHttpAgent(server, new Properties());
         
         final String appname = ServerHttpAgent.getAppname();
@@ -128,6 +135,7 @@ class ServerHttpAgentTest {
         assertEquals("namespace1", namespace);
         assertEquals("namespace1", tenant);
         assertEquals("custom-aaa_8080_nacos_serverlist_namespace1", name);
+        server.shutdown();
         
     }
     

@@ -18,7 +18,7 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
+import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -69,8 +69,8 @@ class NamingServerListManagerTest {
         restMapField.setAccessible(true);
         Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
         cachedNacosRestTemplate = restMap.get(
-                "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory");
-        restMap.put("com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory", nacosRestTemplate);
+                "com.alibaba.nacos.client.address.ServerListHttpClientManager$ServerListHttpClientFactory");
+        restMap.put("com.alibaba.nacos.client.address.ServerListHttpClientManager$ServerListHttpClientFactory", nacosRestTemplate);
         httpRestResult = new HttpRestResult<>();
         httpRestResult.setData("127.0.0.1:8848");
         httpRestResult.setCode(200);
@@ -83,7 +83,7 @@ class NamingServerListManagerTest {
             Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
             restMapField.setAccessible(true);
             Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
-            restMap.put("com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory",
+            restMap.put("com.alibaba.nacos.client.address.ServerListHttpClientManager$ServerListHttpClientFactory",
                     cachedNacosRestTemplate);
         }
         if (null != serverListManager) {
@@ -93,7 +93,7 @@ class NamingServerListManagerTest {
     
     @Test
     void testConstructError() {
-        assertThrows(NacosLoadException.class, () -> {
+        assertThrows(NacosException.class, () -> {
             serverListManager = new NamingServerListManager(new Properties());
         });
     }
@@ -275,10 +275,10 @@ class NamingServerListManagerTest {
     
     private void mockThreadInvoke(NamingServerListManager serverListManager, boolean expectedInvoked)
             throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        Field field = NamingServerListManager.class.getDeclaredField("lastServerListRefreshTime");
+        Field field = AbstractServerListManager.class.getDeclaredField("lastServerListRefreshTime");
         field.setAccessible(true);
         field.set(serverListManager, expectedInvoked ? 0 : System.currentTimeMillis());
-        Method method = NamingServerListManager.class.getDeclaredMethod("refreshServerListIfNeed");
+        Method method = AbstractServerListManager.class.getDeclaredMethod("refreshServerListIfNeed");
         method.setAccessible(true);
         method.invoke(serverListManager);
     }

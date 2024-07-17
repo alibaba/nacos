@@ -20,22 +20,35 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.SystemPropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
+import com.alibaba.nacos.common.executor.NameThreadFactory;
+import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.client.NacosRestTemplate;
+import com.alibaba.nacos.common.http.param.Header;
+import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.lifecycle.Closeable;
+import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
 import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
+import com.alibaba.nacos.common.utils.IoUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.common.utils.ThreadUtils;
 import org.slf4j.Logger;
 
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Properties;
+import java.util.Objects;
 import java.util.StringTokenizer;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
@@ -49,7 +62,16 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     private static final Logger LOGGER = LogUtils.logger(AbstractServerListManager.class);
     
+    private final ScheduledExecutorService refreshServerListExecutor =
+            new ScheduledThreadPoolExecutor(1, new NameThreadFactory("com.alibaba.nacos.client.ServerListManager"));
+    
+    private final NacosRestTemplate nacosRestTemplate = ServerListHttpClientManager.getInstance().getNacosRestTemplate();
+    
     private ServerListProvider serverListProvider;
+    
+    private String serverListProviderType;
+    
+    private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
     
     protected String namespace = "";
     
@@ -73,56 +95,19 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     protected boolean isFixed;
     
+    protected volatile boolean isStarted = false;
+    
+    private final int initServerListRetryTimes = 5;
+    
+    private long lastServerListRefreshTime = 0L;
+    
     {
         Collection<ServerListProvider> serviceLoader = NacosServiceLoader.load(ServerListProvider.class);
         for (ServerListProvider each : serviceLoader) {
-            this.serverListProvider = each;
-            break;
-        }
-    }
-    
-    public AbstractServerListManager() {
-        this.isFixed = false;
-    }
-    
-    public AbstractServerListManager(List<String> fixed, String namespace) {
-        this.isFixed = true;
-        for (String serverAddr : fixed) {
-            String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
-            if (serverAddrArr.length == 1) {
-                this.serverList
-                        .add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
-            } else {
-                this.serverList.add(serverAddr);
+            if (Objects.equals(each.type(), serverListProviderType)) {
+                serverListProvider = each;
+                break;
             }
-        }
-        if (StringUtils.isNotBlank(namespace)) {
-            this.namespace = namespace;
-        }
-    }
-    
-    public AbstractServerListManager(String host, int port) {
-        this.isFixed = false;
-        this.endpoint = host;
-        this.endpointPort = port;
-        initAddressServerUrl(null);
-    }
-    
-    public AbstractServerListManager(String endpoint) throws NacosException {
-        this(endpoint, null);
-    }
-    
-    public AbstractServerListManager(String endpoint, String namespace) throws NacosException {
-        this.isFixed = false;
-        if (StringUtils.isBlank(endpoint)) {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint is blank");
-        }
-        Properties properties = new Properties();
-        properties.setProperty(PropertyKeyConst.ENDPOINT, endpoint);
-        final NacosClientProperties clientProperties = NacosClientProperties.PROTOTYPE.derive(properties);
-        initParam(clientProperties);
-        if (StringUtils.isNotBlank(namespace)) {
-            this.namespace = namespace;
         }
     }
     
@@ -131,32 +116,152 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         if (StringUtils.isNotBlank(endpoint)) {
             return;
         }
-        if (StringUtils.isNotBlank(serverAddrsStr)) {
-            this.isFixed = true;
-            StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
-            while (serverAddrsTokens.hasMoreTokens()) {
-                String serverAddr = serverAddrsTokens.nextToken().trim();
-                if (serverAddr.startsWith(HTTP_PREFIX) || serverAddr.startsWith(HTTPS_PREFIX)) {
-                    this.serverList.add(serverAddr);
+        if (StringUtils.isBlank(serverAddrsStr)) {
+            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint and serverAddr is blank");
+        }
+        this.isFixed = true;
+        StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
+        while (serverAddrsTokens.hasMoreTokens()) {
+            String serverAddr = serverAddrsTokens.nextToken().trim();
+            if (serverAddr.startsWith(HTTP_PREFIX) || serverAddr.startsWith(HTTPS_PREFIX)) {
+                this.serverList.add(serverAddr);
+            } else {
+                String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
+                if (serverAddrArr.length == 1) {
+                    this.serverList
+                            .add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
                 } else {
-                    String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
-                    if (serverAddrArr.length == 1) {
-                        this.serverList.add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
-                    } else {
-                        this.serverList.add(serverAddr);
-                    }
+                    this.serverList.add(serverAddr);
                 }
             }
-        } else {
-            throw new NacosException(NacosException.CLIENT_INVALID_PARAM, "endpoint and serverAddr is blank");
         }
     }
     
-    public AbstractServerListManager(NacosClientProperties properties, String namespace) {
-        initParam(properties);
+    public AbstractServerListManager(NacosClientProperties properties, String namespace) throws NacosException {
+        this(properties);
         if (StringUtils.isNotBlank(namespace)) {
             this.namespace = namespace;
         }
+    }
+    
+    /**
+     * Start.
+     *
+     * @throws NacosException nacos exception
+     */
+    public synchronized void start() throws NacosException {
+        
+        if (isStarted || isFixed()) {
+            return;
+        }
+        
+        for (int i = 0; i < initServerListRetryTimes && getServerList().isEmpty(); ++i) {
+            refreshServerListIfNeed();
+            if (!getServerList().isEmpty()) {
+                break;
+            }
+            try {
+                this.wait((i + 1) * 100L);
+            } catch (Exception e) {
+                LOGGER.warn("get serverlist fail,url: {}", addressServerUrl);
+            }
+        }
+        
+        if (getServerList().isEmpty()) {
+            LOGGER.error("[init-serverlist] fail to get NACOS-server serverlist! url: {}", addressServerUrl);
+            throw new NacosException(NacosException.SERVER_ERROR,
+                    "fail to get NACOS-server serverlist! not connnect url:" + addressServerUrl);
+        }
+        
+        // executor schedules the timer task
+        this.refreshServerListExecutor.scheduleWithFixedDelay(this::refreshServerListIfNeed, 0L, 30L, TimeUnit.SECONDS);
+        this.isStarted = true;
+    }
+    
+    @Override
+    public List<String> getServerList() {
+        if (null != serverListProvider) {
+            return serverListProvider.getServerList();
+        }
+        return serverList.isEmpty() ? serversFromEndpoint : serverList;
+    }
+    
+    @Override
+    public void shutdown() throws NacosException {
+        String className = this.getClass().getName();
+        LOGGER.info("{} do shutdown begin", className);
+        ThreadUtils.shutdownThreadPool(refreshServerListExecutor, LOGGER);
+        if (isStarted) {
+            isStarted = false;
+        }
+        ServerListHttpClientManager.getInstance().shutdown();
+        LOGGER.info("{} do shutdown stop", className);
+    }
+    
+    private void refreshServerListIfNeed() {
+        try {
+            if (!CollectionUtils.isEmpty(serverList)) {
+                LOGGER.debug("server list provided by user: " + serverList);
+                return;
+            }
+            if (System.currentTimeMillis() - lastServerListRefreshTime < refreshServerListInternal) {
+                return;
+            }
+            List<String> list = getServerListFromEndpoint();
+            if (CollectionUtils.isEmpty(list)) {
+                throw new Exception("Can not acquire Nacos list");
+            }
+            if (null == serversFromEndpoint || !CollectionUtils.isEqualCollection(list, serversFromEndpoint)) {
+                LOGGER.info("[SERVER-LIST] server list is updated: {}", list);
+                serversFromEndpoint = list;
+                lastServerListRefreshTime = System.currentTimeMillis();
+                NotifyCenter.publishEvent(new ServerListChangeEvent());
+            }
+        } catch (Throwable e) {
+            LOGGER.warn("failed to update server list", e);
+        }
+    }
+    
+    private List<String> getServerListFromEndpoint() {
+        try {
+            HttpRestResult<String> httpResult = nacosRestTemplate.get(addressServerUrl, Header.EMPTY, Query.EMPTY, String.class);
+            
+            if (!httpResult.ok()) {
+                LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}", addressServerUrl,
+                        httpResult.getCode());
+                return null;
+            }
+            List<String> lines = IoUtils.readLines(new StringReader(httpResult.getData()));
+            List<String> result = new ArrayList<>(lines.size());
+            for (String serverAddr : lines) {
+                if (StringUtils.isBlank(serverAddr)) {
+                    continue;
+                }
+                String[] ipPort = InternetAddressUtil.splitIPPortStr(serverAddr.trim());
+                String ip = ipPort[0].trim();
+                if (ipPort.length == 1) {
+                    result.add(ip + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
+                } else {
+                    result.add(serverAddr);
+                }
+            }
+            return result;
+        } catch (Exception e) {
+            LOGGER.error("[check-serverlist] exception. url: {}", addressServerUrl, e);
+            return null;
+        }
+    }
+    
+    private void initParam(NacosClientProperties properties) {
+        initServerAddr(properties);
+        initNameSpace(properties);
+        initEndpoint(properties);
+        initEndpointPort(properties);
+        initEndpointContextPath(properties);
+        initContextPath(properties);
+        initServerListName(properties);
+        initAddressServerUrl(properties);
+        initServerListProviderType(properties);
     }
     
     private void initNameSpace(NacosClientProperties properties) {
@@ -168,6 +273,10 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     private void initServerAddr(NacosClientProperties properties) {
         this.serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+    }
+    
+    private void initServerListProviderType(NacosClientProperties properties) {
+        this.serverListProviderType = properties.getProperty(PropertyKeyConst.SEVER_LIST_PROVIDER_TYPE);
     }
     
     private void initAddressServerUrl(NacosClientProperties properties) {
@@ -191,17 +300,6 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         }
         this.addressServerUrl = addressServerUrlTem.toString();
         LOGGER.info("address server url = {}", this.addressServerUrl);
-    }
-    
-    private void initParam(NacosClientProperties properties) {
-        initServerAddr(properties);
-        initNameSpace(properties);
-        initEndpoint(properties);
-        initEndpointPort(properties);
-        initEndpointContextPath(properties);
-        initContextPath(properties);
-        initServerListName(properties);
-        initAddressServerUrl(properties);
     }
     
     private void initEndpointContextPath(NacosClientProperties properties) {
@@ -248,7 +346,7 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
             if (StringUtils.isNotBlank(endpointUrl)) {
                 this.serverAddrsStr = "";
             }
-            this.endpoint = endpointUrl;
+            endpointTmp = endpointUrl;
         }
         this.endpoint = StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }
@@ -291,13 +389,5 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
     
     public String getServerAddrsStr() {
         return serverAddrsStr;
-    }
-    
-    @Override
-    public List<String> getServerList() {
-        if (null != serverListProvider) {
-            return serverListProvider.getServerList();
-        }
-        return serverList.isEmpty() ? serversFromEndpoint : serverList;
     }
 }

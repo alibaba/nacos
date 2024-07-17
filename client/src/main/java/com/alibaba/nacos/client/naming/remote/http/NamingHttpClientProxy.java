@@ -31,7 +31,7 @@ import com.alibaba.nacos.api.selector.SelectorType;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.monitor.MetricsMonitor;
 import com.alibaba.nacos.client.naming.core.NamingServerListManager;
-import com.alibaba.nacos.client.naming.event.NamingServerListChangeEvent;
+import com.alibaba.nacos.client.address.ServerListChangeEvent;
 import com.alibaba.nacos.client.naming.remote.AbstractNamingClientProxy;
 import com.alibaba.nacos.client.naming.utils.CollectionUtils;
 import com.alibaba.nacos.client.naming.utils.NamingHttpUtil;
@@ -117,13 +117,13 @@ public class NamingHttpClientProxy extends AbstractNamingClientProxy {
     }
     
     @Override
-    public void onEvent(NamingServerListChangeEvent event) {
+    public void onEvent(ServerListChangeEvent event) {
         // do nothing in http client
     }
     
     @Override
     public Class<? extends Event> subscribeType() {
-        return NamingServerListChangeEvent.class;
+        return ServerListChangeEvent.class;
     }
     
     @Override
