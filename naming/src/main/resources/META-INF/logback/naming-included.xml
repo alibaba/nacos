@@ -220,44 +220,34 @@
         </encoder>
     </appender>
     
-    <logger name="com.alibaba.nacos.naming.main" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.main" additivity="false" level="INFO">
         <appender-ref ref="naming-server"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.raft" additivity="false">
-        <level value="DEBUG"/>
+    <logger name="com.alibaba.nacos.naming.raft" additivity="false" level="DEBUG">
         <appender-ref ref="naming-raft"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.distro" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.distro" additivity="false" level="INFO">
         <appender-ref ref="naming-distro"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.event" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.event" additivity="false" level="INFO">
         <appender-ref ref="naming-event"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.push" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.push" additivity="false" level="INFO">
         <appender-ref ref="naming-push"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.rt" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.rt" additivity="false" level="INFO">
         <appender-ref ref="naming-rt"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.performance" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.performance" additivity="false" level="INFO">
         <appender-ref ref="naming-performance"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.router" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.router" additivity="false" level="INFO">
         <appender-ref ref="naming-router"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.cache" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.cache" additivity="false" level="INFO">
         <appender-ref ref="naming-cache"/>
     </logger>
-    <logger name="com.alibaba.nacos.naming.debug" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.naming.debug" additivity="false" level="INFO">
         <appender-ref ref="naming-debug"/>
     </logger>
 
