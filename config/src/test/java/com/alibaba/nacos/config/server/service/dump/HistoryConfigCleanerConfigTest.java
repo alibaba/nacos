@@ -43,6 +43,7 @@ class HistoryConfigCleanerConfigTest {
     public void test() {
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), any(), anyString())).thenReturn("test");
         HistoryConfigCleanerConfig historyConfigCleanerConfig = HistoryConfigCleanerConfig.getInstance();
+        historyConfigCleanerConfig.getConfigFromEnv();
         assertEquals("test", historyConfigCleanerConfig.getActiveHistoryConfigCleaner());
         envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), any(), anyString())).thenReturn(null);
         historyConfigCleanerConfig.getConfigFromEnv();
