@@ -54,6 +54,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 
@@ -63,6 +64,9 @@ class DumpServiceTest {
     private static final String BETA_TABLE_NAME = "config_info_beta";
     
     private static final String TAG_TABLE_NAME = "config_info_tag";
+    
+    @Mock
+    DefaultHistoryConfigCleaner defaultHistoryConfigCleaner = new DefaultHistoryConfigCleaner();
     
     @Mock
     ConfigInfoPersistService configInfoPersistService;
@@ -95,6 +99,8 @@ class DumpServiceTest {
     
     MockedStatic<PropertyUtil> propertyUtilMockedStatic;
     
+    MockedStatic<HistoryConfigCleanerManager> historyConfigCleanerManagerMockedStatic;
+    
     @Mock
     private DataSourceService dataSourceService;
     
@@ -115,6 +121,9 @@ class DumpServiceTest {
         dumpService = new ExternalDumpService(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
                 configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, mergeDatumService, memberManager);
         configExecutorMocked = Mockito.mockStatic(ConfigExecutor.class);
+        historyConfigCleanerManagerMockedStatic = Mockito.mockStatic(HistoryConfigCleanerManager.class);
+        historyConfigCleanerManagerMockedStatic.when(() -> HistoryConfigCleanerManager.getHistoryConfigCleaner(anyString()))
+                .thenReturn(defaultHistoryConfigCleaner);
         
     }
     
@@ -123,6 +132,7 @@ class DumpServiceTest {
         envUtilMockedStatic.close();
         configExecutorMocked.close();
         propertyUtilMockedStatic.close();
+        historyConfigCleanerManagerMockedStatic.close();
     }
     
     @Test
@@ -189,6 +199,7 @@ class DumpServiceTest {
         Mockito.verify(configInfoTagPersistService, times(1)).configInfoTagCount();
         
         Mockito.verify(mergeDatumService, times(2)).executeConfigsMerge(anyList());
+        Mockito.verify(defaultHistoryConfigCleaner, times(1)).startCleanTask();
         
         // expect dump formal,beta,tag,history clear,config change task to be scheduled.
         // expect config clear history task be scheduled.
@@ -204,8 +215,6 @@ class DumpServiceTest {
         configExecutorMocked.verify(
                 () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeConfigWorker.class), anyLong(), eq(TimeUnit.MILLISECONDS)),
                 times(1));
-        configExecutorMocked.verify(() -> ConfigExecutor.scheduleConfigTask(any(DumpService.ConfigHistoryClear.class), anyLong(), anyLong(),
-                eq(TimeUnit.MINUTES)), times(1));
     }
     
     @Test
