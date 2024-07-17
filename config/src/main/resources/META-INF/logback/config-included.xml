@@ -218,59 +218,47 @@
         </encoder>
     </appender>
 
-    <logger name="com.alibaba.nacos.config.dumpLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.dumpLog" additivity="false" level="INFO">
         <appender-ref ref="dumpFile"/>
     </logger>
-    <logger name="com.alibaba.nacos.config.pullLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.pullLog" additivity="false" level="INFO">
         <appender-ref ref="pullFile"/>
     </logger>
-    <logger name="com.alibaba.nacos.config.pullCheckLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.pullCheckLog" additivity="false" level="INFO">
         <appender-ref ref="pullCheckFile"/>
     </logger>
-    <logger name="com.alibaba.nacos.config.fatal" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.fatal" additivity="false" level="INFO">
         <appender-ref ref="fatalFile"/>
     </logger>
-    <logger name="com.alibaba.nacos.config.monitorLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.monitorLog" additivity="false" level="INFO">
         <appender-ref ref="memoryFile"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.aclLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.aclLog" additivity="false" level="INFO">
         <appender-ref ref="aclLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.clientLog" additivity="false">
-        <level value="info"/>
+    <logger name="com.alibaba.nacos.config.clientLog" additivity="false" level="INFO">
         <appender-ref ref="clientLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.sdkLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.sdkLog" additivity="false" level="INFO">
         <appender-ref ref="sdkLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.notifyLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.notifyLog" additivity="false" level="INFO">
         <appender-ref ref="notifyLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.traceLog" additivity="false">
-        <level value="info"/>
+    <logger name="com.alibaba.nacos.config.traceLog" additivity="false" level="INFO">
         <appender-ref ref="traceLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.appCollectorLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.appCollectorLog" additivity="false" level="INFO">
         <appender-ref ref="appCollectorLog"/>
     </logger>
 
-    <logger name="com.alibaba.nacos.config.startLog" additivity="false">
-        <level value="INFO"/>
+    <logger name="com.alibaba.nacos.config.startLog" additivity="false" level="INFO">
         <appender-ref ref="startLog"/>
     </logger>
 
