@@ -316,7 +316,10 @@ public abstract class DumpService {
                 
             }
             
-            ConfigExecutor.scheduleConfigTask(new ConfigHistoryClear(), 10, 10, TimeUnit.MINUTES);
+            HistoryConfigCleaner cleaner = HistoryConfigCleanerManager.getHistoryConfigCleaner(
+                    HistoryConfigCleanerConfig.getInstance().getActiveHistoryConfigCleaner());
+            cleaner.startCleanTask();
+            
         } finally {
             TimerContext.end(dumpFileContext, LogUtil.DUMP_LOG);
         }
