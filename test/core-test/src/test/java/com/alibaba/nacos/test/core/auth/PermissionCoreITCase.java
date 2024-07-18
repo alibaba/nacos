@@ -42,14 +42,17 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * Integration tests for Nacos permission management with various scenarios.
+ *
  * @author nkorange
  * @since 1.2.0
  */
 //todo fix this test case
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class Permission_ITCase extends HttpClient4Test {
+class PermissionCoreITCase extends HttpClient4Test {
     
     @LocalServerPort
     private int port;
@@ -68,29 +71,31 @@ class Permission_ITCase extends HttpClient4Test {
         
         // Delete permission:
         ResponseEntity<String> response = request("/nacos/v1/auth/permissions",
-                Params.newParams().appendParam("role", "role1").appendParam("resource", "public:*:*").appendParam("action", "rw")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("role", "role1").appendParam("resource", "public:*:*")
+                        .appendParam("action", "rw").appendParam("accessToken", accessToken).done(), String.class,
+                HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Delete permission:
         response = request("/nacos/v1/auth/permissions",
-                Params.newParams().appendParam("role", "role1").appendParam("resource", "test1:*:*").appendParam("action", "r")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("role", "role1").appendParam("resource", "test1:*:*")
+                        .appendParam("action", "r").appendParam("accessToken", accessToken).done(), String.class,
+                HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Delete role:
         response = request("/nacos/v1/auth/roles",
-                Params.newParams().appendParam("role", "role1").appendParam("username", "username3").appendParam("accessToken", accessToken)
-                        .done(), String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("role", "role1").appendParam("username", "username3")
+                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Delete a user:
         response = request("/nacos/v1/auth/users",
-                Params.newParams().appendParam("username", "username3").appendParam("accessToken", accessToken).done(), String.class,
-                HttpMethod.DELETE);
+                Params.newParams().appendParam("username", "username3").appendParam("accessToken", accessToken).done(),
+                String.class, HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
     }
@@ -99,7 +104,8 @@ class Permission_ITCase extends HttpClient4Test {
     void login() {
         
         ResponseEntity<String> response = request("/nacos/v1/auth/users/login",
-                Params.newParams().appendParam("username", "nacos").appendParam("password", "nacos").done(), String.class, HttpMethod.POST);
+                Params.newParams().appendParam("username", "nacos").appendParam("password", "nacos").done(),
+                String.class, HttpMethod.POST);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
@@ -121,22 +127,24 @@ class Permission_ITCase extends HttpClient4Test {
         
         // Create role:
         response = request("/nacos/v1/auth/roles",
-                Params.newParams().appendParam("role", "role1").appendParam("username", "username3").appendParam("accessToken", accessToken)
-                        .done(), String.class, HttpMethod.POST);
+                Params.newParams().appendParam("role", "role1").appendParam("username", "username3")
+                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.POST);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Create permission:
         response = request("/nacos/v1/auth/permissions",
-                Params.newParams().appendParam("role", "role1").appendParam("resource", "public:*:*").appendParam("action", "rw")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.POST);
+                Params.newParams().appendParam("role", "role1").appendParam("resource", "public:*:*")
+                        .appendParam("action", "rw").appendParam("accessToken", accessToken).done(), String.class,
+                HttpMethod.POST);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Create another permission:
         response = request("/nacos/v1/auth/permissions",
-                Params.newParams().appendParam("role", "role1").appendParam("resource", "test1:*:*").appendParam("action", "r")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.POST);
+                Params.newParams().appendParam("role", "role1").appendParam("resource", "test1:*:*")
+                        .appendParam("action", "r").appendParam("accessToken", accessToken).done(), String.class,
+                HttpMethod.POST);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -154,7 +162,8 @@ class Permission_ITCase extends HttpClient4Test {
         assertNotNull(permissionPage);
         assertNotNull(permissionPage.getPageItems());
         
-        boolean found1 = false, found2 = false;
+        boolean found1 = false;
+        boolean found2 = false;
         for (Permission permission : permissionPage.getPageItems()) {
             if (permission.getResource().equals("public:*:*") && permission.getAction().equals("rw")) {
                 found1 = true;
@@ -171,8 +180,9 @@ class Permission_ITCase extends HttpClient4Test {
         
         // Delete permission:
         response = request("/nacos/v1/auth/permissions",
-                Params.newParams().appendParam("role", "role1").appendParam("resource", "public:*:*").appendParam("action", "rw")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("role", "role1").appendParam("resource", "public:*:*")
+                        .appendParam("action", "rw").appendParam("accessToken", accessToken).done(), String.class,
+                HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -205,8 +215,9 @@ class Permission_ITCase extends HttpClient4Test {
         
         // Delete permission:
         response = request("/nacos/v1/auth/permissions",
-                Params.newParams().appendParam("role", "role1").appendParam("resource", "test1:*:*").appendParam("action", "r")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("role", "role1").appendParam("resource", "test1:*:*")
+                        .appendParam("action", "r").appendParam("accessToken", accessToken).done(), String.class,
+                HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         

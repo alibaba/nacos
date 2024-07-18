@@ -33,17 +33,16 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 
-
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @Suite
-@SelectClasses({LdapAuth_ITCase.NonTlsTest.class, LdapAuth_ITCase.TlsTest.class})
-class LdapAuth_ITCase {
+@SelectClasses({LdapAuthCoreITCase.NonTlsTest.class, LdapAuthCoreITCase.TlsTest.class})
+class LdapAuthCoreITCase {
     
     @Test
     void empty() {
-    
     }
     
-    abstract class LdapBase extends AuthBase {
+    abstract static class LdapBase extends AuthBase {
         
         @LocalServerPort
         private int port;
@@ -55,7 +54,8 @@ class LdapAuth_ITCase {
         
         @BeforeEach
         void init() throws Exception {
-            Mockito.when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + "karson" + ")", "karson")).thenReturn(true);
+            Mockito.when(ldapTemplate.authenticate("", "(" + filterPrefix + "=" + "karson" + ")", "karson"))
+                    .thenReturn(true);
             AuthConfigs.setCachingEnabled(false);
             TimeUnit.SECONDS.sleep(5L);
             String url = String.format("http://localhost:%d/", port);
@@ -78,7 +78,8 @@ class LdapAuth_ITCase {
     
     @Nested
     @DirtiesContext
-    @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos", "nacos.core.auth.system.type=ldap",
+    @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/nacos",
+            "nacos.core.auth.system.type=ldap",
             "nacos.core.auth.ldap.url=ldaps://localhost:636"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
     class TlsTest extends LdapBase {
         
@@ -87,6 +88,4 @@ class LdapAuth_ITCase {
             super.login("karson", "karson");
         }
     }
-    
-    
 }
