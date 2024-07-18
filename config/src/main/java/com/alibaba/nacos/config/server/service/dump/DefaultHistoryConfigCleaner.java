@@ -44,14 +44,10 @@ public class DefaultHistoryConfigCleaner implements HistoryConfigCleaner {
     
     @Override
     public void cleanHistoryConfig() {
-        try {
-            Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
-            int pageSize = 1000;
-            LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
-            getHistoryConfigInfoPersistService().removeConfigHistory(startTime, pageSize);
-        } catch (Throwable e) {
-            LOGGER.error("clearConfigHistory error : {}", e.toString());
-        }
+        Timestamp startTime = getBeforeStamp(TimeUtils.getCurrentTime(), 24 * getRetentionDays());
+        int pageSize = 1000;
+        LOGGER.warn("clearConfigHistory, getBeforeStamp:{}, pageSize:{}", startTime, pageSize);
+        getHistoryConfigInfoPersistService().removeConfigHistory(startTime, pageSize);
     }
     
     private HistoryConfigInfoPersistService getHistoryConfigInfoPersistService() {

@@ -203,9 +203,17 @@ public abstract class DumpService {
         
         @Override
         public void run() {
-            LOGGER.warn("clearHistoryConfig start");
+            LOGGER.warn("clearHistoryConfig get scheduled");
             if (canExecute()) {
-                historyConfigCleaner.cleanHistoryConfig();
+                try {
+                    LOGGER.warn("clearHistoryConfig is enable in current context, try to run cleaner");
+                    historyConfigCleaner.cleanHistoryConfig();
+                    LOGGER.warn("history config cleaner successfully");
+                } catch (Throwable e) {
+                    LOGGER.error("clearConfigHistory error : {}", e.toString());
+                }
+            } else {
+                LOGGER.warn("clearHistoryConfig is disable in current context");
             }
         }
     }
