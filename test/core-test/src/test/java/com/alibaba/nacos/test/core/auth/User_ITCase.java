@@ -70,14 +70,16 @@ class User_ITCase extends HttpClient4Test {
         
         // Delete a user:
         ResponseEntity<String> response = request("/nacos/v1/auth/users",
-                Params.newParams().appendParam("username", "username1").appendParam("accessToken", accessToken).done(), String.class,
+                Params.newParams().appendParam("username", "username1").appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),String.class,
                 HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Delete a user:
         request("/nacos/v1/auth/users",
-                Params.newParams().appendParam("username", "username2").appendParam("accessToken", accessToken).done(), String.class,
+                Params.newParams().appendParam("username", "username2").appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),String.class,
                 HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -110,14 +112,17 @@ class User_ITCase extends HttpClient4Test {
         // Create a user:
         ResponseEntity<String> response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("username", "username1").appendParam("password", "password1")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.POST);
+                        .appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),String.class, HttpMethod.POST);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Query a user:
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("pageNo", "1").appendParam("pageSize", String.valueOf(Integer.MAX_VALUE))
-                        .appendParam("accessToken", accessToken).done(), String.class);
+                        .appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),
+                String.class, HttpMethod.GET);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -140,14 +145,18 @@ class User_ITCase extends HttpClient4Test {
         // Update a user:
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("username", "username1").appendParam("newPassword", "password2")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.PUT);
+                        .appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),
+                String.class, HttpMethod.PUT);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Query a user:
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("pageNo", "1").appendParam("pageSize", String.valueOf(Integer.MAX_VALUE))
-                        .appendParam("accessToken", accessToken).done(), String.class);
+                        .appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),
+                String.class,HttpMethod.GET);
         
         userPage = JacksonUtils.toObj(response.getBody(), new TypeReference<Page<User>>() {
         });
@@ -167,7 +176,8 @@ class User_ITCase extends HttpClient4Test {
         
         // Delete a user:
         response = request("/nacos/v1/auth/users",
-                Params.newParams().appendParam("username", "username1").appendParam("accessToken", accessToken).done(), String.class,
+                Params.newParams().appendParam("username", "username1").appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),String.class,
                 HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
@@ -175,7 +185,8 @@ class User_ITCase extends HttpClient4Test {
         // Query a user:
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("pageNo", "1").appendParam("pageSize", String.valueOf(Integer.MAX_VALUE))
-                        .appendParam("accessToken", accessToken).done(), String.class);
+                        .appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),String.class,HttpMethod.GET);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -206,12 +217,16 @@ class User_ITCase extends HttpClient4Test {
         // create username1
         ResponseEntity<String> response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("username", "username1").appendParam("password", "password1")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.POST);
+                        .appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),
+                String.class, HttpMethod.POST);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         // create username2
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("username", "username2").appendParam("password", "password2")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.POST);
+                        .appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),
+                String.class, HttpMethod.POST);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // user login
@@ -226,19 +241,25 @@ class User_ITCase extends HttpClient4Test {
         // update by admin
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("username", "username1").appendParam("newPassword", "password3")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.PUT);
+                        .appendParam("accessToken", accessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),
+                String.class, HttpMethod.PUT);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // update by same user
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("username", "username1").appendParam("newPassword", "password4")
-                        .appendParam("accessToken", user1AccessToken).done(), String.class, HttpMethod.PUT);
+                        .appendParam("accessToken", user1AccessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),
+                String.class, HttpMethod.PUT);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // update by another user
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("username", "username1").appendParam("newPassword", "password5")
-                        .appendParam("accessToken", user2AccessToken).done(), String.class, HttpMethod.PUT);
+                        .appendParam("accessToken", user2AccessToken).done(),
+                Params.newParams().appendParam("Authorization", accessToken).done(),
+                String.class, HttpMethod.PUT);
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
     }
 }

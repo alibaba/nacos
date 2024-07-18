@@ -54,11 +54,21 @@ public class HttpClient4Test {
     protected <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
         
         HttpHeaders headers = new HttpHeaders();
-        
+
         HttpEntity<?> entity = new HttpEntity<T>(headers);
         
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path).queryParams(params);
         
+        return this.restTemplate.exchange(builder.toUriString(), httpMethod, entity, clazz);
+    }
+    protected <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params,MultiValueMap<String, String> headersMap, Class<T> clazz, HttpMethod httpMethod) {
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.addAll(headersMap);
+        HttpEntity<?> entity = new HttpEntity<T>(headers);
+
+        UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(this.base.toString() + path).queryParams(params);
+
         return this.restTemplate.exchange(builder.toUriString(), httpMethod, entity, clazz);
     }
 }

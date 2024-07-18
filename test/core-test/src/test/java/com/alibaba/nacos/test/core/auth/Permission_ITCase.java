@@ -69,7 +69,8 @@ class Permission_ITCase extends HttpClient4Test {
         // Delete permission:
         ResponseEntity<String> response = request("/nacos/v1/auth/permissions",
                 Params.newParams().appendParam("role", "role1").appendParam("resource", "public:*:*").appendParam("action", "rw")
-                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.DELETE);
+                        .appendParam("accessToken", accessToken).done(),
+                String.class, HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
