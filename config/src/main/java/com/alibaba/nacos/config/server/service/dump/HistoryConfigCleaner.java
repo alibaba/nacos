@@ -28,11 +28,6 @@ public interface HistoryConfigCleaner {
     public void cleanHistoryConfig();
     
     /**
-     * Start clean task.
-     */
-    public void startCleanTask();
-    
-    /**
      * Gets name.
      *
      * @return the name

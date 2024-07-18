@@ -26,7 +26,6 @@ class HistoryConfigCleanerManagerTest {
     public void testHistoryConfigCleanerManangerTest() {
         HistoryConfigCleaner cleaner = HistoryConfigCleanerManager.getHistoryConfigCleaner(
                 HistoryConfigCleanerConfig.getInstance().getActiveHistoryConfigCleaner());
-        cleaner.startCleanTask();
         assertEquals(cleaner.getName(), "nacos");
     }
     
