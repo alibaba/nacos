@@ -131,7 +131,7 @@ public class MetricsMonitor {
         List<Tag> tags = new ArrayList<>();
         tags.add(new ImmutableTag("module", "naming"));
         tags.add(new ImmutableTag("name", name));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, number);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, number);
     }
     
     public static AtomicInteger getMysqlHealthCheckMonitor() {

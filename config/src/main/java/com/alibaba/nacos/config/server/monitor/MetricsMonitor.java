@@ -81,42 +81,42 @@ public class MetricsMonitor {
         List<Tag> tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "getConfig"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, getConfig);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, getConfig);
         
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "publish"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, publish);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, publish);
         
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "longPolling"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, longPolling);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, longPolling);
         
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "configCount"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, configCount);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, configCount);
         
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "notifyTask"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, notifyTask);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, notifyTask);
         
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "notifyClientTask"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, notifyClientTask);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, notifyClientTask);
         
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "dumpTask"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, dumpTask);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, dumpTask);
         
         tags = new ArrayList<>();
         tags.add(immutableTag);
         tags.add(new ImmutableTag("name", "fuzzySearch"));
-        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor", tags, fuzzySearch);
+        NacosMeterRegistryCenter.gauge(METER_REGISTRY, "nacos_monitor_gauge", tags, fuzzySearch);
         
         configSubscriber.put("v1", new AtomicInteger(0));
         configSubscriber.put("v2", new AtomicInteger(0));
