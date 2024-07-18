@@ -80,11 +80,11 @@ import static org.junit.jupiter.api.Assertions.fail;
  * @author klw
  * @date 2019/5/23 15:26
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@SuppressWarnings({"checkstyle:TypeName", "checkstyle:AbbreviationAsWordInName"})
-class ConfigExportAndImportAPI_CITCase {
+class ConfigExportAndImportAPIConfigITCase {
     
     private static final long TIME_OUT = 2000;
     
@@ -103,7 +103,7 @@ class ConfigExportAndImportAPI_CITCase {
     @AfterAll
     static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigExportAndImportAPI_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigExportAndImportAPIConfigITCase.class.getSimpleName());
     }
     
     @BeforeEach
@@ -112,8 +112,10 @@ class ConfigExportAndImportAPI_CITCase {
         // register a handler to process byte[] result
         nacosRestTemplate.registerResponseHandler(byte[].class.getName(), new AbstractResponseHandler() {
             @Override
-            public HttpRestResult<byte[]> convertResult(HttpClientResponse response, Type responseType) throws Exception {
-                return new HttpRestResult(response.getHeaders(), response.getStatusCode(), IOUtils.toByteArray(response.getBody()), null);
+            public HttpRestResult<byte[]> convertResult(HttpClientResponse response, Type responseType)
+                    throws Exception {
+                return new HttpRestResult(response.getHeaders(), response.getStatusCode(),
+                        IOUtils.toByteArray(response.getBody()), null);
             }
         });
         
@@ -149,12 +151,12 @@ class ConfigExportAndImportAPI_CITCase {
     @AfterEach
     void cleanup() throws Exception {
         Assertions.assertDoesNotThrow(() -> {
-            HttpRestResult<String> result;
             Map<String, String> params = new HashMap<>();
             params.put("dataId", "testNoAppname1.yml");
             params.put("group", "EXPORT_IMPORT_TEST_GROUP");
             params.put("beta", "false");
-            result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params, agent.getEncode(), TIME_OUT);
+            HttpRestResult<String> result = agent.httpDelete(CONFIG_CONTROLLER_PATH + "/", null, params,
+                    agent.getEncode(), TIME_OUT);
             assertEquals(HttpURLConnection.HTTP_OK, result.getCode());
             
             params.put("dataId", "testNoAppname2.txt");
@@ -305,8 +307,8 @@ class ConfigExportAndImportAPI_CITCase {
         String config3Name = "EXPORT_IMPORT_TEST_GROUP/testHasAppname1.properties";
         int successCount = 0;
         for (ZipUtils.ZipItem zipItem : zipItemList) {
-            if (config1Name.equals(zipItem.getItemName()) || config2Name.equals(zipItem.getItemName()) || config3Name.equals(
-                    zipItem.getItemName())) {
+            if (config1Name.equals(zipItem.getItemName()) || config2Name.equals(zipItem.getItemName())
+                    || config3Name.equals(zipItem.getItemName())) {
                 successCount++;
             }
         }
@@ -334,8 +336,8 @@ class ConfigExportAndImportAPI_CITCase {
         final String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
-        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, "testImport.zip",
-                ZipUtils.zip(zipItemList));
+        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm,
+                "testImport.zip", ZipUtils.zip(zipItemList));
         System.out.println("importResult: " + importResult);
         
         // test unrecognizedData
@@ -396,7 +398,8 @@ class ConfigExportAndImportAPI_CITCase {
     private String packageMetaName(String group, String dataId) {
         String tempDataId = dataId;
         if (tempDataId.contains(".")) {
-            tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId.substring(tempDataId.lastIndexOf(".") + 1);
+            tempDataId = tempDataId.substring(0, tempDataId.lastIndexOf(".")) + "~" + tempDataId.substring(
+                    tempDataId.lastIndexOf(".") + 1);
         }
         return group + "." + tempDataId + ".app";
     }
@@ -404,7 +407,8 @@ class ConfigExportAndImportAPI_CITCase {
     @Test
     void testExportV2() {
         String dataId = "testNoAppname2.txt";
-        String getDataUrl = "?search=accurate&group=TEST1_GROUP&pageNo=1&pageSize=10&tenant=&namespaceId=&dataId=" + dataId;
+        String getDataUrl =
+                "?search=accurate&group=TEST1_GROUP&pageNo=1&pageSize=10&tenant=&namespaceId=&dataId=" + dataId;
         String queryResult = httpGetString(serverAddr + CONFIG_CONTROLLER_PATH + getDataUrl, null);
         JsonNode resultObj = JacksonUtils.toObj(queryResult);
         JsonNode resultConfigs = resultObj.get("pageItems");
@@ -441,8 +445,10 @@ class ConfigExportAndImportAPI_CITCase {
         config1Metadata.setDataId(dataId);
         config1Metadata.setGroup(group);
         config1Metadata.setType(configDetailResult.get("type").asText());
-        config1Metadata.setAppName(configDetailResult.get("appName") == null ? null : configDetailResult.get("appName").asText());
-        config1Metadata.setDesc(configDetailResult.get("desc") == null ? null : configDetailResult.get("desc").asText());
+        config1Metadata.setAppName(
+                configDetailResult.get("appName") == null ? null : configDetailResult.get("appName").asText());
+        config1Metadata.setDesc(
+                configDetailResult.get("desc") == null ? null : configDetailResult.get("desc").asText());
         
         ConfigMetadata.ConfigExportItem configExportItem1 = configMetadata.getMetadata().get(0);
         assertEquals(configExportItem1, config1Metadata);
@@ -452,22 +458,21 @@ class ConfigExportAndImportAPI_CITCase {
     void testImportV2() {
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>(3);
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT2/test1", "test: test1"));
-        String metaDataStr =
-                "metadata:\n" + "- appName: testAppName\n" + "  dataId: test1\n" + "  desc: testDesc\n" + "  group: TEST_IMPORT2\n"
-                        + "  type: yaml";
+        String metaDataStr = "metadata:\n" + "- appName: testAppName\n" + "  dataId: test1\n" + "  desc: testDesc\n"
+                + "  group: TEST_IMPORT2\n" + "  type: yaml";
         
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         final String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
-        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, "testImport.zip",
-                ZipUtils.zip(zipItemList));
+        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm,
+                "testImport.zip", ZipUtils.zip(zipItemList));
         
         JsonNode importResObj = JacksonUtils.toObj(importResult);
         assertEquals(1, importResObj.get("data").get("succCount").asInt());
         
-        String queryConfigDetailResult = httpGetString(serverAddr + CONFIG_CONTROLLER_PATH + "?show=all&dataId=test1&group=TEST_IMPORT2",
-                null);
+        String queryConfigDetailResult = httpGetString(
+                serverAddr + CONFIG_CONTROLLER_PATH + "?show=all&dataId=test1&group=TEST_IMPORT2", null);
         JsonNode configDetailResult = JacksonUtils.toObj(queryConfigDetailResult);
         assertNotNull(configDetailResult);
         
@@ -482,14 +487,16 @@ class ConfigExportAndImportAPI_CITCase {
     void testImportV2MetadataError() {
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>(3);
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT2/test2", "test: test2"));
-        String metaDataStr = "metadata:\n" + "- appName: testAppName\n" + "  desc: test desc\n" + "  group: TEST_IMPORT\n" + "  type: yaml";
+        String metaDataStr =
+                "metadata:\n" + "- appName: testAppName\n" + "  desc: test desc\n" + "  group: TEST_IMPORT\n"
+                        + "  type: yaml";
         
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         final String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
-        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, "testImport.zip",
-                ZipUtils.zip(zipItemList));
+        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm,
+                "testImport.zip", ZipUtils.zip(zipItemList));
         
         JsonNode importResObj = JacksonUtils.toObj(importResult);
         assertEquals(importResObj.get("code").intValue(), ResultCodeEnum.METADATA_ILLEGAL.getCode());
@@ -500,15 +507,15 @@ class ConfigExportAndImportAPI_CITCase {
     void testImportV2MetadataNotFind() {
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>(3);
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT2/test3.yml", "test: test3"));
-        String metaDataStr = "metadata:\n" + "- dataId: notExist\n" + "  group: TEST_IMPORT2\n" + "  type: yaml\n" + "- dataId: test3.yml\n"
-                + "  group: TEST_IMPORT2\n" + "  type: yaml";
+        String metaDataStr = "metadata:\n" + "- dataId: notExist\n" + "  group: TEST_IMPORT2\n" + "  type: yaml\n"
+                + "- dataId: test3.yml\n" + "  group: TEST_IMPORT2\n" + "  type: yaml";
         
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         final String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
-        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, "testImport.zip",
-                ZipUtils.zip(zipItemList));
+        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm,
+                "testImport.zip", ZipUtils.zip(zipItemList));
         
         JsonNode importResObj = JacksonUtils.toObj(importResult);
         JsonNode data = importResObj.get("data");
@@ -526,16 +533,15 @@ class ConfigExportAndImportAPI_CITCase {
         List<ZipUtils.ZipItem> zipItemList = new ArrayList<>(3);
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT2/test4", "test: test4"));
         zipItemList.add(new ZipUtils.ZipItem("TEST_IMPORT2/ignore.yml", "test: test4"));
-        String metaDataStr =
-                "metadata:\n" + "- appName: testAppName\n" + "  dataId: test4\n" + "  desc: testDesc\n" + "  group: TEST_IMPORT2\n"
-                        + "  type: yaml";
+        String metaDataStr = "metadata:\n" + "- appName: testAppName\n" + "  dataId: test4\n" + "  desc: testDesc\n"
+                + "  group: TEST_IMPORT2\n" + "  type: yaml";
         
         zipItemList.add(new ZipUtils.ZipItem(Constants.CONFIG_EXPORT_METADATA_NEW, metaDataStr));
         final String importUrl = "?import=true&namespace=";
         Map<String, String> importPrarm = new HashMap<>(1);
         importPrarm.put("policy", "OVERWRITE");
-        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm, "testImport.zip",
-                ZipUtils.zip(zipItemList));
+        String importResult = uploadZipFile(serverAddr + CONFIG_CONTROLLER_PATH + importUrl, importPrarm,
+                "testImport.zip", ZipUtils.zip(zipItemList));
         
         JsonNode importResObj = JacksonUtils.toObj(importResult);
         JsonNode data = importResObj.get("data");
@@ -587,7 +593,8 @@ class ConfigExportAndImportAPI_CITCase {
             int connectTimeout = 10000;
             int socketTimeout = 10000;
             HttpPost httpPost = new HttpPost(url);
-            RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(connectTimeout).setSocketTimeout(socketTimeout).build();
+            RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(connectTimeout)
+                    .setSocketTimeout(socketTimeout).build();
             httpPost.setConfig(requestConfig);
             
             MultipartEntityBuilder builder = MultipartEntityBuilder.create();
