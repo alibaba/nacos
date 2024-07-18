@@ -24,12 +24,16 @@ import org.springframework.core.env.StandardEnvironment;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 /**
+ * Integration test case for validating unique ID generation using SnowFlowerIdGenerator with distinct initializations
+ * and assertions for uniqueness.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-class SnowFlowerIdGenerator_ITCase {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+class SnowFlowerIdGeneratorCoreITCase {
     
     @Test
-    void test_idGenerator() {
+    void testIdGenerator() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         SnowFlowerIdGenerator generator1 = new SnowFlowerIdGenerator();
         SnowFlowerIdGenerator generator2 = new SnowFlowerIdGenerator();

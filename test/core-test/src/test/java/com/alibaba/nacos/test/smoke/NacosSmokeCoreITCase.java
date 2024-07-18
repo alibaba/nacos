@@ -21,9 +21,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class nacosSmoke_ITCase {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+class NacosSmokeCoreITCase {
     
-    private static Logger logger = Logger.getLogger(nacosSmoke_ITCase.class);
+    private static Logger logger = Logger.getLogger(NacosSmokeCoreITCase.class);
     
     @BeforeEach
     void setUp() {

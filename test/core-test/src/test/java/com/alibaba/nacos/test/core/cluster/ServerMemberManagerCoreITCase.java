@@ -57,9 +57,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+// todo fix
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @TestMethodOrder(MethodName.class)
-        // todo fix
-class ServerMemberManager_ITCase {
+class ServerMemberManagerCoreITCase {
     
     private ServerMemberManager memberManager;
     
@@ -148,7 +149,8 @@ class ServerMemberManager_ITCase {
             @Override
             public void onEvent(MembersChangeEvent event) {
                 System.out.println(event);
-                healthMembers.set(MemberUtil.selectTargetMembers(event.getMembers(), member -> !NodeState.DOWN.equals(member.getState())));
+                healthMembers.set(MemberUtil.selectTargetMembers(event.getMembers(),
+                        member -> !NodeState.DOWN.equals(member.getState())));
                 if (first.getCount() == 1) {
                     first.countDown();
                     return;
@@ -186,7 +188,7 @@ class ServerMemberManager_ITCase {
         member.setState(NodeState.DOWN);
         assertTrue(memberManager.update(member));
         
-        second.await();//fix blocking
+        second.await(); //fix blocking
         copy = new HashSet<>(firstMemberList);
         copy.removeAll(healthMembers.get());
         assertEquals(3, copy.size());

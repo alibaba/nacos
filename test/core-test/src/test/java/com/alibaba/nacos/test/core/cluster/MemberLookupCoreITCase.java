@@ -43,17 +43,22 @@ import java.util.Arrays;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * Integration test case for Member Lookup functionality, validating different lookup strategies: file configuration,
+ * standalone mode, and address server lookup.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @TestMethodOrder(MethodName.class)
-class MemberLookup_ITCase {
+class MemberLookupCoreITCase {
     
-    static final String path = Paths.get(System.getProperty("user.home"), "/member_look").toString();
+    private final String path = Paths.get(System.getProperty("user.home"), "/member_look").toString();
     
-    static final String name = "cluster.conf";
+    private final String name = "cluster.conf";
     
     ServerMemberManager memberManager;
     
@@ -70,7 +75,8 @@ class MemberLookup_ITCase {
         File file = Paths.get(path, "conf", name).toFile();
         DiskUtils.touch(file);
         String ip = InetUtils.getSelfIP();
-        DiskUtils.writeFile(file, (ip + ":8848," + ip + ":8847," + ip + ":8849").getBytes(StandardCharsets.UTF_8), false);
+        DiskUtils.writeFile(file, (ip + ":8848," + ip + ":8847," + ip + ":8849").getBytes(StandardCharsets.UTF_8),
+                false);
         
         try {
             memberManager = new ServerMemberManager(new MockServletContext());
@@ -90,19 +96,19 @@ class MemberLookup_ITCase {
     }
     
     @Test
-    void test_a_lookup_file_config() throws Exception {
+    void testLookupFileConfig() throws Exception {
         try {
             LookupFactory.createLookUp(memberManager);
         } catch (Throwable ignore) {
         }
         MemberLookup lookup = LookupFactory.getLookUp();
         System.out.println(lookup);
-        assertTrue(lookup instanceof FileConfigMemberLookup);
+        assertInstanceOf(FileConfigMemberLookup.class, lookup);
         func(lookup);
     }
     
     @Test
-    void test_b_lookup_standalone() throws Exception {
+    void testLookupStandalone() throws Exception {
         EnvUtil.setIsStandalone(true);
         try {
             LookupFactory.createLookUp(memberManager);
@@ -113,11 +119,11 @@ class MemberLookup_ITCase {
         }
         MemberLookup lookup = LookupFactory.getLookUp();
         System.out.println(lookup);
-        assertTrue(lookup instanceof StandaloneMemberLookup);
+        assertInstanceOf(StandaloneMemberLookup.class, lookup);
     }
     
     @Test
-    void test_c_lookup_address_server() throws Exception {
+    void testLookupAddressServer() throws Exception {
         EnvUtil.setIsStandalone(false);
         System.out.println(EnvUtil.getClusterConfFilePath());
         DiskUtils.deleteFile(Paths.get(path, "conf").toString(), "cluster.conf");
@@ -128,7 +134,7 @@ class MemberLookup_ITCase {
         }
         MemberLookup lookup = LookupFactory.getLookUp();
         System.out.println(lookup);
-        assertTrue(lookup instanceof AddressServerMemberLookup);
+        assertInstanceOf(AddressServerMemberLookup.class, lookup);
         try {
             func(lookup);
         } catch (NacosException e) {

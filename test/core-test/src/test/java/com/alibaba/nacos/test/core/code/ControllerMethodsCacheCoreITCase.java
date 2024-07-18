@@ -31,10 +31,14 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
+ * Integration test case for validating ControllerMethodsCache functionality,ensuring correct method retrieval based on
+ * different request parameters.
+ *
  * @author horizonzy
  * @since 1.3.2
  */
-class ControllerMethodsCache_ITCase {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+class ControllerMethodsCacheCoreITCase {
     
     private ControllerMethodsCache methodsCache;
     
