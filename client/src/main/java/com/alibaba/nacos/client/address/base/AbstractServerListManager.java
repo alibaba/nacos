@@ -57,6 +57,8 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
 
     protected final String namespace;
 
+    private final NacosClientProperties properties;
+
     private volatile List<String> serverList = new ArrayList<>();
 
     private final AtomicInteger index = new AtomicInteger();
@@ -66,6 +68,7 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         this.tenant = namespace;
         this.namespace = namespace;
         this.name = initName(properties);
+        this.properties = properties;
     }
 
     public String getName() {
@@ -74,6 +77,10 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
 
     public String getNamespace() {
         return namespace;
+    }
+
+    public NacosClientProperties getProperties() {
+        return properties;
     }
 
     @Override

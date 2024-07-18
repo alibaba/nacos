@@ -75,11 +75,13 @@ class ServerHttpAgentTest {
 
     @BeforeEach
     void setUp() throws Exception {
-        serverHttpAgent = new ServerHttpAgent(serverListManager, new Properties());
+        Properties properties = new Properties();
+        properties.setProperty(PropertyKeyConst.CONTEXT_PATH, "/");
+        serverHttpAgent = new ServerHttpAgent(serverListManager, properties);
         injectRestTemplate();
+        when(serverListManager.getProperties()).thenReturn(NacosClientProperties.PROTOTYPE.derive(properties));
         when(serverListManager.getCurrentServer()).thenReturn(SERVER_ADDRESS_1);
         when(serverListManager.getNextServer()).thenReturn(SERVER_ADDRESS_1);
-        ParamUtil.setDefaultContextPath(null);
     }
 
     private void injectRestTemplate() throws NoSuchFieldException, IllegalAccessException {

@@ -16,6 +16,7 @@
 
 package com.alibaba.nacos.client.config.http;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.address.base.AbstractServerListManager;
 import com.alibaba.nacos.client.address.factory.ServerListManagerFactory;
@@ -23,6 +24,7 @@ import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.utils.ContextPathUtil;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.client.utils.ParamUtil;
+import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -126,7 +128,11 @@ public class ServerHttpAgent implements HttpAgent {
     }
 
     private String getUrl(String serverAddr, String relativePath) {
-        return serverAddr + ContextPathUtil.normalizeContextPath(ParamUtil.getDefaultContextPath()) + relativePath;
+        String contextPath = TemplateUtils.stringBlankAndThenExecute(
+                serverListManager.getProperties().getProperty(PropertyKeyConst.CONTEXT_PATH),
+                ParamUtil::getDefaultContextPath
+        );
+        return serverAddr + ContextPathUtil.normalizeContextPath(contextPath) + relativePath;
     }
 
     private Header createHeader(Map<String, String> headers) {
