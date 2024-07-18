@@ -28,6 +28,11 @@ import java.util.List;
 import java.util.StringJoiner;
 import java.util.StringTokenizer;
 
+/**
+ * Properties Server List Manager.
+ *
+ * @author misakacoder
+ */
 @Order(100)
 public class PropertiesServerListManager extends AbstractServerListManager {
 

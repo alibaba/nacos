@@ -16,6 +16,8 @@
 
 package com.alibaba.nacos.client.address.spi;
 
+import com.alibaba.nacos.common.utils.StringUtils;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,6 +33,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Service Loader.
+ *
+ * @author misakacoder
+ */
 public class ServiceLoader {
 
     private static final String PREFIX = "META-INF/services/";
@@ -45,42 +52,45 @@ public class ServiceLoader {
      */
     @SuppressWarnings("unchecked")
     public static <T> List<Class<T>> load(Class<T> service) {
-        List<Class<?>> services = SERVICES.get(service);
-        if (services != null) {
-            return services.stream().map(p -> (Class<T>) p).collect(Collectors.toList());
-        }
-        ClassLoader classLoader = ServiceLoader.class.getClassLoader();
-        List<Class<T>> classes = new ArrayList<>();
-        String name = PREFIX + service.getName();
-        try {
-            Enumeration<URL> urls = classLoader.getResources(name);
-            while (urls.hasMoreElements()) {
-                URL url = urls.nextElement();
-                try (
-                        InputStream in = url.openStream();
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))
-                ) {
-                    String className;
-                    while ((className = reader.readLine()) != null) {
-                        Class<?> cls = null;
-                        try {
-                            cls = Class.forName(className, false, classLoader);
-                        } catch (ClassNotFoundException e) {
-                            error(service, String.format("Provider %s not found", className));
-                        }
-                        if (cls != service && service.isAssignableFrom(cls)) {
-                            SERVICES.computeIfAbsent(service, key -> new ArrayList<>()).add(cls);
-                            classes.add((Class<T>) cls);
-                        } else {
-                            error(service, String.format("Provider %s not a subclass", className));
+        List<Class<?>> services = SERVICES.getOrDefault(service, new ArrayList<>());
+        if (services.isEmpty()) {
+            ClassLoader classLoader = ServiceLoader.class.getClassLoader();
+            String name = PREFIX + service.getName();
+            try {
+                Enumeration<URL> urls = classLoader.getResources(name);
+                while (urls.hasMoreElements()) {
+                    URL url = urls.nextElement();
+                    try (
+                            InputStream in = url.openStream();
+                            BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8))
+                    ) {
+                        String line;
+                        while ((line = reader.readLine()) != null) {
+                            final String className = line.trim();
+                            if (StringUtils.isNotBlank(className)
+                                    && !className.startsWith("#")
+                                    && services.stream().noneMatch(p -> p.getName().equals(className))) {
+                                Class<?> cls = null;
+                                try {
+                                    cls = Class.forName(className, false, classLoader);
+                                } catch (ClassNotFoundException e) {
+                                    error(service, String.format("Provider %s not found", className));
+                                }
+                                if (cls != service && service.isAssignableFrom(cls)) {
+                                    services.add(cls);
+                                } else {
+                                    error(service, String.format("Provider %s not a subclass", className));
+                                }
+                            }
                         }
                     }
                 }
+            } catch (IOException e) {
+                error(service, "Error locating configuration files");
             }
-        } catch (IOException e) {
-            error(service, "Error locating configuration files");
+            SERVICES.put(service, services);
         }
-        return classes;
+        return services.stream().map(p -> (Class<T>) p).collect(Collectors.toList());
     }
 
     /**

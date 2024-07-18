@@ -29,6 +29,11 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * Server List Manager Factory.
+ *
+ * @author misakacoder
+ */
 public class ServerListManagerFactory {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ServerListManagerFactory.class);

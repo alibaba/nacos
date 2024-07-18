@@ -42,6 +42,11 @@ import java.util.stream.Collectors;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTPS_PREFIX;
 import static com.alibaba.nacos.common.constant.RequestUrlConstants.HTTP_PREFIX;
 
+/**
+ * Abstract Server List Manager.
+ *
+ * @author misakacoder
+ */
 public abstract class AbstractServerListManager implements ServerListFactory, Closeable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AbstractServerListManager.class);
@@ -91,6 +96,12 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
 
     }
 
+    /**
+     * Initialize the server name.
+     *
+     * @param properties Nacos client properties.
+     * @return The initialized server name.
+     */
     protected abstract String initServerName(NacosClientProperties properties);
 
     protected List<String> readServerList(Reader reader) throws IOException {

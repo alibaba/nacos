@@ -38,10 +38,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * File Server List Manager.
+ *
+ * @author misakacoder
+ */
 @Order(200)
 public class FileServerListManager extends AbstractServerListManager {
 
     private static final String NAME_PREFIX = "file";
+
+    private static final String LINUX_PATH_PREFIX = "/";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(FileServerListManager.class);
 
@@ -62,7 +69,7 @@ public class FileServerListManager extends AbstractServerListManager {
         this.serverFile = initServerFile(properties);
         //windows prefix
         String serverFile = this.serverFile.replace(":", "");
-        if (serverFile.startsWith("/")) {
+        if (serverFile.startsWith(LINUX_PATH_PREFIX)) {
             //linux prefix
             serverFile = serverFile.substring(1);
         }
