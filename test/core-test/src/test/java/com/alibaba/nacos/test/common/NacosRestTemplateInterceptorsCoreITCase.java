@@ -39,42 +39,45 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
- * NacosRestTemplate_Interceptors_ITCase
+ * Integration tests for NacosRestTemplateInterceptorsCoreITCase.These tests verify the functionality of HTTP request
+ * interceptors in NacosRestTemplate.
  *
  * @author mai.jh
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestMethodOrder(MethodName.class)
-class NacosRestTemplate_Interceptors_ITCase {
+class NacosRestTemplateInterceptorsCoreITCase {
     
-    private final String CONFIG_PATH = "/nacos/v1/cs";
+    private static final String CONFIG_PATH = "/nacos/v1/cs";
     
+    private final NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder.getNacosRestTemplate(
+            LoggerFactory.getLogger(NacosRestTemplateInterceptorsCoreITCase.class));
+    
+    @SuppressWarnings("deprecation")
     @LocalServerPort
     private int port;
     
-    private NacosRestTemplate nacosRestTemplate = HttpClientBeanHolder.getNacosRestTemplate(
-            LoggerFactory.getLogger(NacosRestTemplate_Interceptors_ITCase.class));
-    
-    private String IP = null;
+    private String ip = null;
     
     @BeforeEach
     void init() throws NacosException {
-        nacosRestTemplate.setInterceptors(Arrays.asList(new TerminationInterceptor()));
-        IP = String.format("http://localhost:%d", port);
+        nacosRestTemplate.setInterceptors(Collections.singletonList(new TerminationInterceptor()));
+        ip = String.format("http://localhost:%d", port);
     }
     
     @Test
-    void test_url_post_config() throws Exception {
-        String url = IP + CONFIG_PATH + "/configs";
+    void testUrlPostConfig() throws Exception {
+        String url = ip + CONFIG_PATH + "/configs";
         Map<String, String> param = new HashMap<>();
         param.put("dataId", "test-1");
         param.put("group", "DEFAULT_GROUP");
@@ -86,7 +89,7 @@ class NacosRestTemplate_Interceptors_ITCase {
         System.out.println(restResult.getHeader());
     }
     
-    private class TerminationInterceptor implements HttpClientRequestInterceptor {
+    private static class TerminationInterceptor implements HttpClientRequestInterceptor {
         
         @Override
         public HttpClientResponse intercept() {

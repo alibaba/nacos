@@ -23,12 +23,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
+ * This class contains integration tests for the FileTypeEnum enumeration. It verifies the functionality of the
+ * getFileTypeEnumByFileExtensionOrFileType method. The tests ensure that the FileTypeEnum correctly maps file
+ * extensions and file types to their respective enum values.
+ *
  * @author by jiangmin.wu on 2020/12/30
  */
-class FileTypeEnum_ITCase {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+class FileTypeEnumCoreITCase {
     
     @Test
-    void fileTypeEnum_test1() {
+    void fileTypeEnumTest1() {
         for (FileTypeEnum value : FileTypeEnum.values()) {
             FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(value.name());
             assertEquals(fileTypeEnum, value);
@@ -36,7 +41,7 @@ class FileTypeEnum_ITCase {
     }
     
     @Test
-    void fileTypeEnum_test2() {
+    void fileTypeEnumTest2() {
         for (FileTypeEnum value : FileTypeEnum.values()) {
             FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(value.getFileType());
             assertNotNull(fileTypeEnum);
@@ -44,7 +49,7 @@ class FileTypeEnum_ITCase {
     }
     
     @Test
-    void fileTypeEnum_test3() {
+    void fileTypeEnumTest3() {
         FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType("t");
         assertEquals(FileTypeEnum.TEXT, fileTypeEnum);
         
