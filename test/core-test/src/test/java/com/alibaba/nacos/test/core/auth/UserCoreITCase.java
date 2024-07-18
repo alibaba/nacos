@@ -45,13 +45,16 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * Integration tests for user management in Nacos, including user creation, deletion, updating, and permissions.
+ *
  * @author nkorange
  * @since 1.2.0
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class User_ITCase extends HttpClient4Test {
+class UserCoreITCase extends HttpClient4Test {
     
     @LocalServerPort
     private int port;
@@ -70,25 +73,23 @@ class User_ITCase extends HttpClient4Test {
         
         // Delete a user:
         ResponseEntity<String> response = request("/nacos/v1/auth/users",
-                Params.newParams().appendParam("username", "username1").appendParam("accessToken", accessToken).done(), String.class,
-                HttpMethod.DELETE);
+                Params.newParams().appendParam("username", "username1").appendParam("accessToken", accessToken).done(),
+                String.class, HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Delete a user:
         request("/nacos/v1/auth/users",
-                Params.newParams().appendParam("username", "username2").appendParam("accessToken", accessToken).done(), String.class,
-                HttpMethod.DELETE);
+                Params.newParams().appendParam("username", "username2").appendParam("accessToken", accessToken).done(),
+                String.class, HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         System.setProperty("nacos.core.auth.enabled", "false");
     }
     
-    
     @Test
     void login() {
-        
         ResponseEntity<String> response = login("nacos", "nacos");
         assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
@@ -98,8 +99,8 @@ class User_ITCase extends HttpClient4Test {
     
     private ResponseEntity<String> login(String username, String password) {
         return request("/nacos/v1/auth/users/login",
-                Params.newParams().appendParam("username", username).appendParam("password", password).done(), String.class,
-                HttpMethod.POST);
+                Params.newParams().appendParam("username", username).appendParam("password", password).done(),
+                String.class, HttpMethod.POST);
     }
     
     @Test
@@ -130,7 +131,8 @@ class User_ITCase extends HttpClient4Test {
         
         boolean found = false;
         for (User user : userPage.getPageItems()) {
-            if ("username1".equals(user.getUsername()) && PasswordEncoderUtil.matches("password1", user.getPassword())) {
+            if ("username1".equals(user.getUsername()) && PasswordEncoderUtil.matches("password1",
+                    user.getPassword())) {
                 found = true;
                 break;
             }
@@ -158,7 +160,8 @@ class User_ITCase extends HttpClient4Test {
         
         found = false;
         for (User user : userPage.getPageItems()) {
-            if ("username1".equals(user.getUsername()) && PasswordEncoderUtil.matches("password2", user.getPassword())) {
+            if ("username1".equals(user.getUsername()) && PasswordEncoderUtil.matches("password2",
+                    user.getPassword())) {
                 found = true;
                 break;
             }
@@ -167,8 +170,8 @@ class User_ITCase extends HttpClient4Test {
         
         // Delete a user:
         response = request("/nacos/v1/auth/users",
-                Params.newParams().appendParam("username", "username1").appendParam("accessToken", accessToken).done(), String.class,
-                HttpMethod.DELETE);
+                Params.newParams().appendParam("username", "username1").appendParam("accessToken", accessToken).done(),
+                String.class, HttpMethod.DELETE);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -216,11 +219,9 @@ class User_ITCase extends HttpClient4Test {
         
         // user login
         response = login("username1", "password1");
-        String user1AccessToken = JacksonUtils.toObj(response.getBody()).get("accessToken").textValue();
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         response = login("username2", "password2");
-        String user2AccessToken = JacksonUtils.toObj(response.getBody()).get("accessToken").textValue();
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // update by admin
@@ -230,12 +231,14 @@ class User_ITCase extends HttpClient4Test {
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // update by same user
+        String user1AccessToken = JacksonUtils.toObj(response.getBody()).get("accessToken").textValue();
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("username", "username1").appendParam("newPassword", "password4")
                         .appendParam("accessToken", user1AccessToken).done(), String.class, HttpMethod.PUT);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // update by another user
+        String user2AccessToken = JacksonUtils.toObj(response.getBody()).get("accessToken").textValue();
         response = request("/nacos/v1/auth/users",
                 Params.newParams().appendParam("username", "username1").appendParam("newPassword", "password5")
                         .appendParam("accessToken", user2AccessToken).done(), String.class, HttpMethod.PUT);

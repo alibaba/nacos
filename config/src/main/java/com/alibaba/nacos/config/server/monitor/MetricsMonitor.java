@@ -194,6 +194,10 @@ public class MetricsMonitor {
         return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "notifyRt");
     }
     
+    public static Timer getDumpRtTimer() {
+        return NacosMeterRegistryCenter.timer(METER_REGISTRY, "nacos_timer", "module", "config", "name", "dumpRt");
+    }
+    
     public static Counter getIllegalArgumentException() {
         return NacosMeterRegistryCenter
                 .counter(METER_REGISTRY, "nacos_exception", "module", "config", "name", "illegalArgument");

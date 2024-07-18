@@ -33,7 +33,6 @@ import org.springframework.boot.web.server.LocalServerPort;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -41,12 +40,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
+ * Integration tests for Nacos configuration with authentication.
+ *
  * @author nkorange
  * @since 1.2.0
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.contextPath=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class ConfigAuth_ITCase extends AuthBase {
+public class ConfigAuthCoreITCase extends AuthBase {
     
     public static final long TIME_OUT = 2000;
     
@@ -55,15 +57,18 @@ public class ConfigAuth_ITCase extends AuthBase {
     @LocalServerPort
     private int port;
     
-    private String dataId = "yanlin";
+    private final String dataId = "yanlin";
     
-    private String group = "yanlin";
+    private final String group = "yanlin";
     
     @BeforeEach
     void init() throws Exception {
         super.init(port);
     }
     
+    /**
+     * Cleans up resources after each test execution.
+     */
     @AfterEach
     public void destroy() {
         super.destroy();
@@ -72,10 +77,9 @@ public class ConfigAuth_ITCase extends AuthBase {
                 iconfig.shutDown();
             }
         } catch (NacosException ex) {
-        
+            // Ignored exception during shutdown
         }
     }
-    
     
     @Test
     void writeWithReadPermission() throws Exception {
@@ -93,10 +97,6 @@ public class ConfigAuth_ITCase extends AuthBase {
     
     @Test
     void readWithReadPermission() throws Exception {
-        
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicInteger ai = new AtomicInteger(0);
-        
         properties.put(PropertyKeyConst.USERNAME, username1);
         properties.put(PropertyKeyConst.PASSWORD, password1);
         iconfig = NacosFactory.createConfigService(properties);
@@ -104,6 +104,7 @@ public class ConfigAuth_ITCase extends AuthBase {
         final String content = "test" + System.currentTimeMillis();
         System.out.println(content);
         
+        CountDownLatch latch = new CountDownLatch(1);
         iconfig.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
@@ -151,9 +152,6 @@ public class ConfigAuth_ITCase extends AuthBase {
     
     @Test
     void readWithWritePermission() throws Exception {
-        
-        CountDownLatch latch = new CountDownLatch(1);
-        
         properties.put(PropertyKeyConst.NAMESPACE, namespace1);
         properties.put(PropertyKeyConst.USERNAME, username2);
         properties.put(PropertyKeyConst.PASSWORD, password2);
@@ -161,6 +159,7 @@ public class ConfigAuth_ITCase extends AuthBase {
         
         final String content = "test" + System.currentTimeMillis();
         
+        CountDownLatch latch = new CountDownLatch(1);
         iconfig.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
@@ -182,8 +181,8 @@ public class ConfigAuth_ITCase extends AuthBase {
         try {
             iconfig.getConfig(dataId, group, TIME_OUT);
             fail();
-        } catch (NacosException ne) {
-            assertEquals(HttpStatus.SC_FORBIDDEN, ne.getErrCode());
+        } catch (NacosException e) {
+            assertEquals(HttpStatus.SC_FORBIDDEN, e.getErrCode());
         }
         
         latch.await(5L, TimeUnit.SECONDS);
@@ -191,19 +190,15 @@ public class ConfigAuth_ITCase extends AuthBase {
         assertTrue(latch.getCount() > 0);
     }
     
-    
     @Test
-    void ReadWriteWithFullPermission() throws Exception {
-        
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicInteger ai = new AtomicInteger(0);
-        
+    void readWriteWithFullPermission() throws Exception {
         properties.put(PropertyKeyConst.USERNAME, username3);
         properties.put(PropertyKeyConst.PASSWORD, password3);
         iconfig = NacosFactory.createConfigService(properties);
         
         final String content = "test" + System.currentTimeMillis();
         
+        CountDownLatch latch = new CountDownLatch(1);
         iconfig.addListener(dataId, group, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
