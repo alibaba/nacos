@@ -38,13 +38,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
+ * Integration tests for Nacos naming service with various authentication scenarios.
+ *
  * @author nkorange
  * @since 1.2.0
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class NamingAuth_ITCase extends AuthBase {
+class NamingAuthCoreITCase extends AuthBase {
     
     @LocalServerPort
     private int port;
@@ -71,16 +74,16 @@ class NamingAuth_ITCase extends AuthBase {
         try {
             namingService.registerInstance("test.1", "1.2.3.4", 80);
             fail();
-        } catch (NacosException ne) {
-            NacosException cause = (NacosException) ne.getCause();
+        } catch (NacosException e) {
+            NacosException cause = (NacosException) e.getCause();
             assertEquals(HttpStatus.SC_FORBIDDEN, cause.getErrCode());
         }
         
         try {
             namingService.deregisterInstance("test.1", "1.2.3.4", 80);
             fail();
-        } catch (NacosException ne) {
-            NacosException cause = (NacosException) ne.getCause();
+        } catch (NacosException e) {
+            NacosException cause = (NacosException) e.getCause();
             assertEquals(HttpStatus.SC_FORBIDDEN, cause.getErrCode());
         }
         namingService.shutDown();
@@ -132,8 +135,8 @@ class NamingAuth_ITCase extends AuthBase {
         try {
             namingService.getAllInstances("test.1");
             fail();
-        } catch (NacosException ne) {
-            NacosException cause = (NacosException) ne.getCause();
+        } catch (NacosException e) {
+            NacosException cause = (NacosException) e.getCause();
             assertEquals(HttpStatus.SC_FORBIDDEN, cause.getErrCode());
         }
         

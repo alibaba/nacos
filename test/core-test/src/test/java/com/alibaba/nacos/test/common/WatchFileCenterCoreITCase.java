@@ -43,35 +43,39 @@ import java.util.function.Consumer;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
+ * Integration tests for file watching and modification handling using WatchFileCenter.These tests verify the
+ * concurrency and accuracy of file change notifications under high loads.
+ *
  * @author <a href="mailto:liaochuntao@live.com">liaochuntao</a>
  */
-class WatchFileCenter_ITCase {
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
+class WatchFileCenterCoreITCase {
     
-    static final String path = Paths.get(System.getProperty("user.home"), "/watch_file_change_test").toString();
+    private static final String PATH = Paths.get(System.getProperty("user.home"), "/watch_file_change_test").toString();
     
-    static final Executor executor = Executors.newFixedThreadPool(32);
+    private static final Executor EXECUTOR = Executors.newFixedThreadPool(32);
     
     final Object monitor = new Object();
     
     @BeforeAll
     static void beforeCls() throws Exception {
-        DiskUtils.deleteDirThenMkdir(path);
+        DiskUtils.deleteDirThenMkdir(PATH);
     }
     
     @AfterAll
     static void afterCls() throws Exception {
-        DiskUtils.deleteDirectory(path);
+        DiskUtils.deleteDirectory(PATH);
     }
     
     // The last file change must be notified
     
     @Test
-    void test_high_concurrency_modify() throws Exception {
+    void testHighConcurrencyModify() throws Exception {
         AtomicInteger count = new AtomicInteger(0);
         Set<String> set = new ConcurrentHashSet<>();
         
         final String fileName = "test2_file_change";
-        final File file = Paths.get(path, fileName).toFile();
+        final File file = Paths.get(PATH, fileName).toFile();
         
         func(fileName, file, content -> {
             set.add(content);
@@ -82,14 +86,14 @@ class WatchFileCenter_ITCase {
     }
     
     @Test
-    void test_modify_file_much() throws Exception {
+    void testModifyFileMuch() throws Exception {
         final String fileName = "modify_file_much";
-        final File file = Paths.get(path, fileName).toFile();
+        final File file = Paths.get(PATH, fileName).toFile();
         
         CountDownLatch latch = new CountDownLatch(3);
         AtomicInteger count = new AtomicInteger(0);
         
-        WatchFileCenter.registerWatcher(path, new FileWatcher() {
+        WatchFileCenter.registerWatcher(PATH, new FileWatcher() {
             @Override
             public void onChange(FileChangeEvent event) {
                 try {
@@ -118,16 +122,16 @@ class WatchFileCenter_ITCase {
     }
     
     @Test
-    void test_multi_file_modify() throws Exception {
+    void testMultiFileModify() throws Exception {
         CountDownLatch latch = new CountDownLatch(10);
         for (int i = 0; i < 10; i++) {
             AtomicInteger count = new AtomicInteger(0);
             Set<String> set = new ConcurrentHashSet<>();
             
             final String fileName = "test2_file_change_" + i;
-            final File file = Paths.get(path, fileName).toFile();
+            final File file = Paths.get(PATH, fileName).toFile();
             
-            executor.execute(() -> {
+            EXECUTOR.execute(() -> {
                 try {
                     func(fileName, file, content -> {
                         set.add(content);
@@ -148,10 +152,10 @@ class WatchFileCenter_ITCase {
     private void func(final String fileName, final File file, final Consumer<String> consumer) throws Exception {
         CountDownLatch latch = new CountDownLatch(100);
         DiskUtils.touch(file);
-        WatchFileCenter.registerWatcher(path, new FileWatcher() {
+        WatchFileCenter.registerWatcher(PATH, new FileWatcher() {
             @Override
             public void onChange(FileChangeEvent event) {
-                final File file = Paths.get(path, fileName).toFile();
+                final File file = Paths.get(PATH, fileName).toFile();
                 final String content = DiskUtils.readFile(file);
                 consumer.accept(content);
             }
@@ -165,10 +169,10 @@ class WatchFileCenter_ITCase {
         final AtomicInteger id = new AtomicInteger(0);
         final AtomicReference<String> finalContent = new AtomicReference<>(null);
         for (int i = 0; i < 100; i++) {
-            executor.execute(() -> {
+            EXECUTOR.execute(() -> {
                 final String j = fileName + "_" + id.incrementAndGet();
                 try {
-                    final File file1 = Paths.get(path, fileName).toFile();
+                    final File file1 = Paths.get(PATH, fileName).toFile();
                     synchronized (monitor) {
                         finalContent.set(j);
                         DiskUtils.writeFile(file1, j.getBytes(StandardCharsets.UTF_8), false);

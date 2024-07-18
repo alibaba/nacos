@@ -109,7 +109,9 @@ public class LogbackNacosLoggingAdapter implements NacosLoggingAdapter {
         configurator.setContext(loggerContext);
         if (StringUtils.isNotBlank(location)) {
             try {
+                boolean isPackagingDataEnabled = loggerContext.isPackagingDataEnabled();
                 configurator.configure(ResourceUtils.getResourceUrl(location));
+                loggerContext.setPackagingDataEnabled(isPackagingDataEnabled);
             } catch (Exception e) {
                 throw new IllegalStateException("Could not initialize Logback Nacos logging from " + location, e);
             }
