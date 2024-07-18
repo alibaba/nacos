@@ -517,6 +517,7 @@ const request = (function(_global) {
 
     const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
 
+    let accessTokenInHeader = '';
     if (_LOGINPAGE_ENABLED !== 'false') {
       let token = {};
       try {
@@ -526,7 +527,7 @@ const request = (function(_global) {
         goLogin();
       }
       const { accessToken = '' } = token;
-      params.push(`accessToken=${accessToken}`);
+      accessTokenInHeader = accessToken;
     }
 
     return $.ajax(
@@ -540,6 +541,7 @@ const request = (function(_global) {
         },
         headers: {
           Authorization: localStorage.getItem('token'),
+          AccessToken: accessTokenInHeader,
         },
       })
     ).then(
