@@ -37,7 +37,6 @@ import com.alibaba.nacos.sys.utils.InetUtils;
 import com.alibaba.nacos.test.base.BaseClusterTest;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.MethodOrderer.MethodName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
