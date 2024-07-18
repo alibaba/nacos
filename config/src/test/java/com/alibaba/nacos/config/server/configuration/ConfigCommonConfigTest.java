@@ -25,6 +25,8 @@ import org.springframework.mock.env.MockEnvironment;
 import java.lang.reflect.Constructor;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Nacos config common configs test.
@@ -61,10 +63,19 @@ class ConfigCommonConfigTest {
     }
     
     @Test
+    void testSetDerbyOpsEnabled() {
+        assertFalse(commonConfig.isDerbyOpsEnabled());
+        commonConfig.setDerbyOpsEnabled(true);
+        assertTrue(commonConfig.isDerbyOpsEnabled());
+    }
+    
+    @Test
     void testUpgradeFromEvent() {
         environment.setProperty("nacos.config.push.maxRetryTime", "100");
+        environment.setProperty("nacos.config.derby.ops.enabled", "true");
         commonConfig.onEvent(ServerConfigChangeEvent.newEvent());
         assertEquals(100, commonConfig.getMaxPushRetryTimes());
+        assertTrue(commonConfig.isDerbyOpsEnabled());
     }
     
     @Test
