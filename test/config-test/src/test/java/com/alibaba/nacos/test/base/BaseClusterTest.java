@@ -79,6 +79,7 @@ public class BaseClusterTest extends HttpClient4Test {
     static {
         System.getProperties().setProperty("nacos.core.auth.enabled", "false");
         System.getProperties().setProperty("embeddedStorage", "true");
+        System.getProperties().setProperty("nacos.config.derby.ops.enabled", "true");
         String ip = InetUtils.getSelfIP();
         clusterInfo = "nacos.member.list=" + ip + ":8847," + ip + ":8848," + ip + ":8849";
         
