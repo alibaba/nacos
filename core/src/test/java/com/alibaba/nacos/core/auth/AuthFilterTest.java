@@ -21,7 +21,9 @@ import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.core.code.ControllerMethodsCache;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.sys.env.Constants;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -57,6 +59,11 @@ class AuthFilterTest {
     
     @Mock
     private ControllerMethodsCache methodsCache;
+    
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.removeContext();
+    }
     
     @Test
     void testDoFilter() {

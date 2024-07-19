@@ -31,8 +31,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 /**
+ * Base class for authentication tests in Nacos.`
+ *
  * @author nkorange
  * @since 1.2.0
  */
@@ -62,10 +63,18 @@ public class AuthBase extends HttpClient4Test {
     
     protected String namespace1 = "namespace1";
     
+    /**
+     * Logs in a user with the provided username and password, then returns the access token.
+     *
+     * @param username the username of the user
+     * @param password the password of the user
+     * @return the access token (accessToken) as a String
+     * @throws AssertionError if the response status is not 2xx or the accessToken is missing
+     */
     public String login(String username, String password) {
         ResponseEntity<String> response = request("/nacos/v1/auth/users/login",
-                Params.newParams().appendParam("username", username).appendParam("password", password).done(), String.class,
-                HttpMethod.POST);
+                Params.newParams().appendParam("username", username).appendParam("password", password).done(),
+                String.class, HttpMethod.POST);
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
@@ -132,8 +141,8 @@ public class AuthBase extends HttpClient4Test {
         
         // Create a role:
         response = request("/nacos/v1/auth/roles",
-                Params.newParams().appendParam("role", role3).appendParam("username", username3).appendParam("accessToken", accessToken)
-                        .done(), String.class, HttpMethod.POST);
+                Params.newParams().appendParam("role", role3).appendParam("username", username3)
+                        .appendParam("accessToken", accessToken).done(), String.class, HttpMethod.POST);
         System.out.println(response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -142,6 +151,7 @@ public class AuthBase extends HttpClient4Test {
                 Params.newParams().appendParam("role", role1).appendParam("resource", namespace1 + ":*:*").appendParam("action", "r")
                         .appendParam("accessToken", accessToken).done(),
                 Params.newParams().appendParam("Authorization", accessToken).done(),String.class, HttpMethod.POST);
+
         System.out.println(response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -156,6 +166,7 @@ public class AuthBase extends HttpClient4Test {
         response = request("/nacos/v1/auth/permissions",
                 Params.newParams().appendParam("role", role3).appendParam("resource", namespace1 + ":*:*").appendParam("action", "rw")
                         .appendParam("accessToken", accessToken).done(), Params.newParams().appendParam("Authorization", accessToken).done(), String.class, HttpMethod.POST);
+
         System.out.println(response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -171,6 +182,7 @@ public class AuthBase extends HttpClient4Test {
         ResponseEntity<String> response = request("/nacos/v1/auth/permissions",
                 Params.newParams().appendParam("role", role1).appendParam("resource", namespace1 + ":*:*").appendParam("action", "r")
                         .appendParam("accessToken", accessToken).done(),  Params.newParams().appendParam("Authorization", accessToken).done(),String.class, HttpMethod.DELETE);
+
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -178,6 +190,7 @@ public class AuthBase extends HttpClient4Test {
         response = request("/nacos/v1/auth/permissions",
                 Params.newParams().appendParam("role", role2).appendParam("resource", namespace1 + ":*:*").appendParam("action", "w")
                         .appendParam("accessToken", accessToken).done(),  Params.newParams().appendParam("Authorization", accessToken).done(),String.class, HttpMethod.DELETE);
+
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -185,6 +198,7 @@ public class AuthBase extends HttpClient4Test {
         response = request("/nacos/v1/auth/permissions",
                 Params.newParams().appendParam("role", role3).appendParam("resource", namespace1 + ":*:*").appendParam("action", "rw")
                         .appendParam("accessToken", accessToken).done(), Params.newParams().appendParam("Authorization", accessToken).done(), String.class, HttpMethod.DELETE);
+
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
@@ -192,14 +206,6 @@ public class AuthBase extends HttpClient4Test {
         response = request("/nacos/v1/auth/roles",
                 Params.newParams().appendParam("role", role1).appendParam("username", username1).appendParam("accessToken", accessToken)
                         .done(),  Params.newParams().appendParam("Authorization", accessToken).done(),String.class, HttpMethod.DELETE);
-        
-        assertTrue(response.getStatusCode().is2xxSuccessful());
-        
-        // Delete a role:
-        response = request("/nacos/v1/auth/roles",
-                Params.newParams().appendParam("role", role2).appendParam("username", username2).appendParam("accessToken", accessToken)
-                        .done(), Params.newParams().appendParam("Authorization", accessToken).done(), String.class, HttpMethod.DELETE);
-        
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Delete a role:
@@ -212,20 +218,24 @@ public class AuthBase extends HttpClient4Test {
         // Delete a user:
         response = request("/nacos/v1/auth/users", Params.newParams().appendParam("username", username1).appendParam("password", password1)
                 .appendParam("accessToken", accessToken).done(), Params.newParams().appendParam("Authorization", accessToken).done(), String.class, HttpMethod.DELETE);
+
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Delete a user:
+
         response = request("/nacos/v1/auth/users", Params.newParams().appendParam("username", username2).appendParam("password", password2)
                 .appendParam("accessToken", accessToken).done(),
                 Params.newParams().appendParam("Authorization", accessToken).done(),
                 String.class, HttpMethod.DELETE);
+
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         
         // Delete a user:
         response = request("/nacos/v1/auth/users", Params.newParams().appendParam("username", username3).appendParam("password", password3)
                 .appendParam("accessToken", accessToken).done(), Params.newParams().appendParam("Authorization", accessToken).done(), String.class, HttpMethod.DELETE);
+
         
         assertTrue(response.getStatusCode().is2xxSuccessful());
         

@@ -67,7 +67,7 @@ class HttpProtocolAuthServiceTest {
         Mockito.when(request.getParameter(eq(CommonParams.SERVICE_NAME))).thenReturn("testS");
         Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testCNs");
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testCG");
-        Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
     }
     
     @Test
@@ -109,7 +109,7 @@ class HttpProtocolAuthServiceTest {
         Resource actual = httpProtocolAuthService.parseResource(request, secured);
         assertEquals(SignType.CONFIG, actual.getType());
         assertEquals("testD", actual.getName());
-        assertEquals("testCNs", actual.getNamespaceId());
+        assertEquals("testNNs", actual.getNamespaceId());
         assertEquals("testCG", actual.getGroup());
         assertNotNull(actual.getProperties());
     }

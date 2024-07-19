@@ -30,7 +30,7 @@ public class TestServerAbilityControlManager extends ServerAbilityControlManager
         Map<AbilityKey, Boolean> map = new HashMap<>();
         map.put(AbilityKey.SERVER_TEST_1, true);
         map.put(AbilityKey.SERVER_TEST_2, false);
-        HashMap res = new HashMap<>();
+        HashMap<AbilityMode, Map<AbilityKey, Boolean>> res = new HashMap<>();
         res.put(AbilityMode.SERVER, map);
         
         Map<AbilityKey, Boolean> map1 = new HashMap<>();
