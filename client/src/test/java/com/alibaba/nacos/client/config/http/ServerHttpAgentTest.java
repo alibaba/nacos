@@ -20,6 +20,7 @@ import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
+import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpClientConfig;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
@@ -42,6 +43,7 @@ import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -50,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -66,8 +69,10 @@ class ServerHttpAgentTest {
     @Mock
     ConfigServerListManager serverListManager;
     
+    NacosRestTemplate cachedNacosRestTemplate;
+    
     @Mock
-    HttpRestResult<String> mockResult;
+    HttpRestResult mockResult;
     
     @Mock
     Iterator<String> mockIterator;
@@ -77,13 +82,25 @@ class ServerHttpAgentTest {
     
     ServerHttpAgent serverHttpAgent;
     
+    HttpRestResult httpRestResult;
+    
     @BeforeEach
-    void setUp() throws NoSuchFieldException, IllegalAccessException {
+    void setUp() throws Exception {
         serverHttpAgent = new ServerHttpAgent(serverListManager, new Properties());
         injectRestTemplate();
         when(serverListManager.getCurrentServer()).thenReturn(SERVER_ADDRESS_1);
         when(serverListManager.getIterator()).thenReturn(mockIterator);
         when(mockIterator.next()).thenReturn(SERVER_ADDRESS_2);
+        Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
+        restMapField.setAccessible(true);
+        Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
+        cachedNacosRestTemplate = restMap.get(
+                "com.alibaba.nacos.client.address.ServerListHttpClientManager$ServerListHttpClientFactory");
+        restMap.put("com.alibaba.nacos.client.address.ServerListHttpClientManager$ServerListHttpClientFactory", nacosRestTemplate);
+        httpRestResult = new HttpRestResult<String>();
+        httpRestResult.setData("127.0.0.1:8848");
+        httpRestResult.setCode(200);
+        Mockito.when(nacosRestTemplate.get(contains("aaa:8080"), any(), any(), any())).thenReturn(httpRestResult);
     }
     
     private void injectRestTemplate() throws NoSuchFieldException, IllegalAccessException {
@@ -93,14 +110,21 @@ class ServerHttpAgentTest {
     }
     
     @AfterEach
-    void tearDown() throws NacosException {
+    void tearDown() throws NacosException, NoSuchFieldException, IllegalAccessException {
         serverHttpAgent.shutdown();
+        if (null != cachedNacosRestTemplate) {
+            Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
+            restMapField.setAccessible(true);
+            Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
+            restMap.put("com.alibaba.nacos.client.address.ServerListHttpClientManager$ServerListHttpClientFactory",
+                    cachedNacosRestTemplate);
+        }
     }
     
     @Test
     void testConstruct() throws NacosException {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
-        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("localhost");
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("aaa");
         ConfigServerListManager server = new ConfigServerListManager(mockedProperties);
         final ServerHttpAgent serverHttpAgent1 = new ServerHttpAgent(server);
         assertNotNull(serverHttpAgent1);
@@ -116,7 +140,7 @@ class ServerHttpAgentTest {
     }
     
     @Test
-    void testGetterAndSetter() throws NacosException {
+    void testGetterAndSetter() throws Exception {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
         when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("aaa");
         when(mockedProperties.getProperty(PropertyKeyConst.NAMESPACE)).thenReturn("namespace1");

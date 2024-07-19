@@ -1,5 +1,5 @@
 /*
- * Copyright 1999-2018 Alibaba Group Holding Ltd.
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,24 @@
 
 package com.alibaba.nacos.client.address;
 
+import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.env.NacosClientProperties;
+
 import java.util.List;
 
 /**
  * Server list provider.
+ * 
  * @author totalo 
  */
 public interface ServerListProvider {
+    
+    /**
+     * Init.
+     * @param properties
+     * @throws NacosException
+     */
+    void init(NacosClientProperties properties) throws NacosException;
     
     /**
      * Get server list.
@@ -31,8 +42,21 @@ public interface ServerListProvider {
     List<String> getServerList();
     
     /**
-     * server list type.
-     * @return type
+     * Get server name.
+     * @return server name
      */
-    String type();
+    default String getServerName() {
+        return null;
+    }
+    
+    default String getNamespace() {
+        return null;
+    }
+    
+    /**
+     * Get order.
+     * @return order
+     */
+    int getOrder();
+    
 }

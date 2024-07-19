@@ -20,7 +20,6 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
 import com.alibaba.nacos.client.address.AbstractServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import com.alibaba.nacos.common.utils.StringUtils;
 
 import java.util.Properties;
 import java.util.Random;
@@ -35,8 +34,6 @@ public class NamingServerListManager extends AbstractServerListManager {
     
     private final AtomicInteger currentIndex = new AtomicInteger();
     
-    private String nacosDomain;
-    
     public NamingServerListManager(Properties properties) throws NacosException {
         this(NacosClientProperties.PROTOTYPE.derive(properties));
     }
@@ -47,23 +44,11 @@ public class NamingServerListManager extends AbstractServerListManager {
     
     public NamingServerListManager(NacosClientProperties properties, String namespace) throws NacosException {
         super(properties, namespace);
-        this.start();
         if (getServerList().isEmpty()) {
             throw new NacosLoadException("serverList is empty,please check configuration");
         } else {
             currentIndex.set(new Random().nextInt(getServerList().size()));
         }
-        if (this.serverList.size() == 1) {
-            this.nacosDomain = this.serverAddrsStr;
-        }
-    }
-    
-    public boolean isDomain() {
-        return StringUtils.isNotBlank(nacosDomain);
-    }
-    
-    public String getNacosDomain() {
-        return nacosDomain;
     }
     
     @Override

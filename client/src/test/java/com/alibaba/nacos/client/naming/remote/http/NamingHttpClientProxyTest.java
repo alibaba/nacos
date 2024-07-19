@@ -640,8 +640,6 @@ class NamingHttpClientProxyTest {
     void testRegApiForDomain() throws NacosException {
         assertThrows(NacosException.class, () -> {
             Map<String, String> params = new HashMap<>();
-            when(mgr.isDomain()).thenReturn(true);
-            when(mgr.getNacosDomain()).thenReturn("http://test.nacos.domain");
             clientProxy.reqApi("api", params, Collections.emptyMap(), Collections.emptyList(), HttpMethod.GET);
             
         });

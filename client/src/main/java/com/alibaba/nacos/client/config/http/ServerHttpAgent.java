@@ -17,6 +17,7 @@
 package com.alibaba.nacos.client.config.http;
 
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.client.address.AbstractServerListProvider;
 import com.alibaba.nacos.client.config.impl.ConfigHttpClientManager;
 import com.alibaba.nacos.client.config.impl.ConfigServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
@@ -46,7 +47,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     private static final Logger LOGGER = LogUtils.logger(ServerHttpAgent.class);
     
-    private NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
+    private final NacosRestTemplate nacosRestTemplate = ConfigHttpClientManager.getInstance().getNacosRestTemplate();
     
     private String encode;
     
@@ -219,7 +220,11 @@ public class ServerHttpAgent implements HttpAgent {
     }
     
     private String getUrl(String serverAddr, String relativePath) {
-        return serverAddr + ContextPathUtil.normalizeContextPath(serverListMgr.getContentPath()) + relativePath;
+        String contextPath = "";
+        if (serverListMgr.getServerListProvider() instanceof AbstractServerListProvider) {
+            contextPath = ((AbstractServerListProvider) serverListMgr.getServerListProvider()).getContextPath();
+        }
+        return serverAddr + ContextPathUtil.normalizeContextPath(contextPath) + relativePath;
     }
     
     private boolean isFail(HttpRestResult<String> result) {
@@ -257,7 +262,7 @@ public class ServerHttpAgent implements HttpAgent {
     
     @Override
     public String getNamespace() {
-        return serverListMgr.getNamespace();
+        return serverListMgr.getServerListProvider().getNamespace();
     }
     
     @Override

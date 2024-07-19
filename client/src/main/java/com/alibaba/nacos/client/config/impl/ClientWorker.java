@@ -36,7 +36,10 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.RemoteConstants;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
+import com.alibaba.nacos.client.address.AddressServerListProvider;
+import com.alibaba.nacos.client.address.EndpointServerListProvider;
 import com.alibaba.nacos.client.address.ServerListChangeEvent;
+import com.alibaba.nacos.client.address.ServerListProvider;
 import com.alibaba.nacos.client.config.common.GroupKey;
 import com.alibaba.nacos.client.config.filter.impl.ConfigFilterChainManager;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
@@ -528,9 +531,13 @@ public class ClientWorker implements Closeable {
         metric.put("listenConfigSize", String.valueOf(this.cacheMap.get().size()));
         metric.put("clientVersion", VersionUtils.getFullClientVersion());
         metric.put("snapshotDir", LocalConfigInfoProcessor.LOCAL_SNAPSHOT_PATH);
-        boolean isFixServer = agent.serverListManager.isFixed();
-        metric.put("isFixedServer", isFixServer);
-        metric.put("addressUrl", agent.serverListManager.getAddressServerUrl());
+        ServerListProvider provider = agent.serverListManager.getServerListProvider();
+        String addressUrl = "";
+        if (provider instanceof EndpointServerListProvider) {
+            addressUrl = ((EndpointServerListProvider) agent.serverListManager.getServerListProvider()).getAddressServerUrl();
+        }
+        metric.put("addressUrl", addressUrl);
+        metric.put("isFixedServer", provider instanceof AddressServerListProvider);
         metric.put("serverUrls", agent.serverListManager.getUrlString());
         
         Map<ClientConfigMetricRequest.MetricsKey, Object> metricValues = getMetricsValue(metricsKeys);

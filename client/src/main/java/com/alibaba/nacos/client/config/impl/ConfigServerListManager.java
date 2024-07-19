@@ -46,26 +46,20 @@ public class ConfigServerListManager extends AbstractServerListManager {
     
     private String tenant = "";
     
-    public static final String CUSTOM_NAME = "custom";
-    
-    public static final String FIXED_NAME = "fixed";
-    
     private volatile String currentServerAddr;
     
     private Iterator<String> iterator;
     
     public ConfigServerListManager(NacosClientProperties properties) throws NacosException {
         super(properties);
-        this.isStarted = false;
         this.name = initServerName(properties);
+        String namespace = properties.getProperty(PropertyKeyConst.NAMESPACE);
         if (StringUtils.isNotBlank(namespace)) {
             this.tenant = namespace;
         }
     }
     
-    @Override
-    public synchronized void start() throws NacosException {
-        super.start();
+    public void start() throws NacosException {
         iterator = iterator();
         currentServerAddr = iterator.next();
     }
@@ -76,19 +70,7 @@ public class ConfigServerListManager extends AbstractServerListManager {
         if (properties != null && properties.containsKey(PropertyKeyConst.SERVER_NAME)) {
             serverName = properties.getProperty(PropertyKeyConst.SERVER_NAME);
         } else {
-            // if fix url, use fix url join string.
-            if (isFixed) {
-                serverName = FIXED_NAME + "-" + (StringUtils.isNotBlank(namespace) ? (StringUtils.trim(namespace) + "-")
-                        : "") + getFixedNameSuffix(getServerList().toArray(new String[0]));
-            } else {
-                //if use endpoint, use endpoint, content path, serverList name
-                String contextPathTmp =
-                        StringUtils.isNotBlank(this.endpointContextPath) ? this.endpointContextPath : this.contextPath;
-                serverName =
-                        CUSTOM_NAME + "-" + String.join("_", endpoint, String.valueOf(endpointPort), contextPathTmp,
-                                serverListName) + (StringUtils.isNotBlank(namespace) ? ("_" + StringUtils.trim(
-                                namespace)) : "");
-            }
+            serverName = serverListProvider.getServerName();
         }
         serverName = serverName.replaceAll("\\/", "_");
         serverName = serverName.replaceAll("\\:", "_");
@@ -131,18 +113,6 @@ public class ConfigServerListManager extends AbstractServerListManager {
         return getServerList().toString();
     }
     
-    String getFixedNameSuffix(String... serverIps) {
-        StringBuilder sb = new StringBuilder();
-        String split = "";
-        for (String serverIp : serverIps) {
-            sb.append(split);
-            serverIp = serverIp.replaceAll("http(s)?://", "");
-            sb.append(serverIp.replaceAll(":", "_"));
-            split = "-";
-        }
-        return sb.toString();
-    }
-    
     @Override
     public String toString() {
         return "ServerManager-" + name + "-" + getUrlString();
@@ -163,10 +133,6 @@ public class ConfigServerListManager extends AbstractServerListManager {
     
     public Iterator<String> getIterator() {
         return iterator;
-    }
-    
-    public String getContextPath() {
-        return contextPath;
     }
     
     public String getName() {

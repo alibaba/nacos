@@ -18,7 +18,9 @@ package com.alibaba.nacos.client.naming.core;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.exception.NacosException;
-import com.alibaba.nacos.client.address.AbstractServerListManager;
+import com.alibaba.nacos.api.exception.runtime.NacosLoadException;
+import com.alibaba.nacos.client.address.EndpointServerListProvider;
+import com.alibaba.nacos.client.address.ServerListProvider;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
@@ -42,8 +44,10 @@ import java.util.Map;
 import java.util.Properties;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
@@ -74,7 +78,7 @@ class NamingServerListManagerTest {
         httpRestResult = new HttpRestResult<>();
         httpRestResult.setData("127.0.0.1:8848");
         httpRestResult.setCode(200);
-        Mockito.when(nacosRestTemplate.get(any(), any(), any(), any())).thenReturn(httpRestResult);
+        Mockito.when(nacosRestTemplate.get(contains("127.0.0.1"), any(), any(), any())).thenReturn(httpRestResult);
     }
     
     @AfterEach
@@ -93,7 +97,7 @@ class NamingServerListManagerTest {
     
     @Test
     void testConstructError() {
-        assertThrows(NacosException.class, () -> {
+        assertThrows(NacosLoadException.class, () -> {
             serverListManager = new NamingServerListManager(new Properties());
         });
     }
@@ -275,11 +279,13 @@ class NamingServerListManagerTest {
     
     private void mockThreadInvoke(NamingServerListManager serverListManager, boolean expectedInvoked)
             throws NoSuchFieldException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
-        Field field = AbstractServerListManager.class.getDeclaredField("lastServerListRefreshTime");
+        ServerListProvider provider = serverListManager.getServerListProvider();
+        assertInstanceOf(EndpointServerListProvider.class, provider);
+        Field field = EndpointServerListProvider.class.getDeclaredField("lastServerListRefreshTime");
         field.setAccessible(true);
-        field.set(serverListManager, expectedInvoked ? 0 : System.currentTimeMillis());
-        Method method = AbstractServerListManager.class.getDeclaredMethod("refreshServerListIfNeed");
+        field.set(provider, expectedInvoked ? 0 : System.currentTimeMillis());
+        Method method = EndpointServerListProvider.class.getDeclaredMethod("refreshServerListIfNeed");
         method.setAccessible(true);
-        method.invoke(serverListManager);
+        method.invoke(provider);
     }
 }
