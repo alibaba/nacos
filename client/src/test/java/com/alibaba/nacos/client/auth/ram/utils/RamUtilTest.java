@@ -19,20 +19,20 @@ package com.alibaba.nacos.client.auth.ram.utils;
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.auth.ram.identify.CredentialService;
 import com.alibaba.nacos.client.auth.ram.identify.Credentials;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class RamUtilTest {
     
     private Properties properties;
     
-    @Before
+    @BeforeEach
     public void setUp() throws Exception {
         SpasAdapter.freeCredentialInstance();
         Credentials credentials = new Credentials("spasAk", "spasSk", "spasNamespaceId");
@@ -42,7 +42,7 @@ public class RamUtilTest {
         properties.setProperty(PropertyKeyConst.SECRET_KEY, "userSk");
     }
     
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         SpasAdapter.freeCredentialInstance();
     }
