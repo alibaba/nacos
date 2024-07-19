@@ -18,6 +18,9 @@ package com.alibaba.nacos.config.server.utils;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.core.utils.WebUtils;
+import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -28,30 +31,24 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class RequestUtil {
     
-    private static final String X_REAL_IP = "X-Real-IP";
-    
-    private static final String X_FORWARDED_FOR = "X-Forwarded-For";
-    
-    private static final String X_FORWARDED_FOR_SPLIT_SYMBOL = ",";
-    
     public static final String CLIENT_APPNAME_HEADER = "Client-AppName";
     
     /**
-     * get real client ip
-     *
-     * <p>first use X-Forwarded-For header    https://zh.wikipedia.org/wiki/X-Forwarded-For next nginx X-Real-IP last
-     * {@link HttpServletRequest#getRemoteAddr()}
+     * Get real client ip from context first, if no value, use
+     * {@link com.alibaba.nacos.core.utils.WebUtils#getRemoteIp(HttpServletRequest)}.
      *
      * @param request {@link HttpServletRequest}
      * @return remote ip address.
      */
     public static String getRemoteIp(HttpServletRequest request) {
-        String xForwardedFor = request.getHeader(X_FORWARDED_FOR);
-        if (!StringUtils.isBlank(xForwardedFor)) {
-            return xForwardedFor.split(X_FORWARDED_FOR_SPLIT_SYMBOL)[0].trim();
+        String remoteIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getSourceIp();
+        if (StringUtils.isBlank(remoteIp)) {
+            remoteIp = RequestContextHolder.getContext().getBasicContext().getAddressContext().getRemoteIp();
         }
-        String nginxHeader = request.getHeader(X_REAL_IP);
-        return StringUtils.isBlank(nginxHeader) ? request.getRemoteAddr() : nginxHeader;
+        if (StringUtils.isBlank(remoteIp)) {
+            remoteIp = WebUtils.getRemoteIp(request);
+        }
+        return remoteIp;
     }
     
     /**
@@ -61,7 +58,12 @@ public class RequestUtil {
      * @return may be return null
      */
     public static String getAppName(HttpServletRequest request) {
-        return request.getHeader(CLIENT_APPNAME_HEADER);
+        String result = RequestContextHolder.getContext().getBasicContext().getApp();
+        return isUnknownApp(result) ? request.getHeader(CLIENT_APPNAME_HEADER) : result;
+    }
+    
+    private static boolean isUnknownApp(String appName) {
+        return StringUtils.isBlank(appName) || StringUtils.equalsIgnoreCase("unknown", appName);
     }
     
     /**
@@ -71,8 +73,12 @@ public class RequestUtil {
      * @return may be return null
      */
     public static String getSrcUserName(HttpServletRequest request) {
-        String result = (String) request.getSession()
-                .getAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID);
+        IdentityContext identityContext = RequestContextHolder.getContext().getAuthContext().getIdentityContext();
+        String result = StringUtils.EMPTY;
+        if (null != identityContext) {
+            result = (String) identityContext.getParameter(
+                    com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_ID);
+        }
         // If auth is disabled, get username from parameters by agreed key
         return StringUtils.isBlank(result) ? request.getParameter(Constants.USERNAME) : result;
     }

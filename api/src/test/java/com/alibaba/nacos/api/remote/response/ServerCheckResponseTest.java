@@ -20,24 +20,24 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ServerCheckResponseTest {
+class ServerCheckResponseTest {
     
     ObjectMapper mapper = new ObjectMapper();
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
     
     @Test
-    public void testSerialization() throws JsonProcessingException {
+    void testSerialization() throws JsonProcessingException {
         ServerCheckResponse response = new ServerCheckResponse("35643245_1.1.1.1_3306", false);
         String actual = mapper.writeValueAsString(response);
         assertTrue(actual.contains("\"connectionId\":\"35643245_1.1.1.1_3306\""));
@@ -45,7 +45,7 @@ public class ServerCheckResponseTest {
     }
     
     @Test
-    public void testDeserialization() throws JsonProcessingException {
+    void testDeserialization() throws JsonProcessingException {
         String json = "{\"resultCode\":200,\"errorCode\":0,\"connectionId\":\"35643245_1.1.1.1_3306\",\"success\":true,"
                 + "\"supportAbilityNegotiation\":true}";
         ServerCheckResponse response = mapper.readValue(json, ServerCheckResponse.class);

@@ -20,18 +20,20 @@ import com.alibaba.nacos.plugin.control.connection.request.ConnectionCheckReques
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckCode;
 import com.alibaba.nacos.plugin.control.connection.response.ConnectionCheckResponse;
 import com.alibaba.nacos.plugin.control.connection.rule.ConnectionControlRule;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * two fixed metrics, total 30, iptotal 15, detail is testa(total-20,iptotal-10),testb(total-10,iptotal-5).
  */
-public class DefaultConnectionControlManagerTest {
+class DefaultConnectionControlManagerTest {
     
     DefaultConnectionControlManager connectionControlManager = new DefaultConnectionControlManager();
     
     @Test
-    public void test() {
+    void test() {
         
         ConnectionControlRule connectionControlRule = new ConnectionControlRule();
         
@@ -40,8 +42,8 @@ public class DefaultConnectionControlManagerTest {
         connectionControlRule.setCountLimit(40);
         connectionControlManager.applyConnectionLimitRule(connectionControlRule);
         check = connectionControlManager.check(connectionCheckRequest);
-        Assert.assertTrue(check.isSuccess());
-        Assert.assertEquals(ConnectionCheckCode.CHECK_SKIP, check.getCode());
+        assertTrue(check.isSuccess());
+        assertEquals(ConnectionCheckCode.CHECK_SKIP, check.getCode());
         
     }
     

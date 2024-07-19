@@ -131,7 +131,8 @@ public class ServiceController {
         
         getServiceOperator().delete(namespaceId, serviceName);
         NotifyCenter.publishEvent(
-                new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId, "", serviceName));
+                new DeregisterServiceTraceEvent(System.currentTimeMillis(), namespaceId,
+                        NamingUtils.getGroupName(serviceName), NamingUtils.getServiceName(serviceName)));
         return "ok";
     }
     

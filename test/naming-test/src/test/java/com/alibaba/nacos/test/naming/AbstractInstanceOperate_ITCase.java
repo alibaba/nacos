@@ -25,11 +25,8 @@ import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.client.naming.remote.NamingClientProxy;
 import com.alibaba.nacos.common.utils.ReflectUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.server.LocalServerPort;
 
@@ -42,11 +39,11 @@ import java.util.concurrent.TimeUnit;
 
 import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT;
 import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public abstract class AbstractInstanceOperate_ITCase {
-    
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
     
     private NamingService naming;
     
@@ -56,7 +53,7 @@ public abstract class AbstractInstanceOperate_ITCase {
     @Value("${server.servlet.context-path}")
     private String contextPath;
     
-    @Before
+    @BeforeEach
     public void init() throws Exception {
         
         NamingBase.prepareServer(port, contextPath);
@@ -93,7 +90,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         verifyInstanceList(instances, 1, serviceName);
         
         instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(1, instances.size());
+        assertEquals(1, instances.size());
         
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT);
         
@@ -101,7 +98,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(instances.size(), 0);
+        assertEquals(0, instances.size());
     }
     
     /**
@@ -122,7 +119,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         verifyInstanceList(instances, 1, serviceName);
         
         instances = naming.getAllInstances(serviceName);
-        Assert.assertEquals(1, instances.size());
+        assertEquals(1, instances.size());
         
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         
@@ -130,7 +127,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(0, instances.size());
+        assertEquals(0, instances.size());
     }
     
     /**
@@ -149,7 +146,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         instances = naming.getAllInstances(serviceName);
         verifyInstanceList(instances, 1, serviceName);
         
-        Assert.assertEquals(1, instances.size());
+        assertEquals(1, instances.size());
         
         naming.deregisterInstance(serviceName, "127.0.0.1", TEST_PORT, "c1");
         
@@ -157,7 +154,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(0, instances.size());
+        assertEquals(0, instances.size());
     }
     
     private void verifyInstanceList(List<Instance> instances, int size, String serviceName) throws Exception {
@@ -189,7 +186,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         naming.registerInstance(serviceName, "127.0.0.2", 80, "c2");
         List<Instance> instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(1, instances.size());
+        assertEquals(1, instances.size());
     }
     
     /**
@@ -207,9 +204,9 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         List<Instance> instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(1, instances.size());
-        Assert.assertEquals(instances.get(0).getIp(), NamingBase.TEST_IP_4_DOM_1);
-        Assert.assertEquals(instances.get(0).getPort(), NamingBase.TEST_PORT);
+        assertEquals(1, instances.size());
+        assertEquals(NamingBase.TEST_IP_4_DOM_1, instances.get(0).getIp());
+        assertEquals(NamingBase.TEST_PORT, instances.get(0).getPort());
     }
     
     /**
@@ -224,23 +221,21 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         System.out.println(serviceName);
         
-        naming.registerInstance(serviceName, NamingBase.TEST_IP_4_DOM_1, NamingBase.TEST_PORT,
-                NamingBase.TEST_NEW_CLUSTER_4_DOM_1);
+        naming.registerInstance(serviceName, NamingBase.TEST_IP_4_DOM_1, NamingBase.TEST_PORT, NamingBase.TEST_NEW_CLUSTER_4_DOM_1);
         
         TimeUnit.SECONDS.sleep(3);
         
         List<Instance> instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(1, instances.size());
-        Assert.assertEquals(instances.get(0).getIp(), NamingBase.TEST_IP_4_DOM_1);
-        Assert.assertEquals(instances.get(0).getPort(), NamingBase.TEST_PORT);
+        assertEquals(1, instances.size());
+        assertEquals(NamingBase.TEST_IP_4_DOM_1, instances.get(0).getIp());
+        assertEquals(NamingBase.TEST_PORT, instances.get(0).getPort());
         
-        List<Instance> instances2 = naming
-                .getAllInstances(serviceName, Arrays.asList(NamingBase.TEST_NEW_CLUSTER_4_DOM_1));
+        List<Instance> instances2 = naming.getAllInstances(serviceName, Arrays.asList(NamingBase.TEST_NEW_CLUSTER_4_DOM_1));
         
-        Assert.assertEquals(instances2.size(), 1);
-        Assert.assertEquals(instances2.get(0).getIp(), NamingBase.TEST_IP_4_DOM_1);
-        Assert.assertEquals(instances2.get(0).getPort(), NamingBase.TEST_PORT);
+        assertEquals(1, instances2.size());
+        assertEquals(NamingBase.TEST_IP_4_DOM_1, instances2.get(0).getIp());
+        assertEquals(NamingBase.TEST_PORT, instances2.get(0).getPort());
     }
     
     /**
@@ -259,9 +254,9 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         List<Instance> instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(instances.size(), 1);
+        assertEquals(1, instances.size());
         
-        Assert.assertTrue(NamingBase.verifyInstance(i1, instances.get(0)));
+        assertTrue(NamingBase.verifyInstance(i1, instances.get(0)));
         
     }
     
@@ -282,7 +277,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         List<Instance> instances = naming.selectInstances(serviceName, false);
         
-        Assert.assertEquals(0, instances.size());
+        assertEquals(0, instances.size());
     }
     
     @Test
@@ -305,9 +300,9 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         List<Instance> instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(1, instances.size());
-        Assert.assertEquals("1.0", instances.get(0).getMetadata().get("version"));
-        Assert.assertEquals("prod", instances.get(0).getMetadata().get("env"));
+        assertEquals(1, instances.size());
+        assertEquals("1.0", instances.get(0).getMetadata().get("version"));
+        assertEquals("prod", instances.get(0).getMetadata().get("env"));
     }
     
     @Test
@@ -331,7 +326,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         List<Instance> instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(1, instances.size());
+        assertEquals(1, instances.size());
         
         naming.deregisterInstance(serviceName, instance);
         
@@ -339,7 +334,7 @@ public abstract class AbstractInstanceOperate_ITCase {
         
         instances = naming.getAllInstances(serviceName);
         
-        Assert.assertEquals(0, instances.size());
+        assertEquals(0, instances.size());
     }
     
     /**
@@ -349,22 +344,22 @@ public abstract class AbstractInstanceOperate_ITCase {
      */
     @Test
     public void registerEphemeralInstanceWithInvalidClusterName() throws Exception {
-        expectedException.expect(Exception.class);
-        expectedException.expectMessage(
-                "Param 'cluster' is illegal, illegal characters should not appear in the param.");
-        
-        String serviceName = NamingBase.randomDomainName();
-        Instance instance = new Instance();
-        instance.setIp(NamingBase.TEST_IP_4_DOM_1);
-        instance.setPort(NamingBase.TEST_PORT);
-        instance.setWeight(1.0);
-        instance.setEphemeral(true);
-        instance.setClusterName("cluster1,cluster2");
-        
-        // Directly invoke `NamingClientProxy.registerService` to skip client-side parameters checking
-        // in ``NamingService.registerInstance(Instance)``, so we can verify server-side checking is effective or not.
-        NamingClientProxy clientProxy = (NamingClientProxy) ReflectUtils.getFieldValue(naming, "clientProxy");
-        clientProxy.registerService(serviceName, Constants.DEFAULT_GROUP, instance);
+        Throwable exception = assertThrows(Exception.class, () -> {
+            
+            String serviceName = NamingBase.randomDomainName();
+            Instance instance = new Instance();
+            instance.setIp(NamingBase.TEST_IP_4_DOM_1);
+            instance.setPort(NamingBase.TEST_PORT);
+            instance.setWeight(1.0);
+            instance.setEphemeral(true);
+            instance.setClusterName("cluster1,cluster2");
+            
+            // Directly invoke `NamingClientProxy.registerService` to skip client-side parameters checking
+            // in ``NamingService.registerInstance(Instance)``, so we can verify server-side checking is effective or not.
+            NamingClientProxy clientProxy = (NamingClientProxy) ReflectUtils.getFieldValue(naming, "clientProxy");
+            clientProxy.registerService(serviceName, Constants.DEFAULT_GROUP, instance);
+        });
+        assertTrue(exception.getMessage().contains("Param 'cluster' is illegal, illegal characters should not appear in the param."));
     }
     
     /**
@@ -374,21 +369,21 @@ public abstract class AbstractInstanceOperate_ITCase {
      */
     @Test
     public void registerPersistentInstanceWithInvalidClusterName() throws Exception {
-        expectedException.expect(NacosException.class);
-        expectedException.expectMessage(
-                "Param 'cluster' is illegal, illegal characters should not appear in the param.");
-        
-        String serviceName = NamingBase.randomDomainName();
-        Instance instance = new Instance();
-        instance.setIp(NamingBase.TEST_IP_4_DOM_1);
-        instance.setPort(NamingBase.TEST_PORT);
-        instance.setWeight(1.0);
-        instance.setEphemeral(false);
-        instance.setClusterName("cluster1,cluster2");
-        
-        // Directly invoke `NamingClientProxy.registerService` to skip client-side parameters checking
-        // in ``NamingService.registerInstance(Instance)``, so we can verify server-side checking is effective or not.
-        NamingClientProxy clientProxy = (NamingClientProxy) ReflectUtils.getFieldValue(naming, "clientProxy");
-        clientProxy.registerService(serviceName, Constants.DEFAULT_GROUP, instance);
+        Throwable exception = assertThrows(NacosException.class, () -> {
+            
+            String serviceName = NamingBase.randomDomainName();
+            Instance instance = new Instance();
+            instance.setIp(NamingBase.TEST_IP_4_DOM_1);
+            instance.setPort(NamingBase.TEST_PORT);
+            instance.setWeight(1.0);
+            instance.setEphemeral(false);
+            instance.setClusterName("cluster1,cluster2");
+            
+            // Directly invoke `NamingClientProxy.registerService` to skip client-side parameters checking
+            // in ``NamingService.registerInstance(Instance)``, so we can verify server-side checking is effective or not.
+            NamingClientProxy clientProxy = (NamingClientProxy) ReflectUtils.getFieldValue(naming, "clientProxy");
+            clientProxy.registerService(serviceName, Constants.DEFAULT_GROUP, instance);
+        });
+        assertTrue(exception.getMessage().contains("Param 'cluster' is illegal, illegal characters should not appear in the param."));
     }
 }

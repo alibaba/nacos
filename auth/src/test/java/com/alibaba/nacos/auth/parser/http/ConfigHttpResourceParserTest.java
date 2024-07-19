@@ -20,42 +20,74 @@ import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.auth.api.Resource;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import javax.servlet.http.HttpServletRequest;
-
 import java.lang.reflect.Method;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigHttpResourceParserTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ConfigHttpResourceParserTest {
     
     @Mock
     private HttpServletRequest request;
     
     private ConfigHttpResourceParser resourceParser;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         resourceParser = new ConfigHttpResourceParser();
     }
     
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
-    public void testParseWithFullContext() throws NoSuchMethodException {
+    void testParseWithFullContext() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
-        Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
         assertEquals("testNs", actual.getNamespaceId());
+        assertEquals("testG", actual.getGroup());
+        assertEquals("testD", actual.getName());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
+    }
+
+    @Test
+    @Secured(signType = Constants.Config.CONFIG_MODULE)
+    void testParseWithNamespaceId() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        Mockito.when(request.getParameter(eq("namespaceId"))).thenReturn("testNs");
+        Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
+        Resource actual = resourceParser.parse(request, secured);
+        assertEquals("testNs", actual.getNamespaceId());
+        assertEquals("testG", actual.getGroup());
+        assertEquals("testD", actual.getName());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
+    }
+
+    @Test
+    @Secured(signType = Constants.Config.CONFIG_MODULE)
+    void testParseWithNamespaceIdFirst() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
+        Mockito.when(request.getParameter(eq("namespaceId"))).thenReturn("testNsFirst");
+        Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
+        Resource actual = resourceParser.parse(request, secured);
+        assertEquals("testNsFirst", actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
@@ -63,10 +95,10 @@ public class ConfigHttpResourceParserTest {
     
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
-    public void testParseWithoutNamespace() throws NoSuchMethodException {
+    void testParseWithoutNamespace() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
-        Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
         assertEquals(StringUtils.EMPTY, actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
@@ -76,10 +108,10 @@ public class ConfigHttpResourceParserTest {
     
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
-    public void testParseWithoutGroup() throws NoSuchMethodException {
+    void testParseWithoutGroup() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
-        Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
         assertEquals("testNs", actual.getNamespaceId());
         assertEquals(StringUtils.EMPTY, actual.getGroup());
@@ -89,7 +121,7 @@ public class ConfigHttpResourceParserTest {
     
     @Test
     @Secured(signType = Constants.Config.CONFIG_MODULE)
-    public void testParseWithoutDataId() throws NoSuchMethodException {
+    void testParseWithoutDataId() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
@@ -104,7 +136,7 @@ public class ConfigHttpResourceParserTest {
         StackTraceElement[] traces = new Exception().getStackTrace();
         StackTraceElement callerElement = traces[1];
         String methodName = callerElement.getMethodName();
-        Method method = this.getClass().getMethod(methodName);
+        Method method = this.getClass().getDeclaredMethod(methodName);
         return method.getAnnotation(Secured.class);
     }
 }

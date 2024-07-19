@@ -16,9 +16,8 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -28,108 +27,122 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * ReflectUtils unit test.
  *
  * @author karsonto
  * @date 2022/08/19
  */
-public class ReflectUtilsTest {
+class ReflectUtilsTest {
     
     List<String> listStr;
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         listStr = new ArrayList<>(2);
     }
     
     @Test
-    public void testGetFieldValue() {
+    void testGetFieldValue() {
         Object elementData = ReflectUtils.getFieldValue(listStr, "elementData");
-        Assert.assertTrue(elementData instanceof Object[]);
-        Assert.assertEquals(2, ((Object[]) elementData).length);
-    }
-    
-    @Test(expected = RuntimeException.class)
-    public void testGetFieldValueWithoutField() {
-        ReflectUtils.getFieldValue(listStr, "elementDataxx");
+        assertTrue(elementData instanceof Object[]);
+        assertEquals(2, ((Object[]) elementData).length);
     }
     
     @Test
-    public void testGetFieldValueWithDefault() {
+    void testGetFieldValueWithoutField() {
+        assertThrows(RuntimeException.class, () -> {
+            ReflectUtils.getFieldValue(listStr, "elementDataxx");
+        });
+    }
+    
+    @Test
+    void testGetFieldValueWithDefault() {
         Object elementData = ReflectUtils.getFieldValue(listStr, "elementDataxx", 3);
-        Assert.assertEquals(elementData, 3);
+        assertEquals(3, elementData);
         elementData = ReflectUtils.getFieldValue(listStr, "elementData", 3);
-        Assert.assertTrue(elementData instanceof Object[]);
-        Assert.assertEquals(2, ((Object[]) elementData).length);
+        assertTrue(elementData instanceof Object[]);
+        assertEquals(2, ((Object[]) elementData).length);
     }
     
     @Test
-    public void testGetField() throws NoSuchFieldException {
+    void testGetField() throws NoSuchFieldException {
         Field field = listStr.getClass().getDeclaredField("elementData");
         field.setAccessible(true);
         Object elementData = ReflectUtils.getField(field, listStr);
-        Assert.assertTrue(elementData instanceof Object[]);
-    }
-    
-    @Test(expected = IllegalStateException.class)
-    public void testGetFieldWithoutAccess() throws NoSuchFieldException {
-        Field field = listStr.getClass().getDeclaredField("elementData");
-        ReflectUtils.getField(field, listStr);
+        assertTrue(elementData instanceof Object[]);
     }
     
     @Test
-    public void testInvokeMethod() throws Exception {
+    void testGetFieldWithoutAccess() throws NoSuchFieldException {
+        assertThrows(IllegalStateException.class, () -> {
+            Field field = listStr.getClass().getDeclaredField("elementData");
+            ReflectUtils.getField(field, listStr);
+        });
+    }
+    
+    @Test
+    void testInvokeMethod() throws Exception {
         Method method = listStr.getClass().getDeclaredMethod("grow", int.class);
         method.setAccessible(true);
         ReflectUtils.invokeMethod(method, listStr, 4);
         Object elementData = ReflectUtils.getFieldValue(listStr, "elementData");
-        Assert.assertEquals(4, ((Object[]) elementData).length);
+        assertEquals(4, ((Object[]) elementData).length);
     }
     
-    @Test(expected = IllegalStateException.class)
-    public void testInvokeMethodWithoutAccess() throws Exception {
-        Method method = listStr.getClass().getDeclaredMethod("grow", int.class);
-        ReflectUtils.invokeMethod(method, listStr, 4);
+    @Test
+    void testInvokeMethodWithoutAccess() throws Exception {
+        assertThrows(IllegalStateException.class, () -> {
+            Method method = listStr.getClass().getDeclaredMethod("grow", int.class);
+            ReflectUtils.invokeMethod(method, listStr, 4);
+        });
     }
     
-    @Test(expected = UndeclaredThrowableException.class)
-    public void testHandleReflectionException() {
-        try {
-            NoSuchMethodException exception = new NoSuchMethodException("test");
-            ReflectUtils.handleReflectionException(exception);
-        } catch (Exception e) {
-            Assert.assertEquals("Method not found: test", e.getMessage());
-        }
-        try {
-            IllegalAccessException exception = new IllegalAccessException("test");
-            ReflectUtils.handleReflectionException(exception);
-        } catch (Exception e) {
-            Assert.assertEquals("Could not access method or field: test", e.getMessage());
-        }
-        RuntimeException exception = new RuntimeException("test");
-        try {
-            ReflectUtils.handleReflectionException(exception);
-        } catch (Exception e) {
-            Assert.assertEquals(exception, e);
-        }
-        try {
-            InvocationTargetException invocationTargetException = new InvocationTargetException(exception);
-            ReflectUtils.handleReflectionException(invocationTargetException);
-        } catch (Exception e) {
-            Assert.assertEquals(exception, e);
-        }
-        ReflectUtils.handleReflectionException(new IOException());
+    @Test
+    void testHandleReflectionException() {
+        assertThrows(UndeclaredThrowableException.class, () -> {
+            try {
+                NoSuchMethodException exception = new NoSuchMethodException("test");
+                ReflectUtils.handleReflectionException(exception);
+            } catch (Exception e) {
+                assertEquals("Method not found: test", e.getMessage());
+            }
+            try {
+                IllegalAccessException exception = new IllegalAccessException("test");
+                ReflectUtils.handleReflectionException(exception);
+            } catch (Exception e) {
+                assertEquals("Could not access method or field: test", e.getMessage());
+            }
+            RuntimeException exception = new RuntimeException("test");
+            try {
+                ReflectUtils.handleReflectionException(exception);
+            } catch (Exception e) {
+                assertEquals(exception, e);
+            }
+            try {
+                InvocationTargetException invocationTargetException = new InvocationTargetException(exception);
+                ReflectUtils.handleReflectionException(invocationTargetException);
+            } catch (Exception e) {
+                assertEquals(exception, e);
+            }
+            ReflectUtils.handleReflectionException(new IOException());
+        });
     }
     
-    @Test(expected = UndeclaredThrowableException.class)
-    public void testRethrowRuntimeException() {
-        ClassFormatError error = new ClassFormatError("test");
-        try {
-            ReflectUtils.rethrowRuntimeException(error);
-        } catch (Error e) {
-            Assert.assertEquals(error, e);
-        }
-        ReflectUtils.rethrowRuntimeException(new IOException());
+    @Test
+    void testRethrowRuntimeException() {
+        assertThrows(UndeclaredThrowableException.class, () -> {
+            ClassFormatError error = new ClassFormatError("test");
+            try {
+                ReflectUtils.rethrowRuntimeException(error);
+            } catch (Error e) {
+                assertEquals(error, e);
+            }
+            ReflectUtils.rethrowRuntimeException(new IOException());
+        });
     }
 }

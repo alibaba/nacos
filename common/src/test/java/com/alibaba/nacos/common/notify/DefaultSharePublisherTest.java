@@ -17,25 +17,25 @@
 package com.alibaba.nacos.common.notify;
 
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class DefaultSharePublisherTest {
+@ExtendWith(MockitoExtension.class)
+class DefaultSharePublisherTest {
     
     private static final AtomicLong TEST_SEQUENCE = new AtomicLong();
     
@@ -47,19 +47,19 @@ public class DefaultSharePublisherTest {
     @Mock
     SmartSubscriber smartSubscriber2;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         defaultSharePublisher = new DefaultSharePublisher();
         defaultSharePublisher.init(SlowEvent.class, 2);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         defaultSharePublisher.shutdown();
     }
     
     @Test
-    public void testRemoveSubscribers() {
+    void testRemoveSubscribers() {
         defaultSharePublisher.addSubscriber(smartSubscriber1, MockSlowEvent1.class);
         defaultSharePublisher.addSubscriber(smartSubscriber1, MockSlowEvent2.class);
         defaultSharePublisher.addSubscriber(smartSubscriber2, MockSlowEvent2.class);
@@ -71,7 +71,7 @@ public class DefaultSharePublisherTest {
     }
     
     @Test
-    public void testReceiveEventWithoutSubscriber() {
+    void testReceiveEventWithoutSubscriber() {
         defaultSharePublisher.addSubscriber(smartSubscriber1, MockSlowEvent1.class);
         defaultSharePublisher.addSubscriber(smartSubscriber2, MockSlowEvent2.class);
         defaultSharePublisher.receiveEvent(new SlowEvent() {
@@ -87,7 +87,7 @@ public class DefaultSharePublisherTest {
     }
     
     @Test
-    public void testReceiveEventWithSubscriber() {
+    void testReceiveEventWithSubscriber() {
         defaultSharePublisher.addSubscriber(smartSubscriber1, MockSlowEvent1.class);
         defaultSharePublisher.addSubscriber(smartSubscriber2, MockSlowEvent2.class);
         defaultSharePublisher.receiveEvent(new MockSlowEvent1());
@@ -99,7 +99,7 @@ public class DefaultSharePublisherTest {
     }
     
     @Test
-    public void testIgnoreExpiredEvent() throws InterruptedException {
+    void testIgnoreExpiredEvent() throws InterruptedException {
         MockSlowEvent1 mockSlowEvent1 = new MockSlowEvent1();
         MockSlowEvent2 mockSlowEvent2 = new MockSlowEvent2();
         defaultSharePublisher.addSubscriber(smartSubscriber1, MockSlowEvent1.class);

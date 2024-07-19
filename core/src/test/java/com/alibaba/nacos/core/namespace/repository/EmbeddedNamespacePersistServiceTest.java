@@ -23,12 +23,11 @@ import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -36,14 +35,18 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static com.alibaba.nacos.core.namespace.repository.NamespaceRowMapperInjector.TENANT_INFO_ROW_MAPPER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class EmbeddedNamespacePersistServiceTest {
+@ExtendWith(MockitoExtension.class)
+class EmbeddedNamespacePersistServiceTest {
     
     @Mock
     private DatabaseOperate databaseOperate;
@@ -55,8 +58,8 @@ public class EmbeddedNamespacePersistServiceTest {
     
     private MockEnvironment environment;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setIsStandalone(true);
         DatasourceConfiguration.setEmbeddedStorage(true);
         environment = new MockEnvironment();
@@ -67,7 +70,7 @@ public class EmbeddedNamespacePersistServiceTest {
     }
     
     @Test
-    public void insertTenantInfoAtomicTest1() {
+    void insertTenantInfoAtomicTest1() {
         
         String namespaceId = "testNsId";
         String kp = "1";
@@ -84,7 +87,7 @@ public class EmbeddedNamespacePersistServiceTest {
     }
     
     @Test
-    public void insertTenantInfoAtomicTest2() {
+    void insertTenantInfoAtomicTest2() {
         
         String namespaceId = "testNsId";
         String kp = "1";
@@ -94,15 +97,15 @@ public class EmbeddedNamespacePersistServiceTest {
         when(databaseOperate.update(anyList())).thenReturn(false);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         
-        Assert.assertThrows(NacosRuntimeException.class,
-                () -> embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName,
-                        namespaceDesc, createRes, System.currentTimeMillis()));
+        assertThrows(NacosRuntimeException.class,
+                () -> embeddedNamespacePersistService.insertTenantInfoAtomic(kp, namespaceId, namespaceName, namespaceDesc, createRes,
+                        System.currentTimeMillis()));
         
         verify(databaseOperate).update(anyList());
     }
     
     @Test
-    public void removeTenantInfoAtomicTest() {
+    void removeTenantInfoAtomicTest() {
         String namespaceId = "testNsId";
         String kp = "1";
         
@@ -115,7 +118,7 @@ public class EmbeddedNamespacePersistServiceTest {
     }
     
     @Test
-    public void updateTenantNameAtomicTest1() {
+    void updateTenantNameAtomicTest1() {
         
         String namespaceId = "testNsId";
         String kp = "1";
@@ -130,7 +133,7 @@ public class EmbeddedNamespacePersistServiceTest {
     }
     
     @Test
-    public void updateTenantNameAtomicTest2() {
+    void updateTenantNameAtomicTest2() {
         
         String namespaceId = "testNsId";
         String kp = "1";
@@ -139,81 +142,77 @@ public class EmbeddedNamespacePersistServiceTest {
         when(databaseOperate.update(anyList())).thenReturn(false);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         
-        Assert.assertThrows(NacosRuntimeException.class,
-                () -> embeddedNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName,
-                        namespaceDesc));
+        assertThrows(NacosRuntimeException.class,
+                () -> embeddedNamespacePersistService.updateTenantNameAtomic(kp, namespaceId, namespaceName, namespaceDesc));
         verify(databaseOperate).update(anyList());
     }
     
     @Test
-    public void findTenantByKpTest1() {
+    void findTenantByKpTest1() {
         String kp = "1";
         List<TenantInfo> tenantInfoList = new ArrayList<>(1);
         tenantInfoList.add(new TenantInfo());
-        when(databaseOperate.queryMany(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenReturn(
-                tenantInfoList);
+        when(databaseOperate.queryMany(anyString(), eq(new Object[] {kp}), eq(TENANT_INFO_ROW_MAPPER))).thenReturn(tenantInfoList);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         List<TenantInfo> tenantByKp = embeddedNamespacePersistService.findTenantByKp(kp);
         
-        Assert.assertEquals(tenantByKp.get(0), tenantInfoList.get(0));
+        assertEquals(tenantByKp.get(0), tenantInfoList.get(0));
     }
     
     @Test
-    public void findTenantByKpTest2() {
+    void findTenantByKpTest2() {
         String kp = "1";
         String tenantId = "tenantId";
         TenantInfo tenantInfo = new TenantInfo();
         tenantInfo.setTenantId(tenantId);
-        when(databaseOperate.queryOne(anyString(), eq(new Object[] {kp, tenantId}),
-                eq(TENANT_INFO_ROW_MAPPER))).thenReturn(tenantInfo);
+        when(databaseOperate.queryOne(anyString(), eq(new Object[] {kp, tenantId}), eq(TENANT_INFO_ROW_MAPPER))).thenReturn(tenantInfo);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         TenantInfo tenantByKp = embeddedNamespacePersistService.findTenantByKp(kp, tenantId);
         
-        Assert.assertEquals(tenantInfo.getTenantId(), tenantByKp.getTenantId());
+        assertEquals(tenantInfo.getTenantId(), tenantByKp.getTenantId());
     }
     
     @Test
-    public void generateLikeArgumentTest() {
+    void generateLikeArgumentTest() {
         
         String test = embeddedNamespacePersistService.generateLikeArgument("test");
         
         String testB = embeddedNamespacePersistService.generateLikeArgument("test*");
         
-        Assert.assertEquals("test", test);
+        assertEquals("test", test);
         
-        Assert.assertEquals("test%", testB);
+        assertEquals("test%", testB);
     }
     
     @Test
-    public void isExistTableTest() {
+    void isExistTableTest() {
         String tableName = "tableName";
         String sql = String.format("SELECT 1 FROM %s FETCH FIRST ROW ONLY", tableName);
         
         when(databaseOperate.queryOne(sql, Integer.class)).thenReturn(1);
         boolean existTableA = embeddedNamespacePersistService.isExistTable(tableName);
-        Assert.assertTrue(existTableA);
+        assertTrue(existTableA);
         
         when(databaseOperate.queryOne(sql, Integer.class)).thenThrow(new RuntimeException("test"));
         boolean existTableB = embeddedNamespacePersistService.isExistTable(tableName);
-        Assert.assertFalse(existTableB);
+        assertFalse(existTableB);
     }
     
     @Test
-    public void tenantInfoCountByTenantIdTest() {
+    void tenantInfoCountByTenantIdTest() {
         String tenantId = "tenantId";
         
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
         
-        Assert.assertThrows(IllegalArgumentException.class,
-                () -> embeddedNamespacePersistService.tenantInfoCountByTenantId(null));
+        assertThrows(IllegalArgumentException.class, () -> embeddedNamespacePersistService.tenantInfoCountByTenantId(null));
         
         when(databaseOperate.queryOne(anyString(), eq(new String[] {tenantId}), eq(Integer.class))).thenReturn(null);
         int i = embeddedNamespacePersistService.tenantInfoCountByTenantId(tenantId);
-        Assert.assertEquals(0, i);
+        assertEquals(0, i);
         
         when(databaseOperate.queryOne(anyString(), eq(new String[] {tenantId}), eq(Integer.class))).thenReturn(1);
         int j = embeddedNamespacePersistService.tenantInfoCountByTenantId(tenantId);
-        Assert.assertEquals(1, j);
+        assertEquals(1, j);
     }
     
 }

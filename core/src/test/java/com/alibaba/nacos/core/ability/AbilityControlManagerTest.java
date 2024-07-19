@@ -19,45 +19,43 @@ package com.alibaba.nacos.core.ability;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
 import com.alibaba.nacos.api.ability.constant.AbilityStatus;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-@SpringBootTest
-public class AbilityControlManagerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+
+class AbilityControlManagerTest {
     
     private TestServerAbilityControlManager serverAbilityControlManager = new TestServerAbilityControlManager();
     
-    @Before
-    public void inject() {
+    @BeforeEach
+    void inject() {
         Map<String, Boolean> newTable = new HashMap<>();
         newTable.put(AbilityKey.SERVER_TEST_1.getName(), true);
         serverAbilityControlManager.setCurrentSupportingAbility(newTable);
     }
     
     @Test
-    public void testCurrentNodeAbility() {
+    void testCurrentNodeAbility() {
         Set<String> keySet = serverAbilityControlManager.getCurrentNodeAbilities(AbilityMode.SERVER).keySet();
         // diable all
-        keySet.forEach(key -> serverAbilityControlManager
-                .disableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+        keySet.forEach(key -> serverAbilityControlManager.disableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertNotEquals(serverAbilityControlManager
-                    .isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)), AbilityStatus.SUPPORTED);
+            assertNotEquals(AbilityStatus.SUPPORTED,
+                    serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         });
         // enable all
-        keySet.forEach(key -> serverAbilityControlManager
-                .enableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
+        keySet.forEach(key -> serverAbilityControlManager.enableCurrentNodeAbility(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         // get all
         keySet.forEach(key -> {
-            Assert.assertEquals(serverAbilityControlManager
-                    .isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)), AbilityStatus.SUPPORTED);
+            assertEquals(AbilityStatus.SUPPORTED,
+                    serverAbilityControlManager.isCurrentNodeAbilityRunning(AbilityKey.getEnum(AbilityMode.SERVER, key)));
         });
     }
     

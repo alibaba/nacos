@@ -24,46 +24,49 @@ import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ServiceInfo;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.naming.backups.FailoverReactor;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ScheduledExecutorService;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-public class ServiceInfoHolderTest {
+class ServiceInfoHolderTest {
     
     NacosClientProperties nacosClientProperties;
     
     ServiceInfoHolder holder;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         nacosClientProperties = NacosClientProperties.PROTOTYPE.derive();
         holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
     
     }
     
     @Test
-    public void testGetServiceInfoMap() throws NoSuchFieldException, IllegalAccessException {
-        Assert.assertEquals(0, holder.getServiceInfoMap().size());
+    void testGetServiceInfoMap() throws NoSuchFieldException, IllegalAccessException {
+        assertEquals(0, holder.getServiceInfoMap().size());
         Field fieldNotifierEventScope = ServiceInfoHolder.class.getDeclaredField("notifierEventScope");
         fieldNotifierEventScope.setAccessible(true);
-        Assert.assertEquals("scope-001", fieldNotifierEventScope.get(holder));
+        assertEquals("scope-001", fieldNotifierEventScope.get(holder));
     }
     
     @Test
-    public void testProcessServiceInfo() {
+    void testProcessServiceInfo() {
         ServiceInfo info = new ServiceInfo("a@@b@@c");
         Instance instance1 = createInstance("1.1.1.1", 1);
         Instance instance2 = createInstance("1.1.1.2", 2);
@@ -73,7 +76,7 @@ public class ServiceInfoHolderTest {
         info.setHosts(hosts);
         
         ServiceInfo actual1 = holder.processServiceInfo(info);
-        Assert.assertEquals(info, actual1);
+        assertEquals(info, actual1);
         
         Instance newInstance1 = createInstance("1.1.1.1", 1);
         newInstance1.setWeight(2.0);
@@ -85,7 +88,7 @@ public class ServiceInfoHolderTest {
         info2.setHosts(hosts2);
         
         ServiceInfo actual2 = holder.processServiceInfo(info2);
-        Assert.assertEquals(info2, actual2);
+        assertEquals(info2, actual2);
     }
     
     private Instance createInstance(String ip, int port) {
@@ -96,17 +99,17 @@ public class ServiceInfoHolderTest {
     }
     
     @Test
-    public void testProcessServiceInfo2() {
+    void testProcessServiceInfo2() {
         String json = "{\"groupName\":\"a\",\"name\":\"b\",\"clusters\":\"c\"}";
         
         ServiceInfo actual = holder.processServiceInfo(json);
         ServiceInfo expect = new ServiceInfo("a@@b@@c");
         expect.setJsonFromServer(json);
-        Assert.assertEquals(expect.getKey(), actual.getKey());
+        assertEquals(expect.getKey(), actual.getKey());
     }
     
     @Test
-    public void testProcessServiceInfoWithPushEmpty() throws NacosException {
+    void testProcessServiceInfoWithPushEmpty() throws NacosException {
         ServiceInfo oldInfo = new ServiceInfo("a@@b@@c");
         Instance instance1 = createInstance("1.1.1.1", 1);
         Instance instance2 = createInstance("1.1.1.2", 2);
@@ -124,17 +127,17 @@ public class ServiceInfoHolderTest {
         
         final ServiceInfo actual = holder.processServiceInfo(newInfo);
         
-        Assert.assertEquals(oldInfo.getKey(), actual.getKey());
-        Assert.assertEquals(2, actual.getHosts().size());
+        assertEquals(oldInfo.getKey(), actual.getKey());
+        assertEquals(2, actual.getHosts().size());
     }
     
     @Test
-    public void testProcessNullServiceInfo() {
-        Assert.assertNull(holder.processServiceInfo(new ServiceInfo()));
+    void testProcessNullServiceInfo() {
+        assertNull(holder.processServiceInfo(new ServiceInfo()));
     }
     
     @Test
-    public void testProcessServiceInfoForOlder() {
+    void testProcessServiceInfoForOlder() {
         ServiceInfo info = new ServiceInfo("a@@b@@c");
         Instance instance1 = createInstance("1.1.1.1", 1);
         Instance instance2 = createInstance("1.1.1.2", 2);
@@ -147,11 +150,11 @@ public class ServiceInfoHolderTest {
         ServiceInfo olderInfo = new ServiceInfo("a@@b@@c");
         olderInfo.setLastRefTime(0L);
         final ServiceInfo actual = holder.processServiceInfo(olderInfo);
-        Assert.assertEquals(olderInfo, actual);
+        assertEquals(olderInfo, actual);
     }
     
     @Test
-    public void testGetServiceInfo() {
+    void testGetServiceInfo() {
         ServiceInfo info = new ServiceInfo("a@@b@@c");
         Instance instance1 = createInstance("1.1.1.1", 1);
         List<Instance> hosts = new ArrayList<>();
@@ -163,47 +166,47 @@ public class ServiceInfoHolderTest {
         String groupName = "a";
         String clusters = "c";
         ServiceInfo actual = holder.getServiceInfo(serviceName, groupName, clusters);
-        Assert.assertEquals(expect.getKey(), actual.getKey());
-        Assert.assertEquals(expect.getHosts().size(), actual.getHosts().size());
-        Assert.assertEquals(expect.getHosts().get(0), actual.getHosts().get(0));
+        assertEquals(expect.getKey(), actual.getKey());
+        assertEquals(expect.getHosts().size(), actual.getHosts().size());
+        assertEquals(expect.getHosts().get(0), actual.getHosts().get(0));
     }
     
     @Test
-    public void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
+    void testShutdown() throws NacosException, NoSuchFieldException, IllegalAccessException {
         Field field = ServiceInfoHolder.class.getDeclaredField("failoverReactor");
         field.setAccessible(true);
         FailoverReactor reactor = (FailoverReactor) field.get(holder);
         Field executorService = FailoverReactor.class.getDeclaredField("executorService");
         executorService.setAccessible(true);
         ScheduledExecutorService pool = (ScheduledExecutorService) executorService.get(reactor);
-        Assert.assertFalse(pool.isShutdown());
+        assertFalse(pool.isShutdown());
         holder.shutdown();
-        Assert.assertTrue(pool.isShutdown());
+        assertTrue(pool.isShutdown());
     }
     
     @Test
-    public void testConstructWithCacheLoad() throws NacosException {
+    void testConstructWithCacheLoad() throws NacosException {
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_LOAD_CACHE_AT_START, "true");
         nacosClientProperties.setProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR, "non-exist");
         holder.shutdown();
         holder = new ServiceInfoHolder("aa", "scope-001", nacosClientProperties);
-        Assert.assertEquals(System.getProperty("user.home") + "/nacos/non-exist/naming/aa", holder.getCacheDir());
-        Assert.assertTrue(holder.getServiceInfoMap().isEmpty());
+        assertEquals(System.getProperty("user.home") + "/nacos/non-exist/naming/aa", holder.getCacheDir());
+        assertTrue(holder.getServiceInfoMap().isEmpty());
     }
     
     @Test
-    public void testIsFailoverSwitch() throws IllegalAccessException, NoSuchFieldException, NacosException {
+    void testIsFailoverSwitch() throws IllegalAccessException, NoSuchFieldException, NacosException {
         FailoverReactor mock = injectMockFailoverReactor();
         when(mock.isFailoverSwitch()).thenReturn(true);
-        Assert.assertTrue(holder.isFailoverSwitch());
+        assertTrue(holder.isFailoverSwitch());
     }
     
     @Test
-    public void testGetFailoverServiceInfo() throws IllegalAccessException, NoSuchFieldException, NacosException {
+    void testGetFailoverServiceInfo() throws IllegalAccessException, NoSuchFieldException, NacosException {
         FailoverReactor mock = injectMockFailoverReactor();
         ServiceInfo serviceInfo = new ServiceInfo("a@@b@@c");
         when(mock.getService("a@@b@@c")).thenReturn(serviceInfo);
-        Assert.assertEquals(serviceInfo, holder.getFailoverServiceInfo("b", "a", "c"));
+        assertEquals(serviceInfo, holder.getFailoverServiceInfo("b", "a", "c"));
     }
     
     private FailoverReactor injectMockFailoverReactor()

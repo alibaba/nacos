@@ -21,51 +21,53 @@ import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import com.alibaba.nacos.plugin.control.tps.rule.RuleDetail;
 import com.alibaba.nacos.plugin.control.tps.rule.TpsControlRule;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 
-public class NacosTpsControlManagerTest {
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class NacosTpsControlManagerTest {
     
     @Test
-    public void testRegisterTpsPoint1() {
+    void testRegisterTpsPoint1() {
         
         NacosTpsControlManager nacosTpsControlManager = new NacosTpsControlManager();
         nacosTpsControlManager.registerTpsPoint("test");
         
-        Assert.assertTrue(nacosTpsControlManager.getPoints().containsKey("test"));
+        assertTrue(nacosTpsControlManager.getPoints().containsKey("test"));
     }
     
     @Test
-    public void testRegisterTpsPoint2() {
+    void testRegisterTpsPoint2() {
         NacosTpsControlManager nacosTpsControlManager = new NacosTpsControlManager();
         TpsControlRule tpsLimitRule = new TpsControlRule();
         nacosTpsControlManager.applyTpsRule("test", tpsLimitRule);
         nacosTpsControlManager.registerTpsPoint("test");
         
-        Assert.assertTrue(nacosTpsControlManager.getPoints().containsKey("test"));
+        assertTrue(nacosTpsControlManager.getPoints().containsKey("test"));
     }
     
     @Test
-    public void testApplyTpsRule1() {
+    void testApplyTpsRule1() {
         NacosTpsControlManager nacosTpsControlManager = new NacosTpsControlManager();
         TpsControlRule tpsLimitRule = new TpsControlRule();
         nacosTpsControlManager.applyTpsRule("test", tpsLimitRule);
         
-        Assert.assertTrue(nacosTpsControlManager.getRules().containsKey("test"));
+        assertTrue(nacosTpsControlManager.getRules().containsKey("test"));
     }
     
     @Test
-    public void testApplyTpsRule2() {
+    void testApplyTpsRule2() {
         NacosTpsControlManager nacosTpsControlManager = new NacosTpsControlManager();
         nacosTpsControlManager.applyTpsRule("test", null);
         
-        Assert.assertFalse(nacosTpsControlManager.getRules().containsKey("test"));
+        assertFalse(nacosTpsControlManager.getRules().containsKey("test"));
     }
     
     @Test
-    public void testCheck() {
+    void testCheck() {
         NacosTpsControlManager nacosTpsControlManager = new NacosTpsControlManager();
         nacosTpsControlManager.registerTpsPoint("test");
         final TpsControlRule tpsLimitRule = new TpsControlRule();
@@ -82,6 +84,6 @@ public class NacosTpsControlManagerTest {
         tpsCheckRequest.setPointName("test");
         tpsCheckRequest.setTimestamp(timeMillis);
         TpsCheckResponse check = nacosTpsControlManager.check(tpsCheckRequest);
-        Assert.assertTrue(check.isSuccess());
+        assertTrue(check.isSuccess());
     }
 }

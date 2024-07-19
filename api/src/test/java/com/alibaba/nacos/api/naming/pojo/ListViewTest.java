@@ -16,19 +16,19 @@
 
 package com.alibaba.nacos.api.naming.pojo;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class ListViewTest {
+class ListViewTest {
     
     @Test
-    public void testToString() {
+    void testToString() {
         List<String> data = new LinkedList<>();
         data.add("1");
         data.add("2");
@@ -41,7 +41,7 @@ public class ListViewTest {
     }
     
     @Test
-    public void testSetAndGet() {
+    void testSetAndGet() {
         ListView<String> listView = new ListView<>();
         assertEquals(0, listView.getCount());
         assertNull(listView.getData());

@@ -17,15 +17,15 @@
 package com.alibaba.nacos.naming.ability;
 
 import com.alibaba.nacos.api.ability.ServerAbilities;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class NamingAbilityInitializerTest {
+class NamingAbilityInitializerTest {
     
     @Test
-    public void testInitialize() {
+    void testInitialize() {
         NamingAbilityInitializer initializer = new NamingAbilityInitializer();
         ServerAbilities abilities = new ServerAbilities();
         assertFalse(abilities.getNamingAbility().isSupportJraft());

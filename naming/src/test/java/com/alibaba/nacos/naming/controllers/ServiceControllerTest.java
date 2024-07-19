@@ -27,15 +27,14 @@ import com.alibaba.nacos.naming.core.ServiceOperatorV2Impl;
 import com.alibaba.nacos.naming.core.SubscribeManager;
 import com.alibaba.nacos.naming.pojo.Subscriber;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.util.Arrays;
@@ -44,10 +43,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ServiceControllerTest extends BaseTest {
+@ExtendWith(MockitoExtension.class)
+class ServiceControllerTest extends BaseTest {
     
     @InjectMocks
     private ServiceController serviceController;
@@ -62,7 +62,7 @@ public class ServiceControllerTest extends BaseTest {
     
     private volatile Class<? extends Event> eventReceivedClass;
     
-    @Before
+    @BeforeEach
     public void before() {
         super.before();
         subscriber = new SmartSubscriber() {
@@ -81,15 +81,15 @@ public class ServiceControllerTest extends BaseTest {
         NotifyCenter.registerSubscriber(subscriber);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         NotifyCenter.deregisterSubscriber(subscriber);
         NotifyCenter.deregisterPublisher(UpdateServiceTraceEvent.class);
         eventReceivedClass = null;
     }
     
     @Test
-    public void testList() throws Exception {
+    void testList() throws Exception {
         
         Mockito.when(serviceOperatorV2.listService(Mockito.anyString(), Mockito.anyString(), Mockito.anyString()))
                 .thenReturn(Collections.singletonList("DEFAULT_GROUP@@providers:com.alibaba.nacos.controller.test:1"));
@@ -99,72 +99,72 @@ public class ServiceControllerTest extends BaseTest {
         servletRequest.addParameter("pageSize", "10");
         
         ObjectNode objectNode = serviceController.list(servletRequest);
-        Assert.assertEquals(1, objectNode.get("count").asInt());
+        assertEquals(1, objectNode.get("count").asInt());
     }
     
     @Test
-    public void testCreate() {
+    void testCreate() {
         try {
             String res = serviceController.create(TEST_NAMESPACE, TEST_SERVICE_NAME, 0, "", "");
-            Assert.assertEquals("ok", res);
+            assertEquals("ok", res);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testRemove() {
+    void testRemove() {
         try {
             String res = serviceController.remove(TEST_NAMESPACE, TEST_SERVICE_NAME);
-            Assert.assertEquals("ok", res);
+            assertEquals("ok", res);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testDetail() {
+    void testDetail() {
         try {
             ObjectNode result = Mockito.mock(ObjectNode.class);
             Mockito.when(serviceOperatorV2.queryService(Mockito.anyString(), Mockito.anyString())).thenReturn(result);
             
             ObjectNode objectNode = serviceController.detail(TEST_NAMESPACE, TEST_SERVICE_NAME);
-            Assert.assertEquals(result, objectNode);
+            assertEquals(result, objectNode);
         } catch (NacosException e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testUpdate() throws Exception {
+    void testUpdate() throws Exception {
         MockHttpServletRequest servletRequest = new MockHttpServletRequest();
         servletRequest.addParameter(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME);
         servletRequest.addParameter("protectThreshold", "0.01");
         try {
             String res = serviceController.update(servletRequest);
-            Assert.assertEquals("ok", res);
+            assertEquals("ok", res);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
         TimeUnit.SECONDS.sleep(1);
-        assertEquals(eventReceivedClass, UpdateServiceTraceEvent.class);
+        assertEquals(UpdateServiceTraceEvent.class, eventReceivedClass);
     }
     
     @Test
-    public void testSearchService() {
+    void testSearchService() {
         try {
             Mockito.when(serviceOperatorV2.searchServiceName(Mockito.anyString(), Mockito.anyString()))
                     .thenReturn(Collections.singletonList("result"));
             
             ObjectNode objectNode = serviceController.searchService(TEST_NAMESPACE, "");
-            Assert.assertEquals(1, objectNode.get("count").asInt());
+            assertEquals(1, objectNode.get("count").asInt());
         } catch (NacosException e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
         
         try {
@@ -173,15 +173,15 @@ public class ServiceControllerTest extends BaseTest {
             Mockito.when(serviceOperatorV2.listAllNamespace()).thenReturn(Arrays.asList("re1", "re2"));
             
             ObjectNode objectNode = serviceController.searchService(null, "");
-            Assert.assertEquals(4, objectNode.get("count").asInt());
+            assertEquals(4, objectNode.get("count").asInt());
         } catch (NacosException e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testSubscribers() {
+    void testSubscribers() {
         Mockito.when(subscribeManager.getSubscribers(Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean()))
                 .thenReturn(Collections.singletonList(Mockito.mock(Subscriber.class)));
         
@@ -189,6 +189,6 @@ public class ServiceControllerTest extends BaseTest {
         servletRequest.addParameter(CommonParams.SERVICE_NAME, TEST_SERVICE_NAME);
         
         ObjectNode objectNode = serviceController.subscribers(servletRequest);
-        Assert.assertEquals(1, objectNode.get("count").asInt());
+        assertEquals(1, objectNode.get("count").asInt());
     }
 }

@@ -19,13 +19,14 @@ package com.alibaba.nacos.naming.consistency.persistent.impl;
 import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.core.storage.kv.FileKvStorage;
 import com.alibaba.nacos.sys.utils.DiskUtils;
-import junit.framework.TestCase;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -33,21 +34,22 @@ import java.lang.reflect.Field;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NamingKvStorageTest extends TestCase {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class NamingKvStorageTest {
+    
+    private final byte[] key = "fileName_test".getBytes();
+    
+    private final String str = "str_test";
     
     private NamingKvStorage namingKvStorage;
     
     @Mock
     private FileKvStorage baseDirStorageMock;
     
-    private final byte[] key = "fileName_test".getBytes();
-    
-    private final String str = "str_test";
-    
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         namingKvStorage = new NamingKvStorage("baseDir_test");
         
         Field baseDirStorageField = NamingKvStorage.class.getDeclaredField("baseDirStorage");
@@ -57,38 +59,38 @@ public class NamingKvStorageTest extends TestCase {
         when(baseDirStorageMock.get(key)).thenReturn(null);
     }
     
-    @After
-    public void tearDown() throws IOException {
+    @AfterEach
+    void tearDown() throws IOException {
         DiskUtils.deleteDirectory("baseDir_test");
     }
     
     @Test
-    public void testGet() throws KvStorageException {
+    void testGet() throws KvStorageException {
         namingKvStorage.get(key);
         verify(baseDirStorageMock).get(key);
     }
     
     @Test
-    public void testPut() throws KvStorageException {
+    void testPut() throws KvStorageException {
         byte[] value = "value_test".getBytes();
         namingKvStorage.put(key, value);
         verify(baseDirStorageMock).put(key, value);
     }
     
     @Test
-    public void testDelete() throws KvStorageException {
+    void testDelete() throws KvStorageException {
         namingKvStorage.delete(key);
         verify(baseDirStorageMock).delete(key);
     }
     
     @Test
-    public void testDoSnapshot() throws KvStorageException {
+    void testDoSnapshot() throws KvStorageException {
         namingKvStorage.doSnapshot(str);
         verify(baseDirStorageMock).doSnapshot(str);
     }
     
     @Test
-    public void testSnapshotLoad() throws KvStorageException {
+    void testSnapshotLoad() throws KvStorageException {
         namingKvStorage.snapshotLoad(str);
         verify(baseDirStorageMock).snapshotLoad(str);
     }

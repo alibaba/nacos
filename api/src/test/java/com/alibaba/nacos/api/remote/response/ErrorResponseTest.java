@@ -18,59 +18,60 @@ package com.alibaba.nacos.api.remote.response;
 
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.exception.runtime.NacosRuntimeException;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class ErrorResponseTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ErrorResponseTest {
     
     @Test
-    public void testBuildWithErrorCode() {
+    void testBuildWithErrorCode() {
         int errorCode = 500;
         String msg = "err msg";
         
         Response response = ErrorResponse.build(errorCode, msg);
         
-        Assert.assertEquals(errorCode, response.getErrorCode());
-        Assert.assertEquals(errorCode, response.getResultCode());
-        Assert.assertEquals(msg, response.getMessage());
+        assertEquals(errorCode, response.getErrorCode());
+        assertEquals(errorCode, response.getResultCode());
+        assertEquals(msg, response.getMessage());
     }
     
     @Test
-    public void testBuildWithThrowable() {
+    void testBuildWithThrowable() {
         String errMsg = "exception msg";
         RuntimeException runtimeException = new RuntimeException(errMsg);
         
         Response response = ErrorResponse.build(runtimeException);
         
-        Assert.assertEquals(ResponseCode.FAIL.getCode(), response.getErrorCode());
-        Assert.assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
-        Assert.assertEquals(errMsg, response.getMessage());
+        assertEquals(ResponseCode.FAIL.getCode(), response.getErrorCode());
+        assertEquals(ResponseCode.FAIL.getCode(), response.getResultCode());
+        assertEquals(errMsg, response.getMessage());
     }
     
     @Test
-    public void testBuildWithNacosException() {
+    void testBuildWithNacosException() {
         int errCode = 500;
         String errMsg = "nacos exception msg";
         NacosException nacosException = new NacosException(errCode, errMsg);
         
         Response response = ErrorResponse.build(nacosException);
         
-        Assert.assertEquals(errCode, response.getErrorCode());
-        Assert.assertEquals(errCode, response.getResultCode());
-        Assert.assertEquals(errMsg, response.getMessage());
+        assertEquals(errCode, response.getErrorCode());
+        assertEquals(errCode, response.getResultCode());
+        assertEquals(errMsg, response.getMessage());
     }
     
     @Test
-    public void testBuildWithNacosRuntimeException() {
+    void testBuildWithNacosRuntimeException() {
         int errCode = 500;
         String errMsg = "nacos runtime exception msg";
         NacosRuntimeException nacosRuntimeException = new NacosRuntimeException(errCode, errMsg);
         
         Response response = ErrorResponse.build(nacosRuntimeException);
         
-        Assert.assertEquals(errCode, response.getErrorCode());
-        Assert.assertEquals(errCode, response.getResultCode());
-        Assert.assertEquals("errCode: " + errCode + ", errMsg: " + errMsg + " ", response.getMessage());
+        assertEquals(errCode, response.getErrorCode());
+        assertEquals(errCode, response.getResultCode());
+        assertEquals("errCode: " + errCode + ", errMsg: " + errMsg + " ", response.getMessage());
     }
-
+    
 }

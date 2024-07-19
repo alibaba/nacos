@@ -20,37 +20,37 @@ package com.alibaba.nacos.core.config;
 import com.alibaba.nacos.core.distributed.distro.DistroConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleState;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * distro module state builder test.
+ *
  * @author 985492783@qq.com
  * @date 2023/4/7 23:51
  */
-public class DistroModuleStateBuilderTest {
+class DistroModuleStateBuilderTest {
     
     private ConfigurableEnvironment environment;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
     }
     
     @Test
-    public void testBuild() {
+    void testBuild() {
         ModuleState actual = new DistroModuleStateBuilder().build();
         Map<String, Object> states = actual.getStates();
         assertEquals(DistroConstants.DISTRO_MODULE, actual.getModuleName());
-        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS,
-                states.get(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS_STATE));
+        assertEquals(DistroConstants.DEFAULT_DATA_SYNC_DELAY_MILLISECONDS, states.get(DistroConstants.DATA_SYNC_DELAY_MILLISECONDS_STATE));
         assertEquals(DistroConstants.DEFAULT_DATA_SYNC_TIMEOUT_MILLISECONDS,
                 states.get(DistroConstants.DATA_SYNC_TIMEOUT_MILLISECONDS_STATE));
         assertEquals(DistroConstants.DEFAULT_DATA_SYNC_RETRY_DELAY_MILLISECONDS,

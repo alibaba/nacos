@@ -21,22 +21,22 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.encryption.EncryptionPluginManager;
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
+import org.apache.commons.codec.binary.Base64;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 
-import org.apache.commons.codec.binary.Base64;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * AES encryption algorithm testing dataId with prefix cipher.
@@ -45,8 +45,8 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @Date 2023/12/23 9:45 PM
  * @Version 1.0
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ConfigEncryptionFilterTest1 {
+@ExtendWith(MockitoExtension.class)
+class ConfigEncryptionFilterTest1 {
     
     private ConfigEncryptionFilter configEncryptionFilter;
     
@@ -55,8 +55,8 @@ public class ConfigEncryptionFilterTest1 {
     @Mock
     private IConfigFilterChain iConfigFilterChain;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         mockEncryptionPluginService = new EncryptionPluginService() {
             
             private static final String ALGORITHM = "AES";
@@ -150,30 +150,32 @@ public class ConfigEncryptionFilterTest1 {
     }
     
     @Test
-    public void testDoFilterEncryptedData() throws NacosException {
+    void testDoFilterEncryptedData() throws NacosException {
         String dataId = "cipher-aes-test";
         String content = "nacos";
-        final String encryptionContent = mockEncryptionPluginService.encrypt(mockEncryptionPluginService.generateSecretKey(), content);
-        final String theKeyOfContentKey = mockEncryptionPluginService.encryptSecretKey(mockEncryptionPluginService.generateSecretKey());
+        final String encryptionContent = mockEncryptionPluginService.encrypt(
+                mockEncryptionPluginService.generateSecretKey(), content);
+        final String theKeyOfContentKey = mockEncryptionPluginService.encryptSecretKey(
+                mockEncryptionPluginService.generateSecretKey());
         
         ConfigRequest configRequest = new ConfigRequest();
         configRequest.setDataId(dataId);
         configRequest.setContent(content);
         configEncryptionFilter.doFilter(configRequest, null, iConfigFilterChain);
-        Assert.assertEquals(configRequest.getContent(), encryptionContent);
-        Assert.assertEquals(configRequest.getEncryptedDataKey(), theKeyOfContentKey);
+        assertEquals(configRequest.getContent(), encryptionContent);
+        assertEquals(configRequest.getEncryptedDataKey(), theKeyOfContentKey);
         
         ConfigResponse configResponse = new ConfigResponse();
         configResponse.setDataId(dataId);
         configResponse.setContent(encryptionContent);
         configResponse.setEncryptedDataKey(theKeyOfContentKey);
         configEncryptionFilter.doFilter(null, configResponse, iConfigFilterChain);
-        Assert.assertEquals(configResponse.getContent(), content);
-        Assert.assertEquals(configResponse.getEncryptedDataKey(), mockEncryptionPluginService.generateSecretKey());
+        assertEquals(configResponse.getContent(), content);
+        assertEquals(configResponse.getEncryptedDataKey(), mockEncryptionPluginService.generateSecretKey());
     }
     
     @Test
-    public void testDoFilter() throws NacosException {
+    void testDoFilter() throws NacosException {
         String dataId = "test";
         String content = "nacos";
         
@@ -181,21 +183,21 @@ public class ConfigEncryptionFilterTest1 {
         configRequest.setDataId(dataId);
         configRequest.setContent(content);
         configEncryptionFilter.doFilter(configRequest, null, iConfigFilterChain);
-        Assert.assertEquals(configRequest.getContent(), content);
-        Assert.assertEquals(configRequest.getEncryptedDataKey(), "");
+        assertEquals(configRequest.getContent(), content);
+        assertEquals("", configRequest.getEncryptedDataKey());
         
         ConfigResponse configResponse = new ConfigResponse();
         configResponse.setDataId(dataId);
         configResponse.setContent(content);
         configResponse.setEncryptedDataKey("");
         configEncryptionFilter.doFilter(null, configResponse, iConfigFilterChain);
-        Assert.assertEquals(configResponse.getContent(), content);
-        Assert.assertEquals(configResponse.getEncryptedDataKey(), "");
+        assertEquals(configResponse.getContent(), content);
+        assertEquals("", configResponse.getEncryptedDataKey());
     }
     
     @Test
-    public void testGetOrder() {
+    void testGetOrder() {
         int order = configEncryptionFilter.getOrder();
-        Assert.assertEquals(order, 0);
+        assertEquals(0, order);
     }
 }

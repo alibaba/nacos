@@ -293,7 +293,8 @@ public class ServerListManager implements Closeable {
     }
     
     private void initServerListName(NacosClientProperties properties) {
-        String serverListNameTmp = properties.getProperty(PropertyKeyConst.CLUSTER_NAME);
+        String serverListNameTmp = properties.getProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME,
+                properties.getProperty(PropertyKeyConst.CLUSTER_NAME));
         if (!StringUtils.isBlank(serverListNameTmp)) {
             this.serverListName = serverListNameTmp;
         }
@@ -317,7 +318,7 @@ public class ServerListManager implements Closeable {
             if (StringUtils.isNotBlank(endpointUrl)) {
                 this.serverAddrsStr = "";
             }
-            this.endpoint = endpointUrl;
+            endpointTmp = endpointUrl;
         }
         this.endpoint = StringUtils.isNotBlank(endpointTmp) ? endpointTmp : "";
     }

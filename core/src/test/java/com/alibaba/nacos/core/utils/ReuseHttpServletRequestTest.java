@@ -22,36 +22,37 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import javax.servlet.ServletInputStream;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Map;
 
-import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link ReuseHttpServletRequest} unit tests.
+ *
  * @author lynn.lqp
  * @date 2023/12/28
  */
-public class ReuseHttpServletRequestTest {
+class ReuseHttpServletRequestTest {
+    
     private MockHttpServletRequest target;
-
+    
     private ReuseHttpServletRequest reuseHttpServletRequest;
-
+    
     @BeforeEach
-    public void setUp() throws IOException {
+    void setUp() throws IOException {
         target = new MockHttpServletRequest();
         target.setContentType("application/json");
         target.setParameter("name", "test");
         target.setParameter("value", "123");
         reuseHttpServletRequest = new ReuseHttpServletRequest(target);
     }
-
+    
     @Test
-    public void testConstructor() throws IOException {
+    void testConstructor() throws IOException {
         try {
             new ReuseHttpServletRequest(null);
             fail("IllegalArgumentException expected");
@@ -61,50 +62,50 @@ public class ReuseHttpServletRequestTest {
         ReuseHttpServletRequest request = new ReuseHttpServletRequest(target);
         assertNotNull(request);
     }
-
+    
     @Test
-    public void testGetBody() throws Exception {
+    void testGetBody() throws Exception {
         Object body = reuseHttpServletRequest.getBody();
         assertNotNull(body);
         assertEquals("name=test&value=123&", body.toString());
-
+        
         target.setContentType(MediaType.MULTIPART_FORM_DATA);
         body = reuseHttpServletRequest.getBody();
         assertNotNull(body);
     }
-
+    
     @Test
-    public void testGetReader() throws IOException {
+    void testGetReader() throws IOException {
         BufferedReader reader = reuseHttpServletRequest.getReader();
         assertNotNull(reader);
     }
-
+    
     @Test
-    public void testGetParameterMap() {
+    void testGetParameterMap() {
         Map<String, String[]> parameterMap = reuseHttpServletRequest.getParameterMap();
         assertNotNull(parameterMap);
         assertEquals(2, parameterMap.size());
         assertEquals("test", parameterMap.get("name")[0]);
         assertEquals("123", parameterMap.get("value")[0]);
     }
-
+    
     @Test
-    public void testGetParameter() {
+    void testGetParameter() {
         String name = reuseHttpServletRequest.getParameter("name");
         assertNotNull(name);
         assertEquals("test", name);
     }
-
+    
     @Test
-    public void testGetParameterValues() {
+    void testGetParameterValues() {
         String[] values = reuseHttpServletRequest.getParameterValues("value");
         assertNotNull(values);
         assertEquals(1, values.length);
         assertEquals("123", values[0]);
     }
-
+    
     @Test
-    public void testGetInputStream() throws IOException {
+    void testGetInputStream() throws IOException {
         ServletInputStream inputStream = reuseHttpServletRequest.getInputStream();
         assertNotNull(inputStream);
         int read = inputStream.read();

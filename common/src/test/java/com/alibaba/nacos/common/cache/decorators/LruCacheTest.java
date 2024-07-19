@@ -18,39 +18,42 @@ package com.alibaba.nacos.common.cache.decorators;
 
 import com.alibaba.nacos.common.cache.Cache;
 import com.alibaba.nacos.common.cache.builder.CacheBuilder;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.stream.IntStream;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 /**
  * lru test .
+ *
  * @author zzq
  * @date 2021/7/30
  */
-public class LruCacheTest {
-
+class LruCacheTest {
+    
     @Test
-    public void testBasic() throws Exception {
+    void testBasic() throws Exception {
         int capacity = 10;
         int start = 0;
         int end = 99;
         Cache cache = CacheBuilder.builder().maximumSize(capacity).lru(true).build();
         IntStream.range(start, end).forEach(item -> cache.put(item, item));
-        Assert.assertEquals(capacity, cache.getSize());
-        Assert.assertNull(cache.get(start));
-        Assert.assertEquals(89, cache.get(89));
-        Assert.assertEquals(94, cache.get(94));
-        Assert.assertEquals(94, cache.get(94, () -> 100));
+        assertEquals(capacity, cache.getSize());
+        assertNull(cache.get(start));
+        assertEquals(89, cache.get(89));
+        assertEquals(94, cache.get(94));
+        assertEquals(94, cache.get(94, () -> 100));
         Object removed = cache.remove(98);
-        Assert.assertEquals(98, removed);
-        Assert.assertEquals(9, cache.getSize());
+        assertEquals(98, removed);
+        assertEquals(9, cache.getSize());
         cache.clear();
-        Assert.assertEquals(0, cache.getSize());
+        assertEquals(0, cache.getSize());
     }
-
+    
     @Test
-    public void testLru() {
+    void testLru() {
         int capacity = 10;
         int start = 0;
         int end = 10;
@@ -58,7 +61,7 @@ public class LruCacheTest {
         IntStream.range(start, end).forEach(item -> cache.put(item, item));
         IntStream.range(start, 2).forEach(item -> cache.get(0));
         cache.put(100, 100);
-        Assert.assertEquals(start, cache.get(0));
-        Assert.assertNull(cache.get(1));
+        assertEquals(start, cache.get(0));
+        assertNull(cache.get(1));
     }
 }

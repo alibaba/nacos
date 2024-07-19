@@ -20,17 +20,19 @@ import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.FixMethodOrder;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.MethodOrderer.MethodName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * ClusterExternalStorage unit test.
@@ -38,9 +40,11 @@ import org.springframework.test.util.ReflectionTestUtils;
  * @author Long Yu
  * @since 2.2.0
  */
-@RunWith(MockitoJUnitRunner.class)
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ClusterExternalStorageTest {
+@ExtendWith(MockitoExtension.class)
+@TestMethodOrder(MethodName.class)
+class ClusterExternalStorageTest {
+    
+    DatasourceConfiguration datasourceConfig;
     
     @InjectMocks
     private DynamicDataSource dataSource;
@@ -53,10 +57,8 @@ public class ClusterExternalStorageTest {
     @Mock
     private ExternalDataSourceServiceImpl basicDataSourceService;
     
-    DatasourceConfiguration datasourceConfig;
-    
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         datasourceConfig = new DatasourceConfiguration();
@@ -67,7 +69,7 @@ public class ClusterExternalStorageTest {
     }
     
     @Test
-    public void test005WithClusterAndNullDatabase() {
+    void test005WithClusterAndNullDatabase() {
         // 模拟设置环境05：指定集群，未指定数据库，UseExternalDB是true，数据库类型是""
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
         environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "");
@@ -77,13 +79,13 @@ public class ClusterExternalStorageTest {
         // 模拟初始化
         datasourceConfig.initialize(null);
         
-        Assert.assertFalse(EnvUtil.getStandaloneMode());
-        Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
-        Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
+        assertFalse(EnvUtil.getStandaloneMode());
+        assertTrue(DatasourceConfiguration.isUseExternalDB());
+        assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
     
     @Test
-    public void test006WithClusterAndMysqlDatabase() {
+    void test006WithClusterAndMysqlDatabase() {
         // 模拟设置环境06：指定集群，指定数据库mysql，UseExternalDB是true，数据库类型是mysql
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
         environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "mysql");
@@ -93,13 +95,13 @@ public class ClusterExternalStorageTest {
         // 模拟初始化
         datasourceConfig.initialize(null);
         
-        Assert.assertFalse(EnvUtil.getStandaloneMode());
-        Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
-        Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
+        assertFalse(EnvUtil.getStandaloneMode());
+        assertTrue(DatasourceConfiguration.isUseExternalDB());
+        assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
     
     @Test
-    public void test007WithClusterAndDerbyDatabase() {
+    void test007WithClusterAndDerbyDatabase() {
         // 模拟设置环境07：指定集群，指定数据库derby，UseExternalDB是false，数据库类型是derby
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
         environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "derby");
@@ -109,13 +111,13 @@ public class ClusterExternalStorageTest {
         // 模拟初始化
         datasourceConfig.initialize(null);
         
-        Assert.assertFalse(EnvUtil.getStandaloneMode());
-        Assert.assertFalse(DatasourceConfiguration.isUseExternalDB());
-        Assert.assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
+        assertFalse(EnvUtil.getStandaloneMode());
+        assertFalse(DatasourceConfiguration.isUseExternalDB());
+        assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
     }
     
     @Test
-    public void test008WithClusterAndOtherDatabase() {
+    void test008WithClusterAndOtherDatabase() {
         // 模拟设置环境08: 指定集群，指定数据库其他，UseExternalDB是true，数据库类型是其他
         System.setProperty(Constants.STANDALONE_MODE_PROPERTY_NAME, "false");
         environment.setProperty(PersistenceConstant.DATASOURCE_PLATFORM_PROPERTY_OLD, "postgresql");
@@ -125,9 +127,9 @@ public class ClusterExternalStorageTest {
         // 模拟初始化
         datasourceConfig.initialize(null);
         
-        Assert.assertFalse(EnvUtil.getStandaloneMode());
-        Assert.assertTrue(DatasourceConfiguration.isUseExternalDB());
-        Assert.assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
+        assertFalse(EnvUtil.getStandaloneMode());
+        assertTrue(DatasourceConfiguration.isUseExternalDB());
+        assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
     
 }

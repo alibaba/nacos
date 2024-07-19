@@ -23,23 +23,28 @@ import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import io.grpc.netty.shaded.io.netty.channel.Channel;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.env.MockEnvironment;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link ConnectionManager} unit test.
@@ -47,8 +52,10 @@ import java.util.UUID;
  * @author chenglu
  * @date 2021-07-02 14:57
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ConnectionManagerTest {
+@ExtendWith(MockitoExtension.class)
+class ConnectionManagerTest {
+    
+    static MockedStatic<ControlConfigs> propertyUtilMockedStatic;
     
     @InjectMocks
     private ConnectionManager connectionManager;
@@ -69,24 +76,23 @@ public class ConnectionManagerTest {
     
     private String clientIp = "1.1.1.1";
     
-    static MockedStatic<ControlConfigs> propertyUtilMockedStatic;
-    
-    @BeforeClass
-    public static void setUpClass() {
+    @BeforeAll
+    static void setUpClass() {
         propertyUtilMockedStatic = Mockito.mockStatic(ControlConfigs.class);
         propertyUtilMockedStatic.when(ControlConfigs::getInstance).thenReturn(new ControlConfigs());
         
     }
     
-    @AfterClass
-    public static void afterClass() {
+    @AfterAll
+    static void afterClass() {
         if (propertyUtilMockedStatic != null) {
             propertyUtilMockedStatic.close();
         }
     }
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
+        EnvUtil.setEnvironment(new MockEnvironment());
         // create base file path
         File baseDir = new File(EnvUtil.getNacosHome(), "data");
         if (!baseDir.exists()) {
@@ -107,63 +113,63 @@ public class ConnectionManagerTest {
         connectionManager.register(connectId, connection);
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         connectionManager.unregister(connectId);
         
     }
     
     @Test
-    public void testCheckValid() {
-        Assert.assertTrue(connectionManager.checkValid(connectId));
+    void testCheckValid() {
+        assertTrue(connectionManager.checkValid(connectId));
     }
     
     @Test
-    public void testTraced() {
-        Assert.assertFalse(connectionManager.traced(clientIp));
+    void testTraced() {
+        assertFalse(connectionManager.traced(clientIp));
     }
     
     @Test
-    public void testGetConnection() {
-        Assert.assertEquals(connection, connectionManager.getConnection(connectId));
+    void testGetConnection() {
+        assertEquals(connection, connectionManager.getConnection(connectId));
     }
     
     @Test
-    public void testGetConnectionsByClientIp() {
-        Assert.assertEquals(1, connectionManager.getConnectionByIp(clientIp).size());
+    void testGetConnectionsByClientIp() {
+        assertEquals(1, connectionManager.getConnectionByIp(clientIp).size());
     }
     
     @Test
-    public void testGetCurrentConnectionCount() {
-        Assert.assertEquals(1, connectionManager.getCurrentConnectionCount());
+    void testGetCurrentConnectionCount() {
+        assertEquals(1, connectionManager.getCurrentConnectionCount());
     }
     
     @Test
-    public void testRefreshActiveTime() {
+    void testRefreshActiveTime() {
         try {
             connectionManager.refreshActiveTime(connectId);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testLoadSingle() throws NacosException {
+    void testLoadSingle() throws NacosException {
         Mockito.when(connectionMeta.isSdkSource()).thenReturn(true);
         connectionManager.loadSingle(connectId, clientIp);
     }
     
     @Test
-    public void testCurrentClientsCount() {
+    void testCurrentClientsCount() {
         Map<String, String> labels = new HashMap<>();
         labels.put("key", "value");
-        Assert.assertEquals(1, connectionManager.currentClientsCount(labels));
+        assertEquals(1, connectionManager.currentClientsCount(labels));
     }
     
     @Test
-    public void testCurrentSdkCount() {
-        Assert.assertEquals(1, connectionManager.currentSdkClientCount());
+    void testCurrentSdkCount() {
+        assertEquals(1, connectionManager.currentSdkClientCount());
     }
     
 }

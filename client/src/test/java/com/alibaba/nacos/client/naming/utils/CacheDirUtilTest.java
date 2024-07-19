@@ -18,28 +18,36 @@ package com.alibaba.nacos.client.naming.utils;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class CacheDirUtilTest {
+class CacheDirUtilTest {
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         System.clearProperty("user.home");
         System.clearProperty("JM.SNAPSHOT.PATH");
     }
     
     @Test
-    public void testInitCacheDirWithDefaultRootAndWithoutCache() {
+    void testInitCacheDirWithDefaultRootAndWithoutCache() {
         System.setProperty("user.home", "/home/admin");
         String actual = CacheDirUtil.initCacheDir("test", NacosClientProperties.PROTOTYPE.derive());
         assertEquals("/home/admin/nacos/naming/test", actual);
     }
     
     @Test
-    public void testInitCacheDirWithDefaultRootAndWithCache() {
+    void testInitCacheDirWithDefaultRootAndWithoutCache2() {
+        NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty("user.home", "/home/test");
+        String actual = CacheDirUtil.initCacheDir("test", properties);
+        assertEquals("/home/test/nacos/naming/test", actual);
+    }
+    
+    @Test
+    void testInitCacheDirWithDefaultRootAndWithCache() {
         System.setProperty("user.home", "/home/admin");
         NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         properties.setProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR, "custom");
@@ -48,14 +56,22 @@ public class CacheDirUtilTest {
     }
     
     @Test
-    public void testInitCacheDirWithJmSnapshotPathRootAndWithoutCache() {
+    void testInitCacheDirWithJmSnapshotPathRootAndWithoutCache() {
         System.setProperty("JM.SNAPSHOT.PATH", "/home/snapshot");
         String actual = CacheDirUtil.initCacheDir("test", NacosClientProperties.PROTOTYPE.derive());
         assertEquals("/home/snapshot/nacos/naming/test", actual);
     }
     
     @Test
-    public void testInitCacheDirWithJmSnapshotPathRootAndWithCache() {
+    void testInitCacheDirWithJmSnapshotPathRootAndWithoutCache2() {
+        NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
+        properties.setProperty("JM.SNAPSHOT.PATH", "/home/custom/snapshot");
+        String actual = CacheDirUtil.initCacheDir("test", properties);
+        assertEquals("/home/custom/snapshot/nacos/naming/test", actual);
+    }
+    
+    @Test
+    void testInitCacheDirWithJmSnapshotPathRootAndWithCache() {
         System.setProperty("user.home", "/home/snapshot");
         NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive();
         properties.setProperty(PropertyKeyConst.NAMING_CACHE_REGISTRY_DIR, "custom");

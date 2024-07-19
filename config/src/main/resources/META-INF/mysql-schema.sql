@@ -34,7 +34,7 @@ CREATE TABLE `config_info` (
   `effect` varchar(64) DEFAULT NULL COMMENT '配置生效的描述',
   `type` varchar(64) DEFAULT NULL COMMENT '配置的类型',
   `c_schema` text COMMENT '配置的模式',
-  `encrypted_data_key` text NOT NULL COMMENT '密钥',
+   `encrypted_data_key` varchar(1024) NOT NULL DEFAULT '' COMMENT '密钥',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_configinfo_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info';
@@ -72,7 +72,7 @@ CREATE TABLE `config_info_beta` (
   `src_user` text COMMENT 'source user',
   `src_ip` varchar(50) DEFAULT NULL COMMENT 'source ip',
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
-  `encrypted_data_key` text NOT NULL COMMENT '密钥',
+   `encrypted_data_key` varchar(1024) NOT NULL DEFAULT '' COMMENT '密钥',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_configinfobeta_datagrouptenant` (`data_id`,`group_id`,`tenant_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='config_info_beta';
@@ -148,7 +148,7 @@ CREATE TABLE `his_config_info` (
   `src_ip` varchar(50) DEFAULT NULL COMMENT 'source ip',
   `op_type` char(10) DEFAULT NULL COMMENT 'operation type',
   `tenant_id` varchar(128) DEFAULT '' COMMENT '租户字段',
-  `encrypted_data_key` text NOT NULL COMMENT '密钥',
+   `encrypted_data_key` varchar(1024) NOT NULL DEFAULT '' COMMENT '密钥',
   PRIMARY KEY (`nid`),
   KEY `idx_gmt_create` (`gmt_create`),
   KEY `idx_gmt_modified` (`gmt_modified`),
@@ -190,24 +190,27 @@ CREATE TABLE `tenant_info` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='tenant_info';
 
 CREATE TABLE `users` (
-	`username` varchar(50) NOT NULL PRIMARY KEY COMMENT 'username',
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
+	`username` varchar(50) NOT NULL COMMENT 'username',
 	`password` varchar(500) NOT NULL COMMENT 'password',
-	`enabled` boolean NOT NULL COMMENT 'enabled'
+	`enabled` boolean NOT NULL COMMENT 'enabled',
+    PRIMARY KEY (`id`)
 );
 
 CREATE TABLE `roles` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
 	`username` varchar(50) NOT NULL COMMENT 'username',
 	`role` varchar(50) NOT NULL COMMENT 'role',
-	UNIQUE INDEX `idx_user_role` (`username` ASC, `role` ASC) USING BTREE
+    PRIMARY KEY (`id`),
+    UNIQUE INDEX `idx_user_role` (`username` ASC, `role` ASC) USING BTREE
 );
 
 CREATE TABLE `permissions` (
+    `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'id',
     `role` varchar(50) NOT NULL COMMENT 'role',
     `resource` varchar(128) NOT NULL COMMENT 'resource',
     `action` varchar(8) NOT NULL COMMENT 'action',
+    PRIMARY KEY (`id`),
     UNIQUE INDEX `uk_role_permission` (`role`,`resource`,`action`) USING BTREE
 );
 
-INSERT INTO users (username, password, enabled) VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE);
-
-INSERT INTO roles (username, role) VALUES ('nacos', 'ROLE_ADMIN');

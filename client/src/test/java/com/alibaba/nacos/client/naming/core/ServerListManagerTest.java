@@ -22,14 +22,16 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.common.http.HttpClientBeanHolder;
 import com.alibaba.nacos.common.http.HttpRestResult;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -39,11 +41,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ServerListManagerTest {
+@ExtendWith(MockitoExtension.class)
+// todo  remove strictness lenient
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ServerListManagerTest {
     
     private static final String NS = "ns";
     
@@ -58,14 +65,14 @@ public class ServerListManagerTest {
     
     ServerListManager serverListManager;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         clientProperties = NacosClientProperties.PROTOTYPE.derive();
         Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
         restMapField.setAccessible(true);
         Map<String, NacosRestTemplate> restMap = (Map<String, NacosRestTemplate>) restMapField.get(null);
-        cachedNacosRestTemplate = restMap
-                .get("com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory");
+        cachedNacosRestTemplate = restMap.get(
+                "com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory");
         restMap.put("com.alibaba.nacos.client.naming.remote.http.NamingHttpClientManager$NamingHttpClientFactory",
                 nacosRestTemplate);
         httpRestResult = new HttpRestResult<>();
@@ -74,8 +81,8 @@ public class ServerListManagerTest {
         Mockito.when(nacosRestTemplate.get(any(), any(), any(), any())).thenReturn(httpRestResult);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         if (null != cachedNacosRestTemplate) {
             Field restMapField = HttpClientBeanHolder.class.getDeclaredField("SINGLETON_REST");
             restMapField.setAccessible(true);
@@ -88,191 +95,191 @@ public class ServerListManagerTest {
         }
     }
     
-    @Test(expected = NacosLoadException.class)
-    public void testConstructError() {
-        serverListManager = new ServerListManager(new Properties());
+    @Test
+    void testConstructError() {
+        assertThrows(NacosLoadException.class, () -> {
+            serverListManager = new ServerListManager(new Properties());
+        });
     }
     
     @Test
-    public void testConstructWithAddr() {
+    void testConstructWithAddr() {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848,127.0.0.1:8849");
         serverListManager = new ServerListManager(properties);
         final List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(2, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
-        Assert.assertEquals("127.0.0.1:8849", serverList.get(1));
+        assertEquals(2, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals("127.0.0.1:8849", serverList.get(1));
     }
     
     @Test
-    public void testConstructWithAddrTryToRefresh()
+    void testConstructWithAddrTryToRefresh()
             throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, NoSuchFieldException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848,127.0.0.1:8849");
         serverListManager = new ServerListManager(properties);
         List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(2, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
-        Assert.assertEquals("127.0.0.1:8849", serverList.get(1));
+        assertEquals(2, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals("127.0.0.1:8849", serverList.get(1));
         mockThreadInvoke(serverListManager, false);
         serverList = serverListManager.getServerList();
-        Assert.assertEquals(2, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
-        Assert.assertEquals("127.0.0.1:8849", serverList.get(1));
+        assertEquals(2, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals("127.0.0.1:8849", serverList.get(1));
     }
     
     @Test
-    public void testConstructWithEndpointAndRefresh() throws Exception {
+    void testConstructWithEndpointAndRefresh() throws Exception {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         serverListManager = new ServerListManager(properties);
         List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
         
         httpRestResult.setData("127.0.0.1:8848\n127.0.0.1:8948");
         mockThreadInvoke(serverListManager, true);
         serverList = serverListManager.getServerList();
-        Assert.assertEquals(2, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
-        Assert.assertEquals("127.0.0.1:8948", serverList.get(1));
+        assertEquals(2, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals("127.0.0.1:8948", serverList.get(1));
     }
     
     @Test
-    public void testConstructWithEndpointAndTimedNotNeedRefresh() throws Exception {
+    void testConstructWithEndpointAndTimedNotNeedRefresh() throws Exception {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         serverListManager = new ServerListManager(properties);
         List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
         
         httpRestResult.setData("127.0.0.1:8848\n127.0.0.1:8948");
         mockThreadInvoke(serverListManager, false);
         serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
     }
     
     @Test
-    public void testConstructWithEndpointAndRefreshEmpty() throws Exception {
+    void testConstructWithEndpointAndRefreshEmpty() throws Exception {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         serverListManager = new ServerListManager(properties);
         List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
         
         httpRestResult.setData("");
         mockThreadInvoke(serverListManager, true);
         serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
     }
     
     @Test
-    public void testConstructWithEndpointAndRefreshException()
+    void testConstructWithEndpointAndRefreshException()
             throws InvocationTargetException, NoSuchMethodException, IllegalAccessException, NoSuchFieldException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         serverListManager = new ServerListManager(properties);
         List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
         
         httpRestResult.setCode(500);
         mockThreadInvoke(serverListManager, true);
         serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
     }
     
     @Test
-    public void testConstructWithEndpointWithCustomPathAndName() throws Exception {
+    void testConstructWithEndpointWithCustomPathAndName() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.CONTEXT_PATH, "aaa");
-        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "bbb");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "bbb");
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
                 .thenReturn(httpRestResult);
         serverListManager = new ServerListManager(clientProperties, "test");
         List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
     }
     
     @Test
-    public void testConstructWithEndpointWithEndpointPathAndName() throws Exception {
+    void testConstructWithEndpointWithEndpointPathAndName() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "aaa");
-        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "bbb");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "bbb");
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/bbb"), any(), any(), any()))
                 .thenReturn(httpRestResult);
         serverListManager = new ServerListManager(clientProperties, "test");
         List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
     }
     
     @Test
-    public void testConstructEndpointContextPathPriority() throws Exception {
+    void testConstructEndpointContextPathPriority() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "aaa");
         clientProperties.setProperty(PropertyKeyConst.CONTEXT_PATH, "bbb");
-        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "ccc");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "ccc");
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/aaa/ccc"), any(), any(), any()))
                 .thenReturn(httpRestResult);
         serverListManager = new ServerListManager(clientProperties, "test");
         List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
     }
     
     @Test
-    public void testConstructEndpointContextPathIsEmpty() throws Exception {
+    void testConstructEndpointContextPathIsEmpty() throws Exception {
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CONTEXT_PATH, "");
         clientProperties.setProperty(PropertyKeyConst.CONTEXT_PATH, "bbb");
-        clientProperties.setProperty(PropertyKeyConst.CLUSTER_NAME, "ccc");
+        clientProperties.setProperty(PropertyKeyConst.ENDPOINT_CLUSTER_NAME, "ccc");
         clientProperties.setProperty(PropertyKeyConst.ENDPOINT, "127.0.0.1");
         Mockito.reset(nacosRestTemplate);
         Mockito.when(nacosRestTemplate.get(eq("http://127.0.0.1:8080/bbb/ccc"), any(), any(), any()))
                 .thenReturn(httpRestResult);
         serverListManager = new ServerListManager(clientProperties, "test");
         List<String> serverList = serverListManager.getServerList();
-        Assert.assertEquals(1, serverList.size());
-        Assert.assertEquals("127.0.0.1:8848", serverList.get(0));
+        assertEquals(1, serverList.size());
+        assertEquals("127.0.0.1:8848", serverList.get(0));
     }
     
     @Test
-    public void testIsDomain() throws IOException {
+    void testIsDomain() throws IOException {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         serverListManager = new ServerListManager(properties);
-        Assert.assertTrue(serverListManager.isDomain());
-        Assert.assertEquals("127.0.0.1:8848", serverListManager.getNacosDomain());
+        assertTrue(serverListManager.isDomain());
+        assertEquals("127.0.0.1:8848", serverListManager.getNacosDomain());
     }
     
     @Test
-    public void testGetCurrentServer() {
+    void testGetCurrentServer() {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final ServerListManager serverListManager = new ServerListManager(properties);
-        Assert.assertEquals("127.0.0.1:8848", serverListManager.getCurrentServer());
-        Assert.assertEquals("127.0.0.1:8848", serverListManager.genNextServer());
+        assertEquals("127.0.0.1:8848", serverListManager.getCurrentServer());
+        assertEquals("127.0.0.1:8848", serverListManager.genNextServer());
     }
     
     @Test
-    public void testShutdown() {
+    void testShutdown() {
         Properties properties = new Properties();
         properties.put(PropertyKeyConst.SERVER_ADDR, "127.0.0.1:8848");
         final ServerListManager serverListManager = new ServerListManager(properties);
-        try {
+        Assertions.assertDoesNotThrow(() -> {
             serverListManager.shutdown();
-        } catch (Exception e) {
-            Assert.fail();
-        }
+        });
     }
     
     private void mockThreadInvoke(ServerListManager serverListManager, boolean expectedInvoked)

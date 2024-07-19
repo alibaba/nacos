@@ -18,26 +18,29 @@ package com.alibaba.nacos.common.remote;
 
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.ErrorResponse;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class PayloadRegistryTest {
+class PayloadRegistryTest {
     
-    @BeforeClass
-    public static void setUpBefore() {
+    @BeforeAll
+    static void setUpBefore() {
         PayloadRegistry.init();
     }
     
     @Test
-    public void testRegisterInvalidClass() {
+    void testRegisterInvalidClass() {
         PayloadRegistry.register("test", Request.class);
         assertNull(PayloadRegistry.getClassByType("test"));
     }
     
-    @Test(expected = RuntimeException.class)
-    public void testRegisterDuplicated() {
-        PayloadRegistry.register("ErrorResponse", ErrorResponse.class);
+    @Test
+    void testRegisterDuplicated() {
+        assertThrows(RuntimeException.class, () -> {
+            PayloadRegistry.register("ErrorResponse", ErrorResponse.class);
+        });
     }
 }

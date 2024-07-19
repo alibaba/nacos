@@ -31,14 +31,13 @@ import com.alibaba.nacos.naming.model.form.InstanceForm;
 import com.alibaba.nacos.naming.model.form.InstanceMetadataBatchOperationForm;
 import com.alibaba.nacos.naming.model.vo.InstanceDetailInfoVo;
 import com.alibaba.nacos.naming.model.vo.InstanceMetadataBatchOperationVo;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -50,14 +49,15 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class InstanceControllerV2Test extends BaseTest {
+@ExtendWith(MockitoExtension.class)
+class InstanceControllerV2Test extends BaseTest {
     
     @InjectMocks
     private InstanceControllerV2 instanceControllerV2;
@@ -71,7 +71,7 @@ public class InstanceControllerV2Test extends BaseTest {
     
     private volatile Class<? extends Event> eventReceivedClass;
     
-    @Before
+    @BeforeEach
     public void before() {
         super.before();
         ReflectionTestUtils.setField(instanceControllerV2, "instanceServiceV2", instanceServiceV2);
@@ -93,15 +93,15 @@ public class InstanceControllerV2Test extends BaseTest {
         NotifyCenter.registerSubscriber(subscriber);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         NotifyCenter.deregisterSubscriber(subscriber);
         NotifyCenter.deregisterPublisher(UpdateInstanceTraceEvent.class);
         eventReceivedClass = null;
     }
     
     @Test
-    public void registerInstance() throws Exception {
+    void registerInstance() throws Exception {
         
         InstanceForm instanceForm = new InstanceForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
@@ -125,7 +125,7 @@ public class InstanceControllerV2Test extends BaseTest {
     }
     
     @Test
-    public void deregisterInstance() throws Exception {
+    void deregisterInstance() throws Exception {
         
         InstanceForm instanceForm = new InstanceForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
@@ -150,7 +150,7 @@ public class InstanceControllerV2Test extends BaseTest {
     }
     
     @Test
-    public void updateInstance() throws Exception {
+    void updateInstance() throws Exception {
         InstanceForm instanceForm = new InstanceForm();
         instanceForm.setNamespaceId(TEST_NAMESPACE);
         instanceForm.setGroupName("DEFAULT_GROUP");
@@ -171,11 +171,11 @@ public class InstanceControllerV2Test extends BaseTest {
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals("ok", result.getData());
         TimeUnit.SECONDS.sleep(1);
-        assertEquals(eventReceivedClass, UpdateInstanceTraceEvent.class);
+        assertEquals(UpdateInstanceTraceEvent.class, eventReceivedClass);
     }
     
     @Test
-    public void batchUpdateInstanceMetadata() throws Exception {
+    void batchUpdateInstanceMetadata() throws Exception {
         
         InstanceMetadataBatchOperationForm form = new InstanceMetadataBatchOperationForm();
         form.setNamespaceId(TEST_NAMESPACE);
@@ -200,47 +200,44 @@ public class InstanceControllerV2Test extends BaseTest {
     }
     
     @Test
-    public void patch() throws Exception {
+    void patch() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.patch(
                         UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT)
                 .param("namespaceId", TEST_NAMESPACE).param("serviceName", TEST_SERVICE_NAME).param("ip", TEST_IP)
-                .param("cluster", TEST_CLUSTER_NAME).param("port", "9999").param("healthy", "true")
-                .param("weight", "2.0").param("enabled", "true").param("metadata", TEST_METADATA)
-                .param("ephemeral", "false");
+                .param("cluster", TEST_CLUSTER_NAME).param("port", "9999").param("healthy", "true").param("weight", "2.0")
+                .param("enabled", "true").param("metadata", TEST_METADATA).param("ephemeral", "false");
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertEquals("ok", actualValue);
+        assertEquals("ok", actualValue);
     }
     
     @Test
-    public void listInstance() throws Exception {
+    void listInstance() throws Exception {
         
         ServiceInfo serviceInfo = new ServiceInfo();
         serviceInfo.setName("serviceInfo");
         
-        when(instanceServiceV2.listInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any(), eq(TEST_CLUSTER_NAME),
-                eq(false))).thenReturn(serviceInfo);
+        when(instanceServiceV2.listInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any(), eq(TEST_CLUSTER_NAME), eq(false))).thenReturn(
+                serviceInfo);
         
-        Result<ServiceInfo> result = instanceControllerV2.list(TEST_NAMESPACE, "DEFAULT_GROUP", "test-service",
-                TEST_CLUSTER_NAME, TEST_IP, 9999, false, "", "", "");
+        Result<ServiceInfo> result = instanceControllerV2.list(TEST_NAMESPACE, "DEFAULT_GROUP", "test-service", TEST_CLUSTER_NAME, TEST_IP,
+                9999, false, "", "", "");
         
-        verify(instanceServiceV2).listInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any(), eq(TEST_CLUSTER_NAME),
-                eq(false));
+        verify(instanceServiceV2).listInstance(eq(TEST_NAMESPACE), eq(TEST_SERVICE_NAME), any(), eq(TEST_CLUSTER_NAME), eq(false));
         
         assertEquals(ErrorCode.SUCCESS.getCode(), result.getCode());
         assertEquals(serviceInfo.getName(), result.getData().getName());
     }
     
     @Test
-    public void detail() throws Exception {
+    void detail() throws Exception {
         
         Instance instance = new Instance();
         instance.setInstanceId("test-id");
         
-        when(instanceServiceV2.getInstance(TEST_NAMESPACE, TEST_SERVICE_NAME, TEST_CLUSTER_NAME, TEST_IP,
-                9999)).thenReturn(instance);
+        when(instanceServiceV2.getInstance(TEST_NAMESPACE, TEST_SERVICE_NAME, TEST_CLUSTER_NAME, TEST_IP, 9999)).thenReturn(instance);
         
-        Result<InstanceDetailInfoVo> result = instanceControllerV2.detail(TEST_NAMESPACE, "DEFAULT_GROUP",
-                "test-service", TEST_CLUSTER_NAME, TEST_IP, 9999);
+        Result<InstanceDetailInfoVo> result = instanceControllerV2.detail(TEST_NAMESPACE, "DEFAULT_GROUP", "test-service",
+                TEST_CLUSTER_NAME, TEST_IP, 9999);
         
         verify(instanceServiceV2).getInstance(TEST_NAMESPACE, TEST_SERVICE_NAME, TEST_CLUSTER_NAME, TEST_IP, 9999);
         
@@ -249,21 +246,21 @@ public class InstanceControllerV2Test extends BaseTest {
     }
     
     @Test
-    public void beat() throws Exception {
+    void beat() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.put(
-                        UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
-                                + "/beat").param("namespaceId", TEST_NAMESPACE).param("serviceName", TEST_SERVICE_NAME)
-                .param("ip", TEST_IP).param("clusterName", "clusterName").param("port", "0").param("beat", "");
+                        UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/beat")
+                .param("namespaceId", TEST_NAMESPACE).param("serviceName", TEST_SERVICE_NAME).param("ip", TEST_IP)
+                .param("clusterName", "clusterName").param("port", "0").param("beat", "");
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertNotNull(actualValue);
+        assertNotNull(actualValue);
     }
     
     @Test
-    public void listWithHealthStatus() throws Exception {
+    void listWithHealthStatus() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
-                UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT
-                        + "/statuses").param("key", "");
+                        UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_INSTANCE_CONTEXT + "/statuses")
+                .param("key", "");
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
-        Assert.assertNotNull(actualValue);
+        assertNotNull(actualValue);
     }
 }

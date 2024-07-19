@@ -20,10 +20,9 @@ import com.alibaba.nacos.core.exception.KvStorageException;
 import com.alibaba.nacos.core.storage.kv.FileKvStorage;
 import com.alibaba.nacos.core.storage.kv.KvStorage;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,35 +30,29 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.fail;
+
 /**
  * {@link FileKvStorage} unit tests.
  *
  * @author chenglu
  * @date 2021-06-10 18:27
  */
-public class FileKvStorageTest {
+class FileKvStorageTest {
     
     private KvStorage kvStorage;
     
     private String baseDir;
     
-    @Before
-    public void init() {
-        try {
-            baseDir = System.getProperty("user.home");
-            String dir = baseDir + File.separator + "nacos_file_kv_storage_test_brotherluxcq";
-            kvStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, null, dir);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail();
-        }
-    }
-    
-    @AfterClass
-    public static void clean() {
+    @AfterAll
+    static void clean() {
         String dir = System.getProperty("user.home") + File.separator + "nacos_file_kv_storage_test_brotherluxcq";
         String backupDir = System.getProperty("user.home") + File.separator + "nacos_file_kv_storage_test_backup_brotherluxcq";
-    
+        
         try {
             FileUtils.deleteDirectory(new File(dir));
             FileUtils.deleteDirectory(new File(backupDir));
@@ -68,59 +61,71 @@ public class FileKvStorageTest {
         }
     }
     
+    @BeforeEach
+    void init() {
+        try {
+            baseDir = System.getProperty("user.home");
+            String dir = baseDir + File.separator + "nacos_file_kv_storage_test_brotherluxcq";
+            kvStorage = StorageFactory.createKvStorage(KvStorage.KvType.File, null, dir);
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail();
+        }
+    }
+    
     @Test
-    public void testPutAndGetAndDelete() {
+    void testPutAndGetAndDelete() {
         try {
             byte[] key = "key".getBytes();
             byte[] value = "value".getBytes();
             kvStorage.put(key, value);
             byte[] value1 = kvStorage.get(key);
-            Assert.assertArrayEquals(value, value1);
+            assertArrayEquals(value, value1);
             
-            Assert.assertNotNull(kvStorage.allKeys());
+            assertNotNull(kvStorage.allKeys());
             
             kvStorage.delete(key);
-            Assert.assertNull(kvStorage.get(key));
+            assertNull(kvStorage.get(key));
             
             kvStorage.put(key, value);
             kvStorage.shutdown();
-            Assert.assertEquals(kvStorage.allKeys().size(), kvStorage.allKeys().size());
+            assertEquals(kvStorage.allKeys().size(), kvStorage.allKeys().size());
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         }
     }
     
     @Test
-    public void testBatchPutAndGet() {
+    void testBatchPutAndGet() {
         try {
             List<byte[]> keys = Arrays.asList("key1".getBytes(), "key2".getBytes());
             List<byte[]> values = Arrays.asList("value1".getBytes(), "value2".getBytes());
             kvStorage.batchPut(keys, values);
             
             Map<byte[], byte[]> res = kvStorage.batchGet(keys);
-            Assert.assertNotNull(res);
+            assertNotNull(res);
             
             res.forEach((key, value) -> {
                 if (Arrays.equals(key, "key1".getBytes())) {
-                    Assert.assertArrayEquals("value1".getBytes(), value);
+                    assertArrayEquals("value1".getBytes(), value);
                 } else if (Arrays.equals(key, "key2".getBytes())) {
-                    Assert.assertArrayEquals("value2".getBytes(), value);
+                    assertArrayEquals("value2".getBytes(), value);
                 } else {
-                    Assert.fail();
+                    fail();
                 }
             });
             
             kvStorage.batchDelete(keys);
-            Assert.assertEquals(0, kvStorage.batchGet(values).size());
+            assertEquals(0, kvStorage.batchGet(values).size());
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         }
     }
     
     @Test
-    public void testSnapshot() {
+    void testSnapshot() {
         String backupDir = baseDir + File.separator + "nacos_file_kv_storage_test_backup_brotherluxcq";
         try {
             File file = new File(backupDir);
@@ -133,17 +138,17 @@ public class FileKvStorageTest {
             kvStorage.doSnapshot(backupDir);
         } catch (KvStorageException e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         }
-    
+        
         try {
             kvStorage.snapshotLoad(backupDir);
             byte[] key = "key".getBytes();
             byte[] value = kvStorage.get(key);
-            Assert.assertArrayEquals("value".getBytes(), value);
+            assertArrayEquals("value".getBytes(), value);
         } catch (KvStorageException e) {
             e.printStackTrace();
-            Assert.fail();
+            fail();
         }
     }
 }

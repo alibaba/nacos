@@ -16,9 +16,9 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 import java.util.concurrent.CountDownLatch;
@@ -26,31 +26,31 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-public class ThreadUtilsTest {
+class ThreadUtilsTest {
     
     private ExecutorService executorService;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         System.setProperty("nacos.common.processors", "2");
         executorService = Executors.newFixedThreadPool(1);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         System.setProperty("nacos.common.processors", "");
         ThreadUtils.shutdownThreadPool(executorService);
     }
     
     @Test
-    public void testLatchAwait() {
+    void testLatchAwait() {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         long currentTime = System.currentTimeMillis();
         executorService.execute(() -> {
@@ -62,7 +62,7 @@ public class ThreadUtilsTest {
     }
     
     @Test
-    public void testLatchAwaitForTimeout() {
+    void testLatchAwaitForTimeout() {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         long currentTime = System.currentTimeMillis();
         ThreadUtils.latchAwait(countDownLatch, 50, TimeUnit.MILLISECONDS);
@@ -71,13 +71,13 @@ public class ThreadUtilsTest {
     }
     
     @Test
-    public void testGetSuitableThreadCount() {
+    void testGetSuitableThreadCount() {
         assertEquals(4, ThreadUtils.getSuitableThreadCount());
         assertEquals(8, ThreadUtils.getSuitableThreadCount(3));
     }
     
     @Test
-    public void testShutdownThreadPoolWithInterruptedException() throws InterruptedException {
+    void testShutdownThreadPoolWithInterruptedException() throws InterruptedException {
         ExecutorService executor = mock(ExecutorService.class);
         when(executor.awaitTermination(100, TimeUnit.MILLISECONDS)).thenThrow(new InterruptedException());
         ThreadUtils.shutdownThreadPool(executor);
@@ -85,7 +85,7 @@ public class ThreadUtilsTest {
     }
     
     @Test
-    public void testShutdownThreadPoolWithOtherException() throws InterruptedException {
+    void testShutdownThreadPoolWithOtherException() throws InterruptedException {
         ExecutorService executor = mock(ExecutorService.class);
         Logger logger = mock(Logger.class);
         Throwable cause = new RuntimeException();
@@ -96,7 +96,7 @@ public class ThreadUtilsTest {
     }
     
     @Test
-    public void testAddShutdownHook() {
+    void testAddShutdownHook() {
         Runnable shutdownHook = () -> {
         };
         ThreadUtils.addShutdownHook(shutdownHook);

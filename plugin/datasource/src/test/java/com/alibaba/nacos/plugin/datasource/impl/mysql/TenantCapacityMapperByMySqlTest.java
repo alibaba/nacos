@@ -21,19 +21,21 @@ import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
 
-public class TenantCapacityMapperByMySqlTest {
-    
-    private TenantCapacityMapperByMySql tenantCapacityMapperByMySql;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class TenantCapacityMapperByMySqlTest {
     
     String tenantId = "tenantId";
     
     MapperContext context;
+    
+    private TenantCapacityMapperByMySql tenantCapacityMapperByMySql;
     
     private Object modified = new Timestamp(System.currentTimeMillis());
     
@@ -41,8 +43,8 @@ public class TenantCapacityMapperByMySqlTest {
     
     private Object usage = 1;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         tenantCapacityMapperByMySql = new TenantCapacityMapperByMySql();
         context = new MapperContext();
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
@@ -53,74 +55,70 @@ public class TenantCapacityMapperByMySqlTest {
     }
     
     @Test
-    public void testGetTableName() {
+    void testGetTableName() {
         String tableName = tenantCapacityMapperByMySql.getTableName();
-        Assert.assertEquals(tableName, TableConstant.TENANT_CAPACITY);
+        assertEquals(TableConstant.TENANT_CAPACITY, tableName);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         String dataSource = tenantCapacityMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        assertEquals(DataSourceConstant.MYSQL, dataSource);
     }
     
     @Test
-    public void testIncrementUsageWithDefaultQuotaLimit() {
+    void testIncrementUsageWithDefaultQuotaLimit() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.incrementUsageWithDefaultQuotaLimit(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <"
-                        + " ? AND quota = 0");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, tenantId, usage});
+        assertEquals(mapperResult.getSql(),
+                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage <" + " ? AND quota = 0");
+        assertArrayEquals(new Object[] {modified, tenantId, usage}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testIncrementUsageWithQuotaLimit() {
+    void testIncrementUsageWithQuotaLimit() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.incrementUsageWithQuotaLimit(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < "
-                        + "quota AND quota != 0");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, tenantId});
+        assertEquals(mapperResult.getSql(),
+                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ? AND usage < " + "quota AND quota != 0");
+        assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testIncrementUsage() {
+    void testIncrementUsage() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.incrementUsage(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, tenantId});
+        assertEquals("UPDATE tenant_capacity SET usage = usage + 1, gmt_modified = ? WHERE tenant_id = ?", mapperResult.getSql());
+        assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testDecrementUsage() {
+    void testDecrementUsage() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.decrementUsage(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, tenantId});
+        assertEquals("UPDATE tenant_capacity SET usage = usage - 1, gmt_modified = ? WHERE tenant_id = ? AND usage > 0",
+                mapperResult.getSql());
+        assertArrayEquals(new Object[] {modified, tenantId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testCorrectUsage() {
+    void testCorrectUsage() {
         MapperResult mapperResult = tenantCapacityMapperByMySql.correctUsage(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
-                        + "gmt_modified = ? WHERE tenant_id = ?");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {tenantId, modified, tenantId});
+        assertEquals(mapperResult.getSql(), "UPDATE tenant_capacity SET usage = (SELECT count(*) FROM config_info WHERE tenant_id = ?), "
+                + "gmt_modified = ? WHERE tenant_id = ?");
+        assertArrayEquals(new Object[] {tenantId, modified, tenantId}, mapperResult.getParamList().toArray());
         
     }
     
     @Test
-    public void testGetCapacityList4CorrectUsage() {
+    void testGetCapacityList4CorrectUsage() {
         Object id = 1;
         Object limit = 10;
         context.putWhereParameter(FieldConstant.ID, id);
         context.putWhereParameter(FieldConstant.LIMIT_SIZE, limit);
         MapperResult mapperResult = tenantCapacityMapperByMySql.getCapacityList4CorrectUsage(context);
-        Assert.assertEquals(mapperResult.getSql(), "SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id, limit});
+        assertEquals("SELECT id, tenant_id FROM tenant_capacity WHERE id>? LIMIT ?", mapperResult.getSql());
+        assertArrayEquals(new Object[] {id, limit}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testInsertTenantCapacity() {
+    void testInsertTenantCapacity() {
         Object group = "group";
         Object quota = "quota";
         Object maxAggrSize = 10;
@@ -141,10 +139,10 @@ public class TenantCapacityMapperByMySqlTest {
         context.putWhereParameter(FieldConstant.TENANT_ID, tenantId);
         
         MapperResult mapperResult = tenantCapacityMapperByMySql.insertTenantCapacity(context);
-        Assert.assertEquals(mapperResult.getSql(),
+        assertEquals(mapperResult.getSql(),
                 "INSERT INTO tenant_capacity (tenant_id, quota, usage, max_size, max_aggr_count, max_aggr_size, "
                         + "gmt_create, gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE tenant_id=?;");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
-                new Object[] {tenantId, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, tenantId});
+        assertArrayEquals(new Object[] {tenantId, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, tenantId},
+                mapperResult.getParamList().toArray());
     }
 }

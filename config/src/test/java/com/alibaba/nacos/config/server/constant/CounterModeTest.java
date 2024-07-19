@@ -16,21 +16,22 @@
 
 package com.alibaba.nacos.config.server.constant;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 
-public class CounterModeTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class CounterModeTest {
     
     @Mock
     CounterMode counterMode;
     
     @Test
-    public void testReverse() {
+    void testReverse() {
         counterMode = CounterMode.INCREMENT;
-        Assert.assertEquals(CounterMode.DECREMENT, counterMode.reverse());
+        assertEquals(CounterMode.DECREMENT, counterMode.reverse());
         counterMode = CounterMode.DECREMENT;
-        Assert.assertEquals(CounterMode.INCREMENT, counterMode.reverse());
+        assertEquals(CounterMode.INCREMENT, counterMode.reverse());
     }
     
 }

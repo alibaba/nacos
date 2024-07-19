@@ -16,30 +16,30 @@
 
 package com.alibaba.nacos.common.paramcheck;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ParamCheckerManagerTest {
+class ParamCheckerManagerTest {
     
     @Test
-    public void testGetParamCheckerNonExistType() {
+    void testGetParamCheckerNonExistType() {
         assertTrue(ParamCheckerManager.getInstance().getParamChecker("non") instanceof DefaultParamChecker);
     }
     
     @Test
-    public void testGetParamCheckerNull() {
+    void testGetParamCheckerNull() {
         assertTrue(ParamCheckerManager.getInstance().getParamChecker("") instanceof DefaultParamChecker);
         assertTrue(ParamCheckerManager.getInstance().getParamChecker(null) instanceof DefaultParamChecker);
     }
     
     @Test
-    public void testGetParamCheckerDefault() {
+    void testGetParamCheckerDefault() {
         assertTrue(ParamCheckerManager.getInstance().getParamChecker("default") instanceof DefaultParamChecker);
     }
     
     @Test
-    public void testGetParamCheckerOther() {
+    void testGetParamCheckerOther() {
         assertTrue(ParamCheckerManager.getInstance().getParamChecker("mock") instanceof MockParamChecker);
     }
 }
