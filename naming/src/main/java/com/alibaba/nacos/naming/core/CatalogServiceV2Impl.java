@@ -100,7 +100,7 @@ public class CatalogServiceV2Impl implements CatalogService {
             clusterView.setName(each);
             clusterView.setHealthChecker(clusterMetadata.getHealthChecker());
             clusterView.setMetadata(clusterMetadata.getExtendData());
-            clusterView.setUseIPPort4Check(clusterMetadata.isUseInstancePortForCheck());
+            clusterView.setUseIpPort4Check(clusterMetadata.isUseInstancePortForCheck());
             clusterView.setDefaultPort(DEFAULT_PORT);
             clusterView.setDefaultCheckPort(clusterMetadata.getHealthyCheckPort());
             clusterView.setServiceName(service.getGroupedServiceName());

@@ -41,7 +41,7 @@ public class SystemConfig {
         if (StringUtils.isNotEmpty(address)) {
             return address;
         } else {
-            address = InternetAddressUtil.localHostIP();
+            address = InternetAddressUtil.localHostIp();
         }
         try {
             Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();

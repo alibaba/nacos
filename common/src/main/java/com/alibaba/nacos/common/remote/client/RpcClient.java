@@ -902,7 +902,7 @@ public abstract class RpcClient implements Closeable {
         if (matcher.find()) {
             serverAddress = matcher.group(1);
         }
-        String[] ipPortTuple = InternetAddressUtil.splitIPPortStr(serverAddress);
+        String[] ipPortTuple = InternetAddressUtil.splitIpPortStr(serverAddress);
         int defaultPort = Integer.parseInt(System.getProperty("nacos.server.port", "8848"));
         String serverPort = CollectionUtils.getOrDefault(ipPortTuple, 1, Integer.toString(defaultPort));
         

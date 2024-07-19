@@ -123,7 +123,7 @@ public class ServerListManager implements Closeable {
         this.isStarted = true;
         List<String> serverAddrs = new ArrayList<>();
         for (String serverAddr : fixed) {
-            String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
+            String[] serverAddrArr = InternetAddressUtil.splitIpPortStr(serverAddr);
             if (serverAddrArr.length == 1) {
                 serverAddrs
                         .add(serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());
@@ -183,7 +183,7 @@ public class ServerListManager implements Closeable {
                 if (serverAddr.startsWith(HTTP_PREFIX) || serverAddr.startsWith(HTTPS_PREFIX)) {
                     serverAddrs.add(serverAddr);
                 } else {
-                    String[] serverAddrArr = InternetAddressUtil.splitIPPortStr(serverAddr);
+                    String[] serverAddrArr = InternetAddressUtil.splitIpPortStr(serverAddr);
                     if (serverAddrArr.length == 1) {
                         serverAddrs.add(HTTP_PREFIX + serverAddrArr[0] + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil
                                 .getDefaultServerPort());
@@ -441,7 +441,7 @@ public class ServerListManager implements Closeable {
                 List<String> result = new ArrayList<>(lines.size());
                 for (String serverAddr : lines) {
                     if (StringUtils.isNotBlank(serverAddr)) {
-                        String[] ipPort = InternetAddressUtil.splitIPPortStr(serverAddr.trim());
+                        String[] ipPort = InternetAddressUtil.splitIpPortStr(serverAddr.trim());
                         String ip = ipPort[0].trim();
                         if (ipPort.length == 1) {
                             result.add(ip + InternetAddressUtil.IP_PORT_SPLITER + ParamUtil.getDefaultServerPort());

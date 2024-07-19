@@ -63,23 +63,17 @@ public class DumpChangeConfigWorker implements Runnable {
      * do check change.
      */
     public void run() {
-        
         try {
-            
             if (!PropertyUtil.isDumpChangeOn()) {
                 LogUtil.DEFAULT_LOG.info("DumpChange task is not open");
                 return;
             }
             Timestamp currentTime = new Timestamp(System.currentTimeMillis());
             LogUtil.DEFAULT_LOG.info("DumpChange start ,from time {},current time {}", startTime, currentTime);
-            
             LogUtil.DEFAULT_LOG.info("Start to check delete configs from  time {}", startTime);
-            
             long startDeletedConfigTime = System.currentTimeMillis();
             LogUtil.DEFAULT_LOG.info("Check delete configs from  time {}", startTime);
-            
             long deleteCursorId = 0L;
-            
             while (true) {
                 List<ConfigInfoStateWrapper> configDeleted = historyConfigInfoPersistService.findDeletedConfig(startTime,
                         deleteCursorId, pageSize);
@@ -89,21 +83,17 @@ public class DumpChangeConfigWorker implements Runnable {
                         ConfigCacheService.remove(configInfo.getDataId(), configInfo.getGroup(),
                                 configInfo.getTenant());
                         LogUtil.DEFAULT_LOG.info("[dump-delete-ok] {}",
-                                new Object[] {GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup())});
+                                GroupKey2.getKey(configInfo.getDataId(), configInfo.getGroup()));
                     }
                 }
                 if (configDeleted.size() < pageSize) {
                     break;
                 }
                 deleteCursorId = configDeleted.get(configDeleted.size() - 1).getId();
-                
             }
-            LogUtil.DEFAULT_LOG.info("Check delete configs finished,cost:{}",
-                    System.currentTimeMillis() - startDeletedConfigTime);
-            
+            LogUtil.DEFAULT_LOG.info("Check delete configs finished,cost:{}", System.currentTimeMillis() - startDeletedConfigTime);
             LogUtil.DEFAULT_LOG.info("Check changeConfig start");
             long startChangeConfigTime = System.currentTimeMillis();
-            
             long changeCursorId = 0L;
             while (true) {
                 LogUtil.DEFAULT_LOG.info("Check changed configs from  time {},lastMaxId={}", startTime, changeCursorId);
@@ -116,12 +106,12 @@ public class DumpChangeConfigWorker implements Runnable {
                     String localContentMd5 = ConfigCacheService.getContentMd5(groupKey);
                     boolean md5Update = !localContentMd5.equals(cf.getMd5());
                     if (newLastModified || md5Update) {
-                        LogUtil.DEFAULT_LOG.info("[dump-change] find change config  {}, {}, md5={}",
-                                new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
+                        LogUtil.DEFAULT_LOG.info("[dump-change] find change config  {}, {}, md5={}", groupKey, cf.getLastModified(),
+                                cf.getMd5());
                         ConfigInfoWrapper configInfoWrapper = configInfoPersistService.findConfigInfo(cf.getDataId(),
                                 cf.getGroup(), cf.getTenant());
-                        LogUtil.DUMP_LOG.info("[dump-change] find change config  {}, {}, md5={}",
-                                new Object[] {groupKey, cf.getLastModified(), cf.getMd5()});
+                        LogUtil.DUMP_LOG.info("[dump-change] find change config  {}, {}, md5={}", groupKey, cf.getLastModified(),
+                                cf.getMd5());
                         ConfigCacheService.dump(configInfoWrapper.getDataId(), configInfoWrapper.getGroup(),
                                 configInfoWrapper.getTenant(), configInfoWrapper.getContent(),
                                 configInfoWrapper.getLastModified(), configInfoWrapper.getType(),
@@ -129,10 +119,8 @@ public class DumpChangeConfigWorker implements Runnable {
                         final String content = configInfoWrapper.getContent();
                         final String md5 = MD5Utils.md5Hex(content, Constants.ENCODE_GBK);
                         final String md5Utf8 = MD5Utils.md5Hex(content, Constants.ENCODE_UTF8);
-                        
-                        LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={},md5UTF8={}",
-                                new Object[] {groupKey, configInfoWrapper.getLastModified(), content.length(), md5,
-                                        md5Utf8});
+                        LogUtil.DEFAULT_LOG.info("[dump-change-ok] {}, {}, length={}, md5={},md5UTF8={}", groupKey,
+                                configInfoWrapper.getLastModified(), content.length(), md5, md5Utf8);
                     }
                 }
                 if (changeConfigs.size() < pageSize) {
@@ -140,7 +128,6 @@ public class DumpChangeConfigWorker implements Runnable {
                 }
                 changeCursorId = changeConfigs.get(changeConfigs.size() - 1).getId();
             }
-            
             long endChangeConfigTime = System.currentTimeMillis();
             LogUtil.DEFAULT_LOG.info(
                     "Check changed configs finished,cost:{}, next task ready will from start time  {}",
@@ -153,7 +140,6 @@ public class DumpChangeConfigWorker implements Runnable {
                     TimeUnit.MILLISECONDS);
             LogUtil.DEFAULT_LOG.info("Next dump change will scheduled after {} milliseconds",
                     PropertyUtil.getDumpChangeWorkerInterval());
-            
         }
     }
 }

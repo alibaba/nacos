@@ -83,7 +83,7 @@ public class MemberUtil {
         
         String address = member;
         int port = defaultPort;
-        String[] info = InternetAddressUtil.splitIPPortStr(address);
+        String[] info = InternetAddressUtil.splitIpPortStr(address);
         if (info.length > 1) {
             address = info[0];
             port = Integer.parseInt(info[1]);

@@ -104,7 +104,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
             SRV_LOG.warn("[HEALTH-CHECK-V2] tcp check started before last one finished, service: {} : {} : {}:{}",
                     service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
             healthCheckCommon
-                    .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getTcpHealthParams());
+                    .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task, switchDomain.getTcpHealthParams());
             return;
         }
         taskQueue.add(new Beat(task, service, metadata, instance));
@@ -282,7 +282,7 @@ public class TcpHealthCheckProcessor implements HealthCheckProcessorV2, Runnable
                 keyMap.remove(toString());
             }
             
-            healthCheckCommon.reEvaluateCheckRT(rt, task, switchDomain.getTcpHealthParams());
+            healthCheckCommon.reEvaluateCheckRt(rt, task, switchDomain.getTcpHealthParams());
         }
         
         @Override
