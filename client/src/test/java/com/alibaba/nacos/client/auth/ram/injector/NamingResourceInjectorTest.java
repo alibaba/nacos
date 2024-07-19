@@ -17,22 +17,26 @@
 package com.alibaba.nacos.client.auth.ram.injector;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
+import com.alibaba.nacos.client.auth.ram.RamConstants;
 import com.alibaba.nacos.client.auth.ram.RamContext;
 import com.alibaba.nacos.client.auth.ram.identify.StsConfig;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredential;
 import com.alibaba.nacos.client.auth.ram.identify.StsCredentialHolder;
+import com.alibaba.nacos.client.auth.ram.utils.CalculateV4SigningKeyUtil;
 import com.alibaba.nacos.client.auth.ram.utils.SignUtil;
 import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
 import java.util.Date;
 
-public class NamingResourceInjectorTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class NamingResourceInjectorTest {
     
     private NamingResourceInjector namingResourceInjector;
     
@@ -42,8 +46,8 @@ public class NamingResourceInjectorTest {
     
     private StsCredential stsCredential;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         namingResourceInjector = new NamingResourceInjector();
         ramContext = new RamContext();
         ramContext.setAccessKey(PropertyKeyConst.ACCESS_KEY);
@@ -52,81 +56,97 @@ public class NamingResourceInjectorTest {
         StsConfig.getInstance().setRamRoleName(null);
     }
     
-    @After
-    public void tearDown() throws NoSuchFieldException, IllegalAccessException {
+    @AfterEach
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
         clearForSts();
     }
     
     @Test
-    public void testDoInjectWithEmpty() throws Exception {
+    void testDoInjectWithEmpty() throws Exception {
         resource = RequestResource.namingBuilder().setResource("").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
+        assertEquals(3, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
+        assertTrue(Long.parseLong(actual.getParameter("data")) - System.currentTimeMillis() < 100);
         String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
-        Assert.assertEquals(3, actual.getAllKey().size());
-        Assert.assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
-        Assert.assertTrue(Long.parseLong(actual.getParameter("data")) - System.currentTimeMillis() < 100);
-        Assert.assertEquals(expectSign, actual.getParameter("signature"));
+        assertEquals(expectSign, actual.getParameter("signature"));
     }
     
     @Test
-    public void testDoInjectWithGroup() throws Exception {
+    void testDoInjectWithGroup() throws Exception {
         resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
+        assertEquals(3, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
+        assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
         String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
-        Assert.assertEquals(3, actual.getAllKey().size());
-        Assert.assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
-        Assert.assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
-        Assert.assertEquals(expectSign, actual.getParameter("signature"));
+        assertEquals(expectSign, actual.getParameter("signature"));
     }
     
     @Test
-    public void testDoInjectWithoutGroup() throws Exception {
+    void testDoInjectWithoutGroup() throws Exception {
         resource = RequestResource.namingBuilder().setResource("aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
-        Assert.assertTrue(actual.getParameter("data").endsWith("@@group@@aaa"));
-        Assert.assertEquals(3, actual.getAllKey().size());
-        Assert.assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
+        assertTrue(actual.getParameter("data").endsWith("@@group@@aaa"));
+        assertEquals(3, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
         String expectSign = SignUtil.sign(actual.getParameter("data"), PropertyKeyConst.SECRET_KEY);
-        Assert.assertEquals(expectSign, actual.getParameter("signature"));
+        assertEquals(expectSign, actual.getParameter("signature"));
     }
     
     @Test
-    public void testDoInjectWithGroupForSts() throws Exception {
+    void testDoInjectWithGroupForSts() throws Exception {
         prepareForSts();
         resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
+        assertEquals(4, actual.getAllKey().size());
+        assertEquals("test-sts-ak", actual.getParameter("ak"));
+        assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
         String expectSign = SignUtil.sign(actual.getParameter("data"), "test-sts-sk");
-        Assert.assertEquals(4, actual.getAllKey().size());
-        Assert.assertEquals("test-sts-ak", actual.getParameter("ak"));
-        Assert.assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
-        Assert.assertEquals(expectSign, actual.getParameter("signature"));
+        assertEquals(expectSign, actual.getParameter("signature"));
     }
     
     @Test
-    public void testDoInjectWithoutGroupForSts() throws Exception {
+    void testDoInjectWithoutGroupForSts() throws Exception {
         prepareForSts();
         resource = RequestResource.namingBuilder().setResource("aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
+        assertEquals(4, actual.getAllKey().size());
+        assertEquals("test-sts-ak", actual.getParameter("ak"));
+        assertTrue(actual.getParameter("data").endsWith("@@group@@aaa"));
         String expectSign = SignUtil.sign(actual.getParameter("data"), "test-sts-sk");
-        Assert.assertEquals(4, actual.getAllKey().size());
-        Assert.assertEquals("test-sts-ak", actual.getParameter("ak"));
-        Assert.assertTrue(actual.getParameter("data").endsWith("@@group@@aaa"));
-        Assert.assertEquals(expectSign, actual.getParameter("signature"));
+        assertEquals(expectSign, actual.getParameter("signature"));
     }
     
     @Test
-    public void testDoInjectForStsWithException() throws Exception {
+    void testDoInjectForStsWithException() throws Exception {
         prepareForSts();
         stsCredential.setExpiration(new Date());
         resource = RequestResource.namingBuilder().setResource("aaa").setGroup("group").build();
         LoginIdentityContext actual = new LoginIdentityContext();
         namingResourceInjector.doInject(resource, ramContext, actual);
-        Assert.assertEquals(0, actual.getAllKey().size());
+        assertEquals(0, actual.getAllKey().size());
+    }
+    
+    @Test
+    void testDoInjectForV4Sign() throws Exception {
+        resource = RequestResource.namingBuilder().setResource("test@@aaa").setGroup("group").build();
+        LoginIdentityContext actual = new LoginIdentityContext();
+        ramContext.setRegionId("cn-hangzhou");
+        namingResourceInjector.doInject(resource, ramContext, actual);
+        assertEquals(4, actual.getAllKey().size());
+        assertEquals(PropertyKeyConst.ACCESS_KEY, actual.getParameter("ak"));
+        assertEquals(RamConstants.V4, actual.getParameter(RamConstants.SIGNATURE_VERSION));
+        assertTrue(actual.getParameter("data").endsWith("@@test@@aaa"));
+        String signatureKey = CalculateV4SigningKeyUtil.finalSigningKeyStringWithDefaultInfo(
+                PropertyKeyConst.SECRET_KEY, "cn-hangzhou");
+        String expectSign = SignUtil.sign(actual.getParameter("data"), signatureKey);
+        assertEquals(expectSign, actual.getParameter("signature"));
     }
     
     private void prepareForSts() throws NoSuchFieldException, IllegalAccessException {

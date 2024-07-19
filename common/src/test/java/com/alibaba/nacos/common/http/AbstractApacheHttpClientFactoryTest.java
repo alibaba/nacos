@@ -19,35 +19,35 @@ package com.alibaba.nacos.common.http;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
 import com.alibaba.nacos.common.http.client.request.DefaultHttpClientRequest;
 import com.alibaba.nacos.common.http.client.request.HttpClientRequest;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
-public class AbstractApacheHttpClientFactoryTest {
+@ExtendWith(MockitoExtension.class)
+class AbstractApacheHttpClientFactoryTest {
     
     @Mock
     private Logger logger;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
     }
     
     @Test
-    public void testCreateNacosRestTemplate() throws NoSuchFieldException, IllegalAccessException {
+    void testCreateNacosRestTemplate() throws NoSuchFieldException, IllegalAccessException {
         HttpClientFactory factory = new AbstractApacheHttpClientFactory() {
             @Override
             protected HttpClientConfig buildHttpClientConfig() {

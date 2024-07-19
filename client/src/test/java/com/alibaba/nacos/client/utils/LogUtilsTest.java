@@ -16,16 +16,17 @@
 
 package com.alibaba.nacos.client.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
-public class LogUtilsTest {
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class LogUtilsTest {
     
     @Test
-    public void testLogger() {
+    void testLogger() {
         Logger logger = LogUtils.logger(LogUtilsTest.class);
-        Assert.assertNotNull(logger);
+        assertNotNull(logger);
     }
     
 }

@@ -23,13 +23,14 @@ import com.alibaba.nacos.api.naming.remote.NamingRemoteConstants;
 import com.alibaba.nacos.api.naming.remote.request.InstanceRequest;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.naming.core.v2.service.impl.EphemeralClientOperationServiceImpl;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * {@link InstanceRequestHandler} unit tests.
@@ -37,8 +38,8 @@ import org.mockito.junit.MockitoJUnitRunner;
  * @author chenglu
  * @date 2021-09-17 12:49
  */
-@RunWith(MockitoJUnitRunner.class)
-public class InstanceRequestHandlerTest {
+@ExtendWith(MockitoExtension.class)
+class InstanceRequestHandlerTest {
     
     @InjectMocks
     private InstanceRequestHandler instanceRequestHandler;
@@ -47,7 +48,7 @@ public class InstanceRequestHandlerTest {
     private EphemeralClientOperationServiceImpl clientOperationService;
     
     @Test
-    public void testHandle() throws NacosException {
+    void testHandle() throws NacosException {
         InstanceRequest instanceRequest = new InstanceRequest();
         instanceRequest.setType(NamingRemoteConstants.REGISTER_INSTANCE);
         instanceRequest.setServiceName("service1");
@@ -66,7 +67,7 @@ public class InstanceRequestHandlerTest {
         try {
             instanceRequestHandler.handle(instanceRequest, requestMeta);
         } catch (Exception e) {
-            Assert.assertEquals(((NacosException) e).getErrCode(), NacosException.INVALID_PARAM);
+            assertEquals(NacosException.INVALID_PARAM, ((NacosException) e).getErrCode());
         }
     }
 }

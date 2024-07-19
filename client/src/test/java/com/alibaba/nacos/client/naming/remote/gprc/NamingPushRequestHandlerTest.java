@@ -27,17 +27,18 @@ import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.client.naming.cache.ServiceInfoHolder;
 import com.alibaba.nacos.client.naming.remote.TestConnection;
 import com.alibaba.nacos.common.remote.client.RpcClient;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class NamingPushRequestHandlerTest {
+class NamingPushRequestHandlerTest {
     
     @Test
-    public void testRequestReply() {
+    void testRequestReply() {
         //given
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingPushRequestHandler handler = new NamingPushRequestHandler(holder);
@@ -46,15 +47,14 @@ public class NamingPushRequestHandlerTest {
         //when
         Response response = handler.requestReply(req, new TestConnection(new RpcClient.ServerInfo()));
         //then
-        Assert.assertTrue(response instanceof NotifySubscriberResponse);
+        assertTrue(response instanceof NotifySubscriberResponse);
         verify(holder, times(1)).processServiceInfo(info);
     }
     
     @Test
-    public void testRequestReplyOtherType() {
+    void testRequestReplyOtherType() {
         ServiceInfoHolder holder = mock(ServiceInfoHolder.class);
         NamingPushRequestHandler handler = new NamingPushRequestHandler(holder);
-        Assert.assertNull(
-                handler.requestReply(new HealthCheckRequest(), new TestConnection(new RpcClient.ServerInfo())));
+        assertNull(handler.requestReply(new HealthCheckRequest(), new TestConnection(new RpcClient.ServerInfo())));
     }
 }

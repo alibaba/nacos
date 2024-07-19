@@ -18,14 +18,14 @@ package com.alibaba.nacos.api.exception.api;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.model.v2.ErrorCode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class NacosApiExceptionTest {
+class NacosApiExceptionTest {
     
     @Test
-    public void testEmptyConstructor() {
+    void testEmptyConstructor() {
         NacosApiException exception = new NacosApiException();
         assertEquals(0, exception.getErrCode());
         assertEquals(0, exception.getDetailErrCode());
@@ -34,7 +34,7 @@ public class NacosApiExceptionTest {
     }
     
     @Test
-    public void testConstructorWithoutCause() {
+    void testConstructorWithoutCause() {
         NacosApiException exception = new NacosApiException(500, ErrorCode.SERVER_ERROR, "test");
         assertEquals(500, exception.getErrCode());
         assertEquals(ErrorCode.SERVER_ERROR.getCode().intValue(), exception.getDetailErrCode());
@@ -43,7 +43,7 @@ public class NacosApiExceptionTest {
     }
     
     @Test
-    public void testConstructorWithCause() {
+    void testConstructorWithCause() {
         NacosApiException exception = new NacosApiException(500, ErrorCode.SERVER_ERROR,
                 new RuntimeException("cause test"), "test");
         assertEquals(500, exception.getErrCode());

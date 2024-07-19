@@ -17,8 +17,7 @@
 package com.alibaba.nacos.consistency;
 
 import com.alibaba.nacos.common.utils.JacksonUtils;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -27,10 +26,12 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ProtocolMetaDataTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ProtocolMetaDataTest {
     
     @Test
-    public void testProtocolMetaData() throws Exception {
+    void testProtocolMetaData() throws Exception {
         Map<String, Map<String, Object>> map = new HashMap<>();
         Map<String, Object> data = new HashMap<>();
         data.put("test-1", new Date());
@@ -68,7 +69,7 @@ public class ProtocolMetaDataTest {
         
         latch.await(10_000L, TimeUnit.MILLISECONDS);
         
-        Assert.assertEquals(2, count.get());
+        assertEquals(2, count.get());
         
     }
     

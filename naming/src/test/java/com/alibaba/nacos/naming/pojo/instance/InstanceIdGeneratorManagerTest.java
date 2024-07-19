@@ -19,9 +19,9 @@ package com.alibaba.nacos.naming.pojo.instance;
 import com.alibaba.nacos.api.naming.PreservedMetadataKeys;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.HashMap;
@@ -29,11 +29,11 @@ import java.util.Map;
 
 import static com.alibaba.nacos.api.common.Constants.SNOWFLAKE_INSTANCE_ID_GENERATOR;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@RunWith(MockitoJUnitRunner.class)
-public class InstanceIdGeneratorManagerTest {
+@ExtendWith(MockitoExtension.class)
+class InstanceIdGeneratorManagerTest {
     
     static {
         MockEnvironment environment = new MockEnvironment();
@@ -42,7 +42,7 @@ public class InstanceIdGeneratorManagerTest {
     }
     
     @Test
-    public void testGenerateSnowFlakeInstanceId() {
+    void testGenerateSnowFlakeInstanceId() {
         Instance instance = new Instance();
         Map<String, String> metaData = new HashMap<>(1);
         metaData.put(PreservedMetadataKeys.INSTANCE_ID_GENERATOR, SNOWFLAKE_INSTANCE_ID_GENERATOR);
@@ -56,7 +56,7 @@ public class InstanceIdGeneratorManagerTest {
     }
     
     @Test
-    public void testGenerateInstanceId() {
+    void testGenerateInstanceId() {
         Instance instance = new Instance();
         instance.setServiceName("service");
         instance.setClusterName("cluster");

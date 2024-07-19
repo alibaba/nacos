@@ -47,7 +47,12 @@ if [ -z "$JAVA_HOME" ]; then
     fi
   fi
   if [ -z "$JAVA_HOME" ]; then
-        error_exit "Please set the JAVA_HOME variable in your environment, We need java(x64)! jdk8 or later is better!"
+        JAVA_PATH=$(which java)
+        if [ -z "$JAVA_PATH" ]; then
+            error_exit "Please set the JAVA_HOME variable in your environment, We need java(x64)! jdk8 or later is better!"
+        fi
+        JAVA_HOME=$(dirname "$JAVA_PATH")/..
+        export JAVA_HOME=$(cd "$JAVA_HOME" && pwd)
   fi
 fi
 
@@ -84,16 +89,15 @@ export CUSTOM_SEARCH_LOCATIONS=file:${BASE_DIR}/conf/
 # JVM Configuration
 #===========================================================================================
 if [[ "${MODE}" == "standalone" ]]; then
-    JAVA_OPT="${JAVA_OPT} -Xms512m -Xmx512m -Xmn256m"
+    JAVA_OPT="${JAVA_OPT} ${CUSTOM_NACOS_MEMORY:- -Xms512m -Xmx512m -Xmn256m}"
     JAVA_OPT="${JAVA_OPT} -Dnacos.standalone=true"
 else
     if [[ "${EMBEDDED_STORAGE}" == "embedded" ]]; then
         JAVA_OPT="${JAVA_OPT} -DembeddedStorage=true"
     fi
-    JAVA_OPT="${JAVA_OPT} -server -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m"
+    JAVA_OPT="${JAVA_OPT} -server ${CUSTOM_NACOS_MEMORY:- -Xms2g -Xmx2g -Xmn1g -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=320m}"
     JAVA_OPT="${JAVA_OPT} -XX:-OmitStackTraceInFastThrow -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=${BASE_DIR}/logs/java_heapdump.hprof"
     JAVA_OPT="${JAVA_OPT} -XX:-UseLargePages"
-
 fi
 
 if [[ "${FUNCTION_MODE}" == "config" ]]; then

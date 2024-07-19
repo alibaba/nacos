@@ -32,6 +32,7 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -192,12 +193,12 @@ public class InetUtils {
             for (Enumeration<NetworkInterface> nics = NetworkInterface.getNetworkInterfaces();
                     nics.hasMoreElements(); ) {
                 NetworkInterface ifc = nics.nextElement();
-                if (ifc.isUp()) {
+                if (isUp(ifc)) {
                     LOG.debug("Testing interface: " + ifc.getDisplayName());
-                    if (ifc.getIndex() < lowest || result == null) {
-                        lowest = ifc.getIndex();
-                    } else {
+                    if (ifc.getIndex() >= lowest && result != null) {
                         continue;
+                    } else {
+                        lowest = ifc.getIndex();
                     }
                     
                     if (!ignoreInterface(ifc.getDisplayName())) {
@@ -229,6 +230,20 @@ public class InetUtils {
         }
         
         return null;
+    }
+    
+    /**
+     * check network intreface isUp, not throw SocketException.
+     * @param ifc network interface
+     * @return true or false;
+     */
+    public static boolean isUp(NetworkInterface ifc)  {
+        try {
+            return ifc.isUp();
+        } catch (SocketException e) {
+            LOG.debug("Network interface can not get isUp, exception: ", e);
+        }
+        return false;
     }
     
     private static boolean isPreferredAddress(InetAddress address) {

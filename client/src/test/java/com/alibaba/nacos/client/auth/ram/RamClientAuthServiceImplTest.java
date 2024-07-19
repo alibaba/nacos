@@ -17,27 +17,29 @@
 package com.alibaba.nacos.client.auth.ram;
 
 import com.alibaba.nacos.api.PropertyKeyConst;
-import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.client.auth.ram.injector.AbstractResourceInjector;
-import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.common.utils.ReflectUtils;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.plugin.auth.api.LoginIdentityContext;
+import com.alibaba.nacos.plugin.auth.api.RequestResource;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Map;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class RamClientAuthServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class RamClientAuthServiceImplTest {
     
     private static final String MOCK = "mock";
     
@@ -54,11 +56,11 @@ public class RamClientAuthServiceImplTest {
     
     private RequestResource resource;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         ramClientAuthService = new RamClientAuthServiceImpl();
-        Map<String, AbstractResourceInjector> resourceInjectors = (Map<String, AbstractResourceInjector>) ReflectUtils
-                .getFieldValue(ramClientAuthService, "resourceInjectors");
+        Map<String, AbstractResourceInjector> resourceInjectors = (Map<String, AbstractResourceInjector>) ReflectUtils.getFieldValue(
+                ramClientAuthService, "resourceInjectors");
         resourceInjectors.clear();
         resourceInjectors.put(MOCK, mockResourceInjector);
         ramContext = (RamContext) ReflectUtils.getFieldValue(ramClientAuthService, "ramContext");
@@ -70,8 +72,13 @@ public class RamClientAuthServiceImplTest {
         resource = new RequestResource();
     }
     
+    @AfterEach
+    void tearDown() throws NacosException {
+        ramClientAuthService.shutdown();
+    }
+    
     @Test
-    public void testLoginWithAkSk() {
+    void testLoginWithAkSk() {
         assertTrue(ramClientAuthService.login(akSkProperties));
         assertEquals(PropertyKeyConst.ACCESS_KEY, ramContext.getAccessKey());
         assertEquals(PropertyKeyConst.SECRET_KEY, ramContext.getSecretKey());
@@ -83,26 +90,26 @@ public class RamClientAuthServiceImplTest {
     }
     
     @Test
-    public void testLoginWithRoleName() {
+    void testLoginWithRoleName() {
         assertTrue(ramClientAuthService.login(roleProperties));
-        assertNull(PropertyKeyConst.ACCESS_KEY, ramContext.getAccessKey());
-        assertNull(PropertyKeyConst.SECRET_KEY, ramContext.getSecretKey());
+        assertNull(ramContext.getAccessKey(), PropertyKeyConst.ACCESS_KEY);
+        assertNull(ramContext.getSecretKey(), PropertyKeyConst.SECRET_KEY);
         assertEquals(PropertyKeyConst.RAM_ROLE_NAME, ramContext.getRamRoleName());
         assertTrue(ramClientAuthService.login(akSkProperties));
-        assertNull(PropertyKeyConst.ACCESS_KEY, ramContext.getAccessKey());
-        assertNull(PropertyKeyConst.SECRET_KEY, ramContext.getSecretKey());
+        assertNull(ramContext.getAccessKey(), PropertyKeyConst.ACCESS_KEY);
+        assertNull(ramContext.getSecretKey(), PropertyKeyConst.SECRET_KEY);
         assertEquals(PropertyKeyConst.RAM_ROLE_NAME, ramContext.getRamRoleName());
     }
     
     @Test
-    public void testGetLoginIdentityContextWithoutLogin() {
+    void testGetLoginIdentityContextWithoutLogin() {
         LoginIdentityContext actual = ramClientAuthService.getLoginIdentityContext(resource);
         assertTrue(actual.getAllKey().isEmpty());
         verify(mockResourceInjector, never()).doInject(resource, ramContext, actual);
     }
     
     @Test
-    public void testGetLoginIdentityContextWithoutInjector() {
+    void testGetLoginIdentityContextWithoutInjector() {
         ramClientAuthService.login(akSkProperties);
         LoginIdentityContext actual = ramClientAuthService.getLoginIdentityContext(resource);
         assertTrue(actual.getAllKey().isEmpty());
@@ -110,7 +117,7 @@ public class RamClientAuthServiceImplTest {
     }
     
     @Test
-    public void testGetLoginIdentityContextWithInjector() {
+    void testGetLoginIdentityContextWithInjector() {
         ramClientAuthService.login(akSkProperties);
         resource.setType(MOCK);
         LoginIdentityContext actual = ramClientAuthService.getLoginIdentityContext(resource);

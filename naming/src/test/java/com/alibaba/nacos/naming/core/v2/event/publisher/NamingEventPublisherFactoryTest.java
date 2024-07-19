@@ -18,9 +18,9 @@ package com.alibaba.nacos.naming.core.v2.event.publisher;
 
 import com.alibaba.nacos.common.notify.EventPublisher;
 import com.alibaba.nacos.common.notify.NotifyCenter;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.util.ReflectionUtils;
 
 import java.lang.reflect.Field;
@@ -28,14 +28,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 
-public class NamingEventPublisherFactoryTest {
+class NamingEventPublisherFactoryTest {
     
     private Map<String, EventPublisher> originalEventPublisherMap;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         originalEventPublisherMap = new HashMap<>(NotifyCenter.getPublisherMap());
         NotifyCenter.getPublisherMap().clear();
         // Protect other unit test publisher affect this case.
@@ -45,20 +45,20 @@ public class NamingEventPublisherFactoryTest {
         map.clear();
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         NotifyCenter.getPublisherMap().clear();
         NotifyCenter.getPublisherMap().putAll(originalEventPublisherMap);
         originalEventPublisherMap = null;
     }
     
     @Test
-    public void testApply() {
+    void testApply() {
         NamingEventPublisherFactory.getInstance().apply(TestEvent.TestEvent1.class, Byte.SIZE);
         NamingEventPublisherFactory.getInstance().apply(TestEvent.TestEvent2.class, Byte.SIZE);
         NamingEventPublisherFactory.getInstance().apply(TestEvent.class, Byte.SIZE);
-        String expectedStatus = "Naming event publisher statues:\n"
-                + "\tPublisher TestEvent                     : shutdown=false, queue=      0/8      \n";
+        String expectedStatus =
+                "Naming event publisher statues:\n" + "\tPublisher TestEvent                     : shutdown=false, queue=      0/8      \n";
         assertThat(NamingEventPublisherFactory.getInstance().getAllPublisherStatues(), is(expectedStatus));
     }
 }

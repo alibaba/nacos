@@ -22,16 +22,16 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.google.common.collect.Lists;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
 import java.util.List;
 
-public class ConfigInfoTagMapperByMySqlTest {
-    
-    private ConfigInfoTagMapperByMySql configInfoTagMapperByMySql;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConfigInfoTagMapperByMySqlTest {
     
     private final Object[] emptyObjs = new Object[] {};
     
@@ -53,8 +53,10 @@ public class ConfigInfoTagMapperByMySqlTest {
     
     MapperContext context;
     
-    @Before
-    public void setUp() throws Exception {
+    private ConfigInfoTagMapperByMySql configInfoTagMapperByMySql;
+    
+    @BeforeEach
+    void setUp() throws Exception {
         configInfoTagMapperByMySql = new ConfigInfoTagMapperByMySql();
         
         context = new MapperContext(startRow, pageSize);
@@ -68,7 +70,7 @@ public class ConfigInfoTagMapperByMySqlTest {
     }
     
     @Test
-    public void testUpdateConfigInfo4TagCas() {
+    void testUpdateConfigInfo4TagCas() {
         String newContent = "new Content";
         String newMD5 = "newMD5";
         String srcIp = "1.1.1.1";
@@ -106,34 +108,31 @@ public class ConfigInfoTagMapperByMySqlTest {
         
         MapperResult mapperResult = configInfoTagMapperByMySql.updateConfigInfo4TagCas(context);
         
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,"
-                        + "app_name = ? WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND tag_id = ? AND "
-                        + "(md5 = ? OR md5 IS NULL OR md5 = '')");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
-                new Object[] {newContent, newMD5, srcIp, srcUser, time, appNameTmp, dataId, group, tenantId, tagId,
-                        md5});
+        assertEquals(mapperResult.getSql(), "UPDATE config_info_tag SET content = ?, md5 = ?, src_ip = ?,src_user = ?,gmt_modified = ?,"
+                + "app_name = ? WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND tag_id = ? AND "
+                + "(md5 = ? OR md5 IS NULL OR md5 = '')");
+        assertArrayEquals(new Object[] {newContent, newMD5, srcIp, srcUser, time, appNameTmp, dataId, group, tenantId, tagId, md5},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testFindAllConfigInfoTagForDumpAllFetchRows() {
+    void testFindAllConfigInfoTagForDumpAllFetchRows() {
         MapperResult mapperResult = configInfoTagMapperByMySql.findAllConfigInfoTagForDumpAllFetchRows(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified  FROM (  "
-                        + "SELECT id FROM config_info_tag  ORDER BY id LIMIT " + startRow + "," + pageSize
-                        + " ) g, config_info_tag t  WHERE g.id = t.id  ");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
+        assertEquals(mapperResult.getSql(), " SELECT t.id,data_id,group_id,tenant_id,tag_id,app_name,content,md5,gmt_modified  FROM (  "
+                + "SELECT id FROM config_info_tag  ORDER BY id LIMIT " + startRow + "," + pageSize
+                + " ) g, config_info_tag t  WHERE g.id = t.id  ");
+        assertArrayEquals(mapperResult.getParamList().toArray(), emptyObjs);
     }
     
     @Test
-    public void testGetTableName() {
+    void testGetTableName() {
         String tableName = configInfoTagMapperByMySql.getTableName();
-        Assert.assertEquals(tableName, TableConstant.CONFIG_INFO_TAG);
+        assertEquals(TableConstant.CONFIG_INFO_TAG, tableName);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         String dataSource = configInfoTagMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        assertEquals(DataSourceConstant.MYSQL, dataSource);
     }
 }

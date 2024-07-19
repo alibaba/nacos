@@ -20,14 +20,15 @@ import com.alibaba.nacos.common.utils.JacksonUtils;
 import com.alibaba.nacos.consistency.IdGenerator;
 import com.alibaba.nacos.core.distributed.id.SnowFlowerIdGenerator;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.StandardEnvironment;
 
-public class ConfigInfoTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConfigInfoTest {
     
     @Test
-    public void testPrecisionIssue() throws Exception {
+    void testPrecisionIssue() throws Exception {
         EnvUtil.setEnvironment(new StandardEnvironment());
         IdGenerator generator = new SnowFlowerIdGenerator();
         long expected = generator.nextId();
@@ -35,7 +36,7 @@ public class ConfigInfoTest {
         configInfo.setId(expected);
         String json = JacksonUtils.toJson(configInfo);
         ConfigInfo actual = JacksonUtils.toObj(json, ConfigInfo.class);
-        Assert.assertEquals(expected, actual.getId());
+        assertEquals(expected, actual.getId());
         
     }
     

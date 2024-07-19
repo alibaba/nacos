@@ -18,25 +18,25 @@ package com.alibaba.nacos.common.task.engine;
 
 import com.alibaba.nacos.common.task.AbstractDelayTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.internal.verification.Times;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NacosDelayTaskExecuteEngineTest {
+@ExtendWith(MockitoExtension.class)
+class NacosDelayTaskExecuteEngineTest {
     
     private NacosDelayTaskExecuteEngine nacosDelayTaskExecuteEngine;
     
@@ -48,8 +48,8 @@ public class NacosDelayTaskExecuteEngineTest {
     
     private AbstractDelayTask abstractTask;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         nacosDelayTaskExecuteEngine = new NacosDelayTaskExecuteEngine(NacosDelayTaskExecuteEngineTest.class.getName());
         nacosDelayTaskExecuteEngine.setDefaultTaskProcessor(taskProcessor);
         abstractTask = new AbstractDelayTask() {
@@ -59,13 +59,13 @@ public class NacosDelayTaskExecuteEngineTest {
         };
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         nacosDelayTaskExecuteEngine.shutdown();
     }
     
     @Test
-    public void testSize() {
+    void testSize() {
         assertEquals(0, nacosDelayTaskExecuteEngine.size());
         nacosDelayTaskExecuteEngine.addTask("test", abstractTask);
         assertEquals(1, nacosDelayTaskExecuteEngine.size());
@@ -74,7 +74,7 @@ public class NacosDelayTaskExecuteEngineTest {
     }
     
     @Test
-    public void testIsEmpty() {
+    void testIsEmpty() {
         assertTrue(nacosDelayTaskExecuteEngine.isEmpty());
         nacosDelayTaskExecuteEngine.addTask("test", abstractTask);
         assertFalse(nacosDelayTaskExecuteEngine.isEmpty());
@@ -83,7 +83,7 @@ public class NacosDelayTaskExecuteEngineTest {
     }
     
     @Test
-    public void testAddProcessor() throws InterruptedException {
+    void testAddProcessor() throws InterruptedException {
         when(testTaskProcessor.process(abstractTask)).thenReturn(true);
         nacosDelayTaskExecuteEngine.addProcessor("test", testTaskProcessor);
         nacosDelayTaskExecuteEngine.addTask("test", abstractTask);
@@ -94,7 +94,7 @@ public class NacosDelayTaskExecuteEngineTest {
     }
     
     @Test
-    public void testRemoveProcessor() throws InterruptedException {
+    void testRemoveProcessor() throws InterruptedException {
         when(taskProcessor.process(abstractTask)).thenReturn(true);
         nacosDelayTaskExecuteEngine.addProcessor("test", testTaskProcessor);
         nacosDelayTaskExecuteEngine.removeProcessor("test");
@@ -105,7 +105,7 @@ public class NacosDelayTaskExecuteEngineTest {
     }
     
     @Test
-    public void testRetryTaskAfterFail() throws InterruptedException {
+    void testRetryTaskAfterFail() throws InterruptedException {
         when(taskProcessor.process(abstractTask)).thenReturn(false, true);
         nacosDelayTaskExecuteEngine.addTask("test", abstractTask);
         TimeUnit.MILLISECONDS.sleep(300);
@@ -113,7 +113,7 @@ public class NacosDelayTaskExecuteEngineTest {
     }
     
     @Test
-    public void testProcessorWithException() throws InterruptedException {
+    void testProcessorWithException() throws InterruptedException {
         when(taskProcessor.process(abstractTask)).thenThrow(new RuntimeException("test"));
         nacosDelayTaskExecuteEngine.addProcessor("test", testTaskProcessor);
         nacosDelayTaskExecuteEngine.removeProcessor("test");
@@ -123,7 +123,7 @@ public class NacosDelayTaskExecuteEngineTest {
     }
     
     @Test
-    public void testTaskShouldNotExecute() throws InterruptedException {
+    void testTaskShouldNotExecute() throws InterruptedException {
         nacosDelayTaskExecuteEngine.addProcessor("test", testTaskProcessor);
         nacosDelayTaskExecuteEngine.addTask("test", abstractTask);
         abstractTask.setTaskInterval(10000L);
@@ -134,7 +134,7 @@ public class NacosDelayTaskExecuteEngineTest {
     }
     
     @Test
-    public void testTaskMerge() {
+    void testTaskMerge() {
         nacosDelayTaskExecuteEngine.addProcessor("test", testTaskProcessor);
         nacosDelayTaskExecuteEngine.addTask("test", abstractTask);
         nacosDelayTaskExecuteEngine.addTask("test", new AbstractDelayTask() {

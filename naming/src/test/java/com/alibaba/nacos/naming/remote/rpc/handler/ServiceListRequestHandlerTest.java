@@ -23,10 +23,12 @@ import com.alibaba.nacos.api.naming.remote.response.ServiceListResponse;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
 import com.alibaba.nacos.naming.core.v2.ServiceManager;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link ServiceListRequestHandler} unit tests.
@@ -34,23 +36,23 @@ import org.junit.Test;
  * @author chenglu
  * @date 2021-09-17 20:59
  */
-public class ServiceListRequestHandlerTest {
+class ServiceListRequestHandlerTest {
     
     private Service service;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         service = Service.newService("A", "B", "C");
         ServiceManager.getInstance().getSingleton(service);
     }
     
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         ServiceManager.getInstance().removeSingleton(service);
     }
     
     @Test
-    public void testHandle() throws NacosException {
+    void testHandle() throws NacosException {
         ServiceListRequest serviceListRequest = new ServiceListRequest();
         serviceListRequest.setNamespace("A");
         serviceListRequest.setPageNo(1);
@@ -58,7 +60,7 @@ public class ServiceListRequestHandlerTest {
         serviceListRequest.setGroupName("B");
         ServiceListRequestHandler serviceListRequestHandler = new ServiceListRequestHandler();
         ServiceListResponse serviceListResponse = serviceListRequestHandler.handle(serviceListRequest, new RequestMeta());
-        Assert.assertEquals(serviceListResponse.getCount(), 1);
-        Assert.assertTrue(serviceListResponse.getServiceNames().contains("C"));
+        assertEquals(1, serviceListResponse.getCount());
+        assertTrue(serviceListResponse.getServiceNames().contains("C"));
     }
 }

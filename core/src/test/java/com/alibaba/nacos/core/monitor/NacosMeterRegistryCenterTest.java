@@ -18,45 +18,44 @@ package com.alibaba.nacos.core.monitor;
 
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.Silent.class)
-public class NacosMeterRegistryCenterTest {
+@MockitoSettings(strictness = Strictness.LENIENT)
+@ExtendWith(MockitoExtension.class)
+class NacosMeterRegistryCenterTest {
     
     @Mock
     private ConfigurableApplicationContext context;
     
-    @Before
-    public void initMeterRegistry() {
+    @AfterAll
+    static void tearDown() {
+        ApplicationUtils.injectContext(null);
+    }
+    
+    @BeforeEach
+    void initMeterRegistry() {
         ApplicationUtils.injectContext(context);
         when(context.getBean(PrometheusMeterRegistry.class)).thenReturn(null);
     }
     
-    @AfterClass
-    public static void tearDown() {
-        ApplicationUtils.injectContext(null);
-    }
-    
     @Test
-    public void testGetMeterRegistry() {
-        Assert.assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY));
-        Assert.assertNotNull(
-                NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CONFIG_STABLE_REGISTRY));
-        Assert.assertNotNull(
-                NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY));
-        Assert.assertNotNull(
-                NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.TOPN_CONFIG_CHANGE_REGISTRY));
-        Assert.assertNotNull(
-                NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.TOPN_SERVICE_CHANGE_REGISTRY));
+    void testGetMeterRegistry() {
+        assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CORE_STABLE_REGISTRY));
+        assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.CONFIG_STABLE_REGISTRY));
+        assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.NAMING_STABLE_REGISTRY));
+        assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.TOPN_CONFIG_CHANGE_REGISTRY));
+        assertNotNull(NacosMeterRegistryCenter.getMeterRegistry(NacosMeterRegistryCenter.TOPN_SERVICE_CHANGE_REGISTRY));
     }
     
 }
