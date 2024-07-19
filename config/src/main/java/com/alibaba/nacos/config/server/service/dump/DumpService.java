@@ -179,7 +179,7 @@ public abstract class DumpService {
             ConfigDataChangeEvent evt = (ConfigDataChangeEvent) event;
             
             DumpRequest dumpRequest = DumpRequest.create(evt.dataId, evt.group, evt.tenant, evt.lastModifiedTs,
-                    NetUtils.localIP());
+                    NetUtils.localIp());
             dumpRequest.setBeta(evt.isBeta);
             dumpRequest.setBatch(evt.isBatch);
             dumpRequest.setTag(evt.tag);

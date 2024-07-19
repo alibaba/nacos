@@ -80,7 +80,7 @@ class ClusterExternalStorageTest {
         datasourceConfig.initialize(null);
         
         assertFalse(EnvUtil.getStandaloneMode());
-        assertTrue(DatasourceConfiguration.isUseExternalDB());
+        assertTrue(DatasourceConfiguration.isUseExternalDb());
         assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
     
@@ -96,7 +96,7 @@ class ClusterExternalStorageTest {
         datasourceConfig.initialize(null);
         
         assertFalse(EnvUtil.getStandaloneMode());
-        assertTrue(DatasourceConfiguration.isUseExternalDB());
+        assertTrue(DatasourceConfiguration.isUseExternalDb());
         assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
     
@@ -112,7 +112,7 @@ class ClusterExternalStorageTest {
         datasourceConfig.initialize(null);
         
         assertFalse(EnvUtil.getStandaloneMode());
-        assertFalse(DatasourceConfiguration.isUseExternalDB());
+        assertFalse(DatasourceConfiguration.isUseExternalDb());
         assertTrue(dataSource.getDataSource() instanceof LocalDataSourceServiceImpl);
     }
     
@@ -128,7 +128,7 @@ class ClusterExternalStorageTest {
         datasourceConfig.initialize(null);
         
         assertFalse(EnvUtil.getStandaloneMode());
-        assertTrue(DatasourceConfiguration.isUseExternalDB());
+        assertTrue(DatasourceConfiguration.isUseExternalDb());
         assertTrue(dataSource.getDataSource() instanceof ExternalDataSourceServiceImpl);
     }
     
