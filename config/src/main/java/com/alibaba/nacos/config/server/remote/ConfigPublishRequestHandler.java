@@ -74,13 +74,11 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
     @Secured(action = ActionTypes.WRITE, signType = SignType.CONFIG)
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     public ConfigPublishResponse handle(ConfigPublishRequest request, RequestMeta meta) throws NacosException {
-        
         try {
             String dataId = request.getDataId();
             String group = request.getGroup();
             String content = request.getContent();
             final String tenant = request.getTenant();
-            
             final String srcIp = meta.getClientIp();
             final String requestIpApp = request.getAdditionParam("requestIpApp");
             final String tag = request.getAdditionParam("tag");
@@ -102,78 +100,78 @@ public class ConfigPublishRequestHandler extends RequestHandler<ConfigPublishReq
             ParamUtils.checkParam(configAdvanceInfo);
             
             if (AggrWhitelist.isAggrDataId(dataId)) {
-                Loggers.REMOTE_DIGEST.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", srcIp, dataId,
-                        group);
+                Loggers.REMOTE_DIGEST.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", srcIp, dataId, group);
                 throw new NacosException(NacosException.NO_RIGHT, "dataId:" + dataId + " is aggr");
             }
             
-            ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
-            configInfo.setMd5(request.getCasMd5());
-            configInfo.setType(type);
-            configInfo.setEncryptedDataKey(encryptedDataKey);
-            String betaIps = request.getAdditionParam("betaIps");
-            ConfigOperateResult configOperateResult = null;
-            String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
-            if (StringUtils.isBlank(betaIps)) {
-                if (StringUtils.isBlank(tag)) {
-                    if (StringUtils.isNotBlank(request.getCasMd5())) {
-                        configOperateResult = configInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo,
-                                configAdvanceInfo);
-                        if (!configOperateResult.isSuccess()) {
-                            return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                                    "Cas publish fail,server md5 may have changed.");
-                        }
-                    } else {
-                        configOperateResult = configInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo,
-                                configAdvanceInfo);
-                    }
-                    ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(false, dataId, group, tenant,
-                            configOperateResult.getLastModified()));
-                } else {
-                    if (StringUtils.isNotBlank(request.getCasMd5())) {
-                        configOperateResult = configInfoTagPersistService.insertOrUpdateTagCas(configInfo, tag, srcIp,
-                                srcUser);
-                        if (!configOperateResult.isSuccess()) {
-                            return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                                    "Cas publish tag config fail,server md5 may have changed.");
-                        }
-                    } else {
-                        configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp,
-                                srcUser);
-                    }
-                    persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
-                    ConfigChangePublisher.notifyConfigChange(
-                            new ConfigDataChangeEvent(false, dataId, group, tenant, tag,
-                                    configOperateResult.getLastModified()));
-                }
-            } else {
-                // beta publish
-                if (StringUtils.isNotBlank(request.getCasMd5())) {
-                    configOperateResult = configInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp,
-                            srcUser);
-                    if (!configOperateResult.isSuccess()) {
-                        return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
-                                "Cas publish beta config fail,server md5 may have changed.");
-                    }
-                } else {
-                    configOperateResult = configInfoBetaPersistService.insertOrUpdateBeta(configInfo, betaIps, srcIp,
-                            srcUser);
-                }
-                persistEvent = ConfigTraceService.PERSISTENCE_EVENT_BETA;
-                
-                ConfigChangePublisher.notifyConfigChange(
-                        new ConfigDataChangeEvent(true, dataId, group, tenant, configOperateResult.getLastModified()));
-            }
-            ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp,
-                    configOperateResult.getLastModified(), srcIp, persistEvent, ConfigTraceService.PERSISTENCE_TYPE_PUB,
-                    content);
-            return ConfigPublishResponse.buildSuccessResponse();
+            return processConfigPublish(request, dataId, group, tenant, srcIp,
+                    requestIpApp, tag, appName, type, srcUser, encryptedDataKey, content, configAdvanceInfo);
+            
         } catch (Exception e) {
             Loggers.REMOTE_DIGEST.error("[ConfigPublishRequestHandler] publish config error ,request ={}", request, e);
             return ConfigPublishResponse.buildFailResponse(
                     (e instanceof NacosException) ? ((NacosException) e).getErrCode() : ResponseCode.FAIL.getCode(),
                     e.getMessage());
         }
+    }
+    
+    private ConfigPublishResponse processConfigPublish(ConfigPublishRequest request, String dataId, String group,
+            String tenant, String srcIp, String requestIpApp, String tag,
+            String appName, String type, String srcUser, String encryptedDataKey,
+            String content, Map<String, Object> configAdvanceInfo) throws NacosException {
+        ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
+        configInfo.setMd5(request.getCasMd5());
+        configInfo.setType(type);
+        configInfo.setEncryptedDataKey(encryptedDataKey);
+        String betaIps = request.getAdditionParam("betaIps");
+        ConfigOperateResult configOperateResult;
+        String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
+        
+        if (StringUtils.isBlank(betaIps)) {
+            if (StringUtils.isBlank(tag)) {
+                if (StringUtils.isNotBlank(request.getCasMd5())) {
+                    configOperateResult = configInfoPersistService.insertOrUpdateCas(srcIp, srcUser, configInfo, configAdvanceInfo);
+                    if (!configOperateResult.isSuccess()) {
+                        return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                                "Cas publish fail,server md5 may have changed.");
+                    }
+                } else {
+                    configOperateResult = configInfoPersistService.insertOrUpdate(srcIp, srcUser, configInfo, configAdvanceInfo);
+                }
+                ConfigChangePublisher.notifyConfigChange(
+                        new ConfigDataChangeEvent(false, dataId, group, tenant, configOperateResult.getLastModified()));
+            } else {
+                if (StringUtils.isNotBlank(request.getCasMd5())) {
+                    configOperateResult = configInfoTagPersistService.insertOrUpdateTagCas(configInfo, tag, srcIp, srcUser);
+                    if (!configOperateResult.isSuccess()) {
+                        return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                                "Cas publish tag config fail,server md5 may have changed.");
+                    }
+                } else {
+                    configOperateResult = configInfoTagPersistService.insertOrUpdateTag(configInfo, tag, srcIp, srcUser);
+                }
+                persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
+                ConfigChangePublisher.notifyConfigChange(
+                        new ConfigDataChangeEvent(false, dataId, group, tenant, tag, configOperateResult.getLastModified()));
+            }
+        } else {
+            // beta publish
+            if (StringUtils.isNotBlank(request.getCasMd5())) {
+                configOperateResult = configInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp, srcUser);
+                if (!configOperateResult.isSuccess()) {
+                    return ConfigPublishResponse.buildFailResponse(ResponseCode.FAIL.getCode(),
+                            "Cas publish beta config fail,server md5 may have changed.");
+                }
+            } else {
+                configOperateResult = configInfoBetaPersistService.insertOrUpdateBeta(configInfo, betaIps, srcIp, srcUser);
+            }
+            persistEvent = ConfigTraceService.PERSISTENCE_EVENT_BETA;
+            ConfigChangePublisher.notifyConfigChange(new ConfigDataChangeEvent(true, dataId, group, tenant, configOperateResult.getLastModified()));
+        }
+        
+        ConfigTraceService.logPersistenceEvent(dataId, group, tenant, requestIpApp,
+                configOperateResult.getLastModified(), srcIp, persistEvent, ConfigTraceService.PERSISTENCE_TYPE_PUB, content);
+        return ConfigPublishResponse.buildSuccessResponse();
     }
     
 }

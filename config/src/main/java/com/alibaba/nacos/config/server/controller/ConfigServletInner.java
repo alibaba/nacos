@@ -52,7 +52,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
-import static com.alibaba.nacos.config.server.constant.Constants.ENCODE_UTF8;
 import static com.alibaba.nacos.config.server.utils.LogUtil.PULL_LOG;
 
 /**
@@ -129,129 +128,118 @@ public class ConfigServletInner {
      */
     public String doGetConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
             String tenant, String tag, String isNotify, String clientIp, boolean isV2) throws IOException {
-        
         boolean notify = StringUtils.isNotBlank(isNotify) && Boolean.parseBoolean(isNotify);
-        
-        String acceptCharset = ENCODE_UTF8;
-        
         if (isV2) {
             response.setHeader(HttpHeaderConsts.CONTENT_TYPE, MediaType.APPLICATION_JSON);
         }
-        
         final String groupKey = GroupKey2.getKey(dataId, group, tenant);
         String autoTag = request.getHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG);
-        
         String requestIpApp = RequestUtil.getAppName(request);
         int lockResult = ConfigCacheService.tryConfigReadLock(groupKey);
         CacheItem cacheItem = ConfigCacheService.getContentCache(groupKey);
-        
         final String requestIp = RequestUtil.getRemoteIp(request);
         if (lockResult > 0 && cacheItem != null) {
             try {
-                long lastModified;
-                boolean isBeta =
-                        cacheItem.isBeta() && cacheItem.getConfigCacheBeta() != null && cacheItem.getIps4Beta() != null
-                                && cacheItem.getIps4Beta().contains(clientIp);
-                
-                final String configType =
-                        (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
-                response.setHeader(com.alibaba.nacos.api.common.Constants.CONFIG_TYPE, configType);
-                FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
-                String contentTypeHeader = fileTypeEnum.getContentType();
-                response.setHeader(HttpHeaderConsts.CONTENT_TYPE,
-                        isV2 ? MediaType.APPLICATION_JSON : contentTypeHeader);
-                String pullEvent;
-                String content;
-                String md5;
-                String encryptedDataKey;
-                if (isBeta) {
-                    ConfigCache configCacheBeta = cacheItem.getConfigCacheBeta();
-                    pullEvent = ConfigTraceService.PULL_EVENT_BETA;
-                    md5 = configCacheBeta.getMd5(acceptCharset);
-                    lastModified = configCacheBeta.getLastModifiedTs();
-                    encryptedDataKey = configCacheBeta.getEncryptedDataKey();
-                    content = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
-                    response.setHeader("isBeta", "true");
-                } else {
-                    if (StringUtils.isBlank(tag)) {
-                        if (isUseTag(cacheItem, autoTag)) {
-                            
-                            ConfigCache configCacheTag = cacheItem.getConfigCacheTags().get(autoTag);
-                            md5 = configCacheTag.getMd5(acceptCharset);
-                            lastModified = configCacheTag.getLastModifiedTs();
-                            encryptedDataKey = configCacheTag.getEncryptedDataKey();
-                            content = ConfigDiskServiceFactory.getInstance()
-                                    .getTagContent(dataId, group, tenant, autoTag);
-                            pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
-                            response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
-                                    URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
-                        } else {
-                            pullEvent = ConfigTraceService.PULL_EVENT;
-                            md5 = cacheItem.getConfigCache().getMd5(acceptCharset);
-                            lastModified = cacheItem.getConfigCache().getLastModifiedTs();
-                            encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
-                            content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
-                        }
-                    } else {
-                        md5 = cacheItem.getTagMd5(tag, acceptCharset);
-                        lastModified = cacheItem.getTagLastModified(tag);
-                        encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
-                        
-                        content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
-                        pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
-                    }
-                }
-                
-                if (content == null) {
-                    ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, pullEvent,
-                            ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
-                    return get404Result(response, isV2);
-                    
-                }
-                response.setHeader(Constants.CONTENT_MD5, md5);
-                
-                // Disable cache.
-                response.setHeader("Pragma", "no-cache");
-                response.setDateHeader("Expires", 0);
-                response.setHeader("Cache-Control", "no-cache,no-store");
-                response.setDateHeader("Last-Modified", lastModified);
-                if (encryptedDataKey != null) {
-                    response.setHeader("Encrypted-Data-Key", encryptedDataKey);
-                }
-                PrintWriter out;
-                Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
-                String decryptContent = pair.getSecond();
-                out = response.getWriter();
-                if (isV2) {
-                    out.print(JacksonUtils.toJson(Result.success(decryptContent)));
-                } else {
-                    out.print(decryptContent);
-                }
-                
-                out.flush();
-                out.close();
-                
-                LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
-                
-                final long delayed = notify ? -1 : System.currentTimeMillis() - lastModified;
-                ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified, pullEvent,
-                        ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
+                return handleCacheItem(response, dataId, group, tenant, tag,
+                        clientIp, isV2, notify, groupKey, autoTag, requestIpApp, cacheItem, requestIp);
             } finally {
                 ConfigCacheService.releaseReadLock(groupKey);
             }
         } else if (lockResult == 0 || cacheItem == null) {
-            
             ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1, ConfigTraceService.PULL_EVENT,
                     ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
             return get404Result(response, isV2);
-            
         } else {
-            
             PULL_LOG.info("[client-get] clientIp={}, {}, get data during dump", clientIp, groupKey);
             return get409Result(response, isV2);
         }
-        
+    }
+    
+    private String handleCacheItem(HttpServletResponse response, String dataId, String group,
+            String tenant, String tag, String clientIp, boolean isV2, boolean notify,
+            String groupKey, String autoTag, String requestIpApp, CacheItem cacheItem, String requestIp) throws IOException {
+        long lastModified;
+        boolean isBeta = cacheItem.isBeta() && cacheItem.getConfigCacheBeta() != null && cacheItem.getIps4Beta() != null
+                && cacheItem.getIps4Beta().contains(clientIp);
+        final String configType = (null != cacheItem.getType()) ? cacheItem.getType() : FileTypeEnum.TEXT.getFileType();
+        response.setHeader(com.alibaba.nacos.api.common.Constants.CONFIG_TYPE, configType);
+        FileTypeEnum fileTypeEnum = FileTypeEnum.getFileTypeEnumByFileExtensionOrFileType(configType);
+        String contentTypeHeader = fileTypeEnum.getContentType();
+        response.setHeader(HttpHeaderConsts.CONTENT_TYPE, isV2 ? MediaType.APPLICATION_JSON : contentTypeHeader);
+        String pullEvent;
+        String content;
+        String md5;
+        String encryptedDataKey;
+        if (isBeta) {
+            ConfigCache configCacheBeta = cacheItem.getConfigCacheBeta();
+            pullEvent = ConfigTraceService.PULL_EVENT_BETA;
+            md5 = configCacheBeta.getMd5(Constants.ENCODE_UTF8);
+            lastModified = configCacheBeta.getLastModifiedTs();
+            encryptedDataKey = configCacheBeta.getEncryptedDataKey();
+            content = ConfigDiskServiceFactory.getInstance().getBetaContent(dataId, group, tenant);
+            response.setHeader("isBeta", "true");
+        } else {
+            if (StringUtils.isBlank(tag)) {
+                if (isUseTag(cacheItem, autoTag)) {
+                    ConfigCache configCacheTag = cacheItem.getConfigCacheTags().get(autoTag);
+                    md5 = configCacheTag.getMd5(Constants.ENCODE_UTF8);
+                    lastModified = configCacheTag.getLastModifiedTs();
+                    encryptedDataKey = configCacheTag.getEncryptedDataKey();
+                    content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, autoTag);
+                    pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + autoTag;
+                    response.setHeader(com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG,
+                            URLEncoder.encode(autoTag, StandardCharsets.UTF_8.displayName()));
+                } else {
+                    pullEvent = ConfigTraceService.PULL_EVENT;
+                    md5 = cacheItem.getConfigCache().getMd5(Constants.ENCODE_UTF8);
+                    lastModified = cacheItem.getConfigCache().getLastModifiedTs();
+                    encryptedDataKey = cacheItem.getConfigCache().getEncryptedDataKey();
+                    content = ConfigDiskServiceFactory.getInstance().getContent(dataId, group, tenant);
+                }
+            } else {
+                md5 = cacheItem.getTagMd5(tag, Constants.ENCODE_UTF8);
+                lastModified = cacheItem.getTagLastModified(tag);
+                encryptedDataKey = cacheItem.getTagEncryptedDataKey(tag);
+                content = ConfigDiskServiceFactory.getInstance().getTagContent(dataId, group, tenant, tag);
+                pullEvent = ConfigTraceService.PULL_EVENT_TAG + "-" + tag;
+            }
+        }
+        if (content == null) {
+            ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, -1,
+                    pullEvent, ConfigTraceService.PULL_TYPE_NOTFOUND, -1, requestIp, notify, "http");
+            return get404Result(response, isV2);
+        }
+        setResponse(response, md5, lastModified, encryptedDataKey, isV2, dataId, content);
+        LogUtil.PULL_CHECK_LOG.warn("{}|{}|{}|{}", groupKey, requestIp, md5, TimeUtils.getCurrentTimeStr());
+        final long delayed = notify ? -1 : System.currentTimeMillis() - lastModified;
+        ConfigTraceService.logPullEvent(dataId, group, tenant, requestIpApp, lastModified,
+                pullEvent, ConfigTraceService.PULL_TYPE_OK, delayed, clientIp, notify, "http");
         return HttpServletResponse.SC_OK + "";
+    }
+    
+    private void setResponse(HttpServletResponse response, String md5,
+            long lastModified, String encryptedDataKey, boolean isV2, String dataId, String content)
+            throws IOException {
+        response.setHeader(Constants.CONTENT_MD5, md5);
+        // Disable cache.
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
+        response.setHeader("Cache-Control", "no-cache,no-store");
+        response.setDateHeader("Last-Modified", lastModified);
+        if (encryptedDataKey != null) {
+            response.setHeader("Encrypted-Data-Key", encryptedDataKey);
+        }
+        PrintWriter out;
+        Pair<String, String> pair = EncryptionHandler.decryptHandler(dataId, encryptedDataKey, content);
+        String decryptContent = pair.getSecond();
+        out = response.getWriter();
+        if (isV2) {
+            out.print(JacksonUtils.toJson(Result.success(decryptContent)));
+        } else {
+            out.print(decryptContent);
+        }
+        out.flush();
+        out.close();
     }
     
     private String get404Result(HttpServletResponse response, boolean isV2) throws IOException {

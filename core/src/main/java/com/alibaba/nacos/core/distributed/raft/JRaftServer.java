@@ -157,7 +157,7 @@ public class JRaftServer {
         RaftExecutor.init(config);
         
         final String self = config.getSelfMember();
-        String[] info = InternetAddressUtil.splitIPPortStr(self);
+        String[] info = InternetAddressUtil.splitIpPortStr(self);
         selfIp = info[0];
         selfPort = Integer.parseInt(info[1]);
         localPeerId = PeerId.parsePeer(self);
