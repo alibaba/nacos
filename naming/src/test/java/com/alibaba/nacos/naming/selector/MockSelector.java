@@ -59,17 +59,13 @@ public class MockSelector extends AbstractCmdbSelector<Instance> {
         if (context.getProviders() == null) {
             return null;
         }
-        return context.getProviders()
-                .stream()
-                .filter(provider -> {
-                    Map<String, String> labels = provider.getEntity().getLabels();
-                    if (labels == null) {
-                        return false;
-                    }
-                    return value.equals(labels.get(key));
-                })
-                .map(CmdbContext.CmdbInstance::getInstance)
-                .collect(Collectors.toList());
+        return context.getProviders().stream().filter(provider -> {
+            Map<String, String> labels = provider.getEntity().getLabels();
+            if (labels == null) {
+                return false;
+            }
+            return value.equals(labels.get(key));
+        }).map(CmdbContext.CmdbInstance::getInstance).collect(Collectors.toList());
     }
     
     @Override

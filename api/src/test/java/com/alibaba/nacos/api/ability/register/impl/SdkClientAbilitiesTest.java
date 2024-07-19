@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.api.ability.register.impl;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class SdkClientAbilitiesTest {
+class SdkClientAbilitiesTest {
     
     @Test
-    public void testGetStaticAbilities() {
+    void testGetStaticAbilities() {
         // TODO add the sdk client abilities.
         assertTrue(SdkClientAbilities.getStaticAbilities().isEmpty());
     }

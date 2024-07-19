@@ -33,6 +33,8 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
     
     private int maxPushRetryTimes = 50;
     
+    private boolean derbyOpsEnabled = false;
+    
     private ConfigCommonConfig() {
         super(CONFIG_COMMON);
         resetConfig();
@@ -50,13 +52,28 @@ public class ConfigCommonConfig extends AbstractDynamicConfig {
         this.maxPushRetryTimes = maxPushRetryTimes;
     }
     
+    public boolean isDerbyOpsEnabled() {
+        return derbyOpsEnabled;
+    }
+    
+    public void setDerbyOpsEnabled(boolean derbyOpsEnabled) {
+        this.derbyOpsEnabled = derbyOpsEnabled;
+    }
+    
     @Override
     protected void getConfigFromEnv() {
         maxPushRetryTimes = EnvUtil.getProperty("nacos.config.push.maxRetryTime", Integer.class, 50);
+        derbyOpsEnabled = EnvUtil.getProperty("nacos.config.derby.ops.enabled", Boolean.class, false);
     }
     
     @Override
     protected String printConfig() {
-        return "ConfigCommonConfigs{" + "maxPushRetryTimes=" + maxPushRetryTimes + '}';
+        return toString();
+    }
+    
+    @Override
+    public String toString() {
+        return "ConfigCommonConfig{" + "maxPushRetryTimes=" + maxPushRetryTimes + ", derbyOpsEnabled=" + derbyOpsEnabled
+                + '}';
     }
 }

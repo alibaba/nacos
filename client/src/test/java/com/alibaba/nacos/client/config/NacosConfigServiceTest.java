@@ -25,18 +25,27 @@ import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
 import com.alibaba.nacos.client.config.impl.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-public class NacosConfigServiceTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+
+@ExtendWith(MockitoExtension.class)
+class NacosConfigServiceTest {
     
     private NacosConfigService nacosConfigService;
     
@@ -49,8 +58,8 @@ public class NacosConfigServiceTest {
         
     }
     
-    @Before
-    public void mock() throws Exception {
+    @BeforeEach
+    void mock() throws Exception {
         final Properties properties = new Properties();
         properties.put("serverAddr", "1.1.1.1");
         nacosConfigService = new NacosConfigService(properties);
@@ -58,13 +67,13 @@ public class NacosConfigServiceTest {
         setFinal(NacosConfigService.class.getDeclaredField("worker"), nacosConfigService, mockWoker);
     }
     
-    @After
-    public void clean() {
+    @AfterEach
+    void clean() {
         LocalConfigInfoProcessor.cleanAllSnapshot();
     }
     
     @Test
-    public void testGetConfig() throws NacosException {
+    void testGetConfigFromServer() throws NacosException {
         final String dataId = "1";
         final String group = "2";
         final String tenant = "";
@@ -74,13 +83,87 @@ public class NacosConfigServiceTest {
         response.setConfigType("bb");
         Mockito.when(mockWoker.getServerConfig(dataId, group, "", timeout, false)).thenReturn(response);
         final String config = nacosConfigService.getConfig(dataId, group, timeout);
-        Assert.assertEquals("aa", config);
+        assertEquals("aa", config);
         Mockito.verify(mockWoker, Mockito.times(1)).getServerConfig(dataId, group, tenant, timeout, false);
         
     }
     
     @Test
-    public void testGetConfigAndSignListener() throws NacosException {
+    void testGetConfigFromFailOver() throws NacosException {
+        final String dataId = "1failover";
+        final String group = "2";
+        final String tenant = "";
+        
+        MockedStatic<LocalConfigInfoProcessor> localConfigInfoProcessorMockedStatic = Mockito.mockStatic(LocalConfigInfoProcessor.class);
+        try {
+            String contentFailOver = "failOverContent" + System.currentTimeMillis();
+            localConfigInfoProcessorMockedStatic.when(() -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
+                    .thenReturn(contentFailOver);
+            final int timeout = 3000;
+            
+            final String config = nacosConfigService.getConfig(dataId, group, timeout);
+            assertEquals(contentFailOver, config);
+        } finally {
+            localConfigInfoProcessorMockedStatic.close();
+        }
+    }
+    
+    @Test
+    void testGetConfigFromLocalCache() throws NacosException {
+        final String dataId = "1localcache";
+        final String group = "2";
+        final String tenant = "";
+        
+        MockedStatic<LocalConfigInfoProcessor> localConfigInfoProcessorMockedStatic = Mockito.mockStatic(LocalConfigInfoProcessor.class);
+        try {
+            String contentFailOver = "localCacheContent" + System.currentTimeMillis();
+            //fail over null
+            localConfigInfoProcessorMockedStatic.when(() -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
+                    .thenReturn(null);
+            //snapshot content
+            localConfigInfoProcessorMockedStatic.when(() -> LocalConfigInfoProcessor.getSnapshot(any(), eq(dataId), eq(group), eq(tenant)))
+                    .thenReturn(contentFailOver);
+            //form server error.
+            final int timeout = 3000;
+            Mockito.when(mockWoker.getServerConfig(dataId, group, "", timeout, false)).thenThrow(new NacosException());
+            
+            final String config = nacosConfigService.getConfig(dataId, group, timeout);
+            assertEquals(contentFailOver, config);
+        } finally {
+            localConfigInfoProcessorMockedStatic.close();
+        }
+        
+    }
+    
+    @Test
+    void testGetConfig403() throws NacosException {
+        final String dataId = "1localcache403";
+        final String group = "2";
+        final String tenant = "";
+        
+        MockedStatic<LocalConfigInfoProcessor> localConfigInfoProcessorMockedStatic = Mockito.mockStatic(LocalConfigInfoProcessor.class);
+        try {
+            //fail over null
+            localConfigInfoProcessorMockedStatic.when(() -> LocalConfigInfoProcessor.getFailover(any(), eq(dataId), eq(group), eq(tenant)))
+                    .thenReturn(null);
+            
+            //form server error.
+            final int timeout = 3000;
+            Mockito.when(mockWoker.getServerConfig(dataId, group, "", timeout, false))
+                    .thenThrow(new NacosException(NacosException.NO_RIGHT, "no right"));
+            try {
+                nacosConfigService.getConfig(dataId, group, timeout);
+                assertTrue(false);
+            } catch (NacosException e) {
+                assertEquals(NacosException.NO_RIGHT, e.getErrCode());
+            }
+        } finally {
+            localConfigInfoProcessorMockedStatic.close();
+        }
+    }
+    
+    @Test
+    void testGetConfigAndSignListener() throws NacosException {
         final String dataId = "1";
         final String group = "2";
         final String tenant = "";
@@ -98,40 +181,36 @@ public class NacosConfigServiceTest {
             }
         };
         
-        ConfigResponse response = new ConfigResponse();
-        response.setContent(content);
-        response.setConfigType("bb");
-        Mockito.when(mockWoker.getServerConfig(dataId, group, "", timeout, false)).thenReturn(response);
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
         Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ServerListManager()) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP
             }
-    
+            
             @Override
             public String getName() {
                 return "TestConfigTransportClient";
             }
-    
+            
             @Override
             public void notifyListenConfig() {
                 // NOOP
             }
-    
+            
             @Override
             public void executeConfigListen() {
                 // NOOP
             }
-    
+            
             @Override
             public void removeCache(String dataId, String group) {
                 // NOOP
             }
-    
+            
             @Override
-            public ConfigResponse queryConfig(String dataId, String group, String tenant, long readTimeous,
-                    boolean notify) throws NacosException {
+            public ConfigResponse queryConfig(String dataId, String group, String tenant, long readTimeous, boolean notify)
+                    throws NacosException {
                 ConfigResponse configResponse = new ConfigResponse();
                 configResponse.setContent(content);
                 configResponse.setDataId(dataId);
@@ -139,14 +218,13 @@ public class NacosConfigServiceTest {
                 configResponse.setTenant(tenant);
                 return configResponse;
             }
-    
+            
             @Override
-            public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
-                    String betaIps, String content, String encryptedDataKey, String casMd5, String type)
-                    throws NacosException {
+            public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag, String betaIps,
+                    String content, String encryptedDataKey, String casMd5, String type) throws NacosException {
                 return false;
             }
-    
+            
             @Override
             public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
                 return false;
@@ -154,14 +232,13 @@ public class NacosConfigServiceTest {
         });
         
         final String config = nacosConfigService.getConfigAndSignListener(dataId, group, timeout, listener);
-        Assert.assertEquals(content, config);
+        assertEquals(content, config);
         
-        Mockito.verify(mockWoker, Mockito.times(1))
-                .addTenantListenersWithContent(dataId, group, content, null, Arrays.asList(listener));
+        Mockito.verify(mockWoker, Mockito.times(1)).addTenantListenersWithContent(dataId, group, content, null, Arrays.asList(listener));
     }
     
     @Test
-    public void testAddListener() throws NacosException {
+    void testAddListener() throws NacosException {
         String dataId = "1";
         String group = "2";
         Listener listener = new Listener() {
@@ -181,42 +258,38 @@ public class NacosConfigServiceTest {
     }
     
     @Test
-    public void testPublishConfig() throws NacosException {
+    void testPublishConfig() throws NacosException {
         String dataId = "1";
         String group = "2";
         String content = "123";
         String namespace = "";
         String type = ConfigType.getDefaultType().getType();
-        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content, "", null, type))
-                .thenReturn(true);
+        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content, "", null, type)).thenReturn(true);
         
         final boolean b = nacosConfigService.publishConfig(dataId, group, content);
-        Assert.assertTrue(b);
+        assertTrue(b);
         
-        Mockito.verify(mockWoker, Mockito.times(1))
-                .publishConfig(dataId, group, namespace, null, null, null, content, "", null, type);
+        Mockito.verify(mockWoker, Mockito.times(1)).publishConfig(dataId, group, namespace, null, null, null, content, "", null, type);
     }
     
     @Test
-    public void testPublishConfig2() throws NacosException {
+    void testPublishConfig2() throws NacosException {
         String dataId = "1";
         String group = "2";
         String content = "123";
         String namespace = "";
         String type = ConfigType.PROPERTIES.getType();
         
-        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content, "", null, type))
-                .thenReturn(true);
+        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content, "", null, type)).thenReturn(true);
         
         final boolean b = nacosConfigService.publishConfig(dataId, group, content, type);
-        Assert.assertTrue(b);
+        assertTrue(b);
         
-        Mockito.verify(mockWoker, Mockito.times(1))
-                .publishConfig(dataId, group, namespace, null, null, null, content, "", null, type);
+        Mockito.verify(mockWoker, Mockito.times(1)).publishConfig(dataId, group, namespace, null, null, null, content, "", null, type);
     }
     
     @Test
-    public void testPublishConfigCas() throws NacosException {
+    void testPublishConfigCas() throws NacosException {
         String dataId = "1";
         String group = "2";
         String content = "123";
@@ -224,18 +297,16 @@ public class NacosConfigServiceTest {
         String casMd5 = "96147704e3cb8be8597d55d75d244a02";
         String type = ConfigType.getDefaultType().getType();
         
-        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type))
-                .thenReturn(true);
+        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type)).thenReturn(true);
         
         final boolean b = nacosConfigService.publishConfigCas(dataId, group, content, casMd5);
-        Assert.assertTrue(b);
+        assertTrue(b);
         
-        Mockito.verify(mockWoker, Mockito.times(1))
-                .publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type);
+        Mockito.verify(mockWoker, Mockito.times(1)).publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type);
     }
     
     @Test
-    public void testPublishConfigCas2() throws NacosException {
+    void testPublishConfigCas2() throws NacosException {
         String dataId = "1";
         String group = "2";
         String content = "123";
@@ -243,18 +314,16 @@ public class NacosConfigServiceTest {
         String casMd5 = "96147704e3cb8be8597d55d75d244a02";
         String type = ConfigType.PROPERTIES.getType();
         
-        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type))
-                .thenReturn(true);
+        Mockito.when(mockWoker.publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type)).thenReturn(true);
         
         final boolean b = nacosConfigService.publishConfigCas(dataId, group, content, casMd5, type);
-        Assert.assertTrue(b);
+        assertTrue(b);
         
-        Mockito.verify(mockWoker, Mockito.times(1))
-                .publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type);
+        Mockito.verify(mockWoker, Mockito.times(1)).publishConfig(dataId, group, namespace, null, null, null, content, "", casMd5, type);
     }
     
     @Test
-    public void testRemoveConfig() throws NacosException {
+    void testRemoveConfig() throws NacosException {
         String dataId = "1";
         String group = "2";
         String tenant = "";
@@ -262,13 +331,13 @@ public class NacosConfigServiceTest {
         Mockito.when(mockWoker.removeConfig(dataId, group, tenant, null)).thenReturn(true);
         
         final boolean b = nacosConfigService.removeConfig(dataId, group);
-        Assert.assertTrue(b);
+        assertTrue(b);
         
         Mockito.verify(mockWoker, Mockito.times(1)).removeConfig(dataId, group, tenant, null);
     }
     
     @Test
-    public void testRemoveListener() {
+    void testRemoveListener() {
         String dataId = "1";
         String group = "2";
         Listener listener = new Listener() {
@@ -288,23 +357,21 @@ public class NacosConfigServiceTest {
     }
     
     @Test
-    public void testGetServerStatus() {
+    void testGetServerStatus() {
         Mockito.when(mockWoker.isHealthServer()).thenReturn(true);
-        Assert.assertEquals("UP", nacosConfigService.getServerStatus());
+        assertEquals("UP", nacosConfigService.getServerStatus());
         Mockito.verify(mockWoker, Mockito.times(1)).isHealthServer();
         
         Mockito.when(mockWoker.isHealthServer()).thenReturn(false);
-        Assert.assertEquals("DOWN", nacosConfigService.getServerStatus());
+        assertEquals("DOWN", nacosConfigService.getServerStatus());
         Mockito.verify(mockWoker, Mockito.times(2)).isHealthServer();
         
     }
     
     @Test
-    public void testShutDown() {
-        try {
+    void testShutDown() {
+        Assertions.assertDoesNotThrow(() -> {
             nacosConfigService.shutDown();
-        } catch (Exception e) {
-            Assert.fail();
-        }
+        });
     }
 }

@@ -19,20 +19,20 @@
 package com.alibaba.nacos.client.utils;
 
 import com.alibaba.nacos.client.constant.Constants;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class AppNameUtilsTest {
+class AppNameUtilsTest {
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         System.clearProperty(Constants.SysEnv.PROJECT_NAME);
         System.clearProperty("jboss.server.home.dir");
         System.clearProperty("jetty.home");
@@ -40,34 +40,34 @@ public class AppNameUtilsTest {
     }
     
     @Test
-    public void testGetAppNameByDefault() {
+    void testGetAppNameByDefault() {
         String appName = AppNameUtils.getAppName();
         assertEquals("unknown", appName);
     }
     
     @Test
-    public void testGetAppNameByProjectName() {
+    void testGetAppNameByProjectName() {
         System.setProperty(Constants.SysEnv.PROJECT_NAME, "testAppName");
         String appName = AppNameUtils.getAppName();
         assertEquals("testAppName", appName);
     }
     
     @Test
-    public void testGetAppNameByServerTypeForJboss() {
+    void testGetAppNameByServerTypeForJboss() {
         System.setProperty("jboss.server.home.dir", "/home/admin/testAppName/");
         String appName = AppNameUtils.getAppName();
         assertEquals("testAppName", appName);
     }
     
     @Test
-    public void testGetAppNameByServerTypeForJetty() {
+    void testGetAppNameByServerTypeForJetty() {
         System.setProperty("jetty.home", "/home/admin/testAppName/");
         String appName = AppNameUtils.getAppName();
         assertEquals("testAppName", appName);
     }
     
     @Test
-    public void testGetAppNameByServerTypeForTomcat() {
+    void testGetAppNameByServerTypeForTomcat() {
         System.setProperty("catalina.base", "/home/admin/testAppName/");
         String appName = AppNameUtils.getAppName();
         assertEquals("testAppName", appName);

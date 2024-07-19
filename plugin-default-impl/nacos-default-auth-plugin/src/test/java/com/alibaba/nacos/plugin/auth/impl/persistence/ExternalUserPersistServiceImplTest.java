@@ -20,25 +20,31 @@ import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ExternalUserPersistServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ExternalUserPersistServiceImplTest {
     
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -52,8 +58,8 @@ public class ExternalUserPersistServiceImplTest {
     
     private ExternalUserPersistServiceImpl externalUserPersistService;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         externalUserPersistService = new ExternalUserPersistServiceImpl();
         when(jdbcTemplate.queryForObject(any(), any(), eq(Integer.class))).thenReturn(0);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
@@ -66,8 +72,8 @@ public class ExternalUserPersistServiceImplTest {
         externalUserPersistService.init();
     }
     
-    @After
-    public void tearDown() throws NoSuchFieldException, IllegalAccessException {
+    @AfterEach
+    void tearDown() throws NoSuchFieldException, IllegalAccessException {
         DatasourceConfiguration.setEmbeddedStorage(embeddedStorageCache);
         Field datasourceField = DynamicDataSource.class.getDeclaredField("basicDataSourceService");
         datasourceField.setAccessible(true);
@@ -75,7 +81,7 @@ public class ExternalUserPersistServiceImplTest {
     }
     
     @Test
-    public void testCreateUser() {
+    void testCreateUser() {
         externalUserPersistService.createUser("username", "password");
         
         String sql = "INSERT INTO users (username, password, enabled) VALUES (?, ?, ?)";
@@ -83,7 +89,7 @@ public class ExternalUserPersistServiceImplTest {
     }
     
     @Test
-    public void testDeleteUser() {
+    void testDeleteUser() {
         externalUserPersistService.deleteUser("username");
         
         String sql = "DELETE FROM users WHERE username=?";
@@ -91,7 +97,7 @@ public class ExternalUserPersistServiceImplTest {
     }
     
     @Test
-    public void testUpdateUserPassword() {
+    void testUpdateUserPassword() {
         externalUserPersistService.updateUserPassword("username", "password");
         
         String sql = "UPDATE users SET password = ? WHERE username=?";
@@ -99,23 +105,23 @@ public class ExternalUserPersistServiceImplTest {
     }
     
     @Test
-    public void testFindUserByUsername() {
+    void testFindUserByUsername() {
         User username = externalUserPersistService.findUserByUsername("username");
         
-        Assert.assertNull(username);
+        assertNull(username);
     }
     
     @Test
-    public void testGetUsers() {
+    void testGetUsers() {
         Page<User> users = externalUserPersistService.getUsers(1, 10, "nacos");
         
-        Assert.assertNotNull(users);
+        assertNotNull(users);
     }
     
     @Test
-    public void testFindUserLikeUsername() {
+    void testFindUserLikeUsername() {
         List<String> username = externalUserPersistService.findUserLikeUsername("username");
         
-        Assert.assertEquals(username.size(), 0);
+        assertEquals(0, username.size());
     }
 }

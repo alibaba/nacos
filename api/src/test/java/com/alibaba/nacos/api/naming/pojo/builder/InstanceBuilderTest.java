@@ -17,18 +17,16 @@
 package com.alibaba.nacos.api.naming.pojo.builder;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class InstanceBuilderTest {
+class InstanceBuilderTest {
     
     private static final String SERVICE_NAME = "testService";
     
@@ -53,26 +51,26 @@ public class InstanceBuilderTest {
     private static final String META_VALUE = "value";
     
     @Test
-    public void testBuildFullInstance() {
+    void testBuildFullInstance() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();
-        Instance actual = builder.setServiceName(SERVICE_NAME).setClusterName(CLUSTER_NAME).setInstanceId(INSTANCE_ID)
-                .setIp(IP).setPort(PORT).setWeight(WEIGHT).setHealthy(HEALTHY).setEnabled(ENABLED)
-                .setEphemeral(EPHEMERAL).addMetadata(META_KEY, META_VALUE).build();
-        assertThat(actual.getServiceName(), is(SERVICE_NAME));
-        assertThat(actual.getClusterName(), is(CLUSTER_NAME));
-        assertThat(actual.getInstanceId(), is(INSTANCE_ID));
-        assertThat(actual.getIp(), is(IP));
-        assertThat(actual.getPort(), is(PORT));
-        assertThat(actual.getWeight(), is(WEIGHT));
-        assertThat(actual.isHealthy(), is(HEALTHY));
-        assertThat(actual.isEnabled(), is(ENABLED));
-        assertThat(actual.isEphemeral(), is(EPHEMERAL));
-        assertThat(actual.getMetadata().size(), is(1));
-        assertThat(actual.getMetadata().get(META_KEY), is(META_VALUE));
+        Instance actual = builder.setServiceName(SERVICE_NAME).setClusterName(CLUSTER_NAME).setInstanceId(INSTANCE_ID).setIp(IP)
+                .setPort(PORT).setWeight(WEIGHT).setHealthy(HEALTHY).setEnabled(ENABLED).setEphemeral(EPHEMERAL)
+                .addMetadata(META_KEY, META_VALUE).build();
+        assertEquals(actual.getServiceName(), SERVICE_NAME);
+        assertEquals(actual.getClusterName(), CLUSTER_NAME);
+        assertEquals(actual.getInstanceId(), INSTANCE_ID);
+        assertEquals(actual.getIp(), IP);
+        assertEquals(actual.getPort(), PORT);
+        assertEquals(actual.getWeight(), WEIGHT);
+        assertEquals(actual.isHealthy(), HEALTHY);
+        assertEquals(actual.isEnabled(), ENABLED);
+        assertEquals(actual.isEphemeral(), EPHEMERAL);
+        assertEquals(actual.getMetadata().size(), 1);
+        assertEquals(actual.getMetadata().get(META_KEY), META_VALUE);
     }
     
     @Test
-    public void testBuildInstanceWithoutNewMetadata() {
+    void testBuildInstanceWithoutNewMetadata() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();
         Map<String, String> metadata = new HashMap<>();
         metadata.put("test", "test");
@@ -81,8 +79,8 @@ public class InstanceBuilderTest {
         assertNull(actual.getClusterName());
         assertNull(actual.getInstanceId());
         assertNull(actual.getIp());
-        assertThat(actual.getPort(), is(0));
-        assertThat(actual.getWeight(), is(1.0));
+        assertEquals(actual.getPort(), 0);
+        assertEquals(actual.getWeight(), 1.0);
         assertTrue(actual.isHealthy());
         assertTrue(actual.isEnabled());
         assertTrue(actual.isEphemeral());
@@ -90,15 +88,15 @@ public class InstanceBuilderTest {
     }
     
     @Test
-    public void testBuildEmptyInstance() {
+    void testBuildEmptyInstance() {
         InstanceBuilder builder = InstanceBuilder.newBuilder();
         Instance actual = builder.build();
         assertNull(actual.getServiceName());
         assertNull(actual.getClusterName());
         assertNull(actual.getInstanceId());
         assertNull(actual.getIp());
-        assertThat(actual.getPort(), is(0));
-        assertThat(actual.getWeight(), is(1.0));
+        assertEquals(actual.getPort(), 0);
+        assertEquals(actual.getWeight(), 1.0);
         assertTrue(actual.isHealthy());
         assertTrue(actual.isEnabled());
         assertTrue(actual.isEphemeral());

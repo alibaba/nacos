@@ -17,7 +17,7 @@
 package com.alibaba.nacos.common.http.param;
 
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,13 +25,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class HeaderTest {
+class HeaderTest {
     
     @Test
-    public void testSetContentType() {
+    void testSetContentType() {
         Header header = Header.newInstance();
         header.setContentType(null);
         assertEquals(MediaType.APPLICATION_JSON, header.getValue(HttpHeaderConsts.CONTENT_TYPE));
@@ -40,14 +41,14 @@ public class HeaderTest {
     }
     
     @Test
-    public void testHeaderKyeIgnoreCase() {
+    void testHeaderKyeIgnoreCase() {
         Header header = Header.newInstance();
         header.addParam("Content-Encoding", "gzip");
         assertEquals("gzip", header.getValue("content-encoding"));
     }
     
     @Test
-    public void testToList() {
+    void testToList() {
         Header header = Header.newInstance();
         List<String> list = header.toList();
         assertTrue(list.contains(HttpHeaderConsts.CONTENT_TYPE));
@@ -59,7 +60,7 @@ public class HeaderTest {
     }
     
     @Test
-    public void testAddAllForMap() {
+    void testAddAllForMap() {
         Map<String, String> map = new HashMap<>();
         map.put("test1", "test2");
         map.put("test3", "test4");
@@ -71,7 +72,7 @@ public class HeaderTest {
     }
     
     @Test
-    public void testAddAllForList() {
+    void testAddAllForList() {
         List<String> list = new ArrayList<>(4);
         list.add("test1");
         list.add("test2");
@@ -84,18 +85,20 @@ public class HeaderTest {
         assertEquals(4, header.getHeader().size());
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testAddAllForListWithWrongLength() {
-        List<String> list = new ArrayList<>(3);
-        list.add("test1");
-        list.add("test2");
-        list.add("test3");
-        Header header = Header.newInstance();
-        header.addAll(list);
+    @Test
+    void testAddAllForListWithWrongLength() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            List<String> list = new ArrayList<>(3);
+            list.add("test1");
+            list.add("test2");
+            list.add("test3");
+            Header header = Header.newInstance();
+            header.addAll(list);
+        });
     }
     
     @Test
-    public void testAddOriginalResponseHeader() {
+    void testAddOriginalResponseHeader() {
         List<String> list = new ArrayList<>(4);
         list.add("test1");
         list.add("test2");
@@ -109,7 +112,7 @@ public class HeaderTest {
     }
     
     @Test
-    public void testGetCharset() {
+    void testGetCharset() {
         Header header = Header.newInstance();
         assertEquals("UTF-8", header.getCharset());
         header.addParam(HttpHeaderConsts.ACCEPT_CHARSET, null);
@@ -124,7 +127,7 @@ public class HeaderTest {
     }
     
     @Test
-    public void testClear() {
+    void testClear() {
         Header header = Header.newInstance();
         header.addOriginalResponseHeader("test", Collections.singletonList("test"));
         assertEquals(3, header.getHeader().size());

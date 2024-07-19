@@ -26,12 +26,12 @@ import com.alibaba.nacos.naming.core.v2.metadata.ClusterMetadata;
 import com.alibaba.nacos.naming.core.v2.metadata.NamingMetadataManager;
 import com.alibaba.nacos.naming.core.v2.metadata.ServiceMetadata;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -43,8 +43,8 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ServerListControllerTest {
+@ExtendWith(MockitoExtension.class)
+class ServerListControllerTest {
     
     @Mock
     private NamingMetadataManager metadataManager;
@@ -55,23 +55,23 @@ public class ServerListControllerTest {
     private Service service;
     
     private MockMvc mockMvc;
-    
-    @Before
-    public void before() {
+
+    @BeforeEach
+    void before() {
         this.mockMvc = MockMvcBuilders.standaloneSetup(
                 new ServerListController(new AddressServerGeneratorManager(), metadataManager, serviceStorage)).build();
         service = Service
                 .newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "nacos.as.default", false);
         ServiceManager.getInstance().getSingleton(service);
     }
-    
-    @After
-    public void tearDown() {
+
+    @AfterEach
+    void tearDown() {
         ServiceManager.getInstance().removeSingleton(service);
     }
-    
+
     @Test
-    public void testGetCluster() throws Exception {
+    void testGetCluster() throws Exception {
         
         final Service service = Service
                 .newService(Constants.DEFAULT_NAMESPACE_ID, Constants.DEFAULT_GROUP, "nacos.as.default", false);
@@ -86,16 +86,16 @@ public class ServerListControllerTest {
         when(serviceStorage.getData(service)).thenReturn(serviceInfo);
         mockMvc.perform(get("/nacos/serverList")).andExpect(status().isOk());
     }
-    
+
     @Test
-    public void testGetClusterCannotFindService() throws Exception {
+    void testGetClusterCannotFindService() throws Exception {
         tearDown();
         mockMvc.perform(get("/default/serverList")).andExpect(status().isNotFound());
         
     }
-    
+
     @Test
-    public void testGetClusterCannotFindCluster() throws Exception {
+    void testGetClusterCannotFindCluster() throws Exception {
         mockMvc.perform(get("/nacos/serverList")).andExpect(status().isNotFound());
         
     }

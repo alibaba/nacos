@@ -22,16 +22,15 @@ import com.alibaba.nacos.config.server.model.GroupkeyListenserStatus;
 import com.alibaba.nacos.config.server.model.SampleResult;
 import com.alibaba.nacos.config.server.service.ConfigSubService;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.web.MockServletContext;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -40,16 +39,16 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import javax.servlet.ServletContext;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
+@ExtendWith(SpringExtension.class)
 @ContextConfiguration(classes = MockServletContext.class)
 @WebAppConfiguration
-public class ListenerControllerTest {
+class ListenerControllerTest {
     
     @InjectMocks
     ListenerController listenerController;
@@ -62,8 +61,8 @@ public class ListenerControllerTest {
     @Mock
     private ConfigSubService configSubService;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         EnvUtil.setEnvironment(new StandardEnvironment());
         when(servletContext.getContextPath()).thenReturn("/nacos");
         ReflectionTestUtils.setField(listenerController, "configSubService", configSubService);
@@ -71,7 +70,7 @@ public class ListenerControllerTest {
     }
     
     @Test
-    public void testGetAllSubClientConfigByIp() throws Exception {
+    void testGetAllSubClientConfigByIp() throws Exception {
         
         SampleResult sampleResult = new SampleResult();
         Map<String, String> map = new HashMap<>();
@@ -79,15 +78,14 @@ public class ListenerControllerTest {
         sampleResult.setLisentersGroupkeyStatus(map);
         when(configSubService.getCollectSampleResultByIp("localhost", 1)).thenReturn(sampleResult);
         
-        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_PATH)
-                .param("ip", "localhost").param("all", "true")
-                .param("tenant", "test").param("sampleTime", "1");
+        MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(Constants.LISTENER_CONTROLLER_PATH).param("ip", "localhost")
+                .param("all", "true").param("tenant", "test").param("sampleTime", "1");
         
         String actualValue = mockmvc.perform(builder).andReturn().getResponse().getContentAsString();
         GroupkeyListenserStatus groupkeyListenserStatus = JacksonUtils.toObj(actualValue, GroupkeyListenserStatus.class);
         Map<String, String> resultMap = groupkeyListenserStatus.getLisentersGroupkeyStatus();
         
-        Assert.assertEquals(map.get("test"), resultMap.get("test"));
+        assertEquals(map.get("test"), resultMap.get("test"));
         
     }
     

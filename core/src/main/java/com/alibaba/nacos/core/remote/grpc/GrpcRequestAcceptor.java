@@ -27,7 +27,12 @@ import com.alibaba.nacos.api.remote.response.ErrorResponse;
 import com.alibaba.nacos.api.remote.response.Response;
 import com.alibaba.nacos.api.remote.response.ResponseCode;
 import com.alibaba.nacos.api.remote.response.ServerCheckResponse;
+import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.remote.client.grpc.GrpcUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.core.context.RequestContext;
+import com.alibaba.nacos.core.context.RequestContextHolder;
+import com.alibaba.nacos.core.context.addition.BasicContext;
 import com.alibaba.nacos.core.monitor.MetricsMonitor;
 import com.alibaba.nacos.core.remote.Connection;
 import com.alibaba.nacos.core.remote.ConnectionManager;
@@ -186,6 +191,7 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             requestMeta.setLabels(connection.getMetaInfo().getLabels());
             requestMeta.setAbilityTable(connection.getAbilityTable());
             connectionManager.refreshActiveTime(requestMeta.getConnectionId());
+            prepareRequestContext(request, requestMeta, connection);
             Response response = requestHandler.handleRequest(request, requestMeta);
             Payload payloadResponse = GrpcUtils.convert(response);
             traceIfNecessary(payloadResponse, false);
@@ -212,8 +218,26 @@ public class GrpcRequestAcceptor extends RequestGrpc.RequestImplBase {
             responseObserver.onCompleted();
             MetricsMonitor.recordGrpcRequestEvent(type, false,
                     ResponseCode.FAIL.getCode(), e.getClass().getSimpleName(), request.getModule(), System.nanoTime() - startTime);
+        } finally {
+            RequestContextHolder.removeContext();
         }
         
+    }
+    
+    private void prepareRequestContext(Request request, RequestMeta requestMeta, Connection connection) {
+        RequestContext requestContext = RequestContextHolder.getContext();
+        requestContext.setRequestId(request.getRequestId());
+        requestContext.getBasicContext().setUserAgent(requestMeta.getClientVersion());
+        requestContext.getBasicContext().setRequestProtocol(BasicContext.GRPC_PROTOCOL);
+        requestContext.getBasicContext().setRequestTarget(request.getClass().getSimpleName());
+        String app = connection.getMetaInfo().getAppName();
+        if (StringUtils.isBlank(app)) {
+            app = request.getHeader(HttpHeaderConsts.APP_FILED, "unknown");
+        }
+        requestContext.getBasicContext().setApp(app);
+        requestContext.getBasicContext().getAddressContext().setRemoteIp(connection.getMetaInfo().getRemoteIp());
+        requestContext.getBasicContext().getAddressContext().setRemotePort(connection.getMetaInfo().getRemotePort());
+        requestContext.getBasicContext().getAddressContext().setSourceIp(connection.getMetaInfo().getClientIp());
     }
     
 }

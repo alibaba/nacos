@@ -17,16 +17,17 @@
 package com.alibaba.nacos.client.config.listener.impl;
 
 import com.alibaba.nacos.api.config.ConfigChangeEvent;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
 
-public class AbstractConfigChangeListenerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class AbstractConfigChangeListenerTest {
     
     @Test
-    public void receiveConfigInfo() {
+    void receiveConfigInfo() {
         final Deque<String> data = new ArrayDeque<String>();
         AbstractConfigChangeListener a = new AbstractConfigChangeListener() {
             @Override
@@ -41,6 +42,6 @@ public class AbstractConfigChangeListenerTest {
         };
         a.receiveConfigInfo("foo");
         final String actual = data.poll();
-        Assert.assertEquals("foo", actual);
+        assertEquals("foo", actual);
     }
 }

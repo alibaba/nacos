@@ -20,21 +20,21 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.notify.listener.SmartSubscriber;
 import com.alibaba.nacos.common.notify.listener.Subscriber;
 import com.alibaba.nacos.common.utils.ThreadUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NamingEventPublisherTest {
+@ExtendWith(MockitoExtension.class)
+class NamingEventPublisherTest {
     
     @Mock
     private Subscriber subscriber;
@@ -44,19 +44,19 @@ public class NamingEventPublisherTest {
     
     private NamingEventPublisher namingEventPublisher;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         namingEventPublisher = new NamingEventPublisher();
         namingEventPublisher.init(TestEvent.class, Byte.SIZE);
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         namingEventPublisher.shutdown();
     }
     
     @Test
-    public void testAddSubscriber() {
+    void testAddSubscriber() {
         namingEventPublisher.addSubscriber(subscriber, TestEvent.TestEvent1.class);
         namingEventPublisher.addSubscriber(smartSubscriber, TestEvent.TestEvent2.class);
         TestEvent.TestEvent1 testEvent1 = new TestEvent.TestEvent1();
@@ -69,7 +69,7 @@ public class NamingEventPublisherTest {
     }
     
     @Test
-    public void testRemoveSubscriber() {
+    void testRemoveSubscriber() {
         namingEventPublisher.addSubscriber(subscriber, TestEvent.TestEvent1.class);
         namingEventPublisher.addSubscriber(smartSubscriber, TestEvent.TestEvent1.class);
         TestEvent.TestEvent1 testEvent1 = new TestEvent.TestEvent1();
@@ -86,7 +86,7 @@ public class NamingEventPublisherTest {
     }
     
     @Test
-    public void testPublishOverFlow() {
+    void testPublishOverFlow() {
         TestEvent testEvent = new TestEvent();
         for (int i = 0; i < Byte.SIZE; i++) {
             namingEventPublisher.publish(testEvent);
@@ -97,7 +97,7 @@ public class NamingEventPublisherTest {
     }
     
     @Test
-    public void getStatus() throws NacosException {
+    void getStatus() throws NacosException {
         namingEventPublisher.publish(new TestEvent());
         namingEventPublisher.publish(new TestEvent.TestEvent1());
         namingEventPublisher.publish(new TestEvent.TestEvent2());

@@ -20,35 +20,35 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ServerAbilitiesTest {
+class ServerAbilitiesTest {
     
     private static ObjectMapper mapper;
     
     private ServerAbilities serverAbilities;
     
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
+    @BeforeAll
+    static void setUpBeforeClass() throws Exception {
         mapper = new ObjectMapper();
         mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         serverAbilities = new ServerAbilities();
     }
     
     @Test
-    public void testSerialize() throws JsonProcessingException {
+    void testSerialize() throws JsonProcessingException {
         serverAbilities = new ServerAbilities();
         String json = mapper.writeValueAsString(serverAbilities);
         assertTrue(json.contains("\"remoteAbility\":{"));
@@ -57,7 +57,7 @@ public class ServerAbilitiesTest {
     }
     
     @Test
-    public void testDeserialize() throws JsonProcessingException {
+    void testDeserialize() throws JsonProcessingException {
         String json = "{\"remoteAbility\":{\"supportRemoteConnection\":false},"
                 + "\"configAbility\":{\"supportRemoteMetrics\":false},\"namingAbility\":{\"supportDeltaPush\":false,"
                 + "\"supportRemoteMetric\":false}}";
@@ -68,10 +68,10 @@ public class ServerAbilitiesTest {
     }
     
     @Test
-    public void testEqualsAndHashCode() {
+    void testEqualsAndHashCode() {
         assertEquals(serverAbilities, serverAbilities);
         assertEquals(serverAbilities.hashCode(), serverAbilities.hashCode());
-        assertNotEquals(serverAbilities, null);
+        assertNotEquals(null, serverAbilities);
         assertNotEquals(serverAbilities, new ClientAbilities());
         ServerAbilities test = new ServerAbilities();
         assertEquals(serverAbilities, test);

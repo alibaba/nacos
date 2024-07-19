@@ -18,18 +18,18 @@ package com.alibaba.nacos.persistence.configuration.condition;
 
 import com.alibaba.nacos.persistence.configuration.DatasourceConfiguration;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 
-public class ConditionDistributedEmbedStorageTest {
-    
-    private ConditionDistributedEmbedStorage conditionDistributedEmbedStorage;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class ConditionDistributedEmbedStorageTest {
     
     @Mock
     ConditionContext context;
@@ -37,35 +37,36 @@ public class ConditionDistributedEmbedStorageTest {
     @Mock
     AnnotatedTypeMetadata metadata;
     
-    @Before
-    public void init() {
+    private ConditionDistributedEmbedStorage conditionDistributedEmbedStorage;
+    
+    @BeforeEach
+    void init() {
         conditionDistributedEmbedStorage = new ConditionDistributedEmbedStorage();
         
     }
     
     @Test
-    public void testMatches() {
-        MockedStatic<DatasourceConfiguration> propertyUtilMockedStatic = Mockito
-                .mockStatic(DatasourceConfiguration.class);
+    void testMatches() {
+        MockedStatic<DatasourceConfiguration> propertyUtilMockedStatic = Mockito.mockStatic(DatasourceConfiguration.class);
         MockedStatic<EnvUtil> envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         
         propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
-        Assert.assertFalse(conditionDistributedEmbedStorage.matches(context, metadata));
+        assertFalse(conditionDistributedEmbedStorage.matches(context, metadata));
         
         Mockito.when(DatasourceConfiguration.isEmbeddedStorage()).thenReturn(true);
         Mockito.when(EnvUtil.getStandaloneMode()).thenReturn(false);
         propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(true);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(false);
-        Assert.assertTrue(conditionDistributedEmbedStorage.matches(context, metadata));
+        assertTrue(conditionDistributedEmbedStorage.matches(context, metadata));
         
         propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(false);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(true);
-        Assert.assertFalse(conditionDistributedEmbedStorage.matches(context, metadata));
+        assertFalse(conditionDistributedEmbedStorage.matches(context, metadata));
         
         propertyUtilMockedStatic.when(DatasourceConfiguration::isEmbeddedStorage).thenReturn(false);
         envUtilMockedStatic.when(EnvUtil::getStandaloneMode).thenReturn(false);
-        Assert.assertFalse(conditionDistributedEmbedStorage.matches(context, metadata));
+        assertFalse(conditionDistributedEmbedStorage.matches(context, metadata));
         
         propertyUtilMockedStatic.close();
         envUtilMockedStatic.close();

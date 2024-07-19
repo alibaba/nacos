@@ -18,16 +18,16 @@ package com.alibaba.nacos.api.config.remote.request;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConfigQueryRequestTest extends BasedConfigRequestTest {
+class ConfigQueryRequestTest extends BasedConfigRequestTest {
     
     ConfigQueryRequest configQueryRequest;
     
@@ -35,8 +35,8 @@ public class ConfigQueryRequestTest extends BasedConfigRequestTest {
     
     String requestId;
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         headers.put(Constants.Config.NOTIFY_HEADER, Boolean.TRUE.toString());
         configQueryRequest = ConfigQueryRequest.build(DATA_ID, GROUP, TENANT);
         configQueryRequest.putAllHeader(headers);
@@ -45,7 +45,7 @@ public class ConfigQueryRequestTest extends BasedConfigRequestTest {
     }
     
     @Test
-    public void testIsNotify() {
+    void testIsNotify() {
         assertTrue(configQueryRequest.isNotify());
     }
     
@@ -67,10 +67,10 @@ public class ConfigQueryRequestTest extends BasedConfigRequestTest {
         String json = "{\"headers\":{\"notify\":\"true\"},\"dataId\":\"test_data\",\"group\":\"group\","
                 + "\"tenant\":\"test_tenant\",\"notify\":true,\"module\":\"config\",\"tag\":\"tag\"}";
         ConfigQueryRequest actual = mapper.readValue(json, ConfigQueryRequest.class);
-        assertEquals(actual.getDataId(), DATA_ID);
-        assertEquals(actual.getGroup(), GROUP);
-        assertEquals(actual.getTenant(), TENANT);
-        assertEquals(actual.getTag(), TAG);
-        assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
+        assertEquals(DATA_ID, actual.getDataId());
+        assertEquals(GROUP, actual.getGroup());
+        assertEquals(TENANT, actual.getTenant());
+        assertEquals(TAG, actual.getTag());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
     }
 }

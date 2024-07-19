@@ -16,8 +16,10 @@
 
 package com.alibaba.nacos.core.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * {@link StringPool} unit tests.
@@ -25,21 +27,21 @@ import org.junit.Test;
  * @author chenglu
  * @date 2021-06-10 13:52
  */
-public class StringPoolTest {
+class StringPoolTest {
     
     @Test
-    public void testStringPool() {
+    void testStringPool() {
         String val1 = StringPool.get("test");
-        Assert.assertEquals("test", val1);
+        assertEquals("test", val1);
         
         String val2 = StringPool.get(null);
-        Assert.assertEquals(null, val2);
+        assertNull(val2);
         
         long size1 = StringPool.size();
-        Assert.assertEquals(1, size1);
+        assertEquals(1, size1);
         
         StringPool.remove("test");
         long size2 = StringPool.size();
-        Assert.assertEquals(0, size2);
+        assertEquals(0, size2);
     }
 }

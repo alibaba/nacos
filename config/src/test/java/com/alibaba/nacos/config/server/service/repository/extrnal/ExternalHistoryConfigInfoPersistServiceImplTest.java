@@ -18,47 +18,52 @@ package com.alibaba.nacos.config.server.service.repository.extrnal;
 
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
+import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.service.sql.ExternalStorageUtils;
 import com.alibaba.nacos.config.server.utils.TestCaseUtils;
 import com.alibaba.nacos.persistence.datasource.DataSourceService;
 import com.alibaba.nacos.persistence.datasource.DynamicDataSource;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.CannotGetJdbcConnectionException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.math.BigInteger;
 import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_DETAIL_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.HISTORY_LIST_ROW_MAPPER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class ExternalHistoryConfigInfoPersistServiceImplTest {
+@ExtendWith(SpringExtension.class)
+class ExternalHistoryConfigInfoPersistServiceImplTest {
+    
+    MockedStatic<EnvUtil> envUtilMockedStatic;
+    
+    MockedStatic<ExternalStorageUtils> externalStorageUtilsMockedStatic;
+    
+    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
+    
+    @Mock
+    DynamicDataSource dynamicDataSource;
     
     private ExternalHistoryConfigInfoPersistServiceImpl externalHistoryConfigInfoPersistService;
     
@@ -70,17 +75,8 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
     
     private TransactionTemplate transactionTemplate = TestCaseUtils.createMockTransactionTemplate();
     
-    MockedStatic<EnvUtil> envUtilMockedStatic;
-    
-    MockedStatic<ExternalStorageUtils> externalStorageUtilsMockedStatic;
-    
-    MockedStatic<DynamicDataSource> dynamicDataSourceMockedStatic;
-    
-    @Mock
-    DynamicDataSource dynamicDataSource;
-    
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         externalStorageUtilsMockedStatic = Mockito.mockStatic(ExternalStorageUtils.class);
@@ -89,20 +85,19 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
         when(dataSourceService.getTransactionTemplate()).thenReturn(transactionTemplate);
         when(dataSourceService.getJdbcTemplate()).thenReturn(jdbcTemplate);
         when(dataSourceService.getDataSourceType()).thenReturn("mysql");
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
-                .thenReturn(false);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false))).thenReturn(false);
         externalHistoryConfigInfoPersistService = new ExternalHistoryConfigInfoPersistServiceImpl();
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         externalStorageUtilsMockedStatic.close();
     }
     
     @Test
-    public void testInsertConfigHistoryAtomic() {
+    void testInsertConfigHistoryAtomic() {
         String dataId = "dateId243";
         String group = "group243";
         String tenant = "tenant243";
@@ -116,29 +111,24 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setEncryptedDataKey("key23456");
         //expect insert success,verify insert invoked
-        externalHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp,
-                ops);
+        externalHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp, ops);
         Mockito.verify(jdbcTemplate, times(1))
-                .update(anyString(), eq(id), eq(dataId), eq(group), eq(tenant), eq(appName), eq(content),
-                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(timestamp), eq(ops),
-                        eq(configInfo.getEncryptedDataKey()));
+                .update(anyString(), eq(id), eq(dataId), eq(group), eq(tenant), eq(appName), eq(content), eq(configInfo.getMd5()),
+                        eq(srcIp), eq(srcUser), eq(timestamp), eq(ops), eq(configInfo.getEncryptedDataKey()));
         
-        Mockito.when(
-                        jdbcTemplate.update(anyString(), eq(id), eq(dataId), eq(group), eq(tenant), eq(appName), eq(content),
-                                eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(timestamp), eq(ops),
-                                eq(configInfo.getEncryptedDataKey())))
+        Mockito.when(jdbcTemplate.update(anyString(), eq(id), eq(dataId), eq(group), eq(tenant), eq(appName), eq(content),
+                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(timestamp), eq(ops), eq(configInfo.getEncryptedDataKey())))
                 .thenThrow(new CannotGetJdbcConnectionException("mock ex..."));
         try {
-            externalHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp,
-                    ops);
-            Assert.assertTrue(false);
+            externalHistoryConfigInfoPersistService.insertConfigHistoryAtomic(id, configInfo, srcIp, srcUser, timestamp, ops);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertEquals("mock ex...", e.getMessage());
+            assertEquals("mock ex...", e.getMessage());
         }
     }
     
     @Test
-    public void testRemoveConfigHistory() {
+    void testRemoveConfigHistory() {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         int pageSize = 1233;
         externalHistoryConfigInfoPersistService.removeConfigHistory(timestamp, pageSize);
@@ -147,98 +137,93 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
     }
     
     @Test
-    public void testFindDeletedConfig() {
+    void testFindDeletedConfig() {
         
         //mock query list return
-        Map<String, Object> mockObj1 = new HashMap<>();
-        mockObj1.put("nid", new BigInteger("1234"));
-        mockObj1.put("data_id", "data_id1");
-        mockObj1.put("group_id", "group_id1");
-        mockObj1.put("tenant_id", "tenant_id1");
-        LocalDateTime now = LocalDateTime.of(LocalDate.now(), LocalTime.now());
-        mockObj1.put("gmt_modified", now);
-        List<Map<String, Object>> list = new ArrayList<>();
+        ConfigInfoStateWrapper mockObj1 = new ConfigInfoStateWrapper();
+        mockObj1.setDataId("data_id1");
+        mockObj1.setGroup("group_id1");
+        mockObj1.setTenant("tenant_id1");
+        mockObj1.setMd5("md51");
+        mockObj1.setLastModified(System.currentTimeMillis());
+        
+        List<ConfigInfoStateWrapper> list = new ArrayList<>();
         list.add(mockObj1);
-        Map<String, Object> mockObj2 = new HashMap<>();
-        mockObj2.put("nid", new BigInteger("12345"));
-        mockObj2.put("data_id", "data_id2");
-        mockObj2.put("group_id", "group_id2");
-        mockObj2.put("tenant_id", "tenant_id2");
-        LocalDateTime now2 = LocalDateTime.of(LocalDate.now(), LocalTime.now());
-        mockObj2.put("gmt_modified", now2);
+        ConfigInfoStateWrapper mockObj2 = new ConfigInfoStateWrapper();
+        mockObj2.setDataId("data_id2");
+        mockObj2.setGroup("group_id2");
+        mockObj2.setTenant("tenant_id2");
+        mockObj2.setMd5("md52");
         list.add(mockObj2);
         int pageSize = 1233;
         long startId = 23456;
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-        Mockito.when(jdbcTemplate.queryForList(anyString(), eq(timestamp), eq(startId), eq(pageSize))).thenReturn(list);
+        Mockito.when(
+                        jdbcTemplate.query(anyString(), eq(new Object[] {timestamp, startId, pageSize}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+                .thenReturn(list);
         //execute
-        List<ConfigInfoWrapper> deletedConfig = externalHistoryConfigInfoPersistService.findDeletedConfig(timestamp,
-                startId, pageSize);
+        List<ConfigInfoStateWrapper> deletedConfig = externalHistoryConfigInfoPersistService.findDeletedConfig(timestamp, startId,
+                pageSize);
         //expect verify
-        Assert.assertEquals("data_id1", deletedConfig.get(0).getDataId());
-        Assert.assertEquals("group_id1", deletedConfig.get(0).getGroup());
-        Assert.assertEquals("tenant_id1", deletedConfig.get(0).getTenant());
-        Assert.assertEquals(now.toInstant(ZoneOffset.ofHours(8)).toEpochMilli(),
-                deletedConfig.get(0).getLastModified());
-        Assert.assertEquals("data_id2", deletedConfig.get(1).getDataId());
-        Assert.assertEquals("group_id2", deletedConfig.get(1).getGroup());
-        Assert.assertEquals("tenant_id2", deletedConfig.get(1).getTenant());
-        Assert.assertEquals(now2.toInstant(ZoneOffset.ofHours(8)).toEpochMilli(),
-                deletedConfig.get(1).getLastModified());
+        assertEquals("data_id1", deletedConfig.get(0).getDataId());
+        assertEquals("group_id1", deletedConfig.get(0).getGroup());
+        assertEquals("tenant_id1", deletedConfig.get(0).getTenant());
+        assertEquals(mockObj1.getLastModified(), deletedConfig.get(0).getLastModified());
+        assertEquals("data_id2", deletedConfig.get(1).getDataId());
+        assertEquals("group_id2", deletedConfig.get(1).getGroup());
+        assertEquals("tenant_id2", deletedConfig.get(1).getTenant());
+        assertEquals(mockObj2.getLastModified(), deletedConfig.get(1).getLastModified());
         
         //mock exception
-        Mockito.when(jdbcTemplate.queryForList(anyString(), eq(timestamp), eq(startId), eq(pageSize)))
+        Mockito.when(
+                        jdbcTemplate.query(anyString(), eq(new Object[] {timestamp, startId, pageSize}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
                 .thenThrow(new CannotGetJdbcConnectionException("conn error"));
         
         try {
             externalHistoryConfigInfoPersistService.findDeletedConfig(timestamp, startId, pageSize);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertEquals("conn error", e.getMessage());
+            assertEquals("conn error", e.getMessage());
         }
         
     }
     
     @Test
-    public void testFindConfigHistory() {
+    void testFindConfigHistory() {
         String dataId = "dataId34567";
         String group = "group34567";
         String tenant = "tenant34567";
         
         //mock count
-        Mockito.when(
-                        jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))
-                .thenReturn(300);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class))).thenReturn(300);
         //mock list
         List<ConfigHistoryInfo> mockList = new ArrayList<>();
         mockList.add(createMockConfigHistoryInfo(0));
         mockList.add(createMockConfigHistoryInfo(1));
         mockList.add(createMockConfigHistoryInfo(2));
-        Mockito.when(
-                        jdbcTemplate.query(anyString(), eq(new Object[] {dataId, group, tenant}), eq(HISTORY_LIST_ROW_MAPPER)))
+        Mockito.when(jdbcTemplate.query(anyString(), eq(new Object[] {dataId, group, tenant}), eq(HISTORY_LIST_ROW_MAPPER)))
                 .thenReturn(mockList);
         int pageSize = 100;
         int pageNo = 2;
         //execute & verify
-        Page<ConfigHistoryInfo> historyReturn = externalHistoryConfigInfoPersistService.findConfigHistory(dataId, group,
-                tenant, pageNo, pageSize);
-        Assert.assertEquals(mockList, historyReturn.getPageItems());
-        Assert.assertEquals(300, historyReturn.getTotalCount());
+        Page<ConfigHistoryInfo> historyReturn = externalHistoryConfigInfoPersistService.findConfigHistory(dataId, group, tenant, pageNo,
+                pageSize);
+        assertEquals(mockList, historyReturn.getPageItems());
+        assertEquals(300, historyReturn.getTotalCount());
         
         //mock exception
-        Mockito.when(
-                        jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {dataId, group, tenant}), eq(Integer.class)))
                 .thenThrow(new CannotGetJdbcConnectionException("conn error111"));
         try {
             externalHistoryConfigInfoPersistService.findConfigHistory(dataId, group, tenant, pageNo, pageSize);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertEquals("conn error111", e.getMessage());
+            assertEquals("conn error111", e.getMessage());
         }
     }
     
     @Test
-    public void testDetailConfigHistory() {
+    void testDetailConfigHistory() {
         long nid = 256789;
         
         //mock query
@@ -247,27 +232,27 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
                 .thenReturn(mockConfigHistoryInfo);
         //execute & verify
         ConfigHistoryInfo historyReturn = externalHistoryConfigInfoPersistService.detailConfigHistory(nid);
-        Assert.assertEquals(mockConfigHistoryInfo, historyReturn);
+        assertEquals(mockConfigHistoryInfo, historyReturn);
         
         //mock exception EmptyResultDataAccessException
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {nid}), eq(HISTORY_DETAIL_ROW_MAPPER)))
                 .thenThrow(new EmptyResultDataAccessException(1));
         ConfigHistoryInfo historyReturnNull = externalHistoryConfigInfoPersistService.detailConfigHistory(nid);
-        Assert.assertNull(historyReturnNull);
+        assertNull(historyReturnNull);
         
         //mock exception CannotGetJdbcConnectionException
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {nid}), eq(HISTORY_DETAIL_ROW_MAPPER)))
                 .thenThrow(new CannotGetJdbcConnectionException("conn error111"));
         try {
             externalHistoryConfigInfoPersistService.detailConfigHistory(nid);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertEquals("conn error111", e.getMessage());
+            assertEquals("conn error111", e.getMessage());
         }
     }
     
     @Test
-    public void testDetailPreviousConfigHistory() {
+    void testDetailPreviousConfigHistory() {
         long nid = 256789;
         //mock query
         ConfigHistoryInfo mockConfigHistoryInfo = createMockConfigHistoryInfo(0);
@@ -275,45 +260,43 @@ public class ExternalHistoryConfigInfoPersistServiceImplTest {
                 .thenReturn(mockConfigHistoryInfo);
         //execute & verify
         ConfigHistoryInfo historyReturn = externalHistoryConfigInfoPersistService.detailPreviousConfigHistory(nid);
-        Assert.assertEquals(mockConfigHistoryInfo, historyReturn);
+        assertEquals(mockConfigHistoryInfo, historyReturn);
         
         //mock exception EmptyResultDataAccessException
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {nid}), eq(HISTORY_DETAIL_ROW_MAPPER)))
                 .thenThrow(new EmptyResultDataAccessException(1));
         ConfigHistoryInfo historyReturnNull = externalHistoryConfigInfoPersistService.detailPreviousConfigHistory(nid);
-        Assert.assertNull(historyReturnNull);
+        assertNull(historyReturnNull);
         
         //mock exception CannotGetJdbcConnectionException
         Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {nid}), eq(HISTORY_DETAIL_ROW_MAPPER)))
                 .thenThrow(new CannotGetJdbcConnectionException("conn error111"));
         try {
             externalHistoryConfigInfoPersistService.detailPreviousConfigHistory(nid);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertEquals("conn error111", e.getMessage());
+            assertEquals("conn error111", e.getMessage());
         }
     }
     
     @Test
-    public void testFindConfigHistoryCountByTime() {
+    void testFindConfigHistoryCountByTime() {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         
         //mock count
-        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {timestamp}), eq(Integer.class)))
-                .thenReturn(308);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {timestamp}), eq(Integer.class))).thenReturn(308);
         //execute & verify
         int count = externalHistoryConfigInfoPersistService.findConfigHistoryCountByTime(timestamp);
-        Assert.assertEquals(308, count);
+        assertEquals(308, count);
         
         //mock count is null
-        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {timestamp}), eq(Integer.class)))
-                .thenReturn(null);
+        Mockito.when(jdbcTemplate.queryForObject(anyString(), eq(new Object[] {timestamp}), eq(Integer.class))).thenReturn(null);
         //execute & verify
         try {
             externalHistoryConfigInfoPersistService.findConfigHistoryCountByTime(timestamp);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Exception e) {
-            Assert.assertEquals("findConfigHistoryCountByTime error", e.getMessage());
+            assertEquals("findConfigHistoryCountByTime error", e.getMessage());
         }
     }
     

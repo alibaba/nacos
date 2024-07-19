@@ -18,20 +18,20 @@ package com.alibaba.nacos.api.config.remote.request;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConfigChangeNotifyRequestTest extends BasedConfigRequestTest {
+class ConfigChangeNotifyRequestTest extends BasedConfigRequestTest {
     
     ConfigChangeNotifyRequest configChangeNotifyRequest;
     
     String requestId;
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         configChangeNotifyRequest = ConfigChangeNotifyRequest.build(DATA_ID, GROUP, TENANT);
         configChangeNotifyRequest.putAllHeader(HEADERS);
         requestId = injectRequestUuId(configChangeNotifyRequest);
@@ -54,10 +54,10 @@ public class ConfigChangeNotifyRequestTest extends BasedConfigRequestTest {
         String json = "{\"headers\":{\"header1\":\"test_header1\"},\"dataId\":\"test_data\",\"group\":"
                 + "\"group\",\"tenant\":\"test_tenant\",\"module\":\"config\"}";
         ConfigChangeNotifyRequest actual = mapper.readValue(json, ConfigChangeNotifyRequest.class);
-        assertEquals(actual.getDataId(), DATA_ID);
-        assertEquals(actual.getGroup(), GROUP);
-        assertEquals(actual.getTenant(), TENANT);
-        assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
-        assertEquals(actual.getHeader(HEADER_KEY), HEADER_VALUE);
+        assertEquals(DATA_ID, actual.getDataId());
+        assertEquals(GROUP, actual.getGroup());
+        assertEquals(TENANT, actual.getTenant());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
+        assertEquals(HEADER_VALUE, actual.getHeader(HEADER_KEY));
     }
 }

@@ -16,36 +16,38 @@
 
 package com.alibaba.nacos.plugin.auth.impl.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * PasswordEncoderUtil test.
+ *
  * @ClassName: PasswordEncoderUtilTest
  * @Author: ChenHao26
  * @Date: 2022/8/17 01:25
  */
-public class PasswordEncoderUtilTest {
+class PasswordEncoderUtilTest {
     
     /**
      * encode test.
      */
     @Test
-    public void encode() {
+    void encode() {
         String str = PasswordEncoderUtil.encode("nacos");
         String str2 = PasswordEncoderUtil.encode("nacos");
-        Assert.assertNotEquals(str2, str);
+        assertNotEquals(str2, str);
     }
     
     @Test
-    public void matches() {
-        Boolean result1 = PasswordEncoderUtil.matches("nacos",
-                "$2a$10$MK2dspqy7MKcCU63x8PoI.vTGXYxhzTmjWGJ21T.WX8thVsw0K2mO");
-        Assert.assertTrue(result1);
-        Boolean result2 = PasswordEncoderUtil.matches("nacos",
-                "$2a$10$MK2dspqy7MKcCU63x8PoI.vTGXcxhzTmjWGJ21T.WX8thVsw0K2mO");
-        Assert.assertFalse(result2);
+    void matches() {
+        Boolean result1 = PasswordEncoderUtil.matches("nacos", "$2a$10$MK2dspqy7MKcCU63x8PoI.vTGXYxhzTmjWGJ21T.WX8thVsw0K2mO");
+        assertTrue(result1);
+        Boolean result2 = PasswordEncoderUtil.matches("nacos", "$2a$10$MK2dspqy7MKcCU63x8PoI.vTGXcxhzTmjWGJ21T.WX8thVsw0K2mO");
+        assertFalse(result2);
         Boolean matches = PasswordEncoderUtil.matches("nacos", PasswordEncoderUtil.encode("nacos"));
-        Assert.assertTrue(matches);
+        assertTrue(matches);
     }
 }

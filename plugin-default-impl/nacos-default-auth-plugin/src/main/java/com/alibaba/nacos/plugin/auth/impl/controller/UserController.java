@@ -22,6 +22,7 @@ import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
 import com.alibaba.nacos.common.model.RestResultUtils;
 import com.alibaba.nacos.common.utils.JacksonUtils;
+import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.constant.ActionTypes;
@@ -36,6 +37,7 @@ import com.alibaba.nacos.plugin.auth.impl.token.TokenManagerDelegate;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUser;
 import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.plugin.auth.impl.utils.PasswordEncoderUtil;
+import com.alibaba.nacos.plugin.auth.impl.utils.PasswordGeneratorUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -110,6 +112,31 @@ public class UserController {
     }
     
     /**
+     * Create a admin user only not exist admin user can use.
+     */
+    @PostMapping("/admin")
+    public Object createAdminUser(@RequestParam(required = false) String password) {
+        if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            if (iAuthenticationManager.hasGlobalAdminRole()) {
+                return RestResultUtils.failed(HttpStatus.CONFLICT.value(), "have admin user cannot use it");
+            }
+            if (StringUtils.isBlank(password)) {
+                password = PasswordGeneratorUtil.generateRandomPassword();
+            }
+            
+            String username = AuthConstants.DEFAULT_USER;
+            userDetailsService.createUser(username, PasswordEncoderUtil.encode(password));
+            roleService.addAdminRole(username);
+            ObjectNode result = JacksonUtils.createEmptyJsonNode();
+            result.put(AuthConstants.PARAM_USERNAME, username);
+            result.put(AuthConstants.PARAM_PASSWORD, password);
+            return result;
+        } else {
+            return RestResultUtils.failed(HttpStatus.NOT_IMPLEMENTED.value(), "not support");
+        }
+    }
+    
+    /**
      * Delete an existed user.
      *
      * @param username username of user
@@ -122,7 +149,7 @@ public class UserController {
         List<RoleInfo> roleInfoList = roleService.getRoles(username);
         if (roleInfoList != null) {
             for (RoleInfo roleInfo : roleInfoList) {
-                if (roleInfo.getRole().equals(AuthConstants.GLOBAL_ADMIN_ROLE)) {
+                if (AuthConstants.GLOBAL_ADMIN_ROLE.equals(roleInfo.getRole())) {
                     throw new IllegalArgumentException("cannot delete admin: " + username);
                 }
             }
@@ -170,7 +197,8 @@ public class UserController {
         return RestResultUtils.success("update user ok!");
     }
     
-    private boolean hasPermission(String username, HttpServletRequest request) throws HttpSessionRequiredException, AccessException {
+    private boolean hasPermission(String username, HttpServletRequest request)
+            throws HttpSessionRequiredException, AccessException {
         if (!authConfigs.isAuthEnabled()) {
             return true;
         }
@@ -232,10 +260,11 @@ public class UserController {
      */
     @PostMapping("/login")
     public Object login(@RequestParam String username, @RequestParam String password, HttpServletResponse response,
-            HttpServletRequest request) throws AccessException {
+            HttpServletRequest request) throws AccessException, IOException {
         
         if (AuthSystemTypes.NACOS.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())
                 || AuthSystemTypes.LDAP.name().equalsIgnoreCase(authConfigs.getNacosAuthSystemType())) {
+            
             NacosUser user = iAuthenticationManager.authenticate(request);
             
             response.addHeader(AuthConstants.AUTHORIZATION_HEADER, AuthConstants.TOKEN_PREFIX + user.getToken());

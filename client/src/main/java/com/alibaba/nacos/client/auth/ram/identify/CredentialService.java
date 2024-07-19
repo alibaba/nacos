@@ -59,15 +59,7 @@ public final class CredentialService implements SpasCredentialLoader {
     
     public static CredentialService getInstance(String appName) {
         String key = appName != null ? appName : IdentifyConstants.NO_APP_NAME;
-        if (INSTANCES.get(key) == null) {
-            synchronized (CredentialService.INSTANCES) {
-                if (INSTANCES.get(key) == null) {
-                    CredentialService instance = new CredentialService(appName);
-                    INSTANCES.putIfAbsent(key, instance);
-                }
-            }
-        }
-        return INSTANCES.get(key);
+        return INSTANCES.computeIfAbsent(key, k -> new CredentialService(appName));
     }
     
     public static CredentialService freeInstance() {

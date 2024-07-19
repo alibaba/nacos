@@ -16,57 +16,67 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 /**
  * type utils test.
  *
  * @author zzq
  */
-public class TypeUtilsTest {
+class TypeUtilsTest {
     
     @Test
-    public void parameterize() {
+    void parameterize() {
         ParameterizedType stringComparableType = TypeUtils.parameterize(List.class, String.class);
-        Assert.assertEquals("java.util.List<java.lang.String>", stringComparableType.toString());
-        Assert.assertEquals(List.class, stringComparableType.getRawType());
-        Assert.assertNull(stringComparableType.getOwnerType());
-        Assert.assertEquals(1, stringComparableType.getActualTypeArguments().length);
-        Assert.assertEquals(String.class, stringComparableType.getActualTypeArguments()[0]);
+        assertEquals("java.util.List<java.lang.String>", stringComparableType.toString());
+        assertEquals(List.class, stringComparableType.getRawType());
+        assertNull(stringComparableType.getOwnerType());
+        assertEquals(1, stringComparableType.getActualTypeArguments().length);
+        assertEquals(String.class, stringComparableType.getActualTypeArguments()[0]);
         
         ParameterizedType stringIntegerComparableType = TypeUtils.parameterize(Map.class, String.class, Integer.class);
-        Assert.assertEquals("java.util.Map<java.lang.String, java.lang.Integer>",
-                stringIntegerComparableType.toString());
-        Assert.assertEquals(Map.class, stringIntegerComparableType.getRawType());
-        Assert.assertNull(stringComparableType.getOwnerType());
-        Assert.assertEquals(2, stringIntegerComparableType.getActualTypeArguments().length);
-        Assert.assertEquals(String.class, stringIntegerComparableType.getActualTypeArguments()[0]);
-        Assert.assertEquals(Integer.class, stringIntegerComparableType.getActualTypeArguments()[1]);
+        assertEquals("java.util.Map<java.lang.String, java.lang.Integer>", stringIntegerComparableType.toString());
+        assertEquals(Map.class, stringIntegerComparableType.getRawType());
+        assertNull(stringComparableType.getOwnerType());
+        assertEquals(2, stringIntegerComparableType.getActualTypeArguments().length);
+        assertEquals(String.class, stringIntegerComparableType.getActualTypeArguments()[0]);
+        assertEquals(Integer.class, stringIntegerComparableType.getActualTypeArguments()[1]);
     }
     
-    @Test(expected = NullPointerException.class)
-    public void testParameterizeForNull() {
-        TypeUtils.parameterize(null, String.class);
+    @Test
+    void testParameterizeForNull() {
+        assertThrows(NullPointerException.class, () -> {
+            TypeUtils.parameterize(null, String.class);
+        });
     }
     
-    @Test(expected = NullPointerException.class)
-    public void testParameterizeForNullType() {
-        TypeUtils.parameterize(List.class, (Type[]) null);
+    @Test
+    void testParameterizeForNullType() {
+        assertThrows(NullPointerException.class, () -> {
+            TypeUtils.parameterize(List.class, (Type[]) null);
+        });
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testParameterizeForNullTypeArray() {
-        TypeUtils.parameterize(List.class, (Type) null);
+    @Test
+    void testParameterizeForNullTypeArray() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            TypeUtils.parameterize(List.class, (Type) null);
+        });
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testParameterizeForDiffLength() {
-        TypeUtils.parameterize(List.class, String.class, Integer.class);
+    @Test
+    void testParameterizeForDiffLength() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            TypeUtils.parameterize(List.class, String.class, Integer.class);
+        });
     }
 }

@@ -16,33 +16,33 @@
 
 package com.alibaba.nacos.client.config.impl;
 
-import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
-public class ConfigHttpClientManagerTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+class ConfigHttpClientManagerTest {
     
     @Test
-    public void test() {
+    void test() {
         final ConfigHttpClientManager instance1 = ConfigHttpClientManager.getInstance();
         final ConfigHttpClientManager instance2 = ConfigHttpClientManager.getInstance();
         
-        Assert.assertEquals(instance1, instance2);
-    
+        assertEquals(instance1, instance2);
+        
         final NacosRestTemplate nacosRestTemplate = instance1.getNacosRestTemplate();
-        Assert.assertNotNull(nacosRestTemplate);
-    
+        assertNotNull(nacosRestTemplate);
+        
         final int time1 = instance1.getConnectTimeoutOrDefault(10);
-        Assert.assertEquals(1000, time1);
+        assertEquals(1000, time1);
         final int time2 = instance1.getConnectTimeoutOrDefault(2000);
-        Assert.assertEquals(2000, time2);
-    
-        try {
+        assertEquals(2000, time2);
+        
+        Assertions.assertDoesNotThrow(() -> {
             instance1.shutdown();
-        } catch (NacosException e) {
-            Assert.fail();
-        }
+        });
     }
-
+    
 }

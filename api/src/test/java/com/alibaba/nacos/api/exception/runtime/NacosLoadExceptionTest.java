@@ -16,15 +16,15 @@
 
 package com.alibaba.nacos.api.exception.runtime;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class NacosLoadExceptionTest {
+class NacosLoadExceptionTest {
     
     @Test
-    public void testConstructor() {
+    void testConstructor() {
         NacosLoadException exception = new NacosLoadException("test");
         assertEquals("test", exception.getMessage());
         assertNull(exception.getCause());

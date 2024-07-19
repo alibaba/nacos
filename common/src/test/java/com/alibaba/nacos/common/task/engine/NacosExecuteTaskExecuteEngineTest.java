@@ -19,47 +19,48 @@ package com.alibaba.nacos.common.task.engine;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.common.task.AbstractExecuteTask;
 import com.alibaba.nacos.common.task.NacosTaskProcessor;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NacosExecuteTaskExecuteEngineTest {
-    
-    private NacosExecuteTaskExecuteEngine executeTaskExecuteEngine;
+@ExtendWith(MockitoExtension.class)
+class NacosExecuteTaskExecuteEngineTest {
     
     @Mock
     NacosTaskProcessor taskProcessor;
     
     String cachedProcessor;
     
-    @Before
-    public void setUp() {
+    private NacosExecuteTaskExecuteEngine executeTaskExecuteEngine;
+    
+    @Mock
+    private AbstractExecuteTask task;
+    
+    @BeforeEach
+    void setUp() {
         cachedProcessor = System.getProperty("nacos.common.processors");
         System.setProperty("nacos.common.processors", "1");
         executeTaskExecuteEngine = new NacosExecuteTaskExecuteEngine("TEST", null);
     }
     
-    @After
-    public void tearDown() throws NacosException {
+    @AfterEach
+    void tearDown() throws NacosException {
         System.setProperty("nacos.common.processors", null == cachedProcessor ? "" : cachedProcessor);
         executeTaskExecuteEngine.shutdown();
     }
     
-    @Mock
-    private AbstractExecuteTask task;
-    
     @Test
-    public void testAddTask() throws InterruptedException {
+    void testAddTask() throws InterruptedException {
         executeTaskExecuteEngine.addTask("test", task);
         TimeUnit.SECONDS.sleep(1);
         verify(task).run();
@@ -68,7 +69,7 @@ public class NacosExecuteTaskExecuteEngineTest {
     }
     
     @Test
-    public void testAddTaskByProcessor() throws InterruptedException {
+    void testAddTaskByProcessor() throws InterruptedException {
         executeTaskExecuteEngine.addProcessor("test", taskProcessor);
         executeTaskExecuteEngine.addTask("test", task);
         verify(taskProcessor).process(task);
@@ -76,18 +77,22 @@ public class NacosExecuteTaskExecuteEngineTest {
         assertEquals(0, executeTaskExecuteEngine.size());
     }
     
-    @Test(expected = UnsupportedOperationException.class)
-    public void testRemoveTask() {
-        executeTaskExecuteEngine.removeTask(task);
-    }
-    
-    @Test(expected = UnsupportedOperationException.class)
-    public void testGetAllTaskKeys() {
-        executeTaskExecuteEngine.getAllTaskKeys();
+    @Test
+    void testRemoveTask() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            executeTaskExecuteEngine.removeTask(task);
+        });
     }
     
     @Test
-    public void testWorkersStatus() {
+    void testGetAllTaskKeys() {
+        assertThrows(UnsupportedOperationException.class, () -> {
+            executeTaskExecuteEngine.getAllTaskKeys();
+        });
+    }
+    
+    @Test
+    void testWorkersStatus() {
         assertEquals("TEST_0%1, pending tasks: 0\n", executeTaskExecuteEngine.workersStatus());
     }
 }

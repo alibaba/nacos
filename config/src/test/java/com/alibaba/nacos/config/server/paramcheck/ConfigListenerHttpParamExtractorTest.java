@@ -18,12 +18,11 @@ package com.alibaba.nacos.config.server.paramcheck;
 
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.config.server.model.ConfigInfo;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Arrays;
@@ -31,11 +30,11 @@ import java.util.List;
 
 import static com.alibaba.nacos.api.common.Constants.LINE_SEPARATOR;
 import static com.alibaba.nacos.api.common.Constants.WORD_SEPARATOR;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 
-@RunWith(MockitoJUnitRunner.class)
-
-public class ConfigListenerHttpParamExtractorTest {
+@ExtendWith(MockitoExtension.class)
+class ConfigListenerHttpParamExtractorTest {
     
     ConfigListenerHttpParamExtractor configListenerHttpParamExtractor;
     
@@ -43,7 +42,7 @@ public class ConfigListenerHttpParamExtractorTest {
     HttpServletRequest httpServletRequest;
     
     @Test
-    public void testNormal() {
+    void testNormal() {
         String listenerConfigsString = getListenerConfigsString();
         Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs"))).thenReturn(listenerConfigsString);
         configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
@@ -51,16 +50,16 @@ public class ConfigListenerHttpParamExtractorTest {
     }
     
     @Test
-    public void testError() {
+    void testError() {
         String listenerConfigsString = getErrorListenerConfigsString();
         Mockito.when(httpServletRequest.getParameter(eq("Listening-Configs"))).thenReturn(listenerConfigsString);
         configListenerHttpParamExtractor = new ConfigListenerHttpParamExtractor();
         try {
             configListenerHttpParamExtractor.extractParam(httpServletRequest);
-            Assert.assertTrue(false);
+            assertTrue(false);
         } catch (Throwable throwable) {
             throwable.printStackTrace();
-            Assert.assertTrue(throwable instanceof IllegalArgumentException);
+            assertTrue(throwable instanceof IllegalArgumentException);
         }
     }
     

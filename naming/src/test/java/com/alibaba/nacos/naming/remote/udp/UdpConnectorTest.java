@@ -20,16 +20,15 @@ package com.alibaba.nacos.naming.remote.udp;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -39,6 +38,8 @@ import java.net.DatagramSocket;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
@@ -49,8 +50,8 @@ import static org.mockito.Mockito.when;
  * @author chenglu
  * @date 2021-09-15 19:52
  */
-@RunWith(MockitoJUnitRunner.class)
-public class UdpConnectorTest {
+@ExtendWith(MockitoExtension.class)
+class UdpConnectorTest {
     
     @InjectMocks
     private UdpConnector udpConnector;
@@ -64,13 +65,13 @@ public class UdpConnectorTest {
     @Mock
     private DatagramSocket udpSocket;
     
-    @BeforeClass
-    public static void setEnv() {
+    @BeforeAll
+    static void setEnv() {
         EnvUtil.setEnvironment(new MockEnvironment());
     }
     
-    @Before
-    public void setUp() throws IOException, InterruptedException {
+    @BeforeEach
+    void setUp() throws IOException, InterruptedException {
         ReflectionTestUtils.setField(udpConnector, "ackMap", ackMap);
         ReflectionTestUtils.setField(udpConnector, "callbackMap", callbackMap);
         DatagramSocket oldSocket = (DatagramSocket) ReflectionTestUtils.getField(udpConnector, "udpSocket");
@@ -83,20 +84,20 @@ public class UdpConnectorTest {
         TimeUnit.SECONDS.sleep(1);
     }
     
-    @After
-    public void tearDown() throws InterruptedException {
+    @AfterEach
+    void tearDown() throws InterruptedException {
         udpConnector.shutdown();
         TimeUnit.SECONDS.sleep(1);
     }
     
     @Test
-    public void testContainAck() {
+    void testContainAck() {
         when(ackMap.containsKey("1111")).thenReturn(true);
-        Assert.assertTrue(udpConnector.containAck("1111"));
+        assertTrue(udpConnector.containAck("1111"));
     }
     
     @Test
-    public void testSendData() throws NacosException, IOException {
+    void testSendData() throws NacosException, IOException {
         when(udpSocket.isClosed()).thenReturn(false);
         AckEntry ackEntry = new AckEntry("A", new DatagramPacket(new byte[2], 2));
         udpConnector.sendData(ackEntry);
@@ -104,7 +105,7 @@ public class UdpConnectorTest {
     }
     
     @Test
-    public void testSendDataWithCallback() throws IOException, InterruptedException {
+    void testSendDataWithCallback() throws IOException, InterruptedException {
         when(udpSocket.isClosed()).thenReturn(false);
         AckEntry ackEntry = new AckEntry("A", new DatagramPacket(new byte[2], 2));
         udpConnector.sendDataWithCallback(ackEntry, new PushCallBack() {
@@ -120,7 +121,7 @@ public class UdpConnectorTest {
             
             @Override
             public void onFail(Throwable e) {
-                Assert.fail(e.getMessage());
+                fail(e.getMessage());
             }
         });
         Thread.sleep(100);

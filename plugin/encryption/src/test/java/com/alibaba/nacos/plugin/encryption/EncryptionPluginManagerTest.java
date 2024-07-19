@@ -17,26 +17,28 @@
 package com.alibaba.nacos.plugin.encryption;
 
 import com.alibaba.nacos.plugin.encryption.spi.EncryptionPluginService;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * EncryptionPluginManagerTest.
  *
  * @author lixiaoshuang
  */
-public class EncryptionPluginManagerTest {
+class EncryptionPluginManagerTest {
     
     @Test
-    public void testInstance() {
+    void testInstance() {
         EncryptionPluginManager instance = EncryptionPluginManager.instance();
-        Assert.assertNotNull(instance);
+        assertNotNull(instance);
     }
     
     @Test
-    public void testJoin() {
+    void testJoin() {
         EncryptionPluginManager.join(new EncryptionPluginService() {
             @Override
             public String encrypt(String secretKey, String content) {
@@ -57,25 +59,25 @@ public class EncryptionPluginManagerTest {
             public String algorithmName() {
                 return "aes";
             }
-    
+            
             @Override
             public String encryptSecretKey(String secretKey) {
                 return secretKey;
             }
-    
+            
             @Override
             public String decryptSecretKey(String secretKey) {
                 return secretKey;
             }
         });
-        Assert.assertNotNull(EncryptionPluginManager.instance().findEncryptionService("aes"));
+        assertNotNull(EncryptionPluginManager.instance().findEncryptionService("aes"));
     }
     
     @Test
-    public void testFindEncryptionService() {
+    void testFindEncryptionService() {
         EncryptionPluginManager instance = EncryptionPluginManager.instance();
         Optional<EncryptionPluginService> optional = instance.findEncryptionService("aes");
-        Assert.assertTrue(optional.isPresent());
+        assertTrue(optional.isPresent());
     }
     
 }

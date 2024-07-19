@@ -113,10 +113,7 @@ public class ConnectionManager {
                 connection.setTraced(true);
             }
             connections.put(connectionId, connection);
-            if (!connectionForClientIp.containsKey(clientIp)) {
-                connectionForClientIp.put(clientIp, new AtomicInteger(0));
-            }
-            connectionForClientIp.get(clientIp).getAndIncrement();
+            connectionForClientIp.computeIfAbsent(clientIp, k -> new AtomicInteger(0)).getAndIncrement();
             
             clientConnectionEventListenerRegistry.notifyClientConnected(connection);
             

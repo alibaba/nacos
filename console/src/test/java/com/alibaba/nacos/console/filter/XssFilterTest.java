@@ -16,11 +16,11 @@
 
 package com.alibaba.nacos.console.filter;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -28,8 +28,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-@RunWith(MockitoJUnitRunner.class)
-public class XssFilterTest {
+@ExtendWith(MockitoExtension.class)
+class XssFilterTest {
     
     private static final String CONTENT_SECURITY_POLICY_HEADER = "Content-Security-Policy";
     
@@ -45,7 +45,7 @@ public class XssFilterTest {
     private FilterChain filterChain;
     
     @Test
-    public void testSetResponseHeader() throws ServletException, IOException {
+    void testSetResponseHeader() throws ServletException, IOException {
         XssFilter xssFilter = new XssFilter();
         xssFilter.doFilterInternal(request, response, filterChain);
         Mockito.verify(response).setHeader(CONTENT_SECURITY_POLICY_HEADER, CONTENT_SECURITY_POLICY);

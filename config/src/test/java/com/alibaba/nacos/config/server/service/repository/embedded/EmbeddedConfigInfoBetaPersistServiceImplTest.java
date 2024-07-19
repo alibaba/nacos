@@ -28,22 +28,21 @@ import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.persistence.repository.embedded.operate.DatabaseOperate;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER;
 import static com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -55,13 +54,8 @@ import static org.mockito.Mockito.when;
  *
  * @author shiyiyue
  */
-@RunWith(SpringJUnit4ClassRunner.class)
-public class EmbeddedConfigInfoBetaPersistServiceImplTest {
-    
-    private EmbeddedConfigInfoBetaPersistServiceImpl embeddedConfigInfoBetaPersistService;
-    
-    @Mock
-    private DataSourceService dataSourceService;
+@ExtendWith(SpringExtension.class)
+class EmbeddedConfigInfoBetaPersistServiceImplTest {
     
     MockedStatic<EnvUtil> envUtilMockedStatic;
     
@@ -75,28 +69,32 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
     @Mock
     DatabaseOperate databaseOperate;
     
-    @Before
-    public void before() {
+    private EmbeddedConfigInfoBetaPersistServiceImpl embeddedConfigInfoBetaPersistService;
+    
+    @Mock
+    private DataSourceService dataSourceService;
+    
+    @BeforeEach
+    void before() {
         embeddedStorageContextHolderMockedStatic = Mockito.mockStatic(EmbeddedStorageContextHolder.class);
         dynamicDataSourceMockedStatic = Mockito.mockStatic(DynamicDataSource.class);
         envUtilMockedStatic = Mockito.mockStatic(EnvUtil.class);
         when(DynamicDataSource.getInstance()).thenReturn(dynamicDataSource);
         when(dynamicDataSource.getDataSource()).thenReturn(dataSourceService);
         when(dataSourceService.getDataSourceType()).thenReturn("derby");
-        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false)))
-                .thenReturn(false);
+        envUtilMockedStatic.when(() -> EnvUtil.getProperty(anyString(), eq(Boolean.class), eq(false))).thenReturn(false);
         embeddedConfigInfoBetaPersistService = new EmbeddedConfigInfoBetaPersistServiceImpl(databaseOperate);
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         embeddedStorageContextHolderMockedStatic.close();
     }
     
     @Test
-    public void testInsertOrUpdateBetaOfUpdate() {
+    void testInsertOrUpdateBetaOfUpdate() {
         String dataId = "betaDataId113";
         String group = "group";
         String tenant = "tenant";
@@ -107,8 +105,8 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setTenant(tenant);
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
-                        eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+        Mockito.when(
+                        databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
                 .thenReturn(mockedConfigInfoStateWrapper, mockedConfigInfoStateWrapper);
         //execute
         String betaIps = "betaips...";
@@ -118,22 +116,20 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         String content = "content111";
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setEncryptedDataKey("key34567");
-        ConfigOperateResult configOperateResult = embeddedConfigInfoBetaPersistService.insertOrUpdateBeta(configInfo,
-                betaIps, srcIp, srcUser);
+        ConfigOperateResult configOperateResult = embeddedConfigInfoBetaPersistService.insertOrUpdateBeta(configInfo, betaIps, srcIp,
+                srcUser);
         //expect return obj
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         //verify update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(configInfo.getContent()),
-                        eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        eq(configInfo.getAppName()), eq(configInfo.getEncryptedDataKey()), eq(dataId), eq(group),
-                        eq(tenant)), times(1));
-        
+                        eq(configInfo.getMd5()), eq(betaIps), eq(srcIp), eq(srcUser), eq(configInfo.getAppName()),
+                        eq(configInfo.getEncryptedDataKey()), eq(dataId), eq(group), eq(tenant)), times(1));
     }
     
     @Test
-    public void testInsertOrUpdateBetaOfAdd() {
+    void testInsertOrUpdateBetaOfAdd() {
         String dataId = "betaDataId113";
         String group = "group113";
         String tenant = "tenant113";
@@ -144,8 +140,9 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setTenant(tenant);
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null).thenReturn(mockedConfigInfoStateWrapper);
+        Mockito.when(
+                        databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+                .thenReturn(null).thenReturn(mockedConfigInfoStateWrapper);
         
         String betaIps = "betaips...";
         String srcIp = "srcUp...";
@@ -155,21 +152,20 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setEncryptedDataKey("key34567");
         //execute
-        ConfigOperateResult configOperateResult = embeddedConfigInfoBetaPersistService.insertOrUpdateBeta(configInfo,
-                betaIps, srcIp, srcUser);
+        ConfigOperateResult configOperateResult = embeddedConfigInfoBetaPersistService.insertOrUpdateBeta(configInfo, betaIps, srcIp,
+                srcUser);
         //expect return obj
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         //verify add to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant),
-                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(betaIps),
-                        eq(srcIp), eq(srcUser), any(Timestamp.class), any(Timestamp.class),
-                        eq(configInfo.getEncryptedDataKey())), times(1));
+                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getMd5()),
+                        eq(betaIps), eq(srcIp), eq(srcUser), eq(configInfo.getEncryptedDataKey())), times(1));
     }
     
     @Test
-    public void testInsertOrUpdateBetaCasOfUpdate() {
+    void testInsertOrUpdateBetaCasOfUpdate() {
         String dataId = "betaDataId113";
         String group = "group";
         String tenant = "tenant";
@@ -180,8 +176,8 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setTenant(tenant);
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
-                        eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+        Mockito.when(
+                        databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
                 .thenReturn(mockedConfigInfoStateWrapper, mockedConfigInfoStateWrapper);
         
         //execute
@@ -196,22 +192,21 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         String betaIps = "betaips...";
         String srcIp = "srcUp...";
         String srcUser = "srcUser...";
-        ConfigOperateResult configOperateResult = embeddedConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo,
-                betaIps, srcIp, srcUser);
+        ConfigOperateResult configOperateResult = embeddedConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp,
+                srcUser);
         //expect return obj
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         //verify cas update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(configInfo.getContent()),
                         eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(betaIps), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq(appName), eq(dataId), eq(group), eq(tenant), eq(configInfo.getMd5())),
-                times(1));
+                        eq(appName), eq(dataId), eq(group), eq(tenant), eq(configInfo.getMd5())), times(1));
         
     }
     
     @Test
-    public void testInsertOrUpdateBetaCasOfAdd() {
+    void testInsertOrUpdateBetaCasOfAdd() {
         String dataId = "betaDataId113";
         String group = "group113";
         String tenant = "tenant113";
@@ -222,8 +217,9 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setTenant(tenant);
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(null).thenReturn(mockedConfigInfoStateWrapper);
+        Mockito.when(
+                        databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+                .thenReturn(null).thenReturn(mockedConfigInfoStateWrapper);
         
         String betaIps = "betaips...";
         String srcIp = "srcUp...";
@@ -233,22 +229,21 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         ConfigInfo configInfo = new ConfigInfo(dataId, group, tenant, appName, content);
         configInfo.setEncryptedDataKey("key34567");
         //execute
-        ConfigOperateResult configOperateResult = embeddedConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo,
-                betaIps, srcIp, srcUser);
+        ConfigOperateResult configOperateResult = embeddedConfigInfoBetaPersistService.insertOrUpdateBetaCas(configInfo, betaIps, srcIp,
+                srcUser);
         //expect return obj
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
-        Assert.assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
+        assertEquals(mockedConfigInfoStateWrapper.getId(), configOperateResult.getId());
+        assertEquals(mockedConfigInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
         //verify add to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant),
-                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getMd5()), eq(betaIps),
-                        eq(srcIp), eq(srcUser), any(Timestamp.class), any(Timestamp.class),
-                        eq(configInfo.getEncryptedDataKey())), times(1));
+                        eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getMd5()),
+                        eq(betaIps), eq(srcIp), eq(srcUser), eq(configInfo.getEncryptedDataKey())), times(1));
         
     }
     
     @Test
-    public void testRemoveConfigInfo4Beta() {
+    void testRemoveConfigInfo4Beta() {
         String dataId = "dataId456789";
         String group = "group4567";
         String tenant = "tenant56789o0";
@@ -259,21 +254,21 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setTenant(tenant);
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
+        Mockito.when(
+                        databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_STATE_WRAPPER_ROW_MAPPER)))
+                .thenReturn(mockedConfigInfoStateWrapper);
         //mock remove ok
         Mockito.when(databaseOperate.update(any(List.class))).thenReturn(true);
         
         embeddedConfigInfoBetaPersistService.removeConfigInfo4Beta(dataId, group, tenant);
         //verity
         embeddedStorageContextHolderMockedStatic.verify(
-                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant)),
-                times(1));
+                () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(dataId), eq(group), eq(tenant)), times(1));
         
     }
     
     @Test
-    public void testFindConfigInfo4Beta() {
+    void testFindConfigInfo4Beta() {
         String dataId = "dataId456789";
         String group = "group4567";
         String tenant = "tenant56789o0";
@@ -284,23 +279,23 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         mockedConfigInfoStateWrapper.setTenant(tenant);
         mockedConfigInfoStateWrapper.setId(123456L);
         mockedConfigInfoStateWrapper.setLastModified(System.currentTimeMillis());
-        Mockito.when(databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}),
-                eq(CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER))).thenReturn(mockedConfigInfoStateWrapper);
-        ConfigInfoBetaWrapper configInfo4BetaReturn = embeddedConfigInfoBetaPersistService.findConfigInfo4Beta(dataId,
-                group, tenant);
-        Assert.assertEquals(mockedConfigInfoStateWrapper, configInfo4BetaReturn);
+        Mockito.when(
+                        databaseOperate.queryOne(anyString(), eq(new Object[] {dataId, group, tenant}), eq(CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER)))
+                .thenReturn(mockedConfigInfoStateWrapper);
+        ConfigInfoBetaWrapper configInfo4BetaReturn = embeddedConfigInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
+        assertEquals(mockedConfigInfoStateWrapper, configInfo4BetaReturn);
         
     }
     
     @Test
-    public void testConfigInfoBetaCount() {
+    void testConfigInfoBetaCount() {
         Mockito.when(databaseOperate.queryOne(anyString(), eq(Integer.class))).thenReturn(101);
         int returnCount = embeddedConfigInfoBetaPersistService.configInfoBetaCount();
-        Assert.assertEquals(101, returnCount);
+        assertEquals(101, returnCount);
     }
     
     @Test
-    public void testFindAllConfigInfoBetaForDumpAll() {
+    void testFindAllConfigInfoBetaForDumpAll() {
         //mock count
         Mockito.when(databaseOperate.queryOne(anyString(), eq(Integer.class))).thenReturn(12345);
         
@@ -313,18 +308,16 @@ public class EmbeddedConfigInfoBetaPersistServiceImplTest {
         mockList.get(1).setLastModified(System.currentTimeMillis());
         mockList.get(2).setLastModified(System.currentTimeMillis());
         
-        Mockito.when(
-                        databaseOperate.queryMany(anyString(), eq(new Object[] {}), eq(CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER)))
+        Mockito.when(databaseOperate.queryMany(anyString(), eq(new Object[] {}), eq(CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER)))
                 .thenReturn(mockList);
         
         int pageNo = 1;
         int pageSize = 101;
         Mockito.when(databaseOperate.queryOne(anyString(), eq(Integer.class))).thenReturn(101);
         //execute & expect
-        Page<ConfigInfoBetaWrapper> pageReturn = embeddedConfigInfoBetaPersistService.findAllConfigInfoBetaForDumpAll(
-                pageNo, pageSize);
-        Assert.assertEquals(mockList, pageReturn.getPageItems());
-        Assert.assertEquals(101, pageReturn.getTotalCount());
+        Page<ConfigInfoBetaWrapper> pageReturn = embeddedConfigInfoBetaPersistService.findAllConfigInfoBetaForDumpAll(pageNo, pageSize);
+        assertEquals(mockList, pageReturn.getPageItems());
+        assertEquals(101, pageReturn.getTotalCount());
         
     }
     

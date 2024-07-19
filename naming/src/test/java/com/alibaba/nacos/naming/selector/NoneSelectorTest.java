@@ -18,11 +18,12 @@
 package com.alibaba.nacos.naming.selector;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * {@link NoneSelector} unit tests.
@@ -30,12 +31,12 @@ import java.util.List;
  * @author chenglu
  * @date 2021-08-05 19:47
  */
-public class NoneSelectorTest {
+class NoneSelectorTest {
     
     @Test
-    public void testSelect() {
+    void testSelect() {
         NoneSelector<Instance> noneSelector = new NoneSelector<>();
         List<Instance> providers = Collections.emptyList();
-        Assert.assertEquals(providers, noneSelector.select(providers));
+        assertEquals(providers, noneSelector.select(providers));
     }
 }
