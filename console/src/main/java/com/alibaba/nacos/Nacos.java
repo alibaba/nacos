@@ -41,7 +41,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
         @Filter(type = FilterType.CUSTOM, classes = {TypeExcludeFilter.class}),
         @Filter(type = FilterType.CUSTOM, classes = {AutoConfigurationExcludeFilter.class})})
 @ServletComponentScan
-@EnableScheduling
 public class Nacos {
     
     public static void main(String[] args) {
