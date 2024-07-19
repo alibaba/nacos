@@ -305,7 +305,7 @@ public class EnvUtil {
         EnvUtil.nacosHomePath = nacosHomePath;
     }
     
-    public static List<String> getIPsBySystemEnv(String key) {
+    public static List<String> getIpsBySystemEnv(String key) {
         String env = getSystemEnv(key);
         List<String> ips = new ArrayList<>();
         if (StringUtils.isNotEmpty(env)) {

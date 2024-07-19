@@ -254,7 +254,7 @@ public class StartingApplicationListener implements NacosApplicationListener {
         boolean useExternalStorage =
                 !DEFAULT_DATASOURCE_PLATFORM.equalsIgnoreCase(platform) && !DERBY_DATABASE.equalsIgnoreCase(platform);
         
-        // must initialize after setUseExternalDB
+        // must initialize after setUseExternalDb
         // This value is true in stand-alone mode and false in cluster mode
         // If this value is set to true in cluster mode, nacos's distributed storage engine is turned on
         // default value is depend on ${nacos.standalone}
