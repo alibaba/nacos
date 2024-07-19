@@ -110,7 +110,8 @@
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-        <maven-pmd-plugin.version>3.8</maven-pmd-plugin.version>
+        <!-- issue#12028 switch 3.8 to 3.24.0 -->
+        <maven-pmd-plugin.version>3.24.0</maven-pmd-plugin.version>
         <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
         <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
