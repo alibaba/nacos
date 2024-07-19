@@ -123,7 +123,7 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-shade-plugin</artifactId>
-                    <version>3.2.4</version>
+                    <version>3.6.0</version>
                     <configuration>
                         <createDependencyReducedPom>false</createDependencyReducedPom>
                     </configuration>
