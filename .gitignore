@@ -18,3 +18,4 @@ test/logs
 derby.log
 yarn.lock
 .flattened-pom.xml
+lefthook.yml
