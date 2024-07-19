@@ -143,7 +143,8 @@
         <mysql-connector-java.version>8.2.0</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
-        <grpc-java.version>1.64.2</grpc-java.version>
+        <!-- issue#12028 switch 1.57.2 to 1.65.1 -->
+        <grpc-java.version>1.65.1</grpc-java.version>
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.25.5</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
@@ -1046,6 +1047,11 @@
                 <artifactId>grpc-testing</artifactId>
                 <version>${grpc-java.version}</version>
                 <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-util</artifactId>
+                <version>${grpc-java.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.api.grpc</groupId>
