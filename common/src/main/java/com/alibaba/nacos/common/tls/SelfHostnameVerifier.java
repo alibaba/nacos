@@ -39,7 +39,7 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
     private static final ConcurrentHashMap<String, Boolean> HOSTS = new ConcurrentHashMap<>();
     
     private static final String[] LOCALHOST_HOSTNAME = new String[] {InternetAddressUtil.LOCAL_HOST,
-            InternetAddressUtil.localHostIP()};
+            InternetAddressUtil.localHostIp()};
     
     public SelfHostnameVerifier(HostnameVerifier hv) {
         this.hv = hv;
@@ -50,22 +50,22 @@ public final class SelfHostnameVerifier implements HostnameVerifier {
         if (LOCALHOST_HOSTNAME[0].equalsIgnoreCase(hostname) || LOCALHOST_HOSTNAME[1].equals(hostname)) {
             return true;
         }
-        if (isIP(hostname)) {
+        if (isIp(hostname)) {
             return true;
         }
         return hv.verify(hostname, session);
     }
     
-    private static boolean isIP(String host) {
+    private static boolean isIp(String host) {
         if (host == null || host.isEmpty()) {
-            LOGGER.warn("host is empty, isIP = false");
+            LOGGER.warn("host is empty, isIp = false");
             return false;
         }
         Boolean cacheHostVerify = HOSTS.get(host);
         if (cacheHostVerify != null) {
             return cacheHostVerify;
         }
-        boolean isIp = InternetAddressUtil.isIP(host);
+        boolean isIp = InternetAddressUtil.isIp(host);
         HOSTS.putIfAbsent(host, isIp);
         return isIp;
     }

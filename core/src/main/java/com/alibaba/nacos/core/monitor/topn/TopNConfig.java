@@ -49,7 +49,7 @@ public class TopNConfig extends AbstractDynamicConfig {
     
     private boolean enabled;
     
-    private int topNCount;
+    private int countOfTopN;
     
     private long internalMs;
     
@@ -60,7 +60,7 @@ public class TopNConfig extends AbstractDynamicConfig {
     @Override
     protected void getConfigFromEnv() {
         enabled = EnvUtil.getProperty(ENABLED_KEY, Boolean.class, DEFAULT_ENABLED);
-        topNCount = EnvUtil.getProperty(COUNT_KEY, Integer.class, DEFAULT_COUNT);
+        countOfTopN = EnvUtil.getProperty(COUNT_KEY, Integer.class, DEFAULT_COUNT);
         internalMs = EnvUtil.getProperty(INTERNAL_MS_KEY, Long.class, DEFAULT_INTERNAL_MS);
     }
     
@@ -71,7 +71,7 @@ public class TopNConfig extends AbstractDynamicConfig {
     
     @Override
     public String toString() {
-        return "TopNConfig{" + "enabled=" + enabled + ", topNCount=" + topNCount + ", internalMs=" + internalMs + '}';
+        return "TopNConfig{" + "enabled=" + enabled + ", topNCount=" + countOfTopN + ", internalMs=" + internalMs + '}';
     }
     
     public static TopNConfig getInstance() {
@@ -82,8 +82,8 @@ public class TopNConfig extends AbstractDynamicConfig {
         return enabled;
     }
     
-    public int getTopNCount() {
-        return topNCount;
+    public int getCountOfTopN() {
+        return countOfTopN;
     }
     
     public long getInternalMs() {

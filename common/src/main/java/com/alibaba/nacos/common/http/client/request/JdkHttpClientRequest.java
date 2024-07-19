@@ -58,7 +58,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
      * @param sslContext ssl context
      */
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
-    public void setSSLContext(SSLContext sslContext) {
+    public void setSslContext(SSLContext sslContext) {
         if (sslContext != null) {
             HttpsURLConnection.setDefaultSSLSocketFactory(sslContext.getSocketFactory());
         }
@@ -70,7 +70,7 @@ public class JdkHttpClientRequest implements HttpClientRequest {
      * @param hostnameVerifier custom hostnameVerifier
      */
     @SuppressWarnings("checkstyle:abbreviationaswordinname")
-    public void replaceSSLHostnameVerifier(HostnameVerifier hostnameVerifier) {
+    public void replaceSslHostnameVerifier(HostnameVerifier hostnameVerifier) {
         if (hostnameVerifier != null) {
             HttpsURLConnection.setDefaultHostnameVerifier(hostnameVerifier);
         }

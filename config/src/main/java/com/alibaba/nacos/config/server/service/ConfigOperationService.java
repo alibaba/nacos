@@ -75,17 +75,14 @@ public class ConfigOperationService {
      */
     public Boolean publishConfig(ConfigForm configForm, ConfigRequestInfo configRequestInfo, String encryptedDataKey)
             throws NacosException {
-        
         Map<String, Object> configAdvanceInfo = getConfigAdvanceInfo(configForm);
         ParamUtils.checkParam(configAdvanceInfo);
-        
         if (AggrWhitelist.isAggrDataId(configForm.getDataId())) {
             LOGGER.warn("[aggr-conflict] {} attempt to publish single data, {}, {}", configRequestInfo.getSrcIp(),
                     configForm.getDataId(), configForm.getGroup());
             throw new NacosApiException(HttpStatus.FORBIDDEN.value(), ErrorCode.INVALID_DATA_ID,
                     "dataId:" + configForm.getDataId() + " is aggr");
         }
-        
         ConfigInfo configInfo = new ConfigInfo(configForm.getDataId(), configForm.getGroup(),
                 configForm.getNamespaceId(), configForm.getAppName(), configForm.getContent());
         //set old md5
@@ -94,10 +91,19 @@ public class ConfigOperationService {
         }
         configInfo.setType(configForm.getType());
         configInfo.setEncryptedDataKey(encryptedDataKey);
-        ConfigOperateResult configOperateResult;
-        
         String persistEvent = ConfigTraceService.PERSISTENCE_EVENT;
-        
+        ConfigOperateResult configOperateResult = processBuildConfigOperateResult(
+                configAdvanceInfo, configInfo, configRequestInfo, persistEvent, configForm);
+        ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(),
+                configForm.getNamespaceId(), configRequestInfo.getRequestIpApp(), configOperateResult.getLastModified(),
+                InetUtils.getSelfIP(), persistEvent, ConfigTraceService.PERSISTENCE_TYPE_PUB, configForm.getContent());
+        return true;
+    }
+    
+    private ConfigOperateResult processBuildConfigOperateResult(Map<String, Object> configAdvanceInfo,
+            ConfigInfo configInfo, ConfigRequestInfo configRequestInfo, String persistEvent, ConfigForm configForm)
+            throws NacosApiException {
+        ConfigOperateResult configOperateResult;
         if (StringUtils.isBlank(configRequestInfo.getBetaIps())) {
             if (StringUtils.isBlank(configForm.getTag())) {
                 if (StringUtils.isNotBlank(configRequestInfo.getCasMd5())) {
@@ -160,10 +166,7 @@ public class ConfigOperationService {
                     new ConfigDataChangeEvent(true, configForm.getDataId(), configForm.getGroup(),
                             configForm.getNamespaceId(), configOperateResult.getLastModified()));
         }
-        ConfigTraceService.logPersistenceEvent(configForm.getDataId(), configForm.getGroup(),
-                configForm.getNamespaceId(), configRequestInfo.getRequestIpApp(), configOperateResult.getLastModified(),
-                InetUtils.getSelfIP(), persistEvent, ConfigTraceService.PERSISTENCE_TYPE_PUB, configForm.getContent());
-        return true;
+        return configOperateResult;
     }
     
     /**

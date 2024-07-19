@@ -160,13 +160,13 @@ public class UdpPushService {
                 && clientInfo.version.compareTo(parseVersion(switchDomain.getPushPythonVersion())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.C == clientInfo.type
-                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushCVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushVersionOfC())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.GO == clientInfo.type
                 && clientInfo.version.compareTo(parseVersion(switchDomain.getPushGoVersion())) >= 0) {
             return true;
         } else if (ClientInfo.ClientType.CSHARP == clientInfo.type
-                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushCSharpVersion())) >= 0) {
+                && clientInfo.version.compareTo(parseVersion(switchDomain.getPushVersionOfCsharp())) >= 0) {
             return true;
         }
         

@@ -78,7 +78,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
                 SRV_LOG.warn("http check started before last one finished, service: {} : {} : {}:{}",
                         service.getGroupedServiceName(), instance.getCluster(), instance.getIp(), instance.getPort());
                 healthCheckCommon
-                        .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getHttpHealthParams());
+                        .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task, switchDomain.getHttpHealthParams());
                 return;
             }
             
@@ -96,7 +96,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
         } catch (Throwable e) {
             instance.setCheckRt(switchDomain.getHttpHealthParams().getMax());
             healthCheckCommon.checkFail(task, service, "http:error:" + e.getMessage());
-            healthCheckCommon.reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), task,
+            healthCheckCommon.reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(), task,
                     switchDomain.getHttpHealthParams());
         }
     }
@@ -129,18 +129,18 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
             int httpCode = result.getCode();
             if (HttpURLConnection.HTTP_OK == httpCode) {
                 healthCheckCommon.checkOk(task, service, "http:" + httpCode);
-                healthCheckCommon.reEvaluateCheckRT(System.currentTimeMillis() - startTime, task,
+                healthCheckCommon.reEvaluateCheckRt(System.currentTimeMillis() - startTime, task,
                         switchDomain.getHttpHealthParams());
             } else if (HttpURLConnection.HTTP_UNAVAILABLE == httpCode
                     || HttpURLConnection.HTTP_MOVED_TEMP == httpCode) {
                 // server is busy, need verification later
                 healthCheckCommon.checkFail(task, service, "http:" + httpCode);
                 healthCheckCommon
-                        .reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task, switchDomain.getHttpHealthParams());
+                        .reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task, switchDomain.getHttpHealthParams());
             } else {
                 //probably means the state files has been removed by administrator
                 healthCheckCommon.checkFailNow(task, service, "http:" + httpCode);
-                healthCheckCommon.reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), task,
+                healthCheckCommon.reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(), task,
                         switchDomain.getHttpHealthParams());
             }
         }
@@ -153,7 +153,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
             for (int deepth = 0; deepth < maxStackDepth && cause != null; deepth++) {
                 if (HttpUtils.isTimeoutException(cause)) {
                     healthCheckCommon.checkFail(task, service, "http:" + cause.getMessage());
-                    healthCheckCommon.reEvaluateCheckRT(task.getCheckRtNormalized() * 2, task,
+                    healthCheckCommon.reEvaluateCheckRt(task.getCheckRtNormalized() * 2, task,
                             switchDomain.getHttpHealthParams());
                     return;
                 }
@@ -166,7 +166,7 @@ public class HttpHealthCheckProcessor implements HealthCheckProcessorV2 {
             } else {
                 healthCheckCommon.checkFail(task, service, "http:error:" + throwable.getMessage());
             }
-            healthCheckCommon.reEvaluateCheckRT(switchDomain.getHttpHealthParams().getMax(), task,
+            healthCheckCommon.reEvaluateCheckRt(switchDomain.getHttpHealthParams().getMax(), task,
                     switchDomain.getHttpHealthParams());
         }
         

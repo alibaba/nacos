@@ -79,7 +79,7 @@ class ServiceInfoTest {
         assertTrue(actual.expired());
         assertTrue(actual.getHosts().isEmpty());
         assertTrue(actual.isValid());
-        assertFalse(actual.isAllIPs());
+        assertFalse(actual.isAllIps());
     }
     
     @Test
@@ -121,7 +121,7 @@ class ServiceInfoTest {
     
     @Test
     void testValidateForAllIps() {
-        serviceInfo.setAllIPs(true);
+        serviceInfo.setAllIps(true);
         assertTrue(serviceInfo.validate());
     }
     
