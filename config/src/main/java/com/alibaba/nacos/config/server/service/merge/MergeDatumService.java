@@ -145,10 +145,10 @@ public class MergeDatumService {
                 if (datumList.size() > 0) {
                     ConfigInfo cf = MergeTaskProcessor.merge(dataId, group, tenant, datumList);
                     String aggrContent = cf.getContent();
-                    String localContentMD5 = ConfigCacheService.getContentMd5(GroupKey.getKey(dataId, group));
-                    String aggrConetentMD5 = MD5Utils.md5Hex(aggrContent, Constants.ENCODE);
+                    String localContentMd5 = ConfigCacheService.getContentMd5(GroupKey.getKey(dataId, group));
+                    String aggrConetentMd5 = MD5Utils.md5Hex(aggrContent, Constants.ENCODE);
                     
-                    if (!StringUtils.equals(localContentMD5, aggrConetentMD5)) {
+                    if (!StringUtils.equals(localContentMd5, aggrConetentMd5)) {
                         configInfoPersistService.insertOrUpdate(null, null, cf, null);
                         LOGGER.info("[merge-ok] {}, {}, size={}, length={}, md5={}, content={}", dataId, group,
                                 datumList.size(), cf.getContent().length(), cf.getMd5(),
