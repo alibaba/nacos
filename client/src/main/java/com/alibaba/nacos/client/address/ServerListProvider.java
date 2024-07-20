@@ -30,8 +30,8 @@ public interface ServerListProvider {
     
     /**
      * Init.
-     * @param properties
-     * @throws NacosException
+     * @param properties nacos client properties
+     * @throws NacosException nacos exception
      */
     void init(NacosClientProperties properties) throws NacosException;
     
@@ -46,11 +46,15 @@ public interface ServerListProvider {
      * @return server name
      */
     default String getServerName() {
-        return null;
+        return "";
     }
     
+    /**
+     * Get namespace.
+     * @return namespace
+     */
     default String getNamespace() {
-        return null;
+        return "";
     }
     
     /**

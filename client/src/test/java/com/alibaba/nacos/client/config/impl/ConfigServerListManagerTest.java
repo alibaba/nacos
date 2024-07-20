@@ -46,6 +46,7 @@ import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
@@ -61,7 +62,6 @@ class ConfigServerListManagerTest {
     NacosRestTemplate cachedNacosRestTemplate;
     
     HttpRestResult httpRestResult;
-    
     
     @BeforeEach
     void setUp() throws Exception {
@@ -91,12 +91,12 @@ class ConfigServerListManagerTest {
     @Test
     void testStart() throws NacosException {
         NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
-        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("localhost");
-        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_PORT)).thenReturn("0");
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT)).thenReturn("1.1.1.1");
+        when(mockedProperties.getProperty(PropertyKeyConst.ENDPOINT_PORT)).thenReturn("9090");
         final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
         try {
             mgr.start();
-            //fail();
+            fail();
         } catch (NacosException e) {
             assertEquals(
                     "fail to get NACOS-server serverlist! not connnect url:http://localhost:0/nacos/serverlist",
@@ -111,6 +111,7 @@ class ConfigServerListManagerTest {
             NacosClientProperties mockedProperties = mock(NacosClientProperties.class);
             when(mockedProperties.getProperty(PropertyKeyConst.SERVER_ADDR)).thenReturn("1.1.1.1");
             final ConfigServerListManager mgr = new ConfigServerListManager(mockedProperties);
+            final ConfigServerListManager mgr2 = new ConfigServerListManager(mockedProperties);
             assertInstanceOf(AddressServerListProvider.class, mgr.getServerListProvider());
             AddressServerListProvider provider = (AddressServerListProvider) mgr.getServerListProvider();
             assertEquals("nacos", provider.getContextPath());

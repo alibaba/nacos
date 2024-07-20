@@ -22,6 +22,7 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.client.utils.LogUtils;
 import com.alibaba.nacos.common.lifecycle.Closeable;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.spi.NacosServiceLoader;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.common.utils.StringUtils;
 import org.slf4j.Logger;
@@ -48,7 +49,7 @@ public abstract class AbstractServerListManager implements ServerListFactory, Cl
         if (StringUtils.isNotBlank(namespace)) {
             properties.setProperty(PropertyKeyConst.NAMESPACE, namespace);
         }
-        Collection<ServerListProvider> serverListProviders = ServerListProviderOrderedSPILoader.loadReverseOrderService();
+        Collection<ServerListProvider> serverListProviders = NacosServiceLoader.load(ServerListProvider.class);
         for (ServerListProvider each : serverListProviders) {
             each.init(properties);
             serverListProvider = each;

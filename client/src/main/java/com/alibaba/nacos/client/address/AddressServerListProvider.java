@@ -39,19 +39,17 @@ public class AddressServerListProvider extends AbstractServerListProvider {
     
     private static final String FIXED_NAME = "fixed";
     
-    private String serverAddrsStr;
-    
     private List<String> serverList;
     
     @Override
     public void init(final NacosClientProperties properties) throws NacosException {
         super.init(properties);
         serverList = new ArrayList<>();
-        this.serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
-        if (StringUtils.isBlank(this.serverAddrsStr)) {
+        String serverAddrsStr = properties.getProperty(PropertyKeyConst.SERVER_ADDR);
+        if (StringUtils.isBlank(serverAddrsStr)) {
             return;
         }
-        StringTokenizer serverAddrsTokens = new StringTokenizer(this.serverAddrsStr, ",;");
+        StringTokenizer serverAddrsTokens = new StringTokenizer(serverAddrsStr, ",;");
         while (serverAddrsTokens.hasMoreTokens()) {
             String serverAddr = serverAddrsTokens.nextToken().trim();
             if (serverAddr.startsWith(HTTP_PREFIX) || serverAddr.startsWith(HTTPS_PREFIX)) {
@@ -94,9 +92,5 @@ public class AddressServerListProvider extends AbstractServerListProvider {
     @Override
     public int getOrder() {
         return ServerListProviderOrder.ORDER - 1;
-    }
-    
-    public String getContextPath() {
-        return contextPath;
     }
 }

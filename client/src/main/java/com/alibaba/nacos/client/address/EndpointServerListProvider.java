@@ -27,8 +27,8 @@ import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.client.utils.TemplateUtils;
 import com.alibaba.nacos.common.executor.NameThreadFactory;
 import com.alibaba.nacos.common.http.HttpRestResult;
+import com.alibaba.nacos.common.http.HttpUtils;
 import com.alibaba.nacos.common.http.client.NacosRestTemplate;
-import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.utils.InternetAddressUtil;
@@ -56,6 +56,8 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private static final String CUSTOM_NAME = "custom";
     
+    private static final String MODULE_NAME = "Address";
+    
     private final long refreshServerListInternal = TimeUnit.SECONDS.toMillis(30);
     
     private final int initServerListRetryTimes = 5;
@@ -68,15 +70,13 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private int endpointPort = 8080;
     
-    protected String endpointContextPath;
+    private String endpointContextPath;
     
-    protected String serverListName = ParamUtil.getDefaultNodesPath();
+    private String serverListName = ParamUtil.getDefaultNodesPath();
     
-    protected volatile List<String> serversFromEndpoint = new ArrayList<>();
+    private volatile List<String> serversFromEndpoint = new ArrayList<>();
     
     private String addressServerUrl;
-    
-    private volatile boolean isStarted;
     
     @Override
     public void init(final NacosClientProperties properties) throws NacosException {
@@ -89,7 +89,7 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         initEndpointContextPath(properties);
         initServerListName(properties);
         initAddressServerUrl(properties);
-        start();
+        startRefreshServerListTask();
     }
     
     @Override
@@ -111,25 +111,11 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
         return ServerListProviderOrder.ORDER;
     }
     
-    public String getContextPath() {
-        return contextPath;
-    }
-    
     public String getAddressServerUrl() {
         return addressServerUrl;
     }
     
-    /**
-     * Start.
-     *
-     * @throws NacosException nacos exception
-     */
-    public synchronized void start() throws NacosException {
-        
-        if (isStarted) {
-            return;
-        }
-        
+    public void startRefreshServerListTask() throws NacosException {
         for (int i = 0; i < initServerListRetryTimes && getServerList().isEmpty(); ++i) {
             refreshServerListIfNeed();
             if (!serversFromEndpoint.isEmpty()) {
@@ -148,10 +134,10 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
                     "fail to get NACOS-server serverlist! not connnect url:" + addressServerUrl);
         }
         
-        refreshServerListExecutor = new ScheduledThreadPoolExecutor(1, new NameThreadFactory("com.alibaba.nacos.client.address.EndpointServerListProvider.refreshServerList"));
+        refreshServerListExecutor = new ScheduledThreadPoolExecutor(1,
+                new NameThreadFactory("com.alibaba.nacos.client.address.EndpointServerListProvider.refreshServerList"));
         // executor schedules the timer task
         refreshServerListExecutor.scheduleWithFixedDelay(this::refreshServerListIfNeed, 0L, 30L, TimeUnit.SECONDS);
-        this.isStarted = true;
     }
     
     private void refreshServerListIfNeed() {
@@ -176,7 +162,8 @@ public class EndpointServerListProvider extends AbstractServerListProvider {
     
     private List<String> getServerListFromEndpoint() {
         try {
-            HttpRestResult<String> httpResult = nacosRestTemplate.get(addressServerUrl, Header.EMPTY, Query.EMPTY, String.class);
+            HttpRestResult<String> httpResult = nacosRestTemplate.get(addressServerUrl, HttpUtils.builderHeader(MODULE_NAME),
+                    Query.EMPTY, String.class);
             
             if (!httpResult.ok()) {
                 LOGGER.error("[check-serverlist] error. addressServerUrl: {}, code: {}", addressServerUrl,

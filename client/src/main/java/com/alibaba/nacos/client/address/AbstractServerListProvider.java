@@ -41,12 +41,24 @@ public abstract class AbstractServerListProvider implements ServerListProvider {
         initNameSpace(properties);
     }
     
+    /**
+     * Get server list.
+     * @return server list
+     */
     @Override
     public abstract List<String> getServerList();
     
+    /**
+     * Get server name.
+     * @return server name
+     */
     @Override
     public abstract String getServerName();
     
+    /**
+     * Get order.
+     * @return order
+     */
     @Override
     public abstract int getOrder();
     
