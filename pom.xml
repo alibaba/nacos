@@ -110,13 +110,12 @@
         <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
         <maven-jar-plugin.version>3.2.2</maven-jar-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-        <!-- issue#12028 switch 3.8 to 3.15.0 -->
         <maven-pmd-plugin.version>3.15.0</maven-pmd-plugin.version>
         <apache-rat-plugin.version>0.12</apache-rat-plugin.version>
         <maven-resources-plugin.version>3.0.2</maven-resources-plugin.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
         <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
-        <findbugs-maven-plugin.version>3.0.4</findbugs-maven-plugin.version>
+        <soptbugs-maven-plugin.version>4.8.6.2</soptbugs-maven-plugin.version>
         <sonar-maven-plugin.version>3.0.2</sonar-maven-plugin.version>
         <maven-gpg-plugin.version>1.6</maven-gpg-plugin.version>
         <maven-failsafe-plugin.version>3.2.5</maven-failsafe-plugin.version>
@@ -125,40 +124,32 @@
         <maven-easyj-version>1.1.5</maven-easyj-version>
         <!-- dependency version related to plugin -->
         <extra-enforcer-rules.version>1.0-beta-4</extra-enforcer-rules.version>
-        <!-- issue#12028 switch 1.3.0 to 2.1.1 -->
         <p3c-pmd.version>2.1.1</p3c-pmd.version>
         
         <!-- dependency version -->
         <nacos.logback.adapter.version>1.1.0</nacos.logback.adapter.version>
-        <!-- issue#12028 switch 2.7.18 to 3.3.1 -->
         <spring-boot-dependencies.version>3.3.1</spring-boot-dependencies.version>
-        <!-- issue#12028 switch 3.0 to 6.1.0 -->
         <servlet-api.version>6.1.0</servlet-api.version>
         <commons-io.version>2.7</commons-io.version>
         <commons-collections.version>3.2.2</commons-collections.version>
-        <!-- issue#12028 switch 1.7.26 to 2.0.13 -->
         <slf4j-api.version>2.0.13</slf4j-api.version>
-        <!-- issue#12028 switch 1.2.13 to 1.5.6 -->
         <logback.version>1.5.6</logback.version>
         <log4j.version>2.17.1</log4j.version>
         
         <mysql-connector-java.version>8.0.33</mysql-connector-java.version>
         <derby.version>10.14.2.0</derby.version>
         <jjwt.version>0.11.2</jjwt.version>
-        <!-- issue#12028 switch 1.57.2 to 1.65.1 -->
         <grpc-java.version>1.65.1</grpc-java.version>
         <proto-google-common-protos.version>2.17.0</proto-google-common-protos.version>
         <protobuf-java.version>3.22.3</protobuf-java.version>
         <protoc-gen-grpc-java.version>${grpc-java.version}</protoc-gen-grpc-java.version>
         <hessian.version>4.0.63</hessian.version>
-        <mockito.version>4.11.0</mockito.version>
+        <mockito.version>5.2.0</mockito.version>
         <HikariCP.version>3.4.2</HikariCP.version>
         <jraft-core.version>1.3.14</jraft-core.version>
         <rpc-grpc-impl.version>${jraft-core.version}</rpc-grpc-impl.version>
         <SnakeYaml.version>2.0</SnakeYaml.version>
-        <!-- issue#12028 switch 5.3.34 to 6.1.10 -->
         <spring.version>6.1.10</spring.version>
-        <!-- issue#12028 switch 5.7.12 to 6.3.1 -->
         <spring-security.version>6.3.1</spring-security.version>
         <junit5.version>5.10.2</junit5.version>
     </properties>
@@ -431,9 +422,9 @@
                 <version>${maven-surefire-plugin.version}</version>
             </plugin>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs-maven-plugin.version}</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${soptbugs-maven-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
@@ -600,9 +591,9 @@
     <reporting>
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>findbugs-maven-plugin</artifactId>
-                <version>${findbugs-maven-plugin.version}</version>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>${soptbugs-maven-plugin.version}</version>
             </plugin>
         </plugins>
     </reporting>
