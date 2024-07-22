@@ -86,7 +86,7 @@ class ClusterTest {
         assertTrue(json.contains("\"type\":\"HTTP\""));
         assertTrue(json.contains("\"defaultPort\":81"));
         assertTrue(json.contains("\"defaultCheckPort\":82"));
-        assertTrue(json.contains("\"useIPPort4Check\":false"));
+        assertTrue(json.contains("\"useIpPort4Check\":false"));
         assertTrue(json.contains("\"metadata\":{\"a\":\"a\"}"));
     }
     
@@ -94,7 +94,7 @@ class ClusterTest {
     void testJsonDeserialize() throws JsonProcessingException {
         String json = "{\"serviceName\":\"group@@service\",\"name\":\"cluster\","
                 + "\"healthChecker\":{\"type\":\"HTTP\",\"path\":\"\",\"headers\":\"\",\"expectedResponseCode\":200},"
-                + "\"defaultPort\":81,\"defaultCheckPort\":82,\"useIPPort4Check\":false,\"metadata\":{\"a\":\"a\"}}";
+                + "\"defaultPort\":81,\"defaultCheckPort\":82,\"useIpPort4Check\":false,\"metadata\":{\"a\":\"a\"}}";
         Cluster actual = mapper.readValue(json, Cluster.class);
         assertEquals("cluster", actual.getName());
         assertEquals("group@@service", actual.getServiceName());

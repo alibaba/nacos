@@ -22,10 +22,10 @@ import com.alibaba.nacos.common.http.client.handler.ResponseHandler;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.concurrent.FutureCallback;
-import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.reactor.DefaultConnectingIOReactor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -112,7 +112,7 @@ class DefaultAsyncHttpClientRequestTest {
         Map<String, String> body = new HashMap<>();
         body.put("test", "test");
         RequestHttpEntity httpEntity = new RequestHttpEntity(header, Query.EMPTY, body);
-        HttpResponse response = mock(HttpResponse.class);
+        SimpleHttpResponse response = mock(SimpleHttpResponse.class);
         HttpRestResult restResult = new HttpRestResult();
         when(responseHandler.handle(any())).thenReturn(restResult);
         when(client.execute(any(), any())).thenAnswer(invocationOnMock -> {
@@ -129,7 +129,7 @@ class DefaultAsyncHttpClientRequestTest {
         Map<String, String> body = new HashMap<>();
         body.put("test", "test");
         RequestHttpEntity httpEntity = new RequestHttpEntity(header, Query.EMPTY, body);
-        HttpResponse response = mock(HttpResponse.class);
+        SimpleHttpResponse response = mock(SimpleHttpResponse.class);
         RuntimeException exception = new RuntimeException("test");
         when(responseHandler.handle(any())).thenThrow(exception);
         when(client.execute(any(), any())).thenAnswer(invocationOnMock -> {
