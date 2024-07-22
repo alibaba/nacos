@@ -1406,7 +1406,7 @@ class ConfigurationManagement extends React.Component {
                   onPageSizeChange={val => this.handlePageSizeChange(val)}
                   current={configurations.pageNumber}
                   total={configurations.totalCount}
-                  totalRender={(total, range) => <TotalRender total={total} range={range} />}
+                  totalRender={total => <TotalRender locale={locale} total={total} />}
                   pageSize={this.state.pageSize}
                   onChange={this.changePage.bind(this)}
                 />

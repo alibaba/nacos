@@ -24,6 +24,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.groupingBy;
 
@@ -62,6 +63,9 @@ public class PrometheusUtils {
         labelNode.put("__meta_clusterName", clusterName);
         //export metadata
         Map<String, String> metadata = instance.getMetadata();
+        // auto convert label names contain with "." and "-" to "_"
+        metadata = metadata.entrySet().stream().collect(Collectors.toMap(e -> e.getKey().replace(".", "_").replace("-", "_"), e -> e.getValue()));
+        
         metadata.forEach(labelNode::put);
         ObjectNode jsonNode = JacksonUtils.createEmptyJsonNode();
         jsonNode.replace("targets", targetsNode);

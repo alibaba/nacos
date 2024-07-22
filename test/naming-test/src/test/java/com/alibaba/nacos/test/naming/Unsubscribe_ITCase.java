@@ -25,13 +25,10 @@ import com.alibaba.nacos.api.naming.listener.NamingEvent;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.selector.NamingSelector;
 import com.alibaba.nacos.client.naming.selector.DefaultNamingSelector;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -40,6 +37,8 @@ import java.util.List;
 import static com.alibaba.nacos.test.naming.NamingBase.TEST_PORT;
 import static com.alibaba.nacos.test.naming.NamingBase.randomDomainName;
 import static com.alibaba.nacos.test.naming.NamingBase.verifyInstanceList;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Created by wangtong.wt on 2018/6/20.
@@ -47,18 +46,19 @@ import static com.alibaba.nacos.test.naming.NamingBase.verifyInstanceList;
  * @author wangtong.wt
  * @date 2018/6/20
  */
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class Unsubscribe_ITCase {
+class Unsubscribe_ITCase {
     
     private NamingService naming;
     
     @LocalServerPort
     private int port;
     
-    @Before
-    public void init() throws Exception {
+    private volatile List<Instance> instances = Collections.emptyList();
+    
+    @BeforeEach
+    void init() throws Exception {
         instances = Collections.emptyList();
         if (naming == null) {
             //TimeUnit.SECONDS.sleep(10);
@@ -66,15 +66,13 @@ public class Unsubscribe_ITCase {
         }
     }
     
-    private volatile List<Instance> instances = Collections.emptyList();
-    
     /**
      * 取消订阅，添加IP，不会收到通知
      *
      * @throws Exception
      */
     @Test
-    public void unsubscribe() throws Exception {
+    void unsubscribe() throws Exception {
         String serviceName = randomDomainName();
         
         EventListener listener = new EventListener() {
@@ -94,7 +92,7 @@ public class Unsubscribe_ITCase {
             Thread.sleep(1000L);
         }
         
-        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
         
         naming.unsubscribe(serviceName, listener);
         
@@ -109,7 +107,7 @@ public class Unsubscribe_ITCase {
             }
         }
         
-        Assert.fail();
+        fail();
     }
     
     /**
@@ -118,7 +116,7 @@ public class Unsubscribe_ITCase {
      * @throws Exception
      */
     @Test
-    public void unsubscribeCluster() throws Exception {
+    void unsubscribeCluster() throws Exception {
         String serviceName = randomDomainName();
         
         EventListener listener = new EventListener() {
@@ -138,7 +136,7 @@ public class Unsubscribe_ITCase {
             Thread.sleep(1000L);
         }
         
-        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
         
         naming.unsubscribe(serviceName, Arrays.asList("c1"), listener);
         
@@ -153,7 +151,7 @@ public class Unsubscribe_ITCase {
             }
         }
         
-        Assert.fail();
+        fail();
     }
     
     /**
@@ -162,7 +160,7 @@ public class Unsubscribe_ITCase {
      * @throws Exception
      */
     @Test
-    public void unsubscribeSelector() throws Exception {
+    void unsubscribeSelector() throws Exception {
         String serviceName = randomDomainName();
         
         EventListener listener = new EventListener() {
@@ -184,7 +182,7 @@ public class Unsubscribe_ITCase {
             Thread.sleep(1000L);
         }
         
-        Assert.assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
+        assertTrue(verifyInstanceList(instances, naming.getAllInstances(serviceName)));
         
         naming.unsubscribe(serviceName, selector, listener);
         
@@ -199,7 +197,7 @@ public class Unsubscribe_ITCase {
             }
         }
         
-        Assert.fail();
+        fail();
     }
     
 }

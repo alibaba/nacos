@@ -24,6 +24,8 @@ import com.alibaba.nacos.auth.GrpcProtocolAuthService;
 import com.alibaba.nacos.auth.annotation.Secured;
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.utils.ExceptionUtil;
+import com.alibaba.nacos.core.context.RequestContext;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.core.remote.AbstractRequestFilter;
 import com.alibaba.nacos.core.utils.Loggers;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
@@ -75,6 +77,12 @@ public class RemoteRequestAuthFilter extends AbstractRequestFilter {
                 Resource resource = protocolAuthService.parseResource(request, secured);
                 IdentityContext identityContext = protocolAuthService.parseIdentity(request);
                 boolean result = protocolAuthService.validateIdentity(identityContext, resource);
+                RequestContext requestContext = RequestContextHolder.getContext();
+                requestContext.getAuthContext().setIdentityContext(identityContext);
+                requestContext.getAuthContext().setResource(resource);
+                if (null == requestContext.getAuthContext().getAuthResult()) {
+                    requestContext.getAuthContext().setAuthResult(result);
+                }
                 if (!result) {
                     // TODO Get reason of failure
                     throw new AccessException("Validate Identity failed.");

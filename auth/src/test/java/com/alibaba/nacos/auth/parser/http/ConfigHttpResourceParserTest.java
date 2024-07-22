@@ -56,9 +56,38 @@ class ConfigHttpResourceParserTest {
         Secured secured = getMethodSecure();
         Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
-        Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
         assertEquals("testNs", actual.getNamespaceId());
+        assertEquals("testG", actual.getGroup());
+        assertEquals("testD", actual.getName());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
+    }
+
+    @Test
+    @Secured(signType = Constants.Config.CONFIG_MODULE)
+    void testParseWithNamespaceId() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        Mockito.when(request.getParameter(eq("namespaceId"))).thenReturn("testNs");
+        Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
+        Resource actual = resourceParser.parse(request, secured);
+        assertEquals("testNs", actual.getNamespaceId());
+        assertEquals("testG", actual.getGroup());
+        assertEquals("testD", actual.getName());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
+    }
+
+    @Test
+    @Secured(signType = Constants.Config.CONFIG_MODULE)
+    void testParseWithNamespaceIdFirst() throws NoSuchMethodException {
+        Secured secured = getMethodSecure();
+        Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
+        Mockito.when(request.getParameter(eq("namespaceId"))).thenReturn("testNsFirst");
+        Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
+        Resource actual = resourceParser.parse(request, secured);
+        assertEquals("testNsFirst", actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
         assertEquals("testD", actual.getName());
         assertEquals(Constants.Config.CONFIG_MODULE, actual.getType());
@@ -69,7 +98,7 @@ class ConfigHttpResourceParserTest {
     void testParseWithoutNamespace() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Mockito.when(request.getParameter(eq(Constants.GROUP))).thenReturn("testG");
-        Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
         assertEquals(StringUtils.EMPTY, actual.getNamespaceId());
         assertEquals("testG", actual.getGroup());
@@ -82,7 +111,7 @@ class ConfigHttpResourceParserTest {
     void testParseWithoutGroup() throws NoSuchMethodException {
         Secured secured = getMethodSecure();
         Mockito.when(request.getParameter(eq("tenant"))).thenReturn("testNs");
-        Mockito.when(request.getParameter(eq(Constants.DATAID))).thenReturn("testD");
+        Mockito.when(request.getParameter(eq(Constants.DATA_ID))).thenReturn("testD");
         Resource actual = resourceParser.parse(request, secured);
         assertEquals("testNs", actual.getNamespaceId());
         assertEquals(StringUtils.EMPTY, actual.getGroup());

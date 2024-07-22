@@ -27,8 +27,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
@@ -100,13 +99,13 @@ class TraceEventPublisherTest {
         traceEventPublisher.publish(new TraceTestEvent.TraceTestEvent1());
         traceEventPublisher.publish(new TraceTestEvent.TraceTestEvent2());
         String expectedStatus = "Publisher TraceTestEvent                : shutdown=false, queue=      3/8      ";
-        assertThat(traceEventPublisher.getStatus(), is(expectedStatus));
+        assertEquals(traceEventPublisher.getStatus(), expectedStatus);
         traceEventPublisher.addSubscriber(subscriber, TraceTestEvent.TraceTestEvent1.class);
         ThreadUtils.sleep(2000L);
         expectedStatus = "Publisher TraceTestEvent                : shutdown=false, queue=      0/8      ";
-        assertThat(traceEventPublisher.getStatus(), is(expectedStatus));
+        assertEquals(traceEventPublisher.getStatus(), expectedStatus);
         traceEventPublisher.shutdown();
         expectedStatus = "Publisher TraceTestEvent                : shutdown= true, queue=      0/8      ";
-        assertThat(traceEventPublisher.getStatus(), is(expectedStatus));
+        assertEquals(traceEventPublisher.getStatus(), expectedStatus);
     }
 }
