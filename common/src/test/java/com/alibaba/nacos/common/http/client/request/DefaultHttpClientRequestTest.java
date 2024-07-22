@@ -23,12 +23,12 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.http.param.MediaType;
 import com.alibaba.nacos.common.http.param.Query;
 import com.alibaba.nacos.common.model.RequestHttpEntity;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.entity.UrlEncodedFormEntity;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
-import org.apache.hc.core5.http.HttpEntityContainer;
+import org.apache.hc.core5.http.io.HttpClientResponseHandler;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
 
@@ -54,7 +55,7 @@ class DefaultHttpClientRequestTest {
     private CloseableHttpClient client;
     
     @Mock
-    private CloseableHttpResponse response;
+    private SimpleHttpResponse response;
     
     private RequestConfig defaultConfig;
     
@@ -69,16 +70,14 @@ class DefaultHttpClientRequestTest {
         defaultConfig = RequestConfig.DEFAULT;
         httpClientRequest = new DefaultHttpClientRequest(client, defaultConfig);
         when(client.execute(argThat(httpUriRequest -> {
-            HttpEntityContainer entityRequest = (HttpEntityContainer) httpUriRequest;
-            boolean result = isForm == (entityRequest.getEntity() instanceof UrlEncodedFormEntity);
+            boolean result = isForm == (httpUriRequest.getEntity() instanceof UrlEncodedFormEntity);
             HttpUriRequestBase baseHttpRequest = (HttpUriRequestBase) httpUriRequest;
             if (withConfig) {
                 result &= null != baseHttpRequest.getConfig();
             }
             return result;
-        }))).thenReturn(response);
+        }), any(HttpClientResponseHandler.class))).thenReturn(response);
         uri = URI.create("http://127.0.0.1:8080");
-        
     }
     
     @AfterEach
@@ -119,10 +118,10 @@ class DefaultHttpClientRequestTest {
         assertEquals(response, getActualResponse(actual));
     }
     
-    private CloseableHttpResponse getActualResponse(HttpClientResponse actual)
+    private SimpleHttpResponse getActualResponse(HttpClientResponse actual)
             throws IllegalAccessException, NoSuchFieldException {
         Field field = actual.getClass().getDeclaredField("response");
         field.setAccessible(true);
-        return (CloseableHttpResponse) field.get(actual);
+        return (SimpleHttpResponse) field.get(actual);
     }
 }

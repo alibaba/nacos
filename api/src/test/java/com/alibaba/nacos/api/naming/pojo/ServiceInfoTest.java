@@ -58,7 +58,7 @@ class ServiceInfoTest {
         assertTrue(actual.contains("\"lastRefTime\":0"));
         assertTrue(actual.contains("\"checksum\":\"\""));
         assertTrue(actual.contains("\"valid\":true"));
-        assertTrue(actual.contains("\"allIPs\":false"));
+        assertTrue(actual.contains("\"allIps\":false"));
         assertFalse(actual.contains("jsonFromServer"));
         assertFalse(actual.contains("key"));
         assertFalse(actual.contains("keyEncoded"));
@@ -67,7 +67,7 @@ class ServiceInfoTest {
     @Test
     void testDeserialize() throws IOException {
         String example = "{\"name\":\"G@@testName\",\"clusters\":\"testClusters\",\"cacheMillis\":1000,\"hosts\":[],"
-                + "\"lastRefTime\":0,\"checksum\":\"\",\"allIPs\":false,\"valid\":true,\"groupName\":\"\"}";
+                + "\"lastRefTime\":0,\"checksum\":\"\",\"allIps\":false,\"valid\":true,\"groupName\":\"\"}";
         ServiceInfo actual = mapper.readValue(example, ServiceInfo.class);
         assertEquals("G@@testName", actual.getName());
         assertEquals(0, actual.ipCount());
