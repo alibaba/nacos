@@ -66,7 +66,11 @@ public class DefaultClientHttpResponse implements HttpClientResponse {
     @Override
     public InputStream getBody() {
         byte[] bodyBytes = response.getBody().getBodyBytes();
-        this.responseStream = new ByteArrayInputStream(Objects.requireNonNullElseGet(bodyBytes, () -> new byte[0]));
+        if (bodyBytes != null) {
+            this.responseStream = new ByteArrayInputStream(bodyBytes);
+        } else {
+            this.responseStream = new ByteArrayInputStream(new byte[0]);
+        }
         return this.responseStream;
     }
     
