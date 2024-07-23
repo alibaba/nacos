@@ -30,14 +30,15 @@ import com.alibaba.nacos.core.cluster.remote.ClusterRpcClientProxy;
 import com.alibaba.nacos.core.cluster.remote.response.MemberReportResponse;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.boot.web.context.WebServerInitializedEvent;
 import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -49,9 +50,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -60,8 +61,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ServerMemberManagerTest {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class ServerMemberManagerTest {
+    
+    private static final AtomicBoolean EVENT_PUBLISH = new AtomicBoolean(false);
     
     @Mock
     private ConfigurableEnvironment environment;
@@ -86,10 +91,8 @@ public class ServerMemberManagerTest {
     
     private ServerMemberManager serverMemberManager;
     
-    private static final AtomicBoolean EVENT_PUBLISH = new AtomicBoolean(false);
-    
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         when(environment.getProperty("server.port", Integer.class, 8848)).thenReturn(8848);
         when(environment.getProperty("nacos.member-change-event.queue.size", Integer.class, 128)).thenReturn(128);
         when(context.getBean(AuthConfigs.class)).thenReturn(authConfigs);
@@ -103,21 +106,21 @@ public class ServerMemberManagerTest {
         NotifyCenter.getPublisherMap().put(MembersChangeEvent.class.getCanonicalName(), eventPublisher);
     }
     
-    @After
-    public void tearDown() throws NacosException {
+    @AfterEach
+    void tearDown() throws NacosException {
         EVENT_PUBLISH.set(false);
         NotifyCenter.deregisterPublisher(MembersChangeEvent.class);
         serverMemberManager.shutdown();
     }
     
     @Test
-    public void testUpdateNonExistMember() {
+    void testUpdateNonExistMember() {
         Member newMember = Member.builder().ip("1.1.1.2").port(8848).state(NodeState.UP).build();
         assertFalse(serverMemberManager.update(newMember));
     }
     
     @Test
-    public void testUpdateDownMember() {
+    void testUpdateDownMember() {
         Member newMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN).build();
         assertTrue(serverMemberManager.update(newMember));
         assertFalse(serverMemberManager.getMemberAddressInfos().contains("1.1.1.1:8848"));
@@ -125,18 +128,17 @@ public class ServerMemberManagerTest {
     }
     
     @Test
-    public void testUpdateVersionMember() {
+    void testUpdateVersionMember() {
         Member newMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP).build();
         newMember.setExtendVal(MemberMetaDataConstants.VERSION, "testVersion");
         assertTrue(serverMemberManager.update(newMember));
         assertTrue(serverMemberManager.getMemberAddressInfos().contains("1.1.1.1:8848"));
-        assertEquals("testVersion",
-                serverMemberManager.getServerList().get("1.1.1.1:8848").getExtendVal(MemberMetaDataConstants.VERSION));
+        assertEquals("testVersion", serverMemberManager.getServerList().get("1.1.1.1:8848").getExtendVal(MemberMetaDataConstants.VERSION));
         verify(eventPublisher).publish(any(MembersChangeEvent.class));
     }
     
     @Test
-    public void testUpdateNonBasicExtendInfoMember() {
+    void testUpdateNonBasicExtendInfoMember() {
         Member newMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP).build();
         newMember.setExtendVal("naming", "test");
         assertTrue(serverMemberManager.update(newMember));
@@ -146,12 +148,12 @@ public class ServerMemberManagerTest {
     }
     
     @Test
-    public void testHasMember() {
+    void testHasMember() {
         assertTrue(serverMemberManager.hasMember("1.1.1.1"));
     }
     
     @Test
-    public void testMemberLeave() {
+    void testMemberLeave() {
         Member member = Member.builder().ip("1.1.3.3").port(8848).state(NodeState.DOWN).build();
         boolean joinResult = serverMemberManager.memberJoin(Collections.singletonList(member));
         assertTrue(joinResult);
@@ -164,40 +166,39 @@ public class ServerMemberManagerTest {
     }
     
     @Test
-    public void testIsUnHealth() {
+    void testIsUnHealth() {
         assertFalse(serverMemberManager.isUnHealth("1.1.1.1"));
     }
     
     @Test
-    public void testIsFirstIp() {
+    void testIsFirstIp() {
         assertFalse(serverMemberManager.isFirstIp());
     }
     
     @Test
-    public void testGetServerList() {
+    void testGetServerList() {
         assertEquals(2, serverMemberManager.getServerList().size());
     }
     
     @Test
-    public void testEnvSetPort() {
+    void testEnvSetPort() {
         ServletWebServerApplicationContext context = new ServletWebServerApplicationContext();
         context.setServerNamespace("management");
         Mockito.when(mockEvent.getApplicationContext()).thenReturn(context);
         serverMemberManager.onApplicationEvent(mockEvent);
         int port = EnvUtil.getPort();
-        Assert.assertEquals(port, 8848);
+        assertEquals(8848, port);
     }
     
     @Test
-    public void testHttpReportTaskWithoutMemberInfo() throws NacosException {
+    void testHttpReportTaskWithoutMemberInfo() throws NacosException {
         Member testMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN)
                 .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "test")).build();
         testMember.setAbilities(new ServerAbilities());
         testMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
         testMember.getAbilities().getRemoteAbility().setGrpcReportEnabled(false);
         serverMemberManager.updateMember(testMember);
-        assertTrue(
-                serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
+        assertTrue(serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
         NacosAsyncRestTemplate mockAsyncRestTemplate = mock(NacosAsyncRestTemplate.class);
         ReflectionTestUtils.setField(serverMemberManager, "asyncRestTemplate", mockAsyncRestTemplate);
         doAnswer(invocationOnMock -> {
@@ -212,14 +213,13 @@ public class ServerMemberManagerTest {
     }
     
     @Test
-    public void testGrpcReportTaskWithoutMemberInfo() throws NacosException {
+    void testGrpcReportTaskWithoutMemberInfo() throws NacosException {
         Member testMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN)
                 .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "test")).build();
         testMember.setAbilities(new ServerAbilities());
         testMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
         serverMemberManager.updateMember(testMember);
-        assertTrue(
-                serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
+        assertTrue(serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
         ServerMemberManager.MemberInfoReportTask infoReportTask = serverMemberManager.getInfoReportTask();
         ClusterRpcClientProxy clusterRpcClientProxy = mock(ClusterRpcClientProxy.class);
         ReflectionTestUtils.setField(infoReportTask, "clusterRpcClientProxy", clusterRpcClientProxy);
@@ -232,15 +232,14 @@ public class ServerMemberManagerTest {
     }
     
     @Test
-    public void testHttpReportTaskWithMemberInfoChanged() {
+    void testHttpReportTaskWithMemberInfoChanged() {
         Member testMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN)
                 .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "test")).build();
         testMember.setAbilities(new ServerAbilities());
         testMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
         testMember.getAbilities().getRemoteAbility().setGrpcReportEnabled(false);
         serverMemberManager.updateMember(testMember);
-        assertTrue(
-                serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
+        assertTrue(serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
         Member newMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN)
                 .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "new")).build();
         NacosAsyncRestTemplate mockAsyncRestTemplate = mock(NacosAsyncRestTemplate.class);
@@ -257,14 +256,13 @@ public class ServerMemberManagerTest {
     }
     
     @Test
-    public void testGrpcReportTaskWithMemberInfoChanged() throws NacosException {
+    void testGrpcReportTaskWithMemberInfoChanged() throws NacosException {
         Member testMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.DOWN)
                 .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "test")).build();
         testMember.setAbilities(new ServerAbilities());
         testMember.getAbilities().getRemoteAbility().setSupportRemoteConnection(true);
         serverMemberManager.updateMember(testMember);
-        assertTrue(
-                serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
+        assertTrue(serverMemberManager.find("1.1.1.1:8848").getExtendInfo().containsKey(MemberMetaDataConstants.VERSION));
         Member newMember = Member.builder().ip("1.1.1.1").port(8848).state(NodeState.UP)
                 .extendInfo(Collections.singletonMap(MemberMetaDataConstants.VERSION, "new")).build();
         ServerMemberManager.MemberInfoReportTask infoReportTask = serverMemberManager.getInfoReportTask();

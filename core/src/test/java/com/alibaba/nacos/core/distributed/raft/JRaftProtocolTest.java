@@ -22,12 +22,13 @@ import com.alibaba.nacos.consistency.entity.WriteRequest;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alipay.sofa.jraft.Node;
 import com.google.protobuf.Message;
-import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import java.lang.reflect.Field;
 import java.util.HashSet;
@@ -40,8 +41,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class JRaftProtocolTest extends TestCase {
+@ExtendWith(MockitoExtension.class)
+// todo remove this
+@MockitoSettings(strictness = Strictness.LENIENT)
+class JRaftProtocolTest {
     
     @Mock
     private JRaftServer serverMock;
@@ -66,16 +69,15 @@ public class JRaftProtocolTest extends TestCase {
     
     private String groupId;
     
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @BeforeEach
+    void setUp() throws Exception {
         raftProtocol = new JRaftProtocol(memberManager);
         ReadRequest.Builder readRequestBuilder = ReadRequest.newBuilder();
         readRequest = readRequestBuilder.build();
         
         WriteRequest.Builder writeRequestBuilder = WriteRequest.newBuilder();
         writeRequest = writeRequestBuilder.build();
-    
+        
         Field raftServerField = JRaftProtocol.class.getDeclaredField("raftServer");
         raftServerField.setAccessible(true);
         raftServerField.set(raftProtocol, serverMock);
@@ -86,32 +88,32 @@ public class JRaftProtocolTest extends TestCase {
         
         when(serverMock.get(readRequest)).thenReturn(futureMock);
         when(serverMock.commit(any(String.class), any(Message.class), any(CompletableFuture.class))).thenReturn(futureMock);
-    
+        
         groupId = "test_group";
         when(serverMock.findNodeByGroup(groupId)).thenReturn(nodeMock);
     }
     
     @Test
-    public void testGetData() throws Exception {
+    void testGetData() throws Exception {
         raftProtocol.getData(readRequest);
         verify(serverMock).get(readRequest);
     }
     
     @Test
-    public void testWrite() throws Exception {
+    void testWrite() throws Exception {
         raftProtocol.write(writeRequest);
         verify(serverMock).commit(any(String.class), eq(writeRequest), any(CompletableFuture.class));
     }
     
     @Test
-    public void testMemberChange() {
+    void testMemberChange() {
         Set<String> addresses = new HashSet<>();
         raftProtocol.memberChange(addresses);
         verify(serverMock, times(5)).peerChange(jRaftMaintainService, addresses);
     }
     
     @Test
-    public void testIsLeader() {
+    void testIsLeader() {
         raftProtocol.isLeader(groupId);
         verify(serverMock).findNodeByGroup(groupId);
         verify(nodeMock).isLeader();

@@ -17,14 +17,12 @@
 package com.alibaba.nacos.core.paramcheck.impl;
 
 import com.alibaba.nacos.api.config.remote.request.AbstractConfigRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigPublishRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigQueryRequest;
-import com.alibaba.nacos.api.config.remote.request.ConfigRemoveRequest;
-import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.api.remote.request.Request;
-import com.alibaba.nacos.common.paramcheck.ParamCheckUtils;
 import com.alibaba.nacos.common.paramcheck.ParamInfo;
 import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The type Config request param extractor {@link AbstractConfigRequest}.
@@ -34,20 +32,14 @@ import com.alibaba.nacos.core.paramcheck.AbstractRpcParamExtractor;
 public class ConfigRequestParamExtractor extends AbstractRpcParamExtractor {
     
     @Override
-    public void init() {
-        addTargetRequest(ConfigRemoveRequest.class.getSimpleName());
-        addTargetRequest(ConfigQueryRequest.class.getSimpleName());
-        addTargetRequest(ConfigPublishRequest.class.getSimpleName());
-        addTargetRequest(ConfigChangeClusterSyncRequest.class.getSimpleName());
-    }
-    
-    @Override
-    public void extractParamAndCheck(Request request) throws Exception {
+    public List<ParamInfo> extractParam(Request request) {
         AbstractConfigRequest req = (AbstractConfigRequest) request;
         ParamInfo paramInfo = new ParamInfo();
         paramInfo.setDataId(req.getDataId());
         paramInfo.setGroup(req.getGroup());
         paramInfo.setNamespaceId(req.getTenant());
-        ParamCheckUtils.checkParamInfoFormat(paramInfo);
+        ArrayList<ParamInfo> paramInfos = new ArrayList<>();
+        paramInfos.add(paramInfo);
+        return paramInfos;
     }
 }

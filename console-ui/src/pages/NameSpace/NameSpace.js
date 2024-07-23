@@ -16,13 +16,14 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Button, ConfigProvider, Dialog, Loading, Table } from '@alifd/next';
+import { Button, ConfigProvider, Dialog, Loading, Table, Form } from '@alifd/next';
 import RegionGroup from '../../components/RegionGroup';
 import NewNameSpace from '../../components/NewNameSpace';
 import EditorNameSpace from '../../components/EditorNameSpace';
 import { getParams, setParams, request } from '../../globalLib';
 
 import './index.scss';
+import PageTitle from '../../components/PageTitle';
 
 @ConfigProvider.config
 class NameSpace extends React.Component {
@@ -297,7 +298,7 @@ class NameSpace extends React.Component {
     } = locale;
     return (
       <>
-        <RegionGroup left={namespace} />
+        <PageTitle title={namespace} />
         <div className="fusion-demo">
           <Loading
             shape="flower"
@@ -306,23 +307,29 @@ class NameSpace extends React.Component {
             style={{ width: '100%' }}
             visible={this.state.loading}
           >
+            <div
+              style={{
+                position: 'relative',
+                marginTop: 10,
+                height: 'auto',
+                overflow: 'visible',
+              }}
+            >
+              <Form inline>
+                <Form.Item>
+                  <Button type="primary" onClick={this.addNameSpace.bind(this)}>
+                    {namespaceAdd}
+                  </Button>
+                </Form.Item>
+                <Form.Item>
+                  <Button type="secondary" onClick={() => this.getNameSpaces()}>
+                    {locale.refresh}
+                  </Button>
+                </Form.Item>
+              </Form>
+            </div>
+
             <div>
-              <div style={{ textAlign: 'right', marginBottom: 10 }}>
-                <Button
-                  type="primary"
-                  style={{ marginRight: 20, marginTop: 10 }}
-                  onClick={this.addNameSpace.bind(this)}
-                >
-                  {namespaceAdd}
-                </Button>
-                <Button
-                  style={{ marginRight: 0, marginTop: 10 }}
-                  type="secondary"
-                  onClick={() => this.getNameSpaces()}
-                >
-                  {locale.refresh}
-                </Button>
-              </div>
               <div>
                 <Table dataSource={this.state.dataSource} locale={{ empty: pubNoData }}>
                   <Table.Column

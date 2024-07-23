@@ -20,16 +20,18 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.util.Collections;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link FileConfigMemberLookup} unit test.
@@ -37,39 +39,39 @@ import java.util.Collections;
  * @author chenglu
  * @date 2021-07-08 22:23
  */
-@RunWith(MockitoJUnitRunner.class)
-public class FileConfigMemberLookupTest {
+@ExtendWith(MockitoExtension.class)
+class FileConfigMemberLookupTest {
     
     private FileConfigMemberLookup fileConfigMemberLookup;
     
     @Mock
     private ServerMemberManager memberManager;
     
-    @Before
-    public void setUp() throws NacosException {
+    @BeforeEach
+    void setUp() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
         fileConfigMemberLookup = new FileConfigMemberLookup();
         fileConfigMemberLookup.injectMemberManager(memberManager);
         fileConfigMemberLookup.start();
     }
     
-    @After
-    public void tearDown() throws NacosException {
+    @AfterEach
+    void tearDown() throws NacosException {
         fileConfigMemberLookup.destroy();
     }
     
     @Test
-    public void testAfterLookup() {
+    void testAfterLookup() {
         try {
             fileConfigMemberLookup.afterLookup(Collections.singletonList(new Member()));
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testUseAddressServer() {
-        Assert.assertFalse(fileConfigMemberLookup.useAddressServer());
+    void testUseAddressServer() {
+        assertFalse(fileConfigMemberLookup.useAddressServer());
     }
 }

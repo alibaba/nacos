@@ -44,6 +44,7 @@ public class NacosMonitorPushResultHook implements PushResultHook {
     
     @Override
     public void pushFailed(PushResult result) {
+        MetricsMonitor.incrementPush();
         MetricsMonitor.incrementFailPush();
         if (isRpc(result.getSubscriber())) {
             NamingTpsMonitor.rpcPushFail(result.getSubscribeClientId(), result.getSubscriber().getIp());

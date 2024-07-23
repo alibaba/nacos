@@ -80,8 +80,7 @@ public class TraceEventPublisher extends Thread implements ShardedEventPublisher
 
     @Override
     public void addSubscriber(Subscriber subscriber, Class<? extends Event> subscribeType) {
-        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>());
-        subscribes.get(subscribeType).add(subscriber);
+        subscribes.computeIfAbsent(subscribeType, inputType -> new ConcurrentHashSet<>()).add(subscriber);
     }
 
     @Override

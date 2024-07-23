@@ -16,32 +16,33 @@
 
 package com.alibaba.nacos.plugin.auth.api;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class IdentityContextTest {
+class IdentityContextTest {
     
     private static final String TEST = "test";
     
     private IdentityContext identityContext;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         identityContext = new IdentityContext();
     }
     
     @Test
-    public void testGetParameter() {
+    void testGetParameter() {
         assertNull(identityContext.getParameter(TEST));
         identityContext.setParameter(TEST, TEST);
         assertEquals(TEST, identityContext.getParameter(TEST));
     }
     
     @Test
-    public void testGetParameterWithDefaultValue() {
+    void testGetParameterWithDefaultValue() {
         assertEquals(TEST, identityContext.getParameter(TEST, TEST));
         identityContext.setParameter(TEST, TEST + "new");
         assertEquals(TEST + "new", identityContext.getParameter(TEST, TEST));
@@ -49,8 +50,10 @@ public class IdentityContextTest {
         assertEquals(1L, actual);
     }
     
-    @Test(expected = IllegalArgumentException.class)
-    public void testGetParameterWithNullDefaultValue() {
-        identityContext.getParameter(TEST, null);
+    @Test
+    void testGetParameterWithNullDefaultValue() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            identityContext.getParameter(TEST, null);
+        });
     }
 }

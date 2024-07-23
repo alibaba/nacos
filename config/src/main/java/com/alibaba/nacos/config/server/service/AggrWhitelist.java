@@ -67,7 +67,7 @@ public class AggrWhitelist {
      */
     public static void load(String content) {
         if (StringUtils.isBlank(content)) {
-            FATAL_LOG.error("aggr dataId whitelist is blank.");
+            FATAL_LOG.warn("aggr dataId whitelist is blank.");
             return;
         }
         DEFAULT_LOG.warn("[aggr-dataIds] {}", content);

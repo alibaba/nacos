@@ -17,21 +17,22 @@
 package com.alibaba.nacos.persistence.datasource;
 
 import com.zaxxer.hikari.HikariDataSource;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class LocalDataSourceServiceImplTest {
+@ExtendWith(MockitoExtension.class)
+class LocalDataSourceServiceImplTest {
     
     @InjectMocks
     private LocalDataSourceServiceImpl service;
@@ -42,35 +43,35 @@ public class LocalDataSourceServiceImplTest {
     @Mock
     private TransactionTemplate tjt;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         service = new LocalDataSourceServiceImpl();
         ReflectionTestUtils.setField(service, "jt", jt);
         ReflectionTestUtils.setField(service, "tjt", tjt);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("test.jdbc.url");
         when(jt.getDataSource()).thenReturn(dataSource);
-        Assert.assertEquals(dataSource.getJdbcUrl(), ((HikariDataSource) service.getDatasource()).getJdbcUrl());
+        assertEquals(dataSource.getJdbcUrl(), ((HikariDataSource) service.getDatasource()).getJdbcUrl());
     }
     
     @Test
-    public void testCheckMasterWritable() {
+    void testCheckMasterWritable() {
         
-        Assert.assertTrue(service.checkMasterWritable());
+        assertTrue(service.checkMasterWritable());
     }
     
     @Test
-    public void testSetAndGetHealth() {
+    void testSetAndGetHealth() {
         
         service.setHealthStatus("DOWN");
-        Assert.assertEquals("DOWN", service.getHealth());
+        assertEquals("DOWN", service.getHealth());
         
         service.setHealthStatus("UP");
-        Assert.assertEquals("UP", service.getHealth());
+        assertEquals("UP", service.getHealth());
     }
 }

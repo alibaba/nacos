@@ -24,20 +24,14 @@ import java.util.List;
  * @param <T> the type parameter
  * @author zhuoguang
  */
-public interface ParamExtractor<T> {
+public interface ParamExtractor<T, R> {
     
     /**
-     * Gets target request list.
-     *
-     * @return the target request list
-     */
-    List<String> getTargetRequestList();
-    
-    /**
-     * Extract param and check.
+     * Extract param.
      *
      * @param params the params
+     * @return the list
      * @throws Exception the exception
      */
-    void extractParamAndCheck(T params) throws Exception;
+    List<R> extractParam(T params) throws Exception;
 }

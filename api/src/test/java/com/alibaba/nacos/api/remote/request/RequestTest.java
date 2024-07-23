@@ -16,23 +16,23 @@
 
 package com.alibaba.nacos.api.remote.request;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class RequestTest {
+class RequestTest {
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
     }
     
     @Test
-    public void testHeader() {
+    void testHeader() {
         MockRequest request = new MockRequest();
         assertTrue(request.getHeaders().isEmpty());
         assertNull(request.getHeader("clientIp"));

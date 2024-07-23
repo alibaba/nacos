@@ -17,9 +17,11 @@
 
 package com.alibaba.nacos.consistency.snapshot;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link Writer} unit test.
@@ -27,27 +29,27 @@ import org.junit.Test;
  * @author chenglu
  * @date 2021-07-28 18:50
  */
-public class WriterTest {
+class WriterTest {
     
     private Writer writer;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         writer = new Writer("test");
     }
     
     @Test
-    public void test() {
-        Assert.assertEquals("test", writer.getPath());
-    
-        Assert.assertTrue(writer.addFile("a"));
+    void test() {
+        assertEquals("test", writer.getPath());
         
-        Assert.assertTrue(writer.addFile("b", new LocalFileMeta()));
+        assertTrue(writer.addFile("a"));
         
-        Assert.assertEquals(2, writer.listFiles().size());
+        assertTrue(writer.addFile("b", new LocalFileMeta()));
         
-        Assert.assertTrue(writer.removeFile("a"));
+        assertEquals(2, writer.listFiles().size());
         
-        Assert.assertEquals(1, writer.listFiles().size());
+        assertTrue(writer.removeFile("a"));
+        
+        assertEquals(1, writer.listFiles().size());
     }
 }

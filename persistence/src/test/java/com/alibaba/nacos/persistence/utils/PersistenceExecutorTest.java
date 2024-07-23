@@ -16,16 +16,17 @@
 
 package com.alibaba.nacos.persistence.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class PersistenceExecutorTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class PersistenceExecutorTest {
     
     @Test
-    public void testExecuteEmbeddedDump() throws InterruptedException {
+    void testExecuteEmbeddedDump() throws InterruptedException {
         
         AtomicInteger atomicInteger = new AtomicInteger();
         
@@ -35,7 +36,7 @@ public class PersistenceExecutorTest {
         
         TimeUnit.MILLISECONDS.sleep(20);
         
-        Assert.assertEquals(1, atomicInteger.get());
+        assertEquals(1, atomicInteger.get());
         
     }
     

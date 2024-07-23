@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.control.connection.response;
 
 /**
  * connection check response.
+ *
  * @author shiyiyue
  */
 public class ConnectionCheckResponse {
@@ -27,6 +28,8 @@ public class ConnectionCheckResponse {
     private String message;
     
     private int code;
+    
+    private String limitMessage;
     
     public boolean isSuccess() {
         return success;
@@ -50,5 +53,13 @@ public class ConnectionCheckResponse {
     
     public void setCode(int code) {
         this.code = code;
+    }
+    
+    public String getLimitMessage() {
+        return limitMessage;
+    }
+    
+    public void setLimitMessage(String limitMessage) {
+        this.limitMessage = limitMessage;
     }
 }

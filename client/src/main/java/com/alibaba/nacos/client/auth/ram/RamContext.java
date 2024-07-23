@@ -31,6 +31,8 @@ public class RamContext {
     
     private String ramRoleName;
     
+    private String regionId;
+    
     public String getAccessKey() {
         return accessKey;
     }
@@ -53,6 +55,14 @@ public class RamContext {
     
     public void setRamRoleName(String ramRoleName) {
         this.ramRoleName = ramRoleName;
+    }
+    
+    public String getRegionId() {
+        return regionId;
+    }
+    
+    public void setRegionId(String regionId) {
+        this.regionId = regionId;
     }
     
     public boolean validate() {

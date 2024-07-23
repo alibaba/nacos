@@ -18,7 +18,6 @@ package com.alibaba.nacos.config.server.service.repository;
 
 import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
-import com.alibaba.nacos.config.server.model.ConfigKey;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.persistence.repository.PaginationHelper;
 
@@ -43,14 +42,6 @@ public interface ConfigInfoAggrPersistService {
      * @return {@link PaginationHelper}
      */
     <E> PaginationHelper<E> createPaginationHelper();
-    
-    /**
-     * Generate fuzzy search Sql.
-     *
-     * @param s origin string
-     * @return fuzzy search Sql
-     */
-    String generateLikeArgument(String s);
     
     //------------------------------------------insert---------------------------------------------//
     
@@ -82,53 +73,6 @@ public interface ConfigInfoAggrPersistService {
     boolean batchPublishAggr(final String dataId, final String group, final String tenant,
             final Map<String, String> datumMap, final String appName);
     
-    /**
-     * Batch replacement, first delete all the specified DataID+Group data in the aggregation table, and then insert the
-     * data. Any exception during the transaction process will force a TransactionSystemException to be thrown.
-     *
-     * @param dataId   dataId
-     * @param group    group
-     * @param tenant   tenant
-     * @param appName  app name
-     * @param datumMap datumMap
-     * @return {@code true} if replace success
-     */
-    boolean replaceAggr(final String dataId, final String group, final String tenant,
-            final Map<String, String> datumMap, final String appName);
-    
-    //------------------------------------------delete---------------------------------------------//
-    
-    /**
-     * Delete a single piece of data before aggregation.
-     *
-     * @param dataId  data id
-     * @param group   group
-     * @param tenant  tenant
-     * @param datumId datum id
-     */
-    void removeSingleAggrConfigInfo(final String dataId, final String group, final String tenant, final String datumId);
-    
-    /**
-     * Delete all pre-aggregation data under a dataId.
-     *
-     * @param dataId data id
-     * @param group  group
-     * @param tenant tenant
-     */
-    void removeAggrConfigInfo(final String dataId, final String group, final String tenant);
-    
-    /**
-     * To delete aggregated data in bulk, you need to specify a list of datum.
-     *
-     * @param dataId    dataId
-     * @param group     group
-     * @param tenant    tenant
-     * @param datumList datumList
-     * @return {@code true} if remove success
-     */
-    boolean batchRemoveAggr(final String dataId, final String group, final String tenant, final List<String> datumList);
-    
-    //------------------------------------------update---------------------------------------------//
     
     //------------------------------------------select---------------------------------------------//
     
@@ -141,39 +85,6 @@ public interface ConfigInfoAggrPersistService {
      * @return count
      */
     int aggrConfigInfoCount(String dataId, String group, String tenant);
-    
-    /**
-     * Get count of aggregation config info.
-     *
-     * @param dataId   data id
-     * @param group    group
-     * @param tenant   tenant
-     * @param datumIds datum id list
-     * @param isIn     search condition
-     * @return count
-     */
-    int aggrConfigInfoCount(String dataId, String group, String tenant, List<String> datumIds, boolean isIn);
-    
-    /**
-     * Find a single piece of data before aggregation.
-     *
-     * @param dataId  data id
-     * @param group   group
-     * @param tenant  tenant
-     * @param datumId datum id
-     * @return {@link ConfigInfoAggr}
-     */
-    ConfigInfoAggr findSingleConfigInfoAggr(String dataId, String group, String tenant, String datumId);
-    
-    /**
-     * Find all data before aggregation under a dataId. It is guaranteed not to return NULL.
-     *
-     * @param dataId data id
-     * @param group  group
-     * @param tenant tenant
-     * @return {@link ConfigInfoAggr} list
-     */
-    List<ConfigInfoAggr> findConfigInfoAggr(String dataId, String group, String tenant);
     
     /**
      * Query aggregation config info.
@@ -189,31 +100,10 @@ public interface ConfigInfoAggrPersistService {
             final int pageSize);
     
     /**
-     * Query eligible aggregated data.
-     *
-     * @param pageNo     pageNo
-     * @param pageSize   pageSize
-     * @param configKeys aggregate data conditions
-     * @param blacklist  blacklist
-     * @return {@link Page} with {@link ConfigInfoAggr} generation
-     */
-    Page<ConfigInfoAggr> findConfigInfoAggrLike(final int pageNo, final int pageSize, ConfigKey[] configKeys,
-            boolean blacklist);
-    
-    /**
      * Find all aggregated data sets.
      *
      * @return {@link ConfigInfoChanged} list
      */
     List<ConfigInfoChanged> findAllAggrGroup();
-    
-    /**
-     * Find datumId by datum content.
-     *
-     * @param dataId  data id
-     * @param groupId group
-     * @param content content
-     * @return datum keys
-     */
-    List<String> findDatumIdByContent(String dataId, String groupId, String content);
+   
 }

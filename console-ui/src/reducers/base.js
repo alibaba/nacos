@@ -15,7 +15,7 @@
  */
 
 import request from '../utils/request';
-import { GET_STATE, LOGINPAGE_ENABLED, GET_NOTICE } from '../constants';
+import { GET_STATE, LOGINPAGE_ENABLED, GET_NOTICE, SERVER_GUIDE, LANGUAGE_KEY } from '../constants';
 
 const initialState = {
   version: null,
@@ -24,6 +24,9 @@ const initialState = {
   loginPageEnabled: '',
   authEnabled: '',
   notice: '',
+  consoleUiEnable: '',
+  authAdminRequest: '',
+  guideMsg: '',
 };
 
 /**
@@ -31,6 +34,17 @@ const initialState = {
  * @param {*} param0
  */
 const login = user => request.post('v1/auth/users/login', user);
+const admin = user => request.post('v1/auth/users/admin', user);
+
+/**
+ * 单独在login处调用 获取提示信息
+ */
+const guide = () => request.get('v1/console/server/guide');
+
+/**
+ * 单独在login调用 判断是否可以登陆
+ */
+const state = () => request.get('v1/console/server/state');
 
 const getState = () => dispatch =>
   request
@@ -45,6 +59,9 @@ const getState = () => dispatch =>
           functionMode: res.function_mode,
           loginPageEnabled: res.login_page_enabled,
           authEnabled: res.auth_enabled,
+          authAdminRequest: res.auth_admin_request,
+          consoleUiEnable: res.console_ui_enabled,
+          startupMode: res.startup_mode,
         },
       });
     })
@@ -57,13 +74,15 @@ const getState = () => dispatch =>
           functionMode: null,
           loginPageEnabled: null,
           authEnabled: null,
+          consoleUiEnable: null,
+          authAdminRequest: null,
         },
       });
     });
 
 const getNotice = () => dispatch =>
   request
-    .get('v1/console/server/announcement')
+    .get('v1/console/server/announcement?language=' + localStorage.getItem(LANGUAGE_KEY))
     .then(res => {
       dispatch({
         type: GET_NOTICE,
@@ -81,15 +100,37 @@ const getNotice = () => dispatch =>
       });
     });
 
+const getGuide = () => dispatch =>
+  request
+    .get('v1/console/server/guide')
+    .then(res => {
+      dispatch({
+        type: SERVER_GUIDE,
+        data: {
+          guideMsg: res.data,
+        },
+      });
+    })
+    .catch(() => {
+      dispatch({
+        type: SERVER_GUIDE,
+        data: {
+          guideMsg: '',
+        },
+      });
+    });
+
 export default (state = initialState, action) => {
   switch (action.type) {
     case GET_STATE:
       return { ...state, ...action.data };
     case GET_NOTICE:
       return { ...state, ...action.data };
+    case SERVER_GUIDE:
+      return { ...state, ...action.data };
     default:
       return state;
   }
 };
 
-export { getState, login, getNotice };
+export { getState, login, getNotice, getGuide, guide, state, admin };

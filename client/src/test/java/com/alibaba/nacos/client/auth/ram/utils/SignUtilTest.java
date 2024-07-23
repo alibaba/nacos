@@ -16,14 +16,32 @@
 
 package com.alibaba.nacos.client.auth.ram.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class SignUtilTest {
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class SignUtilTest {
     
     @Test
-    public void testSign() throws Exception {
+    void testSign() throws Exception {
         String actual = SignUtil.sign("aaa", "b");
-        Assert.assertEquals("DxyaKScrqL26yXYOuHXE3OwfQ0Y=", actual);
+        assertEquals("DxyaKScrqL26yXYOuHXE3OwfQ0Y=", actual);
+    }
+    
+    @Test
+    void testSignWithException() throws Exception {
+        assertThrows(Exception.class, () -> {
+            SignUtil.sign(null, "b");
+        });
+    }
+    
+    @Test
+    void testSignWithException2() throws Exception {
+        assertThrows(Exception.class, () -> {
+            SignUtil.sign("aaa".getBytes(StandardCharsets.UTF_8), "b".getBytes(StandardCharsets.UTF_8), null);
+        });
     }
 }

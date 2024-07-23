@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+@import "theme/index.scss";
 
 html,
 body,
@@ -1244,7 +1245,7 @@ form.vertical-margin-lg .form-group {
 }
 
 .row-bg-green {
-  background-color: #e4fdda;
+  background-color: #e4fdda !important;
 }
 
 .row-bg-light-green {
@@ -1256,7 +1257,7 @@ form.vertical-margin-lg .form-group {
 }
 
 .row-bg-red {
-  background-color: #ffece4;
+  background-color: #ffece4 !important;
 }
 
 

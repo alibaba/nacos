@@ -36,6 +36,8 @@ public class ParamInfo {
     
     private String cluster;
     
+    private String clusters;
+    
     private String ip;
     
     private String port;
@@ -88,6 +90,14 @@ public class ParamInfo {
     
     public void setCluster(String cluster) {
         this.cluster = cluster;
+    }
+    
+    public String getClusters() {
+        return clusters;
+    }
+    
+    public void setClusters(String clusters) {
+        this.clusters = clusters;
     }
     
     public String getIp() {

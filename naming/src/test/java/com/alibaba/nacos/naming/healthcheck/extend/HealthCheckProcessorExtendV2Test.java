@@ -18,11 +18,11 @@ package com.alibaba.nacos.naming.healthcheck.extend;
 
 import com.alibaba.nacos.naming.healthcheck.v2.processor.HealthCheckProcessorV2;
 import com.alibaba.nacos.naming.healthcheck.v2.processor.MysqlHealthCheckProcessor;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.config.SingletonBeanRegistry;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -33,34 +33,34 @@ import java.util.Set;
 
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class HealthCheckProcessorExtendV2Test {
-
+@ExtendWith(MockitoExtension.class)
+class HealthCheckProcessorExtendV2Test {
+    
     @Mock
     private SingletonBeanRegistry registry;
-
+    
     @Mock
     private MysqlHealthCheckProcessor mysqlProcessor;
-
+    
     private HealthCheckProcessorExtendV2 healthCheckProcessorExtendV2;
-
-    @Before
-    public void setUp() {
+    
+    @BeforeEach
+    void setUp() {
         healthCheckProcessorExtendV2 = new HealthCheckProcessorExtendV2();
         Collection<HealthCheckProcessorV2> processors = new ArrayList<>();
         processors.add(mysqlProcessor);
-
+        
         ReflectionTestUtils.setField(healthCheckProcessorExtendV2, "processors", processors);
         ReflectionTestUtils.setField(healthCheckProcessorExtendV2, "registry", registry);
     }
-
+    
     @Test
-    public void addProcessor() {
+    void addProcessor() {
         Set<String> origin = new HashSet<>();
         origin.add("HTTP");
         healthCheckProcessorExtendV2.addProcessor(origin);
-
-        verify(registry).registerSingleton(healthCheckProcessorExtendV2
-                .lowerFirstChar(mysqlProcessor.getClass().getSimpleName()), mysqlProcessor);
+        
+        verify(registry).registerSingleton(healthCheckProcessorExtendV2.lowerFirstChar(mysqlProcessor.getClass().getSimpleName()),
+                mysqlProcessor);
     }
 }

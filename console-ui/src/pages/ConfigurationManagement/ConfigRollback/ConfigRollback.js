@@ -173,7 +173,7 @@ class ConfigRollback extends React.Component {
       const typeMap = {
         U: locale.update,
         I: locale.insert,
-        D: locale.deleteAction,
+        D: locale.rollbackDelete,
       };
       return typeMap[type];
     }

@@ -48,6 +48,18 @@ class SearchableProperties implements NacosClientProperties {
     private static final CompositeConverter CONVERTER = new CompositeConverter();
     
     static {
+        SEARCH_ORDER = init();
+        StringBuilder orderInfo = new StringBuilder("properties search order:");
+        for (int i = 0; i < SEARCH_ORDER.size(); i++) {
+            orderInfo.append(SEARCH_ORDER.get(i).toString());
+            if (i < SEARCH_ORDER.size() - 1) {
+                orderInfo.append("->");
+            }
+        }
+        LOGGER.debug(orderInfo.toString());
+    }
+    
+    private static List<SourceType> init() {
         List<SourceType> initOrder = Arrays.asList(SourceType.PROPERTIES, SourceType.JVM, SourceType.ENV);
         
         String firstEnv = JVM_ARGS_PROPERTY_SOURCE.getProperty(Constants.SysEnv.NACOS_ENV_FIRST);
@@ -67,15 +79,7 @@ class SearchableProperties implements NacosClientProperties {
                 LOGGER.warn("first source type parse error, it will be used default order!", e);
             }
         }
-        SEARCH_ORDER = initOrder;
-        StringBuilder orderInfo = new StringBuilder("properties search order:");
-        for (int i = 0; i < SEARCH_ORDER.size(); i++) {
-            orderInfo.append(SEARCH_ORDER.get(i).toString());
-            if (i < SEARCH_ORDER.size() - 1) {
-                orderInfo.append("->");
-            }
-        }
-        LOGGER.debug(orderInfo.toString());
+        return initOrder;
     }
     
     static final SearchableProperties INSTANCE = new SearchableProperties();
@@ -117,6 +121,23 @@ class SearchableProperties implements NacosClientProperties {
                 return this.propertiesPropertySource.getProperty(key);
             default:
                 return this.getProperty(key);
+        }
+    }
+    
+    @Override
+    public Properties getProperties(SourceType source) {
+        if (source == null) {
+            return null;
+        }
+        switch (source) {
+            case JVM:
+                return JVM_ARGS_PROPERTY_SOURCE.asProperties();
+            case ENV:
+                return SYSTEM_ENV_PROPERTY_SOURCE.asProperties();
+            case PROPERTIES:
+                return this.propertiesPropertySource.asProperties();
+            default:
+                return null;
         }
     }
     
@@ -183,21 +204,11 @@ class SearchableProperties implements NacosClientProperties {
     }
     
     private <T> Optional<T> search(String key, Class<T> targetType) {
-        if (targetType == null) {
-            throw new IllegalArgumentException("target type must not be null!");
-        }
-        
         for (AbstractPropertySource propertySource : propertySources) {
             final String value = propertySource.getProperty(key);
             if (value != null) {
-                if (String.class.isAssignableFrom(targetType)) {
-                    try {
-                        return (Optional<T>) Optional.of(value);
-                    } catch (Exception e) {
-                        LOGGER.error("target type convert error", e);
-                        return Optional.empty();
-                    }
-                    
+                if (targetType.isAssignableFrom(String.class)) {
+                    return (Optional<T>) Optional.of(value);
                 }
                 return Optional.ofNullable(CONVERTER.convert(value, targetType));
             }

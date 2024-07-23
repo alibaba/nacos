@@ -49,12 +49,6 @@ public class CollectionUtils {
     private static final Integer INTEGER_ONE = 1;
     
     /**
-     * <code>CollectionUtils</code> should not normally be instantiated.
-     */
-    public CollectionUtils() {
-    }
-    
-    /**
      * Returns a new {@link Collection} containing <tt><i>a</i> - <i>b</i></tt>. The cardinality of each element
      * <i>e</i> in the returned {@link Collection} will be the cardinality of <i>e</i> in <i>a</i> minus the
      * cardinality of <i>e</i> in <i>b</i>, or zero, whichever is greater.

@@ -21,12 +21,11 @@ import com.alibaba.nacos.common.utils.VersionUtils;
 import com.alibaba.nacos.sys.env.Constants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -34,6 +33,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * ServerStateController unit test.
@@ -43,34 +44,33 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
  * @Date: 2022/8/13 10:54
  * @Description: TODO
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ServerStateControllerTest {
+@ExtendWith(MockitoExtension.class)
+class ServerStateControllerTest {
+    
+    private static final String CONSOLE_URL = "/v1/console/server/state";
     
     @InjectMocks
     private ServerStateController serverStateController;
     
     private MockMvc mockmvc;
     
-    private static final String CONSOLE_URL = "/v1/console/server/state";
-    
     private ConfigurableEnvironment environment;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         mockmvc = MockMvcBuilders.standaloneSetup(serverStateController).build();
     }
     
     @Test
-    public void serverState() throws Exception {
+    void serverState() throws Exception {
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(CONSOLE_URL);
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
-        Assert.assertEquals(200, response.getStatus());
+        assertEquals(200, response.getStatus());
         ObjectNode responseContent = JacksonUtils.toObj(response.getContentAsByteArray(), ObjectNode.class);
-        Assert.assertEquals(EnvUtil.STANDALONE_MODE_CLUSTER,
-                responseContent.get(Constants.STARTUP_MODE_STATE).asText());
-        Assert.assertEquals("null", responseContent.get(Constants.FUNCTION_MODE_STATE).asText());
-        Assert.assertEquals(VersionUtils.version, responseContent.get(Constants.NACOS_VERSION).asText());
+        assertEquals(EnvUtil.STANDALONE_MODE_CLUSTER, responseContent.get(Constants.STARTUP_MODE_STATE).asText());
+        assertEquals("null", responseContent.get(Constants.FUNCTION_MODE_STATE).asText());
+        assertEquals(VersionUtils.version, responseContent.get(Constants.NACOS_VERSION).asText());
     }
 }
