@@ -32,17 +32,14 @@ public class ConfigTagUtil {
      * <p>Checks if config tags contains "virtual-service" or "destination-rule".</p>
      * @param configTags the tags to check
      * @return {@code true} if the config tags contains "virtual-service" or "destination-rule".
-     * @throws IllegalArgumentException if configTags is null.
      */
     public static boolean isIstio(String configTags) {
         if (configTags == null) {
-            throw new IllegalArgumentException("configTags cannot be null.");
+            return false;
         }
-    
         if (configTags.isEmpty()) {
             return false;
         }
-    
         return Arrays.stream(configTags.split(TAGS_DELIMITER))
                 .map(tag -> tag.trim().replaceAll(HYPHEN, ""))
                 .anyMatch(tag -> tag.equalsIgnoreCase(VIRTUAL_SERVICE.replaceAll(HYPHEN, ""))
