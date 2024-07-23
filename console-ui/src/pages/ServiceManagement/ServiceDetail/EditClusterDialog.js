@@ -141,12 +141,15 @@ class EditClusterDialog extends React.Component {
               className="in-text"
               value={defaultCheckPort}
               onChange={defaultCheckPort => this.onChangeCluster({ defaultCheckPort })}
+              disabled={useIPPort4Check}
             />
           </Form.Item>
           <Form.Item label={`${useIpPortCheck}`}>
             <Switch
               checked={useIPPort4Check}
-              onChange={useIPPort4Check => this.onChangeCluster({ useIPPort4Check })}
+              onChange={useIPPort4Check => {
+                this.onChangeCluster({ useIPPort4Check });
+              }}
             />
           </Form.Item>
           {type === 'HTTP' && [

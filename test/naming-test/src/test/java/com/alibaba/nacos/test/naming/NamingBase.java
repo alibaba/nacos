@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.alibaba.nacos.test.naming;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
@@ -24,46 +25,60 @@ import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.test.base.HttpClient4Test;
 import org.apache.http.HttpStatus;
-import org.junit.Assert;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * @author nkorange
  */
 public class NamingBase extends HttpClient4Test {
-
-    private static final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
-
+    
     public static final String TEST_DOM_1 = "nacos.test.1";
+    
     public static final String TEST_IP_4_DOM_1 = "127.0.0.1";
+    
     public static final String TEST_PORT_4_DOM_1 = "8080";
+    
     public static final String TEST_PORT2_4_DOM_1 = "8888";
+    
     public static final String TEST_PORT3_4_DOM_1 = "80";
+    
     public static final String TEST_TOKEN_4_DOM_1 = "abc";
+    
     public static final String TEST_NEW_CLUSTER_4_DOM_1 = "TEST1";
-
+    
     public static final String TEST_DOM_2 = "nacos.test.2";
+    
     public static final String TEST_IP_4_DOM_2 = "127.0.0.2";
+    
     public static final String TEST_PORT_4_DOM_2 = "7070";
+    
     public static final String TETS_TOKEN_4_DOM_2 = "xyz";
+    
     public static final String TEST_SERVER_STATUS = "UP";
-
+    
     public static final String TEST_GROUP = "group";
+    
     public static final String TEST_GROUP_1 = "group1";
+    
     public static final String TEST_GROUP_2 = "group2";
-
+    
     public static final String TEST_NAMESPACE_1 = "namespace-1";
+    
     public static final String TEST_NAMESPACE_2 = "namespace-2";
-
-    static final String NAMING_CONTROLLER_PATH = "/nacos/v1/ns";
-
+    
     public static final int TEST_PORT = 8080;
-
+    
     public static final int TIME_OUT = 3000;
-
+    
+    static final String NAMING_CONTROLLER_PATH = "/nacos/v1/ns";
+    
+    private static final NacosRestTemplate nacosRestTemplate = NamingHttpClientManager.getInstance().getNacosRestTemplate();
+    
     public static String randomDomainName() {
         StringBuilder sb = new StringBuilder();
         sb.append("jinhan");
@@ -79,7 +94,7 @@ public class NamingBase extends HttpClient4Test {
         }
         return sb.toString();
     }
-
+    
     public static Instance getInstance(String serviceName) {
         Instance instance = new Instance();
         instance.setIp("127.0.0.1");
@@ -89,21 +104,20 @@ public class NamingBase extends HttpClient4Test {
         Map<String, String> instanceMeta = new HashMap<String, String>();
         instanceMeta.put("site", "et2");
         instance.setMetadata(instanceMeta);
-
+        
         instance.setServiceName(serviceName);
         instance.setClusterName("c1");
-
+        
         return instance;
     }
-
+    
     public static boolean verifyInstance(Instance i1, Instance i2) {
-
-        if (!i1.getIp().equals(i2.getIp()) || i1.getPort() != i2.getPort() ||
-            i1.getWeight() != i2.getWeight() || i1.isHealthy() != i2.isHealthy() ||
-            !i1.getMetadata().equals(i2.getMetadata())) {
+        
+        if (!i1.getIp().equals(i2.getIp()) || i1.getPort() != i2.getPort() || i1.getWeight() != i2.getWeight()
+                || i1.isHealthy() != i2.isHealthy() || !i1.getMetadata().equals(i2.getMetadata())) {
             return false;
         }
-
+        
         //Service service1 = i1.getService();
         //Service service2 = i2.getService();
         //
@@ -114,7 +128,7 @@ public class NamingBase extends HttpClient4Test {
         //    service1.isEnableHealthCheck() != service2.isEnableHealthCheck()) {
         //    return false;
         //}
-
+        
         //Cluster cluster1 = i1.getCluster();
         //Cluster cluster2 = i2.getCluster();
         //
@@ -145,22 +159,22 @@ public class NamingBase extends HttpClient4Test {
         //        return false;
         //    }
         //}
-
+        
         return true;
-
+        
     }
-
+    
     public static boolean verifyInstanceList(List<Instance> instanceList1, List<Instance> instanceList2) {
         Map<String, Instance> instanceMap = new HashMap<String, Instance>();
         for (Instance instance : instanceList1) {
             instanceMap.put(instance.getIp(), instance);
         }
-
+        
         Map<String, Instance> instanceGetMap = new HashMap<String, Instance>();
         for (Instance instance : instanceList2) {
             instanceGetMap.put(instance.getIp(), instance);
         }
-
+        
         for (String ip : instanceMap.keySet()) {
             if (!instanceGetMap.containsKey(ip)) {
                 return false;
@@ -171,42 +185,45 @@ public class NamingBase extends HttpClient4Test {
         }
         return true;
     }
-
-    public static void prepareServer(int localPort) throws Exception{
+    
+    public static void prepareServer(int localPort) throws Exception {
         prepareServer(localPort, "UP", "/nacos");
     }
     
-    public static void prepareServer(int localPort,String contextPath) throws Exception{
+    public static void prepareServer(int localPort, String contextPath) throws Exception {
         prepareServer(localPort, "UP", contextPath);
     }
-
-    public static void prepareServer(int localPort, String status,String contextPath) throws Exception {
-        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
+    
+    public static void prepareServer(int localPort, String status, String contextPath) throws Exception {
+        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath)
+                + "/v1/ns/operator/switches?entry=overriddenServerStatus&value=" + status;
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
         HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
         System.out.println(result);
-        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
-
-        url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
-
+        assertEquals(HttpStatus.SC_OK, result.getCode());
+        
+        url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath)
+                + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + false;
+        
         result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
         System.out.println(result);
-        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
+        assertEquals(HttpStatus.SC_OK, result.getCode());
     }
     
-    public static void destoryServer(int localPort) throws Exception{
+    public static void destoryServer(int localPort) throws Exception {
         destoryServer(localPort, "/nacos");
     }
     
-    public static void destoryServer(int localPort, String contextPath) throws Exception{
-        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath) + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
+    public static void destoryServer(int localPort, String contextPath) throws Exception {
+        String url = "http://127.0.0.1:" + localPort + normalizeContextPath(contextPath)
+                + "/v1/ns/operator/switches?entry=autoChangeHealthCheckEnabled&value=" + true;
         Header header = Header.newInstance();
         header.addParam(HttpHeaderConsts.USER_AGENT_HEADER, "Nacos-Server");
-
+        
         HttpRestResult<String> result = nacosRestTemplate.putForm(url, header, new HashMap<>(), String.class);
         System.out.println(result);
-        Assert.assertEquals(HttpStatus.SC_OK, result.getCode());
+        assertEquals(HttpStatus.SC_OK, result.getCode());
     }
     
     public static String normalizeContextPath(String contextPath) {

@@ -21,15 +21,15 @@ import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
 
-public class GroupCapacityMapperByDerbyTest {
-    
-    private GroupCapacityMapperByDerby groupCapacityMapperByDerby;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class GroupCapacityMapperByDerbyTest {
     
     private final Object[] emptyObjs = new Object[] {};
     
@@ -45,8 +45,10 @@ public class GroupCapacityMapperByDerbyTest {
     
     MapperContext context;
     
-    @Before
-    public void setUp() throws Exception {
+    private GroupCapacityMapperByDerby groupCapacityMapperByDerby;
+    
+    @BeforeEach
+    void setUp() throws Exception {
         this.groupCapacityMapperByDerby = new GroupCapacityMapperByDerby();
         context = new MapperContext(startRow, pageSize);
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
@@ -56,19 +58,19 @@ public class GroupCapacityMapperByDerbyTest {
     }
     
     @Test
-    public void testGetTableName() {
+    void testGetTableName() {
         String tableName = groupCapacityMapperByDerby.getTableName();
-        Assert.assertEquals(tableName, TableConstant.GROUP_CAPACITY);
+        assertEquals(TableConstant.GROUP_CAPACITY, tableName);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         String dataSource = groupCapacityMapperByDerby.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.DERBY);
+        assertEquals(DataSourceConstant.DERBY, dataSource);
     }
     
     @Test
-    public void testInsertIntoSelect() {
+    void testInsertIntoSelect() {
         Object group = "group";
         Object quota = "quota";
         Object maxAggrSize = 10;
@@ -85,16 +87,16 @@ public class GroupCapacityMapperByDerbyTest {
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
         
         MapperResult mapperResult = groupCapacityMapperByDerby.insertIntoSelect(context);
-        Assert.assertEquals(mapperResult.getSql(),
+        assertEquals(mapperResult.getSql(),
                 "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size,gmt_create,"
                         + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info");
         
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
-                new Object[] {group, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified});
+        assertArrayEquals(new Object[] {group, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testInsertIntoSelectByWhere() {
+    void testInsertIntoSelectByWhere() {
         Object group = "group";
         Object quota = "quota";
         Object maxAggrSize = 10;
@@ -112,74 +114,72 @@ public class GroupCapacityMapperByDerbyTest {
         context.putUpdateParameter(FieldConstant.GMT_MODIFIED, modified);
         
         MapperResult mapperResult = groupCapacityMapperByDerby.insertIntoSelectByWhere(context);
-        Assert.assertEquals(mapperResult.getSql(),
+        assertEquals(mapperResult.getSql(),
                 "INSERT INTO group_capacity (group_id, quota, usage, max_size, max_aggr_count, max_aggr_size, gmt_create,"
                         + " gmt_modified) SELECT ?, ?, count(*), ?, ?, ?, ?, ? FROM config_info WHERE group_id=? AND tenant_id = ''");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
-                new Object[] {group, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, group});
+        assertArrayEquals(new Object[] {group, quota, maxSize, maxAggrCount, maxAggrSize, createTime, modified, group},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testIncrementUsageByWhereQuotaEqualZero() {
+    void testIncrementUsageByWhereQuotaEqualZero() {
         Object usage = 1;
         context.putWhereParameter(FieldConstant.USAGE, usage);
         MapperResult mapperResult = groupCapacityMapperByDerby.incrementUsageByWhereQuotaEqualZero(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < ? AND quota = 0");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId, usage});
+        assertEquals("UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < ? AND quota = 0",
+                mapperResult.getSql());
+        assertArrayEquals(new Object[] {modified, groupId, usage}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testIncrementUsageByWhereQuotaNotEqualZero() {
+    void testIncrementUsageByWhereQuotaNotEqualZero() {
         
         MapperResult mapperResult = groupCapacityMapperByDerby.incrementUsageByWhereQuotaNotEqualZero(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < quota AND quota != 0");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId});
+        assertEquals("UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ? AND usage < quota AND quota != 0",
+                mapperResult.getSql());
+        assertArrayEquals(new Object[] {modified, groupId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testIncrementUsageByWhere() {
+    void testIncrementUsageByWhere() {
         MapperResult mapperResult = groupCapacityMapperByDerby.incrementUsageByWhere(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ?");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId});
+        assertEquals("UPDATE group_capacity SET usage = usage + 1, gmt_modified = ? WHERE group_id = ?", mapperResult.getSql());
+        assertArrayEquals(new Object[] {modified, groupId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testDecrementUsageByWhere() {
+    void testDecrementUsageByWhere() {
         MapperResult mapperResult = groupCapacityMapperByDerby.decrementUsageByWhere(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE group_capacity SET usage = usage - 1, gmt_modified = ? WHERE group_id = ? AND usage > 0");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId});
+        assertEquals("UPDATE group_capacity SET usage = usage - 1, gmt_modified = ? WHERE group_id = ? AND usage > 0",
+                mapperResult.getSql());
+        assertArrayEquals(new Object[] {modified, groupId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testUpdateUsage() {
+    void testUpdateUsage() {
         MapperResult mapperResult = groupCapacityMapperByDerby.updateUsage(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE group_id = ?");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {modified, groupId});
+        assertEquals("UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info), gmt_modified = ? WHERE group_id = ?",
+                mapperResult.getSql());
+        assertArrayEquals(new Object[] {modified, groupId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testUpdateUsageByWhere() {
+    void testUpdateUsageByWhere() {
         MapperResult mapperResult = groupCapacityMapperByDerby.updateUsageByWhere(context);
-        Assert.assertEquals(mapperResult.getSql(),
+        assertEquals(mapperResult.getSql(),
                 "UPDATE group_capacity SET usage = (SELECT count(*) FROM config_info WHERE group_id=? AND tenant_id = ''),"
                         + " gmt_modified = ? WHERE group_id= ?");
         
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {groupId, modified, groupId});
+        assertArrayEquals(new Object[] {groupId, modified, groupId}, mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testSelectGroupInfoBySize() {
+    void testSelectGroupInfoBySize() {
         Object id = 1;
         context.putWhereParameter(FieldConstant.ID, id);
         MapperResult mapperResult = groupCapacityMapperByDerby.selectGroupInfoBySize(context);
-        Assert.assertEquals(mapperResult.getSql(),
-                "SELECT id, group_id FROM group_capacity WHERE id > ? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY");
+        assertEquals("SELECT id, group_id FROM group_capacity WHERE id > ? OFFSET 0 ROWS FETCH NEXT ? ROWS ONLY", mapperResult.getSql());
         context.putWhereParameter(FieldConstant.GMT_CREATE, createTime);
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(), new Object[] {id, pageSize});
+        assertArrayEquals(new Object[] {id, pageSize}, mapperResult.getParamList().toArray());
     }
 }

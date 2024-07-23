@@ -18,8 +18,8 @@
 package com.alibaba.nacos.core.controller;
 
 import com.alibaba.nacos.api.ability.ServerAbilities;
-import com.alibaba.nacos.api.remote.ability.ServerRemoteAbility;
 import com.alibaba.nacos.api.exception.NacosException;
+import com.alibaba.nacos.api.remote.ability.ServerRemoteAbility;
 import com.alibaba.nacos.api.remote.response.ServerLoaderInfoResponse;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
@@ -29,13 +29,12 @@ import com.alibaba.nacos.core.remote.ConnectionManager;
 import com.alibaba.nacos.core.remote.core.ServerLoaderInfoRequestHandler;
 import com.alibaba.nacos.core.remote.core.ServerReloaderRequestHandler;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -44,14 +43,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 /**
  * {@link ServerLoaderController} unit test.
  *
  * @author chenglu
  * @date 2021-07-07 23:10
  */
-@RunWith(MockitoJUnitRunner.class)
-public class ServerLoaderControllerTest {
+@ExtendWith(MockitoExtension.class)
+class ServerLoaderControllerTest {
     
     @InjectMocks
     private ServerLoaderController serverLoaderController;
@@ -72,21 +73,21 @@ public class ServerLoaderControllerTest {
     private ServerLoaderInfoRequestHandler serverLoaderInfoRequestHandler;
     
     @Test
-    public void testCurrentClients() {
+    void testCurrentClients() {
         Mockito.when(connectionManager.currentClients()).thenReturn(new HashMap<>());
-    
+        
         ResponseEntity<Map<String, Connection>> result = serverLoaderController.currentClients();
-        Assert.assertEquals(0, result.getBody().size());
+        assertEquals(0, result.getBody().size());
     }
     
     @Test
-    public void testReloadCount() {
+    void testReloadCount() {
         ResponseEntity<String> result = serverLoaderController.reloadCount(1, "1.1.1.1");
-        Assert.assertEquals("success", result.getBody());
+        assertEquals("success", result.getBody());
     }
     
     @Test
-    public void testSmartReload() throws NacosException {
+    void testSmartReload() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
         Member member = new Member();
         member.setIp("1.1.1.1");
@@ -97,31 +98,31 @@ public class ServerLoaderControllerTest {
         serverAbilities.setRemoteAbility(serverRemoteAbility);
         member.setAbilities(serverAbilities);
         Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(member));
-    
+        
         Map<String, String> metrics = new HashMap<>();
         metrics.put("conCount", "1");
         metrics.put("sdkConCount", "1");
         ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
         serverLoaderInfoResponse.setLoaderMetrics(metrics);
         Mockito.when(serverLoaderInfoRequestHandler.handle(Mockito.any(), Mockito.any())).thenReturn(serverLoaderInfoResponse);
-    
+        
         Mockito.when(serverMemberManager.getSelf()).thenReturn(member);
-    
+        
         MockHttpServletRequest httpServletRequest = new MockHttpServletRequest();
         ResponseEntity<String> result = serverLoaderController.smartReload(httpServletRequest, "1", null);
         
-        Assert.assertEquals("Ok", result.getBody());
+        assertEquals("Ok", result.getBody());
         
     }
     
     @Test
-    public void testReloadSingle() {
+    void testReloadSingle() {
         ResponseEntity<String> result = serverLoaderController.reloadSingle("111", "1.1.1.1");
-        Assert.assertEquals("success", result.getBody());
+        assertEquals("success", result.getBody());
     }
     
     @Test
-    public void testLoaderMetrics() throws NacosException {
+    void testLoaderMetrics() throws NacosException {
         EnvUtil.setEnvironment(new MockEnvironment());
         Member member = new Member();
         member.setIp("1.1.1.1");
@@ -132,7 +133,7 @@ public class ServerLoaderControllerTest {
         serverAbilities.setRemoteAbility(serverRemoteAbility);
         member.setAbilities(serverAbilities);
         Mockito.when(serverMemberManager.allMembersWithoutSelf()).thenReturn(Collections.singletonList(member));
-    
+        
         Map<String, String> metrics = new HashMap<>();
         metrics.put("conCount", "1");
         ServerLoaderInfoResponse serverLoaderInfoResponse = new ServerLoaderInfoResponse();
@@ -142,6 +143,6 @@ public class ServerLoaderControllerTest {
         Mockito.when(serverMemberManager.getSelf()).thenReturn(member);
         
         ResponseEntity<Map<String, Object>> result = serverLoaderController.loaderMetrics();
-        Assert.assertEquals(9, result.getBody().size());
+        assertEquals(9, result.getBody().size());
     }
 }

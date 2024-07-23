@@ -77,7 +77,7 @@ public class ConfigHttpClientManager implements Closeable {
     public void shutdown() throws NacosException {
         NAMING_LOGGER.warn("[ConfigHttpClientManager] Start destroying NacosRestTemplate");
         try {
-            HttpClientBeanHolder.shutdownNacostSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
+            HttpClientBeanHolder.shutdownNacosSyncRest(HTTP_CLIENT_FACTORY.getClass().getName());
         } catch (Exception ex) {
             NAMING_LOGGER.error("[ConfigHttpClientManager] An exception occurred when the HTTP client was closed : {}",
                     ExceptionUtil.getStackTrace(ex));
@@ -128,7 +128,7 @@ public class ConfigHttpClientManager implements Closeable {
         
         @Override
         public boolean isIntercept(URI uri, String httpMethod, RequestHttpEntity requestHttpEntity) {
-            final String body = requestHttpEntity.getBody() == null ? "" : JacksonUtils.toJson(requestHttpEntity.getBody());
+            final String body = requestHttpEntity.isEmptyBody() ? "" : JacksonUtils.toJson(requestHttpEntity.getBody());
             return Limiter.isLimit(MD5Utils.md5Hex(uri + body, Constants.ENCODE));
         }
         

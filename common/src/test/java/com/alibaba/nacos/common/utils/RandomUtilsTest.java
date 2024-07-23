@@ -16,24 +16,54 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * test RandomUtils.
+ *
  * @author zzq
  */
-public class RandomUtilsTest {
+class RandomUtilsTest {
     
     @Test
-    public void nextLong() {
+    void testNextLong() {
         final long result = RandomUtils.nextLong(1L, 199L);
-        Assert.assertTrue(result >= 1L && result < 199L);
+        assertTrue(result >= 1L && result < 199L);
     }
     
     @Test
-    public void nextInt() {
+    void testNextLongWithSame() {
+        final long result = RandomUtils.nextLong(1L, 1L);
+        assertEquals(1L, result);
+    }
+    
+    @Test
+    void testNextLongWithIllegalArgumentException() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            RandomUtils.nextLong(999L, 199L);
+        });
+    }
+    
+    @Test
+    void testNextLongWithIllegalArgumentException2() {
+        assertThrows(IllegalArgumentException.class, () -> {
+            RandomUtils.nextLong(-10L, 199L);
+        });
+    }
+    
+    @Test
+    void testNextInt() {
         final int result = RandomUtils.nextInt(1, 199);
-        Assert.assertTrue(result >= 1 && result < 199);
+        assertTrue(result >= 1 && result < 199);
+    }
+    
+    @Test
+    void testNextIntWithSame() {
+        final int result = RandomUtils.nextInt(1, 1);
+        assertEquals(1, result);
     }
 }

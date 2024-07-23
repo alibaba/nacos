@@ -25,7 +25,9 @@ import com.alibaba.nacos.common.notify.NotifyCenter;
 import com.alibaba.nacos.common.remote.ConnectionType;
 import com.alibaba.nacos.common.remote.client.RpcClient;
 import com.alibaba.nacos.common.remote.client.RpcClientFactory;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
 import com.alibaba.nacos.common.remote.client.ServerListFactory;
+import com.alibaba.nacos.common.remote.client.RpcClientTlsConfigFactory;
 import com.alibaba.nacos.common.utils.CollectionUtils;
 import com.alibaba.nacos.core.cluster.Member;
 import com.alibaba.nacos.core.cluster.MemberChangeListener;
@@ -41,6 +43,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -98,7 +101,10 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
             Map.Entry<String, RpcClient> next1 = iterator.next();
             if (next1.getKey().startsWith("Cluster-") && !newMemberKeys.contains(next1.getKey())) {
                 Loggers.CLUSTER.info("member leave,destroy client of member - > : {}", next1.getKey());
-                RpcClientFactory.getClient(next1.getKey()).shutdown();
+                RpcClient client = RpcClientFactory.getClient(next1.getKey());
+                if (client != null) {
+                    RpcClientFactory.getClient(next1.getKey()).shutdown();
+                }
                 iterator.remove();
             }
         }
@@ -149,10 +155,10 @@ public class ClusterRpcClientProxy extends MemberChangeListener {
      * Using {@link EnvUtil#getAvailableProcessors(int)} to build cluster clients' grpc thread pool.
      */
     private RpcClient buildRpcClient(ConnectionType type, Map<String, String> labels, String memberClientKey) {
-        RpcClient clusterClient = RpcClientFactory
-                .createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
-                        EnvUtil.getAvailableProcessors(8), labels);
-        return clusterClient;
+        Properties properties = EnvUtil.getProperties();
+        RpcClientTlsConfig config = RpcClientTlsConfigFactory.getInstance().createClusterConfig(properties);
+        return RpcClientFactory.createClusterClient(memberClientKey, type, EnvUtil.getAvailableProcessors(2),
+                EnvUtil.getAvailableProcessors(8), labels, config);
     }
     
     /**

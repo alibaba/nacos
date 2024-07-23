@@ -188,18 +188,14 @@ public class ServiceInfo {
             return false;
         }
         
-        List<Instance> validHosts = new ArrayList<>();
+        boolean existValidHosts = false;
         for (Instance host : hosts) {
-            if (!host.isHealthy()) {
-                continue;
-            }
-            
-            for (int i = 0; i < host.getWeight(); i++) {
-                validHosts.add(host);
+            if (host.isHealthy() && host.getWeight() > 0) {
+                existValidHosts = true;
+                break;
             }
         }
-        //No valid hosts, return false.
-        return !validHosts.isEmpty();
+        return existValidHosts;
     }
     
     @JsonIgnore

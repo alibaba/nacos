@@ -19,7 +19,6 @@ package com.alibaba.nacos.plugin.datasource.impl.derby;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.FieldConstant;
-import com.alibaba.nacos.plugin.datasource.mapper.AbstractMapper;
 import com.alibaba.nacos.plugin.datasource.mapper.ConfigTagsRelationMapper;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
@@ -33,8 +32,8 @@ import java.util.List;
  * @author hyx
  **/
 
-public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implements ConfigTagsRelationMapper {
-    
+public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapperByDerby implements ConfigTagsRelationMapper {
+
     @Override
     public MapperResult findConfigInfo4PageFetchRows(MapperContext context) {
         final String appName = (String) context.getWhereParameter(FieldConstant.APP_NAME);
@@ -43,7 +42,7 @@ public class ConfigInfoTagsRelationMapperByDerby extends AbstractMapper implemen
         final String content = (String) context.getWhereParameter(FieldConstant.CONTENT);
         final String tenantId = (String) context.getWhereParameter(FieldConstant.TENANT_ID);
         final String[] tagArr = (String[]) context.getWhereParameter(FieldConstant.TAG_ARR);
-        
+
         List<Object> paramList = new ArrayList<>();
         StringBuilder where = new StringBuilder(" WHERE ");
         final String baseSql =

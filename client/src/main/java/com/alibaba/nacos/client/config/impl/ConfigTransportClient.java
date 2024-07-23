@@ -23,10 +23,10 @@ import com.alibaba.nacos.client.env.NacosClientProperties;
 import com.alibaba.nacos.plugin.auth.api.RequestResource;
 import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.security.SecurityProxy;
-import com.alibaba.nacos.client.utils.ParamUtil;
 import com.alibaba.nacos.common.utils.ConvertUtils;
 import com.alibaba.nacos.common.utils.MD5Utils;
 import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.client.utils.ParamUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -175,8 +175,10 @@ public abstract class ConfigTransportClient {
     
     /**
      * listen change .
+     *
+     * @throws NacosException nacos exception throws, should retry.
      */
-    public abstract void executeConfigListen();
+    public abstract void executeConfigListen() throws NacosException;
     
     /**
      * remove cache implements.

@@ -20,57 +20,37 @@ import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigs;
 import com.alibaba.nacos.plugin.control.configs.ControlConfigsInitializer;
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 /**
  * spring value for control configs.
  *
  * @author shiyiyue
  */
-@Component
 public class SpringValueConfigsInitializer implements ControlConfigsInitializer {
     
-    @Value("${nacos.plugin.control.tps.barrier.creator:nacos}")
-    private String tpsBarrierCreator = "nacos";
+    private static final String PREFIX = "nacos.plugin.control.";
     
-    @Value("${nacos.plugin.control.tps.barrier.rule.creator:nacos}")
-    private String tpsRuleBarrierCreator = "nacos";
+    private static final String CONNECTION_RUNTIME_EJECTOR = PREFIX + "connection.runtime.ejector";
     
-    @Value("${nacos.plugin.control.connection.runtime.ejector:nacos}")
-    private String connectionRuntimeEjector = "nacos";
+    private static final String CONTROL_MANAGER_TYPE = PREFIX + "manager.type";
     
-    @Value("${nacos.plugin.control.connection.manager:nacos}")
-    private String connectionManager = "nacos";
+    private static final String RULE_EXTERNAL_STORAGE = PREFIX + "rule.external.storage";
     
-    @Value("${nacos.plugin.control.tps.manager:nacos}")
-    private String tpsManager = "nacos";
+    private static final String LOCAL_RULE_STORAGE_BASE_DIR = PREFIX + "rule.local.basedir";
     
-    @Value("${nacos.plugin.control.rule.external.storage:}")
-    private String ruleExternalStorage = "";
-    
-    @Value("${nacos.plugin.control.rule.parser:nacos}")
-    private String ruleParser = "nacos";
-    
-    @Value("${nacos.plugin.control.rule.local.basedir:}")
-    private String localRuleStorageBaseDir = "";
+    private static final String DEFAULT_CONNECTION_RUNTIME_EJECTOR = "nacos";
     
     @Override
     public void initialize(ControlConfigs controlConfigs) {
-        controlConfigs.setTpsManager(tpsManager);
-        controlConfigs.setTpsBarrierCreator(tpsBarrierCreator);
-        controlConfigs.setTpsRuleBarrierCreator(tpsRuleBarrierCreator);
-        
-        controlConfigs.setConnectionRuntimeEjector(connectionRuntimeEjector);
-        controlConfigs.setConnectionManager(connectionManager);
-        
-        controlConfigs.setRuleParser(ruleParser);
+        controlConfigs.setConnectionRuntimeEjector(
+                EnvUtil.getProperty(CONNECTION_RUNTIME_EJECTOR, DEFAULT_CONNECTION_RUNTIME_EJECTOR));
+        String localRuleStorageBaseDir = EnvUtil.getProperty(LOCAL_RULE_STORAGE_BASE_DIR);
         if (StringUtils.isNotBlank(localRuleStorageBaseDir)) {
             controlConfigs.setLocalRuleStorageBaseDir(localRuleStorageBaseDir);
         } else {
             controlConfigs.setLocalRuleStorageBaseDir(EnvUtil.getNacosHome());
         }
-        controlConfigs.setRuleExternalStorage(ruleExternalStorage);
-        
+        controlConfigs.setRuleExternalStorage(EnvUtil.getProperty(RULE_EXTERNAL_STORAGE));
+        controlConfigs.setControlManagerType(EnvUtil.getProperty(CONTROL_MANAGER_TYPE));
     }
 }

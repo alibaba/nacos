@@ -132,8 +132,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
             throw new NacosApiException(NacosException.INVALID_PARAM, ErrorCode.INSTANCE_ERROR,
                     "service not found, namespace: " + namespaceId + ", service: " + service);
         }
-        String metadataId = InstancePublishInfo
-                .genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
+        String metadataId = InstancePublishInfo.genMetadataId(instance.getIp(), instance.getPort(),
+                instance.getClusterName());
         metadataOperateService.updateInstanceMetadata(service, metadataId, buildMetadata(instance));
         NotifyCenter.publishEvent(new InfoChangeEvent.InstanceInfoChangeEvent(service, instance));
     }
@@ -152,8 +152,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         Service service = getService(namespaceId, serviceName, true);
         Instance instance = getInstance(namespaceId, serviceName, patchObject.getCluster(), patchObject.getIp(),
                 patchObject.getPort());
-        String metadataId = InstancePublishInfo
-                .genMetadataId(instance.getIp(), instance.getPort(), instance.getClusterName());
+        String metadataId = InstancePublishInfo.genMetadataId(instance.getIp(), instance.getPort(),
+                instance.getClusterName());
         Optional<InstanceMetadata> instanceMetadata = metadataManager.getInstanceMetadata(service, metadataId);
         InstanceMetadata newMetadata = instanceMetadata.map(this::cloneMetadata).orElseGet(InstanceMetadata::new);
         mergeMetadata(newMetadata, patchObject);
@@ -192,8 +192,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
         }
         ServiceInfo serviceInfo = serviceStorage.getData(service);
         ServiceMetadata serviceMetadata = metadataManager.getServiceMetadata(service).orElse(null);
-        ServiceInfo result = ServiceUtil
-                .selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster, healthOnly, true, subscriber.getIp());
+        ServiceInfo result = ServiceUtil.selectInstancesWithHealthyProtection(serviceInfo, serviceMetadata, cluster,
+                healthOnly, true, subscriber.getIp());
         // adapt for v1.x sdk
         result.setName(NamingUtils.getGroupedName(result.getName(), result.getGroupName()));
         return result;
@@ -332,12 +332,8 @@ public class InstanceOperatorClientImpl implements InstanceOperator {
     
     private void createIpPortClientIfAbsent(String clientId) {
         if (!clientManager.contains(clientId)) {
-            ClientAttributes clientAttributes;
-            if (ClientAttributesFilter.threadLocalClientAttributes.get() != null) {
-                clientAttributes = ClientAttributesFilter.threadLocalClientAttributes.get();
-            } else {
-                clientAttributes = new ClientAttributes();
-            }
+            ClientAttributes clientAttributes = ClientAttributesFilter.getCurrentClientAttributes()
+                    .orElse(new ClientAttributes());
             clientManager.clientConnected(clientId, clientAttributes);
         }
     }

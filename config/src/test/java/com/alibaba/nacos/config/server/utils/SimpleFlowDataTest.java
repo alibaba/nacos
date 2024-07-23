@@ -16,62 +16,63 @@
 
 package com.alibaba.nacos.config.server.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-public class SimpleFlowDataTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class SimpleFlowDataTest {
     
     @Test
-    public void testAddAndGet() {
+    void testAddAndGet() {
         
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
-        Assert.assertEquals(10, simpleFlowData.addAndGet(10));
-        Assert.assertEquals(20, simpleFlowData.addAndGet(10));
+        assertEquals(10, simpleFlowData.addAndGet(10));
+        assertEquals(20, simpleFlowData.addAndGet(10));
     }
     
     @Test
-    public void testIncrementAndGet() {
+    void testIncrementAndGet() {
         
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
-        Assert.assertEquals(1, simpleFlowData.incrementAndGet());
-        Assert.assertEquals(2, simpleFlowData.incrementAndGet());
-        Assert.assertEquals(3, simpleFlowData.incrementAndGet());
+        assertEquals(1, simpleFlowData.incrementAndGet());
+        assertEquals(2, simpleFlowData.incrementAndGet());
+        assertEquals(3, simpleFlowData.incrementAndGet());
         
     }
     
     @Test
-    public void testGetSlotInfo() {
+    void testGetSlotInfo() {
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
         simpleFlowData.incrementAndGet();
         simpleFlowData.incrementAndGet();
         simpleFlowData.incrementAndGet();
-        Assert.assertEquals("0 0 0 0 3", simpleFlowData.getSlotInfo());
+        assertEquals("0 0 0 0 3", simpleFlowData.getSlotInfo());
     }
     
     @Test
-    public void testGetSlotInfo2() {
+    void testGetSlotInfo2() {
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
         simpleFlowData.incrementAndGet();
         simpleFlowData.rotateSlot();
         simpleFlowData.addAndGet(9);
         simpleFlowData.rotateSlot();
         simpleFlowData.incrementAndGet();
-        Assert.assertEquals("0 0 1 9 1", simpleFlowData.getSlotInfo());
-        Assert.assertEquals(1, simpleFlowData.getCurrentCount());
-        Assert.assertEquals(2, simpleFlowData.getAverageCount());
-        Assert.assertEquals(5, simpleFlowData.getSlotCount());
+        assertEquals("0 0 1 9 1", simpleFlowData.getSlotInfo());
+        assertEquals(1, simpleFlowData.getCurrentCount());
+        assertEquals(2, simpleFlowData.getAverageCount());
+        assertEquals(5, simpleFlowData.getSlotCount());
     }
     
     @Test
-    public void testGetCount() {
+    void testGetCount() {
         SimpleFlowData simpleFlowData = new SimpleFlowData(5, 10000);
         simpleFlowData.addAndGet(2);
         simpleFlowData.rotateSlot();
         simpleFlowData.addAndGet(3);
         simpleFlowData.rotateSlot();
         simpleFlowData.incrementAndGet();
-        Assert.assertEquals("0 0 2 3 1", simpleFlowData.getSlotInfo());
-        Assert.assertEquals(2, simpleFlowData.getCount(2));
+        assertEquals("0 0 2 3 1", simpleFlowData.getSlotInfo());
+        assertEquals(2, simpleFlowData.getCount(2));
     }
     
 }

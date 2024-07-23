@@ -18,20 +18,20 @@ package com.alibaba.nacos.api.config.remote.request;
 
 import com.alibaba.nacos.api.common.Constants;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConfigRemoveRequestTest extends BasedConfigRequestTest {
+class ConfigRemoveRequestTest extends BasedConfigRequestTest {
     
     ConfigRemoveRequest configRemoveRequest;
     
     String requestId;
     
-    @Before
-    public void before() {
+    @BeforeEach
+    void before() {
         configRemoveRequest = new ConfigRemoveRequest(DATA_ID, GROUP, TENANT, TAG);
         requestId = injectRequestUuId(configRemoveRequest);
         
@@ -56,10 +56,10 @@ public class ConfigRemoveRequestTest extends BasedConfigRequestTest {
         String json = "{\"headers\":{},\"dataId\":\"test_data\",\"group\":\"group\",\"tenant\":\"test_tenant\""
                 + ",\"tag\":\"tag\",\"module\":\"config\"}";
         ConfigRemoveRequest actual = mapper.readValue(json, ConfigRemoveRequest.class);
-        assertEquals(actual.getDataId(), DATA_ID);
-        assertEquals(actual.getGroup(), GROUP);
-        assertEquals(actual.getTenant(), TENANT);
-        assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
-        assertEquals(actual.getTag(), TAG);
+        assertEquals(DATA_ID, actual.getDataId());
+        assertEquals(GROUP, actual.getGroup());
+        assertEquals(TENANT, actual.getTenant());
+        assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
+        assertEquals(TAG, actual.getTag());
     }
 }

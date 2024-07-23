@@ -16,20 +16,24 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.Calendar;
+import java.util.Date;
 import java.util.TimeZone;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * DateFormatUtils test.
+ *
  * @author zzq
  */
-public class DateFormatUtilsTest {
+class DateFormatUtilsTest {
     
     @Test
-    public void testformat() {
+    void testformat() {
         final Calendar c = Calendar.getInstance(TimeZone.getDefault());
         c.set(2021, Calendar.JANUARY, 1, 12, 0, 0);
         c.setTimeZone(TimeZone.getDefault());
@@ -42,6 +46,20 @@ public class DateFormatUtilsTest {
         buffer.append(month);
         buffer.append(day);
         buffer.append(hour);
-        Assert.assertEquals(buffer.toString(), DateFormatUtils.format(c.getTime(), "yyyyMdH"));
+        assertEquals(buffer.toString(), DateFormatUtils.format(c.getTime(), "yyyyMdH"));
+    }
+    
+    @Test
+    void testForNullPointerExceptionWithDate() {
+        assertThrows(NullPointerException.class, () -> {
+            DateFormatUtils.format(new Date(), null);
+        });
+    }
+    
+    @Test
+    void testForNullPointerExceptionWithPattern() {
+        assertThrows(NullPointerException.class, () -> {
+            DateFormatUtils.format(null, "yyyyMdH");
+        });
     }
 }

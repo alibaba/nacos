@@ -36,6 +36,7 @@ import RegionGroup from '../../../components/RegionGroup';
 import EditServiceDialog from '../ServiceDetail/EditServiceDialog';
 import ShowServiceCodeing from 'components/ShowCodeing/ShowServiceCodeing';
 import PageTitle from '../../../components/PageTitle';
+import TotalRender from '../../../components/Page/TotalRender';
 
 import './ServiceList.scss';
 import { GLOBAL_PAGE_SIZE_LIST } from '../../../constants';
@@ -174,10 +175,11 @@ class ServiceList extends React.Component {
     });
   }
 
-  setNowNameSpace = (nowNamespaceName, nowNamespaceId) =>
+  setNowNameSpace = (nowNamespaceName, nowNamespaceId, nowNamespaceDesc) =>
     this.setState({
       nowNamespaceName,
       nowNamespaceId,
+      nowNamespaceDesc,
     });
 
   rowColor = row => ({ className: !row.healthyInstanceCount ? 'row-bg-red' : '' });
@@ -200,14 +202,20 @@ class ServiceList extends React.Component {
       deleteAction,
       subscriber,
     } = locale;
-    const { search, nowNamespaceName, nowNamespaceId, hasIpCount } = this.state;
+    const { search, nowNamespaceName, nowNamespaceId, nowNamespaceDesc, hasIpCount } = this.state;
     const { init, getValue } = this.field;
     this.init = init;
     this.getValue = getValue;
 
     return (
       <div className="main-container service-management">
-        <PageTitle title={serviceList} desc={nowNamespaceId} nameSpace />
+        <PageTitle
+          title={serviceList}
+          desc={nowNamespaceDesc}
+          namespaceId={nowNamespaceId}
+          namespaceName={nowNamespaceName}
+          nameSpace
+        />
         <RegionGroup
           setNowNameSpace={this.setNowNameSpace}
           namespaceCallBack={this.getQueryLater}
@@ -221,6 +229,11 @@ class ServiceList extends React.Component {
         >
           <Col span="24">
             <Form inline field={this.field}>
+              <FormItem label="">
+                <Button type="primary" onClick={() => this.openEditServiceDialog()}>
+                  {create}
+                </Button>
+              </FormItem>
               <FormItem label={serviceName}>
                 <Input
                   placeholder={serviceNamePlaceholder}
@@ -261,11 +274,6 @@ class ServiceList extends React.Component {
                   style={{ marginRight: 10 }}
                 >
                   {query}
-                </Button>
-              </FormItem>
-              <FormItem label="" style={{ float: 'right' }}>
-                <Button type="primary" onClick={() => this.openEditServiceDialog()}>
-                  {create}
                 </Button>
               </FormItem>
             </Form>
@@ -336,6 +344,7 @@ class ServiceList extends React.Component {
             popupProps={{ align: 'bl tl' }}
             total={this.state.total}
             pageSize={this.state.pageSize}
+            totalRender={total => <TotalRender locale={locale} total={total} />}
             onPageSizeChange={pageSize => this.handlePageSizeChange(pageSize)}
             onChange={currentPage => this.setState({ currentPage }, () => this.queryServiceList())}
           />

@@ -34,6 +34,7 @@ import com.alibaba.nacos.naming.core.v2.client.ClientSyncDatumSnapshot;
 import com.alibaba.nacos.naming.core.v2.client.manager.ClientManager;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientEvent;
 import com.alibaba.nacos.naming.core.v2.event.client.ClientOperationEvent;
+import com.alibaba.nacos.naming.core.v2.event.metadata.MetadataEvent;
 import com.alibaba.nacos.naming.core.v2.event.publisher.NamingEventPublisherFactory;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstanceData;
 import com.alibaba.nacos.naming.core.v2.pojo.BatchInstancePublishInfo;
@@ -181,6 +182,8 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
                 client.addServiceInstance(singleton, instancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));
+                NotifyCenter.publishEvent(
+                        new MetadataEvent.InstanceMetadataEvent(singleton, instancePublishInfo.getMetadataId(), false));
             }
         }
         for (Service each : client.getAllPublishedService()) {
@@ -211,13 +214,8 @@ public class DistroClientDataProcessor extends SmartSubscriber implements Distro
             Service singleton = ServiceManager.getInstance().getSingleton(service);
             syncedService.add(singleton);
             BatchInstancePublishInfo batchInstancePublishInfo = batchInstancePublishInfos.get(i);
-            BatchInstancePublishInfo targetInstanceInfo = (BatchInstancePublishInfo) client
-                    .getInstancePublishInfo(singleton);
-            boolean result = false;
-            if (targetInstanceInfo != null) {
-                result = batchInstancePublishInfo.equals(targetInstanceInfo);
-            }
-            if (!result) {
+            InstancePublishInfo publishInfo = client.getInstancePublishInfo(singleton);
+            if (batchInstancePublishInfo != null && !batchInstancePublishInfo.equals(publishInfo)) {
                 client.addServiceInstance(singleton, batchInstancePublishInfo);
                 NotifyCenter.publishEvent(
                         new ClientOperationEvent.ClientRegisterServiceEvent(singleton, client.getClientId()));

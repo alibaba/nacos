@@ -30,23 +30,27 @@ import com.alibaba.nacos.naming.core.v2.index.ServiceStorage;
 import com.alibaba.nacos.naming.core.v2.pojo.Service;
 import com.alibaba.nacos.sys.utils.ApplicationUtils;
 import com.google.protobuf.ByteString;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ConfigurableApplicationContext;
 
 import java.lang.reflect.Field;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
-public class ServiceMetadataProcessorTest {
+@ExtendWith(MockitoExtension.class)
+class ServiceMetadataProcessorTest {
     
     @Mock
     private NamingMetadataManager namingMetadataManager;
@@ -65,8 +69,8 @@ public class ServiceMetadataProcessorTest {
     
     private ServiceMetadataProcessor serviceMetadataProcessor;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         Mockito.when(protocolManager.getCpProtocol()).thenReturn(cpProtocol);
         ApplicationUtils.injectContext(context);
         
@@ -74,22 +78,22 @@ public class ServiceMetadataProcessorTest {
     }
     
     @Test
-    public void testLoadSnapshotOperate() {
+    void testLoadSnapshotOperate() {
         List<SnapshotOperation> snapshotOperations = serviceMetadataProcessor.loadSnapshotOperate();
         
-        Assert.assertNotNull(snapshotOperations);
-        Assert.assertEquals(snapshotOperations.size(), 1);
+        assertNotNull(snapshotOperations);
+        assertEquals(1, snapshotOperations.size());
     }
     
     @Test
-    public void testOnRequest() {
+    void testOnRequest() {
         Response response = serviceMetadataProcessor.onRequest(ReadRequest.getDefaultInstance());
         
-        Assert.assertNull(response);
+        assertNull(response);
     }
     
     @Test
-    public void testOnApply() throws NoSuchFieldException, IllegalAccessException {
+    void testOnApply() throws NoSuchFieldException, IllegalAccessException {
         WriteRequest defaultInstance = WriteRequest.getDefaultInstance();
         Class<WriteRequest> writeRequestClass = WriteRequest.class;
         Field operation = writeRequestClass.getDeclaredField("operation_");
@@ -117,7 +121,7 @@ public class ServiceMetadataProcessorTest {
         Service singleton = ServiceManager.getInstance().getSingleton(service);
         namingMetadataManager.updateServiceMetadata(singleton, metadataOperation.getMetadata());
         
-        Assert.assertTrue(addResponse.getSuccess());
+        assertTrue(addResponse.getSuccess());
         verify(namingMetadataManager).getServiceMetadata(service);
         verify(namingMetadataManager).updateServiceMetadata(service, serviceMetadata);
         
@@ -125,7 +129,7 @@ public class ServiceMetadataProcessorTest {
         operation.set(defaultInstance, "CHANGE");
         Response changeResponse = serviceMetadataProcessor.onApply(defaultInstance);
         
-        Assert.assertTrue(changeResponse.getSuccess());
+        assertTrue(changeResponse.getSuccess());
         verify(namingMetadataManager, times(2)).getServiceMetadata(service);
         verify(namingMetadataManager).updateServiceMetadata(service, serviceMetadata);
         
@@ -133,7 +137,7 @@ public class ServiceMetadataProcessorTest {
         operation.set(defaultInstance, "DELETE");
         Response deleteResponse = serviceMetadataProcessor.onApply(defaultInstance);
         
-        Assert.assertTrue(deleteResponse.getSuccess());
+        assertTrue(deleteResponse.getSuccess());
         verify(namingMetadataManager).removeServiceMetadata(service);
         verify(serviceStorage).removeData(service);
         
@@ -141,13 +145,13 @@ public class ServiceMetadataProcessorTest {
         operation.set(defaultInstance, "VERIFY");
         Response otherResponse = serviceMetadataProcessor.onApply(defaultInstance);
         
-        Assert.assertFalse(otherResponse.getSuccess());
+        assertFalse(otherResponse.getSuccess());
     }
     
     @Test
-    public void testGroup() {
+    void testGroup() {
         String group = serviceMetadataProcessor.group();
         
-        Assert.assertEquals(group, Constants.SERVICE_METADATA);
+        assertEquals(Constants.SERVICE_METADATA, group);
     }
 }

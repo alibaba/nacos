@@ -18,28 +18,29 @@ package com.alibaba.nacos.plugin.datasource.impl.mysql;
 
 import com.alibaba.nacos.plugin.datasource.constants.DataSourceConstant;
 import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class TenantInfoMapperByMySqlTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class TenantInfoMapperByMySqlTest {
     
     private TenantInfoMapperByMySql tenantInfoMapperByMySql;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         tenantInfoMapperByMySql = new TenantInfoMapperByMySql();
     }
     
     @Test
-    public void testGetTableName() {
+    void testGetTableName() {
         String tableName = tenantInfoMapperByMySql.getTableName();
-        Assert.assertEquals(tableName, TableConstant.TENANT_INFO);
+        assertEquals(TableConstant.TENANT_INFO, tableName);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         String dataSource = tenantInfoMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        assertEquals(DataSourceConstant.MYSQL, dataSource);
     }
 }

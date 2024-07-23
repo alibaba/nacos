@@ -27,6 +27,23 @@ function goLogin() {
   window.location = `${base_url}#/login`;
 }
 
+function goRegister() {
+  const url = window.location.href;
+  localStorage.removeItem('token');
+  const base_url = url.split('#')[0];
+  window.location = `${base_url}#/register`;
+}
+
+function generateRandomPassword(length) {
+  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let password = '';
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * charset.length);
+    password += charset[randomIndex];
+  }
+  return password;
+}
+
 const global = window;
 
 /**
@@ -500,6 +517,7 @@ const request = (function(_global) {
 
     const _LOGINPAGE_ENABLED = localStorage.getItem(LOGINPAGE_ENABLED);
 
+    let accessTokenInHeader = '';
     if (_LOGINPAGE_ENABLED !== 'false') {
       let token = {};
       try {
@@ -509,7 +527,7 @@ const request = (function(_global) {
         goLogin();
       }
       const { accessToken = '' } = token;
-      params.push(`accessToken=${accessToken}`);
+      accessTokenInHeader = accessToken;
     }
 
     return $.ajax(
@@ -523,6 +541,7 @@ const request = (function(_global) {
         },
         headers: {
           Authorization: localStorage.getItem('token'),
+          AccessToken: accessTokenInHeader,
         },
       })
     ).then(
@@ -564,5 +583,7 @@ export {
   setParam,
   setParams,
   goLogin,
+  goRegister,
+  generateRandomPassword,
   request,
 };

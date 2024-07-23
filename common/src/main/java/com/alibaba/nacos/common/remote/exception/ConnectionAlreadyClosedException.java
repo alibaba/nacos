@@ -27,7 +27,7 @@ public class ConnectionAlreadyClosedException extends RemoteException {
     private static final int CONNECTION_ALREADY_CLOSED = 600;
     
     public ConnectionAlreadyClosedException(String msg) {
-        super(CONNECTION_ALREADY_CLOSED);
+        super(CONNECTION_ALREADY_CLOSED, msg);
     }
     
     public ConnectionAlreadyClosedException() {

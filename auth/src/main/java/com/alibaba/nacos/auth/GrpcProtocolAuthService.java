@@ -61,11 +61,12 @@ public class GrpcProtocolAuthService extends AbstractProtocolAuthService<Request
             return parseSpecifiedResource(secured);
         }
         String type = secured.signType();
-        if (!resourceParserMap.containsKey(type)) {
+        AbstractGrpcResourceParser parser = resourceParserMap.get(type);
+        if (parser == null) {
             Loggers.AUTH.warn("Can't find Grpc request resourceParser for type {}", type);
             return useSpecifiedParserToParse(secured, request);
         }
-        return resourceParserMap.get(type).parse(request, secured);
+        return parser.parse(request, secured);
     }
     
     @Override

@@ -17,12 +17,14 @@
 
 package com.alibaba.nacos.core.auth;
 
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * {@link AuthConfig} unit test.
@@ -30,20 +32,20 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
  * @author chenglu
  * @date 2021-07-06 13:36
  */
-@RunWith(MockitoJUnitRunner.class)
-public class AuthConfigTest {
+@ExtendWith(MockitoExtension.class)
+class AuthConfigTest {
     
     @Mock
     private AuthFilter authFilter;
     
     @Test
-    public void testAuthFilterRegistration() {
+    void testAuthFilterRegistration() {
         AuthConfig config = new AuthConfig();
         FilterRegistrationBean filter = config.authFilterRegistration(authFilter);
-        Assert.assertTrue(filter.getFilter() instanceof AuthFilter);
+        assertTrue(filter.getFilter() instanceof AuthFilter);
         
-        Assert.assertTrue(filter.getUrlPatterns().contains("/*"));
+        assertTrue(filter.getUrlPatterns().contains("/*"));
         
-        Assert.assertEquals(6, filter.getOrder());
+        assertEquals(6, filter.getOrder());
     }
 }

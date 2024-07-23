@@ -41,6 +41,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -63,6 +64,8 @@ public class ControllerMethodsCache {
     private ConcurrentMap<RequestMappingInfo, Method> methods = new ConcurrentHashMap<>();
     
     private final ConcurrentMap<String, List<RequestMappingInfo>> urlLookup = new ConcurrentHashMap<>();
+    
+    private final Set<Class> scannedClass = new HashSet<>();
     
     public Method getMethod(HttpServletRequest request) {
         String path = getPath(request);
@@ -143,6 +146,9 @@ public class ControllerMethodsCache {
      * @param clazz {@link Class}
      */
     private void initClassMethod(Class<?> clazz) {
+        if (scannedClass.contains(clazz)) {
+            return;
+        }
         RequestMapping requestMapping = clazz.getAnnotation(RequestMapping.class);
         for (String classPath : requestMapping.value()) {
             for (Method method : clazz.getMethods()) {
@@ -156,12 +162,22 @@ public class ControllerMethodsCache {
                     requestMethods = new RequestMethod[1];
                     requestMethods[0] = RequestMethod.GET;
                 }
-                for (String methodPath : requestMapping.value()) {
-                    String urlKey = requestMethods[0].name() + REQUEST_PATH_SEPARATOR + classPath + methodPath;
-                    addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
+                // FIXME: vipserver needs multiple http methods mapping
+                for (RequestMethod requestMethod : requestMethods) {
+                    String[] value = requestMapping.value();
+                    if (value.length > 0) {
+                        for (String methodPath : requestMapping.value()) {
+                            String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR + classPath + methodPath;
+                            addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
+                        }
+                    } else {
+                        String urlKey = requestMethod.name() + REQUEST_PATH_SEPARATOR + classPath;
+                        addUrlAndMethodRelation(urlKey, requestMapping.params(), method);
+                    }
                 }
             }
         }
+        scannedClass.add(clazz);
     }
     
     private void parseSubAnnotations(Method method, String classPath) {

@@ -18,28 +18,69 @@
 
 package com.alibaba.nacos.client.logging;
 
-import org.junit.Assert;
-import org.junit.Test;
+import com.alibaba.nacos.common.logging.NacosLoggingAdapter;
+import com.alibaba.nacos.common.logging.NacosLoggingProperties;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.lang.reflect.Field;
+import java.util.Properties;
 
-public class NacosLoggingTest {
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.doThrow;
+
+@ExtendWith(MockitoExtension.class)
+class NacosLoggingTest {
     
-    @Test
-    public void testGetInstance() {
-        NacosLogging instance = NacosLogging.getInstance();
-        Assert.assertNotNull(instance);
+    @Mock
+    NacosLoggingAdapter loggingAdapter;
+    
+    NacosLoggingProperties loggingProperties;
+    
+    NacosLogging instance;
+    
+    @BeforeEach
+    void setUp() throws NoSuchFieldException, IllegalAccessException {
+        loggingProperties = new NacosLoggingProperties("", new Properties());
+        instance = NacosLogging.getInstance();
+        Field loggingPropertiesField = NacosLogging.class.getDeclaredField("loggingProperties");
+        loggingPropertiesField.setAccessible(true);
+        loggingPropertiesField.set(instance, loggingProperties);
     }
     
     @Test
-    public void testLoadConfiguration() throws NoSuchFieldException, IllegalAccessException {
+    void testGetInstance() {
         NacosLogging instance = NacosLogging.getInstance();
-        AbstractNacosLogging mockLogging = Mockito.mock(AbstractNacosLogging.class);
-        Field nacosLogging = NacosLogging.class.getDeclaredField("nacosLogging");
+        assertNotNull(instance);
+    }
+    
+    @Test
+    void testLoadConfiguration() throws NoSuchFieldException, IllegalAccessException {
+        instance = NacosLogging.getInstance();
+        Field nacosLogging = NacosLogging.class.getDeclaredField("loggingAdapter");
         nacosLogging.setAccessible(true);
-        nacosLogging.set(instance, mockLogging);
+        nacosLogging.set(instance, loggingAdapter);
         instance.loadConfiguration();
-        Mockito.verify(mockLogging, Mockito.times(1)).loadConfiguration();
+        Mockito.verify(loggingAdapter, Mockito.times(1)).loadConfiguration(loggingProperties);
+    }
+    
+    @Test
+    void testLoadConfigurationWithException() throws NoSuchFieldException, IllegalAccessException {
+        instance = NacosLogging.getInstance();
+        Field nacosLoggingField = NacosLogging.class.getDeclaredField("loggingAdapter");
+        nacosLoggingField.setAccessible(true);
+        NacosLoggingAdapter cachedLogging = (NacosLoggingAdapter) nacosLoggingField.get(instance);
+        try {
+            doThrow(new RuntimeException()).when(loggingAdapter).loadConfiguration(loggingProperties);
+            nacosLoggingField.set(instance, loggingAdapter);
+            instance.loadConfiguration();
+            // without exception thrown
+        } finally {
+            nacosLoggingField.set(instance, cachedLogging);
+        }
     }
 }

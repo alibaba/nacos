@@ -21,13 +21,13 @@ import com.alibaba.nacos.api.model.v2.ErrorCode;
 import com.alibaba.nacos.api.model.v2.Result;
 import com.alibaba.nacos.config.server.model.ConfigHistoryInfo;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
-import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.config.server.service.HistoryService;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import com.alibaba.nacos.persistence.model.Page;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -35,7 +35,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,13 +46,8 @@ import static org.mockito.Mockito.when;
  * @date 2022/7/25
  */
 
-@RunWith(MockitoJUnitRunner.class)
-public class HistoryControllerV2Test {
-    
-    HistoryControllerV2 historyControllerV2;
-    
-    @Mock
-    private HistoryService historyService;
+@ExtendWith(MockitoExtension.class)
+class HistoryControllerV2Test {
     
     private static final String TEST_DATA_ID = "test";
     
@@ -64,13 +59,18 @@ public class HistoryControllerV2Test {
     
     private static final String TEST_CONTENT = "test config";
     
-    @Before
-    public void setUp() {
+    HistoryControllerV2 historyControllerV2;
+    
+    @Mock
+    private HistoryService historyService;
+    
+    @BeforeEach
+    void setUp() {
         historyControllerV2 = new HistoryControllerV2(historyService);
     }
     
     @Test
-    public void testListConfigHistory() throws Exception {
+    void testListConfigHistory() throws Exception {
         
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId(TEST_DATA_ID);
@@ -89,8 +89,8 @@ public class HistoryControllerV2Test {
         
         when(historyService.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1, 10)).thenReturn(page);
         
-        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV2.listConfigHistory(TEST_DATA_ID, TEST_GROUP,
-                TEST_NAMESPACE_ID, 1, 10);
+        Result<Page<ConfigHistoryInfo>> pageResult = historyControllerV2.listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1,
+                10);
         
         verify(historyService).listConfigHistory(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1, 10);
         
@@ -106,7 +106,7 @@ public class HistoryControllerV2Test {
     }
     
     @Test
-    public void testListConfigHistoryWhenNameSpaceIsPublic() throws Exception {
+    void testListConfigHistoryWhenNameSpaceIsPublic() throws Exception {
         
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId(TEST_DATA_ID);
@@ -142,7 +142,7 @@ public class HistoryControllerV2Test {
     }
     
     @Test
-    public void testGetConfigHistoryInfoWhenNameSpaceIsPublic() throws Exception {
+    void testGetConfigHistoryInfoWhenNameSpaceIsPublic() throws Exception {
         
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId(TEST_DATA_ID);
@@ -152,11 +152,9 @@ public class HistoryControllerV2Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(
-                configHistoryInfo);
+        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(configHistoryInfo);
         
-        Result<ConfigHistoryInfo> result = historyControllerV2.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
-                TEST_NAMESPACE_ID_PUBLIC, 1L);
+        Result<ConfigHistoryInfo> result = historyControllerV2.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID_PUBLIC, 1L);
         
         verify(historyService).getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
         
@@ -170,7 +168,7 @@ public class HistoryControllerV2Test {
     }
     
     @Test
-    public void testGetConfigHistoryInfo() throws Exception {
+    void testGetConfigHistoryInfo() throws Exception {
         
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId(TEST_DATA_ID);
@@ -180,11 +178,9 @@ public class HistoryControllerV2Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(
-                configHistoryInfo);
+        when(historyService.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(configHistoryInfo);
         
-        Result<ConfigHistoryInfo> result = historyControllerV2.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
-                TEST_NAMESPACE_ID, 1L);
+        Result<ConfigHistoryInfo> result = historyControllerV2.getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
         
         verify(historyService).getConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
         
@@ -198,7 +194,7 @@ public class HistoryControllerV2Test {
     }
     
     @Test
-    public void testGetPreviousConfigHistoryInfo() throws Exception {
+    void testGetPreviousConfigHistoryInfo() throws Exception {
         
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId(TEST_DATA_ID);
@@ -208,11 +204,10 @@ public class HistoryControllerV2Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(
-                configHistoryInfo);
+        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(configHistoryInfo);
         
-        Result<ConfigHistoryInfo> result = historyControllerV2.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
-                TEST_NAMESPACE_ID, 1L);
+        Result<ConfigHistoryInfo> result = historyControllerV2.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID,
+                1L);
         
         verify(historyService).getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L);
         
@@ -226,7 +221,7 @@ public class HistoryControllerV2Test {
     }
     
     @Test
-    public void testGetPreviousConfigHistoryInfoWhenNameSpaceIsPublic() throws Exception {
+    void testGetPreviousConfigHistoryInfoWhenNameSpaceIsPublic() throws Exception {
         
         ConfigHistoryInfo configHistoryInfo = new ConfigHistoryInfo();
         configHistoryInfo.setDataId(TEST_DATA_ID);
@@ -236,8 +231,7 @@ public class HistoryControllerV2Test {
         configHistoryInfo.setCreatedTime(new Timestamp(new Date().getTime()));
         configHistoryInfo.setLastModifiedTime(new Timestamp(new Date().getTime()));
         
-        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(
-                configHistoryInfo);
+        when(historyService.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP, TEST_NAMESPACE_ID, 1L)).thenReturn(configHistoryInfo);
         
         Result<ConfigHistoryInfo> result = historyControllerV2.getPreviousConfigHistoryInfo(TEST_DATA_ID, TEST_GROUP,
                 TEST_NAMESPACE_ID_PUBLIC, 1L);
@@ -254,7 +248,7 @@ public class HistoryControllerV2Test {
     }
     
     @Test
-    public void testGetConfigListByNamespace() throws NacosApiException {
+    void testGetConfigListByNamespace() throws NacosApiException {
         ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
         configInfoWrapper.setDataId("test");
         configInfoWrapper.setGroup("test");
@@ -275,7 +269,7 @@ public class HistoryControllerV2Test {
     }
     
     @Test
-    public void testGetConfigListByNamespaceWhenIsPublic() throws NacosApiException {
+    void testGetConfigListByNamespaceWhenIsPublic() throws NacosApiException {
         ConfigInfoWrapper configInfoWrapper = new ConfigInfoWrapper();
         configInfoWrapper.setDataId("test");
         configInfoWrapper.setGroup("test");
