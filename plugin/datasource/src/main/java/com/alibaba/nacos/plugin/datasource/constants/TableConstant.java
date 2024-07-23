@@ -32,6 +32,8 @@ public class TableConstant {
     
     public static final String CONFIG_INFO_TAG = "config_info_tag";
     
+    public static final String CONFIG_INFO_GRAY = "config_info_gray";
+    
     public static final String CONFIG_TAGS_RELATION = "config_tags_relation";
     
     public static final String GROUP_CAPACITY = "group_capacity";

@@ -53,9 +53,7 @@ public class ConfigChangeClusterSyncRequestHandler
         DumpRequest dumpRequest = DumpRequest.create(configChangeSyncRequest.getDataId(),
                 configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
                 configChangeSyncRequest.getLastModified(), meta.getClientIp());
-        dumpRequest.setBeta(configChangeSyncRequest.isBeta());
-        dumpRequest.setBatch(configChangeSyncRequest.isBatch());
-        dumpRequest.setTag(configChangeSyncRequest.getTag());
+        dumpRequest.setGrayName(configChangeSyncRequest.getGrayName());
         dumpService.dump(dumpRequest);
         return new ConfigChangeClusterSyncResponse();
     }
