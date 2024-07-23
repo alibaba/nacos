@@ -54,7 +54,6 @@ public class DefaultClientHttpResponse implements HttpClientResponse {
     public Header getHeaders() {
         if (this.responseHeader == null) {
             this.responseHeader = Header.newInstance();
-            // use iterator to get better performance
             org.apache.hc.core5.http.Header[] allHeaders = response.getHeaders();
             for (org.apache.hc.core5.http.Header header : allHeaders) {
                 this.responseHeader.addParam(header.getName(), header.getValue());
