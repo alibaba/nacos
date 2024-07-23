@@ -151,6 +151,7 @@
         <SnakeYaml.version>2.0</SnakeYaml.version>
         <spring.version>5.3.34</spring.version>
         <spring-security.version>5.7.12</spring-security.version>
+        <kubernetes.client.version>14.0.0</kubernetes.client.version>
         <junit5.version>5.10.2</junit5.version>
     </properties>
     <!-- == -->
@@ -1037,13 +1038,13 @@
             <dependency>
                 <groupId>io.kubernetes</groupId>
                 <artifactId>client-java-api</artifactId>
-                <version>14.0.0</version>
+                <version>${kubernetes.client.version}</version>
             </dependency>
             
             <dependency>
                 <groupId>io.kubernetes</groupId>
                 <artifactId>client-java</artifactId>
-                <version>14.0.0</version>
+                <version>${kubernetes.client.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
