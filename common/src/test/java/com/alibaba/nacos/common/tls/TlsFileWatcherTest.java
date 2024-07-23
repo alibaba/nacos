@@ -89,9 +89,16 @@ class TlsFileWatcherTest {
         
         serviceField = TlsFileWatcher.getInstance().getClass().getDeclaredField("service");
         serviceField.setAccessible(true);
-        Field modifiersField2 = Field.class.getDeclaredField("modifiers");
-        modifiersField2.setAccessible(true);
-        modifiersField2.setInt(watchFilesMapField, watchFilesMapField.getModifiers() & ~Modifier.FINAL);
+        Field modifiersField2 = null;
+        for (Field each : fields) {
+            if ("modifiers".equals(each.getName())) {
+                modifiersField2 = each;
+            }
+        }
+        if (modifiersField2 != null) {
+            modifiersField2.setAccessible(true);
+            modifiersField2.setInt(watchFilesMapField, watchFilesMapField.getModifiers() & ~Modifier.FINAL);
+        }
         
         startedField = TlsFileWatcher.getInstance().getClass().getDeclaredField("started");
         startedField.setAccessible(true);
