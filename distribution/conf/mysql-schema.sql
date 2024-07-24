@@ -120,6 +120,7 @@ CREATE TABLE IF NOT EXISTS `config_info_gray` (
     KEY `idx_dataid_gmt_modified` (`data_id`,`gmt_modified`),
     KEY `idx_gmt_modified` (`gmt_modified`)
     ) ENGINE=InnoDB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin  COMMENT='config_info_gray';
+
 /******************************************/
 /*   表名称 = config_tags_relation         */
 /******************************************/
