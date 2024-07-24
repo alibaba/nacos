@@ -18,55 +18,59 @@ package com.alibaba.nacos.address.component;
 
 import com.alibaba.nacos.address.constant.AddressServerConstants;
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class AddressServerGeneratorManagerTest {
-    
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class AddressServerGeneratorManagerTest {
+
     @Test
-    public void testGenerateProductName() {
+    void testGenerateProductName() {
         AddressServerGeneratorManager manager = new AddressServerGeneratorManager();
         final String blankName = manager.generateProductName("");
-        Assert.assertEquals(AddressServerConstants.ALIWARE_NACOS_DEFAULT_PRODUCT_NAME, blankName);
+        assertEquals(AddressServerConstants.ALIWARE_NACOS_DEFAULT_PRODUCT_NAME, blankName);
     
         final String defaultName = manager.generateProductName(AddressServerConstants.DEFAULT_PRODUCT);
-        Assert.assertEquals(AddressServerConstants.ALIWARE_NACOS_DEFAULT_PRODUCT_NAME, defaultName);
+        assertEquals(AddressServerConstants.ALIWARE_NACOS_DEFAULT_PRODUCT_NAME, defaultName);
     
         final String testName = manager.generateProductName("test");
-        Assert.assertEquals("nacos.as.test", testName);
+        assertEquals("nacos.as.test", testName);
     
     }
-    
+
     @Test
-    public void testGenerateInstancesByIps() {
+    void testGenerateInstancesByIps() {
         AddressServerGeneratorManager manager = new AddressServerGeneratorManager();
         final List<Instance> empty = manager.generateInstancesByIps(null, null, null, null);
-        Assert.assertNotNull(empty);
-        Assert.assertTrue(empty.isEmpty());
+        assertNotNull(empty);
+        assertTrue(empty.isEmpty());
     
         String[] ipArray = new String[]{"192.168.3.1:8848", "192.168.3.2:8848", "192.168.3.3:8848"};
         final List<Instance> instanceList = manager.generateInstancesByIps("DEFAULT_GROUP@@nacos.as.test", "test", "test",
                 ipArray);
-        Assert.assertNotNull(instanceList);
-        Assert.assertFalse(instanceList.isEmpty());
-        Assert.assertEquals(3, instanceList.size());
+        assertNotNull(instanceList);
+        assertFalse(instanceList.isEmpty());
+        assertEquals(3, instanceList.size());
     
         final Instance instance1 = instanceList.get(0);
-        Assert.assertEquals("192.168.3.1", instance1.getIp());
+        assertEquals("192.168.3.1", instance1.getIp());
     
         final Instance instance2 = instanceList.get(1);
-        Assert.assertEquals("192.168.3.2", instance2.getIp());
+        assertEquals("192.168.3.2", instance2.getIp());
     
         final Instance instance3 = instanceList.get(2);
-        Assert.assertEquals("192.168.3.3", instance3.getIp());
+        assertEquals("192.168.3.3", instance3.getIp());
     
     }
-    
+
     @Test
-    public void testGenerateResponseIps() {
+    void testGenerateResponseIps() {
         final List<com.alibaba.nacos.api.naming.pojo.Instance> instanceList = new ArrayList<>();
         Instance instance1 = new Instance();
         instance1.setIp("192.168.3.1");
@@ -92,19 +96,19 @@ public class AddressServerGeneratorManagerTest {
                 .append("192.168.3.1:8848").append('\n')
                 .append("192.168.3.2:8848").append('\n')
                 .append("192.168.3.3:8848").append('\n');
-        Assert.assertEquals(ret.toString(), ipListStr);
+        assertEquals(ret.toString(), ipListStr);
     
     }
-    
+
     @Test
-    public void testGenerateNacosServiceName() {
+    void testGenerateNacosServiceName() {
         AddressServerGeneratorManager manager = new AddressServerGeneratorManager();
     
         final String containDefault = manager.generateNacosServiceName("DEFAULT_GROUP@@test");
-        Assert.assertEquals("DEFAULT_GROUP@@test", containDefault);
+        assertEquals("DEFAULT_GROUP@@test", containDefault);
     
         final String product = manager.generateNacosServiceName("product");
-        Assert.assertEquals("DEFAULT_GROUP@@product", product);
+        assertEquals("DEFAULT_GROUP@@product", product);
     }
     
 }

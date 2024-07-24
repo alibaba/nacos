@@ -32,6 +32,7 @@ import Layout from './layouts/MainLayout';
 import { LANGUAGE_KEY, REDUX_DEVTOOLS, THEME } from './constants';
 
 import Login from './pages/Login';
+import Register from './pages/Register';
 import Namespace from './pages/NameSpace';
 import Newconfig from './pages/ConfigurationManagement/NewConfig';
 import Configsync from './pages/ConfigurationManagement/ConfigSync';
@@ -136,6 +137,7 @@ class App extends React.Component {
           {loginPageEnabled && loginPageEnabled === 'false' ? null : (
             <Route path="/login" component={Login} />
           )}
+          <Route path="/register" component={Register} />
           {/* <Route path="/login" component={Login} /> */}
           <Layout>
             {consoleUiEnable &&

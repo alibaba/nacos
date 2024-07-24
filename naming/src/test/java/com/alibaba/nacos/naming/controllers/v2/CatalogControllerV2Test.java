@@ -24,13 +24,12 @@ import com.alibaba.nacos.naming.BaseTest;
 import com.alibaba.nacos.naming.core.CatalogServiceV2Impl;
 import com.alibaba.nacos.naming.misc.UtilsAndCommons;
 import com.fasterxml.jackson.databind.JsonNode;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -40,10 +39,13 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class CatalogControllerV2Test extends BaseTest {
+@ExtendWith(MockitoExtension.class)
+class CatalogControllerV2Test extends BaseTest {
+    
+    List instances;
     
     @Mock
     private CatalogServiceV2Impl catalogServiceV2;
@@ -53,9 +55,7 @@ public class CatalogControllerV2Test extends BaseTest {
     
     private MockMvc mockmvc;
     
-    List instances;
-    
-    @Before
+    @BeforeEach
     public void before() {
         Instance instance = new Instance();
         instance.setIp("1.1.1.1");
@@ -69,18 +69,17 @@ public class CatalogControllerV2Test extends BaseTest {
     }
     
     @Test
-    public void testInstanceList() throws Exception {
+    void testInstanceList() throws Exception {
         String serviceNameWithoutGroup = NamingUtils.getServiceName(TEST_SERVICE_NAME);
         String groupName = NamingUtils.getGroupName(TEST_SERVICE_NAME);
-        when(catalogServiceV2.listAllInstances(Constants.DEFAULT_NAMESPACE_ID, groupName,
-                serviceNameWithoutGroup)).thenReturn(instances);
+        when(catalogServiceV2.listAllInstances(Constants.DEFAULT_NAMESPACE_ID, groupName, serviceNameWithoutGroup)).thenReturn(instances);
         MockHttpServletRequestBuilder builder = MockMvcRequestBuilders.get(
-                        UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT
-                                + "/instances").param("namespaceId", Constants.DEFAULT_NAMESPACE_ID)
-                .param("serviceName", TEST_SERVICE_NAME).param("pageNo", "1").param("pageSize", "100");
+                        UtilsAndCommons.DEFAULT_NACOS_NAMING_CONTEXT_V2 + UtilsAndCommons.NACOS_NAMING_CATALOG_CONTEXT + "/instances")
+                .param("namespaceId", Constants.DEFAULT_NAMESPACE_ID).param("serviceName", TEST_SERVICE_NAME).param("pageNo", "1")
+                .param("pageSize", "100");
         MockHttpServletResponse response = mockmvc.perform(builder).andReturn().getResponse();
-        Assert.assertEquals(200, response.getStatus());
+        assertEquals(200, response.getStatus());
         JsonNode data = JacksonUtils.toObj(response.getContentAsString()).get("data").get("instances");
-        Assert.assertEquals(instances.size(), data.size());
+        assertEquals(instances.size(), data.size());
     }
 }

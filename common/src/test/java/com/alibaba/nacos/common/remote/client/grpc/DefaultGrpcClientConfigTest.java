@@ -17,33 +17,33 @@
 package com.alibaba.nacos.common.remote.client.grpc;
 
 import com.alibaba.nacos.common.remote.client.RpcClientTlsConfig;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class DefaultGrpcClientConfigTest {
+class DefaultGrpcClientConfigTest {
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         System.setProperty("nacos.common.processors", "2");
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         System.clearProperty("nacos.common.processors");
     }
     
     @Test
-    public void testDefault() {
+    void testDefault() {
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder().build();
         assertNull(config.name());
         assertEquals(3, config.retryTimes());
@@ -65,7 +65,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testFromProperties() {
+    void testFromProperties() {
         Properties properties = new Properties();
         properties.setProperty(GrpcConstants.GRPC_NAME, "test");
         properties.setProperty(GrpcConstants.GRPC_RETRY_TIMES, "3");
@@ -84,7 +84,7 @@ public class DefaultGrpcClientConfigTest {
         properties.setProperty(GrpcConstants.GRPC_CHANNEL_CAPABILITY_NEGOTIATION_TIMEOUT, "5000");
         
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) DefaultGrpcClientConfig.newBuilder()
-                .fromProperties(properties).build();
+                .fromProperties(properties, null).build();
         
         assertEquals("test", config.name());
         assertEquals(3, config.retryTimes());
@@ -106,7 +106,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testName() {
+    void testName() {
         String name = "test";
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setName(name);
@@ -115,7 +115,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetRetryTimes() {
+    void testSetRetryTimes() {
         int retryTimes = 3;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setRetryTimes(retryTimes);
@@ -124,7 +124,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetTimeOutMills() {
+    void testSetTimeOutMills() {
         long timeOutMills = 3000;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setTimeOutMills(timeOutMills);
@@ -133,7 +133,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetConnectionKeepAlive() {
+    void testSetConnectionKeepAlive() {
         long connectionKeepAlive = 5000;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setConnectionKeepAlive(connectionKeepAlive);
@@ -142,7 +142,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetThreadPoolKeepAlive() {
+    void testSetThreadPoolKeepAlive() {
         long threadPoolKeepAlive = 10000;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setThreadPoolKeepAlive(threadPoolKeepAlive);
@@ -151,7 +151,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetThreadPoolCoreSize() {
+    void testSetThreadPoolCoreSize() {
         int threadPoolCoreSize = 2;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setThreadPoolCoreSize(threadPoolCoreSize);
@@ -160,7 +160,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetThreadPoolMaxSize() {
+    void testSetThreadPoolMaxSize() {
         int threadPoolMaxSize = 8;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setThreadPoolMaxSize(threadPoolMaxSize);
@@ -169,7 +169,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetServerCheckTimeOut() {
+    void testSetServerCheckTimeOut() {
         long serverCheckTimeOut = 3000;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setServerCheckTimeOut(serverCheckTimeOut);
@@ -178,7 +178,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetThreadPoolQueueSize() {
+    void testSetThreadPoolQueueSize() {
         int threadPoolQueueSize = 10000;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setThreadPoolQueueSize(threadPoolQueueSize);
@@ -187,7 +187,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetMaxInboundMessageSize() {
+    void testSetMaxInboundMessageSize() {
         int maxInboundMessageSize = 10485760;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setMaxInboundMessageSize(maxInboundMessageSize);
@@ -196,7 +196,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetChannelKeepAlive() {
+    void testSetChannelKeepAlive() {
         int channelKeepAlive = 60000;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setChannelKeepAlive(channelKeepAlive);
@@ -205,7 +205,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetChannelKeepAliveTimeout() {
+    void testSetChannelKeepAliveTimeout() {
         int channelKeepAliveTimeout = 20000;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setChannelKeepAliveTimeout(channelKeepAliveTimeout);
@@ -214,7 +214,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetCapabilityNegotiationTimeout() {
+    void testSetCapabilityNegotiationTimeout() {
         long capabilityNegotiationTimeout = 5000;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setCapabilityNegotiationTimeout(capabilityNegotiationTimeout);
@@ -223,7 +223,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetHealthCheckRetryTimes() {
+    void testSetHealthCheckRetryTimes() {
         int healthCheckRetryTimes = 3;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setHealthCheckRetryTimes(healthCheckRetryTimes);
@@ -232,7 +232,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetHealthCheckTimeOut() {
+    void testSetHealthCheckTimeOut() {
         long healthCheckTimeOut = 3000;
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setHealthCheckTimeOut(healthCheckTimeOut);
@@ -241,7 +241,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetLabels() {
+    void testSetLabels() {
         Map<String, String> labels = new HashMap<>();
         labels.put("key1", "value1");
         labels.put("key2", "value2");
@@ -254,7 +254,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetTlsConfig() {
+    void testSetTlsConfig() {
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         builder.setTlsConfig(tlsConfig);
@@ -263,7 +263,7 @@ public class DefaultGrpcClientConfigTest {
     }
     
     @Test
-    public void testSetTlsConfigDirectly() {
+    void testSetTlsConfigDirectly() {
         RpcClientTlsConfig tlsConfig = new RpcClientTlsConfig();
         DefaultGrpcClientConfig.Builder builder = DefaultGrpcClientConfig.newBuilder();
         DefaultGrpcClientConfig config = (DefaultGrpcClientConfig) builder.build();

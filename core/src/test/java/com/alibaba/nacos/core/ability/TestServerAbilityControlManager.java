@@ -23,7 +23,7 @@ import com.alibaba.nacos.core.ability.control.ServerAbilityControlManager;
 import java.util.Map;
 
 public class TestServerAbilityControlManager extends ServerAbilityControlManager {
-
+    
     @JustForTest
     public void setCurrentSupportingAbility(Map<String, Boolean> ability) {
         currentNodeAbilities.get(AbilityMode.SERVER).clear();

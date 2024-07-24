@@ -139,7 +139,7 @@ public class ConfigCacheService {
             DUMP_LOG.error("[dump-exception] save disk error. " + groupKey + ", " + ioe);
             if (ioe.getMessage() != null) {
                 String errMsg = ioe.getMessage();
-                if (NO_SPACE_CN.equals(errMsg) || NO_SPACE_EN.equals(errMsg) || errMsg.contains(DISK_QUOTA_CN)
+                if (errMsg.contains(NO_SPACE_CN) || errMsg.contains(NO_SPACE_EN) || errMsg.contains(DISK_QUOTA_CN)
                         || errMsg.contains(DISK_QUOTA_EN)) {
                     // Protect from disk full.
                     FATAL_LOG.error("Local Disk Full,Exit", ioe);

@@ -38,4 +38,14 @@ public interface ModuleStateBuilder {
     default boolean isIgnore() {
         return false;
     }
+    
+    /**
+     * Whether module is cache, default return true.
+     *
+     * @return boolean
+     */
+    default boolean isCacheable() {
+        return true;
+    }
+    
 }

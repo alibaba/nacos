@@ -21,15 +21,16 @@ import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.PushCallBack;
 import com.alibaba.nacos.common.remote.exception.ConnectionAlreadyClosedException;
 import com.alibaba.nacos.core.remote.grpc.GrpcConnection;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * {@link RpcPushService} unit test.
@@ -37,8 +38,8 @@ import java.util.UUID;
  * @author chenglu
  * @date 2021-07-02 19:35
  */
-@RunWith(MockitoJUnitRunner.class)
-public class RpcPushServiceTest {
+@ExtendWith(MockitoExtension.class)
+class RpcPushServiceTest {
     
     @InjectMocks
     private RpcPushService rpcPushService;
@@ -52,7 +53,7 @@ public class RpcPushServiceTest {
     private String connectId = UUID.randomUUID().toString();
     
     @Test
-    public void testPushWithCallback() {
+    void testPushWithCallback() {
         try {
             Mockito.when(connectionManager.getConnection(Mockito.any())).thenReturn(null);
             rpcPushService.pushWithCallback(connectId, null, new PushCallBack() {
@@ -60,38 +61,36 @@ public class RpcPushServiceTest {
                 public long getTimeout() {
                     return 0;
                 }
-    
+                
                 @Override
                 public void onSuccess() {
                     System.out.println("success");
                 }
-    
+                
                 @Override
                 public void onFail(Throwable e) {
                     e.printStackTrace();
-                    Assert.fail(e.getMessage());
+                    fail(e.getMessage());
                 }
             }, null);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
     
     @Test
-    public void testPushWithoutAck() {
+    void testPushWithoutAck() {
         Mockito.when(connectionManager.getConnection(Mockito.any())).thenReturn(grpcConnection);
         try {
-            Mockito.when(grpcConnection.request(Mockito.any(), Mockito.eq(3000L)))
-                    .thenThrow(ConnectionAlreadyClosedException.class);
+            Mockito.when(grpcConnection.request(Mockito.any(), Mockito.eq(3000L))).thenThrow(ConnectionAlreadyClosedException.class);
             rpcPushService.pushWithoutAck(connectId, null);
-    
-            Mockito.when(grpcConnection.request(Mockito.any(), Mockito.eq(3000L)))
-                    .thenThrow(NacosException.class);
+            
+            Mockito.when(grpcConnection.request(Mockito.any(), Mockito.eq(3000L))).thenThrow(NacosException.class);
             rpcPushService.pushWithoutAck(connectId, null);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
         
         try {
@@ -99,7 +98,7 @@ public class RpcPushServiceTest {
             rpcPushService.pushWithoutAck(connectId, null);
         } catch (Exception e) {
             e.printStackTrace();
-            Assert.fail(e.getMessage());
+            fail(e.getMessage());
         }
     }
 }

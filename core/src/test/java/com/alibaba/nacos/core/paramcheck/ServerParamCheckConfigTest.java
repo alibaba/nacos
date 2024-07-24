@@ -17,18 +17,18 @@
 package com.alibaba.nacos.core.paramcheck;
 
 import com.alibaba.nacos.sys.env.EnvUtil;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Constructor;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
-public class ServerParamCheckConfigTest {
+class ServerParamCheckConfigTest {
     
     @Test
-    public void getConfigFromEnv() throws ReflectiveOperationException {
+    void getConfigFromEnv() throws ReflectiveOperationException {
         MockEnvironment environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         environment.setProperty("nacos.core.param.check.enabled", String.valueOf(false));
@@ -39,20 +39,20 @@ public class ServerParamCheckConfigTest {
         ServerParamCheckConfig paramCheckConfig = declaredConstructor.newInstance();
         
         assertFalse(paramCheckConfig.isParamCheckEnabled());
-        assertEquals(paramCheckConfig.getActiveParamChecker(), "default");
+        assertEquals("default", paramCheckConfig.getActiveParamChecker());
     }
     
     @Test
-    public void setParamCheckEnabled() {
+    void setParamCheckEnabled() {
         ServerParamCheckConfig paramCheckConfig = ServerParamCheckConfig.getInstance();
         paramCheckConfig.setParamCheckEnabled(false);
         assertFalse(paramCheckConfig.isParamCheckEnabled());
     }
     
     @Test
-    public void setActiveParamChecker() {
+    void setActiveParamChecker() {
         ServerParamCheckConfig paramCheckConfig = ServerParamCheckConfig.getInstance();
         paramCheckConfig.setActiveParamChecker("test");
-        assertEquals(paramCheckConfig.getActiveParamChecker(), "test");
+        assertEquals("test", paramCheckConfig.getActiveParamChecker());
     }
 }

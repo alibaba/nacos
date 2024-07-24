@@ -22,17 +22,17 @@ import com.alibaba.nacos.plugin.datasource.constants.TableConstant;
 import com.alibaba.nacos.plugin.datasource.model.MapperContext;
 import com.alibaba.nacos.plugin.datasource.model.MapperResult;
 import com.google.common.collect.Lists;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.List;
 
-public class ConfigInfoBetaMapperByMySqlTest {
-    
-    private ConfigInfoBetaMapperByMySql configInfoBetaMapperByMySql;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class ConfigInfoBetaMapperByMySqlTest {
     
     int startRow = 0;
     
@@ -52,8 +52,10 @@ public class ConfigInfoBetaMapperByMySqlTest {
     
     MapperContext context;
     
-    @Before
-    public void setUp() throws Exception {
+    private ConfigInfoBetaMapperByMySql configInfoBetaMapperByMySql;
+    
+    @BeforeEach
+    void setUp() throws Exception {
         configInfoBetaMapperByMySql = new ConfigInfoBetaMapperByMySql();
         
         context = new MapperContext(startRow, pageSize);
@@ -67,12 +69,11 @@ public class ConfigInfoBetaMapperByMySqlTest {
     }
     
     @Test
-    public void testUpdateConfigInfo4BetaCas() {
+    void testUpdateConfigInfo4BetaCas() {
         String newContent = "new Content";
         String newMD5 = "newMD5";
         String srcIp = "1.1.1.1";
         Object srcUser = "nacos";
-        Object time = new Timestamp(System.currentTimeMillis());
         Object appNameTmp = "newAppName";
         Object desc = "description";
         Object use = "use";
@@ -86,7 +87,6 @@ public class ConfigInfoBetaMapperByMySqlTest {
         context.putUpdateParameter(FieldConstant.BETA_IPS, betaIps);
         context.putUpdateParameter(FieldConstant.SRC_IP, srcIp);
         context.putUpdateParameter(FieldConstant.SRC_USER, srcUser);
-        context.putUpdateParameter(FieldConstant.GMT_MODIFIED, time);
         context.putUpdateParameter(FieldConstant.APP_NAME, appNameTmp);
         context.putUpdateParameter(FieldConstant.C_DESC, desc);
         context.putUpdateParameter(FieldConstant.C_USE, use);
@@ -106,36 +106,34 @@ public class ConfigInfoBetaMapperByMySqlTest {
         MapperResult mapperResult = configInfoBetaMapperByMySql.updateConfigInfo4BetaCas(context);
         
         String sql = mapperResult.getSql();
-        List<Object> paramList = mapperResult.getParamList();
-        Assert.assertEquals(sql,
-                "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,src_ip = ?,src_user = ?,gmt_modified = ?,app_name = ? "
+        assertEquals(sql,
+                "UPDATE config_info_beta SET content = ?,md5 = ?,beta_ips = ?,"
+                        + "src_ip = ?,src_user = ?,gmt_modified = NOW(3),app_name = ? "
                         + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND (md5 = ? OR md5 is null OR md5 = '')");
-        Assert.assertArrayEquals(mapperResult.getParamList().toArray(),
-                new Object[] {newContent, newMD5, betaIps, srcIp, srcUser, time, appNameTmp, dataId, group, tenantId,
-                        md5});
+        assertArrayEquals(new Object[]{newContent, newMD5, betaIps, srcIp, srcUser, appNameTmp, dataId, group, tenantId, md5},
+                mapperResult.getParamList().toArray());
     }
     
     @Test
-    public void testFindAllConfigInfoBetaForDumpAllFetchRows() {
+    void testFindAllConfigInfoBetaForDumpAllFetchRows() {
         MapperResult result = configInfoBetaMapperByMySql.findAllConfigInfoBetaForDumpAllFetchRows(context);
         String sql = result.getSql();
         List<Object> paramList = result.getParamList();
-        Assert.assertEquals(sql,
-                " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key "
-                        + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT " + startRow + "," + pageSize
-                        + " )" + "  g, config_info_beta t WHERE g.id = t.id ");
-        Assert.assertEquals(paramList, Arrays.asList(startRow, pageSize));
+        assertEquals(sql, " SELECT t.id,data_id,group_id,tenant_id,app_name,content,md5,gmt_modified,beta_ips,encrypted_data_key "
+                + " FROM ( SELECT id FROM config_info_beta  ORDER BY id LIMIT " + startRow + "," + pageSize + " )"
+                + "  g, config_info_beta t WHERE g.id = t.id ");
+        assertEquals(paramList, Arrays.asList(startRow, pageSize));
     }
     
     @Test
-    public void testGetTableName() {
+    void testGetTableName() {
         String tableName = configInfoBetaMapperByMySql.getTableName();
-        Assert.assertEquals(tableName, TableConstant.CONFIG_INFO_BETA);
+        assertEquals(TableConstant.CONFIG_INFO_BETA, tableName);
     }
     
     @Test
-    public void testGetDataSource() {
+    void testGetDataSource() {
         String dataSource = configInfoBetaMapperByMySql.getDataSource();
-        Assert.assertEquals(dataSource, DataSourceConstant.MYSQL);
+        assertEquals(DataSourceConstant.MYSQL, dataSource);
     }
 }

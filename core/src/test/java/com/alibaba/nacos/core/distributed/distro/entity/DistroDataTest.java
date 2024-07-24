@@ -17,31 +17,32 @@
 package com.alibaba.nacos.core.distributed.distro.entity;
 
 import com.alibaba.nacos.consistency.DataOperation;
-import junit.framework.TestCase;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-public class DistroDataTest extends TestCase {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class DistroDataTest {
+    
+    private final String type = "com.alibaba.nacos.naming.iplist.";
     
     private DistroData distroData;
     
     private DistroKey distroKey;
     
-    private final String type = "com.alibaba.nacos.naming.iplist.";
-    
     private int contentSize = 10;
     
     private final byte[] content = new byte[contentSize];
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         distroKey = new DistroKey("checksum", type);
         distroData = new DistroData(distroKey, content);
         distroData.setType(DataOperation.VERIFY);
     }
     
     @Test
-    public void testGetters() {
+    void testGetters() {
         assertEquals(distroKey, distroData.getDistroKey());
         assertEquals(content, distroData.getContent());
         assertEquals(DataOperation.VERIFY, distroData.getType());

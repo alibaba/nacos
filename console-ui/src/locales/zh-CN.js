@@ -27,10 +27,12 @@ const I18N_CONF = {
   },
   Login: {
     login: '登录',
+    initPassword: '初始化密码',
     internalSysTip1: '内部系统，不可暴露到公网',
     submit: '提交',
     pleaseInputUsername: '请输入用户名',
     pleaseInputPassword: '请输入密码',
+    pleaseInputPasswordTips: '请输入密码（若密码为空，将使用随机密码）',
     invalidUsernameOrPassword: '用户名或密码错误',
     passwordRequired: '密码不能为空',
     usernameRequired: '用户名不能为空',
@@ -125,6 +127,7 @@ const I18N_CONF = {
     promptDelete: '确定要删除当前服务吗？',
     create: '创建服务',
     subscriber: '订阅者',
+    total: '总数：',
   },
   SubscriberList: {
     subscriberList: '订阅者列表',
@@ -363,6 +366,7 @@ const I18N_CONF = {
     cloneEditableTitle: '修改 Data Id 和 Group (可选操作)',
     authFail: '权限认证失败',
     copyNamespaceID: '复制命名空间ID',
+    total: '总数：',
   },
   NewConfig: {
     newListingMain: '新建配置',

@@ -16,7 +16,7 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Collections;
@@ -27,15 +27,15 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
-public class MapUtilTest {
+class MapUtilTest {
     
     @Test
-    public void testIsEmptyAndNotEmptyMap() {
+    void testIsEmptyAndNotEmptyMap() {
         Map<Object, Object> map = null;
         assertTrue(MapUtil.isEmpty(map));
         assertFalse(MapUtil.isNotEmpty(map));
@@ -48,7 +48,7 @@ public class MapUtilTest {
     }
     
     @Test
-    public void testIsEmptyOrEmptyDictionary() {
+    void testIsEmptyOrEmptyDictionary() {
         Dictionary<Object, Object> dictionary = null;
         assertTrue(MapUtil.isEmpty(dictionary));
         assertFalse(MapUtil.isNotEmpty(dictionary));
@@ -61,7 +61,7 @@ public class MapUtilTest {
     }
     
     @Test
-    public void testPutIfValNoNull() {
+    void testPutIfValNoNull() {
         Map<Object, Object> map = new HashMap<>();
         MapUtil.putIfValNoNull(map, "key-1", null);
         assertTrue(map.isEmpty());
@@ -70,7 +70,7 @@ public class MapUtilTest {
     }
     
     @Test
-    public void testPutIfValNoEmptyMap() {
+    void testPutIfValNoEmptyMap() {
         Map<Object, Object> map = new HashMap<>();
         
         MapUtil.putIfValNoEmpty(map, "key-str", null);
@@ -113,7 +113,7 @@ public class MapUtilTest {
     }
     
     @Test
-    public void testComputeIfAbsent() {
+    void testComputeIfAbsent() {
         Map<String, String> target = new HashMap<>();
         String key = "key";
         String param1 = "param1";
@@ -136,7 +136,7 @@ public class MapUtilTest {
     }
     
     @Test
-    public void testRemoveKey() {
+    void testRemoveKey() {
         Map<String, Integer> map = new HashMap<>();
         map.put("A", 1);
         map.put("B", 2);

@@ -78,6 +78,8 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
     @Value("${" + Constants.Auth.NACOS_CORE_AUTH_ENABLE_USER_AGENT_AUTH_WHITE + ":false}")
     private boolean enableUserAgentAuthWhite;
     
+    private boolean hasGlobalAdminRole;
+    
     private Map<String, Properties> authPluginProperties = new HashMap<>();
     
     public AuthConfigs() {
@@ -123,6 +125,14 @@ public class AuthConfigs extends Subscriber<ServerConfigChangeEvent> {
         } catch (Exception e) {
             LOGGER.warn("Refresh plugin properties failed ", e);
         }
+    }
+    
+    public boolean isHasGlobalAdminRole() {
+        return hasGlobalAdminRole;
+    }
+    
+    public void setHasGlobalAdminRole(boolean hasGlobalAdminRole) {
+        this.hasGlobalAdminRole = hasGlobalAdminRole;
     }
     
     public String getNacosAuthSystemType() {

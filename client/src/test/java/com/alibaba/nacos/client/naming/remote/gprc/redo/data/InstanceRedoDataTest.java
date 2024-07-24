@@ -17,28 +17,26 @@
 package com.alibaba.nacos.client.naming.remote.gprc.redo.data;
 
 import com.alibaba.nacos.api.naming.pojo.Instance;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class InstanceRedoDataTest {
+class InstanceRedoDataTest {
     
     @Test
-    public void testEquals() {
+    void testEquals() {
         InstanceRedoData redoData1 = new InstanceRedoData("a", "b");
-        assertTrue(redoData1.equals(redoData1));
-        assertFalse(redoData1.equals(null));
+        assertEquals(redoData1, redoData1);
+        assertNotEquals(null, redoData1);
         BatchInstanceRedoData redoData2 = new BatchInstanceRedoData("a", "b");
-        assertFalse(redoData1.equals(redoData2));
+        assertNotEquals(redoData1, redoData2);
         InstanceRedoData redoData3 = new InstanceRedoData("a", "b");
-        assertTrue(redoData1.equals(redoData3));
+        assertEquals(redoData1, redoData3);
     }
     
     @Test
-    public void testHashCode() {
+    void testHashCode() {
         InstanceRedoData redoData1 = new InstanceRedoData("a", "b");
         redoData1.set(new Instance());
         InstanceRedoData redoData2 = new InstanceRedoData("a", "b");

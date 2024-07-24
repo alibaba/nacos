@@ -626,6 +626,9 @@ public class ConfigController {
             failedData.put("succCount", 0);
             return RestResultUtils.buildResult(ResultCodeEnum.NAMESPACE_NOT_EXIST, failedData);
         }
+        if (StringUtils.isBlank(srcUser)) {
+            srcUser = RequestUtil.getSrcUserName(request);
+        }
         List<ConfigAllInfo> configInfoList = new ArrayList<>();
         List<Map<String, String>> unrecognizedList = new ArrayList<>();
         try {
@@ -900,7 +903,9 @@ public class ConfigController {
                     ci.getEncryptedDataKey() == null ? StringUtils.EMPTY : ci.getEncryptedDataKey());
             configInfoList4Clone.add(ci4save);
         }
-        
+        if (StringUtils.isBlank(srcUser)) {
+            srcUser = RequestUtil.getSrcUserName(request);
+        }
         final String srcIp = RequestUtil.getRemoteIp(request);
         String requestIpApp = RequestUtil.getAppName(request);
         final Timestamp time = TimeUtils.getCurrentTime();

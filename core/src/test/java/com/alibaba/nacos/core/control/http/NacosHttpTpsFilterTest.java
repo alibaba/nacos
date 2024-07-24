@@ -26,14 +26,14 @@ import com.alibaba.nacos.plugin.control.tps.TpsControlManager;
 import com.alibaba.nacos.plugin.control.tps.request.TpsCheckRequest;
 import com.alibaba.nacos.plugin.control.tps.response.TpsCheckResponse;
 import org.apache.catalina.core.AsyncContextImpl;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockFilterChain;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -48,14 +48,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
-public class NacosHttpTpsFilterTest {
-    
-    @Mock
-    private ControlManagerCenter controlManagerCenter;
-    
-    @Mock
-    private TpsControlManager tpsControlManager;
+@ExtendWith(MockitoExtension.class)
+class NacosHttpTpsFilterTest {
     
     NacosHttpTpsFilter nacosHttpTpsFilter;
     
@@ -64,18 +58,23 @@ public class NacosHttpTpsFilterTest {
     @Mock
     ControllerMethodsCache controllerMethodsCache;
     
-    @Before
-    public void before() {
+    @Mock
+    private ControlManagerCenter controlManagerCenter;
+    
+    @Mock
+    private TpsControlManager tpsControlManager;
+    
+    @BeforeEach
+    void before() {
         controlManagerCenterMockedStatic = Mockito.mockStatic(ControlManagerCenter.class);
-        controlManagerCenterMockedStatic.when(() -> ControlManagerCenter.getInstance())
-                .thenReturn(controlManagerCenter);
+        controlManagerCenterMockedStatic.when(() -> ControlManagerCenter.getInstance()).thenReturn(controlManagerCenter);
         when(controlManagerCenter.getTpsControlManager()).thenReturn(tpsControlManager);
         nacosHttpTpsFilter = new NacosHttpTpsFilter(controllerMethodsCache);
         
     }
     
-    @After
-    public void after() {
+    @AfterEach
+    void after() {
         controlManagerCenterMockedStatic.close();
     }
     
@@ -83,7 +82,7 @@ public class NacosHttpTpsFilterTest {
      * test tps check passed ,response is null.
      */
     @Test
-    public void testPass() throws Exception {
+    void testPass() throws Exception {
         HttpTpsCheckRequestParserRegistry.register(new HttpTpsCheckRequestParser() {
             @Override
             public TpsCheckRequest parse(HttpServletRequest httpServletRequest) {
@@ -106,7 +105,7 @@ public class NacosHttpTpsFilterTest {
         
         //mock http tps control method
         Method method = HealthCheckRequestHandler.class.getMethod("handle", Request.class, RequestMeta.class);
-    
+        
         MockHttpServletRequest httpServletRequest = Mockito.mock(MockHttpServletRequest.class);
         MockHttpServletResponse httpServletResponse = Mockito.mock(MockHttpServletResponse.class);
         MockFilterChain filterChain = Mockito.mock(MockFilterChain.class);
@@ -124,7 +123,7 @@ public class NacosHttpTpsFilterTest {
      * test tps check rejected ,response is not null.
      */
     @Test
-    public void testRejected() throws Exception {
+    void testRejected() throws Exception {
         HttpTpsCheckRequestParserRegistry.register(new HttpTpsCheckRequestParser() {
             @Override
             public TpsCheckRequest parse(HttpServletRequest httpServletRequest) {
@@ -147,7 +146,7 @@ public class NacosHttpTpsFilterTest {
         
         //mock http tps control method
         Method method = HealthCheckRequestHandler.class.getMethod("handle", Request.class, RequestMeta.class);
-    
+        
         MockHttpServletRequest httpServletRequest = Mockito.mock(MockHttpServletRequest.class);
         MockHttpServletResponse httpServletResponse = Mockito.mock(MockHttpServletResponse.class);
         MockFilterChain filterChain = Mockito.mock(MockFilterChain.class);
@@ -168,7 +167,7 @@ public class NacosHttpTpsFilterTest {
      * test tps check exception ,return null skip.
      */
     @Test
-    public void testTpsCheckException() throws Exception {
+    void testTpsCheckException() throws Exception {
         HttpTpsCheckRequestParserRegistry.register(new HttpTpsCheckRequestParser() {
             @Override
             public TpsCheckRequest parse(HttpServletRequest httpServletRequest) {

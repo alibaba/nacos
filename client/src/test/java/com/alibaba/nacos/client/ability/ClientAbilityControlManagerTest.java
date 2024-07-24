@@ -18,25 +18,25 @@ package com.alibaba.nacos.client.ability;
 
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
 import com.alibaba.nacos.api.ability.constant.AbilityMode;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ClientAbilityControlManagerTest {
+class ClientAbilityControlManagerTest {
     
     ClientAbilityControlManager clientAbilityControlManager;
     
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         clientAbilityControlManager = new ClientAbilityControlManager();
     }
     
     @Test
-    public void testInitCurrentNodeAbilities() {
+    void testInitCurrentNodeAbilities() {
         Map<AbilityMode, Map<AbilityKey, Boolean>> actual = clientAbilityControlManager.initCurrentNodeAbilities();
         assertEquals(1, actual.size());
         assertTrue(actual.containsKey(AbilityMode.SDK_CLIENT));
@@ -45,7 +45,7 @@ public class ClientAbilityControlManagerTest {
     }
     
     @Test
-    public void testGetPriority() {
+    void testGetPriority() {
         assertEquals(0, clientAbilityControlManager.getPriority());
     }
 }

@@ -20,34 +20,33 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
-public class ServerNamingAbilityTest {
+class ServerNamingAbilityTest {
     
     private static ObjectMapper jacksonMapper;
     
-    @BeforeClass
-    public static void setUpClass() throws Exception {
+    @BeforeAll
+    static void setUpClass() throws Exception {
         jacksonMapper = new ObjectMapper();
         jacksonMapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
         jacksonMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
     }
     
     @Test
-    public void testDeserializeServerNamingAbilityForNonExistItem() throws JsonProcessingException {
+    void testDeserializeServerNamingAbilityForNonExistItem() throws JsonProcessingException {
         String nonExistItemJson = "{\"exampleAbility\":false}";
         ServerNamingAbility actual = jacksonMapper.readValue(nonExistItemJson, ServerNamingAbility.class);
         assertFalse(actual.isSupportJraft());
     }
     
     @Test
-    public void testEquals() throws JsonProcessingException {
+    void testEquals() throws JsonProcessingException {
         ServerNamingAbility expected = new ServerNamingAbility();
         expected.setSupportJraft(true);
         String serializeJson = jacksonMapper.writeValueAsString(expected);
@@ -60,19 +59,19 @@ public class ServerNamingAbilityTest {
     }
     
     @Test
-    public void testEqualsForOneObject() {
+    void testEqualsForOneObject() {
         ServerNamingAbility ability = new ServerNamingAbility();
-        assertTrue(ability.equals(ability));
+        assertEquals(ability, ability);
     }
     
     @Test
-    public void testEqualsForOtherAbility() {
+    void testEqualsForOtherAbility() {
         ServerNamingAbility ability = new ServerNamingAbility();
-        assertFalse(ability.equals(new ClientNamingAbility()));
+        assertNotEquals(ability, new ClientNamingAbility());
     }
     
     @Test
-    public void testHashCode() throws JsonProcessingException {
+    void testHashCode() throws JsonProcessingException {
         ServerNamingAbility expected = new ServerNamingAbility();
         expected.setSupportJraft(true);
         String serializeJson = jacksonMapper.writeValueAsString(expected);

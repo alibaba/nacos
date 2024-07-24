@@ -43,10 +43,14 @@ public class Constants {
     
     public static final String NULL = "";
     
-    public static final String DATAID = "dataId";
-    
+    public static final String DATA_ID = "dataId";
+
+    public static final String TENANT = "tenant";
+
     public static final String GROUP = "group";
-    
+
+    public static final String NAMESPACE_ID = "namespaceId";
+
     public static final String LAST_MODIFIED = "Last-Modified";
     
     public static final String ACCEPT_ENCODING = "Accept-Encoding";
@@ -242,6 +246,11 @@ public class Constants {
     public static final String APP_CONN_PREFIX = "app_";
     
     public static final String CONFIG_GRAY_LABEL = "nacos.config.gray.label";
+    
+    /**
+     * Since 2.3.3, For some situation like java agent using nacos-client which can't use env ram info.
+     */
+    public static final String DEFAULT_USE_RAM_INFO_PARSING = "true";
     
     /**
      * The constants in config directory.

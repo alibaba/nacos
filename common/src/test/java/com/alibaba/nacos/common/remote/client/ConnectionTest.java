@@ -23,23 +23,23 @@ import com.alibaba.nacos.api.remote.RequestCallBack;
 import com.alibaba.nacos.api.remote.RequestFuture;
 import com.alibaba.nacos.api.remote.request.Request;
 import com.alibaba.nacos.api.remote.response.Response;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class ConnectionTest {
+class ConnectionTest {
     
     Connection connection;
     
-    @Before
-    public void setUp() throws Exception {
+    @BeforeEach
+    void setUp() throws Exception {
         connection = new Connection(new RpcClient.ServerInfo("127.0.0.1", 8848)) {
             @Override
             public Response request(Request request, long timeoutMills) throws NacosException {
@@ -61,20 +61,20 @@ public class ConnectionTest {
         };
     }
     
-    @After
-    public void tearDown() throws Exception {
+    @AfterEach
+    void tearDown() throws Exception {
         connection.close();
     }
     
     @Test
-    public void testSetConnectionId() {
+    void testSetConnectionId() {
         assertNull(connection.getConnectionId());
         connection.setConnectionId("testConnectionId");
         assertEquals("testConnectionId", connection.getConnectionId());
     }
     
     @Test
-    public void testGetConnectionAbility() {
+    void testGetConnectionAbility() {
         assertFalse(connection.isAbilitiesSet());
         assertEquals(AbilityStatus.UNKNOWN, connection.getConnectionAbility(AbilityKey.SDK_CLIENT_TEST_1));
         connection.setAbilityTable(Collections.singletonMap(AbilityKey.SERVER_TEST_2.getName(), true));
@@ -86,7 +86,7 @@ public class ConnectionTest {
     }
     
     @Test
-    public void testSetAbandon() {
+    void testSetAbandon() {
         assertFalse(connection.isAbandon());
         connection.setAbandon(true);
         assertTrue(connection.isAbandon());

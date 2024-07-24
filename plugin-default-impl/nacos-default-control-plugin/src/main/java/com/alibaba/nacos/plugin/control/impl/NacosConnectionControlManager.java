@@ -58,6 +58,11 @@ public class NacosConnectionControlManager extends ConnectionControlManager {
         connectionCheckResponse.setSuccess(true);
         connectionCheckResponse.setCode(ConnectionCheckCode.PASS_BY_TOTAL);
         int totalCountLimit = connectionControlRule.getCountLimit();
+        // If totalCountLimit less than 0, no limit is applied.
+        if (totalCountLimit < 0) {
+            return connectionCheckResponse;
+        }
+        
         // Get total connection from metrics
         Map<String, Integer> metricsTotalCount = metricsCollectorList.stream().collect(
                 Collectors.toMap(ConnectionMetricsCollector::getName, ConnectionMetricsCollector::getTotalCount));

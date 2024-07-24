@@ -21,29 +21,30 @@ import com.alibaba.nacos.core.distributed.distro.DistroConstants;
 import com.alibaba.nacos.core.distributed.raft.RaftSysConstants;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.alibaba.nacos.sys.module.ModuleStateHolder;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * standalone module-state-builder test.
+ *
  * @author 985492783@qq.com
  * @date 2023/4/8 0:17
  */
-public class ModuleStateClusterTest {
+class ModuleStateClusterTest {
     
     private ConfigurableEnvironment environment;
-
+    
     private ModuleStateHolder moduleStateHolder;
     
-    @Before
-    public void setUp() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
+    @BeforeEach
+    void setUp() throws NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException {
         environment = new MockEnvironment();
         EnvUtil.setEnvironment(environment);
         EnvUtil.setIsStandalone(false);
@@ -53,7 +54,7 @@ public class ModuleStateClusterTest {
     }
     
     @Test
-    public void testStandaloneBuilder() {
+    void testStandaloneBuilder() {
         assertTrue(moduleStateHolder.getModuleState(DistroConstants.DISTRO_MODULE).isPresent());
         assertTrue(moduleStateHolder.getModuleState(RaftSysConstants.RAFT_STATE).isPresent());
     }

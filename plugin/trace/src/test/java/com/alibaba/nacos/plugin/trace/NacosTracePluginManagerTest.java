@@ -17,21 +17,21 @@
 package com.alibaba.nacos.plugin.trace;
 
 import com.alibaba.nacos.plugin.trace.spi.NacosTraceSubscriber;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.fail;
 
-public class NacosTracePluginManagerTest {
+class NacosTracePluginManagerTest {
     
-    @BeforeClass
-    public static void setUp() {
+    @BeforeAll
+    static void setUp() {
         NacosTracePluginManager.getInstance();
     }
     
     @Test
-    public void testGetAllTraceSubscribers() {
+    void testGetAllTraceSubscribers() {
         assertFalse(NacosTracePluginManager.getInstance().getAllTraceSubscribers().isEmpty());
         assertContainsTestPlugin();
     }
@@ -42,6 +42,6 @@ public class NacosTracePluginManagerTest {
                 return;
             }
         }
-        Assert.fail("No found plugin named 'trace-plugin-mock'");
+        fail("No found plugin named 'trace-plugin-mock'");
     }
 }

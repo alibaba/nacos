@@ -16,14 +16,14 @@
 
 package com.alibaba.nacos.common.utils;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class PairTest {
+class PairTest {
     
     @Test
-    public void testPair() {
+    void testPair() {
         Pair<String, String> pair = Pair.with("a", "b");
         assertEquals("a", pair.getFirst());
         assertEquals("b", pair.getSecond());

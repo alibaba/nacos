@@ -38,29 +38,29 @@ import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjecto
 import com.alibaba.nacos.config.server.service.repository.ConfigRowMapperInjector.ConfigInfoTagWrapperRowMapper;
 import com.alibaba.nacos.persistence.repository.RowMapperManager;
 import com.mysql.cj.jdbc.result.ResultSetImpl;
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mockito;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.sql.SQLException;
 import java.sql.Timestamp;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-public class ConfigRowMapperInjectorTest {
+@ExtendWith(SpringExtension.class)
+class ConfigRowMapperInjectorTest {
     
     @Test
-    public void testInit() {
+    void testInit() {
         ConfigRowMapperInjector configRowMapperInjector = new ConfigRowMapperInjector();
-        Assert.assertEquals(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER, RowMapperManager.getRowMapper(
-                ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName()));
+        assertEquals(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER,
+                RowMapperManager.getRowMapper(ConfigRowMapperInjector.CONFIG_INFO_WRAPPER_ROW_MAPPER.getClass().getCanonicalName()));
     }
     
     @Test
-    public void testConfigInfoTagWrapperRowMapper() throws SQLException {
+    void testConfigInfoTagWrapperRowMapper() throws SQLException {
         ConfigInfoTagWrapper preConfig = new ConfigInfoTagWrapper();
         preConfig.setDataId("testDataId");
         preConfig.setGroup("group_id11");
@@ -87,12 +87,12 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("tag_id"))).thenReturn(preConfig.getTag());
         ConfigInfoTagWrapperRowMapper configInfoWrapperRowMapper = new ConfigInfoTagWrapperRowMapper();
         ConfigInfoTagWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
-        Assert.assertEquals(preConfig.getTag(), configInfoWrapper.getTag());
+        assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig.getTag(), configInfoWrapper.getTag());
     }
     
     @Test
-    public void testConfigInfo4BetaRowMapper() throws SQLException {
+    void testConfigInfo4BetaRowMapper() throws SQLException {
         ConfigInfo4Beta preConfig = new ConfigInfo4Beta();
         preConfig.setDataId("testDataId");
         preConfig.setGroup("group_id11");
@@ -117,12 +117,12 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
         ConfigInfo4BetaRowMapper configInfoWrapperRowMapper = new ConfigInfo4BetaRowMapper();
         ConfigInfo4Beta configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
-        Assert.assertEquals(preConfig.getBetaIps(), configInfoWrapper.getBetaIps());
+        assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig.getBetaIps(), configInfoWrapper.getBetaIps());
     }
     
     @Test
-    public void testConfigInfoBetaWrapperRowMapper() throws SQLException {
+    void testConfigInfoBetaWrapperRowMapper() throws SQLException {
         ConfigInfoBetaWrapper preConfig = new ConfigInfoBetaWrapper();
         preConfig.setDataId("testDataId");
         preConfig.setGroup("group_id11");
@@ -147,11 +147,11 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
         ConfigInfoBetaWrapperRowMapper configInfoWrapperRowMapper = new ConfigInfoBetaWrapperRowMapper();
         ConfigInfoBetaWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
     }
     
     @Test
-    public void testConfigAdvanceInfoRowMapper() throws SQLException {
+    void testConfigAdvanceInfoRowMapper() throws SQLException {
         ConfigAdvanceInfo preConfig = new ConfigAdvanceInfo();
         preConfig.setModifyTime(System.currentTimeMillis());
         preConfig.setCreateTime(System.currentTimeMillis());
@@ -174,11 +174,11 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("c_schema"))).thenReturn(preConfig.getSchema());
         ConfigRowMapperInjector.ConfigAdvanceInfoRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigAdvanceInfoRowMapper();
         ConfigAdvanceInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
     }
     
     @Test
-    public void testConfigAllInfoRowMapper() throws SQLException {
+    void testConfigAllInfoRowMapper() throws SQLException {
         ConfigAllInfo preConfig = new ConfigAllInfo();
         preConfig.setDataId("testDataId");
         preConfig.setGroup("group_id11");
@@ -206,11 +206,11 @@ public class ConfigRowMapperInjectorTest {
         ConfigRowMapperInjector.ConfigAllInfoRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigAllInfoRowMapper();
         
         ConfigAllInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
     }
     
     @Test
-    public void testConfigInfoRowMapper() throws SQLException {
+    void testConfigInfoRowMapper() throws SQLException {
         
         ConfigInfo preConfig = new ConfigInfo();
         preConfig.setDataId("testDataId");
@@ -234,11 +234,11 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
         ConfigRowMapperInjector.ConfigInfoRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfoRowMapper();
         ConfigInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
     }
     
     @Test
-    public void testConfigInfoWrapperRowMapper() throws SQLException {
+    void testConfigInfoWrapperRowMapper() throws SQLException {
         
         ConfigInfoWrapper preConfig = new ConfigInfoWrapper();
         preConfig.setDataId("testDataId");
@@ -264,12 +264,12 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
         ConfigRowMapperInjector.ConfigInfoWrapperRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfoWrapperRowMapper();
         ConfigInfoWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
         
     }
     
     @Test
-    public void testConfigInfo4TagRowMapper() throws SQLException {
+    void testConfigInfo4TagRowMapper() throws SQLException {
         
         ConfigInfo4Tag preConfig = new ConfigInfo4Tag();
         preConfig.setDataId("testDataId");
@@ -295,12 +295,12 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("encrypted_data_key"))).thenReturn(preConfig.getEncryptedDataKey());
         ConfigRowMapperInjector.ConfigInfo4TagRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfo4TagRowMapper();
         ConfigInfo4Tag configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
         
     }
     
     @Test
-    public void testConfigInfoBaseRowMapper() throws SQLException {
+    void testConfigInfoBaseRowMapper() throws SQLException {
         
         ConfigInfoBase preConfig = new ConfigInfoBase();
         preConfig.setDataId("testDataId");
@@ -314,12 +314,12 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
         ConfigRowMapperInjector.ConfigInfoBaseRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfoBaseRowMapper();
         ConfigInfoBase configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
         
     }
     
     @Test
-    public void testConfigInfoAggrRowMapper() throws SQLException {
+    void testConfigInfoAggrRowMapper() throws SQLException {
         
         ConfigInfoAggr preConfig = new ConfigInfoAggr();
         preConfig.setDataId("testDataId");
@@ -338,12 +338,12 @@ public class ConfigRowMapperInjectorTest {
         ConfigRowMapperInjector.ConfigInfoAggrRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigInfoAggrRowMapper();
         
         ConfigInfoAggr configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
         
     }
     
     @Test
-    public void testConfigInfoChangedRowMapper() throws SQLException {
+    void testConfigInfoChangedRowMapper() throws SQLException {
         
         ConfigInfoChanged preConfig = new ConfigInfoChanged();
         preConfig.setDataId("testDataId");
@@ -355,12 +355,12 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getString(eq("tenant_id"))).thenReturn(preConfig.getTenant());
         ConfigInfoChangedRowMapper configInfoWrapperRowMapper = new ConfigInfoChangedRowMapper();
         ConfigInfoChanged configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
         
     }
     
     @Test
-    public void testConfigHistoryRowMapper() throws SQLException {
+    void testConfigHistoryRowMapper() throws SQLException {
         
         ConfigHistoryInfo preConfig = new ConfigHistoryInfo();
         preConfig.setDataId("testDataId");
@@ -387,12 +387,12 @@ public class ConfigRowMapperInjectorTest {
         ConfigRowMapperInjector.ConfigHistoryRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigHistoryRowMapper();
         
         ConfigHistoryInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
         
     }
     
     @Test
-    public void testConfigHistoryDetailRowMapper() throws SQLException {
+    void testConfigHistoryDetailRowMapper() throws SQLException {
         
         ConfigHistoryInfo preConfig = new ConfigHistoryInfo();
         preConfig.setDataId("testDataId");
@@ -427,12 +427,12 @@ public class ConfigRowMapperInjectorTest {
         
         ConfigHistoryDetailRowMapper configInfoWrapperRowMapper = new ConfigHistoryDetailRowMapper();
         ConfigHistoryInfo configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
         
     }
     
     @Test
-    public void testConfigInfoStateWrapperRowMapper() throws SQLException {
+    void testConfigInfoStateWrapperRowMapper() throws SQLException {
         
         ConfigInfoStateWrapper preConfig = new ConfigInfoStateWrapper();
         preConfig.setDataId("testDataId");
@@ -448,12 +448,12 @@ public class ConfigRowMapperInjectorTest {
         Mockito.when(resultSet.getLong(eq("id"))).thenReturn(preConfig.getId());
         ConfigInfoStateWrapperRowMapper configInfoWrapperRowMapper = new ConfigInfoStateWrapperRowMapper();
         ConfigInfoStateWrapper configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
         
     }
     
     @Test
-    public void testConfigKeyRowMapper() throws SQLException {
+    void testConfigKeyRowMapper() throws SQLException {
         ConfigKey preConfig = new ConfigKey();
         preConfig.setDataId("testDataId");
         preConfig.setGroup("group_id11");
@@ -465,7 +465,7 @@ public class ConfigRowMapperInjectorTest {
         ConfigRowMapperInjector.ConfigKeyRowMapper configInfoWrapperRowMapper = new ConfigRowMapperInjector.ConfigKeyRowMapper();
         
         ConfigKey configInfoWrapper = configInfoWrapperRowMapper.mapRow(resultSet, 10);
-        Assert.assertEquals(preConfig, configInfoWrapper);
+        assertEquals(preConfig, configInfoWrapper);
         
     }
     
