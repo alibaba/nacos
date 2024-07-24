@@ -105,8 +105,6 @@ public abstract class DumpService {
     
     int total = 0;
     
-    private int retentionDays = 30;
-    
     /**
      * Here you inject the dependent objects constructively, ensuring that some of the dependent functionality is
      * initialized ahead of time.
