@@ -38,13 +38,16 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 
 /**
+ * Integration test case for long polling configuration updates using Nacos.
+ *
  * @author liaochuntao
  * @date 2019-06-07 22:24
  **/
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class ConfigLongPoll_CITCase {
+class ConfigLongPollConfigITCase {
     
     @LocalServerPort
     private int port;
@@ -55,7 +58,7 @@ class ConfigLongPoll_CITCase {
     @AfterAll
     static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigLongPoll_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigLongPollConfigITCase.class.getSimpleName());
         
     }
     
@@ -74,6 +77,7 @@ class ConfigLongPoll_CITCase {
         try {
             configService.shutDown();
         } catch (NacosException ex) {
+            // ignore
         }
     }
     

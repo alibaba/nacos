@@ -32,14 +32,15 @@ import java.io.IOException;
  *
  * @see <a href="https://github.com/alibaba/nacos/issues/4181">#4171</a>
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {"server.servlet.context-path=/",
         "server.port=7001"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class ConfigAPI_With_RootContextPath_CITCase extends AbstractConfigAPI_CITCase {
+class ConfigAPIWithRootContextPathConfigITCase extends AbstractConfigAPIConfigITCase {
     
     @BeforeAll
     static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPI_With_RootContextPath_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPIWithRootContextPathConfigITCase.class.getSimpleName());
         ConfigCleanUtils.cleanClientCache();
         EnvUtil.setPort(7001);
         

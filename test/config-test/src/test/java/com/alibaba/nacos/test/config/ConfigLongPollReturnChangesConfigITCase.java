@@ -44,10 +44,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class ConfigLongPollReturnChanges_CITCase {
+class ConfigLongPollReturnChangesConfigITCase {
     
     @LocalServerPort
     private int port;
@@ -58,7 +59,7 @@ class ConfigLongPollReturnChanges_CITCase {
     @AfterAll
     static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigLongPollReturnChanges_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigLongPollReturnChangesConfigITCase.class.getSimpleName());
     }
     
     @BeforeEach
@@ -76,6 +77,7 @@ class ConfigLongPollReturnChanges_CITCase {
         try {
             configService.shutDown();
         } catch (NacosException ex) {
+            // ignore
         }
     }
     
