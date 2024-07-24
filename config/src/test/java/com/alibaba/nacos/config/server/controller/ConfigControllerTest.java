@@ -362,7 +362,7 @@ class ConfigControllerTest {
         configInfoBetaWrapper.setGroup("test");
         configInfoBetaWrapper.setContent("test");
         configInfoBetaWrapper.setGrayName("beta");
-        configInfoBetaWrapper.setGrayRule("127.0.0.1,127.0.0.2");
+        configInfoBetaWrapper.setGrayRule("{\"type\":\"beta\",\"version\":\"1.0.0\",\"expr\":\"127.0.0.1,127.0.0.2\",\"priority\":-1000}");
         when(configInfoGrayPersistService.findConfigInfo4Gray("test", "test", "", "beta")).thenReturn(
                 configInfoBetaWrapper);
         
@@ -378,7 +378,7 @@ class ConfigControllerTest {
         assertEquals(configInfoBetaWrapper.getDataId(), resConfigInfoBetaWrapper.getDataId());
         assertEquals(configInfoBetaWrapper.getGroup(), resConfigInfoBetaWrapper.getGroup());
         assertEquals(configInfoBetaWrapper.getContent(), resConfigInfoBetaWrapper.getContent());
-        assertEquals(configInfoBetaWrapper.getGrayRule(), resConfigInfoBetaWrapper.getBetaIps());
+        assertEquals("127.0.0.1,127.0.0.2", resConfigInfoBetaWrapper.getBetaIps());
         
     }
     

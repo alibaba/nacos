@@ -139,8 +139,8 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         //verify update to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        eq(configInfo.getAppName()), eq(grayRule), eq(dataId), eq(group), eq(tenant), eq(grayName));
+                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule),
+                        eq(dataId), eq(group), eq(tenant), eq(grayName));
         
     }
     
@@ -179,7 +179,7 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
                         eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser), any(Timestamp.class), any(Timestamp.class));
+                        eq(configInfo.getMd5()), eq(srcIp), eq(srcUser));
     }
     
     @Test
@@ -209,8 +209,8 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         String grayRule = "grayRule...";
         // mock update throw CannotGetJdbcConnectionException
         when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                eq(configInfo.getAppName()), eq(grayRule), eq(dataId), eq(group), eq(tenant), eq(grayName))).thenThrow(
+                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule),
+                eq(dataId), eq(group), eq(tenant), eq(grayName))).thenThrow(
                 new CannotGetJdbcConnectionException("mock fail"));
         //execute of update& expect.
         try {
@@ -226,8 +226,8 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         //mock add throw CannotGetJdbcConnectionException
         when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
                 eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                any(Timestamp.class))).thenThrow(new CannotGetJdbcConnectionException("mock fail add"));
+                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser))).thenThrow(
+                new CannotGetJdbcConnectionException("mock fail add"));
         
         //execute of add& expect.
         try {
@@ -281,8 +281,8 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         String grayRule = "grayRule...";
         //mock cas update
         when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, ENCODE)),
-                eq(srcIp), eq(srcUser), any(Timestamp.class), eq(configInfo.getAppName()), eq(grayRule), eq(dataId),
-                eq(group), eq(tenant), eq(grayName), eq(configInfo.getMd5()))).thenReturn(1);
+                eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule), eq(dataId), eq(group), eq(tenant),
+                eq(grayName), eq(configInfo.getMd5()))).thenReturn(1);
         
         ConfigOperateResult configOperateResult = externalConfigInfoGrayPersistService.insertOrUpdateGrayCas(configInfo,
                 grayName, grayRule, srcIp, srcUser);
@@ -292,8 +292,8 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         //verify cas update to be invoked
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp),
-                        eq(srcUser), any(Timestamp.class), eq(configInfo.getAppName()), eq(grayRule), eq(dataId),
-                        eq(group), eq(tenant), eq(grayName), eq(configInfo.getMd5()));
+                        eq(srcUser), eq(configInfo.getAppName()), eq(grayRule), eq(dataId), eq(group), eq(tenant),
+                        eq(grayName), eq(configInfo.getMd5()));
         
     }
     
@@ -333,8 +333,7 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         Mockito.verify(jdbcTemplate, times(1))
                 .update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
                         eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                        eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                        any(Timestamp.class));
+                        eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser));
         
     }
     
@@ -365,8 +364,8 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         String grayRule = "grayRule...";
         // mock update throw CannotGetJdbcConnectionException
         when(jdbcTemplate.update(anyString(), eq(configInfo.getContent()), eq(MD5Utils.md5Hex(content, ENCODE)),
-                eq(srcIp), eq(srcUser), any(Timestamp.class), eq(configInfo.getAppName()), eq(grayRule), eq(dataId),
-                eq(group), eq(tenant), eq(grayName), eq(configInfo.getMd5()))).thenThrow(
+                eq(srcIp), eq(srcUser), eq(configInfo.getAppName()), eq(grayRule), eq(dataId), eq(group), eq(tenant),
+                eq(grayName), eq(configInfo.getMd5()))).thenThrow(
                 new CannotGetJdbcConnectionException("updat mock fail"));
         
         //execute of update& expect.
@@ -383,8 +382,8 @@ public class ExternalConfigInfoGrayPersistServiceImplTest {
         //mock add throw CannotGetJdbcConnectionException
         when(jdbcTemplate.update(anyString(), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(grayRule),
                 eq(configInfo.getAppName()), eq(configInfo.getContent()), eq(configInfo.getEncryptedDataKey()),
-                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser), any(Timestamp.class),
-                any(Timestamp.class))).thenThrow(new CannotGetJdbcConnectionException("mock fail add"));
+                eq(MD5Utils.md5Hex(content, ENCODE)), eq(srcIp), eq(srcUser))).thenThrow(
+                new CannotGetJdbcConnectionException("mock fail add"));
         
         //execute of add& expect.
         try {

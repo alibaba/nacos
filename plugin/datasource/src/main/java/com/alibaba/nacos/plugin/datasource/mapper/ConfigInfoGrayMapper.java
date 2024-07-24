@@ -56,7 +56,7 @@ public interface ConfigInfoGrayMapper extends Mapper {
                 + getFunction("NOW()") + ",app_name = ?, gray_rule = ?"
                 + "WHERE data_id = ? AND group_id = ? AND tenant_id = ? AND gray_name = ? AND (md5 = ? OR md5 IS NULL OR md5 = '')";
         return new MapperResult(sql,
-                CollectionUtils.list(content, md5, srcIp, srcUser, gmtModified, appName, grayRule, dataId, groupId,
+                CollectionUtils.list(content, md5, srcIp, srcUser, appName, grayRule, dataId, groupId,
                         tenantId, grayName, oldMd5));
     }
     
