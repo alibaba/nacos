@@ -175,7 +175,7 @@ public class EmbeddedConfigInfoGrayPersistServiceImpl implements ConfigInfoGrayP
         
         ConfigInfoGrayMapper configInfoGrayMapper = mapperManager.findMapper(dataSourceService.getDataSourceType(),
                 TableConstant.CONFIG_INFO_GRAY);
-        final String sql = configInfoGrayMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "grayName"));
+        final String sql = configInfoGrayMapper.delete(Arrays.asList("data_id", "group_id", "tenant_id", "gray_name"));
         final Object[] args = new Object[] {dataId, group, tenantTmp, grayNameTmp};
         
         EmbeddedStorageContextUtils.onDeleteConfigGrayInfo(tenantTmp, group, dataId, grayNameTmp, srcIp);
