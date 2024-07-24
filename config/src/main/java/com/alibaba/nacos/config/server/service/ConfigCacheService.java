@@ -391,15 +391,19 @@ public class ConfigCacheService {
         return getContentMd5(groupKey, ip, tag, null, ENCODE_UTF8);
     }
     
-    public static  String getContentMd5(String groupKey, String ip, String tag, Map<String, String> connLabels,
+    public static String getContentMd5(String groupKey, String ip, String tag, Map<String, String> connLabels,
             String encode) {
         CacheItem item = CACHE.get(groupKey);
         if (item == null) {
             return NULL;
         }
-        if (connLabels == null && (StringUtils.isNotBlank(ip) || StringUtils.isNotBlank(tag))) {
-            connLabels = new HashMap<>();
+        if (connLabels == null && StringUtils.isNotBlank(ip)) {
+            connLabels = new HashMap<>(4);
         }
+        if (connLabels == null && StringUtils.isNotBlank(tag)) {
+            connLabels = new HashMap<>(4);
+        }
+        
         if (StringUtils.isNotBlank(ip)) {
             connLabels.put(CLIENT_IP, ip);
         }

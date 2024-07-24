@@ -81,7 +81,7 @@ public class CacheItem {
      */
     public void initConfigGrayIfEmpty() {
         if (this.configCacheGray == null) {
-            this.configCacheGray = new HashMap<>();
+            this.configCacheGray = new HashMap<>(4);
         }
     }
     

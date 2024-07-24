@@ -162,7 +162,7 @@ public class ConfigServletInner {
                         isV2 ? MediaType.APPLICATION_JSON : contentTypeHeader);
                 
                 ConfigCacheGray matchedGray = null;
-                Map<String, String> appLabels = new HashMap();
+                Map<String, String> appLabels = new HashMap(4);
                 appLabels.put(BetaGrayRule.CLIENT_IP_LABEL, clientIp);
                 boolean specificTag = StringUtils.isNotBlank(tag);
                 

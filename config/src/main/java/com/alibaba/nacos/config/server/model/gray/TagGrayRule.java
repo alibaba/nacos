@@ -24,6 +24,10 @@ import java.util.Objects;
 
 import static com.alibaba.nacos.api.common.Constants.VIPSERVER_TAG;
 
+/**
+ * Tag gray rule.
+ * @author shiyiyue
+ */
 public class TagGrayRule extends AbstractGrayRule {
     
     String tagValue;

@@ -109,7 +109,7 @@ public class ConfigQueryRequestHandler extends RequestHandler<ConfigQueryRequest
                 Map<String, String> appLabels = null;
                 boolean specificTag = StringUtils.isNotBlank(tag);
                 if (specificTag) {
-                    appLabels = new HashMap<>();
+                    appLabels = new HashMap<>(4);
                     appLabels.put(TagGrayRule.VIP_SERVER_TAG_LABEL, tag);
                     appLabels.put(CLIENT_IP, clientIp);
                 } else {

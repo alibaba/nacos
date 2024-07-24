@@ -24,7 +24,8 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * zunfei.lzf
+ * beta gray rule for beta ips.
+ * @author shiyiyue1102
  */
 public class BetaGrayRule extends AbstractGrayRule {
     
