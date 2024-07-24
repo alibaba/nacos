@@ -56,11 +56,21 @@ public class ConfigGrayModelMigrateService {
         this.configInfoTagPersistService = configInfoTagPersistService;
     }
     
+    /**
+     * migrate beta&tag to gray .
+     */
     @PostConstruct
     public void migrate() {
         doCheckMigrate();
     }
     
+    /**
+     * migrate single config beta.
+     *
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     */
     public void checkMigrateBeta(String dataId, String group, String tenant) {
         ConfigInfoBetaWrapper configInfo4Beta = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
         if (configInfo4Beta == null) {
@@ -81,6 +91,14 @@ public class ConfigGrayModelMigrateService {
         
     }
     
+    /**
+     * migrate single config tag.
+     *
+     * @param dataId dataId.
+     * @param group  group.
+     * @param tenant tenant.
+     * @param tag    tag.
+     */
     public void checkMigrateTag(String dataId, String group, String tenant, String tag) {
         ConfigInfoTagWrapper configInfo4Tag = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant,
                 tag);
