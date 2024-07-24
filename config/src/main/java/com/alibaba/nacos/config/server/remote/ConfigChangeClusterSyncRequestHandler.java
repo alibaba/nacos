@@ -16,12 +16,19 @@
 
 package com.alibaba.nacos.config.server.remote;
 
+import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.ability.constant.AbilityStatus;
 import com.alibaba.nacos.api.config.remote.request.cluster.ConfigChangeClusterSyncRequest;
 import com.alibaba.nacos.api.config.remote.response.cluster.ConfigChangeClusterSyncResponse;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.remote.request.RequestMeta;
+import com.alibaba.nacos.common.utils.StringUtils;
+import com.alibaba.nacos.config.server.model.gray.BetaGrayRule;
+import com.alibaba.nacos.config.server.model.gray.TagGrayRule;
+import com.alibaba.nacos.config.server.service.ConfigGrayModelMigrateService;
 import com.alibaba.nacos.config.server.service.dump.DumpRequest;
 import com.alibaba.nacos.config.server.service.dump.DumpService;
+import com.alibaba.nacos.config.server.utils.PropertyUtil;
 import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import com.alibaba.nacos.core.paramcheck.impl.ConfigRequestParamExtractor;
 import com.alibaba.nacos.core.remote.RequestHandler;
@@ -40,8 +47,12 @@ public class ConfigChangeClusterSyncRequestHandler
     
     private final DumpService dumpService;
     
-    public ConfigChangeClusterSyncRequestHandler(DumpService dumpService) {
+    private ConfigGrayModelMigrateService configGrayModelMigrateService;
+    
+    public ConfigChangeClusterSyncRequestHandler(DumpService dumpService,
+            ConfigGrayModelMigrateService configGrayModelMigrateService) {
         this.dumpService = dumpService;
+        this.configGrayModelMigrateService = configGrayModelMigrateService;
     }
     
     @TpsControl(pointName = "ClusterConfigChangeNotify")
@@ -49,13 +60,38 @@ public class ConfigChangeClusterSyncRequestHandler
     @ExtractorManager.Extractor(rpcExtractor = ConfigRequestParamExtractor.class)
     public ConfigChangeClusterSyncResponse handle(ConfigChangeClusterSyncRequest configChangeSyncRequest,
             RequestMeta meta) throws NacosException {
-    
+        
         DumpRequest dumpRequest = DumpRequest.create(configChangeSyncRequest.getDataId(),
                 configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
                 configChangeSyncRequest.getLastModified(), meta.getClientIp());
+        if (PropertyUtil.isGrayCompatibleModel()) {
+            if (configChangeSyncRequest.isBeta() || StringUtils.isNotBlank(configChangeSyncRequest.getTag())) {
+                if (supportNewGrayModel(meta)) {
+                    //capability model from new server,ignore.
+                    return new ConfigChangeClusterSyncResponse();
+                } else {
+                    String grayName = null;
+                    //from old server ,try migrate and transfer gray model.
+                    if (configChangeSyncRequest.isBeta()) {
+                        configGrayModelMigrateService.checkMigrateBeta(configChangeSyncRequest.getDataId(),
+                                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant());
+                        grayName = BetaGrayRule.TYPE_BETA;
+                    } else {
+                        configGrayModelMigrateService.checkMigrateTag(configChangeSyncRequest.getDataId(),
+                                configChangeSyncRequest.getGroup(), configChangeSyncRequest.getTenant(),
+                                configChangeSyncRequest.getTag());
+                        grayName = TagGrayRule.TYPE_TAG + "_" + configChangeSyncRequest.getTag();
+                    }
+                    configChangeSyncRequest.setGrayName(grayName);
+                }
+            }
+        }
         dumpRequest.setGrayName(configChangeSyncRequest.getGrayName());
         dumpService.dump(dumpRequest);
         return new ConfigChangeClusterSyncResponse();
     }
     
+    private boolean supportNewGrayModel(RequestMeta meta) {
+        return AbilityStatus.SUPPORTED.equals(meta.getConnectionAbility(AbilityKey.SUPPORT_NEW_GRAY_MODEL));
+    }
 }

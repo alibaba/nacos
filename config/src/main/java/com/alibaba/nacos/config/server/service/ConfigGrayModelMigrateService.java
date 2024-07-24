@@ -61,6 +61,46 @@ public class ConfigGrayModelMigrateService {
         doCheckMigrate();
     }
     
+    public void checkMigrateBeta(String dataId, String group, String tenant) {
+        ConfigInfoBetaWrapper configInfo4Beta = configInfoBetaPersistService.findConfigInfo4Beta(dataId, group, tenant);
+        if (configInfo4Beta == null) {
+            return;
+        }
+        ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
+                BetaGrayRule.TYPE_BETA);
+        if (configInfo4Gray == null || configInfo4Gray.getLastModified() < configInfo4Beta.getLastModified()) {
+            DEFAULT_LOG.info("[migrate beta to gray] dataId={}, group={}, tenant={},  md5={}",
+                    configInfo4Beta.getDataId(), configInfo4Beta.getGroup(), configInfo4Beta.getTenant(),
+                    configInfo4Beta.getMd5());
+            ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(BetaGrayRule.TYPE_BETA,
+                    BetaGrayRule.VERSION, configInfo4Beta.getBetaIps(), BetaGrayRule.PROPRITY);
+            configInfoGrayPersistService.insertOrUpdateGray(configInfo4Beta, BetaGrayRule.TYPE_BETA,
+                    GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo), NetUtils.localIP(),
+                    "nacos_auto_migrate");
+        }
+        
+    }
+    
+    public void checkMigrateTag(String dataId, String group, String tenant, String tag) {
+        ConfigInfoTagWrapper configInfo4Tag = configInfoTagPersistService.findConfigInfo4Tag(dataId, group, tenant,
+                tag);
+        if (configInfo4Tag == null) {
+            return;
+        }
+        ConfigInfoGrayWrapper configInfo4Gray = configInfoGrayPersistService.findConfigInfo4Gray(dataId, group, tenant,
+                TagGrayRule.TYPE_TAG + "_" + tag);
+        if (configInfo4Gray == null || configInfo4Gray.getLastModified() < configInfo4Tag.getLastModified()) {
+            DEFAULT_LOG.info("[migrate tag to gray] dataId={}, group={}, tenant={},  md5={}",
+                    configInfo4Tag.getDataId(), configInfo4Tag.getGroup(), configInfo4Tag.getTenant(),
+                    configInfo4Tag.getMd5());
+            ConfigGrayPersistInfo localConfigGrayPersistInfo = new ConfigGrayPersistInfo(TagGrayRule.TYPE_TAG,
+                    TagGrayRule.VERSION, configInfo4Tag.getTag(), TagGrayRule.PROPRITY);
+            configInfoGrayPersistService.insertOrUpdateGray(configInfo4Tag, TagGrayRule.TYPE_TAG,
+                    GrayRuleManager.serializeConfigGrayPersistInfo(localConfigGrayPersistInfo), NetUtils.localIP(),
+                    "nacos_auto_migrate");
+        }
+    }
+    
     private void doCheckMigrate() {
         int pageSize = 100;
         int rowCount = configInfoBetaPersistService.configInfoBetaCount();
