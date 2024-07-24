@@ -242,9 +242,9 @@ public class EmbeddedConfigInfoGrayPersistServiceImplTest {
         //verify update to be invoked
         embeddedStorageContextHolderMockedStatic.verify(
                 () -> EmbeddedStorageContextHolder.addSqlContext(anyString(), eq(content),
-                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser),
-                        any(Timestamp.class), eq(appName), eq(grayRule), eq(dataId), eq(group), eq(tenant),
-                        eq(grayName), eq(configInfo.getMd5())), times(1));
+                        eq(MD5Utils.md5Hex(content, Constants.PERSIST_ENCODE)), eq(srcIp), eq(srcUser), eq(appName),
+                        eq(grayRule), eq(dataId), eq(group), eq(tenant), eq(grayName), eq(configInfo.getMd5())),
+                times(1));
         assertEquals(configInfoStateWrapper.getId(), configOperateResult.getId());
         assertEquals(configInfoStateWrapper.getLastModified(), configOperateResult.getLastModified());
     }
