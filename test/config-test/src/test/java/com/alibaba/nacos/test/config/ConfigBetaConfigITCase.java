@@ -44,13 +44,16 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * Integration tests for Config API Beta functionality.
+ *
  * @author xiaochun.xxc
  * @date 2019-07-03
  **/
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=/nacos"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-class ConfigBeta_CITCase {
+class ConfigBetaConfigITCase {
     
     static final String CONFIG_CONTROLLER_PATH = "/nacos/v1/cs";
     
@@ -76,7 +79,7 @@ class ConfigBeta_CITCase {
     @AfterAll
     static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigBeta_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigBetaConfigITCase.class.getSimpleName());
     }
     
     @BeforeEach
@@ -85,9 +88,9 @@ class ConfigBeta_CITCase {
     }
     
     /**
-     * @TCDescription : 正常发布Beta配置
-     * @TestStep :
-     * @ExpectResult :
+     * Tests publishing a Beta configuration with all required parameters.
+     *
+     * @throws Exception if an error occurs during the publishing process
      */
     @Test
     void publishBetaConfig() throws Exception {
@@ -95,63 +98,64 @@ class ConfigBeta_CITCase {
         headers.add("betaIps", "127.0.0.1,127.0.0.2");
         
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant)
-                        .appendParam("content", content).appendParam("config_tags", "").appendParam("appName", appName).done(),
-                String.class, HttpMethod.POST);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).appendParam("content", content).appendParam("config_tags", "")
+                        .appendParam("appName", appName).done(), String.class, HttpMethod.POST);
         System.out.println("publishBetaConfig : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("true", response.getBody());
     }
     
     /**
-     * @TCDescription : 必选content未设置的发布Beta配置
-     * @TestStep :
-     * @ExpectResult :
+     * Tests publishing a Beta configuration without the required content parameter.
+     *
+     * @throws Exception if an error occurs during the publishing process
      */
     @Test
-    void publishBetaConfig_no_content() throws Exception {
+    void publishBetaConfigNoContent() throws Exception {
         HttpHeaders headers = new HttpHeaders();
         headers.add("betaIps", "127.0.0.1,127.0.0.2");
         
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant)
-                        .appendParam("config_tags", "").appendParam("appName", appName).done(), String.class, HttpMethod.POST);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).appendParam("config_tags", "").appendParam("appName", appName)
+                        .done(), String.class, HttpMethod.POST);
         System.out.println("publishBetaConfig_no_content : " + response);
         assertFalse(response.getStatusCode().is2xxSuccessful());
     }
     
     /**
-     * @TCDescription : 可选参数betaIps不存在时，发布Beta配置应该不成功。
-     * @TestStep :
-     * @ExpectResult :
+     * Tests publishing and retrieving a Beta configuration without beta IPs, expecting failure.
+     *
+     * @throws Exception if an error occurs during the publishing process
      */
     @Test
-    void publishBetaConfig_noBetaIps_beta() throws Exception {
+    void publishBetaConfigNoBetaIpsBeta() throws Exception {
         HttpHeaders headers = new HttpHeaders(); //不存在betaIps
         
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant)
-                        .appendParam("content", content).appendParam("config_tags", "").appendParam("appName", appName).done(),
-                String.class, HttpMethod.POST);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).appendParam("content", content).appendParam("config_tags", "")
+                        .appendParam("appName", appName).done(), String.class, HttpMethod.POST);
         System.out.println("publishBetaConfig_noBetaIps_beta post : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("true", response.getBody());
         
         ResponseEntity<String> response1 = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant).done(),
-                String.class, HttpMethod.GET);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).done(), String.class, HttpMethod.GET);
         System.out.println("publishBetaConfig_noBetaIps_beta get : " + response);
         assertTrue(response1.getStatusCode().is2xxSuccessful());
         assertTrue(JacksonUtils.toObj(response1.getBody()).get("data").isNull());
     }
     
     /**
-     * @TCDescription : 可选参数betaIps不存在时，发布Beta配置应该不成功。
-     * @TestStep :
-     * @ExpectResult :
+     * Tests publishing and retrieving a Beta configuration without beta IPs.
+     *
+     * @throws Exception if an error occurs during the process
      */
     @Test
-    void publishBetaConfig_noBetaIps() throws Exception {
+    void publishBetaConfigNoBetaIps() throws Exception {
         
         HttpHeaders headers = new HttpHeaders(); //不存在betaIps
         
@@ -160,9 +164,9 @@ class ConfigBeta_CITCase {
         final String content = "publishBetaConfig_noBetaIps";
         
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", groupId).appendParam("tenant", tenant)
-                        .appendParam("content", content).appendParam("config_tags", "").appendParam("appName", appName).done(),
-                String.class, HttpMethod.POST);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", groupId)
+                        .appendParam("tenant", tenant).appendParam("content", content).appendParam("config_tags", "")
+                        .appendParam("appName", appName).done(), String.class, HttpMethod.POST);
         System.out.println("publishBetaConfig_noBetaIps post : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("true", response.getBody());
@@ -170,17 +174,17 @@ class ConfigBeta_CITCase {
         ThreadUtils.sleep(10_000L);
         
         response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=false",
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", groupId).appendParam("tenant", tenant).done(),
-                String.class, HttpMethod.GET);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", groupId)
+                        .appendParam("tenant", tenant).done(), String.class, HttpMethod.GET);
         System.out.println("publishBetaConfig_noBetaIps get : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals(content, response.getBody());
     }
     
     /**
-     * @TCDescription : 正常获取Beta配置
-     * @TestStep :
-     * @ExpectResult :
+     * Tests retrieving a Beta configuration.
+     *
+     * @throws Exception if an error occurs during the process
      */
     @Test
     void getBetaConfig() throws Exception {
@@ -188,25 +192,25 @@ class ConfigBeta_CITCase {
         headers.add("betaIps", "127.0.0.1,127.0.0.2");
         
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant)
-                        .appendParam("content", content).appendParam("config_tags", "").appendParam("appName", appName).done(),
-                String.class, HttpMethod.POST);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).appendParam("content", content).appendParam("config_tags", "")
+                        .appendParam("appName", appName).done(), String.class, HttpMethod.POST);
         System.out.println("getBetaConfig post : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("true", response.getBody());
         
         response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant).done(),
-                String.class, HttpMethod.GET);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).done(), String.class, HttpMethod.GET);
         System.out.println("getBetaConfig get : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("com.dungu.test", JacksonUtils.toObj(response.getBody()).get("data").get("dataId").asText());
     }
     
     /**
-     * @TCDescription : 正常删除Beta配置
-     * @TestStep :
-     * @ExpectResult :
+     * Delete Beta configuration successfully.
+     *
+     * @throws Exception if an error occurs during the process
      */
     @Test
     void deleteBetaConfig() throws Exception {
@@ -215,30 +219,30 @@ class ConfigBeta_CITCase {
         headers.add("betaIps", "127.0.0.1,127.0.0.2");
         
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant)
-                        .appendParam("content", content).appendParam("config_tags", "").appendParam("appName", appName).done(),
-                String.class, HttpMethod.POST);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).appendParam("content", content).appendParam("config_tags", "")
+                        .appendParam("appName", appName).done(), String.class, HttpMethod.POST);
         System.out.println("deleteBetaConfig post : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("true", response.getBody());
         
         response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant).done(),
-                String.class, HttpMethod.GET);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).done(), String.class, HttpMethod.GET);
         System.out.println("deleteBetaConfig get : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("com.dungu.test", JacksonUtils.toObj(response.getBody()).get("data").get("dataId").asText());
         
         response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant).done(),
-                String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).done(), String.class, HttpMethod.DELETE);
         System.out.println("deleteBetaConfig delete : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("true", JacksonUtils.toObj(response.getBody()).get("data").asText());
         
         response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant).done(),
-                String.class, HttpMethod.GET);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).done(), String.class, HttpMethod.GET);
         System.out.println("deleteBetaConfig after delete then get : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertTrue(JacksonUtils.toObj(response.getBody()).get("data").isNull());
@@ -246,47 +250,48 @@ class ConfigBeta_CITCase {
     
     
     /**
-     * @TCDescription : beta=false时，删除Beta配置
-     * @TestStep :
-     * @ExpectResult :
+     * Delete Beta configuration with beta=false.
+     *
+     * @throws Exception if an error occurs during the process
      */
     @Test
-    void deleteBetaConfig_delete_beta_false() throws Exception {
+    void deleteBetaConfigDeleteBetaFalse() throws Exception {
         
         HttpHeaders headers = new HttpHeaders();
         headers.add("betaIps", "127.0.0.1,127.0.0.2");
         
         ResponseEntity<String> response = request(CONFIG_CONTROLLER_PATH + "/configs", headers,
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant)
-                        .appendParam("content", content).appendParam("config_tags", "").appendParam("appName", appName).done(),
-                String.class, HttpMethod.POST);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).appendParam("content", content).appendParam("config_tags", "")
+                        .appendParam("appName", appName).done(), String.class, HttpMethod.POST);
         System.out.println("deleteBetaConfig_delete_beta_false post : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("true", response.getBody());
         
         response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant).done(),
-                String.class, HttpMethod.GET);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).done(), String.class, HttpMethod.GET);
         System.out.println("deleteBetaConfig_delete_beta_false get : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("com.dungu.test", JacksonUtils.toObj(response.getBody()).get("data").get("dataId").asText());
         
         response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=false",
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant).done(),
-                String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).done(), String.class, HttpMethod.DELETE);
         System.out.println("deleteBetaConfig_delete_beta_false delete : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("true", response.getBody());
         
         response = request(CONFIG_CONTROLLER_PATH + "/configs?beta=true",
-                Params.newParams().appendParam("dataId", dataId).appendParam("group", group).appendParam("tenant", tenant).done(),
-                String.class, HttpMethod.GET);
+                Params.newParams().appendParam("dataId", dataId).appendParam("group", group)
+                        .appendParam("tenant", tenant).done(), String.class, HttpMethod.GET);
         System.out.println("deleteBetaConfig_delete_beta_false after delete then get : " + response);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         assertEquals("com.dungu.test", JacksonUtils.toObj(response.getBody()).get("data").get("dataId").asText());
     }
     
-    <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz, HttpMethod httpMethod) {
+    <T> ResponseEntity<T> request(String path, MultiValueMap<String, String> params, Class<T> clazz,
+            HttpMethod httpMethod) {
         
         HttpHeaders headers = new HttpHeaders();
         
@@ -297,8 +302,8 @@ class ConfigBeta_CITCase {
         return this.restTemplate.exchange(builder.toUriString(), httpMethod, entity, clazz);
     }
     
-    <T> ResponseEntity<T> request(String path, HttpHeaders headers, MultiValueMap<String, String> params, Class<T> clazz,
-            HttpMethod httpMethod) {
+    <T> ResponseEntity<T> request(String path, HttpHeaders headers, MultiValueMap<String, String> params,
+            Class<T> clazz, HttpMethod httpMethod) {
         
         HttpEntity<?> entity = new HttpEntity<T>(headers);
         
