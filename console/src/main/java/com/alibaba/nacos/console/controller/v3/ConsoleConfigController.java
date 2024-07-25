@@ -25,7 +25,12 @@ import com.alibaba.nacos.core.paramcheck.ExtractorManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -49,15 +54,27 @@ public class ConsoleConfigController {
         this.configProxy = configProxy;
     }
     
+    /**
+     * Get configure board information fail.
+     *
+     * @throws ServletException ServletException.
+     * @throws IOException      IOException.
+     * @throws NacosException   NacosException.
+     */
     @GetMapping("/configs")
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
-            @RequestParam("dataId") String dataId,
-            @RequestParam("group") String group,
+            @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant,
-            @RequestParam(value = "tag", required = false) String tag) throws IOException, ServletException, NacosException {
+            @RequestParam(value = "tag", required = false) String tag)
+            throws IOException, ServletException, NacosException {
         configProxy.getConfig(request, response, dataId, group, tenant, tag);
     }
     
+    /**
+     * Adds or updates non-aggregated data.
+     *
+     * @throws NacosException NacosException.
+     */
     @PostMapping("/configs")
     public ResponseEntity<?> publishConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
@@ -73,13 +90,19 @@ public class ConsoleConfigController {
             @RequestParam(value = "schema", required = false) String schema,
             @RequestParam(required = false) String encryptedDataKey) {
         try {
-            boolean result = configProxy.publishConfig(request, response, dataId, group, tenant, content, tag, appName, srcUser, configTags, desc, use, effect, type, schema, encryptedDataKey);
+            boolean result = configProxy.publishConfig(request, response, dataId, group, tenant, content, tag, appName,
+                    srcUser, configTags, desc, use, effect, type, schema, encryptedDataKey);
             return ResponseEntity.ok(result);
         } catch (NacosException e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getErrMsg());
         }
     }
     
+    /**
+     * Synchronously delete all pre-aggregation data under a dataId.
+     *
+     * @throws NacosException NacosException.
+     */
     @DeleteMapping("/configs")
     public ResponseEntity<?> deleteConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
@@ -93,8 +116,14 @@ public class ConsoleConfigController {
         }
     }
     
+    /**
+     * Get the specific configuration information that the console USES.
+     *
+     * @throws NacosException NacosException.
+     */
     @GetMapping("/configs/detail")
-    public ResponseEntity<?> detailConfigInfo(@RequestParam("dataId") String dataId, @RequestParam("group") String group,
+    public ResponseEntity<?> detailConfigInfo(@RequestParam("dataId") String dataId,
+            @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant) {
         try {
             ConfigAllInfo configAllInfo = configProxy.detailConfigInfo(dataId, group, tenant);

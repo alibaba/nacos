@@ -51,6 +51,13 @@ public class ConfigProxy {
         this.consoleConfig = consoleConfig;
     }
     
+    /**
+     * Fetches the configuration.
+     *
+     * @throws IOException      if an I/O error occurs
+     * @throws ServletException if a servlet error occurs
+     * @throws NacosException   if a Nacos error occurs
+     */
     public void getConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
             String tenant, String tag) throws IOException, ServletException, NacosException {
         ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
@@ -60,6 +67,11 @@ public class ConfigProxy {
         configHandler.getConfig(request, response, dataId, group, tenant, tag);
     }
     
+    /**
+     * Publishes the configuration.
+     *
+     * @throws NacosException if a Nacos error occurs
+     */
     public boolean publishConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
             String tenant, String content, String tag, String appName, String srcUser, String configTags, String desc,
             String use, String effect, String type, String schema, String encryptedDataKey) throws NacosException {
@@ -71,6 +83,11 @@ public class ConfigProxy {
                 configTags, desc, use, effect, type, schema, encryptedDataKey);
     }
     
+    /**
+     * Deletes the configuration.
+     *
+     * @throws NacosException if a Nacos error occurs
+     */
     public boolean deleteConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group,
             String tenant, String tag) throws NacosException {
         ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
@@ -80,6 +97,11 @@ public class ConfigProxy {
         return configHandler.deleteConfig(request, response, dataId, group, tenant, tag);
     }
     
+    /**
+     * Gets detailed configuration information.
+     *
+     * @throws NacosException if a Nacos error occurs
+     */
     public ConfigAllInfo detailConfigInfo(String dataId, String group, String tenant) throws NacosException {
         ConfigHandler configHandler = configHandlerMap.get(consoleConfig.getType());
         if (configHandler == null) {

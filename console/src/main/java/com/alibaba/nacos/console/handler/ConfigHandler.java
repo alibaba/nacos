@@ -33,7 +33,7 @@ import java.io.IOException;
 public interface ConfigHandler {
     
     /**
-     * Fetch the configuration.
+     * Fetches the configuration.
      *
      * @param request  the HttpServletRequest object
      * @param response the HttpServletResponse object
@@ -41,7 +41,9 @@ public interface ConfigHandler {
      * @param group    the group
      * @param tenant   the tenant
      * @param tag      the tag
-     * @throws IOException, ServletException, NacosException in case of any errors
+     * @throws IOException      if an I/O error occurs
+     * @throws ServletException if a servlet error occurs
+     * @throws NacosException   if a Nacos error occurs
      */
     void getConfig(HttpServletRequest request, HttpServletResponse response, String dataId, String group, String tenant,
             String tag) throws IOException, ServletException, NacosException;
