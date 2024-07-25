@@ -215,22 +215,24 @@ public abstract class ConfigTransportClient {
      * @param encryptedDataKey encryptedDataKey
      * @param casMd5           casMd5.
      * @param type             type.
+     * @param srcUser          the src user
      * @return success or not.
      * @throws NacosException throw where publish fail.
      */
     public abstract boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
-            String betaIps, String content, String encryptedDataKey, String casMd5, String type) throws NacosException;
+            String betaIps, String content, String encryptedDataKey, String casMd5, String type, String srcUser) throws NacosException;
     
     /**
      * remove config.
      *
-     * @param dataid dataid.
-     * @param group  group.
-     * @param tenat  tenat.
-     * @param tag    tag.
+     * @param dataId  the data id
+     * @param group   group.
+     * @param tenant  the tenant
+     * @param tag     tag.
+     * @param srcUser the src user
      * @return success or not.
      * @throws NacosException throw where publish fail.
      */
-    public abstract boolean removeConfig(String dataid, String group, String tenat, String tag) throws NacosException;
+    public abstract boolean removeConfig(String dataId, String group, String tenant, String tag, String srcUser) throws NacosException;
     
 }
