@@ -70,6 +70,7 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
         String dataId = configRemoveRequest.getDataId();
         String group = configRemoveRequest.getGroup();
         String tag = configRemoveRequest.getTag();
+        String srcUser = configRemoveRequest.getAdditionParam("src_user");
         
         try {
             ParamUtils.checkTenant(tenant);
@@ -79,11 +80,10 @@ public class ConfigRemoveRequestHandler extends RequestHandler<ConfigRemoveReque
             
             String clientIp = meta.getClientIp();
             if (StringUtils.isBlank(tag)) {
-                configInfoPersistService.removeConfigInfo(dataId, group, tenant, clientIp, null);
+                configInfoPersistService.removeConfigInfo(dataId, group, tenant, clientIp, srcUser);
             } else {
                 persistEvent = ConfigTraceService.PERSISTENCE_EVENT_TAG + "-" + tag;
-                
-                configInfoTagPersistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, null);
+                configInfoTagPersistService.removeConfigInfoTag(dataId, group, tenant, tag, clientIp, srcUser);
             }
             final Timestamp time = TimeUtils.getCurrentTime();
             ConfigTraceService.logPersistenceEvent(dataId, group, tenant, null, time.getTime(), clientIp, persistEvent,
