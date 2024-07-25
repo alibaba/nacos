@@ -21,6 +21,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -33,6 +36,8 @@ class ConfigRemoveRequestTest extends BasedConfigRequestTest {
     @BeforeEach
     void before() {
         configRemoveRequest = new ConfigRemoveRequest(DATA_ID, GROUP, TENANT, TAG);
+        configRemoveRequest.putAdditionalParam("test1", "test1");
+        configRemoveRequest.putAdditionalParam("test2", "test2");
         requestId = injectRequestUuId(configRemoveRequest);
         
     }
@@ -47,6 +52,8 @@ class ConfigRemoveRequestTest extends BasedConfigRequestTest {
         assertTrue(json.contains("\"tenant\":\"" + TENANT));
         assertTrue(json.contains("\"tag\":\"" + TAG));
         assertTrue(json.contains("\"requestId\":\"" + requestId));
+        assertTrue(json.contains("\"test1\":\"test1\""));
+        assertTrue(json.contains("\"test2\":\"test2\""));
         
     }
     
@@ -54,12 +61,20 @@ class ConfigRemoveRequestTest extends BasedConfigRequestTest {
     @Test
     public void testDeserialize() throws JsonProcessingException {
         String json = "{\"headers\":{},\"dataId\":\"test_data\",\"group\":\"group\",\"tenant\":\"test_tenant\""
-                + ",\"tag\":\"tag\",\"module\":\"config\"}";
+                + ",\"tag\":\"tag\",\"module\":\"config\",\"additionMap\":{\"test1\":\"test1\",\"test2\":\"test2\"}}";
         ConfigRemoveRequest actual = mapper.readValue(json, ConfigRemoveRequest.class);
-        assertEquals(DATA_ID, actual.getDataId());
-        assertEquals(GROUP, actual.getGroup());
-        assertEquals(TENANT, actual.getTenant());
-        assertEquals(Constants.Config.CONFIG_MODULE, actual.getModule());
-        assertEquals(TAG, actual.getTag());
+        assertEquals(actual.getDataId(), DATA_ID);
+        assertEquals(actual.getGroup(), GROUP);
+        assertEquals(actual.getTenant(), TENANT);
+        assertEquals(actual.getModule(), Constants.Config.CONFIG_MODULE);
+        assertEquals(actual.getTag(), TAG);
+        assertEquals(actual.getAdditionParam("test1"), "test1");
+        assertEquals(actual.getAdditionParam("test2"), "test2");
+        Map<String, String> additionalMap = new HashMap<>();
+        additionalMap.put("test3", "test3");
+        additionalMap.put("test4", "test4");
+        actual.setAdditionMap(additionalMap);
+        assertTrue(actual.getAdditionMap().containsKey("test3"));
+        assertTrue(actual.getAdditionMap().containsKey("test4"));
     }
 }
