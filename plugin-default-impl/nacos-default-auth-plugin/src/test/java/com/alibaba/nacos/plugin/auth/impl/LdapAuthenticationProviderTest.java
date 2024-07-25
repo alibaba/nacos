@@ -81,7 +81,7 @@ class LdapAuthenticationProviderTest {
     
     private List<RoleInfo> roleInfos = new ArrayList<>();
     
-    private String defaultPassWord = "nacos";
+    private String defaultPassWord = System.getProperty("ldap.default.password", "nacos");
     
     @BeforeEach
     void setUp() throws NoSuchMethodException {

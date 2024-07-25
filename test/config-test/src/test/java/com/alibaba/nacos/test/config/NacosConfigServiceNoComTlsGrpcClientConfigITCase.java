@@ -24,7 +24,7 @@ import com.alibaba.nacos.client.config.NacosConfigService;
 import com.alibaba.nacos.client.config.listener.impl.AbstractConfigChangeListener;
 import com.alibaba.nacos.common.remote.client.RpcConstants;
 import com.alibaba.nacos.test.base.ConfigCleanUtils;
-import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -43,49 +43,46 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * use  configPublishRequest for  communication verification between client and server.
+ * Use configPublishRequest for communication verification between client and server.
  *
  * @author githubcheng2978.
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = {Nacos.class}, properties = {"nacos.standalone=true", RpcConstants.NACOS_SERVER_RPC + ".enableTls=true",
-        RpcConstants.NACOS_SERVER_RPC + ".mutualAuthEnable=true", RpcConstants.NACOS_SERVER_RPC + ".compatibility=false",
-        RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
-        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem", RpcConstants.NACOS_SERVER_RPC
-        + ".trustCollectionCertFile=test-ca-cert.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-public class NacosConfigV2MutualAuth_CITCase {
-    
+        RpcConstants.NACOS_SERVER_RPC + ".compatibility=false", RpcConstants.NACOS_SERVER_RPC + ".certChainFile=test-server-cert.pem",
+        RpcConstants.NACOS_SERVER_RPC + ".certPrivateKey=test-server-key.pem"}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+public class NacosConfigServiceNoComTlsGrpcClientConfigITCase {
     
     public static AtomicInteger increment = new AtomicInteger(100);
     
     @BeforeAll
     static void beforeClass() throws IOException {
-        ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigV2MutualAuth_CITCase.class.getSimpleName());
-        
+        ConfigCleanUtils.changeToNewTestNacosHome(NacosConfigServiceNoComTlsGrpcClientConfigITCase.class.getSimpleName());
     }
     
-    @AfterEach
-    void cleanClientCache() throws Exception {
+    @BeforeAll
+    @AfterAll
+    static void cleanClientCache() throws Exception {
         ConfigCleanUtils.cleanClientCache();
     }
     
     @Test
     @Disabled("TODO, Fix cert expired problem")
-    void test_d_MutualAuth() throws Exception {
-        Properties propertiesfalse = new Properties();
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_MUTUAL_AUTH, "true");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_KEY, "test-client-key.pem");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_CERT_CHAIN_PATH, "test-client-cert.pem");
-        propertiesfalse.put("serverAddr", "127.0.0.1");
-        ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
+    void testTlsServerAndTlsClient() throws Exception {
+        Properties properties = new Properties();
+        properties.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
+        properties.put(RpcConstants.RPC_CLIENT_TLS_PROVIDER, "openssl");
+        properties.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-ca-cert.pem");
+        properties.put("serverAddr", "127.0.0.1");
+        ConfigService configService = new NacosConfigService(properties);
+        String content = UUID.randomUUID().toString();
         String dataId = "test-group" + increment.getAndIncrement();
         String groupId = "test-data" + increment.getAndIncrement();
-        String content = UUID.randomUUID().toString();
-        boolean res = configServiceFalse.publishConfig(dataId, groupId, content);
-        CountDownLatch latch2 = new CountDownLatch(1);
-        configServiceFalse.addListener(dataId, groupId, new AbstractConfigChangeListener() {
+        boolean b = configService.publishConfig("test-group" + increment.getAndIncrement(), "test-data" + increment.getAndIncrement(),
+                content);
+        CountDownLatch latch = new CountDownLatch(1);
+        configService.addListener(dataId, groupId, new AbstractConfigChangeListener() {
             @Override
             public void receiveConfigChange(ConfigChangeEvent event) {
                 ConfigChangeItem cci = event.getChangeItem("content");
@@ -93,20 +90,17 @@ public class NacosConfigV2MutualAuth_CITCase {
                 if (!content.equals(cci.getNewValue())) {
                     return;
                 }
-                latch2.countDown();
+                latch.countDown();
             }
         });
-        latch2.await(5, TimeUnit.SECONDS);
-        assertTrue(res);
+        latch.await(5, TimeUnit.SECONDS);
+        assertTrue(b);
     }
     
     @Test
-    void test_d_MutualAuthButClientNot() throws Exception {
-        
+    void testTlsServerAndPlainClient() throws Exception {
         Properties propertiesfalse = new Properties();
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "true");
-        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_TRUST_COLLECTION_CHAIN_PATH, "test-client-cert.pem");
-        
+        propertiesfalse.put(RpcConstants.RPC_CLIENT_TLS_ENABLE, "false");
         propertiesfalse.put("serverAddr", "127.0.0.1");
         ConfigService configServiceFalse = new NacosConfigService(propertiesfalse);
         String dataId = "test-group" + increment.getAndIncrement();

@@ -39,18 +39,21 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import java.net.URL;
 import java.util.Random;
 
-import static com.alibaba.nacos.test.config.ConfigAPI_V2_CITCase.CONTEXT_PATH;
+import static com.alibaba.nacos.test.config.ConfigAPIV2ConfigITCase.CONTEXT_PATH;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
+ * Integration tests for Config API V2.
+ *
  * @author karsonto
  */
+@SuppressWarnings("checkstyle:AbbreviationAsWordInName")
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(classes = Nacos.class, properties = {
         "server.servlet.context-path=" + CONTEXT_PATH}, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestMethodOrder(MethodName.class)
-public class ConfigAPI_V2_CITCase extends HttpClient4Test {
+public class ConfigAPIV2ConfigITCase extends HttpClient4Test {
     
     public static final long TIME_OUT = 5000;
     
@@ -60,20 +63,19 @@ public class ConfigAPI_V2_CITCase extends HttpClient4Test {
     
     private static final String CONTENT = randomContent();
     
-    private final String DATA_ID = "nacos.example";
+    private static final String DATA_ID = "nacos.example";
     
-    private final String GROUP = "DEFAULT_GROUP";
+    private static final String GROUP = "DEFAULT_GROUP";
     
-    private final String NAME_SPACE_ID = "public";
+    private static final String NAME_SPACE_ID = "public";
     
     @LocalServerPort
     private int port;
     
     @BeforeAll
     static void beforeClass() {
-        ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPI_V2_CITCase.class.getSimpleName());
+        ConfigCleanUtils.changeToNewTestNacosHome(ConfigAPIV2ConfigITCase.class.getSimpleName());
     }
-    
     
     @AfterAll
     @BeforeAll
@@ -81,6 +83,9 @@ public class ConfigAPI_V2_CITCase extends HttpClient4Test {
         ConfigCleanUtils.cleanClientCache();
     }
     
+    /**
+     * Generates random content for testing purposes.
+     */
     public static String randomContent() {
         StringBuilder sb = new StringBuilder();
         Random rand = new Random();
@@ -116,20 +121,25 @@ public class ConfigAPI_V2_CITCase extends HttpClient4Test {
         assertTrue(thrown);
     }
     
+    /**
+     * Publishes a configuration.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
     public void publishConfig() throws Exception {
         ResponseEntity<String> response = request(CONFIG_V2_CONTROLLER_PATH,
-                Params.newParams().appendParam("dataId", DATA_ID).appendParam("group", GROUP).appendParam("namespaceId", NAME_SPACE_ID)
-                        .appendParam("content", CONTENT).done(), String.class, HttpMethod.POST);
+                Params.newParams().appendParam("dataId", DATA_ID).appendParam("group", GROUP)
+                        .appendParam("namespaceId", NAME_SPACE_ID).appendParam("content", CONTENT).done(), String.class,
+                HttpMethod.POST);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
         assertTrue(json.get("data").asBoolean());
-        
     }
     
     public String getConfig(boolean ignoreStatusCode) throws Exception {
         ResponseEntity<String> response = request(CONFIG_V2_CONTROLLER_PATH,
-                Params.newParams().appendParam("dataId", DATA_ID).appendParam("group", GROUP).appendParam("namespaceId", NAME_SPACE_ID)
-                        .done(), String.class, HttpMethod.GET);
+                Params.newParams().appendParam("dataId", DATA_ID).appendParam("group", GROUP)
+                        .appendParam("namespaceId", NAME_SPACE_ID).done(), String.class, HttpMethod.GET);
         if (!ignoreStatusCode) {
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new RuntimeException("Fail to get config");
@@ -141,13 +151,17 @@ public class ConfigAPI_V2_CITCase extends HttpClient4Test {
         return json.get("data").asText();
     }
     
+    /**
+     * Deletes a configuration.
+     *
+     * @throws Exception if an error occurs during the test.
+     */
     public void deleteConfig() throws Exception {
         ResponseEntity<String> response = request(CONFIG_V2_CONTROLLER_PATH,
-                Params.newParams().appendParam("dataId", DATA_ID).appendParam("group", GROUP).appendParam("namespaceId", NAME_SPACE_ID)
-                        .done(), String.class, HttpMethod.DELETE);
+                Params.newParams().appendParam("dataId", DATA_ID).appendParam("group", GROUP)
+                        .appendParam("namespaceId", NAME_SPACE_ID).done(), String.class, HttpMethod.DELETE);
         assertTrue(response.getStatusCode().is2xxSuccessful());
         JsonNode json = JacksonUtils.toObj(response.getBody());
         assertTrue(json.get("data").asBoolean());
-        
     }
 }

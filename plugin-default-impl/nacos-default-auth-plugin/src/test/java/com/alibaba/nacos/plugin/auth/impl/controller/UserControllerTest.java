@@ -18,6 +18,7 @@ package com.alibaba.nacos.plugin.auth.impl.controller;
 
 import com.alibaba.nacos.auth.config.AuthConfigs;
 import com.alibaba.nacos.common.model.RestResult;
+import com.alibaba.nacos.core.context.RequestContextHolder;
 import com.alibaba.nacos.persistence.model.Page;
 import com.alibaba.nacos.plugin.auth.api.IdentityContext;
 import com.alibaba.nacos.plugin.auth.exception.AccessException;
@@ -33,6 +34,7 @@ import com.alibaba.nacos.plugin.auth.impl.users.NacosUserDetailsServiceImpl;
 import com.alibaba.nacos.sys.env.EnvUtil;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -105,6 +107,12 @@ class UserControllerTest {
                 AuthConstants.DEFAULT_TOKEN_EXPIRE_SECONDS.toString());
         
         EnvUtil.setEnvironment(mockEnvironment);
+        RequestContextHolder.getContext().getAuthContext().setIdentityContext(new IdentityContext());
+    }
+    
+    @AfterEach
+    public void tearDown() {
+        RequestContextHolder.removeContext();
     }
     
     @Test
@@ -123,18 +131,24 @@ class UserControllerTest {
     
     @Test
     void testCreateUser1() {
-        when(userDetailsService.getUserFromDatabase("nacos")).thenReturn(null);
-        RestResult<String> result = (RestResult<String>) userController.createUser("nacos", "test");
+        when(userDetailsService.getUserFromDatabase("test")).thenReturn(null);
+        RestResult<String> result = (RestResult<String>) userController.createUser("test", "test");
         assertEquals(200, result.getCode());
         
     }
     
     @Test
     void testCreateUser2() {
-        when(userDetailsService.getUserFromDatabase("nacos")).thenReturn(new User());
+        when(userDetailsService.getUserFromDatabase("test")).thenReturn(new User());
         assertThrows(IllegalArgumentException.class, () -> {
-            userController.createUser("nacos", "test");
+            userController.createUser("test", "test");
         });
+    }
+    
+    @Test
+    void testCreateUserNamedNacos() {
+        RestResult<String> result = (RestResult<String>) userController.createUser("nacos", "test");
+        assertEquals(409, result.getCode());
     }
     
     @Test
@@ -221,7 +235,7 @@ class UserControllerTest {
     
     @Test
     void testUpdateUser3() throws IOException {
-        
+        RequestContextHolder.getContext().getAuthContext().setIdentityContext(null);
         when(authConfigs.isAuthEnabled()).thenReturn(true);
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
@@ -234,15 +248,11 @@ class UserControllerTest {
     
     @Test
     void testUpdateUser4() throws IOException {
-        
+        RequestContextHolder.getContext().getAuthContext().getIdentityContext()
+                .setParameter(AuthConstants.NACOS_USER_KEY, user);
         when(authConfigs.isAuthEnabled()).thenReturn(true);
         when(userDetailsService.getUserFromDatabase(anyString())).thenReturn(new User());
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
-        IdentityContext identityContext = new IdentityContext();
-        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, user);
-        mockHttpServletRequest.getSession()
-                .setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT,
-                        identityContext);
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         RestResult<String> result = (RestResult<String>) userController.updateUser("nacos", "test",
                 mockHttpServletResponse, mockHttpServletRequest);
@@ -252,17 +262,13 @@ class UserControllerTest {
     
     @Test
     void testUpdateUser5() throws IOException, AccessException {
-        
+        RequestContextHolder.getContext().getAuthContext().getIdentityContext()
+                .setParameter(AuthConstants.NACOS_USER_KEY, null);
         when(authConfigs.isAuthEnabled()).thenReturn(true);
         when(userDetailsService.getUserFromDatabase(anyString())).thenReturn(new User());
         when(authenticationManager.authenticate(any(MockHttpServletRequest.class))).thenReturn(user);
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
-        IdentityContext identityContext = new IdentityContext();
-        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, null);
-        mockHttpServletRequest.getSession()
-                .setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT,
-                        identityContext);
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         RestResult<String> result = (RestResult<String>) userController.updateUser("nacos", "test",
                 mockHttpServletResponse, mockHttpServletRequest);
@@ -272,16 +278,12 @@ class UserControllerTest {
     
     @Test
     void testUpdateUser6() throws IOException, AccessException {
-        
+        RequestContextHolder.getContext().getAuthContext().getIdentityContext()
+                .setParameter(AuthConstants.NACOS_USER_KEY, null);
         when(authConfigs.isAuthEnabled()).thenReturn(true);
         when(authenticationManager.authenticate(any(MockHttpServletRequest.class))).thenReturn(null);
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
-        IdentityContext identityContext = new IdentityContext();
-        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, null);
-        mockHttpServletRequest.getSession()
-                .setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT,
-                        identityContext);
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         Object result = userController.updateUser("nacos", "test", mockHttpServletResponse, mockHttpServletRequest);
         
@@ -292,17 +294,13 @@ class UserControllerTest {
     
     @Test
     void testUpdateUser7() throws IOException, AccessException {
-        
+        RequestContextHolder.getContext().getAuthContext().getIdentityContext()
+                .setParameter(AuthConstants.NACOS_USER_KEY, null);
         when(authConfigs.isAuthEnabled()).thenReturn(true);
         when(authenticationManager.authenticate(any(MockHttpServletRequest.class))).thenThrow(
                 new AccessException("test"));
         
         MockHttpServletRequest mockHttpServletRequest = new MockHttpServletRequest();
-        IdentityContext identityContext = new IdentityContext();
-        identityContext.setParameter(AuthConstants.NACOS_USER_KEY, null);
-        mockHttpServletRequest.getSession()
-                .setAttribute(com.alibaba.nacos.plugin.auth.constant.Constants.Identity.IDENTITY_CONTEXT,
-                        identityContext);
         MockHttpServletResponse mockHttpServletResponse = new MockHttpServletResponse();
         Object result = userController.updateUser("nacos", "test", mockHttpServletResponse, mockHttpServletRequest);
         

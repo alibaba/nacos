@@ -86,7 +86,7 @@ You can view the full documentation from the [Nacos website](https://nacos.io/en
 
 You can also read this online eBook from the [NACOS ARCHITECTURE & PRINCIPLES](https://www.yuque.com/nacos/ebook/kbyo6n).
 
-All the latest and long-term notice can also be found here from [Github notice issue](https://github.com/alibaba/nacos/labels/notice).
+All the latest and long-term notice can also be found here from [GitHub notice issue](https://github.com/alibaba/nacos/labels/notice).
 
 ## Contributing
 
@@ -134,7 +134,7 @@ https://cn.aliyun.com/product/aliware/mse?spm=nacos-website.topbar.0.0.0
 ## Download
 
 - [Nacos Official Website](https://nacos.io/download/nacos-server)
-- [Github Release](https://github.com/alibaba/nacos/releases)
+- [GitHub Release](https://github.com/alibaba/nacos/releases)
   
 ## Who is using
 

@@ -19,21 +19,47 @@ package com.alibaba.nacos.test.base;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+/**
+ * Helper class for building HTTP request parameters using Spring's MultiValueMap. Provides methods to construct and
+ * append parameters.
+ */
 public class Params {
     
     private MultiValueMap<String, String> paramMap;
     
-    public static Params newParams() {
-        Params params = new Params();
-        params.paramMap = new LinkedMultiValueMap<String, String>();
-        return params;
+    /**
+     * Private constructor to enforce usage of static factory method `newParams()`.
+     */
+    private Params() {
+        this.paramMap = new LinkedMultiValueMap<>();
     }
     
+    /**
+     * Static factory method to create a new instance of Params.
+     *
+     * @return A new Params instance.
+     */
+    public static Params newParams() {
+        return new Params();
+    }
+    
+    /**
+     * Appends a parameter with the specified name and value to the parameter map.
+     *
+     * @param name  The parameter name.
+     * @param value The parameter value.
+     * @return This Params instance for method chaining.
+     */
     public Params appendParam(String name, String value) {
         this.paramMap.add(name, value);
         return this;
     }
     
+    /**
+     * Retrieves the constructed parameter map.
+     *
+     * @return The MultiValueMap containing the appended parameters.
+     */
     public MultiValueMap<String, String> done() {
         return paramMap;
     }
