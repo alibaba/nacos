@@ -38,6 +38,8 @@ public class ConfigDataChangeEvent extends Event {
     
     public final String tag;
     
+    public final String grayName;
+    
     public final long lastModifiedTs;
     
     public ConfigDataChangeEvent(String dataId, String group, long gmtModified) {
@@ -55,6 +57,7 @@ public class ConfigDataChangeEvent extends Event {
         this.tag = null;
         this.isBatch = false;
         this.lastModifiedTs = gmtModified;
+        this.grayName = null;
     }
     
     public ConfigDataChangeEvent(boolean isBeta, String dataId, String group, long gmtModified) {
@@ -72,10 +75,12 @@ public class ConfigDataChangeEvent extends Event {
         this.tenant = tenant;
         this.tag = tag;
         this.isBatch = false;
+        this.grayName = null;
         this.lastModifiedTs = gmtModified;
     }
     
-    public ConfigDataChangeEvent(String dataId, String group, String tenant, boolean isBatch, long gmtModified) {
+    public ConfigDataChangeEvent(String dataId, String group, String tenant, String tag, String grayName,
+            long gmtModified) {
         if (null == dataId || null == group) {
             throw new IllegalArgumentException();
         }
@@ -83,8 +88,9 @@ public class ConfigDataChangeEvent extends Event {
         this.dataId = dataId;
         this.group = group;
         this.tenant = tenant;
-        this.tag = null;
-        this.isBatch = isBatch;
+        this.tag = tag;
+        this.isBatch = false;
+        this.grayName = grayName;
         this.lastModifiedTs = gmtModified;
     }
     

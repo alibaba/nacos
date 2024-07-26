@@ -34,6 +34,8 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
     
     boolean isBatch;
     
+    String grayName;
+    
     public boolean isBeta() {
         return isBeta;
     }
@@ -66,6 +68,14 @@ public class ConfigChangeClusterSyncRequest extends AbstractConfigRequest {
      */
     public void setTag(String tag) {
         this.tag = tag;
+    }
+    
+    public String getGrayName() {
+        return grayName;
+    }
+    
+    public void setGrayName(String grayName) {
+        this.grayName = grayName;
     }
     
     /**

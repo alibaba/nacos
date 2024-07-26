@@ -63,5 +63,8 @@ public class PropertiesConstant {
     
     public static final String DUMP_CHANGE_WORKER_INTERVAL = "dumpChangeWorkerInterval";
     
+    public static final String GRAY_CAPATIBEL_MODEL = "nacos.config.gray.compatible.model";
+    
+    
     
 }

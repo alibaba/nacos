@@ -105,8 +105,7 @@ class DumpChangeConfigWorkerTest {
         dynamicDataSourceMockedStatic.close();
         envUtilMockedStatic.close();
         ConfigDiskServiceFactory.getInstance().clearAll();
-        ConfigDiskServiceFactory.getInstance().clearAllBeta();
-        ConfigDiskServiceFactory.getInstance().clearAllTag();
+        ConfigDiskServiceFactory.getInstance().clearAllGray();
         
         Field[] declaredFields = ConfigDiskServiceFactory.class.getDeclaredFields();
         for (Field filed : declaredFields) {

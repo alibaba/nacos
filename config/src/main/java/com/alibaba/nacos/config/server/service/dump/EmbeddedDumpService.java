@@ -21,19 +21,18 @@ import com.alibaba.nacos.common.utils.Observer;
 import com.alibaba.nacos.common.utils.StringUtils;
 import com.alibaba.nacos.common.utils.ThreadUtils;
 import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
-import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
-import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.consistency.ProtocolMetaData;
 import com.alibaba.nacos.consistency.cp.CPProtocol;
 import com.alibaba.nacos.consistency.cp.MetadataKey;
 import com.alibaba.nacos.core.cluster.ServerMemberManager;
 import com.alibaba.nacos.core.distributed.ProtocolManager;
+import com.alibaba.nacos.core.namespace.repository.NamespacePersistService;
 import com.alibaba.nacos.core.utils.GlobalExecutor;
+import com.alibaba.nacos.persistence.configuration.condition.ConditionOnEmbeddedStorage;
 import com.alibaba.nacos.persistence.constants.PersistenceConstant;
 import com.alibaba.nacos.persistence.repository.embedded.EmbeddedStorageContextHolder;
 import com.alibaba.nacos.sys.env.EnvUtil;
@@ -77,11 +76,10 @@ public class EmbeddedDumpService extends DumpService {
             NamespacePersistService namespacePersistService,
             HistoryConfigInfoPersistService historyConfigInfoPersistService,
             ConfigInfoAggrPersistService configInfoAggrPersistService,
-            ConfigInfoBetaPersistService configInfoBetaPersistService,
-            ConfigInfoTagPersistService configInfoTagPersistService, MergeDatumService mergeDatumService,
+            ConfigInfoGrayPersistService configInfoGrayPersistService, MergeDatumService mergeDatumService,
             ServerMemberManager memberManager, ProtocolManager protocolManager) {
         super(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService,
+                configInfoAggrPersistService, configInfoGrayPersistService,
                 mergeDatumService, memberManager);
         this.protocolManager = protocolManager;
     }

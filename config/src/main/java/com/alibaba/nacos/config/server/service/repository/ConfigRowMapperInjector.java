@@ -26,6 +26,7 @@ import com.alibaba.nacos.config.server.model.ConfigInfoAggr;
 import com.alibaba.nacos.config.server.model.ConfigInfoBase;
 import com.alibaba.nacos.config.server.model.ConfigInfoBetaWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoChanged;
+import com.alibaba.nacos.config.server.model.ConfigInfoGrayWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoStateWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoTagWrapper;
 import com.alibaba.nacos.config.server.model.ConfigInfoWrapper;
@@ -54,6 +55,8 @@ public class ConfigRowMapperInjector {
     public static final ConfigInfoBetaWrapperRowMapper CONFIG_INFO_BETA_WRAPPER_ROW_MAPPER = new ConfigInfoBetaWrapperRowMapper();
     
     public static final ConfigInfoTagWrapperRowMapper CONFIG_INFO_TAG_WRAPPER_ROW_MAPPER = new ConfigInfoTagWrapperRowMapper();
+    
+    public static final ConfigInfoGrayWrapperRowMapper CONFIG_INFO_GRAY_WRAPPER_ROW_MAPPER = new ConfigInfoGrayWrapperRowMapper();
     
     public static final ConfigInfoRowMapper CONFIG_INFO_ROW_MAPPER = new ConfigInfoRowMapper();
     
@@ -283,6 +286,39 @@ public class ConfigRowMapperInjector {
             info.setGroup(rs.getString("group_id"));
             info.setTenant(rs.getString("tenant_id"));
             info.setTag(rs.getString("tag_id"));
+            info.setAppName(rs.getString("app_name"));
+            
+            try {
+                info.setContent(rs.getString("content"));
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setId(rs.getLong("id"));
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setLastModified(rs.getTimestamp("gmt_modified").getTime());
+            } catch (SQLException ignore) {
+            }
+            try {
+                info.setMd5(rs.getString("md5"));
+            } catch (SQLException ignore) {
+            }
+            return info;
+        }
+    }
+    
+    public static final class ConfigInfoGrayWrapperRowMapper implements RowMapper<ConfigInfoGrayWrapper> {
+        
+        @Override
+        public ConfigInfoGrayWrapper mapRow(ResultSet rs, int rowNum) throws SQLException {
+            ConfigInfoGrayWrapper info = new ConfigInfoGrayWrapper();
+            
+            info.setDataId(rs.getString("data_id"));
+            info.setGroup(rs.getString("group_id"));
+            info.setTenant(rs.getString("tenant_id"));
+            info.setGrayName(rs.getString("gray_name"));
+            info.setGrayRule(rs.getString("gray_rule"));
             info.setAppName(rs.getString("app_name"));
             
             try {

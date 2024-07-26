@@ -22,9 +22,8 @@ import com.alibaba.nacos.config.server.model.event.ConfigDataChangeEvent;
 import com.alibaba.nacos.config.server.service.dump.task.DumpTask;
 import com.alibaba.nacos.config.server.service.merge.MergeDatumService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoAggrPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoBetaPersistService;
+import com.alibaba.nacos.config.server.service.repository.ConfigInfoGrayPersistService;
 import com.alibaba.nacos.config.server.service.repository.ConfigInfoPersistService;
-import com.alibaba.nacos.config.server.service.repository.ConfigInfoTagPersistService;
 import com.alibaba.nacos.config.server.service.repository.HistoryConfigInfoPersistService;
 import com.alibaba.nacos.config.server.utils.ConfigExecutor;
 import com.alibaba.nacos.config.server.utils.GroupKey;
@@ -81,10 +80,7 @@ class DumpServiceTest {
     ConfigInfoAggrPersistService configInfoAggrPersistService;
     
     @Mock
-    ConfigInfoBetaPersistService configInfoBetaPersistService;
-    
-    @Mock
-    ConfigInfoTagPersistService configInfoTagPersistService;
+    ConfigInfoGrayPersistService configInfoGrayPersistService;
     
     @Mock
     MergeDatumService mergeDatumService;
@@ -118,7 +114,7 @@ class DumpServiceTest {
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "localDataSourceService", dataSourceService);
         ReflectionTestUtils.setField(DynamicDataSource.getInstance(), "basicDataSourceService", dataSourceService);
         dumpService = new ExternalDumpService(configInfoPersistService, namespacePersistService, historyConfigInfoPersistService,
-                configInfoAggrPersistService, configInfoBetaPersistService, configInfoTagPersistService, mergeDatumService, memberManager);
+                configInfoAggrPersistService, configInfoGrayPersistService, mergeDatumService, memberManager);
         configExecutorMocked = Mockito.mockStatic(ConfigExecutor.class);
         historyConfigCleanerManagerMockedStatic = Mockito.mockStatic(HistoryConfigCleanerManager.class);
         historyConfigCleanerManagerMockedStatic.when(() -> HistoryConfigCleanerManager.getHistoryConfigCleaner(anyString()))
@@ -145,20 +141,11 @@ class DumpServiceTest {
         dumpService.dump(dumpRequest);
         Mockito.verify(dumpTaskMgr, times(1))
                 .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant())), any(DumpTask.class));
-        dumpRequest.setBeta(true);
+       
+        dumpRequest.setGrayName("tag_123");
         dumpService.dump(dumpRequest);
         Mockito.verify(dumpTaskMgr, times(1))
-                .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+beta"), any(DumpTask.class));
-        dumpRequest.setBeta(false);
-        dumpRequest.setBatch(true);
-        dumpService.dump(dumpRequest);
-        Mockito.verify(dumpTaskMgr, times(1))
-                .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+batch"), any(DumpTask.class));
-        dumpRequest.setBatch(false);
-        dumpRequest.setTag("testTag111");
-        dumpService.dump(dumpRequest);
-        Mockito.verify(dumpTaskMgr, times(1))
-                .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+tag+" + dumpRequest.getTag()),
+                .addTask(eq(GroupKey.getKeyTenant(dataId, group, dumpRequest.getTenant()) + "+gray+" + dumpRequest.getGrayName()),
                         any(DumpTask.class));
         
     }
@@ -194,8 +181,7 @@ class DumpServiceTest {
         // expect dump
         Mockito.verify(configInfoPersistService, times(1)).findAllConfigInfoFragment(0, 100, true);
         Mockito.verify(configInfoPersistService, times(1)).findConfigMaxId();
-        Mockito.verify(configInfoBetaPersistService, times(1)).configInfoBetaCount();
-        Mockito.verify(configInfoTagPersistService, times(1)).configInfoTagCount();
+        Mockito.verify(configInfoGrayPersistService, times(1)).configInfoGrayCount();
         
         Mockito.verify(mergeDatumService, times(2)).executeConfigsMerge(anyList());
         
@@ -204,11 +190,9 @@ class DumpServiceTest {
         configExecutorMocked.verify(
                 () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllProcessorRunner.class), anyLong(), anyLong(),
                         eq(TimeUnit.MINUTES)), times(1));
+        
         configExecutorMocked.verify(
-                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllBetaProcessorRunner.class), anyLong(), anyLong(),
-                        eq(TimeUnit.MINUTES)), times(1));
-        configExecutorMocked.verify(
-                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllTagProcessorRunner.class), anyLong(), anyLong(),
+                () -> ConfigExecutor.scheduleConfigTask(any(DumpService.DumpAllGrayProcessorRunner.class), anyLong(), anyLong(),
                         eq(TimeUnit.MINUTES)), times(1));
         configExecutorMocked.verify(
                 () -> ConfigExecutor.scheduleConfigChangeTask(any(DumpChangeConfigWorker.class), anyLong(), eq(TimeUnit.MILLISECONDS)),

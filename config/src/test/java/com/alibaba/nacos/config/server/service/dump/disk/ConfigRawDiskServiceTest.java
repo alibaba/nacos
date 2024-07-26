@@ -45,7 +45,8 @@ class ConfigRawDiskServiceTest {
      */
     @Test
     void testTargetFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class, String.class);
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetFile", String.class, String.class,
+                String.class);
         method.setAccessible(true);
         File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf");
         // 分解路径
@@ -65,50 +66,27 @@ class ConfigRawDiskServiceTest {
      * 测试获取beta文件路径.
      */
     @Test
-    void testTargetBetaFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetBetaFile", String.class, String.class, String.class);
+    void testTargetGrayFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetGrayFile", String.class, String.class,
+                String.class, String.class);
         method.setAccessible(true);
-        File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf");
+        File result = (File) method.invoke(null, "data345678", "group3456", "tenant1234", "graynem4567");
         // 分解路径
         Path path = Paths.get(result.getPath());
         Path parent = path.getParent();
         Path grandParent = parent.getParent();
+        Path grand2Parent = grandParent.getParent();
+        
         // 获取最后三段路径
-        String lastSegment = path.getFileName().toString();
-        String secondLastSegment = parent.getFileName().toString();
+        String fourthLastSegment = grand2Parent.getFileName().toString();
+        assertEquals(fourthLastSegment, "tenant1234");
         String thirdLastSegment = grandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : thirdLastSegment, thirdLastSegment);
-        assertEquals(isWindows() ? "aaaa%A4%dsaknkf" : secondLastSegment, secondLastSegment);
-        assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : lastSegment, lastSegment);
+        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : thirdLastSegment, "group3456");
+        String secondLastSegment = parent.getFileName().toString();
+        assertEquals(isWindows() ? "aaaa%A4%dsaknkf" : secondLastSegment, "data345678");
+        String lastSegment = path.getFileName().toString();
+        assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : lastSegment, "graynem4567");
         
     }
     
-    /**
-     * 测试获取tag文件路径.
-     *
-     * @throws NoSuchMethodException     方法不存在异常
-     * @throws IllegalAccessException    非法访问异常
-     * @throws InvocationTargetException 目标异常
-     */
-    @Test
-    void testTargetTagFile() throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-        Method method = ConfigRawDiskService.class.getDeclaredMethod("targetTagFile", String.class, String.class, String.class,
-                String.class);
-        method.setAccessible(true);
-        File result = (File) method.invoke(null, "aaaa?dsaknkf", "aaaa*dsaknkf", "aaaa:dsaknkf", "aaaadsaknkf");
-        // 分解路径
-        Path path = Paths.get(result.getPath());
-        Path parent = path.getParent();
-        Path grandParent = parent.getParent();
-        Path greatGrandParent = grandParent.getParent();
-        // 获取最后四段路径
-        String secondLastSegment = parent.getFileName().toString();
-        String thirdLastSegment = grandParent.getFileName().toString();
-        String fourthLastSegment = greatGrandParent.getFileName().toString();
-        assertEquals(isWindows() ? "aaaa%A3%dsaknkf" : fourthLastSegment, fourthLastSegment);
-        assertEquals(isWindows() ? "aaaa%A4%dsaknkf" : thirdLastSegment, thirdLastSegment);
-        assertEquals(isWindows() ? "aaaa%A5%dsaknkf" : secondLastSegment, secondLastSegment);
-        String lastSegment = path.getFileName().toString();
-        assertEquals("aaaadsaknkf", lastSegment);
-    }
 }

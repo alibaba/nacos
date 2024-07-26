@@ -91,6 +91,26 @@ public enum ErrorCode {
     PARAMETER_MISMATCH(20009, "parameter mismatch"),
     
     /**
+     * config gray request error.
+     */
+    CONFIG_GRAY_OVER_MAX_VERSION_COUNT(20010, "config gray version version over max count"),
+    
+    /**
+     * config gray tag v2 rule format invalid.
+     */
+    CONFIG_GRAY_RULE_FORMAT_INVALID(20011, "config gray rule format invalid"),
+    
+    /**
+     * config gray tag v2 rule version invalid.
+     */
+    CONFIG_GRAY_VERSION_INVALID(20012, "config gray rule version invalid"),
+    
+    /**
+     * config gray request error.
+     */
+    CONFIG_GRAY_NAME_UNRECOGNIZED_ERROR(20013, "config gray name not recognized"),
+    
+    /**
      *  service name error.
      */
     SERVICE_NAME_ERROR(21000, "service name error"),
