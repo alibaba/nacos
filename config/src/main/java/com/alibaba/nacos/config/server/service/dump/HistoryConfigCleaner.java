@@ -1,5 +1,5 @@
-/*!
- * Copyright 1999-2023 Alibaba Group Holding Ltd.
+/*
+ * Copyright 1999-2024 Alibaba Group Holding Ltd.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,23 @@
  * limitations under the License.
  */
 
-.setting-box {
-  margin-top: 15px;
-  padding: 20px;
-  background-color: #fff;
-  border: 1px solid #f6f7fb;
-  border-radius: 0;
-  -webkit-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  -moz-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+package com.alibaba.nacos.config.server.service.dump;
 
-.text-box {
-  width: 100%;
-  flex-wrap: wrap;
-  display: flex;
-}
-
-.setting-checkbox {
-  flex: 0 0 50%;
-  height: 100px;
-  box-sizing: border-box;
-}
-
-.setting-span {
-  font-size: 18px;
-  font-weight: normal;
-  margin-bottom: 15px;
+/**
+ * The interface History config cleaner.
+ * @author Sunrisea
+ */
+public interface HistoryConfigCleaner {
+    
+    /**
+     * Clean history config.
+     */
+    public void cleanHistoryConfig();
+    
+    /**
+     * Gets name.
+     *
+     * @return the name
+     */
+    public String getName();
 }
