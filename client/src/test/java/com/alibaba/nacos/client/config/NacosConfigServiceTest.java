@@ -23,7 +23,7 @@ import com.alibaba.nacos.client.config.filter.impl.ConfigResponse;
 import com.alibaba.nacos.client.config.impl.ClientWorker;
 import com.alibaba.nacos.client.config.impl.ConfigTransportClient;
 import com.alibaba.nacos.client.config.impl.LocalConfigInfoProcessor;
-import com.alibaba.nacos.client.config.impl.ServerListManager;
+import com.alibaba.nacos.client.serverlist.ServerListManager;
 import com.alibaba.nacos.client.env.NacosClientProperties;
 import org.junit.After;
 import org.junit.Assert;
@@ -103,35 +103,35 @@ public class NacosConfigServiceTest {
         response.setConfigType("bb");
         Mockito.when(mockWoker.getServerConfig(dataId, group, "", timeout, false)).thenReturn(response);
         final NacosClientProperties properties = NacosClientProperties.PROTOTYPE.derive(new Properties());
-        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ServerListManager()) {
+        Mockito.when(mockWoker.getAgent()).thenReturn(new ConfigTransportClient(properties, new ServerListManager(new Properties())) {
             @Override
             public void startInternal() throws NacosException {
                 // NOOP
             }
-    
+
             @Override
             public String getName() {
                 return "TestConfigTransportClient";
             }
-    
+
             @Override
             public void notifyListenConfig() {
                 // NOOP
             }
-    
+
             @Override
             public void executeConfigListen() {
                 // NOOP
             }
-    
+
             @Override
             public void removeCache(String dataId, String group) {
                 // NOOP
             }
-    
+
             @Override
             public ConfigResponse queryConfig(String dataId, String group, String tenant, long readTimeous,
-                    boolean notify) throws NacosException {
+                                              boolean notify) throws NacosException {
                 ConfigResponse configResponse = new ConfigResponse();
                 configResponse.setContent(content);
                 configResponse.setDataId(dataId);
@@ -139,14 +139,14 @@ public class NacosConfigServiceTest {
                 configResponse.setTenant(tenant);
                 return configResponse;
             }
-    
+
             @Override
             public boolean publishConfig(String dataId, String group, String tenant, String appName, String tag,
-                    String betaIps, String content, String encryptedDataKey, String casMd5, String type)
+                                         String betaIps, String content, String encryptedDataKey, String casMd5, String type)
                     throws NacosException {
                 return false;
             }
-    
+
             @Override
             public boolean removeConfig(String dataId, String group, String tenant, String tag) throws NacosException {
                 return false;
