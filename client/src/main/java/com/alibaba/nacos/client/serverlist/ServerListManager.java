@@ -149,12 +149,12 @@ public class ServerListManager implements ServerListFactory, Closeable {
     @Override
     public String genNextServer() {
         int index = currentIndex.incrementAndGet() % getServerList().size();
-        return getServerList().get(index);
+        return serverList.get(index);
     }
     
     @Override
     public String getCurrentServer() {
-        return getServerList().get(currentIndex.get() % getServerList().size());
+        return serverList.get(currentIndex.get() % serverList.size());
     }
 
     public void refreshCurrentServerAddr() {
@@ -193,6 +193,6 @@ public class ServerListManager implements ServerListFactory, Closeable {
     }
 
     public boolean hasNext() {
-        return currentIndex.get() + 1 < getServerList().size();
+        return currentIndex.get() + 1 < serverList.size();
     }
 }

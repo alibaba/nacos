@@ -1,5 +1,6 @@
 package com.alibaba.nacos.client.serverlist.utils;
 
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.common.constant.HttpHeaderConsts;
 import com.alibaba.nacos.common.http.param.Header;
 import com.alibaba.nacos.common.utils.UuidUtils;
@@ -13,16 +14,12 @@ import com.alibaba.nacos.common.utils.VersionUtils;
  */
 public class HttpUtil {
 
-    private static final String NAMING_MODULE = "Naming";
-
-    private static final String CONFIG_MODULE = "Config";
-
     public static Header builderNamingHeader() {
-        return builderHeaderByModule(NAMING_MODULE);
+        return builderHeaderByModule(Constants.Naming.NAMING_MODULE);
     }
 
     public static Header builderConfigHeader() {
-        return builderHeaderByModule(CONFIG_MODULE);
+        return builderHeaderByModule(Constants.Config.CONFIG_MODULE);
     }
 
     /**

@@ -16,7 +16,9 @@
 
 package com.alibaba.nacos.client.naming.remote;
 
+import com.alibaba.nacos.api.PropertyKeyConst;
 import com.alibaba.nacos.api.ability.constant.AbilityKey;
+import com.alibaba.nacos.api.common.Constants;
 import com.alibaba.nacos.api.exception.NacosException;
 import com.alibaba.nacos.api.naming.pojo.Instance;
 import com.alibaba.nacos.api.naming.pojo.ListView;
@@ -70,6 +72,7 @@ public class NamingClientProxyDelegate implements NamingClientProxy {
             NacosClientProperties properties, InstancesChangeNotifier changeNotifier) throws NacosException {
         this.serviceInfoUpdateService = new ServiceInfoUpdateService(properties, serviceInfoHolder, this,
                 changeNotifier);
+        properties.setProperty(PropertyKeyConst.MODULE_NAME, Constants.Naming.NAMING_MODULE);
         this.serverListManager = new ServerListManager(properties, namespace);
         this.serviceInfoHolder = serviceInfoHolder;
         this.securityProxy = new SecurityProxy(this.serverListManager.getServerList(),

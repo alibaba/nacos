@@ -80,6 +80,7 @@ public class NacosConfigService implements ConfigService {
         
         initNamespace(clientProperties);
         this.configFilterChainManager = new ConfigFilterChainManager(clientProperties.asProperties());
+        properties.setProperty(PropertyKeyConst.MODULE_NAME, Constants.Config.CONFIG_MODULE);
         ServerListManager serverListManager = new ServerListManager(properties);
 
         this.worker = new ClientWorker(this.configFilterChainManager, serverListManager, clientProperties);
