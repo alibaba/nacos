@@ -43,7 +43,7 @@ import java.io.IOException;
  * @author zhangyukun
  */
 @RestController
-@RequestMapping("/v3/console/cs")
+@RequestMapping("/v3/console/cs/configs")
 @ExtractorManager.Extractor(httpExtractor = ConsoleDefaultHttpParamExtractor.class)
 public class ConsoleConfigController {
     
@@ -61,7 +61,7 @@ public class ConsoleConfigController {
      * @throws IOException      IOException.
      * @throws NacosException   NacosException.
      */
-    @GetMapping("/configs")
+    @GetMapping
     public void getConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant,
@@ -75,7 +75,7 @@ public class ConsoleConfigController {
      *
      * @throws NacosException NacosException.
      */
-    @PostMapping("/configs")
+    @PostMapping
     public ResponseEntity<?> publishConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant,
@@ -103,7 +103,7 @@ public class ConsoleConfigController {
      *
      * @throws NacosException NacosException.
      */
-    @DeleteMapping("/configs")
+    @DeleteMapping
     public ResponseEntity<?> deleteConfig(HttpServletRequest request, HttpServletResponse response,
             @RequestParam("dataId") String dataId, @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant,
@@ -121,7 +121,7 @@ public class ConsoleConfigController {
      *
      * @throws NacosException NacosException.
      */
-    @GetMapping("/configs/detail")
+    @GetMapping("/detail")
     public ResponseEntity<?> detailConfigInfo(@RequestParam("dataId") String dataId,
             @RequestParam("group") String group,
             @RequestParam(value = "tenant", required = false, defaultValue = "") String tenant) {
