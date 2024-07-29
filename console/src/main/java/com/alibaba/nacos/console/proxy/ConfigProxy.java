@@ -46,7 +46,6 @@ public class ConfigProxy {
     
     @Autowired
     public ConfigProxy(ConfigInnerHandler configInnerHandler, ConsoleConfig consoleConfig) {
-        //        this.configHandlerMap.put("separate", configInnerHandler);
         this.configHandlerMap.put("merged", configInnerHandler);
         this.consoleConfig = consoleConfig;
     }
